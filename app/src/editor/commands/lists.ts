@@ -185,7 +185,8 @@ export function applyNumberLook(look: NumberLook): Command {
 /** A bullet from the library, or any one character with a font (Define new bullet). */
 export function applyBullet(symbol: string, font: string | null = null): Command {
   const chars = [...symbol];
-  if (chars.length !== 1 || /\p{Cc}/u.test(symbol)) return () => false;
+  // An invisible bullet is refused: controls, format characters, spaces, and a lone combining mark.
+  if (chars.length !== 1 || /^[\p{C}\p{Z}\p{M}]$/u.test(symbol)) return () => false;
   return redefine('bulletList', (levels, depth) => {
     levels[depth] = { ...levels[depth], format: 'bullet', symbol, ...(font ? { font } : {}) };
     return levels;

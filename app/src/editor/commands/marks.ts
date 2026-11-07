@@ -129,19 +129,21 @@ export function stepTextSize(direction: 1 | -1): Command {
 export const KEPT_ON_CLEAR: ReadonlySet<string> = new Set([...CONTENT_MARKS, 'code', 'lang', 'dir']);
 
 /** Clear character formatting (Word Ctrl+Space): takes off every run format but the kept marks. The paragraph's
- * style and its paragraph formatting stay. */
+ * style and its paragraph formatting stay. False when there was no run format to take off. */
 export const clearFormattingChange: Change = (tr) => {
   const marks = Object.values(tr.doc.type.schema.marks).filter((type) => !KEPT_ON_CLEAR.has(type.name));
   if (tr.selection.empty) {
-    tr.setStoredMarks(
-      (tr.storedMarks ?? tr.selection.$from.marks()).filter((mark) => KEPT_ON_CLEAR.has(mark.type.name)),
-    );
+    const current = tr.storedMarks ?? tr.selection.$from.marks();
+    const kept = current.filter((mark) => KEPT_ON_CLEAR.has(mark.type.name));
+    if (kept.length === current.length) return false;
+    tr.setStoredMarks(kept);
     return true;
   }
+  const before = tr.doc;
   for (const range of tr.selection.ranges) {
     for (const type of marks) tr.removeMark(range.$from.pos, range.$to.pos, type);
   }
-  return true;
+  return !tr.doc.eq(before);
 };
 
 export function clearFormatting(): Command {

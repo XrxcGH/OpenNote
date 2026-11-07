@@ -87,9 +87,31 @@ interface Segment {
   lang?: string;
 }
 
-/** The selected text, run by run. A caret takes the word around it, as Word does. */
+/** The text from `from` to `to`, run by run. Code is skipped. */
+function partsBetween(doc: PMNode, from: number, to: number): Segment[] {
+  const parts: Segment[] = [];
+  doc.nodesBetween(from, to, (node, pos, parent) => {
+    if (!node.isText || parent?.type.spec.code === true) return !node.isText;
+    const runLang = node.marks.find((mark) => mark.type.name === 'lang')?.attrs.lang as string | undefined;
+    const paraLang = typeof parent?.attrs.lang === 'string' ? parent.attrs.lang : undefined;
+    const start = Math.max(pos, from);
+    const end = Math.min(pos + node.nodeSize, to);
+    const text = (node.text ?? '').slice(start - pos, end - pos);
+    parts.push({ from: start, to: end, node, text, lang: runLang ?? paraLang });
+    return false;
+  });
+  return parts;
+}
+
+/** The selected text, run by run, over every range of the selection. A caret takes the word around it, as Word
+ * does. */
 function segments(state: EditorState | Transaction): { from: number; to: number; parts: Segment[] } {
-  let { from, to } = state.selection;
+  const { selection } = state;
+  if (selection.ranges.length > 1) {
+    const parts = selection.ranges.flatMap((range) => partsBetween(state.doc, range.$from.pos, range.$to.pos));
+    return { from: selection.from, to: selection.to, parts };
+  }
+  let { from, to } = selection;
   if (from === to) {
     const $at = state.doc.resolve(from);
     const text = $at.parent.textContent;
@@ -100,18 +122,7 @@ function segments(state: EditorState | Transaction): { from: number; to: number;
     from = $at.start() + start;
     to = $at.start() + end;
   }
-  const parts: Segment[] = [];
-  state.doc.nodesBetween(from, to, (node, pos, parent) => {
-    if (!node.isText || parent?.type.spec.code === true) return !node.isText;
-    const runLang = node.marks.find((mark) => mark.type.name === 'lang')?.attrs.lang as string | undefined;
-    const paraLang = typeof parent?.attrs.lang === 'string' ? parent.attrs.lang : undefined;
-    const start = Math.max(pos, from);
-    const end = Math.min(pos + node.nodeSize, to);
-    const text = (node.text ?? '').slice(start - pos, end - pos);
-    parts.push({ from: start, to: end, node, text, lang: runLang ?? paraLang });
-    return false;
-  });
-  return { from, to, parts };
+  return { from, to, parts: partsBetween(state.doc, from, to) };
 }
 
 /** Rewrites the selected text in a case mode, keeping every run's marks. False when nothing changes. */
@@ -132,7 +143,8 @@ export function changeCaseChange(mode: CaseMode | 'cycle'): (tr: Transaction) =>
       changed = true;
     }
     if (!changed) return false;
-    tr.setSelection(TextSelection.create(tr.doc, from, tr.mapping.map(to)));
+    // A selection of several ranges maps through the replacements by itself; one range keeps all its new text.
+    if (tr.selection.ranges.length <= 1) tr.setSelection(TextSelection.create(tr.doc, from, tr.mapping.map(to)));
     return true;
   };
 }

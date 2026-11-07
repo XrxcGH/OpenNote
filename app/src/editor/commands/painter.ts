@@ -10,7 +10,8 @@ import { PARA_KEYS } from '../paragraph/attributes';
 import { fromChange, runCommand } from './command';
 import type { Change, Command } from './command';
 import { KEPT_ON_CLEAR, clearFormattingChange } from './marks';
-import { paraTargets } from './paragraph';
+import { paraTargets, selectionParaTargets, validParaValue } from './paragraph';
+import { RUN_MARKS, validRunAttrs } from './runFormat';
 
 export interface CopiedMark {
   type: string;
@@ -81,19 +82,19 @@ export function pasteFormatChange(format: CopiedFormat): Change {
       }
     }
     if (format.para) {
-      const { from, to } = tr.selection;
-      for (const { node, pos } of paraTargets(tr.doc, from, to)) {
-        for (const [key, value] of Object.entries(format.para.attrs)) {
-          if ((node.attrs[key] ?? null) !== value) tr.setNodeAttribute(pos, key, value);
+      const { para } = format;
+      for (const { node, pos } of selectionParaTargets(tr.doc, tr.selection)) {
+        for (const [key, value] of Object.entries(para.attrs)) {
+          if (JSON.stringify(node.attrs[key] ?? null) !== JSON.stringify(value)) tr.setNodeAttribute(pos, key, value);
         }
       }
-      tr.doc.nodesBetween(from, to, (node, pos) => {
-        if (!node.isTextblock) return true;
-        if ('style' in node.attrs && node.attrs.style !== format.para?.style) {
-          tr.setNodeAttribute(pos, 'style', format.para?.style ?? null);
-        }
-        return false;
-      });
+      for (const range of tr.selection.ranges) {
+        tr.doc.nodesBetween(range.$from.pos, range.$to.pos, (node, pos) => {
+          if (!node.isTextblock) return true;
+          if ('style' in node.attrs && node.attrs.style !== para.style) tr.setNodeAttribute(pos, 'style', para.style);
+          return false;
+        });
+      }
       tr.setMeta(META_ELEMENT_DATA, true);
     }
     return !tr.doc.eq(before) || tr.storedMarks !== storedBefore;
@@ -116,19 +117,49 @@ function store(format: CopiedFormat): void {
 
 let copied: CopiedFormat | null = null;
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+/** Stored formatting checked against the grammar: only run formats a command may set, with valid attributes, and
+ * paragraph keys a reader keeps. Another window, an older version, or a hand edit may have written the store. Null
+ * when nothing valid remains. */
+export function checkedFormat(value: unknown): CopiedFormat | null {
+  if (!isRecord(value) || !Array.isArray(value.marks)) return null;
+  const marks = value.marks.flatMap((entry: unknown): CopiedMark[] => {
+    if (!isRecord(entry) || typeof entry.type !== 'string' || !RUN_MARKS.includes(entry.type)) return [];
+    const attrs = isRecord(entry.attrs) ? entry.attrs : {};
+    return validRunAttrs(entry.type, attrs) ? [{ type: entry.type, attrs: { ...attrs } }] : [];
+  });
+  const format: CopiedFormat = { marks };
+  const para = value.para;
+  if (isRecord(para) && isRecord(para.attrs) && (typeof para.style === 'string' || para.style === null)) {
+    const attrs: Record<string, unknown> = {};
+    for (const key of PARA_KEYS) {
+      if (key === 'list' || !(key in para.attrs)) continue;
+      const entry = para.attrs[key] ?? null;
+      if (!validParaValue(key, entry)) continue;
+      attrs[key] = entry === null ? null : JSON.parse(JSON.stringify(entry));
+    }
+    format.para = { attrs, style: para.style };
+  }
+  return marks.length > 0 || format.para ? format : null;
+}
+
 /** The formatting copied last, in this window or another page. */
 export function copiedFormat(): CopiedFormat | null {
   if (copied) return copied;
   try {
     const raw = localStorage.getItem(STORE_KEY);
-    const parsed: unknown = raw ? JSON.parse(raw) : null;
-    if (parsed && typeof parsed === 'object' && Array.isArray((parsed as CopiedFormat).marks)) {
-      return parsed as CopiedFormat;
-    }
+    return checkedFormat(raw ? JSON.parse(raw) : null);
   } catch {
     // Unreadable stored formatting counts as none.
   }
   return null;
+}
+
+/** Forgets the formatting copied in this window, so the device store answers (for tests). */
+export function forgetCopiedFormat(): void {
+  copied = null;
 }
 
 /** Copy formatting (Word Ctrl+Shift+C). */
@@ -183,10 +214,12 @@ export function startPainter(editor: Editor, options: { locked?: boolean } = {})
   stopPainter();
   const format = copyFormatting(editor.state);
   const dom = editor.view.dom;
-  const done = () => queueMicrotask(() => painterSelectionDone(editor));
+  // A macrotask, so the editor's own mouseup and selection update have run first.
+  const done = () => void setTimeout(() => painterSelectionDone(editor), 0);
+  // Only releasing Shift ends a keyboard selection: Shift+arrow keyups still extend it.
   const onKey = (event: KeyboardEvent) => {
     if (event.key === 'Escape') stopPainter();
-    else if (event.shiftKey || event.key === 'Shift') done();
+    else if (event.key === 'Shift') done();
   };
   dom.addEventListener('pointerup', done);
   dom.addEventListener('keyup', onKey);

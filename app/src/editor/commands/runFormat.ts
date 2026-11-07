@@ -157,10 +157,12 @@ export function runMarkPressed(state: EditorState, name: string): boolean | 'mix
   const type = state.schema.marks[name] as MarkType | undefined;
   if (!type || state.selection.empty) return false;
   let some = false;
-  state.doc.nodesBetween(state.selection.from, state.selection.to, (node: PMNode) => {
-    if (node.isText && type.isInSet(node.marks)) some = true;
-    return !some;
-  });
+  for (const range of state.selection.ranges) {
+    state.doc.nodesBetween(range.$from.pos, range.$to.pos, (node: PMNode) => {
+      if (node.isText && type.isInSet(node.marks)) some = true;
+      return !some;
+    });
+  }
   return some ? 'mixed' : false;
 }
 

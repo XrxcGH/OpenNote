@@ -37,7 +37,7 @@ export class RangesSelection extends Selection {
   }
 
   toJSON(): { type: string; ranges: [number, number][] } {
-    return { type: 'ranges', ranges: this.ranges.map((range) => [range.$from.pos, range.$to.pos]) };
+    return { type: 'opennoteRanges', ranges: this.ranges.map((range) => [range.$from.pos, range.$to.pos]) };
   }
 
   static fromJSON(doc: PMNode, json: { ranges?: [number, number][] }): Selection {

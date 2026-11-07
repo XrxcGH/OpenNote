@@ -12,7 +12,7 @@ import { copyFormatting, pasteFormatting } from './painter';
 import { repeatLast, lastRepeatable } from './repeat';
 import { runMarkOn, setRunMark, setRunValue, setWeight, toggleRunMark, weightAt } from './runFormat';
 import { similarRanges, selectSimilar } from './similar';
-import { BODY_POINTS, parseSizeInput, pointsOf, sizeText } from './sizes';
+import { BODY_POINTS, parseSizeInput, pointsOf, sizeText, validSize } from './sizes';
 import { describeFormat } from './speakFormat';
 import { markAttrs } from './state';
 
@@ -67,7 +67,12 @@ export const TEXT_RUN_ENTRIES: Record<string, CatalogEntry> = {
   'format.fontSize': {
     command: (args) => {
       if (args.value === null) return setTextSize(null);
-      const points = typeof args.value === 'number' ? args.value : parseSizeInput(String(args.value ?? ''));
+      const points =
+        typeof args.value === 'number'
+          ? validSize(args.value)
+            ? args.value
+            : null
+          : parseSizeInput(String(args.value ?? ''));
       return points === null || args.value === undefined ? null : setTextSize(sizeText(points));
     },
     name: 'textCommands.names.fontSize',

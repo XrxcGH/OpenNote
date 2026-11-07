@@ -46,7 +46,12 @@ export function parseSizeInput(text: string): number | null {
   const trimmed = text.trim();
   if (!/^\d+(\.\d+)?$/.test(trimmed)) return null;
   const value = Number(trimmed);
-  return value >= MIN_POINTS && value <= MAX_POINTS && Number.isInteger(value * 2) ? value : null;
+  return validSize(value) ? value : null;
+}
+
+/** Whether a size in points can be set: from 1 to 1638, in half points. */
+export function validSize(points: number): boolean {
+  return points >= MIN_POINTS && points <= MAX_POINTS && Number.isInteger(points * 2);
 }
 
 /** The next size on Word's list in a direction. A size between two entries moves to the next one that way. */
