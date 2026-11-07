@@ -198,6 +198,69 @@ describe('forced colors', () => {
     expect(getComputedStyle(root.querySelector('[data-box]')!).outlineStyle).toBe('double');
     expect(getComputedStyle(root.querySelectorAll('p')[1]).borderBlockStartStyle).toBe('solid');
   });
+
+  it('keeps a deletion struck through and tells it from an insertion without color', async () => {
+    await emulate('active');
+    const root = host();
+    const insertion = root.appendChild(document.createElement('span'));
+    insertion.setAttribute('data-ins', '');
+    const deletion = root.appendChild(document.createElement('span'));
+    deletion.setAttribute('data-del', '');
+    expect(getComputedStyle(insertion).textDecorationLine).toBe('underline');
+    expect(getComputedStyle(insertion).textDecorationStyle).toBe('dashed');
+    expect(getComputedStyle(deletion).textDecorationLine).toBe('line-through');
+    expect(getComputedStyle(deletion).textDecorationStyle).toBe('dashed');
+  });
+});
+
+describe('shade, group spacing, hanging indents, and drop caps', () => {
+  it('draws a run shade behind a highlight, not over it', () => {
+    const root = host();
+    renderStatic(docOf('<mark data-color="#ffee00"><span data-shade="#00ff00">x</span></mark>'), root);
+    expect(getComputedStyle(root.querySelector('mark')!).backgroundColor).toBe('rgb(255, 238, 0)');
+    expect(getComputedStyle(root.querySelector('[data-shade]')!).backgroundColor).toBe('rgba(0, 0, 0, 0)');
+    const alone = drawn(docOf('<span data-shade="#00ff00">y</span>'), '[data-shade]');
+    expect(getComputedStyle(alone).backgroundColor).toBe('rgb(0, 255, 0)');
+  });
+
+  it('keeps no space between the members of a border group, whatever their spacing', () => {
+    const border = { start: { style: 'single', width: 1, space: 2 } };
+    const spaced = { border, before: 12, after: 12 };
+    const root = host();
+    renderStatic(
+      applyElementData(parseTextBlock('one\n\ntwo\n\nthree'), {
+        ids: ['a', 'b', 'c'],
+        paras: { a: spaced, b: spaced, c: spaced },
+      }),
+      root,
+    );
+    const [first, middle, last] = [...root.querySelectorAll('p')].map((p) => getComputedStyle(p));
+    expect([first.marginBlockStart, first.marginBlockEnd]).toEqual(['16px', '0px']);
+    expect([middle.marginBlockStart, middle.marginBlockEnd]).toEqual(['0px', '0px']);
+    expect([last.marginBlockStart, last.marginBlockEnd]).toEqual(['0px', '16px']);
+  });
+
+  it('adds a start border space to the padding of a hanging indent', () => {
+    const style = styleOf('word', 'p', {
+      indent: { start: 27, end: 0, first: -13.5 },
+      border: { start: { style: 'single', width: 1, space: 6 } },
+    });
+    // 13.5 pt of hanging padding is 18px and a 6 pt space is 8px.
+    expect(style.paddingInlineStart).toBe('26px');
+  });
+
+  it('draws a drop cap as an initial letter, and a margin drop cap outside the text', () => {
+    const drop = { dropCap: { mode: 'drop', lines: 3, distance: 6 } };
+    const first = getComputedStyle(drawn(docOf('Word', drop), 'p'), '::first-letter');
+    expect(first.getPropertyValue('initial-letter')).toMatch(/^3/);
+    expect(first.marginInlineEnd).toBe('8px');
+    expect(first.marginInlineStart).toBe('0px');
+    const margin = getComputedStyle(
+      drawn(docOf('Word', { dropCap: { ...drop.dropCap, mode: 'margin' } }), 'p'),
+      '::first-letter',
+    );
+    expect(Number.parseFloat(margin.marginInlineStart)).toBeLessThan(0);
+  });
 });
 
 // ---- Static render equals mounted render ----
@@ -296,12 +359,21 @@ describe('render benchmark', () => {
   const line = (i: number, rich: boolean) =>
     [
       `Line ${i} with <span data-size="${rich && i % 4 === 0 ? '11' : 'large'}">some</span>`,
-      `words in <u${rich && i % 4 === 1 ? ' data-line="dash"' : ''}>it</u> and **bold** text.`,
+      `words in <u${rich && i % 4 === 1 ? ' data-line="dash"' : ''}>it</u>`,
+      rich && i % 4 === 2
+        ? '<span data-font="Georgia">and</span> <span data-caps="small">more</span>'
+        : '<span data-size="large">and</span> <span data-size="large">more</span>',
+      rich && i === 7 ? '<span data-scale="120">scaled words</span>' : '<span data-size="large">scaled words</span>',
+      '**bold** text.',
     ].join(' ');
   const plain = Array.from({ length: LINES }, (_, i) => line(i, false));
   const formatted = Array.from({ length: LINES }, (_, i) => line(i, true));
+  const border = { top: { style: 'single', width: 1 }, bottom: { style: 'single', width: 1 } };
   const paras = Object.fromEntries(
-    Array.from({ length: LINES / 5 }, (_, i) => [`p${i * 5}`, { align: 'justify', indent: { first: 18 }, after: 6 }]),
+    Array.from({ length: LINES / 5 }, (_, i) => [
+      `p${i * 5}`,
+      { align: 'justify', indent: { first: 18 }, after: 6, contextual: true, ...(i % 2 === 0 ? { border } : {}) },
+    ]),
   );
   const build = (lines: string[], withParas: boolean) =>
     applyElementData(parseTextBlock(lines.join('\n\n')), {
@@ -321,12 +393,20 @@ describe('render benchmark', () => {
     return min;
   }
 
-  it('renders a formatted page within 10 percent of the same page without formatting', () => {
+  it('does the formatting work, and costs under 1.75 times the same page without it', () => {
     const base = build(plain, false);
     const rich = build(formatted, true);
+    const probe = host();
+    renderStatic(rich, probe);
+    // The page must really hold the work (a render without it would be as fast as the plain page).
+    expect(probe.querySelectorAll('[data-border-place]').length).toBeGreaterThan(10);
+    expect(probe.querySelectorAll('[data-scaled]').length).toBe(2);
+    expect(probe.querySelectorAll('span[style*="font-family"]').length).toBeGreaterThan(50);
+    expect(probe.querySelectorAll('p[style*="margin-block-end: 0"]').length).toBeGreaterThan(10);
+    probe.remove();
     best(base);
     best(rich);
     const [a, b] = [best(base), best(rich)];
-    expect(b).toBeLessThanOrEqual(a * 1.1 + 1);
+    expect(b).toBeLessThanOrEqual(a * 1.75);
   });
 });

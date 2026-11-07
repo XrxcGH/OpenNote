@@ -64,6 +64,8 @@ describe('runStyle', () => {
   it('resolves colors', () => {
     expect(colorValue('fern')).toBe('var(--ink-fern)');
     expect(colorValue('theme:text')).toBe('var(--color-text-primary)');
+    expect(colorValue('theme:accent2')).toBe('var(--theme-accent2, var(--color-accent-clay))');
+    expect(colorValue('theme:accent1); background: url(x')).toBe('currentcolor');
     expect(colorValue('nonsense')).toBe('currentcolor');
   });
 });
@@ -87,6 +89,13 @@ describe('paraStyle', () => {
       'padding-inline-start': '24px',
       'text-indent': '-24px',
     });
+  });
+
+  it('adds a start border space to the padding of a hanging indent', () => {
+    const border = { start: { style: 'single', width: 0.75, space: 6, color: null } };
+    const style = paraStyle({ indent: { start: 36, end: 0, first: -18 }, border });
+    expect(style['padding-inline-start']).toBe('calc(24px + var(--bd-start-space, 0px))');
+    expect(style['--bd-start-space']).toBe('8px');
   });
 
   it('writes the three line rules', () => {

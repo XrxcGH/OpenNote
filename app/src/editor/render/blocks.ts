@@ -41,7 +41,16 @@ function siblings(parent: PMNode, start: number, marks: NodeMarks): void {
   const kids = children(parent, start);
   const formats = kids.map(({ node }) => (FORMATTED.has(node.type.name) ? paraFormat(node.attrs) : null));
   borderPlaces(formats).forEach((place, at) => {
-    if (place) add(marks, kids[at].pos, { 'data-border-place': place });
+    if (!place || place === 'single') {
+      if (place) add(marks, kids[at].pos, { 'data-border-place': place });
+      return;
+    }
+    // The group is one box, so its members hold no space between them. Spacing is an inline style, which beats the
+    // style sheet, so the zero margins are written the same way.
+    const joined = [place !== 'first' && 'margin-block-start: 0', place !== 'last' && 'margin-block-end: 0']
+      .filter(Boolean)
+      .join('; ');
+    add(marks, kids[at].pos, joined ? { 'data-border-place': place, style: joined } : { 'data-border-place': place });
   });
   kids.forEach(({ node, pos }, at) => {
     const format = formats[at];
@@ -68,17 +77,17 @@ function listLabels(doc: PMNode, lists: ListDefinitions, marks: NodeMarks): void
   }
 }
 
-/** Whether the document holds anything these marks draw, so a plain page pays one scan and no more. */
-function hasFormatting(doc: PMNode): boolean {
-  let found = false;
+/** What the document holds that these marks draw, so a page pays one scan, and only for the passes it needs. */
+function formatting(doc: PMNode): { groups: boolean; lists: boolean; scale: boolean } {
+  const found = { groups: false, lists: false, scale: false };
   doc.descendants((node) => {
-    if (found) return false;
-    if (node.isText) found = node.marks.some((mark) => mark.type.name === 'scale');
+    if (node.isText) found.scale ||= node.marks.some((mark) => mark.type.name === 'scale');
     else if (FORMATTED.has(node.type.name)) {
       const a = node.attrs;
-      found = a.border != null || a.contextual != null || a.list != null;
+      found.groups ||= a.border != null || a.contextual != null;
+      found.lists ||= a.list != null;
     }
-    return !found;
+    return !(found.groups && found.lists && found.scale);
   });
   return found;
 }
@@ -87,15 +96,17 @@ function hasFormatting(doc: PMNode): boolean {
 export function blockMarks(doc: PMNode, lists: ListDefinitions = new Map()): { nodes: NodeMarks; words: WordRange[] } {
   const nodes: NodeMarks = new Map();
   const words: WordRange[] = [];
-  if (!hasFormatting(doc)) return { nodes, words };
-  siblings(doc, 0, nodes);
-  listLabels(doc, lists, nodes);
-  doc.descendants((node, pos) => {
-    if (!node.isText || !node.marks.some((mark) => mark.type.name === 'scale')) return;
-    for (const word of (node.text ?? '').matchAll(/\S+/g)) {
-      words.push({ from: pos + word.index, to: pos + word.index + word[0].length });
-    }
-  });
+  const has = formatting(doc);
+  if (has.groups) siblings(doc, 0, nodes);
+  if (has.lists) listLabels(doc, lists, nodes);
+  if (has.scale) {
+    doc.descendants((node, pos) => {
+      if (!node.isText || !node.marks.some((mark) => mark.type.name === 'scale')) return;
+      for (const word of (node.text ?? '').matchAll(/\S+/g)) {
+        words.push({ from: pos + word.index, to: pos + word.index + word[0].length });
+      }
+    });
+  }
   return { nodes, words };
 }
 
@@ -124,9 +135,8 @@ export function applyBlockMarks(doc: PMNode, into: HTMLElement, lists?: ListDefi
   }
   if (words.length === 0) return;
   wrapScaledWords(into);
-  // The margins need layout, so a root that isn't in the page yet is measured on its first frame.
-  if (into.isConnected) measureScaledWords(into);
-  else requestAnimationFrame(() => measureScaledWords(into));
+  // The margins need layout, which a render must not force (it would lay out the whole page), so the next frame measures.
+  requestAnimationFrame(() => measureScaledWords(into));
 }
 
 /** Wraps each word inside a scaled run in its own `inline-block` span (the editor draws the same with decorations). */
@@ -158,7 +168,8 @@ export function measureScaledWords(root: Element): void {
   for (const box of boxes) box.style.marginInlineEnd = '';
   const widths = boxes.map((box) => box.offsetWidth);
   boxes.forEach((box, at) => {
-    const scale = Number.parseFloat(getComputedStyle(box).getPropertyValue('--scale'));
+    // The nearest run's own attribute, so no style is computed for each word.
+    const scale = Number.parseFloat(box.closest('[data-scale]')?.getAttribute('data-scale') ?? '') / 100;
     if (Number.isFinite(scale) && widths[at] > 0) box.style.marginInlineEnd = `${widths[at] * (scale - 1)}px`;
   });
 }

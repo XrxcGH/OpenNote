@@ -197,6 +197,11 @@
     --chip-fill: color-mix(in srgb, var(--run-fill) 45%, transparent);
   }
 
+  /* A shade sits behind a highlight: inside one, it draws nothing (the inline style needs the override). */
+  .text :global(.ProseMirror) mark [data-shade] {
+    background-color: transparent !important;
+  }
+
   .text :global(.ProseMirror) [data-border] {
     border-block-start: var(--bd-top, 0 none);
     border-block-end: var(--bd-bottom, 0 none);
@@ -354,7 +359,13 @@
     .text :global(.ProseMirror) :is([data-comment], [data-ins], [data-del], [data-fmt]) {
       background: Highlight;
       color: HighlightText;
-      text-decoration: underline dashed;
+      text-decoration-line: underline;
+      text-decoration-style: dashed;
+    }
+
+    /* A deletion keeps its line through, dashed, so it still differs from an insertion without color. */
+    .text :global(.ProseMirror) [data-del] {
+      text-decoration-line: line-through;
     }
 
     .text :global(.ProseMirror) [data-callout] {

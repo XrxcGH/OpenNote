@@ -1,5 +1,6 @@
 // The CSS declarations for a run's version 2 formatting (text DESIGN.md 2.2 and 7). The schema's marks call this with
 // the mark's name and attributes while they render, so the static DOM and the editor's DOM carry the same style.
+import { THEME_COLORS } from '../schema/constants';
 import { loadStandIn } from '../../theme/fonts';
 import { fontStack } from './fallbacks';
 import { lineFactor } from './lineFactor';
@@ -32,7 +33,9 @@ export function colorValue(color: string): string {
   if (color in WASH) return WASH[color];
   if (color === 'theme:text') return 'var(--color-text-primary)';
   if (color === 'theme:background') return 'var(--color-surface-page)';
-  if (color.startsWith('theme:accent')) return `var(--theme-${color.slice(6)}, var(--color-accent-clay))`;
+  if (color.startsWith('theme:accent') && THEME_COLORS.includes(color.slice(6))) {
+    return `var(--theme-${color.slice(6)}, var(--color-accent-clay))`;
+  }
   return 'currentcolor';
 }
 
@@ -128,15 +131,25 @@ const BOXES: Readonly<Record<string, string>> = {
   thick: '2px solid',
 };
 
+const fontDeclarations = new Map<string, StyleDeclarations>();
+
 function font(name: string): StyleDeclarations {
   if (typeof document !== 'undefined') void loadStandIn(name).catch(() => undefined);
-  // The run's own single-line factor, used when its paragraph sets a line multiple (paraStyle's `--line-mult`).
+  // A page repeats a few font names many times, so each name's declarations are worked out once. They are read-only.
+  // The factor can be taught later (setLineFactor), so it is part of the key.
   const factor = String(Math.round(lineFactor(name) * 10000) / 10000);
-  return {
-    'font-family': fontStack(name),
-    '--line-factor': factor,
-    'line-height': 'calc(var(--line-mult) * var(--line-factor))',
-  };
+  const key = `${factor}:${name}`;
+  let declarations = fontDeclarations.get(key);
+  if (declarations === undefined) {
+    // The run's own single-line factor, used when its paragraph sets a line multiple (paraStyle's `--line-mult`).
+    declarations = {
+      'font-family': fontStack(name),
+      '--line-factor': factor,
+      'line-height': 'calc(var(--line-mult) * var(--line-factor))',
+    };
+    fontDeclarations.set(key, declarations);
+  }
+  return declarations;
 }
 
 /** The declarations for one run's formatting attributes: `mark` names the mark, the rest are its attributes. */

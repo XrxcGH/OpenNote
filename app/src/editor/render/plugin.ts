@@ -31,13 +31,46 @@ function build(state: EditorState, lists: ListDefinitions): State {
   return { lists, decorations: DecorationSet.create(state.doc, all), scaled: words.length > 0 };
 }
 
-/** Measures scaled words after each update that has any, so their layout width follows their paint width. */
+/**
+ * Measures scaled words so their layout width follows their paint width. It measures only the paragraphs a change
+ * touched, in one frame however many updates come, and nothing for an update that changed neither the document nor
+ * the list definitions (a selection move).
+ */
 class ScaleView {
+  private frame = 0;
+  /** The text blocks waiting to be measured, or `null` for the whole editor. */
+  private pending: Set<HTMLElement> | null = new Set();
   constructor(private readonly view: EditorView) {
-    this.update();
+    this.queue(null);
   }
-  update(): void {
-    if (key.getState(this.view.state)?.scaled) measureScaledWords(this.view.dom);
+  update(view: EditorView, prev: EditorState): void {
+    const now = key.getState(view.state);
+    if (!now?.scaled || now === key.getState(prev)) return;
+    if (prev.doc.eq(view.state.doc)) return this.queue(null);
+    const start = prev.doc.content.findDiffStart(view.state.doc.content);
+    const end = prev.doc.content.findDiffEnd(view.state.doc.content);
+    if (start === null || !end) return;
+    const touched = new Set<HTMLElement>();
+    view.state.doc.nodesBetween(start, Math.max(start, end.b), (node, pos) => {
+      const dom = node.isTextblock ? view.nodeDOM(pos) : null;
+      if (dom instanceof HTMLElement) touched.add(dom);
+      return !node.isTextblock;
+    });
+    this.queue(touched);
+  }
+  private queue(blocks: Set<HTMLElement> | null): void {
+    if (blocks === null || this.pending === null) this.pending = null;
+    else for (const block of blocks) this.pending.add(block);
+    if (this.frame !== 0) return;
+    this.frame = requestAnimationFrame(() => {
+      this.frame = 0;
+      const roots = this.pending ?? [this.view.dom];
+      this.pending = new Set();
+      if (key.getState(this.view.state)?.scaled) for (const root of roots) measureScaledWords(root);
+    });
+  }
+  destroy(): void {
+    cancelAnimationFrame(this.frame);
   }
 }
 

@@ -93,7 +93,8 @@ function styleOf(f: ParaFormat): StyleDeclarations {
     // A hanging indent: the first line sits at start + first, and padding holds the later lines at start.
     if (first < 0) {
       out['margin-inline-start'] = px(start + first);
-      out['padding-inline-start'] = px(-first);
+      // A start border's space is padding too, and this inline padding replaces the style sheet's.
+      out['padding-inline-start'] = f.border?.start ? `calc(${px(-first)} + var(--bd-start-space, 0px))` : px(-first);
     } else if (start !== 0) {
       out['margin-inline-start'] = px(start);
     }
