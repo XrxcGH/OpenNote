@@ -97,4 +97,12 @@ describe('criteria', () => {
     expect(countIf([text], '*a'.repeat(20) + '*b')).toBe(1);
     expect(performance.now() - start).toBeLessThan(10);
   });
+
+  it("applies Excel's documented 255-character limit on criteria text (gap V2-3)", () => {
+    const long = 'a'.repeat(255);
+    // A criterion of exactly 255 characters still matches; one character more and it matches nothing.
+    expect(countIf([long, 'b'], long)).toBe(1);
+    expect(countIf([long + 'a', 'b'], long + 'a')).toBe(0);
+    expect(countIf(['b'], '<>' + 'x'.repeat(254))).toBe(0);
+  });
 });

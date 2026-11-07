@@ -2,10 +2,11 @@
 // changes that other tables read. Expected values are worked by hand or come from Excel's documented limits.
 
 import { describe, expect, it } from 'vitest';
-import { createTable, setCellInput } from '../edit';
+import { createTable, deleteRows, insertRows, moveRows, setCellInput } from '../edit';
 import { explainOrigin } from '../formula/explain';
 import { EN_US } from '../locale';
-import type { Table } from '../model';
+import type { Cell, Table } from '../model';
+import { adjustFormula } from '../refactor';
 import { errorOrigin, recalculate, type EngineEnv } from '../recalc';
 import { err, type Value } from '../values';
 import { changeBookRows, recalculateBook } from '../workbook';
@@ -117,5 +118,68 @@ describe('row changes on a page (gap G7)', () => {
     book = changeBookRows(book, 0, { kind: 'deleteRows', at: 1, count: 1 }, ENV);
     expect(book[1].rows.map((row) => row.cells[0].formula)).toEqual(['Sales!B2*2', 'Sales!#REF!']);
     expect(column(book[1], 0)).toEqual([40, err('REF')]);
+  });
+});
+
+describe('row changes with indexes that are not whole numbers (gap V2-1)', () => {
+  const t = sheet([
+    ['1', '=A1*2', '=SUM(A1:A2)'],
+    ['3', '=A2*2', ''],
+  ]);
+  it('leaves the table unchanged for NaN, fractions, and negative indexes', () => {
+    for (const n of [Number.NaN, 1.5, Infinity]) {
+      expect(deleteRows(t, 0, n)).toBe(t);
+      expect(deleteRows(t, n, 1)).toBe(t);
+      expect(insertRows(t, n, 1)).toBe(t);
+      expect(insertRows(t, 1, n)).toBe(t);
+      expect(moveRows(t, n, 1, 0)).toBe(t);
+      expect(moveRows(t, 0, 1, n)).toBe(t);
+    }
+    expect(insertRows(t, -1, 1)).toBe(t);
+    // A whole-number change still works: B2 =A2*2 follows its row to B3 and still reads 3*2.
+    const inserted = insertRows(t, 1, 1);
+    expect(inserted.rows[2].cells[1].formula).toBe('A3*2');
+    expect(at(inserted, 'B3')).toBe(6);
+  });
+  it('leaves a formula as written when the change is not whole', () => {
+    expect(adjustFormula('A1+A2', { kind: 'insertRows', at: 0, count: Number.NaN })).toBe('A1+A2');
+    expect(adjustFormula('SUM(A1:A2)', { kind: 'deleteRows', at: 0, count: 1.5 })).toBe('SUM(A1:A2)');
+    expect(adjustFormula('A1+A2', { kind: 'insertRows', at: 0, count: 1 })).toBe('A2+A3');
+  });
+});
+
+describe('fields another lane adds to a cell (gap V2-2)', () => {
+  it('keeps every field of a recalculated cell, including ones Cell does not declare yet', () => {
+    const t = sheet([['1', '=A1*2']]);
+    const cells = [...t.rows[0].cells];
+    cells[1] = { ...cells[1], note: 'kept', format: { bold: true } } as Cell;
+    const marked: Table = { ...t, rows: [{ ...t.rows[0], cells }] };
+    const after = type(marked, 'A1', '5');
+    expect(at(after, 'B1')).toBe(10);
+    expect(after.rows[0].cells[1]).toMatchObject({ formula: 'A1*2', note: 'kept', format: { bold: true } });
+  });
+});
+
+describe('a cycle across two tables (gap V2-5)', () => {
+  // Each table holds one cell that reads the other plus 1, starting from 0 (a cycle iterates from the stored values).
+  const holding = (name: string, formula: string): Table => {
+    const table = createTable([{ name: 'A', type: 'number' }], [['0']], EN_US, ENV, 1);
+    return { ...table, name, rows: [{ ...table.rows[0], cells: [{ raw: `=${formula}`, value: 0, formula }] }] };
+  };
+  const pair = (iterateTwo: boolean): Table[] => {
+    const one = holding('One', 'Two!A1+1');
+    const two = holding('Two', 'One!A1+1');
+    return [{ ...one, iterate: { max: 10, change: 0 } }, iterateTwo ? { ...two, iterate: { max: 3, change: 0 } } : two];
+  };
+  it('is Circular unless every table in it has iteration on', () => {
+    const book = recalculateBook(pair(false), ENV);
+    expect(book[0].rows[0].cells[0].value).toEqual(err('CYCLE'));
+    expect(book[1].rows[0].cells[0].value).toEqual(err('CYCLE'));
+  });
+  it('runs the fewest passes any table allows', () => {
+    // Three passes in order One, Two: (1, 2), (3, 4), (5, 6).
+    const book = recalculateBook(pair(true), ENV);
+    expect(book[0].rows[0].cells[0].value).toBe(5);
+    expect(book[1].rows[0].cells[0].value).toBe(6);
   });
 });

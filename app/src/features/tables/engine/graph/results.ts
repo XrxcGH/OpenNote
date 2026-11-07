@@ -6,14 +6,13 @@ import { ROWS, cellKey, sameValue } from './units';
 import type { Cell, Row, Table } from '../model';
 
 /**
- * A cell with a new value. Built field by field, which is much faster than spreading for thousands of cells; it must
- * copy every field of Cell (model.ts).
+ * A cell with a new value. It spreads the old cell, so a field another lane adds to Cell (formats, comments,
+ * validation) survives every recalculation. Only changed cells are copied, a few thousand per edit at most.
  */
 function withValue(cell: Cell, value: Cell['value'], spilled: boolean): Cell {
-  const next: Cell = { raw: cell.raw, value };
-  if (cell.formula !== undefined) next.formula = cell.formula;
-  if (cell.array !== undefined) next.array = cell.array;
+  const next: Cell = { ...cell, value };
   if (spilled) next.spill = true;
+  else delete next.spill;
   return next;
 }
 

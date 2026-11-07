@@ -25,6 +25,13 @@ export type StructureChange =
 
 const REF_ERROR = '#REF!';
 
+/** True when every index of the change is a whole number at or above 0 and it changes at least one row or column. */
+export function wholeChange(change: StructureChange): boolean {
+  const whole = (n: number): boolean => Number.isInteger(n) && n >= 0;
+  if (!whole(change.count) || change.count < 1) return false;
+  return 'at' in change ? whole(change.at) : whole(change.from) && whole(change.to);
+}
+
 /** Where an index goes, or null when it was deleted. `to` of a move is where the block starts afterwards. */
 function mapIndex(change: StructureChange, i: number): number | null {
   switch (change.kind) {
@@ -121,6 +128,7 @@ export interface AdjustOptions {
  * not parse is returned as it is.
  */
 export function adjustFormula(formula: string, change: StructureChange, options: AdjustOptions = {}): string {
+  if (!wholeChange(change)) return formula;
   const parsed = parseFormula(formula, undefined, { legacy: false });
   if (!parsed.ok) return formula;
   const edits: { start: number; end: number; text: string }[] = [];

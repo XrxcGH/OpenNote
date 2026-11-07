@@ -1,10 +1,10 @@
 // Recalculation off the page's thread (ADR 0065). A page whose tables hold more than 20,000 cells recalculates in a
 // worker, so typing stays smooth. When the worker takes longer than 2 seconds, the formulas show #BUSY! until it
 // answers; the person can stop it, which leaves #BUSY! until the next recalculation. Smaller pages recalculate on the
-// page at once. Functions given through `EngineEnv.functions` stay on the page, so a page that needs them should
-// recalculate there.
+// page at once, unless a table iterates more than 1,000 passes: a small cycle can then still take seconds. Functions
+// given through `EngineEnv.functions` stay on the page, so a page that needs them should recalculate there.
 
-import type { Table } from '../model';
+import { iterateLimits, type Table } from '../model';
 import { DEFAULT_ENV, type EngineEnv } from '../recalc';
 import { recalculateBook } from '../workbook';
 import type { RecalcReply, RecalcRequest } from './protocol';
@@ -12,6 +12,8 @@ import { applyChanges, busyTables } from './run';
 
 /** Pages with more cells than this recalculate in the worker. */
 export const WORKER_CELLS = 20_000;
+/** Pages with a table that iterates more passes than this recalculate in the worker, however small. */
+export const WORKER_PASSES = 1000;
 /** How long a recalculation may take before formulas show #BUSY!. */
 export const BUSY_MS = 2000;
 
@@ -46,6 +48,12 @@ export function cellCount(tables: readonly Table[]): number {
   return tables.reduce((sum, t) => sum + t.rows.length * t.columns.length, 0);
 }
 
+/** True when a page should recalculate in the worker: it is large, or a table iterates many passes. */
+export function needsWorker(tables: readonly Table[], threshold: number): boolean {
+  if (cellCount(tables) > threshold) return true;
+  return tables.some((t) => t.iterate !== undefined && iterateLimits(t.iterate).max > WORKER_PASSES);
+}
+
 function spawnDefault(): WorkerLike {
   return new Worker(new URL('./recalc.worker.ts', import.meta.url), { type: 'module' }) as unknown as WorkerLike;
 }
@@ -71,7 +79,7 @@ export function createRecalcClient(options: RecalcClientOptions = {}): RecalcCli
 
   return {
     recalc(tables, env = DEFAULT_ENV, late) {
-      if (cellCount(tables) <= threshold) return Promise.resolve(recalculateBook(tables, env));
+      if (!needsWorker(tables, threshold)) return Promise.resolve(recalculateBook(tables, env));
       const id = nextId++;
       return new Promise<Table[]>((resolve) => {
         let answered = false;

@@ -55,6 +55,17 @@ describe('recalculation worker', () => {
     expect(worker.posted).toBe(0);
   });
 
+  it('sends a small page to the worker when a table iterates more than 1,000 passes (gap V2-4)', async () => {
+    const worker = new SlowWorker(0);
+    const client = createRecalcClient({ spawn: () => worker });
+    await client.recalc([{ ...stale(3), iterate: { max: 1000, change: 0 } }]);
+    expect(worker.posted).toBe(0);
+    const [table] = await client.recalc([{ ...stale(3), iterate: { max: 1001, change: 0 } }]);
+    expect(worker.posted).toBe(1);
+    expect(table.rows.map((r) => r.cells[1].value)).toEqual([0, 2, 4]);
+    client.dispose();
+  });
+
   it('sends a large page to the worker and applies the changed cells', async () => {
     const worker = new SlowWorker(5);
     const client = createRecalcClient({ spawn: () => worker, threshold: 4, busyMs: 1000 });

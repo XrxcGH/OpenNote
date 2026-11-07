@@ -86,10 +86,19 @@ export function cycle(e: Engine, ids: readonly number[]): void {
   const units = ids
     .map((id) => e.units.get(id)!)
     .sort((a, b) => a.s - b.s || (a.row ?? -1) - (b.row ?? -1) || a.col - b.col);
-  const settings = e.tables[units[0].s].iterate;
-  if (settings === undefined) for (const unit of units) markCycle(e, unit);
-  else {
-    const { max, change } = iterateLimits(settings);
-    iterateCycle(e, units, max, change);
+  // A cycle that spans tables iterates only when every one of them has iteration on: the fewest passes and the
+  // largest change of any of them decide, so no table iterates further than its own settings allow.
+  let max = Infinity;
+  let change = 0;
+  for (const s of new Set(units.map((unit) => unit.s))) {
+    const settings = e.tables[s].iterate;
+    if (settings === undefined) {
+      for (const unit of units) markCycle(e, unit);
+      return;
+    }
+    const limits = iterateLimits(settings);
+    max = Math.min(max, limits.max);
+    change = Math.max(change, limits.change);
   }
+  iterateCycle(e, units, max, change);
 }

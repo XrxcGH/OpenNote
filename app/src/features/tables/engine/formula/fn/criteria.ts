@@ -128,8 +128,12 @@ function textCriterion(op: Op, operand: string): Criterion {
   };
 }
 
+/** Excel's documented limit on the length of criteria text. Longer criteria match nothing. */
+export const CRITERIA_MAX_LENGTH = 255;
+
 /** Reads a criterion into a test of one cell's value. */
 export function parseCriterion(criterion: Scalar): Criterion {
+  if (typeof criterion === 'string' && criterion.length > CRITERIA_MAX_LENGTH) return () => false;
   if (criterion === null) return numberCriterion('=', 0);
   if (typeof criterion === 'number') return numberCriterion('=', criterion);
   if (typeof criterion === 'boolean') return (value) => value === criterion;

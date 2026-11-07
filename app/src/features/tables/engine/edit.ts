@@ -14,7 +14,7 @@ import {
   recalculateWithCycles,
   type EngineEnv as Env,
 } from './recalc';
-import { adjustTable } from './refactor';
+import { adjustTable, wholeChange } from './refactor';
 
 export interface ColumnInit extends Partial<Column> {
   name: string;
@@ -135,10 +135,10 @@ export type RowChange =
   | { readonly kind: 'deleteRows'; readonly at: number; readonly count: number }
   | { readonly kind: 'moveRows'; readonly from: number; readonly count: number; readonly to: number };
 
-/** True when the change does something and its rows are in the table. */
+/** True when the change does something and its rows are in the table. Indexes must be whole numbers. */
 export function rowChangeFits(table: Table, change: RowChange): boolean {
   const n = table.rows.length;
-  if (change.count <= 0) return false;
+  if (!wholeChange(change)) return false;
   if (change.kind === 'insertRows') return change.at >= 0 && change.at <= n;
   if (change.kind === 'deleteRows') return change.at >= 0 && change.at < n;
   const { from, count, to } = change;
