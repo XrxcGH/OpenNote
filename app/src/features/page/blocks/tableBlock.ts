@@ -13,7 +13,14 @@ import { createRoot } from 'react-dom/client';
 import type { Root } from 'react-dom/client';
 import { commandContext } from '../../../commands/registry';
 import { menuItemsFor } from '../../../commands/menus';
-import { applyTableOp, cellAt, cellTextPos, fitAddedColumn } from '../../../editor/commands/tables';
+import {
+  applyTableOp,
+  cellAt,
+  cellTextPos,
+  fitAddedColumn,
+  isStructureOp,
+  withSelectionBox,
+} from '../../../editor/commands/tables';
 import type { CellAt, TableChange, TableOp } from '../../../editor/commands/tables';
 import { createBlockEditor } from '../../../editor/extensions/kit';
 import { META_REMOTE } from '../../../editor/meta';
@@ -54,6 +61,7 @@ const ANNOUNCE: Partial<Record<TableOp['op'], MessageKey>> = {
 
 /** What a screen reader hears after a table command. */
 function announcement(op: TableOp, change: TableChange): string {
+  if (isStructureOp(op)) return t(`sheetStructure.announce.${op.op}` as MessageKey);
   const key = ANNOUNCE[op.op];
   if (key) return t(key);
   if (op.op === 'headerRow') return t(change.data.header ? 'tables.announce.headerOn' : 'tables.announce.headerOff');
@@ -133,7 +141,7 @@ class TableView implements InnerView {
     this.editRoot.dataset.scope = 'editor editor.table';
     this.handle = {
       block: current.id,
-      can: (op) => applyTableOp(this.data, this.caretCell(), op) !== null,
+      can: (op) => applyTableOp(this.data, this.caretCell(), this.boxed(op), this.sheetData()) !== null,
       header: () => this.data.header,
       run: (op) => this.run(op),
       deleteTable: () => this.deleteTable(),
@@ -209,10 +217,21 @@ class TableView implements InnerView {
     });
   }
 
+  /** The table's `data.sheet` as the page holds it, for commands that read or adjust it. */
+  private sheetData(): unknown {
+    const data = this.current.data as { sheet?: unknown } | undefined;
+    return data?.sheet;
+  }
+
+  /** The command with the cells a cell selection covers, for commands that act on a block. */
+  private boxed(op: TableOp): TableOp {
+    return withSelectionBox(op, this.editor?.state ?? null);
+  }
+
   private async run(op: TableOp): Promise<boolean> {
     if (this.sync) await this.sync.flush('command');
     const before = this.latest();
-    const applied = applyTableOp(before, this.caretCell(), op);
+    const applied = applyTableOp(before, this.caretCell(), this.boxed(op), this.sheetData());
     if (!applied) return false;
     const adds = op.op === 'columnLeft' || op.op === 'columnRight';
     // The scroller is the page's width; its border takes a pixel on each side.
@@ -220,7 +239,7 @@ class TableView implements InnerView {
     this.show(change.data, change.caret);
     this.editor?.commands.focus();
     this.ctx.host.announce(announcement(op, change));
-    await this.send(change.data);
+    await this.send(change.data, undefined, change.extra);
     return true;
   }
 

@@ -5,3 +5,5 @@ export { attachSmart } from './smart/attach';
 export { runSmartCommand } from './smart/commands';
 export type { SmartCommand } from './smart/commands';
 export { exportTableCharts } from './smart/exportCharts';
+// The structure commands and the reference adjustment register themselves with the table commands of the editor.
+import './sheet/structure/hooks';
