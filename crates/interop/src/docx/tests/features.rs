@@ -390,3 +390,72 @@ fn a_user_style_named_like_a_fixed_style_gets_its_own_style_id() {
         "{styles_xml}"
     );
 }
+
+#[test]
+fn notes_and_comments_keep_their_links_and_pictures_through_their_own_relationships() {
+    let markdown = format!(
+        "![Graph](pic) Text[^{ID1}] <span data-comment=\"{ID2}\">here</span> [site](https://example.org/a)[^{ID3}]"
+    );
+    let records = json!({
+        "notes": {
+            ID1: {"kind": "foot", "markdown": "See [the site](https://example.org/a) and ![Graph](pic)."},
+            ID3: {"kind": "end", "markdown": "Mail [us](mailto:team@example.org)."}
+        },
+        "comments": {ID2: {"author": "Sam", "time": "2026-10-01T09:00:00Z", "markdown": "Read [this](https://example.org/b)."}}
+    });
+    let mut word = input(vec![text_part(&markdown, records)], Setup::default());
+    word.media.insert(
+        "pic".to_owned(),
+        Media {
+            bytes: vec![0x89, b'P', b'N', b'G'],
+            ext: "png".to_owned(),
+            width: 40,
+            height: 20,
+        },
+    );
+    let all = files(&word);
+    let rel_id = |xml: &str, attr: &str| -> String {
+        let start = xml.find(attr).unwrap_or_else(|| panic!("{attr} in {xml}")) + attr.len();
+        xml[start..start + xml[start..].find('"').expect("a closing quote")].to_owned()
+    };
+    // Each part names its own relationship, which its own relationships part holds with the right target.
+    for (part, attr, target) in [
+        (
+            "footnotes",
+            "<w:hyperlink r:id=\"",
+            "Target=\"https://example.org/a\" TargetMode=\"External\"",
+        ),
+        ("footnotes", "r:embed=\"", "Target=\"media/image1.png\""),
+        (
+            "endnotes",
+            "<w:hyperlink r:id=\"",
+            "Target=\"mailto:team@example.org\" TargetMode=\"External\"",
+        ),
+        (
+            "comments",
+            "<w:hyperlink r:id=\"",
+            "Target=\"https://example.org/b\" TargetMode=\"External\"",
+        ),
+    ] {
+        let xml = &all[&format!("word/{part}.xml")];
+        let id = rel_id(xml, attr);
+        let rels = &all[&format!("word/_rels/{part}.xml.rels")];
+        let rel = rels
+            .split("<Relationship ")
+            .find(|r| r.contains(&format!("Id=\"{id}\"")))
+            .unwrap_or_else(|| panic!("{id} in {rels}"));
+        assert!(rel.contains(target), "{part}: {rel}");
+        assert!(
+            !all["word/_rels/document.xml.rels"].contains(&format!("Id=\"{id}\"")),
+            "IDs are unique across parts"
+        );
+        schema::check_part(&format!("word/_rels/{part}.xml.rels"), rels);
+    }
+    // The body and the footnote share one picture file.
+    assert_eq!(all.keys().filter(|k| k.starts_with("word/media/")).count(), 1);
+    assert!(all["word/document.xml"].contains("r:embed=\"rId"));
+    assert!(
+        !all["word/footnotes.xml"].contains("[Graph]"),
+        "the picture, not its description"
+    );
+}

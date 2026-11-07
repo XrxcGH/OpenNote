@@ -221,6 +221,14 @@ pub fn build(input: &WordInput) -> Result<Vec<u8>> {
             archive.add(&format!("word/{name}.xml"), xml.as_bytes())?;
         }
     }
+    for (part, rels) in &state.sub_rels {
+        if !rels.is_empty() {
+            archive.add(
+                &format!("word/_rels/{}.xml.rels", part.name()),
+                parts::rels_xml(&rels.concat()).as_bytes(),
+            )?;
+        }
+    }
     for (name, _, xml) in &headers.files {
         archive.add(&format!("word/{name}"), xml.as_bytes())?;
     }
