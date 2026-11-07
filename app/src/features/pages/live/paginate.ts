@@ -2,6 +2,7 @@
 // with the paginator that print uses, and pushes content past each sheet edge: a margin above a block, or a spacer
 // inside a text block's lines. The content itself never changes. A text block is cut into the same units print uses:
 // each top-level element of the text is one unit, and a heading stays with what follows it.
+import { readTextLayout } from '../print/textLayout';
 import type { MountedPage } from '../../page';
 import type { BlockJson } from '../../../services/pages/types';
 import { planFlow } from '../layout';
@@ -217,7 +218,16 @@ class ScreenPaginator implements Paginator {
     for (const block of layer.blocks()) {
       const wrapper = layer.view(block.id)?.element;
       if (isFloating(block) || !wrapper || wrapper.hidden) continue;
-      const root = block.type === 'text' ? wrapper.querySelector<HTMLElement>('[data-block]') : null;
+      // A break is a new sheet and takes no room of its own (R-BRK-3).
+      if (block.type === 'break') {
+        const flow: FlowBlock = { id: block.id, kind: 'break' };
+        const measure = this.box(wrapper, origin, zoom);
+        units.push({ id: block.id, block: block.id, element: null, index: 0, wrapper, flow, measure, starts: [] });
+        continue;
+      }
+      // A block with columns never splits: its lines lie side by side, so no line is a place to cut.
+      const columned = block.type === 'text' && readTextLayout(block.data).columns > 1;
+      const root = block.type === 'text' && !columned ? wrapper.querySelector<HTMLElement>('[data-block]') : null;
       const elements = root ? this.textElements(block.id, root) : [];
       if (elements.length > 0) {
         units.push(...this.textUnits(block, wrapper, elements, origin));

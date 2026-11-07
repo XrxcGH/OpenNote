@@ -17,7 +17,7 @@ import { acceptRemoteText, shownQueue } from '../sync';
 import { whenViewReady } from './lazyView';
 
 /** Splits a text block's document after the top-level block with the caret. An empty paragraph there goes. */
-function splitAtCaret(editor: Editor): { head: string; tail: string; headEnd: number } {
+export function splitAtCaret(editor: Editor): { head: string; tail: string; headEnd: number } {
   const { doc, selection } = editor.state;
   const cache = createMarkdownCache();
   const $from = selection.$from;
