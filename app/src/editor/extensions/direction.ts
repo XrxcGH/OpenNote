@@ -14,53 +14,13 @@ import { Plugin, PluginKey } from '@tiptap/pm/state';
 import type { EditorState, Transaction } from '@tiptap/pm/state';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import type { EditorHost } from '../host';
-import { PARA_NODES, paraFormat } from '../paragraph/attributes';
-import type { Align } from '../paragraph/attributes';
+import { PARA_NODES } from '../paragraph/attributes';
+import { directionDom } from '../paragraph/directionDom';
+import type { Direction } from '../paragraph/directionDom';
 import { editorExtensions } from './kit';
 
-export type Direction = 'ltr' | 'rtl';
-export type PhysicalAlign = 'left' | 'right' | 'center' | 'justify';
-
-/** The side a logical alignment takes in a paragraph of the given direction. */
-export function physicalAlign(align: Align | undefined, dir: Direction): PhysicalAlign {
-  switch (align ?? 'start') {
-    case 'start':
-      return dir === 'rtl' ? 'right' : 'left';
-    case 'end':
-      return dir === 'rtl' ? 'left' : 'right';
-    case 'center':
-      return 'center';
-    default:
-      return 'justify';
-  }
-}
-
-/**
- * The DOM attributes a paragraph's direction, language, and hyphenation give it, or null when it sets none.
- * `pageHyphenate` is the page's default (`view.text.hyphenate`), which a paragraph's own `hyphenate` overrides.
- */
-export function directionDom(
-  attrs: Readonly<Record<string, unknown>>,
-  pageHyphenate = false,
-): Record<string, string> | null {
-  if (attrs.dir == null && attrs.lang == null && attrs.align == null && attrs.hyphenate == null && !pageHyphenate) {
-    return null;
-  }
-  const format = paraFormat(attrs);
-  const out: Record<string, string> = {};
-  const style: string[] = [];
-  if (format.dir) out.dir = format.dir;
-  if (format.lang) out.lang = format.lang;
-  // Start and end become sides. Center, justify, and distribute need no side, so paraStyle's declarations stand.
-  const logical = format.align === undefined || format.align === 'start' || format.align === 'end';
-  if (logical && (format.dir || format.align))
-    style.push(`text-align: ${physicalAlign(format.align, format.dir ?? 'ltr')}`);
-  const hyphenate = format.hyphenate ?? pageHyphenate;
-  if (hyphenate) style.push('hyphens: auto', '-webkit-hyphens: auto');
-  else if (format.hyphenate === false) style.push('hyphens: manual', '-webkit-hyphens: manual');
-  if (style.length) out.style = style.join('; ');
-  return Object.keys(out).length ? out : null;
-}
+export { directionDom, physicalAlign } from '../paragraph/directionDom';
+export type { Direction, PhysicalAlign } from '../paragraph/directionDom';
 
 export interface DirectionOptions {
   /** The page's default for automatic hyphenation. Default: off, as in Word and Docs. */
@@ -127,12 +87,24 @@ function update(tr: Transaction, old: DecorationSet, prev: PMNode, hyphenate: bo
 export function directionPlugin(options: DirectionOptions = {}): Plugin<DecorationSet> {
   const hyphenate = options.hyphenate ?? (() => false);
   const language = options.language ?? (() => null);
+  // The page default the decorations were drawn with. When the page changes it, the next transaction redraws all.
+  let drawn = hyphenate();
+  const all = (doc: PMNode) => DecorationSet.create(doc, decorate(doc, 0, doc.content.size, drawn));
   return new Plugin<DecorationSet>({
     key,
     state: {
-      init: (_config, state) =>
-        DecorationSet.create(state.doc, decorate(state.doc, 0, state.doc.content.size, hyphenate())),
-      apply: (tr, old, before) => (tr.docChanged ? update(tr, old, before.doc, hyphenate()) : old),
+      init: (_config, state) => {
+        drawn = hyphenate();
+        return all(state.doc);
+      },
+      apply: (tr, old, before) => {
+        const now = hyphenate();
+        if (now !== drawn) {
+          drawn = now;
+          return all(tr.doc);
+        }
+        return tr.docChanged ? update(tr, old, before.doc, now) : old;
+      },
     },
     props: {
       decorations: (state) => key.getState(state),
@@ -218,6 +190,10 @@ if (!editorExtensions.get('text.direction')) {
     order: 410,
     flag: 'text.language',
     kinds: ['text', 'table'],
-    create: (host) => directionExtension({ language: pageLanguage(host) }),
+    create: (host) =>
+      directionExtension({
+        language: pageLanguage(host),
+        hyphenate: () => host.pageSettings?.().text.hyphenate ?? false,
+      }),
   });
 }

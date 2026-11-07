@@ -38,5 +38,7 @@ describe('direction DOM attributes', () => {
 
   it('ignores values outside the grammar', () => {
     expect(directionDom({ dir: 'up', lang: 'not a tag' })).toBeNull();
+    // The decoration never writes dir="auto": a paragraph's first strong letter must not turn it around.
+    expect(directionDom({ dir: 'auto' })).toBeNull();
   });
 });

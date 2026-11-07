@@ -68,7 +68,10 @@ export function textblockText(element: Element, mask = true): TextblockText {
       langs[langs.length - 1] = { start: last.start, length: last.length + length, lang };
     } else langs.push({ start, length, lang });
   };
-  const walk = (parent: Node, masked: boolean, lang: string | null) => {
+  // `code` masks everything under it. "Do not check spelling" masks only while it is the nearest language, so a run
+  // with its own language inside a zxx paragraph is still checked, as a run's language wins over its paragraph's.
+  const walk = (parent: Node, inCode: boolean, lang: string | null) => {
+    const masked = inCode || (mask && lang === NO_PROOF);
     for (let child = parent.firstChild; child; child = child.nextSibling) {
       if (child.nodeType === Node.TEXT_NODE) {
         const data = (child as Text).data;
@@ -83,12 +86,12 @@ export function textblockText(element: Element, mask = true): TextblockText {
           continue;
         }
         const inner = ownLang(child) ?? lang;
-        walk(child, masked || (mask && (child.localName === 'code' || inner === NO_PROOF)), inner);
+        walk(child, inCode || (mask && child.localName === 'code'), inner);
       }
     }
   };
   const base = paragraphLang(element);
-  walk(element, mask && base === NO_PROOF, base);
+  walk(element, false, base);
   const own = langs.filter((span) => span.lang !== NO_PROOF);
   return {
     text: mask ? text.replace(ADDRESS, (match) => ' '.repeat(match.length)) : text,

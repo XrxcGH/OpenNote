@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { testHost } from '../commands/testing';
 import { applyElementData } from '../markdown/elements';
 import { parseTextBlock } from '../markdown/parse';
+import { renderStatic } from '../schema/dom';
 // Importing the module registers the extension in every editor whose host has text.language on.
 import { paragraphDirection, setParagraphAttr, setParagraphDirection } from './direction';
 import { createBlockEditor } from './kit';
@@ -19,11 +20,18 @@ afterEach(() => {
 
 const ARABIC = 'مرحبا';
 
-function mount(markdown: string, entry: Record<string, unknown> = {}, language = 'en-US'): HTMLElement {
+function mount(
+  markdown: string,
+  entry: Record<string, unknown> = {},
+  language = 'en-US',
+  page?: { hyphenate: () => boolean },
+): HTMLElement {
   const root = document.body.appendChild(document.createElement('div'));
   root.style.cssText = 'width: 400px; font: 16px sans-serif; white-space: pre-wrap';
   const doc = applyElementData(parseTextBlock(markdown), { ids: ['a'], paras: { a: entry } });
-  const host = testHost();
+  const host = testHost(
+    page ? { pageSettings: () => ({ text: { hyphenate: page.hyphenate(), defaultTab: 36 } }) } : {},
+  );
   host.editing = { ...host.editing, spelling: { enabled: false, languages: [language] } };
   editor = createBlockEditor(root, doc, { kind: 'text', block: 'b1', host });
   return root;
@@ -119,6 +127,23 @@ describe('paragraph direction', () => {
   });
 });
 
+describe('static and mounted paragraphs', () => {
+  it('draws the same direction, language, side, and hyphens before and after the editor mounts', () => {
+    const entry = { dir: 'rtl', lang: 'ar-EG', align: 'end', hyphenate: true };
+    const still = document.body.appendChild(document.createElement('div'));
+    renderStatic(applyElementData(parseTextBlock('abc'), { ids: ['a'], paras: { a: entry } }), still, {
+      direction: { hyphenate: false },
+    });
+    const mounted = first(mount('abc', entry));
+    const look = (p: HTMLElement) => {
+      const style = getComputedStyle(p);
+      return [p.getAttribute('dir'), p.getAttribute('lang'), style.direction, style.textAlign, style.hyphens];
+    };
+    expect(look(first(still))).toEqual(look(mounted));
+    expect(look(mounted)).toEqual(['rtl', 'ar-EG', 'rtl', 'left', 'auto']);
+  });
+});
+
 describe('language and hyphenation', () => {
   it('gives the root the page language and a paragraph its own', () => {
     const root = mount('bonjour', { lang: 'fr-FR' }, 'en-US');
@@ -131,6 +156,21 @@ describe('language and hyphenation', () => {
     expect(getComputedStyle(first(root)).hyphens).toBe('auto');
     expect(first(root).closest('[lang]')?.getAttribute('lang')).toBe('en-US');
     setParagraphAttr(editor!.state, editor!.view.dispatch, 'hyphenate', false);
+    expect(getComputedStyle(first(root)).hyphens).toBe('manual');
+  });
+
+  it('hyphenates a paragraph without its own setting when the page hyphenates by default', () => {
+    let pageOn = true;
+    const root = mount('internationalization', {}, 'en-US', { hyphenate: () => pageOn });
+    expect(getComputedStyle(first(root)).hyphens).toBe('auto');
+    // The paragraph's own setting wins over the page's.
+    setParagraphAttr(editor!.state, editor!.view.dispatch, 'hyphenate', false);
+    expect(getComputedStyle(first(root)).hyphens).toBe('manual');
+    setParagraphAttr(editor!.state, editor!.view.dispatch, 'hyphenate', null);
+    expect(getComputedStyle(first(root)).hyphens).toBe('auto');
+    // Turning the page default off redraws the paragraph on the next change.
+    pageOn = false;
+    editor!.commands.setTextSelection(2);
     expect(getComputedStyle(first(root)).hyphens).toBe('manual');
   });
 });

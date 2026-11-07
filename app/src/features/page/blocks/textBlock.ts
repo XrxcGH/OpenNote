@@ -7,7 +7,7 @@ import type { Node as PMNode } from '@tiptap/pm/model';
 import { createBlockEditor } from '../../../editor/extensions/kit';
 import { highlightStatic } from '../../../editor/highlight';
 import { parseTextBlock, serializeTextBlock } from '../../../editor/markdown';
-import { renderStatic } from '../../../editor/schema/dom';
+import { renderStatic, staticOptions } from '../../../editor/schema/dom';
 import type { BlockId, BlockJson } from '../../../services/pages/types';
 import { t } from '../../../strings/t';
 import type { PagePool } from '../pool/pool';
@@ -216,7 +216,7 @@ class TextBlockView implements LazyBlockView, LiveText {
 
   /** Draws the static text. Its code is colored in idle time, so it looks the same before an editor mounts. */
   private drawStatic(doc: PMNode): void {
-    renderStatic(doc, this.editRoot);
+    renderStatic(doc, this.editRoot, staticOptions(this.ctx.host));
     if (this.ctx.host.flag('page.codeHighlight')) void highlightStatic(this.editRoot, doc).catch(() => undefined);
   }
 

@@ -171,6 +171,16 @@ describe('spell check by language', () => {
   });
 });
 
+describe('a run language inside a zxx paragraph', () => {
+  it('checks a run with its own language, since the run language wins over the paragraph', () => {
+    const item = itemOf(paragraph('teh <span lang="fr-FR">chatt</span> <code>x</code>', { lang: 'zxx' }));
+    expect(item.text).toBe('    chatt  ');
+    expect(item.langs).toEqual([{ start: 4, length: 5, lang: 'fr-FR' }]);
+    // Code under a run with its own language stays masked.
+    expect(textblockText(paragraph('<span lang="fr-FR">a <code>b</code></span>', { lang: 'zxx' })).text).toBe('a  ');
+  });
+});
+
 describe('language pieces and checkers', () => {
   it('blanks own-language parts of the page piece and keeps offsets', () => {
     expect(piecesOf({ text: 'ab cd ef', langs: [{ start: 3, length: 2, lang: 'fr' }] }, 4)).toEqual([

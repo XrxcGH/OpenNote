@@ -1,8 +1,9 @@
 // Set language and "Do not check spelling" (lane text:language-direction, text DESIGN.md 2.1 and 2.2). A selection
-// gets a `lang` mark on its text. A caret alone sets the language of the paragraphs it is in, as the paragraph
-// mark's language. The language "zxx" means "do not check spelling", which the spell checker never sends.
+// gets a `lang` mark on its text. A caret inside a run with its own language changes that run. Any other caret
+// sets the language of the paragraphs it is in, as the paragraph mark's language. The language "zxx" means "do not
+// check spelling", which the spell checker never sends.
 import type { Editor } from '@tiptap/core';
-import type { MarkType } from '@tiptap/pm/model';
+import type { Mark, MarkType } from '@tiptap/pm/model';
 import type { EditorState, Transaction } from '@tiptap/pm/state';
 import { setParagraphAttr } from '../../../editor/extensions/direction';
 import { NO_PROOF } from '../../../editor/extensions/spellingText';
@@ -46,6 +47,40 @@ export function selectionLanguage(state: EditorState): string | null {
 }
 
 /**
+ * The `lang` run the caret is in, as selectionLanguage reads it: the stored marks when they hold a language, else
+ * the whole run of text around the caret that carries the same `lang` mark. Null when the caret has no run language.
+ */
+function caretLangRun(
+  state: EditorState,
+  type: MarkType,
+): { from: number; to: number; stored?: readonly Mark[] } | null {
+  const { $from } = state.selection;
+  if (state.storedMarks) {
+    return state.storedMarks.some((mark) => mark.type === type)
+      ? { from: $from.pos, to: $from.pos, stored: state.storedMarks }
+      : null;
+  }
+  const mark = $from.marks().find((item) => item.type === type);
+  if (!mark) return null;
+  const parent = $from.parent;
+  const start = $from.start();
+  const offset = $from.parentOffset;
+  let found: { from: number; to: number } | null = null;
+  let open = -1;
+  const close = (end: number) => {
+    if (open !== -1 && !found && open <= offset && offset <= end) found = { from: start + open, to: start + end };
+    open = -1;
+  };
+  parent.forEach((child, pos) => {
+    if (mark.isInSet(child.marks)) {
+      if (open === -1) open = pos;
+    } else close(pos);
+  });
+  close(parent.content.size);
+  return found;
+}
+
+/**
  * Sets the language of the selection, or of the caret's paragraphs. Null returns the text to the page's language.
  * Returns false when nothing can take a language, such as a code block.
  */
@@ -56,8 +91,25 @@ export function setLanguage(
 ): boolean {
   const lang = tag === null ? null : tag === NO_PROOF ? NO_PROOF : canonicalTag(tag);
   if (tag !== null && lang === null) return false;
-  if (state.selection.empty) return setParagraphAttr(state, dispatch, 'lang', lang);
   const type = langType(state);
+  if (state.selection.empty) {
+    // A caret inside a run with its own language changes that run, since the run's language wins over the
+    // paragraph's. Otherwise the caret sets its paragraphs' language.
+    const run = type ? caretLangRun(state, type) : null;
+    if (!run || !type) return setParagraphAttr(state, dispatch, 'lang', lang);
+    if (dispatch) {
+      const tr = state.tr;
+      if (run.stored) {
+        const marks = run.stored.filter((mark) => mark.type !== type);
+        tr.setStoredMarks(lang === null ? marks : [...marks, type.create({ lang })]);
+      } else {
+        tr.removeMark(run.from, run.to, type);
+        if (lang !== null) tr.addMark(run.from, run.to, type.create({ lang }));
+      }
+      dispatch(tr.scrollIntoView());
+    }
+    return true;
+  }
   if (!type) return false;
   if (dispatch) {
     const tr = state.tr;

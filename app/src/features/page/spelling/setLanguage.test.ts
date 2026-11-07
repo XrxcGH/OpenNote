@@ -2,7 +2,7 @@
 // file's tag form (text SPEC D.8), and a caret alone sets its paragraph's language.
 import type { EditorState, Transaction } from '@tiptap/pm/state';
 import { describe, expect, it } from 'vitest';
-import { applyTo, marked } from '../../../editor/commands/testing';
+import { applyTo, markdownOf, marked } from '../../../editor/commands/testing';
 import { canonicalTag, languageChoices, selectionLanguage, setLanguage, toggleNoProof } from './setLanguage';
 
 const run = (state: EditorState, command: (s: EditorState, d: (tr: Transaction) => void) => boolean) => {
@@ -38,6 +38,23 @@ describe('set language', () => {
     expect(selectionLanguage(on)).toBe('zxx');
     const off = run(on, toggleNoProof);
     expect(selectionLanguage(off)).toBeNull();
+  });
+
+  it('turns do not check spelling off for the run the caret is in', () => {
+    const { state } = marked('a <span lang="zxx">t[]eh</span> b');
+    expect(selectionLanguage(state)).toBe('zxx');
+    const off = run(state, toggleNoProof);
+    expect(markdownOf(off)).toBe('a teh b');
+    expect(selectionLanguage(off)).toBeNull();
+    expect(off.doc.firstChild?.attrs.lang ?? null).toBeNull();
+  });
+
+  it('changes the language of the run the caret is in, and only that run', () => {
+    const { state } = marked('<span lang="fr-FR">un</span> x <span lang="fr-FR">ch[]at</span>');
+    const page = run(state, (s, d) => setLanguage(s, d, null));
+    expect(markdownOf(page)).toBe('<span lang="fr-FR">un</span> x chat');
+    const german = run(state, (s, d) => setLanguage(s, d, 'de-DE'));
+    expect(markdownOf(german)).toBe('<span lang="fr-FR">un</span> x <span lang="de-DE">chat</span>');
   });
 });
 
