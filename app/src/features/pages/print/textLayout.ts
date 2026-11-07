@@ -77,8 +77,9 @@ export function layoutStyle(layout: TextLayout): string {
 }
 
 /**
- * The merge patch that sets a text block's layout keys. A key set to its default is removed, and a layout with no
- * keys left is removed, so a block that goes back to one column is as it was.
+ * The merge patch (RFC 7396) that sets a text block's layout keys. A key that goes back to its default is sent as null,
+ * because a merge patch only removes a key that is null. A layout with no keys left is sent as null, so a block that
+ * goes back to one column is as it was.
  */
 export function layoutPatch(
   data: unknown,
@@ -86,12 +87,30 @@ export function layoutPatch(
 ): { readonly layout: Record<string, unknown> | null } {
   const raw = isObject(data) && isObject(data.layout) ? { ...data.layout } : {};
   const defaults: Record<keyof TextLayout, unknown> = { columns: 1, gap: DEFAULT_GAP, rule: false, vertical: false };
+  const patch: Record<string, unknown> = { ...raw };
   for (const [key, value] of Object.entries(change)) {
-    if (value === defaults[key as keyof TextLayout]) delete raw[key];
-    else raw[key] = value;
+    if (value === defaults[key as keyof TextLayout]) {
+      delete raw[key];
+      patch[key] = null;
+    } else {
+      raw[key] = value;
+      patch[key] = value;
+    }
   }
   // A gap or a rule means nothing without columns, but the person may have set them first, so they stay.
-  return { layout: Object.keys(raw).length === 0 ? null : raw };
+  return { layout: Object.keys(raw).length === 0 ? null : patch };
+}
+
+/** A block's data after the merge patch of its `layout` key: what the core stores. */
+export function applyLayoutPatch(
+  data: Record<string, unknown>,
+  patch: { readonly layout: Record<string, unknown> | null },
+): Record<string, unknown> {
+  const { layout: before, ...rest } = data;
+  if (patch.layout === null) return rest;
+  const merged = { ...(isObject(before) ? before : {}), ...patch.layout };
+  for (const key of Object.keys(merged)) if (merged[key] === null) delete merged[key];
+  return { ...rest, layout: merged };
 }
 
 export type BreakKind = 'page' | 'column';

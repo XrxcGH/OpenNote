@@ -19,7 +19,10 @@ export const breakBlockRenderer: BlockRendererDef = {
     const element = document.createElement('div');
     element.className = styles.break;
     element.setAttribute('role', 'group');
-    element.tabIndex = -1;
+    // Focusable like an image or a file, so a keyboard user can reach a break; Delete and Backspace remove it
+    // (objects/keys.ts).
+    element.tabIndex = 0;
+    element.dataset.scope = 'pageObject';
     element.dataset.blockId = block.id;
     const caption = document.createElement('span');
     element.append(caption);

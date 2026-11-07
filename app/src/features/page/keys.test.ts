@@ -32,7 +32,7 @@ const chords = (): string[] =>
 
 describe('the Phase 4 keys table', () => {
   it('lists every command of PLAN.md section 3.10', () => {
-    expect(ids).toHaveLength(105);
+    expect(ids).toHaveLength(114);
   });
 
   it('uses canonical, allowed chords and keeps Ctrl+1 to Ctrl+9 free', () => {

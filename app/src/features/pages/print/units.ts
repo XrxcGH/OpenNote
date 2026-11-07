@@ -20,6 +20,8 @@ export interface FlowUnit {
   readonly flow: FlowBlock;
   /** The whole unit as HTML. Empty for a manual break. */
   readonly html: string;
+  /** A block of newspaper columns: one unit that never splits, unless it is taller than a sheet. */
+  readonly columns?: true;
   /** The table, for a unit that splits between rows. */
   readonly table?: TableBlock;
 }
@@ -49,20 +51,26 @@ function textUnits(block: ExportBlock & { type: 'text' }, cx: BlockContext): Flo
   }));
 }
 
-/** A block with columns is one unit that never splits: columns balance inside it, so no line is a place to cut. */
+/**
+ * A block with columns is one unit that never splits: columns balance inside it, so no line is a place to cut. One
+ * taller than a content box would be clipped, so the page flows it in one column instead (`plain` in `pageUnits`).
+ */
 function columnUnit(block: ExportBlock & { type: 'text' }, layout: TextLayout, cx: BlockContext): FlowUnit {
   const html = renderHtml(parseMarkdown(block.markdown), htmlOptions(cx));
   return {
     id: block.id,
     block: block.id,
     flow: { id: block.id, kind: 'atom' },
+    columns: true,
     html: `<div class="columns" style="${escapeAttr(layoutStyle(layout))}">${html}</div>`,
   };
 }
 
-function unitsOf(block: ExportBlock, cx: BlockContext): FlowUnit[] {
+function unitsOf(block: ExportBlock, cx: BlockContext, plain: ReadonlySet<string>): FlowUnit[] {
   if (block.type === 'text') {
-    return block.layout && block.layout.columns > 1 ? [columnUnit(block, block.layout, cx)] : textUnits(block, cx);
+    return block.layout && block.layout.columns > 1 && !plain.has(block.id)
+      ? [columnUnit(block, block.layout, cx)]
+      : textUnits(block, cx);
   }
   if (block.type === 'other' && block.kind === 'break') {
     return [{ id: block.id, block: block.id, flow: { id: block.id, kind: 'break' }, html: '' }];
@@ -78,9 +86,14 @@ function unitsOf(block: ExportBlock, cx: BlockContext): FlowUnit[] {
 
 /**
  * The page's blocks as flow units and floating units. `ordered` is the blocks in reading order. Floating blocks with
- * nothing to show are left out. Ink blocks that float are drawn as a layer over the sheet, not as units.
+ * nothing to show are left out. Ink blocks that float are drawn as a layer over the sheet, not as units. A block in
+ * `plain` flows in one column even if it has columns.
  */
-export function pageUnits(ordered: readonly ExportBlock[], cx: BlockContext): PageUnits {
+export function pageUnits(
+  ordered: readonly ExportBlock[],
+  cx: BlockContext,
+  plain: ReadonlySet<string> = new Set(),
+): PageUnits {
   const flow: FlowUnit[] = [];
   const floating: FloatingUnit[] = [];
   for (const block of ordered) {
@@ -88,7 +101,7 @@ export function pageUnits(ordered: readonly ExportBlock[], cx: BlockContext): Pa
       if (block.type === 'ink') continue;
       const html = renderBlock(block, cx);
       if (html !== '') floating.push({ block, html });
-    } else flow.push(...unitsOf(block, cx));
+    } else flow.push(...unitsOf(block, cx, plain));
   }
   return { flow, floating };
 }

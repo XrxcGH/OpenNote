@@ -14,7 +14,7 @@ import { bandForSheet, readLineNumbers, readPageNumbers, readSavedBands } from '
 import { lineNumberMarks } from './lineNumbers';
 import { withSavedSettings } from './prepare';
 import { planPrint } from './sheets';
-import { layoutCss, layoutPatch, layoutStyle, readBreakKind, readTextLayout } from './textLayout';
+import { applyLayoutPatch, layoutCss, layoutPatch, layoutStyle, readBreakKind, readTextLayout } from './textLayout';
 import { pageUnits } from './units';
 
 const text = (id: string, markdown: string, order: string) => ({
@@ -230,7 +230,17 @@ describe('columns', () => {
   it('go back to no layout key when the last setting returns to its default', () => {
     expect(layoutPatch({}, { columns: 2 })).toEqual({ layout: { columns: 2 } });
     expect(layoutPatch({ layout: { columns: 2 } }, { columns: 1 })).toEqual({ layout: null });
-    expect(layoutPatch({ layout: { columns: 2, gap: 12 } }, { columns: 1 })).toEqual({ layout: { gap: 12 } });
+    expect(layoutPatch({ layout: { columns: 2, gap: 12 } }, { columns: 1 })).toEqual({
+      layout: { columns: null, gap: 12 },
+    });
+  });
+
+  it('remove a key in the stored data when applied as an RFC 7396 merge patch', () => {
+    const data = { text: 'a', layout: { columns: 2, vertical: true } };
+    const patch = layoutPatch(data, { columns: 1 });
+    expect(patch).toEqual({ layout: { columns: null, vertical: true } });
+    expect(applyLayoutPatch(data, patch)).toEqual({ text: 'a', layout: { vertical: true } });
+    expect(applyLayoutPatch(data, layoutPatch(data, { columns: 1, vertical: false }))).toEqual({ text: 'a' });
   });
 
   it('print a block with columns as one unit that never splits, with its column style', () => {
@@ -307,5 +317,17 @@ describe('line numbers', () => {
       expect(numbers.map((m) => m[1])).toEqual(['1', '2', '3']);
     }
     expect(printed(pageOf([text('a', 'One.', 'a')])).html).not.toContain('class="line-numbers"');
+  });
+
+  it('print a floating text box with its columns and vertical writing', () => {
+    const page = pageOf([
+      {
+        ...text('a', 'One and Two', 'a'),
+        data: { markdown: 'One and Two', layout: { columns: 2, vertical: true } },
+        frame: { x: 10, y: 20 },
+      },
+    ]);
+    const html = measureDocument({ ...setupFor(page).setup });
+    expect(html).toMatch(/class="float"[^>]*style="[^"]*column-count:2[^"]*writing-mode:vertical-rl/);
   });
 });

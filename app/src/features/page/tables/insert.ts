@@ -2,6 +2,7 @@
 // paragraph with the caret. Text after that paragraph moves into a new text block below the table, so the page
 // reads in the same order. The text edit and both new blocks go to the core as one step, which one undo removes.
 import type { Editor } from '@tiptap/core';
+import type { EditorState } from '@tiptap/pm/state';
 import { newId } from '../../../editor/ids';
 import { createMarkdownCache, serializeTextBlock } from '../../../editor/markdown';
 import { META_REMOTE } from '../../../editor/meta';
@@ -32,6 +33,32 @@ export function splitAtCaret(editor: Editor): { head: string; tail: string; head
     tail: serializeTextBlock(doc.cut(end), cache),
     headEnd,
   };
+}
+
+/**
+ * Splits a text block's document at the caret, as Word and Docs do for a break: the paragraph is cut where the caret
+ * is, and the rest of it goes below. At the end of a paragraph, or in an empty one, it is the same as `splitAtCaret`.
+ */
+export function splitAtPosition(state: EditorState): { head: string; tail: string; headEnd: number } {
+  const { doc, selection } = state;
+  const $from = selection.$from;
+  const atEnd = $from.depth === 0 || $from.parentOffset >= $from.parent.content.size;
+  if (atEnd) {
+    const index = $from.depth === 0 ? Math.min($from.index(0), doc.childCount - 1) : $from.index(0);
+    const start = $from.depth === 0 ? $from.pos : $from.before(1);
+    const end = start + doc.child(index).nodeSize;
+    const empty = $from.parent.type.name === 'paragraph' && $from.parent.content.size === 0 && doc.childCount > 1;
+    const headEnd = empty ? start : end;
+    const cache = createMarkdownCache();
+    return {
+      head: serializeTextBlock(doc.cut(0, headEnd), cache),
+      tail: serializeTextBlock(doc.cut(end), cache),
+      headEnd,
+    };
+  }
+  const cache = createMarkdownCache();
+  const at = selection.from;
+  return { head: serializeTextBlock(doc.cut(0, at), cache), tail: serializeTextBlock(doc.cut(at), cache), headEnd: at };
 }
 
 export async function insertTable(data: TableData = newTableData(3, 3, true)): Promise<boolean> {

@@ -1,7 +1,9 @@
 // The Layout tab's registrations (text program, B12): page and column breaks, columns, vertical text, line numbers,
 // and the header and footer dialog. The break block's renderer registers here too. This file loads at start-up, so it
 // holds only definitions; each command loads its code when first run. Everything sits behind text.layout.
-import type { CommandId } from '../../../commands/types';
+import { executeCommand } from '../../../commands/registry';
+import type { CommandContext, CommandId } from '../../../commands/types';
+import { REMOVE_BREAK_EVENT, type RemoveBreakDetail } from '../../../editor/commands/state';
 import { inTaskItem } from '../../../editor/commands/state';
 import { commandBar, commands } from '../../../registries';
 import type { MessageKey } from '../../../strings/t';
@@ -10,6 +12,8 @@ import { announce } from '../../../ui';
 import { targetEditor } from '../formattingBar/target';
 import { pageCommandDef, type PageCommandId } from '../keys';
 import { blockRenderers, slashItems } from '../registries';
+import { shownLayer } from '../mount';
+import { shownPool } from '../pool/shown';
 import { shownQueue } from '../sync';
 import { breakBlockRenderer } from '../textLayout/breakBlock';
 
@@ -17,23 +21,37 @@ const FLAG = 'text.layout' as const;
 
 blockRenderers.register(breakBlockRenderer);
 
+// Backspace at the start of the text after a break removes the break.
+if (typeof document !== 'undefined') {
+  document.addEventListener(REMOVE_BREAK_EVENT, (event) => {
+    const { detail } = event as CustomEvent<RemoveBreakDetail>;
+    void import('../textLayout/removeBreak').then(({ removeBreak }) => removeBreak(detail));
+  });
+}
+
 const load = () => import('../textLayout/commands');
 const loadBreak = () => import('../textLayout/insertBreak');
 
 const haveText = () => targetEditor() !== null;
-const havePage = () => shownQueue.get() !== null;
-/** Ctrl+Enter is Check or uncheck inside a task item, so the page break steps aside there. */
-const notInTask = () => {
-  const editor = targetEditor();
-  return havePage() && !(editor && inTaskItem(editor.state));
+/** A break splits the block with the caret, so a locked block turns the commands off. */
+const unlocked = () => {
+  const active = shownPool.get()?.active();
+  return !(active && shownLayer.get()?.block(active.block)?.lock);
 };
+const havePage = () => shownQueue.get() !== null;
+/** Ctrl+Enter is Check or uncheck inside a task item, so the key press there runs that command instead. */
+const inTask = () => {
+  const editor = targetEditor();
+  return editor !== null && inTaskItem(editor.state);
+};
+const keyInTask = (ctx: CommandContext) => ctx.source === 'keyboard' && inTask();
 
 interface Def {
   readonly id: PageCommandId;
   readonly title: MessageKey;
   readonly keywords: MessageKey;
-  readonly when: () => boolean;
-  readonly run: () => unknown;
+  readonly when: (ctx: CommandContext) => boolean;
+  readonly run: (ctx: CommandContext) => unknown;
 }
 
 const DEFS: readonly Def[] = [
@@ -41,8 +59,12 @@ const DEFS: readonly Def[] = [
     id: 'insert.pageBreak',
     title: 'textLayout.commands.pageBreak',
     keywords: 'textLayout.commands.pageBreakKeywords',
-    when: notInTask,
-    run: async () => {
+    when: (ctx) => ((havePage() && !inTask()) || keyInTask(ctx)) && unlocked(),
+    run: async (ctx) => {
+      if (keyInTask(ctx)) {
+        await executeCommand('block.toggleCheck', undefined, 'keyboard');
+        return;
+      }
       if (await (await loadBreak()).insertBreak('page')) announce(t('textLayout.announce.pageBreak'));
     },
   },
@@ -50,7 +72,7 @@ const DEFS: readonly Def[] = [
     id: 'insert.columnBreak',
     title: 'textLayout.commands.columnBreak',
     keywords: 'textLayout.commands.columnBreakKeywords',
-    when: havePage,
+    when: () => havePage() && unlocked(),
     run: async () => {
       if (await (await loadBreak()).insertBreak('column')) announce(t('textLayout.announce.columnBreak'));
     },
@@ -115,7 +137,7 @@ for (const def of DEFS) {
       category: 'insert',
       flag: FLAG,
       when: def.when,
-      run: () => void def.run(),
+      run: (ctx) => void def.run(ctx),
     }),
   );
 }

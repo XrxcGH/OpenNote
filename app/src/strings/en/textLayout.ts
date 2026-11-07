@@ -30,6 +30,9 @@ export const textLayout = {
   announce: {
     pageBreak: 'Page break inserted.',
     columnBreak: 'Column break inserted.',
+    breakFailed: 'The break could not be changed.',
+    breakRemoved: 'Break removed.',
+    breakInsertFailed: 'The break could not be inserted.',
     columns: '{count} columns.',
     oneColumn: 'One column.',
     verticalOn: 'Vertical text on.',

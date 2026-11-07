@@ -17,6 +17,7 @@ import type { PagePlan } from '../layout/plan';
 import type { Rect } from '../pagination/geometry';
 import { paperPaths } from '../paper/patterns';
 import { paperSvg } from '../paper/svg';
+import { layoutStyle } from './textLayout';
 import { measureCss, paperStyle, printCss } from './css';
 import type { BandBox } from './headerFooter';
 import { lineNumberMarks, type LineMark } from './lineNumbers';
@@ -82,6 +83,8 @@ function floatStyle(block: ExportBlock, rules: RuleGrid | null): string {
   if (f.w !== undefined) parts.push(`width:${px(f.w)}px`);
   else if (block.type === 'text') parts.push('width:max-content', 'min-width:120px', 'max-width:600px');
   if (f.h !== undefined) parts.push(`height:${px(f.h)}px`);
+  // Columns and vertical writing of a floating text box print as they show on the screen.
+  if (block.type === 'text' && block.layout) parts.push(layoutStyle(block.layout));
   if (f.rotate) parts.push(`transform:rotate(${px(f.rotate)}deg)`, 'transform-origin:center');
   return parts.join(';');
 }

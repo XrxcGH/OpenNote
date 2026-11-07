@@ -32,6 +32,7 @@ export {
   DEFAULT_TEXT_LAYOUT,
   MAX_COLUMNS,
   PX_PER_POINT,
+  applyLayoutPatch,
   layoutCss,
   layoutPatch,
   layoutStyle,

@@ -1,7 +1,7 @@
 // The Layout commands that change the page or the text block with the caret: columns, vertical text, line numbers, and
 // the header and footer dialog. They load on first use; registrations/layout.ts holds only the definitions.
 import { createElement } from 'react';
-import { layoutPatch, readLineNumbers, readTextLayout, type TextLayout } from '../../pages';
+import { applyLayoutPatch, layoutPatch, readLineNumbers, readTextLayout, type TextLayout } from '../../pages';
 import type { BlockJson } from '../../../services/pages/types';
 import { t } from '../../../strings/t';
 import { announce } from '../../../ui';
@@ -26,13 +26,6 @@ function activeTextBlock(): BlockJson | null {
 
 const isFloating = (block: BlockJson): boolean => block.frame?.x !== undefined && block.frame?.y !== undefined;
 
-/** The data after a merge patch of its `layout` key. */
-function withLayout(data: Record<string, unknown>, patch: { layout: Record<string, unknown> | null }) {
-  const rest = { ...data };
-  delete rest.layout;
-  return patch.layout === null ? rest : { ...rest, layout: patch.layout };
-}
-
 /** Changes the layout of the text block with the caret. Returns false when there is none. */
 export async function changeLayout(change: Partial<TextLayout>): Promise<boolean> {
   const block = activeTextBlock();
@@ -41,7 +34,7 @@ export async function changeLayout(change: Partial<TextLayout>): Promise<boolean
   if (!block || !queue || !layer) return false;
   const patch = layoutPatch(block.data, change);
   await queue.send({ edits: [{ edit: 'patchBlock', block: block.id, data: patch }] });
-  layer.upsert({ ...block, data: withLayout(block.data, patch) });
+  layer.upsert({ ...block, data: applyLayoutPatch(block.data, patch) });
   return true;
 }
 
