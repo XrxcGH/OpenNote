@@ -23,6 +23,7 @@ export const textNotes = {
   endnoteName: 'Endnote {label}',
   backTo: 'Go to reference {label}',
   missing: 'This reference has no note text.',
+  tooLong: 'This note is over the 64 KB limit, so it isn’t saved. Shorten it to save it.',
   options: 'Note options',
   footnotes: 'Footnotes',
   format: 'Number format',

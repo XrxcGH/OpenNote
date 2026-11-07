@@ -4,6 +4,7 @@
 // rule.
 import type { Node as PMNode } from '@tiptap/pm/model';
 import { parseTextBlock } from '../markdown';
+import { isElementId } from '../schema/constants';
 
 /** A note's record in `data.notes` (R-NOTE-1). */
 export interface NoteJson {
@@ -16,12 +17,16 @@ export type NoteKind = 'foot' | 'end';
 /** What the numbering walks: a reference, or a level 1 heading where numbering may restart. */
 export type NoteMark = { kind: 'ref'; id: string } | { kind: 'heading' };
 
-/** The references and level 1 headings of a text block's document, in document order. */
+/**
+ * The references and level 1 headings of a text block's document, in document order. A reference whose ID is not a
+ * valid element ID (D.9) is left out, so the page's number sheet never holds text that could break out of its rule.
+ */
 export function noteMarks(doc: PMNode): NoteMark[] {
   const out: NoteMark[] = [];
   doc.descendants((node) => {
     if (node.type.name === 'footnoteRef') {
-      out.push({ kind: 'ref', id: String(node.attrs.id) });
+      const id = String(node.attrs.id);
+      if (isElementId(id)) out.push({ kind: 'ref', id });
       return false;
     }
     if (node.type.name === 'heading' && node.attrs.level === 1) out.push({ kind: 'heading' });

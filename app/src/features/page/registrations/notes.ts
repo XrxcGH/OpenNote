@@ -98,6 +98,11 @@ function viewDeps(mounted: MountedPage, model: NotesModel): NotesViewDeps {
       const editor = pool.mount(block, null, 'target') ?? pool.editor(block);
       if (editor) caretAfterRef(editor, id);
     },
+    editorAt(element) {
+      const block = element.closest<HTMLElement>('[data-block]')?.dataset.block;
+      return block ? pool.editor(block) : null;
+    },
+    warn: say,
   };
 }
 

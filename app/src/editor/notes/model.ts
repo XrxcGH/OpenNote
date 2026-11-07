@@ -22,6 +22,8 @@ export interface NotesEdit {
 
 /** How many notes that left their blocks are kept for a paste or an undo in the editor. */
 const KEEP_LEFT = 1000;
+/** How many notes of references a command is inserting are kept, in case a reference's batch is never built. */
+export const KEEP_PENDING = 100;
 
 export class NotesModel {
   private readonly notes = new Map<string, Record<string, NoteJson>>();
@@ -81,6 +83,7 @@ export class NotesModel {
   /** A command is about to insert a reference to a new note. */
   expect(id: string, kind: NoteKind, markdown = ''): void {
     this.pending.set(id, { kind, markdown });
+    if (this.pending.size > KEEP_PENDING) this.pending.delete(this.pending.keys().next().value!);
   }
 
   /** Applies a patch this window sends, so the model need not wait for the core. */

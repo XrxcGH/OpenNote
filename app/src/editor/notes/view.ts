@@ -4,9 +4,10 @@
 // with an accessible name such as "Footnote 3". So the static text and the editor show the same number, and
 // neither needs to know the page's other blocks. The notes area lists footnotes, then endnotes, each in number
 // order. A note's text opens in an editor of its own when it is clicked or focused; its number goes back to the
-// reference. A double-click on a reference goes to its note.
+// reference. A double-click on a reference, or Enter on a selected reference, goes to its note.
 import type { Editor } from '@tiptap/core';
 import type { Node as PMNode } from '@tiptap/pm/model';
+import { NodeSelection } from '@tiptap/pm/state';
 import { t } from '../../strings/t';
 import { createBlockEditor } from '../extensions/kit';
 import type { EditorHost } from '../host';
@@ -38,6 +39,10 @@ export interface NotesViewDeps {
   sendSettings(kind: NoteKind, settings: NoteSettings): void;
   /** Puts the caret right after the reference and shows it. */
   showRef(block: string, id: string): void;
+  /** The page's text editor that holds `element`, or null, for Enter on a selected reference. */
+  editorAt(element: Element): Editor | null;
+  /** Tells the person something on the screen, and the screen reader too. */
+  warn(message: string): void;
 }
 
 export interface NotesView {
@@ -56,7 +61,7 @@ export interface NotesView {
 
 const cssString = (text: string) => `"${text.replace(/["\\]/g, (char) => `\\${char}`).replace(/\n/g, ' ')}"`;
 
-/** The style rule that draws a reference's number. IDs are validated element IDs (D.9), so they need no escape. */
+/** The rule that draws a reference's number. noteMarks keeps only valid element IDs (D.9), so none needs escaping. */
 function numberRule(note: NumberedNote): string {
   const name = t(note.kind === 'foot' ? 'textNotes.footnoteName' : 'textNotes.endnoteName', { label: note.label });
   return `[data-footnote="${note.id}"]::after{content:${cssString(note.label)} / ${cssString(name)}}`;
@@ -69,12 +74,16 @@ export function numberSheet(numbering: Numbering): string {
 
 interface Item {
   li: HTMLLIElement;
+  /** The note inside the list item. The list item keeps its role, so the list still counts its items. */
+  wrap: HTMLElement;
   number: HTMLButtonElement;
   text: HTMLElement;
   body: HTMLElement;
   shown: string | null;
   editor: Editor | null;
   timer: ReturnType<typeof setTimeout> | null;
+  /** The editor's text is over the 64 KiB limit, so it is not saved and the editor stays open. */
+  over: boolean;
   note: NumberedNote;
 }
 
@@ -126,6 +135,7 @@ class View implements NotesView {
     deps.after.after(this.element);
     this.element.before(this.sheet);
     deps.root.addEventListener('dblclick', this.onDoubleClick);
+    deps.root.addEventListener('keydown', this.onKey, true);
     this.stopModel = deps.model.onChange(() => this.refresh());
     this.refreshNow();
   }
@@ -174,7 +184,8 @@ class View implements NotesView {
     if (this.frame) this.element.ownerDocument.defaultView?.cancelAnimationFrame(this.frame);
     this.stopModel();
     this.deps.root.removeEventListener('dblclick', this.onDoubleClick);
-    for (const item of this.items.values()) this.unmount(item);
+    this.deps.root.removeEventListener('keydown', this.onKey, true);
+    for (const item of this.items.values()) this.unmount(item, true);
     this.items.clear();
     this.element.remove();
     this.sheet.remove();
@@ -206,19 +217,18 @@ class View implements NotesView {
   private create(note: NumberedNote): Item {
     const doc = this.element.ownerDocument;
     const li = doc.createElement('li');
-    li.className = styles.item!;
     li.dataset.note = note.id;
-    const number = li.appendChild(doc.createElement('button'));
+    const wrap = li.appendChild(doc.createElement('div'));
+    wrap.className = styles.item!;
+    const number = wrap.appendChild(doc.createElement('button'));
     number.type = 'button';
     number.className = styles.number!;
-    const text = li.appendChild(doc.createElement('div'));
+    const text = wrap.appendChild(doc.createElement('div'));
     text.className = styles.text!;
     text.tabIndex = 0;
-    text.setAttribute('role', 'textbox');
-    text.setAttribute('aria-multiline', 'true');
-    if (this.deps.readOnly) text.setAttribute('aria-readonly', 'true');
+    textboxRole(text, this.deps.readOnly);
     const body = text.appendChild(doc.createElement('div'));
-    const item: Item = { li, number, text, body, shown: null, editor: null, timer: null, note };
+    const item: Item = { li, wrap, number, text, body, shown: null, editor: null, timer: null, over: false, note };
     number.addEventListener('click', () => this.deps.showRef(item.note.block, item.note.id));
     text.addEventListener('focus', () => {
       if (!this.deps.readOnly && !item.editor) this.mount(item).commands.focus('end');
@@ -229,14 +239,17 @@ class View implements NotesView {
 
   private update(item: Item, note: NumberedNote): void {
     item.note = note;
-    item.li.setAttribute('role', note.kind === 'foot' ? 'doc-footnote' : 'listitem');
+    // DPUB has an endnote role only as a deprecated one, so an endnote is just its list item.
+    if (note.kind === 'foot') item.wrap.setAttribute('role', 'doc-footnote');
+    else item.wrap.removeAttribute('role');
     item.number.textContent = note.label;
     item.number.setAttribute('aria-label', t('textNotes.backTo', { label: note.label }));
     const name = t(note.kind === 'foot' ? 'textNotes.footnoteName' : 'textNotes.endnoteName', { label: note.label });
     item.text.setAttribute('aria-label', name);
+    if (item.editor) item.editor.view.dom.setAttribute('aria-label', name);
     // A reference whose note is missing still gets its number (R-FN-5).
-    if (note.markdown === null) item.li.dataset.missing = '';
-    else delete item.li.dataset.missing;
+    if (note.markdown === null) item.wrap.dataset.missing = '';
+    else delete item.wrap.dataset.missing;
     const markdown = note.markdown ?? '';
     if (item.editor) {
       // An undo or another window changed the note while its editor is open: show the new text.
@@ -254,6 +267,11 @@ class View implements NotesView {
   private mount(item: Item): Editor {
     if (item.editor) return item.editor;
     const root = this.element.ownerDocument.createElement('div');
+    // The editor is the text box now, and its wrapper only a named group, so a screen reader finds one text box.
+    textboxRole(root, false);
+    root.setAttribute('aria-label', item.text.getAttribute('aria-label') ?? '');
+    item.text.setAttribute('role', 'group');
+    item.text.removeAttribute('aria-multiline');
     item.body.replaceWith(root);
     item.body = root;
     const editor = createBlockEditor(root, noteDoc(item.note.markdown ?? ''), {
@@ -276,24 +294,37 @@ class View implements NotesView {
     item.timer = null;
     if (!item.editor) return;
     const markdown = noteMarkdown(item.editor.state.doc);
-    if (markdown === (item.note.markdown ?? '') || !fitsNote(markdown)) return;
+    const over = !fitsNote(markdown);
+    if (over !== item.over) {
+      item.over = over;
+      if (over) item.text.setAttribute('aria-invalid', 'true');
+      else item.text.removeAttribute('aria-invalid');
+      // Said once each time the text goes over, not on every pause in typing.
+      if (over) this.deps.warn(t('textNotes.tooLong'));
+    }
+    if (over || markdown === (item.note.markdown ?? '')) return;
     const { id, block, kind } = item.note;
     item.note = { ...item.note, markdown };
     this.deps.sendNotes(block, { [id]: { kind, markdown } }, `note:${id}`);
   }
 
-  private unmount(item: Item): void {
+  /** Closes a note's editor when it loses the focus. Text over the limit keeps it open, so nothing typed is lost. */
+  private unmount(item: Item, force = false): void {
     const { editor } = item;
     if (!editor || editor.isDestroyed) return;
-    if (editor.isFocused) return;
+    if (editor.isFocused && !force) return;
     this.save(item);
+    if (item.over && !force) return;
     editor.destroy();
     item.editor = null;
+    item.over = false;
     const body = this.element.ownerDocument.createElement('div');
     item.body.replaceWith(body);
     item.body = body;
     item.shown = null;
     item.text.tabIndex = 0;
+    item.text.removeAttribute('aria-invalid');
+    textboxRole(item.text, this.deps.readOnly);
     this.update(item, item.note);
   }
 
@@ -374,6 +405,28 @@ class View implements NotesView {
     event.preventDefault();
     this.focusNote(id);
   };
+
+  /** Enter on a selected reference goes to its note: the keyboard's way to do what a double-click does. */
+  private readonly onKey = (event: KeyboardEvent) => {
+    if (event.key !== 'Enter' || event.isComposing) return;
+    if (event.shiftKey || event.ctrlKey || event.altKey || event.metaKey) return;
+    const target = event.target as Element | null;
+    const selection = target?.closest ? this.deps.editorAt(target)?.state.selection : null;
+    if (!(selection instanceof NodeSelection) || selection.node.type.name !== 'footnoteRef') return;
+    const id = String(selection.node.attrs.id);
+    if (!this.items.has(id)) return;
+    // Enter would otherwise put a new paragraph in place of the selected reference.
+    event.preventDefault();
+    event.stopPropagation();
+    this.focusNote(id);
+  };
+}
+
+/** Makes `element` a multi-line text box, read-only where the page is. */
+function textboxRole(element: HTMLElement, readOnly: boolean): void {
+  element.setAttribute('role', 'textbox');
+  element.setAttribute('aria-multiline', 'true');
+  if (readOnly) element.setAttribute('aria-readonly', 'true');
 }
 
 export function createNotesView(deps: NotesViewDeps): NotesView {
