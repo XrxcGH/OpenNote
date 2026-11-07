@@ -23,7 +23,7 @@ use std::collections::{BTreeSet, HashMap};
 use opennote_core::Timestamp;
 
 pub use self::fonts::{EmbedFont, Theme, BUNDLED};
-pub use self::rpr::weight_face;
+pub use self::rpr::{split_weight_face, weight_face};
 pub use self::section::{Band, BandFields, Bands, PageSetup};
 pub use self::styles::{app_styles, merge as merge_styles, sheet_from_json, style_id, StyleSheet};
 pub use self::units::NUMBER_FORMATS;

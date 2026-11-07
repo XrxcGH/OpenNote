@@ -381,3 +381,26 @@ pub fn import(docx: &[u8]) -> Vec<Block> {
     }
     blocks
 }
+
+/// Imports a written file as one page with the crate's Word import, and returns its text blocks and their records.
+pub fn import_text(docx: &[u8]) -> (Vec<Block>, crate::doc::data::TextData) {
+    let dir = tempfile::tempdir().expect("a temp folder");
+    let path = dir.path().join("generated.docx");
+    std::fs::write(&path, docx).expect("writes");
+    let world = crate::testing::TestEnv::new();
+    let mut sink = crate::MemorySink::default();
+    crate::import_docx_with(&path, crate::WordPages::Single, &world.env(), &mut sink).expect("imports");
+    let mut blocks = Vec::new();
+    let mut data = crate::doc::data::TextData::default();
+    for (_, imported) in &sink.pages {
+        for block in imported.page.blocks.iter() {
+            if let opennote_core::model::BlockData::Text(text) = &block.data {
+                blocks.extend(crate::doc::parse::parse_page(&text.markdown).blocks);
+                let ids: Vec<String> = text.ids.iter().map(|id| id.to_string()).collect();
+                let styles = text.styles.iter().map(|(k, v)| (k.to_string(), v.clone())).collect();
+                data = crate::doc::data::TextData::read(&ids, &styles, &text.extra);
+            }
+        }
+    }
+    (blocks, data)
+}

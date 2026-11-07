@@ -51,6 +51,19 @@ pub fn weight_face<'a>(family: &str, weight: u16, faces: &'a [String]) -> Option
     })
 }
 
+/// The family and weight of a face name such as "Segoe UI Semibold", the inverse of [`weight_face`]. `None`
+/// when the name does not end in a weight's name after a family.
+pub fn split_weight_face(face: &str) -> Option<(&str, u16)> {
+    [100u16, 200, 300, 500, 600, 800, 900].into_iter().find_map(|weight| {
+        weight_names(weight).iter().find_map(|name| {
+            let cut = face.len().checked_sub(name.len() + 1)?;
+            let (family, tail) = (face.get(..cut)?, face.get(cut..)?);
+            (tail.starts_with(' ') && tail[1..].eq_ignore_ascii_case(name) && !family.trim().is_empty())
+                .then_some((family, weight))
+        })
+    })
+}
+
 /// `w:rFonts` for a font name or a theme token.
 pub fn fonts_xml(font: &str, mono: &str) -> String {
     match font {

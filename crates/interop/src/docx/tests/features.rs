@@ -137,6 +137,65 @@ fn a_weight_names_the_device_face_and_is_bold_from_600() {
 }
 
 #[test]
+fn a_weight_face_imports_back_as_its_family_and_weight() {
+    let faces = vec!["Segoe UI Semibold".to_owned(), "Segoe UI Light".to_owned()];
+    let markdown = concat!(
+        "<span data-font=\"Segoe UI\"><span data-weight=\"600\">semi</span></span> ",
+        "<span data-font=\"Segoe UI\"><span data-weight=\"300\">light</span></span> ",
+        "<span data-font=\"Segoe UI\">**bold**</span>"
+    );
+    let mut setup = Setup::default();
+    setup.options.faces = faces;
+    let bytes = build(&input(vec![text_part(markdown, json!({}))], setup)).expect("builds");
+    let (blocks, _) = readback::import_text(&bytes);
+    let Some(Block::Paragraph(inlines)) = blocks.first() else {
+        panic!("a paragraph: {blocks:?}");
+    };
+    let marks_of = |word: &str| -> Marks {
+        inlines
+            .iter()
+            .find_map(|inline| match inline {
+                crate::doc::Inline::Text { text, marks } if text == word => Some(marks.clone()),
+                _ => None,
+            })
+            .unwrap_or_else(|| panic!("{word} in {inlines:?}"))
+    };
+    let semi = marks_of("semi");
+    assert_eq!(
+        (semi.font.as_deref(), semi.weight.as_deref(), semi.strong),
+        (Some("Segoe UI"), Some("600"), false),
+        "Semibold is Segoe UI at 600, and its w:b is the weight's"
+    );
+    let light = marks_of("light");
+    assert_eq!(
+        (light.font.as_deref(), light.weight.as_deref(), light.strong),
+        (Some("Segoe UI"), Some("300"), false)
+    );
+    let bold = marks_of("bold");
+    assert_eq!(
+        (bold.font.as_deref(), bold.weight.as_deref(), bold.strong),
+        (Some("Segoe UI"), None, true)
+    );
+}
+
+#[test]
+fn a_face_name_splits_into_its_family_and_weight() {
+    for (face, expected) in [
+        ("Segoe UI Semibold", Some(("Segoe UI", 600))),
+        ("Segoe UI Light", Some(("Segoe UI", 300))),
+        ("Arial Black", Some(("Arial", 900))),
+        ("Source Sans Pro ExtraLight", Some(("Source Sans Pro", 200))),
+        ("Fira Sans Semi Bold", Some(("Fira Sans", 600))),
+        ("Segoe UI", None),
+        ("Semibold", None),
+        ("Georgia", None),
+        ("Boldface", None),
+    ] {
+        assert_eq!(split_weight_face(face), expected, "{face}");
+    }
+}
+
+#[test]
 fn styles_come_from_the_notebook_and_the_page_sheet() {
     let notebook = styles::sheet_from_json(&json!({
         "normal": {"font": "Georgia", "sizePt": 11, "line": {"rule": "multiple", "value": 1.15}},

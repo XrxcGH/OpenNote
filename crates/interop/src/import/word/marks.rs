@@ -4,7 +4,7 @@
 
 use serde_json::{Map, Value};
 
-use super::props::{RunProps, Toggle};
+use super::props::{FontRef, RunProps, Toggle};
 use super::theme::{Script as TextScript, Theme};
 use super::values::{hex, num, text};
 use crate::doc::values as grammar;
@@ -76,6 +76,17 @@ pub(super) fn is_code_font(font: &str) -> bool {
     CODE_FONTS.contains(&font.to_lowercase().as_str())
 }
 
+/// The family and weight of a Latin font that the run names directly as a weight face.
+fn named_face<'a>(props: &RunProps, script: TextScript, font: &'a str) -> Option<(&'a str, u16)> {
+    let named = matches!(
+        props.fonts.ascii.as_ref().or(props.fonts.h_ansi.as_ref()),
+        Some(FontRef::Name(_))
+    );
+    (named && script == TextScript::Latin)
+        .then(|| crate::docx::split_weight_face(font))
+        .flatten()
+}
+
 /// The marks of a run with these properties, as if nothing else styled it.
 pub(super) fn marks_of(props: &RunProps, theme: &Theme, script: TextScript) -> Marks {
     let mut marks = Marks::none();
@@ -102,6 +113,12 @@ pub(super) fn marks_of(props: &RunProps, theme: &Theme, script: TextScript) -> M
     if let Some(font) = theme.run_font(&props.fonts, script) {
         if is_code_font(&font) {
             marks.code = true;
+        } else if let Some((family, weight)) = named_face(props, script, &font) {
+            // A face named on the run, such as "Segoe UI Semibold", is its family at a weight, which also gives
+            // the bold (ADR 0083). Theme fonts stay as they are.
+            marks.font = grammar::font_name(family).then(|| family.to_owned());
+            marks.weight = Some(weight.to_string());
+            marks.strong &= weight < 600;
         } else if grammar::font_name(&font) {
             marks.font = Some(font);
         }
