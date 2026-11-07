@@ -148,8 +148,8 @@ export interface ZipCaps {
 /**
  * The entries of an archive, folders left out. An entry larger than `maxBytes` is listed as skipped, unopened.
  * Throws ZipError when the bytes are not an archive this reader takes, and ZipError('tooBig') as soon as the
- * archive lists more entries or more unpacked bytes than `caps` allows. Two entries that share one local header
- * are corrupt.
+ * archive lists more entries or more unpacked bytes than `caps` allows. Two entries that share one local header,
+ * or an entry that inflates past its declared size, are corrupt.
  */
 export async function readZip(
   bytes: Uint8Array,
@@ -200,17 +200,15 @@ export async function readZip(
       out.push({ path, tooBig: true });
       continue;
     }
-    // The declared size counts before anything is opened, and the inflater may not pass what is left.
+    // The declared size counts before anything is opened, and the inflater may not pass it.
     if (total + size > caps.totalBytes) throw new ZipError('tooBig');
     const data = bytes.subarray(start, start + packed);
     let content: Uint8Array | null;
     if (method === 0) content = data;
-    else if (method === 8) content = await inflate(data, Math.min(maxBytes, caps.totalBytes - total));
+    else if (method === 8) content = await inflate(data, size);
     else throw new ZipError('method');
-    if (content === null) {
-      out.push({ path, tooBig: true });
-      continue;
-    }
+    // A stream that runs past its declared size lied about it: the archive is refused at the first such entry.
+    if (content === null) throw new ZipError('corrupt');
     if (content.length !== size || crc32(content) !== crc) throw new ZipError('corrupt');
     total += size;
     out.push({ path, bytes: content.slice() });

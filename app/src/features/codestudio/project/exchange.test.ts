@@ -179,7 +179,87 @@ function sharedHeaders(entryBytes: number, count: number): Uint8Array {
   return out;
 }
 
+/** A one-entry archive with `text` deflated (APPNOTE 4.4.5: method 8 and the packed size) and `declared` as its size. */
+async function deflatedZip(text: string, declared = text.length): Promise<Uint8Array> {
+  const deflated = new Uint8Array(
+    await new Response(new Blob([text]).stream().pipeThrough(new CompressionStream('deflate-raw'))).arrayBuffer(),
+  );
+  const stored = writeZip([{ path: 'x.py', bytes: encoder.encode(text) }]);
+  const nameEnd = 30 + 4;
+  const packedZip = new Uint8Array(stored.length - text.length + deflated.length);
+  packedZip.set(stored.subarray(0, nameEnd));
+  packedZip.set(deflated, nameEnd);
+  packedZip.set(stored.subarray(nameEnd + text.length), nameEnd + deflated.length);
+  const view = new DataView(packedZip.buffer);
+  view.setUint16(8, 8, true);
+  view.setUint32(18, deflated.length, true);
+  view.setUint32(22, declared, true);
+  const central = nameEnd + deflated.length;
+  view.setUint16(central + 10, 8, true);
+  view.setUint32(central + 20, deflated.length, true);
+  view.setUint32(central + 24, declared, true);
+  view.setUint32(packedZip.length - 22 + 16, central, true);
+  return packedZip;
+}
+
+/**
+ * The entries of the sample's export with opennote-project.json replaced by `manifest`. A .zip entry holds at most
+ * 1 MiB, so the manifest stays within it unless `uncapped`, which tests the model's own bound behind that cap.
+ */
+async function withManifest(manifest: Record<string, unknown>, uncapped = false): Promise<ZipEntry[]> {
+  const bytes = encoder.encode(JSON.stringify({ ...manifestOf(sample()), ...manifest }));
+  if (!uncapped) expect(bytes.length).toBeLessThan(1024 * 1024);
+  return ((await readZip(exportZip(sample()), 1 << 20)) as ZipEntry[]).map((entry) =>
+    entry.path === 'opennote-project.json' ? { ...entry, bytes } : entry,
+  );
+}
+
 describe('hostile archives', () => {
+  it('refuses an entry that inflates past its declared size, instead of listing it as too big', async () => {
+    // Declared 10 bytes, within the 100-byte cap, but the stream holds 1000.
+    const lying = await deflatedZip('a'.repeat(1000), 10);
+    await expect(readZip(lying, 100)).rejects.toEqual(new ZipError('corrupt'));
+    await expect(readZip(lying, 1 << 20)).rejects.toEqual(new ZipError('corrupt'));
+  });
+
+  it('restores only known manifest fields, bounded, into a fresh project', async () => {
+    const entries = await withManifest({
+      name: 'n'.repeat(900 * 1024),
+      language: 'evil',
+      runtime: 'evil',
+      stdin: 7,
+      args: ['a', 1, 'b'],
+      settings: { timeMs: 1e300, memoryMb: -5, tabSize: 2.6, junk: 'x'.repeat(1000), nested: { a: 1 } },
+      extra: 'not stored',
+    });
+    const plan = planImport(empty(), entries);
+    expect(plan.refusal).toBeNull();
+    const patch = plan.patch!;
+    expect(Object.keys(patch).sort()).toEqual(['args', 'files', 'main', 'name', 'settings', 'tests', 'v']);
+    expect(patch.name).toBe('n'.repeat(256));
+    expect(patch.args).toEqual(['a', 'b']);
+    // Clamped to SETTINGS_RANGE (model.ts), and the tab size rounded to a whole number.
+    expect(patch.settings).toEqual({ timeMs: 600_000, memoryMb: 16, tabSize: 3 });
+    const files = JSON.stringify(patch.files).length + JSON.stringify(patch.tests).length;
+    expect(JSON.stringify(patch).length - files).toBeLessThan(1024);
+    const back = imported(empty(), entries);
+    expect(back.language).toBe('python');
+    expect(back.runtime).toBe('python-quick');
+    expect(back.stdin).toBe('');
+  });
+
+  it('keeps a known language and runtime, and leaves out input past 1 MiB', async () => {
+    const entries = await withManifest({ language: 'javascript', runtime: 'toolchain', stdin: 'é'.repeat(300_000) });
+    const plan = planImport(empty(), entries);
+    expect(plan.patch!.language).toBe('javascript');
+    expect(plan.patch!.runtime).toBe('toolchain');
+    // 300,000 characters are 600,000 UTF-8 bytes, within the limit.
+    expect(plan.patch!.stdin).toHaveLength(300_000);
+    // 524,289 characters are 1 MiB and 2 bytes.
+    const over = planImport(empty(), await withManifest({ stdin: 'é'.repeat(524_289) }, true));
+    expect(over.patch).not.toHaveProperty('stdin');
+  });
+
   it('refuses central entries that share one local header at once, without copying them', async () => {
     const archive = sharedHeaders(1024 * 1024, 300);
     const start = performance.now();
@@ -234,23 +314,7 @@ describe('zip format', () => {
 
   it('reads deflated entries, and skips an entry larger than allowed without inflating it', async () => {
     const text = 'print("hello")\n'.repeat(50);
-    const deflated = new Uint8Array(
-      await new Response(new Blob([text]).stream().pipeThrough(new CompressionStream('deflate-raw'))).arrayBuffer(),
-    );
-    const stored = writeZip([{ path: 'x.py', bytes: encoder.encode(text) }]);
-    // The same archive with the entry deflated: method 8 and the packed size, as APPNOTE 4.4.5 describes.
-    const nameEnd = 30 + 4;
-    const packedZip = new Uint8Array(stored.length - text.length + deflated.length);
-    packedZip.set(stored.subarray(0, nameEnd));
-    packedZip.set(deflated, nameEnd);
-    packedZip.set(stored.subarray(nameEnd + text.length), nameEnd + deflated.length);
-    const view = new DataView(packedZip.buffer);
-    view.setUint16(8, 8, true);
-    view.setUint32(18, deflated.length, true);
-    const central = nameEnd + deflated.length;
-    view.setUint16(central + 10, 8, true);
-    view.setUint32(central + 20, deflated.length, true);
-    view.setUint32(packedZip.length - 22 + 16, central, true);
+    const packedZip = await deflatedZip(text);
     const [entry] = (await readZip(packedZip, 1 << 20)) as ZipEntry[];
     expect(decoder.decode(entry.bytes)).toBe(text);
     expect(await readZip(packedZip, 100)).toEqual([{ path: 'x.py', tooBig: true }]);
@@ -301,7 +365,23 @@ describe('project import', () => {
     expect(planImport(project, big).skipped).toEqual([{ path: 'big.txt', reason: 'tooBig' }]);
   });
 
+  it('lists the first 10 skipped names in the sentence, and counts the rest', async () => {
+    const bad = Array.from({ length: 25 }, (_, i) => ({ id: `bad${i}`, name: `Case ${i}` }));
+    const entries = ((await readZip(exportZip(sample()), 1 << 20)) as ZipEntry[]).map((entry) =>
+      entry.path === 'opennote-tests.json'
+        ? { ...entry, bytes: encoder.encode(JSON.stringify({ format: 'opennote-code-project', tests: bad })) }
+        : entry,
+    );
+    const plan = planImport(empty(), entries);
+    expect(plan.skipped).toHaveLength(25);
+    const summary = importSummary(plan);
+    expect(summary).toContain('Skipped 25 files: Case 0 (not a test case OpenNote can read)');
+    expect(summary).toContain('Case 9 (not a test case OpenNote can read), and 15 more.');
+    expect(summary).not.toContain('Case 10 ');
+  });
+
   it('gives one file for download under its own name', () => {
+
     const download = fileDownload(sample(), 'f02')!;
     expect(download.name).toBe('util.py');
     expect(decoder.decode(download.bytes)).toBe('def two_sum(nums, target):\n    return [0, 1]\n');

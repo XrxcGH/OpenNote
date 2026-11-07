@@ -162,11 +162,10 @@ fn a_null_removes_one_file() {
 /// runner's Rust validator (code:L16) will read too, holds the lane's known answers.
 #[test]
 fn the_shared_path_case_table_holds_the_known_answers() {
-    let file = concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/../../app/src/features/codestudio/project/pathCases.json"
-    );
-    let table: Value = serde_json::from_slice(&std::fs::read(file).unwrap()).unwrap();
+    // The binary carries the table, so a build reused from another checkout never reads a path that is gone, and
+    // cargo rebuilds the test when the table changes.
+    let bytes = include_bytes!("../../../app/src/features/codestudio/project/pathCases.json");
+    let table: Value = serde_json::from_slice(bytes).unwrap();
     let single = table["single"].as_array().unwrap();
     let problem = |path: &str| {
         single

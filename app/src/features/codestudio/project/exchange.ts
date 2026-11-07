@@ -4,9 +4,9 @@
 // limits goes in, and everything else is listed as skipped with the reason.
 
 import { t } from '../../../strings/t';
-import { CODE_PROJECT_VERSION, COMPARE_MODES, PROJECT_LIMITS, TEST_KINDS } from '../contracts';
+import { CODE_PROJECT_VERSION, COMPARE_MODES, PROJECT_LANGUAGES, PROJECT_LIMITS, RUNTIME_IDS, TEST_KINDS } from '../contracts';
 import type { CodeFile, CodeProject, TestCase } from '../contracts';
-import { RESERVED_ROOT_FILES, nextId, nextOrder, readProject, sortedFiles } from './model';
+import { NAME_CHARS, RESERVED_ROOT_FILES, nextId, nextOrder, readProject, sortedFiles } from './model';
 import { pathKey, pathProblemAmong } from './paths';
 import { limitRefusal, replacing } from './store';
 import type { Refusal } from './store';
@@ -286,14 +286,31 @@ export function planImport(
   return plan;
 }
 
-/** The fields an export restores into an empty project or the untouched starter. */
+/** The most arguments an import restores. */
+const ARGS_MAX = 256;
+/** The most skipped names the import sentence lists; the count still holds them all. */
+export const SKIPS_LISTED = 10;
+
+/** Text within a byte limit, measured as UTF-8. */
+const fits = (text: string, bytes: number) => text.length <= bytes && encoder.encode(text).length <= bytes;
+
+/**
+ * The fields an export restores into an empty project or the untouched starter. Each goes through the model first:
+ * a language or runtime this app does not know stays out, the settings keep only their known keys within range, and
+ * the name, input, and arguments are bounded, so a crafted manifest cannot write anything else into the page.
+ */
 function settingsFrom(manifest: Record<string, unknown>, files: Record<string, CodeFile>): Record<string, unknown> {
   const out: Record<string, unknown> = { v: CODE_PROJECT_VERSION };
-  for (const key of ['name', 'language', 'runtime', 'stdin'] as const) {
-    if (typeof manifest[key] === 'string') out[key] = manifest[key];
+  const { name, language, runtime, stdin, args } = manifest;
+  if (typeof name === 'string') out.name = Array.from(name).slice(0, NAME_CHARS).join('');
+  if ((PROJECT_LANGUAGES as readonly unknown[]).includes(language)) out.language = language;
+  if (runtime === 'toolchain' || (RUNTIME_IDS as readonly unknown[]).includes(runtime)) out.runtime = runtime;
+  if (typeof stdin === 'string' && fits(stdin, PROJECT_LIMITS.fileBytes)) out.stdin = stdin;
+  if (Array.isArray(args)) {
+    const texts = args.filter((arg): arg is string => typeof arg === 'string');
+    if (texts.length <= ARGS_MAX && fits(texts.join(''), PROJECT_LIMITS.fileBytes)) out.args = texts;
   }
-  if (Array.isArray(manifest.args)) out.args = manifest.args.filter((arg) => typeof arg === 'string');
-  if (isMap(manifest.settings)) out.settings = manifest.settings;
+  if (isMap(manifest.settings)) out.settings = readProject({ settings: manifest.settings }).settings;
   const main = Object.entries(files).find(([, file]) => file.path === manifest.main)?.[0];
   out.main = main ?? sortedFiles(files)[0]?.[0] ?? '';
   return out;
@@ -326,7 +343,10 @@ export function importSummary(plan: ImportPlan): string {
   const parts = [t('codeStudio.project.exchange.imported', { count: plan.added.length + plan.replaced.length })];
   if (plan.skipped.length > 0) {
     const key = { binary: 'skipBinary', path: 'skipPath', tooBig: 'skipTooBig', test: 'skipTest' } as const;
-    const list = plan.skipped.map((skip) => t(`codeStudio.project.exchange.${key[skip.reason]}`, { path: skip.path }));
+    const shown = plan.skipped.slice(0, SKIPS_LISTED);
+    const list = shown.map((skip) => t(`codeStudio.project.exchange.${key[skip.reason]}`, { path: skip.path }));
+    const more = plan.skipped.length - shown.length;
+    if (more > 0) list.push(t('codeStudio.project.exchange.skipMore', { count: more }));
     parts.push(t('codeStudio.project.exchange.skipped', { count: plan.skipped.length, list: list.join(', ') }));
   }
   return parts.join(' ');

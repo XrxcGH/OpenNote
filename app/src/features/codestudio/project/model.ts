@@ -6,6 +6,16 @@ import type { CodeFile, CodeProject, CodeProjectSettings, ProjectLanguage, TestC
 
 export const DEFAULT_SETTINGS: CodeProjectSettings = { timeMs: 10_000, memoryMb: 64, tabSize: 4 };
 
+/** The lowest and highest value of each run setting. A read clamps to them, so no page holds a run without bounds. */
+export const SETTINGS_RANGE: Record<keyof CodeProjectSettings, readonly [number, number]> = {
+  timeMs: [100, 600_000],
+  memoryMb: [16, 4096],
+  tabSize: [1, 8],
+};
+
+/** The longest project name, in characters. */
+export const NAME_CHARS = 256;
+
 /** Export file names at the project's root. A project file cannot take them, so an export never loses one. */
 export const RESERVED_ROOT_FILES = ['opennote-project.json', 'opennote-tests.json'] as const;
 
@@ -14,6 +24,12 @@ const isObject = (value: unknown): value is Record<string, unknown> =>
 
 const num = (value: unknown, fallback: number): number =>
   typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+
+/** A setting within its range, a whole number, or the default when it is not a finite number. */
+function setting(value: unknown, key: keyof CodeProjectSettings): number {
+  const [low, high] = SETTINGS_RANGE[key];
+  return Math.min(high, Math.max(low, Math.round(num(value, DEFAULT_SETTINGS[key]))));
+}
 
 const str = (value: unknown, fallback = ''): string => (typeof value === 'string' ? value : fallback);
 
@@ -55,9 +71,9 @@ export function readProject(data: Record<string, unknown>): CodeProject {
     args: Array.isArray(data.args) ? data.args.filter((arg): arg is string => typeof arg === 'string') : [],
     tests: readTests(data.tests),
     settings: {
-      timeMs: num(settings.timeMs, DEFAULT_SETTINGS.timeMs),
-      memoryMb: num(settings.memoryMb, DEFAULT_SETTINGS.memoryMb),
-      tabSize: num(settings.tabSize, DEFAULT_SETTINGS.tabSize),
+      timeMs: setting(settings.timeMs, 'timeMs'),
+      memoryMb: setting(settings.memoryMb, 'memoryMb'),
+      tabSize: setting(settings.tabSize, 'tabSize'),
     },
   };
 }

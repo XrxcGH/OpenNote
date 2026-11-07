@@ -55,6 +55,7 @@ export const codeStudioProject = {
     skipPath: '{path} (path not allowed)',
     skipTooBig: '{path} (larger than 1 MiB)',
     skipTest: '{path} (not a test case OpenNote can read)',
+    skipMore: '{count, plural, one {and # more} other {and # more}}',
     exported: 'Exported {name}.',
     exportFailed: 'The project could not be exported.',
     importFailed: 'The files could not be imported.',
