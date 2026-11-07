@@ -39,6 +39,14 @@ async function openMembranes(page: Page): Promise<void> {
   await settle(page);
 }
 
+/** Opens the page on a wide screen, where the notebook tree is on screen, then narrows to the size being photographed. */
+async function openMembranesNarrow(page: Page, theme: Theme, width: number, height: number): Promise<void> {
+  await start(page, theme, 1280, 900);
+  await openMembranes(page);
+  await page.setViewportSize({ width, height });
+  await settle(page);
+}
+
 const bar = (page: Page): Locator => page.locator('[data-region="commandBar"]').first();
 
 async function pressBold(page: Page): Promise<void> {
@@ -64,8 +72,11 @@ interface Shot {
 const ribbon = (size: string, width: number): Shot => ({
   name: `home-ribbon-${size}`,
   async run(page, theme) {
-    await start(page, theme, width, 900);
-    await openMembranes(page);
+    if (width < 760) await openMembranesNarrow(page, theme, width, 900);
+    else {
+      await start(page, theme, width, 900);
+      await openMembranes(page);
+    }
     await pressBold(page);
     return bar(page);
   },
@@ -101,8 +112,7 @@ const SHOTS: readonly Shot[] = [
   {
     name: 'more-menu-medium',
     async run(page, theme) {
-      await start(page, theme, 720, 900);
-      await openMembranes(page);
+      await openMembranesNarrow(page, theme, 720, 900);
       await bar(page).getByRole('button', { name: 'More commands' }).click();
       await page.getByRole('menu').waitFor();
       await settle(page);
