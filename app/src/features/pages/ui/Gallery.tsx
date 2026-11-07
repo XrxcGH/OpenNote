@@ -6,11 +6,13 @@ import type { DragEvent, KeyboardEvent, RefObject } from 'react';
 import type { Location } from '../../../app/location';
 import type { Platform } from '../../../platform/types';
 import type { NodeId, NodeSummary, NotesService } from '../../../services/notes';
+import type { OpenPage } from '../../../services/pages/types';
 import { formatDate } from '../../../strings/format';
 import { t } from '../../../strings/t';
 import { announce, Button, Dialog } from '../../../ui';
 import { titleOf } from '../../tree';
-import { exportHtml, lightTheme, readExportPage } from '../export';
+import { dataUri, exportHtml, lightTheme, readExportPage } from '../export';
+import type { ExportPage } from '../export';
 import { collectStrokes } from '../host/strokes';
 import { bundledFontFaces } from '../host/fonts';
 import {
@@ -67,13 +69,23 @@ async function turn<T>(work: () => Promise<T>): Promise<T> {
   }
 }
 
-/** The origin that the asset URLs of a page load from, or null when they have none. */
-function assetOrigin(url: string): string | null {
-  try {
-    return new URL(url).origin;
-  } catch {
-    return null;
-  }
+/** The page's pictures as data URIs, read while the page is open. A closed page serves no asset, so a thumbnail that
+ * kept the asset URLs would show broken pictures (and 404s) when its frame loads them. */
+async function pictureUris(open: OpenPage, page: ExportPage): Promise<Map<string, string>> {
+  const uris = new Map<string, string>();
+  await Promise.all(
+    Object.values(page.assets)
+      .filter((asset) => asset.mime.startsWith('image/'))
+      .map(async (asset) => {
+        try {
+          const response = await fetch(open.assetUrl(asset.id));
+          if (response.ok) uris.set(asset.id, dataUri(asset.mime, new Uint8Array(await response.arrayBuffer())));
+        } catch {
+          // The thumbnail goes without a picture it can't read.
+        }
+      }),
+  );
+  return uris;
 }
 
 /** The page as a small document: its text, tables, pictures, and handwriting in the page's own styles. */
@@ -87,10 +99,9 @@ async function thumbnailHtml(platform: Platform, node: NodeSummary): Promise<str
       const strokes = await collectStrokes(node.id);
       const page = readExportPage(open.initial, strokes, 'en');
       const theme = lightTheme(bundledFontFaces());
-      const origin = assetOrigin(open.assetUrl('thumbnail'));
+      const uris = await pictureUris(open, page);
       return exportHtml(page, {
-        assetUrl: (asset) => open.assetUrl(asset.id),
-        imageOrigins: origin ? [origin] : [],
+        assetUrl: (asset) => uris.get(asset.id) ?? null,
         header: false,
         maxWidth: PAPER_WIDTH - 96,
         theme,
