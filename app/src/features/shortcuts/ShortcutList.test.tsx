@@ -1,6 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';
+import { registerAccept } from './registerAcceptStandIn';
 import { chord, defineCommand } from '../../commands/registry';
 import { commands, shortcutListSections } from '../../registries';
 import { closeOverlay } from '../../shell/commandbar/overlays';
@@ -151,23 +152,8 @@ describe("the OneNote set's clashes", () => {
 });
 
 describe('the code editor in the shortcut list', () => {
-  const registerAccept = () =>
-    stops.push(
-      commands.register(
-        defineCommand({
-          id: 'test.code.accept',
-          title: 'commands.colors.ink',
-          category: 'code',
-          keys: [chord('Ctrl+Tab')],
-          scope: 'codeEditor',
-          refines: 'tabs.next',
-          run() {},
-        }),
-      ),
-    );
-
   it('lists the code command under Code editor with a note on both rows', async () => {
-    registerAccept();
+    stops.push(registerAccept());
     await renderApp();
     const dialog = await openList();
     const group = within(dialog).getByRole('table', { name: 'Code editor' });
@@ -181,8 +167,12 @@ describe('the code editor in the shortcut list', () => {
   });
 
   it('drops both notes when the code command moves to another chord', async () => {
-    registerAccept();
+    stops.push(registerAccept());
     await renderApp();
+    const before = await openList();
+    expect(rowOf(before, 'Go to the next tab').textContent).toContain('In the code editor');
+    expect(within(before).getByRole('table', { name: 'Code editor' }).textContent).toContain('Before Go to the next tab');
+    closeOverlay();
     await setShortcut('test.code.accept', [chord('Alt+Enter')]);
     const dialog = await openList();
     const group = within(dialog).getByRole('table', { name: 'Code editor' });

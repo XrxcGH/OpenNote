@@ -4,8 +4,7 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';
-import { chord, defineCommand } from '../../commands/registry';
-import { commands } from '../../registries';
+import { registerAccept } from './registerAcceptStandIn';
 import { closeOverlay } from '../../shell/commandbar/overlays';
 import { getSettings } from '../../state/settings';
 import { announcements, expectFocus, expectNoAxeViolations, pressChord, renderApp } from '../../test';
@@ -16,22 +15,6 @@ afterEach(() => {
   closeOverlay();
   stops.splice(0).forEach((stop) => stop());
 });
-
-/** Stands in for the code editor's accept command, which refines Next tab on Ctrl+Tab. */
-const registerAccept = () =>
-  stops.push(
-    commands.register(
-      defineCommand({
-        id: 'test.code.accept',
-        title: 'commands.colors.ink',
-        category: 'code',
-        keys: [chord('Ctrl+Tab')],
-        scope: 'codeEditor',
-        refines: 'tabs.next',
-        run() {},
-      }),
-    ),
-  );
 
 async function openList() {
   await pressChord('Ctrl+/');
@@ -143,7 +126,7 @@ describe('capturing Tab chords', () => {
   });
 
   it('names both users when Ctrl+Tab goes to a third command', async () => {
-    registerAccept();
+    stops.push(registerAccept());
     await renderApp();
     const dialog = await openList();
     const { row } = await startChange(dialog, 'Toggle dark mode');
