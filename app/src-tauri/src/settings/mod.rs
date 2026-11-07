@@ -3,6 +3,7 @@
 //! interface changes settings only through merge patches, which Rust validates. A writer thread saves the raw
 //! document 250 ms after a change, atomically; theme changes and the exit handshake save at once.
 
+pub mod code;
 pub mod commands;
 pub mod editing;
 pub mod file;
