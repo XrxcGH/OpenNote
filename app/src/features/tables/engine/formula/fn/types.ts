@@ -66,6 +66,8 @@ export interface Param {
    * TRUE as 1, as SUM("3",TRUE) is 4; 'raw' keeps the value as it is, as COUNTA counts it.
    */
   readonly direct?: 'number' | 'raw';
+  /** For an array: text in a referenced cell counts as empty, as the logical functions skip it. Typed text still counts. */
+  readonly skipRefText?: boolean;
 }
 
 /** Parameters that repeat together: value1, value2, and on, or criteria range and criteria pairs. */

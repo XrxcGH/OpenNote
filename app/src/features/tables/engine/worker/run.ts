@@ -12,7 +12,7 @@ function same(a: Value, b: Value): boolean {
 
 /** Recalculates the tables of a request and lists the changed cells. */
 export function respond(request: RecalcRequest): RecalcReply {
-  const result = recalculateBook(request.tables, { today: () => request.today });
+  const result = recalculateBook(request.tables, { today: () => request.today, title: request.title });
   const changes: CellChange[] = [];
   result.forEach((table, s) => {
     const before = request.tables[s];

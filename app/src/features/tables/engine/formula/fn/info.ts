@@ -6,10 +6,12 @@
 import { lettersFromColumn } from '../../../../../core/expr';
 import { parseDate } from '../../dates';
 import {
+  arrayOf,
   err,
   isArray,
   isError,
   isRef,
+  toNumber,
   type ErrorCode,
   type FormulaError,
   type RefValue,
@@ -54,7 +56,7 @@ function parity(name: string, odd: boolean, example: string): FnSpec2 {
     params: [{ name: 'number', kind: 'value' }],
     run: ([v]) => {
       if (typeof v === 'boolean') return err('VALUE');
-      const n = typeof v === 'string' ? Number(v.trim() === '' ? NaN : v) : v;
+      const n = toNumber(v);
       if (typeof n !== 'number' || !Number.isFinite(n)) return err('VALUE');
       return (Math.trunc(n) % 2 !== 0) === odd;
     },
@@ -239,8 +241,22 @@ export const functions: readonly FnSpec2[] = [
     refArgs: true,
     run: ([v], env) => {
       if (!isRef(v)) return err('VALUE');
-      const cell = env.probe?.cell(v);
-      return cell === undefined ? err('REF') : cell.formula;
+      const probe = env.probe;
+      if (v.r1 === v.r2 && v.c1 === v.c2) {
+        const cell = probe?.cell(v);
+        return cell === undefined ? err('REF') : cell.formula;
+      }
+      // A block spills one answer per cell.
+      const rows: Scalar[][] = [];
+      for (let r = v.r1; r <= v.r2; r++) {
+        const row: Scalar[] = [];
+        for (let c = v.c1; c <= v.c2; c++) {
+          const cell = probe?.cell({ ...v, r1: r, r2: r, c1: c, c2: c });
+          row.push(cell === undefined ? err('REF') : cell.formula);
+        }
+        rows.push(row);
+      }
+      return arrayOf(rows);
     },
     meta: { signature: 'ISFORMULA(reference)', example: '=ISFORMULA(B2) gives TRUE when B2 has a formula' },
   },

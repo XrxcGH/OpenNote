@@ -3,8 +3,6 @@
 // Owner: tables:fn-logic-info (B10). shared:x-shared registered it in the string index, and the owner fills it in.
 
 const value = 'The value to check.';
-/** The name has a dot, so it cannot be a plain key. */
-const ERROR_TYPE = ['ERROR', 'TYPE'].join('.');
 
 export const fnLogicInfo = {
   AND: { about: 'Gives TRUE when every argument is true.', args: { logical: 'A value, array, or range to test.' } },
@@ -64,7 +62,7 @@ export const fnLogicInfo = {
       reference: 'The cell to ask about. This cell if left out.',
     },
   },
-  [ERROR_TYPE]: {
+  ERROR_TYPE: {
     about: 'Gives a number for the kind of error, such as 2 for divide by zero and 7 for not available.',
     args: { error: 'The error.' },
   },

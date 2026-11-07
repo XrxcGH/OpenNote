@@ -11,6 +11,7 @@ import { DEFAULT_ENV, recalculate, type EngineEnv } from '../../recalc';
 import { ERROR_TOKENS, err, type ErrorCode, type Value } from '../../values';
 import { recalculateBook, setBookCellInput } from '../../workbook';
 import { fnLogicInfo } from '../../../../../strings/en/fnLogicInfo';
+import { fnKey } from '../../../../../strings/fnKey';
 import { REGISTRY, paramsOf } from '.';
 
 interface Fixture {
@@ -163,7 +164,7 @@ describe('the registry', () => {
     const strings = fnLogicInfo as unknown as Record<string, { about: string; args: Record<string, string> }>;
     for (const spec of REGISTRY.values()) {
       if (spec.family !== 'logical' && spec.family !== 'info') continue;
-      const text = strings[spec.name];
+      const text = strings[fnKey(spec.name)];
       expect(text?.about, spec.name).toMatch(/\S/);
       expect(Object.keys(text.args).sort(), spec.name).toEqual(
         paramsOf(spec)
@@ -171,5 +172,48 @@ describe('the registry', () => {
           .sort(),
       );
     }
+  });
+});
+
+describe('verification gaps (G4, G5, G6, G7)', () => {
+  /** A sheet with a text column C and a formula in D1, then the result of `formula` typed in D3. */
+  function runIn(data: string[][], formula: string): Value {
+    const columns = LETTERS.map((name) => ({ name, type: (name === 'C' ? 'text' : 'number') as 'text' | 'number' }));
+    let t = createTable(columns, data, EN_US, DEFAULT_ENV, 1);
+    t = setCellInput(t, { row: 0, col: 3, raw: '=1+1' }, EN_US, DEFAULT_ENV);
+    t = setCellInput(t, { row: 2, col: 3, raw: formula }, EN_US, DEFAULT_ENV);
+    return t.rows[2].cells[3].value;
+  }
+  const data = [
+    ['1', '2', 'TRUE', ''],
+    ['3', '4', 'y', ''],
+    ['', '', '', ''],
+  ];
+
+  it('G4: ISEVEN and ISODD read a blank cell as 0 and text with the number rule', () => {
+    expect(runIn(data, '=ISEVEN(A3)')).toBe(true);
+    expect(runIn(data, '=ISODD(A3)')).toBe(false);
+    expect(runIn(data, '=ISEVEN("0x10")')).toEqual(err('VALUE'));
+    expect(runIn(data, '=ISODD("0b11")')).toEqual(err('VALUE'));
+    expect(runIn(data, '=ISODD("3")')).toBe(true);
+  });
+
+  it('G5: AND and OR skip text in a referenced cell but read typed text', () => {
+    expect(runIn(data, '=AND(C1)')).toEqual(err('VALUE'));
+    expect(runIn(data, '=OR(C1)')).toEqual(err('VALUE'));
+    expect(runIn(data, '=AND("TRUE")')).toBe(true);
+    expect(runIn(data, '=AND(C1,A1)')).toBe(true);
+  });
+
+  it('G6: a dotted function name maps to a low-line key', () => {
+    expect(fnKey('ERROR.TYPE')).toBe('ERROR_TYPE');
+    expect(fnKey('SUM')).toBe('SUM');
+    expect(fnLogicInfo.ERROR_TYPE.about).toMatch(/\S/);
+  });
+
+  it('G7: SWITCH returns an array result whole, and ISFORMULA lifts over a range', () => {
+    expect(runIn(data, '=SUM(SWITCH(1,1,A1:B2))')).toBe(10);
+    expect(runIn(data, '=SUM(--ISFORMULA(C1:D1))')).toBe(1);
+    expect(runIn(data, '=SUM(--ISFORMULA(A1:B2))')).toBe(0);
   });
 });

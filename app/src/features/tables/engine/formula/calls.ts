@@ -191,9 +191,12 @@ function plain(h: Host, spec: FnSpec2, node: Call): Fn {
     if (ref !== null && refArgs) return (ctx) => toRefValue(h, ref.fn(ctx));
     if (ref !== null && returnsRef && kind === 'range') return (ctx) => toRefValue(h, ref.fn(ctx));
     const v = ref !== null ? h.deref(ref) : h.value(arg);
+    const skipText = ref !== null && params[i]?.skipRefText === true;
     return (ctx) => {
       const value = v(ctx);
-      return isError(value) ? value : asArray(value);
+      if (isError(value)) return value;
+      const array = asArray(value);
+      return skipText ? { ...array, data: array.data.map((x) => (typeof x === 'string' ? null : x)) } : array;
     };
   });
   // A lazy parameter of a form the engine does not know arrives evaluated, errors included, never broadcast.

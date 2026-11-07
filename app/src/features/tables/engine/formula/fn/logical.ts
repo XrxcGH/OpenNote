@@ -37,7 +37,7 @@ function logic(name: string, combine: (bools: boolean[]) => boolean, example: st
   return {
     name,
     family: 'logical',
-    params: [{ repeat: [{ name: 'logical', kind: 'array' }], min: 1 }],
+    params: [{ repeat: [{ name: 'logical', kind: 'array', skipRefText: true }], min: 1 }],
     run: (args) => {
       const bools = logicals(args);
       return Array.isArray(bools) ? combine(bools) : bools;
@@ -163,9 +163,11 @@ export const functions: readonly FnSpec2[] = [
     run: (args) => {
       const [value, ...rest] = args.map(scalar);
       if (isError(value)) return value;
+      const raw = args.slice(1);
       const pairs = Math.floor(rest.length / 2);
-      for (let i = 0; i < pairs; i++) if (same(value, rest[2 * i])) return rest[2 * i + 1];
-      return rest.length % 2 === 1 ? rest[rest.length - 1] : err('NA');
+      // The chosen result is returned as it is, so an array result is not cut down to its first element.
+      for (let i = 0; i < pairs; i++) if (same(value, rest[2 * i])) return raw[2 * i + 1];
+      return rest.length % 2 === 1 ? raw[raw.length - 1] : err('NA');
     },
     meta: {
       signature: 'SWITCH(value, match, result, ..., [default])',
