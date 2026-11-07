@@ -1,0 +1,65 @@
+/* The symbol dialog: a search row, a grid of symbols, and the chosen symbol's name. */
+@layer components {
+  .body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    min-inline-size: min(36rem, 80vw);
+  }
+
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    align-items: end;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    flex: 1 1 10rem;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(2.5rem, 1fr));
+    gap: var(--space-1);
+    max-block-size: 16rem;
+    overflow-y: auto;
+    padding: var(--space-1);
+    margin: 0;
+    list-style: none;
+  }
+
+  .cell {
+    inline-size: 100%;
+    block-size: 2.5rem;
+    font-size: calc(var(--type-body-size) * 1.4);
+    line-height: 1;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-text-primary);
+    cursor: pointer;
+  }
+
+  .cell:hover {
+    background: var(--color-surface-hover);
+  }
+
+  .cell[aria-pressed='true'] {
+    border-color: var(--color-accent-primary);
+  }
+
+  .cell:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: var(--size-focus-ring-offset);
+  }
+
+  .note {
+    margin: 0;
+    color: var(--color-text-secondary);
+    min-block-size: 1.5em;
+  }
+}
