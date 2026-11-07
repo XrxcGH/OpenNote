@@ -98,7 +98,13 @@ const KNOWN: Record<string, string> = {
 };
 
 /** Functions that cannot be compared with a fixed answer: their result depends on the day it runs. */
-const NOT_COMPARABLE = new Set(['TODAY']);
+const NOT_COMPARABLE = new Set([
+  'TODAY',
+  'NOW',
+  // The other date and time functions have hand-worked cases in fixtures/fn/datetime.json (lane fn-datetime).
+  ...'HOUR MINUTE SECOND TIME TIMEVALUE DATEVALUE DAYS360 EDATE EOMONTH WEEKDAY WEEKNUM ISOWEEKNUM'.split(' '),
+  ...'NETWORKDAYS NETWORKDAYS.INTL WORKDAY WORKDAY.INTL DATEDIF YEARFRAC EPOCHTODATE'.split(' '),
+]);
 
 const DATE_RESULTS = new Set(['DATE']);
 
