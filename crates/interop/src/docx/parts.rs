@@ -12,6 +12,8 @@ pub const NS_R: &str = "http://schemas.openxmlformats.org/officeDocument/2006/re
 pub const NS_EXTENSIONS: &str = "xmlns:mc=\"http://schemas.openxmlformats.org/markup-compatibility/2006\" \
      xmlns:w14=\"http://schemas.microsoft.com/office/word/2010/wordml\" \
      xmlns:w15=\"http://schemas.microsoft.com/office/word/2012/wordml\"";
+/// The DrawingML namespaces of an inline picture (`w:drawing`), which the body, notes, and comments can hold.
+pub const NS_DRAWING: &str = "xmlns:wp=\"http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing\"      xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\"      xmlns:pic=\"http://schemas.openxmlformats.org/drawingml/2006/picture\"";
 pub const NS_REL: &str = "http://schemas.openxmlformats.org/package/2006/relationships";
 
 /// Escapes text for XML, and drops the control characters that XML 1.0 forbids.
@@ -218,7 +220,7 @@ pub fn settings_xml(setup: &super::Setup, extras: &Extras) -> String {
 pub fn notes_xml(kind: &str, notes: &[String]) -> String {
     let root = format!("{kind}s");
     let mut out =
-        format!("{XML_HEADER}<w:{root} xmlns:w=\"{NS_W}\" xmlns:r=\"{NS_R}\" {NS_EXTENSIONS} mc:Ignorable=\"w14\">");
+        format!("{XML_HEADER}<w:{root} xmlns:w=\"{NS_W}\" xmlns:r=\"{NS_R}\" {NS_EXTENSIONS} {NS_DRAWING} mc:Ignorable=\"w14\">");
     let spacing = "<w:pPr><w:spacing w:after=\"0\" w:line=\"240\" w:lineRule=\"auto\"/></w:pPr>";
     out.push_str(&format!(
         "<w:{kind} w:type=\"separator\" w:id=\"-1\"><w:p>{spacing}<w:r><w:separator/></w:r></w:p></w:{kind}>\
@@ -235,7 +237,7 @@ pub fn notes_xml(kind: &str, notes: &[String]) -> String {
 /// `word/comments.xml`.
 pub fn comments_xml(comments: &[String]) -> String {
     let mut out =
-        format!("{XML_HEADER}<w:comments xmlns:w=\"{NS_W}\" xmlns:r=\"{NS_R}\" {NS_EXTENSIONS} mc:Ignorable=\"w14\">");
+        format!("{XML_HEADER}<w:comments xmlns:w=\"{NS_W}\" xmlns:r=\"{NS_R}\" {NS_EXTENSIONS} {NS_DRAWING} mc:Ignorable=\"w14\">");
     for comment in comments {
         out.push_str(comment);
     }

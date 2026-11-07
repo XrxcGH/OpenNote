@@ -11,7 +11,14 @@ import { Button, Dialog, RadioCard, RadioGroup, Switch, TextField, announce } fr
 import type { DialogAction } from '../../ui';
 import { createExportFlow } from './exportFlow';
 import { CheckFirstSwitch } from '../a11yCheck';
-import { pageTitleOn, removePersonalOn, setPageTitle, setRemovePersonal } from '../exportPrefs';
+import {
+  embedFontsOn,
+  pageTitleOn,
+  removePersonalOn,
+  setEmbedFonts,
+  setPageTitle,
+  setRemovePersonal,
+} from '../exportPrefs';
 import { LatexFields } from './LatexFields';
 import { SendExtras } from './SendExtras';
 import { NO_SHARE_CHOICES } from './exportFlow';
@@ -148,6 +155,7 @@ function Options({
       {state.format !== 'share' && <SendExtras flow={flow} folder={state.folder} />}
       {state.format === 'pdf' && <PageTitleSwitch />}
       {state.format === 'docx' && <RemovePersonalSwitch />}
+      {state.format === 'docx' && <EmbedFontsSwitch />}
       <CheckFirstSwitch />
       {state.error && (
         <p role="alert" className={styles.error}>
@@ -192,6 +200,28 @@ function RemovePersonalSwitch() {
       />
       <p id={helpId} className={styles.note}>
         {t('interop.export.removePersonalHelp')}
+      </p>
+    </>
+  );
+}
+
+/** Whether a Word export embeds the bundled fonts it uses. Off until turned on, and remembered. */
+function EmbedFontsSwitch() {
+  const [on, setOn] = useState(embedFontsOn);
+  const helpId = useId();
+  return (
+    <>
+      <Switch
+        label={t('interop.export.embedFonts')}
+        checked={on}
+        describedBy={helpId}
+        onChange={(value) => {
+          setEmbedFonts(value);
+          setOn(value);
+        }}
+      />
+      <p id={helpId} className={styles.note}>
+        {t('interop.export.embedFontsHelp')}
       </p>
     </>
   );

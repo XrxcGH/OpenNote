@@ -39,3 +39,24 @@ export function setRemovePersonal(on: boolean): void {
     // The choice just is not remembered.
   }
 }
+
+// Whether a Word export embeds the app's bundled fonts that the document uses. Off until the person turns it on,
+// and the choice is remembered on this device.
+
+const EMBED_KEY = 'opennote.export.embedFonts';
+
+export function embedFontsOn(): boolean {
+  try {
+    return localStorage.getItem(EMBED_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+export function setEmbedFonts(on: boolean): void {
+  try {
+    localStorage.setItem(EMBED_KEY, String(on));
+  } catch {
+    // The choice just is not remembered.
+  }
+}

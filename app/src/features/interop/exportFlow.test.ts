@@ -2,7 +2,7 @@
 // What an export covers (page, section, notebook) and the export flow, on the sample library and the web fake.
 
 import { describe, expect, it, vi } from 'vitest';
-import { setRemovePersonal } from '../exportPrefs';
+import { setEmbedFonts, setRemovePersonal } from '../exportPrefs';
 import { createWebInterop } from '../../platform/web/interop';
 import { createMemoryNotesService } from '../../services/notes/memory';
 import type { NodeId } from '../../services/notes/types';
@@ -96,9 +96,11 @@ describe('the Word choices', () => {
       return interop.log.exports[0];
     };
     try {
-      expect(await sent('docx')).toMatchObject({ format: 'docx', word: { removePersonal: false } });
+      expect(await sent('docx')).toMatchObject({ format: 'docx', word: { removePersonal: false, embedFonts: false } });
       setRemovePersonal(true);
-      expect(await sent('docx')).toMatchObject({ format: 'docx', word: { removePersonal: true } });
+      expect(await sent('docx')).toMatchObject({ format: 'docx', word: { removePersonal: true, embedFonts: false } });
+      setEmbedFonts(true);
+      expect(await sent('docx')).toMatchObject({ format: 'docx', word: { removePersonal: true, embedFonts: true } });
       expect(await sent('markdown')).not.toHaveProperty('word');
     } finally {
       vi.unstubAllGlobals();

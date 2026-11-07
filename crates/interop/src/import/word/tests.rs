@@ -197,6 +197,33 @@ fn toggles_in_styles_cancel_and_direct_bold_is_bold() {
 }
 
 #[test]
+fn named_weight_faces_split_only_for_families_that_have_them() {
+    // "Segoe UI Semibold" and "Segoe UI Light" are faces of Segoe UI. "Arial Black" and "Franklin Gothic Medium"
+    // are families of their own, and "Segoe UI Semilight" weighs 350, which no weight name gives.
+    let font = |name: &str| format!(r#"<w:rFonts w:ascii="{name}" w:hAnsi="{name}"/>"#);
+    let body = format!(
+        "<w:p>{} {} {} {} {}</w:p>",
+        run(&font("Segoe UI Semibold"), "semi"),
+        run(&format!("{}<w:b/>", font("Segoe UI Light")), "light"),
+        run(&font("Arial Black"), "black"),
+        run(&font("Franklin Gothic Medium"), "medium"),
+        run(&font("Segoe UI Semilight"), "semilight"),
+    );
+    let sink = import_bytes(&docx(&body, &[]));
+    let text = markdown(first_page(&sink));
+    for expected in [
+        r#"<span data-weight="600"><span data-font="Segoe UI">semi</span></span>"#,
+        r#"<span data-weight="300"><span data-font="Segoe UI">light</span></span>"#,
+        r#"<span data-font="Arial Black">black</span>"#,
+        r#"<span data-font="Franklin Gothic Medium">medium</span>"#,
+        r#"<span data-font="Segoe UI Semilight">semilight</span>"#,
+    ] {
+        assert!(text.contains(expected), "{expected} in {text}");
+    }
+    assert!(!text.contains("**"), "a light face with w:b is not also bold: {text}");
+}
+
+#[test]
 fn theme_fonts_resolve_through_the_theme() {
     let theme = r#"<a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:themeElements>
         <a:fontScheme name="Office"><a:majorFont><a:latin typeface="Calibri Light"/></a:majorFont>
