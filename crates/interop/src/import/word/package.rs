@@ -99,17 +99,29 @@ impl<R: Read + Seek> Package<R> {
         let props = xml_part(&mut archive, "docProps/core.xml", &mut unpacked)?
             .map(|e| read_props(&e))
             .unwrap_or_default();
-        let part = |archive: &mut ZipArchive<R>, unpacked: &mut u64, file: &str| {
+        let path_of = |file: &str| {
             let target = rels
                 .values()
                 .find(|r| !r.external && r.target.rsplit('/').next() == Some(file))
                 .map_or_else(|| file.to_owned(), |r| r.target.trim_start_matches('/').to_owned());
-            let path = if target.starts_with(&format!("{dir}/")) {
+            if target.starts_with(&format!("{dir}/")) {
                 target
             } else {
                 format!("{dir}/{target}")
+            }
+        };
+        let part =
+            |archive: &mut ZipArchive<R>, unpacked: &mut u64, file: &str| xml_part(archive, &path_of(file), unpacked);
+        // The relationships of a part sit in `_rels/<name>.rels` next to it.
+        let part_rels = |archive: &mut ZipArchive<R>, unpacked: &mut u64, file: &str| -> Result<_> {
+            let path = path_of(file);
+            let (folder, name) = path.rsplit_once('/').unwrap_or(("", path.as_str()));
+            let rels_path = if folder.is_empty() {
+                format!("_rels/{name}.rels")
+            } else {
+                format!("{folder}/_rels/{name}.rels")
             };
-            xml_part(archive, &path, unpacked)
+            Ok(xml_part(archive, &rels_path, unpacked)?.map(|e| read_rels(&e)))
         };
         let theme = match part(&mut archive, &mut unpacked, "theme1.xml")? {
             Some(root) => Theme::read(&root),
@@ -120,13 +132,16 @@ impl<R: Read + Seek> Package<R> {
         let mut sources = Sources::default();
         if let Some(root) = part(&mut archive, &mut unpacked, "footnotes.xml")? {
             sources.footnotes = read_notes(&root, "w:footnote");
+            sources.footnote_rels = part_rels(&mut archive, &mut unpacked, "footnotes.xml")?;
         }
         if let Some(root) = part(&mut archive, &mut unpacked, "endnotes.xml")? {
             sources.endnotes = read_notes(&root, "w:endnote");
+            sources.endnote_rels = part_rels(&mut archive, &mut unpacked, "endnotes.xml")?;
         }
         if let Some(root) = part(&mut archive, &mut unpacked, "comments.xml")? {
             let extended = part(&mut archive, &mut unpacked, "commentsExtended.xml")?;
             sources.read_comments(&root, extended.as_ref());
+            sources.comment_rels = part_rels(&mut archive, &mut unpacked, "comments.xml")?;
         }
         let settings = part(&mut archive, &mut unpacked, "settings.xml")?;
         let unread_parts = unread(&archive, &dir);

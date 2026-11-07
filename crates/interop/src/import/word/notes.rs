@@ -3,6 +3,7 @@
 
 use std::collections::HashMap;
 
+use super::package::Rel;
 use super::styles::children;
 use crate::import::xmltree::{Element, Node};
 
@@ -25,6 +26,11 @@ pub(super) struct Sources {
     pub footnotes: HashMap<String, Element>,
     pub endnotes: HashMap<String, Element>,
     pub comments: HashMap<String, CommentSource>,
+    /// The relationships of each part, which its links and pictures name. A part without its own relationships
+    /// part falls back to the document's.
+    pub footnote_rels: Option<HashMap<String, Rel>>,
+    pub endnote_rels: Option<HashMap<String, Rel>>,
+    pub comment_rels: Option<HashMap<String, Rel>>,
     /// Comment IDs in file order, so replies keep their order.
     pub order: Vec<String>,
     /// The replies of each top comment, in file order, worked out once when the comments are read.
