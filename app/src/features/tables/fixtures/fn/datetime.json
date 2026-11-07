@@ -1,0 +1,469 @@
+{
+  "cases": [
+    {
+      "formula": "=DATE(2024,14,1)",
+      "expected": 45689,
+      "source": "hand",
+      "note": "Month 14 of 2024 is February 2025. 1 January 2025 is 45658, and February starts 31 days later."
+    },
+    {
+      "formula": "=EOMONTH(DATE(2011,1,1),1)",
+      "expected": 40602,
+      "source": "hand",
+      "note": "One month after January 2011 is February, which ends on the 28th, serial 40602."
+    },
+    {
+      "formula": "=EDATE(DATE(2011,1,15),-1)",
+      "expected": 40527,
+      "source": "hand",
+      "note": "One month before 15 January 2011 is 15 December 2010."
+    },
+    {
+      "formula": "=EDATE(DATE(2024,1,31),1)",
+      "expected": 45351,
+      "source": "hand",
+      "note": "The 31st is cut back to the end of a shorter month: 29 February 2024, a leap year."
+    },
+    {
+      "formula": "=EOMONTH(DATE(2024,1,15),-2)",
+      "expected": 45260,
+      "source": "hand",
+      "note": "Two months before January 2024 is November 2023, which ends on the 30th."
+    },
+    {
+      "formula": "=NETWORKDAYS(DATE(2012,10,1),DATE(2013,3,1))",
+      "expected": 110,
+      "source": "hand",
+      "note": "Counted by walking each day from 1 October 2012 to 1 March 2013 and skipping Saturday and Sunday."
+    },
+    {
+      "formula": "=NETWORKDAYS(DATE(2012,10,1),DATE(2013,3,1),A1:A3)",
+      "cells": {
+        "A1": 41235,
+        "A2": 41247,
+        "A3": 41295
+      },
+      "expected": 107,
+      "source": "hand",
+      "note": "The same walk, also skipping three holidays that all fall on weekdays."
+    },
+    {
+      "formula": "=NETWORKDAYS(DATE(2013,3,1),DATE(2012,10,1))",
+      "expected": -110,
+      "source": "hand",
+      "note": "Dates given in reverse order give the count with a minus sign."
+    },
+    {
+      "formula": "=NETWORKDAYS.INTL(DATE(2006,1,1),DATE(2006,1,31),7)",
+      "expected": 23,
+      "source": "hand",
+      "note": "Code 7 makes Friday and Saturday the weekend."
+    },
+    {
+      "formula": "=NETWORKDAYS.INTL(DATE(2006,1,1),DATE(2006,1,31),11)",
+      "expected": 26,
+      "source": "hand",
+      "note": "Code 11 makes Sunday the only weekend day."
+    },
+    {
+      "formula": "=NETWORKDAYS.INTL(DATE(2006,1,1),DATE(2006,1,31),\"0010001\")",
+      "expected": 22,
+      "source": "hand",
+      "note": "The mask lists Monday first; a 1 marks Wednesday and Sunday as days off."
+    },
+    {
+      "formula": "=NETWORKDAYS.INTL(DATE(2006,1,1),DATE(2006,1,31),\"1111111\")",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "A mask with every day off leaves no working day, so it is an invalid value."
+    },
+    {
+      "formula": "=WORKDAY(DATE(2008,10,1),151)",
+      "expected": 39933,
+      "source": "hand",
+      "note": "151 working days after 1 October 2008, found by walking forward and skipping weekends."
+    },
+    {
+      "formula": "=WORKDAY(DATE(2008,10,1),151,A1:A3)",
+      "cells": {
+        "A1": 39778,
+        "A2": 39786,
+        "A3": 39834
+      },
+      "expected": 39938,
+      "source": "hand",
+      "note": "The same count with three holidays skipped."
+    },
+    {
+      "formula": "=WORKDAY(DATE(2008,10,1),-30)",
+      "expected": 39680,
+      "source": "hand",
+      "note": "30 working days back from 1 October 2008, walking backward."
+    },
+    {
+      "formula": "=WORKDAY(DATE(2008,10,1),0)",
+      "expected": 39722,
+      "source": "hand",
+      "note": "Zero working days is the start date itself."
+    },
+    {
+      "formula": "=WORKDAY.INTL(DATE(2012,1,1),30,0)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Code 0 is not a weekend code."
+    },
+    {
+      "formula": "=WORKDAY.INTL(DATE(2012,1,1),90,11)",
+      "expected": 41013,
+      "source": "hand",
+      "note": "Only Sunday is a day off, found by walking forward 90 working days."
+    },
+    {
+      "formula": "=WORKDAY.INTL(DATE(2012,1,1),-10,\"0000011\")",
+      "expected": 40896,
+      "source": "hand",
+      "note": "A mask of Saturday and Sunday behaves like code 1, walking backward."
+    },
+    {
+      "formula": "=DATEDIF(DATE(2001,1,1),DATE(2003,1,1),\"Y\")",
+      "expected": 2,
+      "source": "hand",
+      "note": "Two full years."
+    },
+    {
+      "formula": "=DATEDIF(DATE(2001,1,1),DATE(2003,1,1),\"D\")",
+      "expected": 730,
+      "source": "hand",
+      "note": "365 days in 2001 plus 365 in 2002."
+    },
+    {
+      "formula": "=DATEDIF(DATE(2001,6,1),DATE(2002,8,15),\"MD\")",
+      "expected": 14,
+      "source": "hand",
+      "note": "The day of the month goes from 1 to 15, a difference of 14."
+    },
+    {
+      "formula": "=DATEDIF(DATE(2001,6,1),DATE(2002,8,15),\"YD\")",
+      "expected": 75,
+      "source": "hand",
+      "note": "From 1 June to 15 August is 30 plus 31 plus 14 days."
+    },
+    {
+      "formula": "=DATEDIF(DATE(2001,6,1),DATE(2002,8,15),\"M\")",
+      "expected": 14,
+      "source": "hand",
+      "note": "June 2001 to August 2002 is 14 months, and the 15th is past the 1st."
+    },
+    {
+      "formula": "=DATEDIF(DATE(2001,6,1),DATE(2002,8,15),\"YM\")",
+      "expected": 2,
+      "source": "hand",
+      "note": "Months left over after the full year: 2."
+    },
+    {
+      "formula": "=DATEDIF(DATE(2001,6,20),DATE(2002,8,15),\"MD\")",
+      "expected": 26,
+      "source": "hand",
+      "note": "The end day is before the start day, so borrow the 31 days of July: 31 minus 20 plus 15."
+    },
+    {
+      "formula": "=DATEDIF(DATE(2003,1,1),DATE(2001,1,1),\"Y\")",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "A start after the end is invalid."
+    },
+    {
+      "formula": "=DATEDIF(DATE(2001,1,1),DATE(2003,1,1),\"Q\")",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Q is not a unit."
+    },
+    {
+      "formula": "=WEEKDAY(DATE(2008,2,14))",
+      "expected": 5,
+      "source": "hand",
+      "note": "14 February 2008 was a Thursday, the fifth day when Sunday is 1."
+    },
+    {
+      "formula": "=WEEKDAY(DATE(2008,2,14),2)",
+      "expected": 4,
+      "source": "hand",
+      "note": "Thursday is the fourth day when Monday is 1."
+    },
+    {
+      "formula": "=WEEKDAY(DATE(2008,2,14),3)",
+      "expected": 3,
+      "source": "hand",
+      "note": "Thursday is 3 when Monday is 0."
+    },
+    {
+      "formula": "=WEEKDAY(DATE(2008,2,14),16)",
+      "expected": 6,
+      "source": "hand",
+      "note": "Type 16 starts the week on Saturday, so Thursday is the sixth day."
+    },
+    {
+      "formula": "=WEEKDAY(DATE(2008,2,14),9)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "9 is not a return type."
+    },
+    {
+      "formula": "=WEEKNUM(DATE(2012,3,9))",
+      "expected": 10,
+      "source": "hand",
+      "note": "1 January 2012 was a Sunday, so weeks start on it: day 69 falls in week 10."
+    },
+    {
+      "formula": "=WEEKNUM(DATE(2012,3,9),2)",
+      "expected": 11,
+      "source": "hand",
+      "note": "With Monday weeks, the partial first week counts as week 1, so the date falls in week 11."
+    },
+    {
+      "formula": "=WEEKNUM(DATE(2012,3,9),21)",
+      "expected": 10,
+      "source": "hand",
+      "note": "Type 21 is the ISO week."
+    },
+    {
+      "formula": "=ISOWEEKNUM(DATE(2012,3,9))",
+      "expected": 10,
+      "source": "hand",
+      "note": "The ISO week with the year's first Thursday is week 1."
+    },
+    {
+      "formula": "=ISOWEEKNUM(DATE(2021,1,3))",
+      "expected": 53,
+      "source": "hand",
+      "note": "3 January 2021 belongs to the last ISO week of 2020, which is week 53."
+    },
+    {
+      "formula": "=ISOWEEKNUM(DATE(2024,12,30))",
+      "expected": 1,
+      "source": "hand",
+      "note": "30 December 2024 belongs to ISO week 1 of 2025."
+    },
+    {
+      "formula": "=YEARFRAC(DATE(2012,1,1),DATE(2012,7,30))",
+      "expected": 0.5805555555555556,
+      "tolerance": 1e-09,
+      "source": "hand",
+      "note": "Basis 0: 209 days on a 30-day-month year, over 360."
+    },
+    {
+      "formula": "=YEARFRAC(DATE(2012,1,1),DATE(2012,7,30),1)",
+      "expected": 0.5765027322404371,
+      "tolerance": 1e-09,
+      "source": "hand",
+      "note": "Basis 1: 211 actual days over the 366 days of leap year 2012."
+    },
+    {
+      "formula": "=YEARFRAC(DATE(2012,1,1),DATE(2012,7,30),2)",
+      "expected": 0.5861111111111111,
+      "tolerance": 1e-09,
+      "source": "hand",
+      "note": "Basis 2: actual days over 360."
+    },
+    {
+      "formula": "=YEARFRAC(DATE(2012,1,1),DATE(2012,7,30),3)",
+      "expected": 0.5780821917808219,
+      "tolerance": 1e-09,
+      "source": "hand",
+      "note": "Basis 3: actual days over 365."
+    },
+    {
+      "formula": "=YEARFRAC(DATE(2012,1,1),DATE(2012,7,30),4)",
+      "expected": 0.5805555555555556,
+      "tolerance": 1e-09,
+      "source": "hand",
+      "note": "Basis 4: 209 days on a 30-day-month year, European rule."
+    },
+    {
+      "formula": "=YEARFRAC(DATE(2012,7,30),DATE(2012,1,1))",
+      "expected": 0.5805555555555556,
+      "tolerance": 1e-09,
+      "source": "hand",
+      "note": "Dates in reverse order give the same fraction."
+    },
+    {
+      "formula": "=YEARFRAC(DATE(2010,1,1),DATE(2012,1,1),1)",
+      "expected": 1.998175182481752,
+      "tolerance": 1e-09,
+      "source": "hand",
+      "note": "Basis 1 over several years divides by the average year length of 2010 to 2012."
+    },
+    {
+      "formula": "=YEARFRAC(DATE(2012,1,1),DATE(2012,7,30),5)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "5 is not a basis."
+    },
+    {
+      "formula": "=DAYS360(DATE(1993,1,30),DATE(1993,2,1))",
+      "expected": 1,
+      "source": "hand",
+      "note": "The 30th to the 1st of the next month is 1 day on a 30-day-month year."
+    },
+    {
+      "formula": "=DAYS360(DATE(2011,1,31),DATE(2011,3,31))",
+      "expected": 60,
+      "source": "hand",
+      "note": "Both 31sts become the 30th: two months of 30 days."
+    },
+    {
+      "formula": "=DAYS360(DATE(2011,1,30),DATE(2011,3,31))",
+      "expected": 60,
+      "source": "hand",
+      "note": "A 31st end date becomes the 30th when the start is the 30th."
+    },
+    {
+      "formula": "=DAYS360(DATE(2011,1,15),DATE(2011,3,31))",
+      "expected": 76,
+      "source": "hand",
+      "note": "A 31st end date stays 31 when the start is before the 30th: 60 days plus 16."
+    },
+    {
+      "formula": "=DAYS360(DATE(2011,1,15),DATE(2011,3,31),TRUE)",
+      "expected": 75,
+      "source": "hand",
+      "note": "The European method always turns 31 into 30."
+    },
+    {
+      "formula": "=DATEVALUE(\"2008-07-24\")",
+      "expected": 39653,
+      "source": "hand",
+      "note": "An ISO date reads as its serial."
+    },
+    {
+      "formula": "=DATEVALUE(\"2008-07-24 18:00\")",
+      "expected": 39653,
+      "source": "hand",
+      "note": "The time of day is dropped."
+    },
+    {
+      "formula": "=DATEVALUE(\"banana\")",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Text that is no date is invalid."
+    },
+    {
+      "formula": "=TIME(12,0,0)",
+      "expected": 0.5,
+      "source": "hand",
+      "note": "Noon is half a day."
+    },
+    {
+      "formula": "=TIME(27,0,0)",
+      "expected": 0.125,
+      "source": "hand",
+      "note": "Hours wrap around a day: 27 hours is 3 a.m."
+    },
+    {
+      "formula": "=TIME(0,750,0)",
+      "expected": 0.5208333333333334,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "750 minutes is 12 hours 30 minutes."
+    },
+    {
+      "formula": "=TIME(-1,0,0)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "A negative part is invalid."
+    },
+    {
+      "formula": "=TIMEVALUE(\"6:35 PM\")",
+      "expected": 0.7743055555555556,
+      "tolerance": 1e-09,
+      "source": "hand",
+      "note": "18:35 is 66900 seconds of 86400."
+    },
+    {
+      "formula": "=TIMEVALUE(\"2008-01-01 6:00\")",
+      "expected": 0.25,
+      "source": "hand",
+      "note": "The time part of a date and time is a fraction of a day."
+    },
+    {
+      "formula": "=TIMEVALUE(\"12\")",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "A bare number is not a time."
+    },
+    {
+      "formula": "=HOUR(0.75)",
+      "expected": 18,
+      "source": "hand",
+      "note": "Three quarters of a day is 18:00."
+    },
+    {
+      "formula": "=MINUTE(0.75+37/1440)",
+      "expected": 37,
+      "source": "hand",
+      "note": "18:00 plus 37 minutes."
+    },
+    {
+      "formula": "=SECOND(0.25+59/86400)",
+      "expected": 59,
+      "source": "hand",
+      "note": "6:00 plus 59 seconds."
+    },
+    {
+      "formula": "=HOUR(45292.999999)",
+      "expected": 0,
+      "source": "hand",
+      "note": "Less than half a second before midnight rounds to midnight, hour 0."
+    },
+    {
+      "formula": "=EPOCHTODATE(0)",
+      "expected": 25569,
+      "source": "hand",
+      "note": "Day 0 of the Unix clock is 1970-01-01, serial 25569."
+    },
+    {
+      "formula": "=EPOCHTODATE(1655906710)",
+      "expected": 44734.58692129629,
+      "tolerance": 1e-09,
+      "source": "hand",
+      "note": "1655906710 seconds is 2022-06-22 14:05:10 UTC."
+    },
+    {
+      "formula": "=EPOCHTODATE(1655906710000,2)",
+      "expected": 44734.58692129629,
+      "tolerance": 1e-09,
+      "source": "hand",
+      "note": "Unit 2 counts milliseconds."
+    },
+    {
+      "formula": "=EPOCHTODATE(1,4)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "4 is not a unit."
+    },
+    {
+      "formula": "=DAYS(DATE(2024,3,1),DATE(2024,2,1))",
+      "expected": 29,
+      "source": "hand",
+      "note": "February 2024 has 29 days."
+    },
+    {
+      "formula": "=YEAR(DATE(2024,2,29))",
+      "expected": 2024,
+      "source": "hand",
+      "note": "Year part."
+    },
+    {
+      "formula": "=MONTH(DATE(2024,2,29))",
+      "expected": 2,
+      "source": "hand",
+      "note": "Month part."
+    },
+    {
+      "formula": "=DAY(DATE(2024,2,29))",
+      "expected": 29,
+      "source": "hand",
+      "note": "Day part."
+    }
+  ]
+}
