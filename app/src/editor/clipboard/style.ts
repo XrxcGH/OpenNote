@@ -77,6 +77,8 @@ function decoration(line: string, attrs: Record<string, unknown>): Declarations 
   const out: Declarations = { 'text-decoration-line': line };
   const kind = typeof attrs.line === 'string' ? UNDERLINE_CSS[attrs.line] : undefined;
   if (kind) out['text-decoration-style'] = kind;
+  // Word reads a double underline from its own hint, not from text-decoration-style.
+  if (line === 'underline' && kind === 'double') out['text-underline'] = 'double';
   const color = cssColor(attrs.color);
   if (color) out['text-decoration-color'] = color;
   return out;

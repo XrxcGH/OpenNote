@@ -58,6 +58,21 @@ function dropPageHeaders(body: HTMLElement): void {
 }
 
 /**
+ * What no paste keeps, whatever it claims to be: page chrome, hidden elements, tracking pixels, and relative
+ * addresses. OpenNote's own copy gets this too, so a page cannot skip it by claiming to be one.
+ */
+export function webHygiene(body: HTMLElement, input: PasteInput): void {
+  removeAll(body, WEB_CHROME);
+  removeAll(body, WEB_NOISE);
+  removeAll(body, HIDDEN);
+  body.querySelectorAll('[style]').forEach((element) => {
+    if (HIDDEN_STYLE.test(element.getAttribute('style') ?? '')) element.remove();
+  });
+  removeAll(body, 'img[width="1"], img[height="1"]');
+  resolveAddresses(body, input.sourceUrl ?? null);
+}
+
+/**
  * Web pages keep structure (headings, lists, quotes, code, tables, links, and images) and lose fonts, colors,
  * classes, and page chrome. A pasted selection may carry a tracking pixel, which is dropped too.
  */
@@ -65,15 +80,8 @@ export function normalizeWeb(body: HTMLElement, input: PasteInput): void {
   dropUnwanted(body);
   dropPageHeaders(body);
   markTaskBoxes(body);
-  removeAll(body, WEB_CHROME);
-  removeAll(body, WEB_NOISE);
-  removeAll(body, HIDDEN);
+  webHygiene(body, input);
   body.querySelectorAll('mark').forEach(unwrap);
-  body.querySelectorAll('[style]').forEach((element) => {
-    if (HIDDEN_STYLE.test(element.getAttribute('style') ?? '')) element.remove();
-  });
-  removeAll(body, 'img[width="1"], img[height="1"]');
-  resolveAddresses(body, input.sourceUrl ?? null);
   fixNestedLists(body);
   breaksToNewlines(body);
   body.querySelectorAll('b[style]').forEach((element) => {

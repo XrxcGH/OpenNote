@@ -11,9 +11,10 @@ import { parseHtml } from './dom';
 import { collectImageRequests, dropUnknownImages } from './images';
 import { keepSourceFormatting } from './normalize/keep';
 import { dropUnwanted } from './normalize/common';
+import { webHygiene } from './normalize/web';
 import { codePieces, codeText } from './normalize/vscode';
 import { pasteParser } from './paraRules';
-import { choiceFor, isOpenNoteHtml, mergeOpenNote, OPENNOTE_SOURCE } from './options';
+import { choiceFor, isOpenNoteCopy, mergeOpenNote, OPENNOTE_SOURCE } from './options';
 import { joinBrokenLines } from './pdf';
 import { detectSource } from './sources';
 import { looksLikeMarkdown, parsePastedMarkdown, plainTextPieces } from '../../../editor/markdown/paste';
@@ -87,7 +88,7 @@ function fromHtml(html: string, input: PasteInput, newId: () => string, options:
   const doc = parseHtml(html);
   const body = doc.body;
   const forRegistry = { ...registryInput(input), html };
-  const own = !!options.fidelity && isOpenNoteHtml(html);
+  const own = !!options.fidelity && isOpenNoteCopy(body);
   const def = own ? null : detectSource(forRegistry, doc);
   const source = own ? OPENNOTE_SOURCE : (def?.id ?? 'web');
   if (source === 'vscode') {
@@ -105,6 +106,7 @@ function fromHtml(html: string, input: PasteInput, newId: () => string, options:
   if (choice === 'keepSource' && KEEPS.has(source)) keepSourceFormatting(body);
   if (own) {
     dropUnwanted(body);
+    webHygiene(body, forRegistry);
     if (choice === 'mergeFormatting') mergeOpenNote(body);
   } else def?.normalize(doc, forRegistry);
   dropUnknownImages(body);

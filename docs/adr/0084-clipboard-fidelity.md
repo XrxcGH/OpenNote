@@ -27,3 +27,5 @@ Copying from OpenNote used ProseMirror's default serializer. It writes `data-col
 ## Consequences
 
 The Word and Docs fixtures (`word-v2.html`, `gdocs-v2.html`) are hand-written to the structure those programs write, not captures, and carry no personal data. Captures from the reference apps replace them when the owner supplies sanitized ones. Word list formats beyond bullets and numbers need list definitions that a paste cannot carry, so they stay with the list item's own style until the lists lane adds a paste route. This changes a built behavior, so it is PLAN.md owner decision 4.
+
+OpenNote's own copy is told apart by `data-opennote-copy` beside ProseMirror's `data-pm-slice`, both read on the parsed first element. The slice attribute alone is written by every ProseMirror app, so it never counts. Own pastes still get the web hygiene (hidden elements, page chrome, tracking images, link resolution). Keep source reads a unitless `line-height` as a multiple and `text-underline:double` as a double underline, and drops any declaration value longer than 256 characters before a pattern sees it.

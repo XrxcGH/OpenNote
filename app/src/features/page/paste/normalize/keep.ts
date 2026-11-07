@@ -32,11 +32,14 @@ const PARA_PROPERTIES = [
 type Declarations = Map<string, string>;
 type Sides = { top?: number; right?: number; bottom?: number; left?: number };
 
+/** No value this reads is longer than this; a longer one is dropped before any pattern sees it. */
+const MAX_VALUE = 256;
+
 function readStyle(element: Element): Declarations {
   const out: Declarations = new Map();
   for (const part of (element.getAttribute('style') ?? '').split(';')) {
     const at = part.indexOf(':');
-    if (at > 0)
+    if (at > 0 && part.length - at <= MAX_VALUE)
       out.set(
         part.slice(0, at).trim().toLowerCase(),
         part
@@ -55,7 +58,9 @@ function writeStyle(element: Element, declarations: Declarations): void {
 
 /** A CSS length in points, or null when it is not one this reads (percentages, `auto`, and keywords). */
 export function points(text: string | undefined): number | null {
-  const match = /^(-?(?:\d+\.?\d*|\.\d+))\s*(pt|in|cm|mm|px|pc)?$/i.exec((text ?? '').trim());
+  const trimmed = (text ?? '').trim();
+  if (trimmed.length > 64) return null;
+  const match = /^(-?(?:\d+(?:\.\d*)?|\.\d+))\s*(pt|in|cm|mm|px|pc)?$/i.exec(trimmed);
   if (!match) return null;
   const unit = match[2]?.toLowerCase();
   if (!unit) return Number(match[1]) === 0 ? 0 : null;
@@ -141,13 +146,19 @@ function spanAttributes(element: HTMLElement, style: Declarations): Record<strin
 
 function lineMarks(element: HTMLElement, style: Declarations): void {
   const decoration = `${style.get('text-decoration') ?? ''} ${style.get('text-decoration-line') ?? ''}`;
-  const double = /double/i.test(`${style.get('text-decoration-style') ?? ''} ${decoration}`);
+  // Word writes a double underline as `text-underline:double`, other programs as `text-decoration-style`.
+  const hint = style.get('text-underline') ?? '';
+  const double = /double/i.test(`${style.get('text-decoration-style') ?? ''} ${decoration} ${hint}`);
   style.delete('text-decoration-style');
+  if (/^double/i.test(hint)) style.delete('text-underline');
   if (!double) return;
-  const underline = /underline/i.test(decoration);
+  const underline = /underline/i.test(decoration) || /^double/i.test(hint);
   const strike = !underline && /line-through/i.test(decoration);
-  if (underline && !element.closest('u, a')) wrapChildren(element, 'u').setAttribute('data-line', 'double');
-  else if (strike && !element.closest('s, del, strike')) wrapChildren(element, 's').setAttribute('data-line', 'double');
+  // Word wraps a run in <u> and puts the hint on a span inside it, so a plain <u> around it does not stop this.
+  if (underline && !element.closest('a, u[data-line]')) {
+    wrapChildren(element, 'u').setAttribute('data-line', 'double');
+  } else if (strike && !element.closest('s, del, strike'))
+    wrapChildren(element, 's').setAttribute('data-line', 'double');
   else return;
   style.delete('text-decoration');
   style.delete('text-decoration-line');
@@ -196,6 +207,10 @@ function lineSpacing(style: Declarations): Record<string, unknown> | null {
   const height = style.get('line-height') ?? '';
   const percent = /^(\d+(?:\.\d+)?)%$/.exec(height);
   if (percent) return { rule: 'multiple', value: Math.round(Number(percent[1])) / 100 };
+  // Google Docs writes a unitless line-height, a multiple of the font size.
+  const unitless = /^(\d{1,3}(?:\.\d{1,4})?)$/.exec(height);
+  if (unitless && Number(unitless[1]) > 0)
+    return { rule: 'multiple', value: Math.round(Number(unitless[1]) * 100) / 100 };
   const fixed = points(height);
   if (!fixed) return null;
   const rule = /at-least/i.test(style.get('mso-line-height-rule') ?? '') ? 'atLeast' : 'exact';

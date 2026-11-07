@@ -58,7 +58,7 @@ describe('copy', () => {
 
   it('writes nothing extra for a paragraph with no formatting', () => {
     const root = copyHtml([nodes.paragraph.create(null, textSchema.text('Plain'))]);
-    expect(root.innerHTML).toBe('<p>Plain</p>');
+    expect(root.innerHTML).toBe('<p data-opennote-copy="1">Plain</p>');
   });
 });
 

@@ -7,7 +7,7 @@ import type { DOMOutputSpec, Mark, Node as PMNode, Schema } from '@tiptap/pm/mod
 import { markDeclarations, paraDeclarations, portableFormat, styleText } from './style';
 import type { Declarations } from './style';
 import { paraFormat } from '../paragraph/attributes';
-import { PARA_DATA } from './paraData';
+import { COPY_MARKER, PARA_DATA } from './paraData';
 
 const isAttrs = (value: unknown): value is Record<string, string> =>
   value !== null && typeof value === 'object' && !Array.isArray(value) && !('nodeType' in value);
@@ -46,24 +46,21 @@ function paraExtra(node: PMNode, withStyle: boolean): Record<string, string> {
  * red is one `<span>` whose style holds all three. Attributes of the same name keep the outer one, except `style`.
  */
 export function mergeSpans(root: ParentNode): void {
-  let changed = true;
-  while (changed) {
-    changed = false;
-    for (const outer of Array.from(root.querySelectorAll('span'))) {
-      const only = outer.childNodes.length === 1 ? outer.firstElementChild : null;
-      if (!only || only.tagName !== 'SPAN') continue;
-      const joined = (name: string) => name === 'style' || name === PENDING;
-      const clash = Array.from(only.attributes).some((a) => !joined(a.name) && outer.hasAttribute(a.name));
-      if (clash) continue;
-      for (const a of Array.from(only.attributes)) {
-        if (joined(a.name) && outer.hasAttribute(a.name)) {
-          outer.setAttribute(a.name, `${outer.getAttribute(a.name)};${a.value}`);
-        } else outer.setAttribute(a.name, a.value);
-      }
-      outer.replaceChildren(...Array.from(only.childNodes));
-      changed = true;
-      break;
+  const joined = (name: string) => name === 'style' || name === PENDING;
+  // One pass, innermost first: a span folded into its parent is already complete, so nothing restarts.
+  const spans = Array.from(root.querySelectorAll('span'));
+  for (let i = spans.length - 1; i >= 0; i--) {
+    const outer = spans[i];
+    const only = outer.childNodes.length === 1 ? outer.firstElementChild : null;
+    if (!only || only.tagName !== 'SPAN') continue;
+    const clash = Array.from(only.attributes).some((a) => !joined(a.name) && outer.hasAttribute(a.name));
+    if (clash) continue;
+    for (const a of Array.from(only.attributes)) {
+      if (joined(a.name) && outer.hasAttribute(a.name)) {
+        outer.setAttribute(a.name, `${outer.getAttribute(a.name)};${a.value}`);
+      } else outer.setAttribute(a.name, a.value);
     }
+    outer.replaceChildren(...Array.from(only.childNodes));
   }
 }
 
@@ -84,6 +81,7 @@ class CopySerializer extends DOMSerializer {
     const out = super.serializeFragment(...args);
     mergeSpans(out);
     writeStyles(out);
+    (out.firstElementChild as Element | null)?.setAttribute(COPY_MARKER, '1');
     return out;
   }
 }

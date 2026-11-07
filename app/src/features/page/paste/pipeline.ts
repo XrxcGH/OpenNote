@@ -463,7 +463,6 @@ async function pasteContent(
     if (place.kind === 'after') place.block = blocks[blocks.length - 1];
   } else await mounted.sync.flushAll('command');
   announce(t('paste.pasted'));
-  if (offered) offerPasteOptions(offered);
 
   const settings = getSettings().editing.paste;
   const extras = flagged('page.pasteExtras');
@@ -473,6 +472,8 @@ async function pasteContent(
   }
 
   if (extras && !request.plain) await runExtras(mounted, editor, inserted, result, facts);
+  // After the extras: a source link below the paste leaves the pasted range alone, and the chip must see the page as it ends.
+  if (offered) offerPasteOptions(offered);
 }
 
 export { importError };

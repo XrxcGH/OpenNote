@@ -55,8 +55,12 @@ export async function switchChoice(offer: PasteOffer, choice: PasteChoice): Prom
   return next;
 }
 
-async function choose(offer: PasteOffer): Promise<void> {
-  if (!offerHolds(offer)) return;
+async function choose(offer: PasteOffer, dismiss: () => void): Promise<void> {
+  if (!offerHolds(offer)) {
+    dismiss();
+    announce(t('textPaste.ended'));
+    return;
+  }
   const at = offer.editor.view.coordsAtPos(offer.to);
   const items = PASTE_CHOICES.map((choice) => ({
     id: choice,
@@ -76,9 +80,10 @@ async function choose(offer: PasteOffer): Promise<void> {
 /** Shows the chip for a paste. */
 export function offerPasteOptions(offer: PasteOffer): void {
   left.set(offer, offer.editor.state.doc);
-  showToast({
+  const shown: { dismiss?: () => void } = {};
+  shown.dismiss = showToast({
     id: 'page.pasteOptions',
     message: t('textPaste.chip', { choice: t(LABEL[offer.choice]) }),
-    action: { label: t('textPaste.options'), run: () => choose(offer) },
-  });
+    action: { label: t('textPaste.options'), run: () => choose(offer, () => shown.dismiss?.()) },
+  }).dismiss;
 }
