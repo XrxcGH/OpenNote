@@ -1,6 +1,6 @@
 # ADR 0088: The symbol dialog searches a subset of Unicode names generated at build time
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-11-01
 
 ## Context
@@ -22,3 +22,5 @@ A build script generates a JSON of the blocks people use for symbols: punctuatio
 ## Consequences
 
 `app/scripts/unicode/` holds the generator and a pinned copy of the source data with its license. A test checks that the chunk stays under budget and that the data covers the code points named in the help.
+
+The pinned source is `app/scripts/unicode/ucd-subset.txt`, one `code;NAME` line per assigned character in the subset's ranges, taken from Unicode 16.0 through the Unicode data that ships with Python (`extract-names.py`, run only to move the pin). `generate.ts` turns it into `app/src/features/page/symbols/symbolData.json`, about 150 KB raw and 34 KB gzip. The dialog imports the JSON dynamically, so it is its own chunk, and `app/bundle-budget.json` caps the group at 80 KB. The license text is beside the data (`LICENSE-UNICODE.txt`). A plain space is left out of the list, and the nonbreaking space and hyphens have their own commands.

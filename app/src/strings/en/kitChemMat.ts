@@ -27,6 +27,8 @@ export const kitChemMat = {
     insertTable: 'Insert as table',
     insertEquation: 'Insert equation',
     insertPlot: 'Insert plot',
+    insertLive: 'Live calculation block',
+    liveInserted: 'Added a live calculation block. Use Open in tool to change it.',
     inserted: 'Inserted into the page.',
     noPage: 'Click in a page first, then insert.',
     quantity: 'Quantity',

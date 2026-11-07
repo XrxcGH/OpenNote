@@ -17,6 +17,8 @@ const LIGHT = {
   source: 'Source: {source}',
   insertAnswer: 'Insert answer',
   insertMore: 'More ways to insert',
+  insertLive: 'Live calculation block',
+  liveInserted: 'Added a live calculation block. Use Open in tool to change it.',
   insertMenu: 'Insert',
   insertEquation: 'Insert the equation',
   insertTable: 'Insert the table',
