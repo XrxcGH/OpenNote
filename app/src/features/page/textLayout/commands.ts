@@ -33,7 +33,12 @@ export async function changeLayout(change: Partial<TextLayout>): Promise<boolean
   const layer = shownLayer.get();
   if (!block || !queue || !layer) return false;
   const patch = layoutPatch(block.data, change);
-  await queue.send({ edits: [{ edit: 'patchBlock', block: block.id, data: patch }] });
+  try {
+    await queue.send({ edits: [{ edit: 'patchBlock', block: block.id, data: patch }] });
+  } catch {
+    announce(t('textLayout.announce.layoutFailed'));
+    return false;
+  }
   layer.upsert({ ...block, data: applyLayoutPatch(block.data, patch) });
   return true;
 }
@@ -43,9 +48,9 @@ export function setColumns(count: number): boolean {
     announce(t('textLayout.commands.needsText'));
     return false;
   }
-  void changeLayout({ columns: count }).then(() =>
-    announce(count === 1 ? t('textLayout.announce.oneColumn') : t('textLayout.announce.columns', { count })),
-  );
+  void changeLayout({ columns: count }).then((ok) => {
+    if (ok) announce(count === 1 ? t('textLayout.announce.oneColumn') : t('textLayout.announce.columns', { count }));
+  });
   return true;
 }
 
@@ -60,9 +65,9 @@ export function toggleVertical(): boolean {
     return false;
   }
   const next = !readTextLayout(block.data).vertical;
-  void changeLayout({ vertical: next }).then(() =>
-    announce(t(next ? 'textLayout.announce.verticalOn' : 'textLayout.announce.verticalOff')),
-  );
+  void changeLayout({ vertical: next }).then((ok) => {
+    if (ok) announce(t(next ? 'textLayout.announce.verticalOn' : 'textLayout.announce.verticalOff'));
+  });
   return true;
 }
 

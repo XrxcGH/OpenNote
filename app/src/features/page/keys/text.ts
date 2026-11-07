@@ -4,10 +4,13 @@
 import type { KeySpec } from '../keys';
 
 export const TEXT_KEYS = {
-  // text:page-layout: Word's keys for breaks. Ctrl+Enter is the one owner of the chord in both sets; in a task item
-  // the key press runs Check or uncheck (registrations/layout.ts), so block.toggleCheck holds no chord of its own.
+  // text:page-layout: Word's keys for breaks, on the default set only (the OneNote set is unchanged). Ctrl+Enter
+  // refines Check or uncheck: it is a page break only where the command is on (text.layout, a paginated page, not in
+  // a task item), and Check or uncheck keeps the chord everywhere else.
   'insert.pageBreak': {
     keys: ['Ctrl+Enter'],
+    oneNoteKeys: [],
+    refines: 'block.toggleCheck',
     scope: 'editor',
     allowInTextInput: true,
   },

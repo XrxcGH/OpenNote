@@ -1,7 +1,6 @@
 // The Layout tab's registrations (text program, B12): page and column breaks, columns, vertical text, line numbers,
 // and the header and footer dialog. The break block's renderer registers here too. This file loads at start-up, so it
 // holds only definitions; each command loads its code when first run. Everything sits behind text.layout.
-import { executeCommand } from '../../../commands/registry';
 import type { CommandContext, CommandId } from '../../../commands/types';
 import { REMOVE_BREAK_EVENT, type RemoveBreakDetail } from '../../../editor/commands/state';
 import { inTaskItem } from '../../../editor/commands/state';
@@ -12,6 +11,7 @@ import { announce } from '../../../ui';
 import { targetEditor } from '../formattingBar/target';
 import { pageCommandDef, type PageCommandId } from '../keys';
 import { blockRenderers, slashItems } from '../registries';
+import { shownPagesView } from '../../pages';
 import { shownLayer } from '../mount';
 import { shownPool } from '../pool/shown';
 import { shownQueue } from '../sync';
@@ -39,12 +39,13 @@ const unlocked = () => {
   return !(active && shownLayer.get()?.block(active.block)?.lock);
 };
 const havePage = () => shownQueue.get() !== null;
-/** Ctrl+Enter is Check or uncheck inside a task item, so the key press there runs that command instead. */
+/** Ctrl+Enter is Check or uncheck inside a task item, so the chord is not a page break there. */
 const inTask = () => {
   const editor = targetEditor();
   return editor !== null && inTaskItem(editor.state);
 };
-const keyInTask = (ctx: CommandContext) => ctx.source === 'keyboard' && inTask();
+/** The chord is a page break only on a paginated page; the Insert menu works on any page. */
+const paginated = () => shownPagesView.get()?.state().mode === 'paginated';
 
 interface Def {
   readonly id: PageCommandId;
@@ -59,12 +60,8 @@ const DEFS: readonly Def[] = [
     id: 'insert.pageBreak',
     title: 'textLayout.commands.pageBreak',
     keywords: 'textLayout.commands.pageBreakKeywords',
-    when: (ctx) => ((havePage() && !inTask()) || keyInTask(ctx)) && unlocked(),
-    run: async (ctx) => {
-      if (keyInTask(ctx)) {
-        await executeCommand('block.toggleCheck', undefined, 'keyboard');
-        return;
-      }
+    when: (ctx) => havePage() && unlocked() && (ctx.source !== 'keyboard' || (paginated() && !inTask())),
+    run: async () => {
       if (await (await loadBreak()).insertBreak('page')) announce(t('textLayout.announce.pageBreak'));
     },
   },
@@ -81,35 +78,35 @@ const DEFS: readonly Def[] = [
     id: 'layout.columns1',
     title: 'textLayout.commands.columns1',
     keywords: 'textLayout.commands.columnsKeywords',
-    when: haveText,
+    when: () => haveText() && unlocked(),
     run: async () => (await load()).setColumns(1),
   },
   {
     id: 'layout.columns2',
     title: 'textLayout.commands.columns2',
     keywords: 'textLayout.commands.columnsKeywords',
-    when: haveText,
+    when: () => haveText() && unlocked(),
     run: async () => (await load()).setColumns(2),
   },
   {
     id: 'layout.columns3',
     title: 'textLayout.commands.columns3',
     keywords: 'textLayout.commands.columnsKeywords',
-    when: haveText,
+    when: () => haveText() && unlocked(),
     run: async () => (await load()).setColumns(3),
   },
   {
     id: 'layout.columns4',
     title: 'textLayout.commands.columns4',
     keywords: 'textLayout.commands.columnsKeywords',
-    when: haveText,
+    when: () => haveText() && unlocked(),
     run: async () => (await load()).setColumns(4),
   },
   {
     id: 'layout.verticalText',
     title: 'textLayout.commands.verticalText',
     keywords: 'textLayout.commands.verticalTextKeywords',
-    when: haveText,
+    when: () => haveText() && unlocked(),
     run: async () => (await load()).toggleVertical(),
   },
   {

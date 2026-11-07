@@ -84,7 +84,8 @@ const markdownOf = (block: BlockJson) => (typeof block.data.markdown === 'string
 
 /** Whether a block sits at its own frame rather than in the flow. */
 export function isFloating(block: BlockJson): boolean {
-  return block.frame?.x !== undefined && block.frame?.y !== undefined;
+  // A break has no frame (R-BRK-1): a reader ignores one.
+  return block.type !== 'break' && block.frame?.x !== undefined && block.frame?.y !== undefined;
 }
 
 /** Whether a block is a text box or a panel (study tape, flashcards, a mind map...): the kinds that have a grip. */

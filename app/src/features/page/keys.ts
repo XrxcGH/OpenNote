@@ -63,7 +63,7 @@ export const BUILT_IN_PAGE_KEYS = {
   'block.orderedList': editor(['Ctrl+Shift+7'], ['Ctrl+/'], 'app.shortcuts'),
   'block.checklist': editor(['Ctrl+Shift+9'], []),
   'block.todoCycle': none,
-  'block.toggleCheck': none,
+  'block.toggleCheck': editor(['Ctrl+Enter']),
   'block.quote': editor(['Ctrl+Shift+B']),
   'block.codeBlock': none,
   'block.callout': none,

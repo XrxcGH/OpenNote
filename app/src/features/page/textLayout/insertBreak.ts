@@ -40,6 +40,8 @@ export async function insertBreak(kind: BreakKind): Promise<boolean> {
   let tail = '';
   let cut: { head: string; headEnd: number } | null = null;
   if (active && !draft && !floating) {
+    // A range selection is replaced by the break, as in Word.
+    if (!active.editor.state.selection.empty) active.editor.view.dispatch(active.editor.state.tr.deleteSelection());
     const split = splitAtPosition(active.editor.state);
     tail = split.tail;
     await syncOf(active.editor)?.flush('command');

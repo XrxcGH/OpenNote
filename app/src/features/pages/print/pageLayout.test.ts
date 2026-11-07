@@ -120,6 +120,16 @@ describe('break blocks', () => {
     const end = printed(pageOf([text('a', 'One.', 'a'), pageBreak('c', 'b')]));
     expect(end.plan.sheets).toBe(2);
   });
+
+  it('ignores a frame on a break (R-BRK-1): it still starts sheet 2 at its place in the order', () => {
+    const framed = { ...pageBreak('brk', 'b'), frame: { x: 10, y: 900, w: 100, h: 20 } };
+    const { html, plan } = printed(pageOf([text('a', 'First.', 'a'), framed, text('z', 'Second.', 'c')]));
+    expect(plan.sheets).toBe(2);
+    const sheets = html.split('<section class="sheet"').slice(1);
+    expect(sheets[0]).toContain('First.');
+    expect(sheets[0]).not.toContain('Second.');
+    expect(sheets[1]).toContain('Second.');
+  });
 });
 
 describe('page numbers', () => {

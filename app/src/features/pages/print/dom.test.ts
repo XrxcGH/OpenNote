@@ -165,9 +165,18 @@ describe('a block of columns taller than a sheet', () => {
     const block = { ...textBlock(markdown), data: { markdown, layout: { columns: 2 } } };
     const page = pageOf([block]);
     const { result, value } = await printed(page, () => document.body.textContent ?? '');
+    const html = await printed(page, () => document.body.innerHTML);
+    expect(html.value).not.toContain('column-count');
     expect(result.sheets).toBeGreaterThan(1);
     expect(result.warnings).not.toContain('tooTall');
     expect(value).toContain('Line 1');
     expect(value).toContain('Line 120');
+  }, 120_000);
+
+  it('keeps the columns of a block shorter than a sheet', async () => {
+    const markdown = 'Short text.';
+    const block = { ...textBlock(markdown), data: { markdown, layout: { columns: 2 } } };
+    const { value } = await printed(pageOf([block]), () => document.body.innerHTML);
+    expect(value).toContain('column-count:2');
   }, 120_000);
 });

@@ -1,6 +1,8 @@
 /* eslint-disable opennote/feature-boundaries -- This test mounts the real page assembly with the page feature's harness. */
 // A break block in the live paginated view (R-BRK-3): the block after it starts sheet 2, with no room of its own.
 import { afterEach, describe, expect, it } from 'vitest';
+import { commandContext } from '../../../commands/registry';
+import { commands } from '../../../registries';
 import { cleanupPages, renderPage } from '../../page/test/harness';
 import type { PageFixture } from '../../page/test/fixtures';
 import { pageLayout, readView } from '../layout';
@@ -58,5 +60,17 @@ describe('a break in the live paginated view', () => {
     expect(top('01k6f0000000000000000t0001') / zoom).toBeLessThan(sheet.height);
     expect(top('01k6f0000000000000000t0002') / zoom).toBeGreaterThanOrEqual(sheet.height);
     expect(shownPagesView.get()?.state().sheets).toBe(2);
+  });
+
+  it('binds Ctrl+Enter to the page break only on a paginated page, and the menu command works on any page', async () => {
+    const harness = await renderPage({ fixture });
+    detach = attachPagesView(harness.mounted);
+    const def = commands.get('insert.pageBreak');
+    const when = (source: 'keyboard' | 'palette') => def?.when?.(commandContext(source)) ?? false;
+    shownPagesView.get()?.setMode('infinite');
+    expect(when('keyboard')).toBe(false);
+    expect(when('palette')).toBe(true);
+    shownPagesView.get()?.setMode('paginated');
+    expect(when('keyboard')).toBe(true);
   });
 });
