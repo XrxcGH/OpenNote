@@ -78,7 +78,8 @@ const SUPERSCRIPT_DIGITS = '⁰¹²³⁴⁵⁶⁷⁸⁹';
 const SUPERSCRIPT_MINUS = '⁻';
 const NAME_PATTERNS = {
   ascii: /[A-Za-z_][A-Za-z0-9_]*/y,
-  cell: /[A-Za-z_$][A-Za-z0-9_$]*/y,
+  // A dot joins name parts, as in NETWORKDAYS.INTL and STDEV.S. It never ends a name, so "A1." stays a name and a dot.
+  cell: /[A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*/y,
   letters: /\p{L}+\d*/uy,
 } as const;
 const WHITESPACE = /\s/;
