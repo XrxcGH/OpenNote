@@ -67,6 +67,7 @@ function later<M, K extends keyof M>(load: () => Promise<M>, name: K) {
 
 export const openStatModelsKit = later(() => import('./statmodels/open'), 'openStatModelsKit');
 export const openHumanitiesTool = later(() => import('./humanities/open'), 'openHumanitiesTool');
+export const openChemCalc = later(() => import('./ui/chemCalcOpen'), 'openChemCalc');
 export const openMolBio = later(() => import('./molbio/open'), 'openMolBio');
 export const openLifeSys = later(() => import('./lifesys/open'), 'openLifeSys');
 export const reopenLifeSys = later(() => import('./lifesys/open'), 'reopenLifeSys');
