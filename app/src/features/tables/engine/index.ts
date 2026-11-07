@@ -15,10 +15,14 @@ export { toCanonical, parseCanonical } from './canonical';
 export { daysToIso, excelSerialToDays, parseDate, parseIsoDate, todayDays } from './dates';
 export {
   addRow,
+  calculateTable,
   checkFormulaInput,
   createTable,
   deleteRow,
+  deleteRows,
+  insertRows,
   makeCell,
+  moveRows,
   setCellInput,
   setColumnFormula,
   setColumnType,
@@ -32,12 +36,33 @@ export type { FormulaProblem, Syntax } from './formula/lexer';
 export { parseFormula } from './formula/parser';
 export { DE_DE, EN_US, FR_FR, parseLocaleNumber } from './locale';
 export type { DateOrder, Locale } from './locale';
-export { columnLetter, isMismatch, letterToColumn, parseInput } from './model';
-export type { Cell, Column, ColumnType, Row, Table, TotalKind } from './model';
+export { columnLetter, isMismatch, ITERATE_DEFAULTS, letterToColumn, parseInput } from './model';
+export type { Cell, Column, ColumnType, IterateSettings, Row, Table, TableName, TotalKind } from './model';
 export { formatQuickMath, quickMath } from './quickMath';
 export type { QuickMathResult } from './quickMath';
-export { recalculate, recalculateWithCycles } from './recalc';
-export type { CycleCell } from './recalc';
+export {
+  errorOrigin,
+  needsCalculation,
+  recalculate,
+  recalculateCells,
+  recalculateWithCycles,
+  spillRange,
+} from './recalc';
+export type { CellRef, CycleCell, EngineEnv } from './recalc';
+export { explainOrigin } from './formula/explain';
+export type { ErrorOrigin, OriginCell } from './formula/explain';
+export { adjustFormula, adjustNames, adjustTable } from './refactor';
+export type { AdjustOptions, StructureChange } from './refactor';
+export {
+  bookCycles,
+  bookErrorOrigin,
+  bookSpillRange,
+  recalculateBook,
+  recalculateBookCells,
+  setBookCellInput,
+  tableNames,
+} from './workbook';
+export type { Workbook } from './workbook';
 export { sortedIndices, sortTable } from './sort';
 export type { SortKey } from './sort';
 export { columnTotal, hasTotals, totalsRow } from './totals';
