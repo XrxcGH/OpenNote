@@ -1,0 +1,223 @@
+/*
+ * Drawing cell styles (ADR 0056, DESIGN 9). draw.ts gives each cell custom properties (--cell-*) and data attributes;
+ * these rules turn them into pixels. Borders come from the settled edges in --cell-bt, --cell-br, --cell-bb, and
+ * --cell-bl, so both cells of a shared edge draw the same line. Colors are values the draw step resolved for the
+ * current scheme, so dark mode needs no second set of rules. Every selector starts with table[data-sheet], which
+ * outranks the table's base rules in tables.module.css.
+ */
+@layer components {
+  table[data-sheet] {
+    border-collapse: collapse;
+    box-shadow: none;
+  }
+
+  table[data-sheet] :is(td, th)[data-cell] {
+    box-shadow: none;
+    box-sizing: border-box;
+    border-top: var(--cell-bt, none);
+    border-right: var(--cell-br, none);
+    border-bottom: var(--cell-bb, none);
+    border-left: var(--cell-bl, none);
+    padding-block: var(--cell-pad-t, 2pt) var(--cell-pad-b, 2pt);
+    padding-inline: calc(var(--cell-pad-l, 4pt) + var(--cell-indent-l, 0px))
+      calc(var(--cell-pad-r, 4pt) + var(--cell-indent-r, 0px));
+    background-color: var(--cell-fill, transparent);
+    background-image: var(--cell-diag, none), var(--cell-fill-image, none);
+    color: var(--cell-color, inherit);
+    font-family: var(--cell-font, inherit);
+    font-size: var(--cell-size, inherit);
+    font-weight: var(--cell-weight, normal);
+    font-style: var(--cell-style, normal);
+    text-decoration: var(--cell-deco, none);
+    text-align: var(--cell-h, start);
+    vertical-align: var(--cell-v, top);
+    direction: var(--cell-dir, inherit);
+    overflow-wrap: anywhere;
+  }
+
+  table[data-sheet] :is(td, th)[data-cell][data-distributed] {
+    text-align-last: justify;
+  }
+
+  /* Wrap, overflow, and clip. Without room to spill, overflow clips at the cell edge, as Excel does. */
+  table[data-sheet] :is(td, th)[data-cell]:is([data-wrap='overflow'], [data-wrap='clip']) {
+    overflow: hidden;
+    white-space: nowrap;
+    overflow-wrap: normal;
+  }
+
+  /* Text that spills draws in a paragraph wider than its cell. The measuring pass (measure.ts) sets how far. */
+  table[data-sheet] :is(td, th)[data-cell]:is([data-spill-before], [data-spill-after], [data-across]) {
+    position: relative;
+    z-index: calc(var(--layer-base) + 1);
+    overflow: visible;
+  }
+
+  table[data-sheet] :is(td, th)[data-cell]:is([data-spill-before], [data-spill-after], [data-across]) > p:first-child {
+    contain: inline-size;
+    overflow: hidden;
+    margin-inline: calc(-1 * var(--cell-spill-l, 0px)) calc(-1 * var(--cell-spill-r, 0px));
+    inline-size: calc(100% + var(--cell-spill-l, 0px) + var(--cell-spill-r, 0px));
+  }
+
+  table[data-sheet] :is(td, th)[data-cell][data-across-covered] {
+    border-left-color: transparent;
+  }
+
+  /* Shrink to fit: one line, scaled by the factor the measuring pass found. */
+  table[data-sheet] :is(td, th)[data-cell][data-shrink] {
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  table[data-sheet] :is(td, th)[data-cell][data-shrink] > p {
+    font-size: calc(var(--cell-size, 1em) * var(--cell-shrink, 1));
+  }
+
+  /* Rotated text turns inside the cell, which the measuring pass makes tall enough for the turned box. */
+  table[data-sheet] :is(td, th)[data-cell][data-rotate] {
+    position: relative;
+    height: var(--cell-rot-h, auto);
+    overflow: hidden;
+  }
+
+  table[data-sheet] :is(td, th)[data-cell][data-rotate] > p {
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-start: 50%;
+    inline-size: max-content;
+    white-space: nowrap;
+    transform: translate(-50%, -50%) rotate(var(--cell-rotate, 0deg));
+  }
+
+  table[data-sheet] :is(td, th)[data-cell][data-stacked] {
+    text-align: center;
+  }
+
+  table[data-sheet] :is(td, th)[data-cell][data-stacked] > p {
+    writing-mode: vertical-lr;
+    text-orientation: upright;
+  }
+
+  /* Fill alignment repeats the text; the measuring pass writes the repeated text to data-fill-text. */
+  table[data-sheet] :is(td, th)[data-cell][data-fill-repeat][data-fill-text] {
+    position: relative;
+  }
+
+  table[data-sheet] :is(td, th)[data-cell][data-fill-repeat][data-fill-text] > p {
+    color: transparent;
+  }
+
+  table[data-sheet] :is(td, th)[data-cell][data-fill-repeat][data-fill-text]::after {
+    content: attr(data-fill-text);
+    position: absolute;
+    inset: 0;
+    padding: inherit;
+    overflow: hidden;
+    white-space: nowrap;
+    color: var(--cell-color, inherit);
+    pointer-events: none;
+  }
+
+  /* Row heights: a minimum, or an exact height that clips. */
+  table[data-sheet] tr[data-row-min] > :is(td, th) {
+    height: var(--row-h);
+  }
+
+  table[data-sheet] tr[data-row-exact] > :is(td, th) {
+    height: var(--row-h);
+    overflow: hidden;
+  }
+
+  table[data-sheet] tr[data-row-exact] > :is(td, th) > * {
+    max-block-size: calc(var(--row-h) - var(--cell-pad-t, 2pt) - var(--cell-pad-b, 2pt));
+    overflow: hidden;
+  }
+
+  /* Hidden rows and columns, with a thin double line where they are. */
+  table[data-sheet] tr[data-row-hidden],
+  table[data-sheet] :is(td, th)[data-col-hidden] {
+    display: none;
+  }
+
+  table[data-sheet] :is(td, th)[data-cell][data-hidden-below] {
+    border-bottom: 3px double var(--sheet-ink);
+  }
+
+  table[data-sheet] :is(td, th)[data-cell][data-hidden-above] {
+    border-top: 3px double var(--sheet-ink);
+  }
+
+  table[data-sheet] :is(td, th)[data-cell][data-hidden-right] {
+    border-right: 3px double var(--sheet-ink);
+  }
+
+  table[data-sheet] :is(td, th)[data-cell][data-hidden-left] {
+    border-left: 3px double var(--sheet-ink);
+  }
+
+  /* Freeze panes: the frozen cells stick inside the table's scroll container. The offsets come from measure.ts. */
+  table[data-sheet] :is(td, th)[data-cell][data-frozen-row],
+  table[data-sheet] :is(td, th)[data-cell][data-frozen-col] {
+    position: sticky;
+    background-color: var(--cell-fill, var(--color-surface-page));
+  }
+
+  table[data-sheet] :is(td, th)[data-cell][data-frozen-row] {
+    top: var(--cell-sticky-top, 0);
+    z-index: calc(var(--layer-sticky) + 3);
+  }
+
+  table[data-sheet] :is(td, th)[data-cell][data-frozen-col] {
+    left: var(--cell-sticky-left, 0);
+    z-index: calc(var(--layer-sticky) + 2);
+  }
+
+  table[data-sheet] :is(td, th)[data-cell][data-frozen-row][data-frozen-col] {
+    z-index: calc(var(--layer-sticky) + 4);
+  }
+
+  table[data-sheet] :is(td, th)[data-cell][data-frozen-row='edge'] {
+    box-shadow: 0 1px 0 var(--color-border-control);
+  }
+
+  table[data-sheet] :is(td, th)[data-cell][data-frozen-col='edge'] {
+    box-shadow: 1px 0 0 var(--color-border-control);
+  }
+
+  table[data-sheet] :is(td, th)[data-cell][data-frozen-row='edge'][data-frozen-col='edge'] {
+    box-shadow:
+      0 1px 0 var(--color-border-control),
+      1px 0 0 var(--color-border-control);
+  }
+
+  /* Forced colors drop fills, so a filled cell gets an outline, and gridlines use the system line color. */
+  @media (forced-colors: active) {
+    table[data-sheet] {
+      --sheet-grid: CanvasText;
+    }
+
+    table[data-sheet] :is(td, th)[data-cell] {
+      color: CanvasText;
+      background-color: Canvas;
+      background-image: none;
+      forced-color-adjust: none;
+    }
+
+    table[data-sheet] :is(td, th)[data-cell][data-filled] {
+      outline: 1px solid CanvasText;
+      outline-offset: -2px;
+    }
+  }
+
+  /* Printing: a header row repeats on each page when the table has a thead. */
+  @media print {
+    table[data-sheet] > thead {
+      display: table-header-group;
+    }
+
+    table[data-sheet] tr {
+      break-inside: avoid;
+    }
+  }
+}
