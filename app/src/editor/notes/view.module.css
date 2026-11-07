@@ -1,0 +1,128 @@
+/*
+ * Footnotes and endnotes (notes/view.ts, ADR 0087): the number after each reference and the notes area under the
+ * page's text. Colors and sizes come from the tokens. In forced colors the system colors take over.
+ */
+@layer components {
+  /* A reference's number. The page's style sheet gives each one its label; this sets how it looks. */
+  :global([data-footnote]) {
+    white-space: nowrap;
+  }
+
+  :global([data-footnote])::after {
+    font-size: 0.75em;
+    line-height: 0;
+    vertical-align: super;
+    color: var(--color-accent-primary);
+    cursor: pointer;
+  }
+
+  :global([data-footnote].ProseMirror-selectednode) {
+    outline: 2px solid var(--color-focus-ring);
+    outline-offset: 1px;
+  }
+
+  @media (forced-colors: active) {
+    :global([data-footnote])::after {
+      color: LinkText;
+    }
+
+    :global([data-footnote].ProseMirror-selectednode) {
+      outline-color: Highlight;
+    }
+  }
+
+  /* The notes area lines up with the flow column (layout/layout.module.css). */
+  .notes {
+    margin-inline-start: var(--flow-start);
+    inline-size: min(var(--flow-width, 72ch), calc(100cqi / var(--page-zoom, 1) - 2 * var(--flow-margin)));
+    padding-block: var(--space-4);
+    font-family: var(--font-reading);
+    font-size: 0.875em;
+    color: var(--color-text-primary);
+  }
+
+  .part + .part {
+    margin-block-start: var(--space-4);
+  }
+
+  /* Word's and Docs' short separator line above the footnotes. */
+  .rule {
+    inline-size: 33%;
+    margin: 0 0 var(--space-2);
+    border: 0;
+    border-block-start: 1px solid var(--color-border-subtle);
+  }
+
+  .heading {
+    margin: 0 0 var(--space-2);
+    font-size: 1em;
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .item {
+    display: flex;
+    gap: var(--space-2);
+    align-items: baseline;
+  }
+
+  .item[data-missing] .text {
+    color: var(--color-text-muted);
+  }
+
+  .number {
+    min-inline-size: 2ch;
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    color: var(--color-accent-primary);
+    text-align: end;
+    cursor: pointer;
+  }
+
+  .number:focus-visible,
+  .text:focus-visible {
+    outline: 2px solid var(--color-focus-ring);
+  }
+
+  .text {
+    flex: 1;
+    min-inline-size: 0;
+    min-block-size: 1.5em;
+  }
+
+  .text p {
+    margin: 0;
+  }
+
+  .options {
+    margin-block-start: var(--space-4);
+    color: var(--color-text-secondary);
+  }
+
+  .fieldset {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    margin-block-start: var(--space-2);
+    border: 1px solid var(--color-border-subtle);
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  @media (forced-colors: active) {
+    .number {
+      color: LinkText;
+    }
+  }
+}

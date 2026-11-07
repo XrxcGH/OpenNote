@@ -29,3 +29,9 @@ We will store the last results of formula cells and spilled cells in `data.sheet
 - A table of 10,000 formula cells grows by about 300 KiB uncompressed (page files are gzip-friendly).
 - Sync traffic grows with recalculation; values are written only when they change, and volatile results only when an input changes.
 - Protected sections encrypt the cache with the rest of the page.
+
+## Implementation notes
+
+- Lane tables:engine-eval. The engine's result tables hold every formula result and spilled value in `Cell.value`, with `spill: true` on spilled cells. Those are the values the sheet integration writes with `writeValues` (sheet model, `cache.ts`).
+- A table rebuilt from a document starts from the values its cells carry. A value left by a spill is worked out again before it is trusted, so a stale spill cannot survive a recalculation.
+- The engine does not open a table from the cache without recalculating. With incremental recalculation, opening 100,000 cells costs one full pass; reading the cache instead is left to the sheet integration if it is needed.

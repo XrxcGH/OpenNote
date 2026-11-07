@@ -3,8 +3,8 @@
 // the cell style instead of the runs of its text. With no target registered, or none that claims the selection,
 // the command acts on the text as it always has.
 //
-// shared:x-shared wrote this stub. text:editor-commands owns it next, and tables registers the cell-range target
-// from features/tables/sheet/formatTarget.ts.
+// shared:x-shared wrote the stub. text:editor-commands owns it, and tables registers the cell-range target from
+// features/tables/sheet/formatTarget.ts. A target that does not take a request returns false from apply.
 import type { EditorState, Transaction } from '@tiptap/pm/state';
 import type { HighlightColor } from '../schema/specs';
 import type { Command } from './command';
@@ -22,9 +22,15 @@ export type FormatRequest =
   | { format: 'highlight'; color: 'none'; toggle: false }
   | { format: 'textColor'; color: string | null }
   | { format: 'textSize'; size: string | null }
-  | { format: 'textSizeStep'; direction: 1 | -1 }
-  | { format: 'clear' }
-  | { format: 'align'; align: 'left' | 'center' | 'right' | 'justify' };
+  /** By Word's preset list (the default), or by one point. */
+  | { format: 'textSizeStep'; direction: 1 | -1; by?: 'preset' | 'point' }
+  /** Character formatting (the default), or character and paragraph formatting with the Normal style. */
+  | { format: 'clear'; scope?: 'character' | 'all' }
+  | { format: 'align'; align: 'left' | 'center' | 'right' | 'justify' | 'distribute' }
+  /** Any other run format: a mark of inline version 2 with its attributes, or null attributes to take it off. */
+  | { format: 'run'; mark: string; attrs: Record<string, unknown> | null; toggle: boolean }
+  /** A paragraph format: a `paras` key and its value, or null to take the key off. */
+  | { format: 'para'; key: string; value: unknown };
 
 export interface FormatTarget {
   /** Such as 'tables.cellRange'. */

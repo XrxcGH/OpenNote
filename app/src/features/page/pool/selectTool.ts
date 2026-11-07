@@ -23,7 +23,7 @@ function staticBlockOf(event: PointerEvent, pool: EditorPool): BlockId | null {
 function onEmptyPage(event: PointerEvent, world: HTMLElement): boolean {
   const target = event.target instanceof Element ? event.target : null;
   if (!target || !world.contains(target)) return false;
-  return !target.closest('[data-block-id], [data-page-title], button, a, input');
+  return !target.closest('[data-block-id], [data-page-title], [data-page-notes], button, a, input');
 }
 
 export interface SelectToolOptions {
