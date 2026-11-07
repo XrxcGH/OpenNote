@@ -61,6 +61,10 @@ fn font_and_language_commands(languages: &[&str]) -> String {
     let none = "\\newcommand{\\opnlang}[2]{#2}";
     format!(
         concat!(
+            // \IfFileExists keeps its branches in a macro definition, where a # is an error, so it only sets a switch.
+            // The switch is defined before \ifPDFTeX so that a skipped branch still counts its \ifopnpoly and \fi.
+            "\\newif\\ifopnpoly\n",
+            "\\IfFileExists{{polyglossia.sty}}{{\\opnpolytrue}}{{}}\n",
             "\\ifPDFTeX\n",
             "  \\newcommand{{\\opnfont}}[1]{{}}\n",
             "  {none}\n",
@@ -68,10 +72,12 @@ fn font_and_language_commands(languages: &[&str]) -> String {
             // \detokenize keeps an underscore or an ampersand in a font name from becoming a command.
             "  \\newcommand{{\\opnfont}}[1]{{%\n",
             "    \\IfFontExistsTF{{\\detokenize{{#1}}}}{{\\fontspec{{\\detokenize{{#1}}}}}}{{}}}}\n",
-            "  \\IfFileExists{{polyglossia.sty}}{{%\n",
-            "    \\usepackage{{polyglossia}}\\setmainlanguage{{english}}{others}%\n",
-            "    \\newcommand{{\\opnlang}}[2]{{\\csname text#1\\endcsname{{#2}}}}%\n",
-            "  }}{{{none}}}\n",
+            "  \\ifopnpoly\n",
+            "    \\usepackage{{polyglossia}}\\setmainlanguage{{english}}{others}\n",
+            "    \\newcommand{{\\opnlang}}[2]{{\\csname text#1\\endcsname{{#2}}}}\n",
+            "  \\else\n",
+            "    {none}\n",
+            "  \\fi\n",
             "\\fi\n"
         ),
         none = none,
