@@ -90,7 +90,7 @@ pub fn split_weight_face(face: &str) -> Option<(&str, u16)> {
             let cut = face.len().checked_sub(name.len() + 1)?;
             let (family, tail) = (face.get(..cut)?, face.get(cut..)?);
             (tail.starts_with(' ') && tail[1..].eq_ignore_ascii_case(name) && has_weight_faces(family))
-                .then_some((family, weight))
+                .then_some((family.trim(), weight))
         })
     })
 }

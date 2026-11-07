@@ -193,6 +193,8 @@ fn a_face_name_splits_into_its_family_and_weight() {
         ("Semibold", None),
         ("Georgia", None),
         ("Boldface", None),
+        // A doubled space before the weight still names the family without its trailing space.
+        ("Segoe UI  Light", Some(("Segoe UI", 300))),
     ] {
         assert_eq!(split_weight_face(face), expected, "{face}");
     }
