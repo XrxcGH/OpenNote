@@ -28,3 +28,14 @@
 
 - Budgets in DESIGN.md section 18 become tests in `engine/engine.bench.test.ts`.
 - Recalculation order must account for spills (ADR 0059) and cross-table references (ADR 0062).
+
+## Implementation notes
+
+- Lane tables:engine-eval. The state of a page (values, formulas, graph, spills, error origins, and cycles) lives in `engine/graph/engine.ts`. It is kept in a WeakMap beside the table object it produced. Each edit forks it; the fork shares every map and column until it changes one. Editing the same table twice from one starting point gives two independent results.
+- The graph (`engine/graph/index.ts`) indexes reads per column: single cells by row, ranges in an implicit interval tree. A recalculation walks from the changed cells with Tarjan's algorithm (`tarjan.ts`). That one walk gives the evaluation order and the cycles.
+- Volatile functions run on every edit. A function that returns a reference (`returnsRef`) records what it read while running; when that was calculated later in the same pass, the formula runs again (up to 8 rounds).
+- Aggregates over the same fixed block share one result per recalculation. 1,000 cells of `SUM(A1:A10000)` compute the sum once.
+- Cycles: Circular (`#REF!` in storage) without `iterate`. With `iterate: {max, change}`, the cycle runs in a fixed order until no value moves by `change` or `max` passes run.
+- Manual calculation (`calc: 'manual'`): an edit calculates only formulas typed in that edit. `calculateTable` (F9) calculates everything, and `needsCalculation` says when something waits.
+- Worker (`engine/worker/`): pages above 20,000 cells go to a module worker that returns changed cells. Past 2 seconds every formula cell shows `#BUSY!` until it answers. Functions passed through `EngineEnv.functions` do not cross into the worker.
+- Measured on the development machine under heavy load from other work: 100,000 cells with 10,000 formulas, 2 ms per edit; the 10,000-deep chain, 17 ms; 1,000 sums over 10,000 rows, 3 ms. `engine.bench.test.ts` holds the budgets, multiplied by 3 on CI.

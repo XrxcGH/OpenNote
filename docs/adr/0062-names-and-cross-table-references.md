@@ -27,3 +27,11 @@ Formulas can name only cells and columns of their own table (`B2`, `[Price]`, `{
 
 - Cross-page references need the notes service to deliver another page's table data on request and a reverse index to refresh readers (R3).
 - The Name manager shows both scopes and conflicts.
+
+## Implementation notes
+
+- Lane tables:engine-eval. The engine's `Table` carries `name`, `names` (`{name, ref, scope}`), `calc`, and `iterate`; the sheet integration fills them from `data.sheet`. Default names are `Table1`, `Table2`, and so on in page order (`engine/workbook.ts`).
+- `engine/workbook.ts` recalculates a page's tables over one graph: `recalculateBook`, `setBookCellInput`, and `recalculateBookCells`. `Sales[Amount]`, `Sales[@Amount]`, `Sales[[#Headers],[Amount]]`, `Sales!B2`, and `Table1!A1` resolve across tables. An unknown table gives `#REF!`. `#Totals` gives `#REF!` until totals rows join the engine.
+- Names resolve in the order of this ADR: LET names and LAMBDA parameters, then the table's own names, page names in table order, columns named without brackets, and functions. A name's text is compiled in its own table. A named LAMBDA is callable (`Fact(10)`) and may call itself. Recursion stops at 1,024 levels, or sooner if the stack runs out, with `#NUM!`.
+- `LAMBDA(x, x+1)(2)` calls in place, through a `callee` on the core parser's call node. Optional parameters are written `[name]`, and `ISOMITTED` tests them.
+- Other pages (`'Page title'!Table[Col]`) are R3 and not built yet.
