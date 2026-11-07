@@ -19,6 +19,7 @@ import { EPS, type Rect } from '../pagination/geometry';
 import type { BlockMeasure, Measure } from '../pagination/types';
 import { measureDocument, printDocument, type DocumentSetup } from './document';
 import { FlowMeasurer, settle, type UnitMeasure } from './dom';
+import { readLineNumbers, readPageNumbers, readSavedBands } from './headerFooter';
 import { planPrint, type PrintOptions, type PrintPlan } from './sheets';
 import { pageUnits, withTitle } from './units';
 
@@ -46,6 +47,21 @@ export interface PrepareResult {
   readonly warnings: readonly string[];
   /** Milliseconds spent measuring, planning, and building. */
   readonly timings: { readonly measure: number; readonly plan: number; readonly build: number };
+}
+
+/**
+ * The print options with what the page saved (`view.print`, `view.text`): the saved headers and footers, page
+ * numbers, and line numbers. What the print dialog set for itself wins, so the dialog can still change a print.
+ */
+export function withSavedSettings(options: PrintOptions | undefined, rawView: unknown): PrintOptions {
+  const saved = readSavedBands(rawView);
+  return {
+    ...options,
+    header: options?.header ?? saved.header,
+    footer: options?.footer ?? saved.footer,
+    pageNumbers: options?.pageNumbers ?? readPageNumbers(rawView),
+    lineNumbers: options?.lineNumbers ?? readLineNumbers(rawView) ?? undefined,
+  };
 }
 
 /** The box around a rectangle turned by `degrees` about its center. */
@@ -157,7 +173,7 @@ export async function preparePrint(doc: Document, input: PrepareInput): Promise<
   ];
   const measureEnd = performance.now();
   const plan = planPage(layout, { flowPlan: flow, floating });
-  const print = planPrint(layout.sheet, plan.sheets + plan.cut, input.print);
+  const print = planPrint(layout.sheet, plan.sheets + plan.cut, withSavedSettings(input.print, page.rawView));
   const planEnd = performance.now();
   const unitTops = new Map([...measured].map(([id, m]) => [id, { top: m.top, first: m.first }] as const));
   const html = printDocument(setup, print, {

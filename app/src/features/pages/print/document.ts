@@ -19,6 +19,7 @@ import { paperPaths } from '../paper/patterns';
 import { paperSvg } from '../paper/svg';
 import { measureCss, paperStyle, printCss } from './css';
 import type { BandBox } from './headerFooter';
+import { lineNumberMarks, type LineMark } from './lineNumbers';
 import type { PrintPlan, PrintSheet } from './sheets';
 import type { FlowUnit, PageUnits } from './units';
 
@@ -147,6 +148,8 @@ class SheetWriter {
   private readonly unitById: Map<string, FlowUnit>;
   private readonly rank: Map<string, number>;
   private readonly counts: Map<string, number>;
+  /** The line numbers to draw, by sheet (view.text.lineNumbers). Empty without them. */
+  private readonly numbers: Map<number, LineMark[]>;
 
   constructor(
     private readonly setup: DocumentSetup,
@@ -161,6 +164,33 @@ class SheetWriter {
     for (const piece of content.plan.flow?.pieces ?? []) {
       this.counts.set(piece.block, Math.max(this.counts.get(piece.block) ?? 0, piece.index + 1));
     }
+    // Only lines of text count: a table's rows, an image, and a column block do not.
+    const lines = (content.plan.flow?.pieces ?? []).filter((piece) => {
+      const unit = this.unitById.get(piece.block);
+      return unit?.flow.kind === 'text' && !unit.table;
+    });
+    this.numbers = print.lineNumbers ? lineNumberMarks(print.lineNumbers, lines, setup.layout.sheet.height) : new Map();
+  }
+
+  /** The numbers of one sheet's lines, right-aligned in the left margin. */
+  private lineNumbers(index: number): string {
+    const marks = this.numbers.get(index) ?? [];
+    if (marks.length === 0) return '';
+    const { column } = this.setup.layout;
+    const spans = marks.map((m) => {
+      const h = px(m.height);
+      const style = `position:absolute;left:0;right:0;top:${px(m.top)}px;height:${h}px;line-height:${h}px`;
+      return `<span style="${style}">${escapeHtml(m.label)}</span>`;
+    });
+    const box = [
+      'left:0',
+      `width:${px(Math.max(0, column.x - 8))}px`,
+      'top:0',
+      'height:100%',
+      `z-index:${LAYER.band}`,
+    ].join(';');
+    const look = 'position:absolute;text-align:right;font-size:9px';
+    return `<div class="line-numbers" aria-hidden="true" style="${box};${look}">${spans.join('')}</div>`;
   }
 
   private flowParts(index: number): Part[] {
@@ -254,6 +284,7 @@ class SheetWriter {
       this.ink(sheet.index, true),
       ...parts.map((p) => p.html),
       this.ink(sheet.index, false),
+      this.lineNumbers(sheet.index),
       this.band(this.print.header, sheet.header, 'header'),
       this.band(this.print.footer, sheet.footer, 'footer'),
       '</section>',

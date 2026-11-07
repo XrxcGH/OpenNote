@@ -4,6 +4,7 @@
 
 import { isObject, geometry, type Json, type JsonObject } from '../layout/json';
 import { readView, type PageViewSpec } from '../layout/view';
+import { readTextLayout, type TextLayout } from '../print/textLayout';
 import { numberMarkdown } from '../../../editor/equations';
 import { readingOrder } from './order';
 
@@ -36,6 +37,8 @@ interface BlockBase {
 export interface TextBlock extends BlockBase {
   readonly type: 'text';
   readonly markdown: string;
+  /** Columns or vertical writing, when the block has them (R-LAY-1). Missing for an ordinary block. */
+  readonly layout?: TextLayout;
 }
 
 /** Where anchored ink is tied to text (format spec 8.1). */
@@ -207,7 +210,10 @@ function readAnchor(raw: Json | undefined): InkAnchor | undefined {
 
 function readData(type: string, data: JsonObject, fallback: Json | undefined): Body<ExportBlock> {
   const alt = { alt: str(data.alt), decorative: flag(data.decorative) };
-  if (type === 'text' && typeof data.markdown === 'string') return { type, markdown: data.markdown };
+  if (type === 'text' && typeof data.markdown === 'string') {
+    const layout = readTextLayout(data);
+    return { type, markdown: data.markdown, ...(layout.columns > 1 || layout.vertical ? { layout } : {}) };
+  }
   if (type === 'ink') {
     const anchor = readAnchor(data.anchor);
     return {

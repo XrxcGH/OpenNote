@@ -7,7 +7,8 @@ import { htmlOptions, renderBlock, type BlockContext } from '../export/blocks';
 import { isFloating, type ExportBlock, type ExportPage, type TableBlock } from '../export/source';
 import { parseMarkdown, renderHtml } from '../export/markdown';
 import type { FlowBlock } from '../pagination/types';
-import { escapeHtml } from '../export/markdown';
+import { escapeAttr, escapeHtml } from '../export/markdown';
+import { layoutStyle, type TextLayout } from './textLayout';
 import { formatDate } from '../../../strings/format';
 
 export interface FlowUnit {
@@ -48,8 +49,21 @@ function textUnits(block: ExportBlock & { type: 'text' }, cx: BlockContext): Flo
   }));
 }
 
+/** A block with columns is one unit that never splits: columns balance inside it, so no line is a place to cut. */
+function columnUnit(block: ExportBlock & { type: 'text' }, layout: TextLayout, cx: BlockContext): FlowUnit {
+  const html = renderHtml(parseMarkdown(block.markdown), htmlOptions(cx));
+  return {
+    id: block.id,
+    block: block.id,
+    flow: { id: block.id, kind: 'atom' },
+    html: `<div class="columns" style="${escapeAttr(layoutStyle(layout))}">${html}</div>`,
+  };
+}
+
 function unitsOf(block: ExportBlock, cx: BlockContext): FlowUnit[] {
-  if (block.type === 'text') return textUnits(block, cx);
+  if (block.type === 'text') {
+    return block.layout && block.layout.columns > 1 ? [columnUnit(block, block.layout, cx)] : textUnits(block, cx);
+  }
   if (block.type === 'other' && block.kind === 'break') {
     return [{ id: block.id, block: block.id, flow: { id: block.id, kind: 'break' }, html: '' }];
   }
