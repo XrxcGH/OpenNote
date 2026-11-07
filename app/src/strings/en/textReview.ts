@@ -27,7 +27,6 @@ export const textReview = {
   nextChange: 'Next change',
   previousChange: 'Previous change',
   changeNavKeywords: 'change suggestion next previous review',
-  markup: 'Markup',
   markupSimple: 'Simple markup',
   markupAll: 'All markup',
   markupNone: 'No markup',

@@ -1,6 +1,6 @@
 {
   "startup": {
-    "jsKb": 542,
+    "jsKb": 545,
     "cssKb": 27.5
   },
   "after": [
@@ -16,6 +16,7 @@
         "core/audio",
         "editor/",
         "features/docstructure/",
+        "features/review/",
         "features/ink/",
         "features/pdf/"
       ],
@@ -125,7 +126,7 @@
     "features/engineering/mechdyn/ui/MechDynKit.tsx": 124,
     "features/engineering/electrical/KitElectricalTool.tsx": 30,
     "features/engineering/mechdyn": 12,
-    "features/engineering/aero/ui/KitAeroTool.tsx": 223,
+    "features/engineering/aero/ui/KitAeroTool.tsx": 224,
     "features/engineering/solids/ui/SolidsKit.tsx": 119,
     "features/engineering/thermo/ui/ThermoKit.tsx": 412,
     "features/study/ui/exam/ExamResults.tsx": 42
