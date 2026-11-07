@@ -4,14 +4,7 @@ import { altX, altXSelected } from './altx';
 import { pickSymbol } from './SymbolDialog';
 import { pushRecent, readRecent, writeRecent } from './model';
 
-/** The special characters the commands insert. */
-export const SPECIAL = {
-  nbsp: '\u00a0',
-  nbHyphen: '\u2011',
-  softHyphen: '\u00ad',
-  emDash: '\u2014',
-  enDash: '\u2013',
-} as const;
+export { SPECIAL } from './model';
 
 /** Types a character at the caret, replacing the selection, as one undo step. */
 export function insertChar(editor: Editor, char: string): void {
@@ -25,18 +18,29 @@ export function insertChar(editor: Editor, char: string): void {
     .run();
 }
 
-/** Alt+X: the code before the caret becomes its character, or the character becomes its code. */
+/** The placeholder that stands for an atom (an equation, an image, a line break) in a text range. */
+const ATOM = String.fromCharCode(0xfffc);
+
+/**
+ * Alt+X: the code before the caret becomes its character, or the character becomes its code. It leaves atoms alone
+ * (an inline equation, an image, a line break) and works inside one text block, so it never deletes content that
+ * has no text.
+ */
 export function runAltX(editor: Editor): boolean {
   const { state } = editor;
-  const { from, to, empty, $from } = state.selection;
+  const { from, to, empty, $from, $to } = state.selection;
   if (empty) {
-    const before = $from.parent.textBetween(0, $from.parentOffset, undefined, '\ufffc');
+    if (!$from.nodeBefore?.isText) return false;
+    const before = $from.parent.textBetween(0, $from.parentOffset, undefined, ATOM);
     const result = altX(before);
     if (!result) return false;
     editor.view.dispatch(state.tr.insertText(result.replacement, from - result.length, from).scrollIntoView());
     return true;
   }
-  const replacement = altXSelected(state.doc.textBetween(from, to, undefined, '\ufffc'));
+  if (!($from.sameParent($to) && $from.parent.isTextblock)) return false;
+  const text = state.doc.textBetween(from, to, undefined, ATOM);
+  if (text.includes(ATOM)) return false;
+  const replacement = altXSelected(text);
   if (replacement === null) return false;
   editor.view.dispatch(state.tr.insertText(replacement, from, to).scrollIntoView());
   return true;

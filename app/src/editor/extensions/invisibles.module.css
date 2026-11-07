@@ -27,6 +27,8 @@
 
   :global([data-fmark='space'])::after {
     content: '\00b7';
+    inset-inline-start: 50%;
+    translate: -50% 0;
   }
 
   :global([data-fmark='tab'])::after {
@@ -39,6 +41,9 @@
 
   :global([data-fmark='shy'])::after {
     content: '\00ac';
+    position: static;
+    display: inline-block;
+    inline-size: 0.6em;
   }
 
   :global([data-fmark='para']) {

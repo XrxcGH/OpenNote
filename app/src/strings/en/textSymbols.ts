@@ -22,7 +22,18 @@ export const textSymbols = {
     cancel: 'Cancel',
     loading: 'Loading symbols.',
     symbolLabel: '{name}, U+{code}',
+    fontList: 'Fonts',
+    special: 'Special characters',
+    specialWithKeys: '{name}, {keys}',
+    recentGrid: 'Recently used symbols',
     truncated: 'Showing the first {count} matches. Type more to narrow them.',
+  },
+  specials: {
+    nbsp: 'Nonbreaking space',
+    nbHyphen: 'Nonbreaking hyphen',
+    softHyphen: 'Optional hyphen',
+    emDash: 'Em dash',
+    enDash: 'En dash',
   },
   category: {
     all: 'All symbols',

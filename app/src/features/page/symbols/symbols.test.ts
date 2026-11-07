@@ -3,14 +3,16 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { gzipSync } from 'node:zlib';
-import { afterEach, describe, expect, it } from 'vitest';
+import { NodeSelection, TextSelection } from '@tiptap/pm/state';
+import type { Node as PMNode } from '@tiptap/pm/model';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderSymbolData } from '../../../../scripts/unicode/generate';
 import { mountEditor } from '../../../editor/commands/testing';
 import type { TestEditor } from '../../../editor/commands/testing';
-import { formattingMarks } from '../../../editor/extensions/invisibles';
+import { formattingMarks, marksFor, shownMarks } from '../../../editor/extensions/invisibles';
 import { altX, altXSelected } from './altx';
 import { SPECIAL, insertChar, runAltX } from './commands';
-import { codeOf, flatten, hexOf, pushRecent, readRecent, searchSymbols, writeRecent } from './model';
+import { codeOf, flatten, gridMove, hexOf, pushRecent, readRecent, searchSymbols, writeRecent } from './model';
 import type { SymbolData } from './model';
 
 const DATA_PATH = join(import.meta.dirname, 'symbolData.json');
@@ -174,5 +176,137 @@ describe('Show formatting marks', () => {
     insertChar(page.editor, ' ');
     const kinds = [...page.root.querySelectorAll('[data-fmark]')].map((el) => el.getAttribute('data-fmark'));
     expect(kinds).toEqual(expect.arrayContaining(['tab', 'space']));
+  });
+});
+
+describe('Alt+X leaves atoms alone', () => {
+  /** Finds the first node of a type in the document, with its position. */
+  function find(doc: PMNode, test: (node: PMNode) => boolean): { node: PMNode; pos: number } {
+    let found: { node: PMNode; pos: number } | null = null;
+    doc.descendants((node, pos) => {
+      if (!found && test(node)) found = { node, pos };
+      return !found;
+    });
+    if (!found) throw new Error('No such node.');
+    return found;
+  }
+
+  it('does nothing right after a hard break', () => {
+    const page = mount('a');
+    const { schema } = page.editor;
+    const br = schema.nodes['hardBreak'];
+    if (!br) throw new Error('No hard break.');
+    page.editor.view.dispatch(page.editor.state.tr.insert(2, [br.create(), schema.text('b')]));
+    const { pos } = find(page.editor.state.doc, (n) => n.type === br);
+    page.editor.commands.setTextSelection(pos + 1);
+    const before = page.editor.state.doc;
+    expect(runAltX(page.editor)).toBe(false);
+    expect(page.editor.state.doc.eq(before)).toBe(true);
+  });
+
+  it('does nothing right after an inline equation, and when one is selected', () => {
+    const page = mount('x $a$');
+    const eq = find(page.editor.state.doc, (n) => n.isInline && n.isAtom && !n.isText);
+    const before = page.editor.state.doc;
+    page.editor.commands.setTextSelection(eq.pos + eq.node.nodeSize);
+    expect(runAltX(page.editor)).toBe(false);
+    page.editor.view.dispatch(page.editor.state.tr.setSelection(NodeSelection.create(page.editor.state.doc, eq.pos)));
+    expect(runAltX(page.editor)).toBe(false);
+    expect(page.editor.state.doc.eq(before)).toBe(true);
+  });
+
+  it('does nothing when the selection spans two paragraphs', () => {
+    const page = mount('x 20\n\n14 y');
+    const doc = page.editor.state.doc;
+    expect(doc.childCount).toBe(2);
+    const first = doc.child(0).nodeSize;
+    page.editor.view.dispatch(page.editor.state.tr.setSelection(TextSelection.create(doc, first - 3, first + 3)));
+    const before = page.editor.state.doc;
+    expect(runAltX(page.editor)).toBe(false);
+    expect(page.editor.state.doc.eq(before)).toBe(true);
+  });
+});
+
+describe('the symbol grid keys', () => {
+  it('moves by cell, row and page, and stops at the ends', () => {
+    expect(gridMove('ArrowRight', 0, 20, 5)).toBe(1);
+    expect(gridMove('ArrowLeft', 0, 20, 5)).toBe(0);
+    expect(gridMove('ArrowDown', 3, 20, 5)).toBe(8);
+    expect(gridMove('ArrowUp', 3, 20, 5)).toBe(0);
+    expect(gridMove('PageDown', 2, 30, 5)).toBe(22);
+    expect(gridMove('PageUp', 25, 30, 5)).toBe(5);
+    expect(gridMove('Home', 7, 20, 5)).toBe(0);
+    expect(gridMove('End', 7, 20, 5)).toBe(19);
+    expect(gridMove('ArrowDown', 18, 20, 5)).toBe(19);
+    expect(gridMove('a', 1, 20, 5)).toBeNull();
+  });
+});
+
+describe('the formatting marks while typing', () => {
+  const words = Array.from({ length: 60 }, (_, i) => 'word' + i).join(' ');
+  const text = Array.from({ length: 120 }, () => words).join('\n\n');
+  const summary = (set: ReturnType<typeof marksFor>, doc: PMNode) =>
+    set
+      .find(0, doc.content.size)
+      .map((d) => `${d.from}-${d.to}`)
+      .sort();
+
+  it('keeps the marks equal to a full redraw after edits, joins and splits', () => {
+    const page = mount('one two\n\nthree four\n\nfive');
+    formattingMarks.set(true);
+    const { editor } = page;
+    const edits = [
+      () => insertChar(editor, ' '),
+      () => insertChar(editor, SPECIAL.nbsp),
+      () => editor.commands.splitBlock(),
+      () => editor.commands.setTextSelection(1),
+      () => editor.commands.joinForward(),
+      () => editor.commands.deleteRange({ from: 2, to: 6 }),
+      () => editor.commands.deleteRange({ from: 1, to: 3 }),
+    ];
+    for (const edit of edits) {
+      edit();
+      const state = editor.state;
+      const shown = shownMarks(state);
+      expect(summary(shown, state.doc)).toEqual(summary(marksFor(state.doc), state.doc));
+    }
+  });
+
+  it('redraws only the touched block: typing stays fast on a long page', () => {
+    const page = mount(text);
+    formattingMarks.set(true);
+    const { editor } = page;
+    editor.commands.setTextSelection(editor.state.doc.content.size / 2);
+    const times: number[] = [];
+    for (let i = 0; i < 60; i += 1) {
+      const start = performance.now();
+      insertChar(editor, i % 2 ? ' ' : 'a');
+      times.push(performance.now() - start);
+    }
+    times.sort((x, y) => x - y);
+    // A full redraw of 120 paragraphs of 60 words costs more than 40 ms a key here; one block costs a few.
+    expect(times[Math.ceil(times.length * 0.95) - 1]).toBeLessThan(40);
+  });
+});
+
+describe('the glyph probe', () => {
+  it('measures each character once per font, however often the filter runs', async () => {
+    vi.resetModules();
+    let fontSets = 0;
+    const context = {
+      set font(_value: string) {
+        fontSets += 1;
+      },
+      measureText: () => ({ width: 10 }),
+    };
+    const spy = vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(context as never);
+    const model = await import('./model');
+    for (let round = 0; round < 5; round += 1) {
+      for (const char of ['a', 'b', 'c']) model.fontHasGlyph('Cambria Math', char);
+    }
+    expect(fontSets).toBe(6);
+    model.fontHasGlyph('Symbol', 'a');
+    expect(fontSets).toBe(8);
+    spy.mockRestore();
   });
 });

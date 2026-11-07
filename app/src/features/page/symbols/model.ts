@@ -133,6 +133,10 @@ let probe: CanvasRenderingContext2D | null | undefined;
  */
 export function fontHasGlyph(font: string, char: string): boolean {
   if (typeof document === 'undefined') return true;
+  const key = `${font}
+${char}`;
+  const known = glyphCache.get(key);
+  if (known !== undefined) return known;
   if (probe === undefined) {
     try {
       probe = document.createElement('canvas').getContext('2d');
@@ -147,5 +151,73 @@ export function fontHasGlyph(font: string, char: string): boolean {
     context.font = [PROBE_SIZE, `${name},`, fallback].join(' ');
     return context.measureText(char).width;
   };
-  return width('serif') === width('monospace');
+  const has = width('serif') === width('monospace');
+  glyphCache.set(key, has);
+  return has;
+}
+
+/** The answers of fontHasGlyph, so a keystroke in the search box measures each character at most once per font. */
+const glyphCache = new Map<string, boolean>();
+
+/** A few fonts that carry symbols of their own, offered when the system's font list is not available. */
+export const SYMBOL_FONTS: readonly string[] = [
+  'Segoe UI Symbol',
+  'Segoe UI Emoji',
+  'Cambria Math',
+  'Noto Sans Symbols',
+  'Apple Symbols',
+  'Symbol',
+  'Wingdings',
+  'Webdings',
+];
+
+/** The families installed on this computer, when the browser engine can list them; an empty list otherwise. */
+export async function installedFonts(): Promise<string[]> {
+  const query = (globalThis as { queryLocalFonts?: () => Promise<{ family: string }[]> }).queryLocalFonts;
+  if (typeof query !== 'function') return [];
+  try {
+    const faces = await query.call(globalThis);
+    return [...new Set(faces.map((face) => face.family))].sort((a, b) => a.localeCompare(b));
+  } catch {
+    return [];
+  }
+}
+
+/** The special characters the commands insert, and the key of each that has one. */
+export const SPECIAL = {
+  nbsp: '\u00a0',
+  nbHyphen: '\u2011',
+  softHyphen: '\u00ad',
+  emDash: '\u2014',
+  enDash: '\u2013',
+} as const;
+
+/** The key of the special character, shown in the dialog's list. */
+export const SPECIAL_KEYS: Readonly<Partial<Record<keyof typeof SPECIAL, string>>> = { nbsp: 'Ctrl+Shift+Space' };
+
+/** The most keys PageUp and PageDown move in a symbol grid, in rows. */
+export const GRID_PAGE_ROWS = 4;
+
+/** Where an arrow key, Home, End, PageUp or PageDown sends the focus in a grid, or null for any other key. */
+export function gridMove(key: string, index: number, count: number, columns: number): number | null {
+  const cols = Math.max(1, columns);
+  const target =
+    key === 'ArrowRight'
+      ? index + 1
+      : key === 'ArrowLeft'
+        ? index - 1
+        : key === 'ArrowDown'
+          ? index + cols
+          : key === 'ArrowUp'
+            ? index - cols
+            : key === 'PageDown'
+              ? index + cols * GRID_PAGE_ROWS
+              : key === 'PageUp'
+                ? index - cols * GRID_PAGE_ROWS
+                : key === 'Home'
+                  ? 0
+                  : key === 'End'
+                    ? count - 1
+                    : null;
+  return target === null ? null : Math.min(count - 1, Math.max(0, target));
 }

@@ -1,6 +1,7 @@
 // The Symbol dialog: search by name or code, groups, recent symbols, and a font to see its own glyphs in. It resolves
 // the chosen character, or null when the person cancels. The name list loads when the dialog opens (ADR 0088).
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import type { KeyboardEvent } from 'react';
 import { createRoot } from 'react-dom/client';
 import { t } from '../../../strings/t';
 import { Dialog } from '../../../ui';
@@ -8,9 +9,14 @@ import type { DialogAction } from '../../../ui';
 import {
   CATEGORY_IDS,
   MAX_RESULTS,
+  SPECIAL,
+  SPECIAL_KEYS,
+  SYMBOL_FONTS,
   cssFamily,
   fontHasGlyph,
+  gridMove,
   hexOf,
+  installedFonts,
   loadSymbols,
   readRecent,
   searchSymbols,
@@ -25,8 +31,24 @@ interface Filters {
   onlyFont: boolean;
 }
 
+/** How long the font field rests before the glyph filter measures again. */
+const FONT_DEBOUNCE_MS = 250;
+
 function Fields(props: { filters: Filters; change(next: Partial<Filters>): void }) {
   const { filters, change } = props;
+  const [fonts, setFonts] = useState<readonly string[]>(SYMBOL_FONTS);
+  const asked = useRef(false);
+  const [typed, setTyped] = useState(filters.font);
+  useEffect(() => {
+    const timer = setTimeout(() => change({ font: typed }), FONT_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- change is a new function on every render.
+  }, [typed]);
+  const loadFonts = () => {
+    if (asked.current) return;
+    asked.current = true;
+    void installedFonts().then((list) => list.length > 0 && setFonts(list));
+  };
   return (
     <>
       <div className={styles.row}>
@@ -59,10 +81,17 @@ function Fields(props: { filters: Filters; change(next: Partial<Filters>): void 
           {t('textSymbols.dialog.font')}
           <input
             type="text"
-            value={filters.font}
+            list="opennote-symbol-fonts"
+            value={typed}
             placeholder={t('textSymbols.dialog.fontPlaceholder')}
-            onChange={(event) => change({ font: event.target.value })}
+            onFocus={loadFonts}
+            onChange={(event) => setTyped(event.target.value)}
           />
+          <datalist id="opennote-symbol-fonts" aria-label={t('textSymbols.dialog.fontList')}>
+            {fonts.map((name) => (
+              <option key={name} value={name} />
+            ))}
+          </datalist>
         </label>
         <label>
           <input
@@ -80,6 +109,14 @@ function Fields(props: { filters: Filters; change(next: Partial<Filters>): void 
 const labelOf = (e: SymbolEntry) =>
   t('textSymbols.dialog.symbolLabel', { name: e.name.toLowerCase(), code: hexOf(e.cp) });
 
+/** How many columns the grid shows now, read from the layout; a fixed width in tests, which have no layout. */
+function columnsOf(grid: HTMLElement | null): number {
+  const template = grid ? getComputedStyle(grid).gridTemplateColumns : '';
+  const count = template.split(' ').filter((part) => part.endsWith('px')).length;
+  return count > 0 ? count : 8;
+}
+
+/** One listbox of symbols with a single tab stop: the arrow keys move, Enter inserts. */
 function Cells(props: {
   list: readonly SymbolEntry[];
   chosen: SymbolEntry | null;
@@ -90,25 +127,78 @@ function Cells(props: {
 }) {
   const { list, chosen, font, label, pick, done } = props;
   const style = font.trim() ? { fontFamily: `${cssFamily(font.trim())}, inherit` } : undefined;
+  const grid = useRef<HTMLUListElement>(null);
+  const [active, setActive] = useState(0);
+  // The tab stop is the chosen cell when this grid has it, otherwise the one the arrows last reached.
+  const chosenAt = list.findIndex((e) => e.cp === chosen?.cp);
+  const stop = Math.min(chosenAt >= 0 ? chosenAt : active, Math.max(0, list.length - 1));
+  const move = (event: KeyboardEvent<HTMLUListElement>) => {
+    const entry = list[stop];
+    if (event.key === 'Enter' && entry) {
+      event.preventDefault();
+      event.stopPropagation();
+      done(entry);
+      return;
+    }
+    if (event.key === ' ' && entry) {
+      event.preventDefault();
+      pick(entry);
+      return;
+    }
+    const to = gridMove(event.key, stop, list.length, columnsOf(grid.current));
+    const target = to === null ? undefined : list[to];
+    if (to === null || !target) return;
+    event.preventDefault();
+    setActive(to);
+    pick(target);
+    grid.current?.querySelectorAll<HTMLElement>('[role="option"]')[to]?.focus();
+  };
   return (
-    <ul className={styles.grid} aria-label={label}>
-      {list.map((e) => (
-        <li key={e.cp}>
-          <button
-            type="button"
-            className={styles.cell}
-            style={style}
-            aria-label={labelOf(e)}
-            aria-pressed={chosen?.cp === e.cp}
-            title={labelOf(e)}
-            onClick={() => pick(e)}
-            onDoubleClick={() => done(e)}
-          >
-            {e.char}
-          </button>
+    <ul ref={grid} className={styles.grid} role="listbox" aria-label={label} onKeyDown={move}>
+      {list.map((e, index) => (
+        <li
+          key={e.cp}
+          role="option"
+          className={styles.cell}
+          style={style}
+          aria-label={labelOf(e)}
+          aria-selected={chosen?.cp === e.cp}
+          tabIndex={index === stop ? 0 : -1}
+          title={labelOf(e)}
+          onClick={() => {
+            setActive(index);
+            pick(e);
+          }}
+          onDoubleClick={() => done(e)}
+        >
+          {e.char}
         </li>
       ))}
     </ul>
+  );
+}
+
+/** The five special characters, each one press from inserted. */
+function Specials(props: { done(entry: SymbolEntry): void }) {
+  return (
+    <div role="group" aria-label={t('textSymbols.dialog.special')} className={styles.specials}>
+      {(Object.keys(SPECIAL) as (keyof typeof SPECIAL)[]).map((id) => {
+        const keys = SPECIAL_KEYS[id];
+        const name = t(`textSymbols.specials.${id}`);
+        const label = keys ? t('textSymbols.dialog.specialWithKeys', { name, keys }) : name;
+        const char = SPECIAL[id];
+        return (
+          <button
+            key={id}
+            type="button"
+            className={styles.special}
+            onClick={() => props.done({ cp: char.codePointAt(0) ?? 0, char, name, category: 'punctuation', block: '' })}
+          >
+            {label}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
@@ -181,7 +271,8 @@ export function Picker(props: { done(entry: SymbolEntry | null): void }) {
     >
       <div className={styles.body}>
         <Fields filters={filters} change={(next) => setFilters((before) => ({ ...before, ...next }))} />
-        {recent.length > 0 ? cells(recent, t('textSymbols.dialog.recent')) : null}
+        <Specials done={done} />
+        {recent.length > 0 ? cells(recent, t('textSymbols.dialog.recentGrid')) : null}
         {all === null ? note(t('textSymbols.dialog.loading')) : null}
         {all !== null && matches.length === 0 ? note(t('textSymbols.dialog.none')) : null}
         {matches.length > 0 ? cells(matches.slice(0, MAX_RESULTS), t('textSymbols.dialog.grid')) : null}

@@ -7,6 +7,7 @@ import { t } from '../../../strings/t';
 import type { MessageKey } from '../../../strings/t';
 import type { IconName } from '../../../ui/icons';
 import { announce } from '../../../ui';
+import { hostSystem } from '../../../platform/system';
 import { targetEditor } from '../formattingBar/target';
 import { shownQueue } from '../sync/shown';
 import { say } from './say';
@@ -57,7 +58,8 @@ add({
   title: 'textSymbols.altX',
   keywords: 'textSymbols.altXKeywords',
   icon: 'Keyboard',
-  keys: ['Alt+X'],
+  // Option+X types a character on macOS, so the command stays unbound there.
+  keys: hostSystem() === 'macos' ? [] : ['Alt+X'],
   run: async (editor) => {
     if (!(await import('../symbols/commands')).runAltX(editor)) announce(t('textSymbols.altXNone'));
   },
