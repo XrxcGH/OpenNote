@@ -189,7 +189,14 @@ export async function saveStyles(
 export function applyShownStyles(root: HTMLElement = document.documentElement): void {
   const notebook = shownNotebook();
   // A notebook shown for the first time loads; its styles apply when they arrive.
-  if (notebook && !(notebook in notebookStyles.get())) loadStyles(notebook).catch(() => undefined);
+  if (notebook && !(notebook in notebookStyles.get())) {
+    // Before the commands are configured there is no storage to read; the styles apply once something loads them.
+    try {
+      loadStyles(notebook).catch(() => undefined);
+    } catch {
+      /* no storage yet */
+    }
+  }
   applyNamedStyles(root, resolveAll(shownContext()).values());
 }
 
