@@ -214,6 +214,7 @@ export const pageExtras = {
     displayCommand: 'Show attachment as icon or preview',
     menu: 'Attachment',
     open: 'Open',
+    adding: '{count, plural, one {Attaching # file} other {Attaching # files}}',
     label: 'Attachment: {name}, {size}',
     missing: 'Attachment, file missing',
     opened: 'Opened {name}. Changes you save there come back into this page.',

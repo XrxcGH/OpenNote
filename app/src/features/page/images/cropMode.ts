@@ -1,13 +1,14 @@
 // Crop mode (Phase 4 ARCHITECTURE.md section 12.4): the whole image shows dimmed with the crop rectangle bright and
 // 8 crop handles. Enter or a click outside keeps the crop as one batch: a patchBlock with data.crop, and a
 // moveBlock so the image keeps its scale. Escape cancels. Each handle moves by the arrow keys too, 1% a press.
+import './text';
 import type { Edit, Frame } from '../../../services/pages/types';
 import { t } from '../../../strings/t';
 import { announce } from '../../../ui';
 import type { ImageHandle } from '../blocks/imageBlock';
 import type { Crop, Handle } from './geometry';
 import { cropDrag, cropOf, frameForCrop, HANDLES, isWhole } from './geometry';
-import { arrowStep, trackDrag } from './drag';
+import { arrowStep, ownsItsDrag, trackDrag } from './drag';
 import styles from './images.module.css';
 
 /** The edits that change an image's crop and keep its scale, or none when nothing changed. */
@@ -86,7 +87,7 @@ class CropSession {
   }
 
   private addHandle(edge: Handle): HTMLButtonElement {
-    const button = this.region.appendChild(document.createElement('button'));
+    const button = ownsItsDrag(this.region.appendChild(document.createElement('button')));
     button.type = 'button';
     button.className = `${styles.handle} ${styles[edge]}`;
     button.setAttribute('aria-label', t('images.cropMode.handle', { edge: t(`images.edges.${edge}`) }));

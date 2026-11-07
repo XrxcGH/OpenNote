@@ -32,7 +32,9 @@ async function toShownPage(id: 'page.undo' | 'page.redo', ctx: CommandContext): 
   if (ctx.source === 'commandBar' || ctx.source === 'palette' || ctx.source === 'menu') {
     return executeCommand(id, undefined, ctx.source);
   }
-  if (ctx.source !== 'keyboard' || (focused && focused !== document.body)) return false;
+  // A panel of the page outside the page's own scope (the properties panel) marks itself data-page-undo.
+  const inPage = focused?.closest('[data-page-undo]');
+  if (ctx.source !== 'keyboard' || (focused && focused !== document.body && !inPage)) return false;
   return executeCommand(id, undefined, 'keyboard');
 }
 

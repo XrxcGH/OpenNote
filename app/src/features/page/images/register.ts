@@ -2,6 +2,7 @@
 // text, Copy as Markdown, the image's context menu, the slash item, and the Paste settings part.
 // registrations/images.ts loads this module right after start-up, so none of it counts against the start-up
 // bundle. The commands only apply once a page is shown, and their work loads on first use.
+import './text';
 import { isEnabled } from '../../../app/flags';
 import { executeCommand } from '../../../commands/registry';
 import { t } from '../../../strings/t';
