@@ -22,8 +22,9 @@ const said = (page: Page, text: string) => page.locator('[aria-live="polite"]').
 
 test.beforeEach(async ({ page }) => {
   await openSmart(page);
-  // The keys load with the table's editor; every cell has its row number once they are in.
-  await expect(cell(page, 0, 0)).toHaveAttribute('aria-rowindex', '1');
+  // The keys load with the table's editor; every cell has its row number once they are in. Start-up defers that
+  // import, so a loaded machine can take longer than the default 5 seconds.
+  await expect(cell(page, 0, 0)).toHaveAttribute('aria-rowindex', '1', { timeout: 20_000 });
   await fillSales(page);
 });
 

@@ -85,13 +85,21 @@ export const sheetKeys = {
     gridTab: 'Grid mode and Edit mode: move right or left, finishing an entry',
     gridHome: 'Grid mode: go to the start of the row',
     gridPage: 'Grid mode: move one screen up or down',
-    gridEscape: 'Grid mode: select only the active cell, then select the table as an object',
+    gridEscape:
+      'Grid mode: select only the active cell, then select the table as an object. Arrows then leave the table.',
     gridSpace: 'Grid mode: select the row',
     gridType: 'Grid mode: replace the cell with what you type',
     typeKey: 'Any letter, digit, or sign',
     editEnter: 'Edit mode: finish the entry and move down',
-    editEscape: 'Edit mode: cancel the entry and go back to Grid mode',
-    editArrows: 'Enter mode: finish the entry and move; Edit mode: move in the text',
+    editEscape: 'Edit mode: cancel the entry, put the cell’s text back, and go back to Grid mode',
+    editArrows: 'Enter mode: finish the entry and move. Edit mode: move in the text, or leave the table at its edge.',
+  },
+  // Shown once, when an older table with numbers or formulas first uses spreadsheet keys.
+  tip: {
+    switched:
+      'This table holds numbers, so it uses spreadsheet keys. Enter moves down, and typing replaces the cell. ' +
+      'To get the old keys back, use the command “Use document keys in this table.”',
+    useDocument: 'Use document keys',
   },
   // Settings, then Tables.
   settings: {

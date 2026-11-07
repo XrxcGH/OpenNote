@@ -49,8 +49,10 @@ export function cancel(ctx: Ctx): boolean {
   if (!at) return false;
   const entry = sheetKeysKey.getState(ctx.state)?.entry;
   const tr = ctx.state.tr;
-  const restore = entry && entry.before && entry.row === at.row && entry.column === at.column;
-  if (restore) setCellContent(tr, at, entry.before!);
+  const before = entry && entry.row === at.row && entry.column === at.column ? entry.before : null;
+  // Nothing to put back when the text is as it was, such as after a click into the cell and no typing.
+  const restore = before !== null && !before.eq(contentOf(ctx.state.doc, at));
+  if (restore) setCellContent(tr, at, before);
   const cell = placedAt(tr.doc, at);
   if (cell) tr.setSelection(CellSelection.create(tr.doc, cell.pos));
   ctx.dispatch(tr.setMeta(sheetKeysKey, { entry: null, active: null } satisfies SheetMeta));

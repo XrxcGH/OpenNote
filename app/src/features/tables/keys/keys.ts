@@ -97,6 +97,19 @@ function atLineEdge(view: EditorView, down: boolean): boolean {
   }
 }
 
+/**
+ * Whether an arrow leaves the table from this cell: up from the first row, down from the last, left from the first
+ * cell, or right from the last. The table block's edge keys then move to the block beside the table.
+ */
+function leavesTable(ctx: Ctx, rows: number, columns: number): boolean {
+  const at = activeCell(ctx.state);
+  const last = ctx.texts.length - 1;
+  if (!at) return false;
+  if (rows !== 0) return at.row === (rows < 0 ? 0 : last);
+  const width = ctx.texts[last]?.length ?? 0;
+  return columns < 0 ? at.row === 0 && at.column === 0 : at.row === last && at.column === width - 1;
+}
+
 /** The fixed keys of Edit mode. */
 function editKey(ctx: Ctx, event: KeyboardEvent): boolean {
   if (!plain(event)) return false;
@@ -104,9 +117,9 @@ function editKey(ctx: Ctx, event: KeyboardEvent): boolean {
   const arrow = ARROWS[event.key];
   if (arrow && !event.shiftKey) {
     if (entry?.mode === 'enter') return commitBy(ctx, arrow[0], arrow[1]);
-    // Edit mode keeps the caret in the cell, as a spreadsheet's does.
-    if (arrow[1] !== 0) return atTextEdge(ctx.state, arrow[1] > 0);
-    return atLineEdge(ctx.view, arrow[0] > 0);
+    // Edit mode keeps the caret in the cell, as a spreadsheet's does, except where the arrow leaves the table.
+    const edge = arrow[1] !== 0 ? atTextEdge(ctx.state, arrow[1] > 0) : atLineEdge(ctx.view, arrow[0] > 0);
+    return edge && !leavesTable(ctx, arrow[0], arrow[1]);
   }
   switch (event.key) {
     case 'Enter':

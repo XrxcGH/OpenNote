@@ -3,6 +3,7 @@
 // the table's own keys, and the registered sheet commands all take part.
 import type { Editor } from '@tiptap/core';
 import type { Node as PMNode } from '@tiptap/pm/model';
+import { Plugin } from '@tiptap/pm/state';
 import { CellSelection } from '@tiptap/pm/tables';
 import { Decoration } from '@tiptap/pm/view';
 import axe from 'axe-core';
@@ -81,15 +82,24 @@ function cellOf(name: string, header: boolean) {
   return { row: header ? number : number - 1, column };
 }
 
-function mount(rows: string[][], options: Partial<SheetKeysOptions> & { header?: boolean } = {}): Harness {
+interface MountOptions extends Partial<SheetKeysOptions> {
+  header?: boolean;
+  /** The document instead of one made from the rows. */
+  doc?: PMNode;
+  /** Whether the editor gets focus, as when a person works in the table. Default: true. */
+  focus?: boolean;
+}
+
+function mount(rows: string[][], options: MountOptions = {}): Harness {
   const header = options.header ?? false;
   const root = document.body.appendChild(document.createElement('div'));
-  const editor = createBlockEditor(root, tableDoc(rows, header), { kind: 'table', block: 'b1', host });
+  const editor = createBlockEditor(root, options.doc ?? tableDoc(rows, header), { kind: 'table', block: 'b1', host });
   editors.push(editor);
   const said: string[] = [];
   const plugin = sheetKeysPlugin({ spreadsheet: true, announce: (text) => said.push(text), ...options });
   editor.registerPlugin(plugin, (added, plugins) => [added, ...plugins]);
   const { view } = editor;
+  if (options.focus !== false) view.dom.dispatchEvent(new FocusEvent('focus'));
   const cellPos = (name: string) => {
     const at = cellOf(name, header);
     let pos = 1;
@@ -452,5 +462,90 @@ describe('the grid that screen readers read', () => {
     const sheet = mount(FIVE);
     sheet.select('A1', 'B2');
     expect(linkApplies(sheet.editor.state)).toBe(false);
+  });
+});
+
+describe('merged cells', () => {
+  // A1 spans two columns: A1 (A1:B1), C1 / A2, B2, C2. Pasted HTML can make one.
+  function mergedDoc(): PMNode {
+    const cell = (text: string, attrs: Record<string, unknown> | null = null) =>
+      nodes.tableCell.create(attrs, nodes.paragraph.create(null, tableSchema.text(text)));
+    return nodes.doc.create(
+      null,
+      nodes.table.create(null, [
+        nodes.tableRow.create(null, [cell('wide', { colspan: 2 }), cell('c1')]),
+        nodes.tableRow.create(null, [cell('a2'), cell('b2'), cell('c2')]),
+      ]),
+    );
+  }
+
+  it('numbers the cells by the table’s columns, so the cell after a merged one is column 3', () => {
+    const sheet = mount([], { doc: mergedDoc() });
+    const first = sheet.editor.view.dom.querySelectorAll('tr')[0].querySelectorAll('td');
+    expect(first[1].textContent).toBe('c1');
+    expect(first[1].getAttribute('aria-colindex')).toBe('3');
+    expect(sheet.texts()[0]).toEqual(['wide', 'wide', 'c1']);
+  });
+
+  it('uses document keys while a cell is merged, so keys never land on the wrong cell', () => {
+    const sheet = mount([], { doc: mergedDoc() });
+    const { view } = sheet.editor;
+    sheet.caretIn('A2');
+    expect(modeOf(view.state)).toBeNull();
+    expect(view.dom.getAttribute('data-scope')).toBe('editor editor.table');
+    expect(view.dom.querySelector('table')?.getAttribute('role')).toBeNull();
+    expect(view.dom.querySelector('td')?.getAttribute('role')).toBeNull();
+  });
+});
+
+describe('leaving and canceling', () => {
+  it('lets an arrow at the table’s edge in Edit mode go on, so the keyboard can leave the table', () => {
+    const sheet = mount([
+      ['1', '2'],
+      ['3', '4'],
+    ]);
+    const seen: string[] = [];
+    // Stands in for the table block's edge keys: the next plugin after the sheet keys.
+    sheet.editor.registerPlugin(
+      new Plugin({ props: { handleKeyDown: (_view, event) => (seen.push(event.key), true) } }),
+      (added, plugins) => [plugins[0], added, ...plugins.slice(1)],
+    );
+    sheet.caretIn('B2');
+    sheet.editor.commands.setTextSelection(sheet.editor.state.selection.head + 1);
+    sheet.press('ArrowRight');
+    sheet.press('ArrowDown');
+    expect(seen).toEqual(['ArrowRight', 'ArrowDown']);
+    // Inside the table the caret stays in its cell.
+    sheet.caretIn('A2');
+    sheet.editor.commands.setTextSelection(sheet.editor.state.selection.head + 1);
+    sheet.press('ArrowRight');
+    expect(seen).toHaveLength(2);
+  });
+
+  it('puts the text back with Esc after a click into the cell and typing', () => {
+    const sheet = mount(FIVE);
+    sheet.caretIn('B2');
+    sheet.editor.view.dispatch(sheet.editor.state.tr.insertText('9'));
+    expect(sheet.texts()[1][1]).toBe('95');
+    sheet.press('Escape');
+    expect(sheet.texts()[1][1]).toBe('5');
+    expect(modeOf(sheet.editor.state)).toBe('grid');
+    expect(sheet.said).toContain('Entry canceled.');
+  });
+
+  it('says nothing was canceled when Esc follows a click with no typing', () => {
+    const sheet = mount(FIVE);
+    sheet.caretIn('B2');
+    sheet.press('Escape');
+    expect(sheet.texts()[1][1]).toBe('5');
+    expect(sheet.said).not.toContain('Entry canceled.');
+  });
+});
+
+describe('focus', () => {
+  it('marks no cell selected before the editor ever had focus', () => {
+    const sheet = mount(FIVE, { focus: false });
+    sheet.select('B2', 'C3');
+    expect(sheet.editor.view.dom.querySelectorAll('[aria-selected]')).toHaveLength(0);
   });
 });

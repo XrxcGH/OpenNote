@@ -7,7 +7,7 @@
 // (bindings.ts), so rebinding works; the navigation keys are fixed. A table set to document keys keeps today's
 // keys: the plugin then only adds the cells' row and column numbers for screen readers.
 import type { Node as PMNode } from '@tiptap/pm/model';
-import { Plugin } from '@tiptap/pm/state';
+import { Plugin, TextSelection } from '@tiptap/pm/state';
 import type { EditorState, Transaction } from '@tiptap/pm/state';
 import { CellSelection } from '@tiptap/pm/tables';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
@@ -24,8 +24,11 @@ import {
   activeCell,
   cellOfPos,
   cellsOf,
+  contentOf,
   gridOf,
   hasHeader,
+  hasMerged,
+  keysOn,
   modeOf,
   placedAt,
   selectCells,
@@ -41,13 +44,17 @@ export { dateText, runSheetCommand, setSheetKeys, timeText } from './actions';
 // ---- Decorations and announcements
 
 /**
- * aria-rowindex and aria-colindex on every cell, counted from 1. With spreadsheet keys each cell is a "gridcell"
- * or a "columnheader" of the grid that markGrid makes the table, so Grid mode's aria-selected is allowed.
+ * aria-rowindex and aria-colindex on every cell, counted from 1. A merged cell takes its top left slot's. With
+ * spreadsheet keys each cell is a "gridcell" or a "columnheader" of the grid that markGrid makes the table, so Grid
+ * mode's aria-selected is allowed.
  */
 function indexesOf(doc: PMNode, spreadsheet: boolean): DecorationSet {
   const decorations: Decoration[] = [];
+  const done = new Set<number>();
   cellsOf(doc).forEach((row, r) =>
     row.forEach((cell, c) => {
+      if (done.has(cell.pos)) return;
+      done.add(cell.pos);
       const attrs: Record<string, string> = { 'aria-rowindex': String(r + 1), 'aria-colindex': String(c + 1) };
       if (spreadsheet) attrs.role = cell.node.type.name === 'tableHeader' ? 'columnheader' : 'gridcell';
       decorations.push(Decoration.node(cell.pos, cell.pos + cell.node.nodeSize, attrs));
@@ -108,7 +115,7 @@ function applyMeta(tr: Transaction, value: SheetState, state: EditorState): Shee
   if (meta?.focused !== undefined) next.focused = meta.focused;
   // Typing maps the cells' numbers through the change, so a keystroke costs the same in a big table as in a small one.
   if (next.spreadsheet !== value.spreadsheet || (tr.docChanged && !insideOneCell(tr)))
-    next.indexes = indexesOf(state.doc, next.spreadsheet);
+    next.indexes = indexesOf(state.doc, next.spreadsheet && !hasMerged(state.doc));
   else if (tr.docChanged) next.indexes = value.indexes.map(tr.mapping, tr.doc);
   if (meta && 'active' in meta) next.active = meta.active ?? null;
   else if (tr.selectionSet) next.active = null;
@@ -116,6 +123,17 @@ function applyMeta(tr: Transaction, value: SheetState, state: EditorState): Shee
   else if (next.entry) {
     const at = state.selection instanceof CellSelection ? null : cellOfPos(state.doc, state.selection.head);
     if (!at || at.row !== next.entry.row || at.column !== next.entry.column) next.entry = null;
+  }
+  // A click or Tab that puts the caret in a cell starts an Edit mode entry, so Esc puts the cell's text back.
+  if (
+    !next.entry &&
+    tr.selectionSet &&
+    !tr.docChanged &&
+    next.spreadsheet &&
+    state.selection instanceof TextSelection
+  ) {
+    const at = cellOfPos(state.doc, state.selection.head);
+    if (at && !hasMerged(state.doc)) next.entry = { ...at, before: contentOf(state.doc, at), mode: 'edit' };
   }
   return next;
 }
@@ -152,7 +170,7 @@ function noteFocus(view: EditorView, focused: boolean): boolean {
 /** A click on a cell's padding, not its text, selects the cell in Grid mode. */
 function clickPadding(view: EditorView, event: MouseEvent): boolean {
   const target = event.target;
-  if (!sheetKeysKey.getState(view.state)?.spreadsheet || event.button !== 0 || event.shiftKey) return false;
+  if (!keysOn(view.state) || event.button !== 0 || event.shiftKey) return false;
   if (!(target instanceof HTMLTableCellElement) || !view.dom.contains(target)) return false;
   const at = cellOfPos(view.state.doc, view.posAtDOM(target, 0));
   const tr = at && selectCells(view.state, at);
@@ -185,17 +203,20 @@ function markGrid(view: EditorView, on: boolean): void {
 function sheetView(view: EditorView, options: SheetKeysOptions) {
   const runner: SheetRunner = {
     run: (command) => runSheetCommand(view, options, command),
-    documentKeys: () => !sheetKeysKey.getState(view.state)?.spreadsheet,
+    documentKeys: () => !keysOn(view.state),
   };
   const focus = () => setActiveSheet(runner);
   view.dom.addEventListener('focusin', focus);
-  if (view.hasFocus()) focus();
-  const spreadsheet = (state: EditorState) => sheetKeysKey.getState(state)?.spreadsheet ?? false;
-  markGrid(view, spreadsheet(view.state));
+  if (view.hasFocus()) {
+    focus();
+    // The state starts unfocused. Note focus after this update, since a view can't dispatch while it updates.
+    queueMicrotask(() => noteFocus(view, view.hasFocus()));
+  }
+  markGrid(view, keysOn(view.state));
   let said = spoken(view.state);
   return {
     update(next: EditorView) {
-      markGrid(next, spreadsheet(next.state));
+      markGrid(next, keysOn(next.state));
       const now = spoken(next.state);
       if (now === said) return;
       said = now;
@@ -218,8 +239,8 @@ export function sheetKeysPlugin(options: SheetKeysOptions): Plugin<SheetState> {
         spreadsheet: options.spreadsheet,
         entry: null,
         active: null,
-        indexes: indexesOf(state.doc, options.spreadsheet),
-        focused: true,
+        indexes: indexesOf(state.doc, options.spreadsheet && !hasMerged(state.doc)),
+        focused: false,
       }),
       apply: (tr, value, _old, state) => applyMeta(tr, value, state),
     },

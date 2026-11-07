@@ -4,7 +4,7 @@ import { Fragment } from '@tiptap/pm/model';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import { PluginKey, TextSelection } from '@tiptap/pm/state';
 import type { EditorState, Transaction } from '@tiptap/pm/state';
-import { CellSelection } from '@tiptap/pm/tables';
+import { CellSelection, TableMap } from '@tiptap/pm/tables';
 import type { DecorationSet, EditorView } from '@tiptap/pm/view';
 import type { DateOrder } from '../engine/locale';
 import { boxOf, inBox } from './grid';
@@ -64,26 +64,49 @@ export interface Placed {
 
 const layouts = new WeakMap<PMNode, Placed[][]>();
 
-/** Every cell's position (before the cell) and node, row by row. A table block's document is one table. */
+/**
+ * Every grid slot's cell, row by row: its position (before the cell) and node. The slots come from the table's map,
+ * so a merged cell fills each slot it covers. A table block's document is one table.
+ */
 export function cellsOf(doc: PMNode): Placed[][] {
   const known = layouts.get(doc);
   if (known) return known;
   const table = doc.firstChild;
   const rows: Placed[][] = [];
   layouts.set(doc, rows);
-  if (!table) return rows;
-  let rowPos = 1;
-  table.forEach((row) => {
+  if (!table || table.childCount === 0) return rows;
+  const map = TableMap.get(table);
+  for (let row = 0; row < map.height; row++) {
     const cells: Placed[] = [];
-    let pos = rowPos + 1;
-    row.forEach((cell) => {
-      cells.push({ pos, node: cell });
-      pos += cell.nodeSize;
-    });
+    for (let column = 0; column < map.width; column++) {
+      const offset = map.map[row * map.width + column];
+      const node = table.nodeAt(offset);
+      if (node) cells.push({ pos: offset + 1, node });
+    }
     rows.push(cells);
-    rowPos += row.nodeSize;
-  });
+  }
   return rows;
+}
+
+const merges = new WeakMap<PMNode, boolean>();
+
+/** Whether a cell spans more than one row or column. Spreadsheet keys step one slot at a time, so they wait. */
+export function hasMerged(doc: PMNode): boolean {
+  const known = merges.get(doc);
+  if (known !== undefined) return known;
+  let merged = false;
+  doc.firstChild?.forEach((row) =>
+    row.forEach((cell) => {
+      if (Number(cell.attrs.colspan ?? 1) > 1 || Number(cell.attrs.rowspan ?? 1) > 1) merged = true;
+    }),
+  );
+  merges.set(doc, merged);
+  return merged;
+}
+
+/** Whether the table's keys are spreadsheet keys now: chosen, and no merged cells. Otherwise document keys work. */
+export function keysOn(state: EditorState): boolean {
+  return (sheetKeysKey.getState(state)?.spreadsheet ?? false) && !hasMerged(state.doc);
 }
 
 export function textsOf(doc: PMNode): string[][] {
@@ -92,7 +115,7 @@ export function textsOf(doc: PMNode): string[][] {
 
 export const hasHeader = (doc: PMNode) => doc.firstChild?.firstChild?.firstChild?.type.name === 'tableHeader';
 
-/** The grid cell of a position inside or before a cell. */
+/** The grid cell of a position inside or before a cell. A merged cell's is its top left slot. */
 export function cellOfPos(doc: PMNode, pos: number): GridCell | null {
   const cells = cellsOf(doc);
   for (let row = 0; row < cells.length; row++)
@@ -116,8 +139,7 @@ export function textRange(cell: Placed): { from: number; to: number } {
 export type SheetMode = 'grid' | 'edit';
 
 export function modeOf(state: EditorState): SheetMode | null {
-  const sheet = sheetKeysKey.getState(state);
-  if (!sheet?.spreadsheet) return null;
+  if (!keysOn(state)) return null;
   if (state.selection instanceof CellSelection) return 'grid';
   return cellOfPos(state.doc, state.selection.head) ? 'edit' : null;
 }

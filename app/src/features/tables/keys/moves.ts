@@ -76,16 +76,21 @@ export function nextInRow(ctx: Ctx, from: GridCell, back: boolean): boolean {
 export function addRow(ctx: Ctx): boolean {
   const { state } = ctx;
   const table = state.doc.firstChild;
-  const last = table?.lastChild;
+  const grid = cellsOf(state.doc);
+  const last = grid[grid.length - 1];
   if (!table || !last) return false;
   const { nodes } = state.schema;
-  const cells: PMNode[] = [];
-  last.forEach((cell) => {
-    const attrs = { colwidth: cell.attrs.colwidth as unknown, colId: cell.attrs.colId as unknown };
-    cells.push(nodes.tableCell.create(attrs, nodes.paragraph.create()));
+  // One cell for each column of the table's map, so a merged cell above doesn't make the row short.
+  const cells: PMNode[] = last.map(({ node }) => {
+    const single = Number(node.attrs.colspan ?? 1) === 1;
+    const attrs = {
+      colwidth: single ? (node.attrs.colwidth as unknown) : null,
+      colId: single ? (node.attrs.colId as unknown) : null,
+    };
+    return nodes.tableCell.create(attrs, nodes.paragraph.create());
   });
   const tr = state.tr.insert(1 + table.content.size, nodes.tableRow.create(null, cells));
-  const first = placedAt(tr.doc, { row: table.childCount, column: 0 });
+  const first = placedAt(tr.doc, { row: grid.length, column: 0 });
   if (first) tr.setSelection(CellSelection.create(tr.doc, first.pos));
   ctx.dispatch(tr.setMeta(sheetKeysKey, { active: null, entry: null } satisfies SheetMeta).scrollIntoView());
   return true;
