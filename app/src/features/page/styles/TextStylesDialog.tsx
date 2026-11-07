@@ -8,9 +8,17 @@ import { t } from '../../../strings/t';
 import type { MessageKey } from '../../../strings/t';
 import { tokens } from '../../../theme/tokens';
 import { Button, Dialog, showToast } from '../../../ui';
-import { contrastWarning, STYLE_FONTS, STYLE_LIMITS, STYLE_NAMES, withStyle } from './styleVars';
+import {
+  contrastWarning,
+  dialogValues,
+  fromDialog,
+  STYLE_FONTS,
+  STYLE_LIMITS,
+  STYLE_NAMES,
+  withStyle,
+} from './styleVars';
 import type { NotebookStyles, StyleName, StyleValues } from './styleVars';
-import { saveStyles, shownNotebook, stylesFor } from './store';
+import { loadStyles, saveStyles, shownNotebook, stylesFor } from './store';
 import styles from './TextStylesDialog.module.css';
 
 const PENS = tokens.ink.pens.map((pen) => pen.name.toLowerCase());
@@ -187,9 +195,17 @@ function StyleFields({ values, update }: { values: StyleValues; update(patch: Pa
   );
 }
 
-export function StyleEditor({ initial, onChange }: { initial: NotebookStyles; onChange(next: NotebookStyles): void }) {
+export function StyleEditor({
+  initial,
+  onChange,
+  initialStyle = 'normal',
+}: {
+  initial: NotebookStyles;
+  onChange(next: NotebookStyles): void;
+  initialStyle?: StyleName;
+}) {
   const [all, setAll] = useState<NotebookStyles>(initial);
-  const [style, setStyle] = useState<StyleName>('normal');
+  const [style, setStyle] = useState<StyleName>(initialStyle);
   const values = all[style] ?? {};
   const update = (patch: Partial<StyleValues>) => {
     const next = withStyle(all, style, { ...values, ...patch });
@@ -226,16 +242,20 @@ export function StyleEditor({ initial, onChange }: { initial: NotebookStyles; on
   );
 }
 
-/** Opens the dialog for a notebook, by default the shown page's. Saving swaps the style variables; nothing re-renders. */
-export function openTextStyles(notebookId?: string): Promise<void> {
+/**
+ * Opens the dialog for a notebook, by default the shown page's, on one style. Saving is one notebook change with an
+ * Undo toast; it swaps the style variables, and nothing re-renders.
+ */
+export async function openTextStyles(notebookId?: string, initialStyle?: StyleName): Promise<void> {
   const notebook = notebookId ?? shownNotebook();
   if (!notebook) {
     showToast({ message: t('editor.styles.noNotebook') });
-    return Promise.resolve();
+    return;
   }
+  const initial = dialogValues(await loadStyles(notebook));
   const host = document.body.appendChild(document.createElement('div'));
   const root = createRoot(host);
-  let draft = stylesFor(notebook);
+  let draft = initial;
   return new Promise((resolve) => {
     const close = () => {
       queueMicrotask(() => {
@@ -245,10 +265,8 @@ export function openTextStyles(notebookId?: string): Promise<void> {
       });
     };
     const save = () => {
-      const saved = saveStyles(notebook, draft);
-      showToast({
-        message: t(saved ? 'editor.styles.saved' : 'editor.styles.saveFailed'),
-        tone: saved ? undefined : 'danger',
+      void saveStyles(notebook, fromDialog(stylesFor(notebook), initial, draft), {
+        message: t('editor.styles.saved'),
       });
       close();
     };
@@ -262,7 +280,7 @@ export function openTextStyles(notebookId?: string): Promise<void> {
           { id: 'save', label: t('editor.styles.save'), variant: 'primary', onPress: save },
         ]}
       >
-        <StyleEditor initial={draft} onChange={(next) => (draft = next)} />
+        <StyleEditor initial={draft} initialStyle={initialStyle} onChange={(next) => (draft = next)} />
       </Dialog>,
     );
   });
