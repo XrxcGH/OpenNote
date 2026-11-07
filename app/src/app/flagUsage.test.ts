@@ -19,7 +19,6 @@ const WAITING: Readonly<Record<string, string>> = {
   'text.styles2': 'Beta 10 to 12: the lane that builds it reads it.',
   'text.formatPane': 'Beta 10 to 12: the lane that builds it reads it.',
   'text.ruler': 'Beta 10 to 12: the lane that builds it reads it.',
-  'text.symbols': 'Beta 10 to 12: the lane that builds it reads it.',
   'text.language': 'Beta 10 to 12: the lane that builds it reads it.',
   'text.footnotes': 'Beta 10 to 12: the lane that builds it reads it.',
   'text.pasteFidelity': 'Beta 10 to 12: the lane that builds it reads it.',
