@@ -1,6 +1,6 @@
 //! Runs of text with their marks, as LaTeX.
 
-use super::escape::{self, href_target};
+use super::escape::href_target;
 use super::math;
 use super::writer::Writer;
 use super::Engine;
@@ -178,7 +178,8 @@ impl Writer<'_> {
         // `\opnfont` does nothing under pdfLaTeX and for a font the machine lacks (see the preamble).
         if self.engine == Engine::Unicode && !self.simple {
             if let Some(font) = marks.font.as_deref().filter(|f| !f.starts_with('+')) {
-                let name = escape::text(font, Engine::Unicode, &mut self.missing);
+                // The preamble passes the name through \detokenize, so only what would end the argument is dropped.
+                let name: String = font.chars().filter(|c| !"{}\\%#".contains(*c)).collect();
                 text = format!("{{\\opnfont{{{name}}}{text}}}");
             }
             if let Some(name) = marks.lang.as_deref().and_then(polyglossia_name) {
@@ -344,7 +345,7 @@ mod tests {
             ..Marks::default()
         };
         let out = render(&[marked("x", font)]);
-        assert_eq!(out, "\\opnlang{french}{{\\opnfont{Fira\\_Sans}x}}");
+        assert_eq!(out, "\\opnlang{french}{{\\opnfont{Fira_Sans}x}}");
         assert!(!out.contains("fontspec"), "{out}");
         let english = Marks {
             lang: Some("en-US".to_owned()),

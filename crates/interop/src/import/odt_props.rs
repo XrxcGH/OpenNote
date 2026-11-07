@@ -111,11 +111,10 @@ impl Props {
                 .clone()
                 .filter(|_| direct)
                 .map(|f| Some(f).filter(|f| crate::doc::values::font_name(f))),
-            size: attr("fo:font-size").filter(|_| direct).map(|s| {
-                let points = length_points(s).map(|p| (p * 2.0).round() / 2.0);
-                points
-                    .map(|p| points_text(p, 50))
-                    .filter(|t| crate::doc::values::size_points_text(t))
+            size: attr("fo:font-size").filter(|_| direct).and_then(|s| {
+                // A relative size such as 120% is not a length: it leaves the size of the parent style alone.
+                let points = length_points(s).map(|p| (p * 2.0).round() / 2.0)?;
+                Some(Some(points_text(points, 50)).filter(|t| crate::doc::values::size_points_text(t)))
             }),
             underline_line: underline_style.map(|style| {
                 let double = attr("style:text-underline-type") == Some("double");
@@ -271,6 +270,19 @@ mod tests {
         );
         assert!(b.underline && b.underline_line.as_deref() == Some("wave"), "{b:?}");
         assert_eq!(b.underline_color.as_deref(), Some("#ff0000"));
+    }
+
+    #[test]
+    fn a_relative_size_leaves_the_size_of_the_parent_alone() {
+        let element = super::super::xmltree::parse(r#"<style:text-properties fo:font-size="120%"/>"#);
+        let props = Props::read(&element, true, &Faces::new());
+        assert_eq!(props.size, None);
+        let mut marks = Marks {
+            size: Some("14".to_owned()),
+            ..Marks::default()
+        };
+        props.apply(&mut marks);
+        assert_eq!(marks.size.as_deref(), Some("14"));
     }
 
     #[test]

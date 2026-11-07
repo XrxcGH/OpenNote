@@ -664,7 +664,8 @@ mod tests {
     #[test]
     fn declared_fonts_sizes_and_spacing_import_in_the_grammar_units() {
         let styles = r##"<style:style style:name="T1" style:family="text"><style:text-properties style:font-name="Liberation Serif1"
-              fo:font-size="10.5pt" fo:letter-spacing="0.035cm" style:text-underline-style="wave" style:text-underline-color="#ff0000"/></style:style>"##;
+              fo:font-size="10.5pt" fo:letter-spacing="0.035cm" style:text-underline-style="wave"
+              style:text-underline-color="#ff0000"/></style:style>"##;
         let out = import_text(
             styles,
             r#"<text:p><text:span text:style-name="T1">x</text:span></text:p>"#,
@@ -675,7 +676,9 @@ mod tests {
             "{out}"
         );
         assert!(
-            out.contains("10.5") && out.contains("wave") && out.contains("#ff0000"),
+            out.contains("data-size=\"10.5\"")
+                && out.contains("data-line=\"wave\"")
+                && out.contains("data-line-color=\"#ff0000\""),
             "{out}"
         );
         assert!(out.contains("data-tracking=\"1\""), "{out}");

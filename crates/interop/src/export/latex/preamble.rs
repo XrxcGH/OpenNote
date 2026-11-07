@@ -60,7 +60,22 @@ fn font_and_language_commands(languages: &[&str]) -> String {
     let others: String = languages.iter().map(|l| format!("\\setotherlanguage{{{l}}}")).collect();
     let none = "\\newcommand{\\opnlang}[2]{#2}";
     format!(
-        "\\ifPDFTeX\n  \\newcommand{{\\opnfont}}[1]{{}}\n  {none}\n\\else\n  \\newcommand{{\\opnfont}}[1]{{\\IfFontExistsTF{{#1}}{{\\fontspec{{#1}}}}{{}}}}\n  \\IfFileExists{{polyglossia.sty}}{{%\n    \\usepackage{{polyglossia}}\\setmainlanguage{{english}}{others}%\n    \\newcommand{{\\opnlang}}[2]{{\\csname text#1\\endcsname{{#2}}}}%\n  }}{{{none}}}\n\\fi\n"
+        concat!(
+            "\\ifPDFTeX\n",
+            "  \\newcommand{{\\opnfont}}[1]{{}}\n",
+            "  {none}\n",
+            "\\else\n",
+            // \detokenize keeps an underscore or an ampersand in a font name from becoming a command.
+            "  \\newcommand{{\\opnfont}}[1]{{%\n",
+            "    \\IfFontExistsTF{{\\detokenize{{#1}}}}{{\\fontspec{{\\detokenize{{#1}}}}}}{{}}}}\n",
+            "  \\IfFileExists{{polyglossia.sty}}{{%\n",
+            "    \\usepackage{{polyglossia}}\\setmainlanguage{{english}}{others}%\n",
+            "    \\newcommand{{\\opnlang}}[2]{{\\csname text#1\\endcsname{{#2}}}}%\n",
+            "  }}{{{none}}}\n",
+            "\\fi\n"
+        ),
+        none = none,
+        others = others
     )
 }
 
@@ -230,7 +245,10 @@ mod tests {
         };
         let out = top(&page, &mut Missing::default());
         assert_eq!(out.matches(r"\fontspec{").count(), 1, "{out}");
-        assert!(out.contains(r"\IfFontExistsTF{#1}{\fontspec{#1}}{}"), "{out}");
+        assert!(
+            out.contains(r"\IfFontExistsTF{\detokenize{#1}}{\fontspec{\detokenize{#1}}}{}"),
+            "{out}"
+        );
         assert!(
             out.contains(r"\ifPDFTeX") && out.contains(r"\newcommand{\opnfont}[1]{}"),
             "{out}"

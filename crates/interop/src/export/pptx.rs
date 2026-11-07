@@ -846,7 +846,7 @@ mod tests {
         // 10 pt at the 12 pt body is 20 * 10 / 12 = 16.67 pt.
         assert!(small.contains("sz=\"1667\""), "{small}");
         assert!(
-            small.contains("<a:uFill><a:solidFill><a:srgbClr val=\"FF0000\"/>") || small.contains("val=\"ff0000\""),
+            small.contains("<a:uFill><a:solidFill><a:srgbClr val=\"FF0000\"/></a:solidFill></a:uFill>"),
             "{small}"
         );
         let double = run_xml(Marks {
