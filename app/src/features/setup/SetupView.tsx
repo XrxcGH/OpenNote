@@ -12,6 +12,7 @@ import { DEFAULT_LOCATION } from '../../state/session';
 import { shallowEqual, useStore } from '../../state/store';
 import { t } from '../../strings/t';
 import { Button, announce, showToast } from '../../ui';
+import { focusFromScript } from '../../ui/focusOrigin';
 import { finishSetup } from './finish';
 import { saveProgress, setupStore, startRun, updateDraft } from './runtime';
 import styles from './SetupView.module.css';
@@ -43,7 +44,7 @@ function FocusFirst({ content, draft }: { content: RefObject<HTMLElement | null>
     if (done.current) return;
     const first = content.current?.querySelector<HTMLElement>(FIRST_CONTROL);
     const target = first ?? content.current?.closest('form')?.querySelector<HTMLElement>('button[type="submit"]');
-    target?.focus();
+    if (target) focusFromScript(target);
     // A step that loads its choices first has no control yet, so it tries again on its next change.
     done.current = Boolean(first);
   }, [content, draft]);

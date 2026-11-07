@@ -25,7 +25,21 @@ fn defaults_match_schema_version_2() {
             "darkCustomBackgrounds": "exact"
         },
         "tables": { "newTableKeys": "spreadsheet", "formulaBar": true },
-        "code": {}
+        "code": {
+            "indent": {},
+            "pythonRuntime": "quick",
+            "timeLimitSeconds": 10,
+            "memoryLimitMib": 64,
+            "formatOnSave": false,
+            "completionList": true,
+            "suggestions": "automaticRules",
+            "acceptButton": "touchOrPen",
+            "announceSuggestions": true,
+            "diagnostics": "everything",
+            "cStandard": "c17",
+            "cppStandard": "cpp20",
+            "compilerWarnings": true
+        }
     });
     expected["editing"] = serde_json::to_value(EditingSettings::default()).expect("serializes");
     expected["ink"] = serde_json::to_value(InkSettings::default()).expect("serializes");

@@ -3,11 +3,13 @@
 //! the `editing` group (Phase 4) and the `ink` group (Phase 5) were added that way. Version 2 (Beta 9) adds the
 //! `text`, `tables`, and `code` groups in one raise, with every key the formatting, tables, and code programs
 //! know of at its default. The step from version 1 changes nothing else, so Beta 8 may still write the file.
+//! Beta 12 fills the `code` group (`code.rs`) with defaults, which keeps version 2.
 
 use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};
 
+pub use super::code::CodeSettings;
 use super::{
     editing::EditingSettings,
     ink::InkSettings,
@@ -115,6 +117,7 @@ impl Settings {
         }
         self.editing.check(&mut check);
         self.ink.check(&mut check);
+        self.code.check(&mut check);
         check.that(
             "language.locale",
             validate::language_tag(&self.language.locale),
@@ -435,12 +438,6 @@ pub enum TableKeys {
     Spreadsheet,
     Document,
 }
-
-/// The code studio's settings. Empty until the code program fills it in Beta 12.
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", default)]
-#[cfg_attr(test, derive(ts_rs::TS))]
-pub struct CodeSettings {}
 
 /// A top-level settings section that `settings_reset` can put back to its defaults.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

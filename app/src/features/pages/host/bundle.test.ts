@@ -53,6 +53,7 @@ describe('printing a bundle', () => {
     };
     const service = pages();
     const seen: string[] = [];
+    const failures: [string, string][] = [];
     const drawn = await drawBundle({
       pages: service,
       exports: {} as ExportsClient,
@@ -61,8 +62,10 @@ describe('printing a bundle', () => {
       notebook: 'Biology',
       sections,
       onPage: (done, total, title) => seen.push(`${done}/${total} ${title}`),
+      onFailure: (title, error) => failures.push([title, (error as Error).message]),
     });
     expect(drawn).toEqual({ drawn: 2, failed: 1 });
+    expect(failures).toEqual([['Broken', 'The print window failed.']]);
     expect(seen).toEqual(['0/3 Cells', '1/3 Broken', '2/3 Enzymes']);
     expect(service.opened).toEqual(['p1', 'p2', 'p3']);
     expect(service.closed).toBe(3);

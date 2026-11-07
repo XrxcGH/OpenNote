@@ -11,6 +11,7 @@ import type {
   AssetJson,
   BlockId,
   BlockJson,
+  Edit,
   ExternalChange,
   OpenPage,
   PageErrorCode,
@@ -76,6 +77,17 @@ interface Changes {
   blocksChanged: BlockId[];
   blocksRemoved: BlockId[];
   assetsChanged: string[];
+}
+
+/**
+ * An edit as the core takes it. The page service says `frame: null` removes a block's frame and `lock: null` removes
+ * its lock, and the memory service does so. The core reads a null as "no change" in both places: it removes a frame
+ * given with no values, and it takes the lock "none", so a null sent as it is would leave the frame and the lock.
+ */
+export function toCoreEdit(edit: Edit): Edit {
+  if (edit.edit === 'moveBlock' && edit.frame === null) return { ...edit, frame: {} };
+  if (edit.edit === 'patchBlock' && edit.lock === null) return { ...edit, lock: 'none' } as unknown as Edit;
+  return edit;
 }
 
 /** A frame of another client's change, from the page as the core now holds it. */
@@ -319,7 +331,7 @@ export function createTauriPageService(client: CoreClient, images: ImagesClient,
               clientSeq,
               coalesce: batch.coalesce ?? null,
               ui: batch.ui ?? null,
-              edits: batch.edits,
+              edits: batch.edits.map(toCoreEdit),
             };
             // Phase 5: new strokes go with page_add_strokes, after the batch's edits in the same transaction.
             return batch.strokes ? client.pageAddStrokes(request, batch.strokes) : client.pageApply(request);

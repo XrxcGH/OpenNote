@@ -5,6 +5,7 @@ export { NotebooksPane, PagesPane } from './Panes';
 export { recordTrashRestore, titleOf } from './actions';
 export { recordCreated } from './create';
 export { listRestored, useTreeNode } from './access';
+export { useNotebookAccent, useNotebookAccentOf } from './useNotebookAccent';
 
 // What the quality-of-life features (features/qol) use: the open row, selections, the actions on them, and the store.
 export { currentNode, currentSection } from './current';

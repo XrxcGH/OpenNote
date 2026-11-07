@@ -261,6 +261,7 @@ mod tests {
             },
             bookmarks: Vec::new(),
             shaded: false,
+            ..Para::default()
         })
     }
 

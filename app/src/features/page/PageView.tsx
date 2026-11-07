@@ -12,7 +12,7 @@ import { registerRegionMain } from '../../shell/regions';
 import { formatDate } from '../../strings/format';
 import { t } from '../../strings/t';
 import { EmptyArt, ProgressBar, useDelayedFlag } from '../../ui';
-import { titleOf, useTreeNode } from '../tree';
+import { titleOf, useNotebookAccent, useTreeNode } from '../tree';
 import { TitleSlot, useTitleBand } from './title/TitleSlot';
 import styles from './PageView.module.css';
 import { usePageZoom } from './zoom';
@@ -41,6 +41,7 @@ export function PageView() {
   const location = useLocation();
   const { page, loading } = usePage(location.view === 'workspace' ? location.pageId : null);
   const heading = useRef<HTMLHeadingElement>(null);
+  const accent = useNotebookAccent();
   const showProgress = useDelayedFlag(loading);
   const editing = useFlag('page.editor');
   const shown = editing && page !== null;
@@ -77,7 +78,13 @@ export function PageView() {
         </>
       ) : (
         <>
-          <h1 ref={heading} tabIndex={-1} className={styles.title}>
+          <h1
+            ref={heading}
+            tabIndex={-1}
+            className={styles.title}
+            data-accent={accent ?? undefined}
+            data-notebook-mark={accent ? 'title-rule' : undefined}
+          >
             {title}
           </h1>
           {changed && <p className={styles.changed}>{changed}</p>}

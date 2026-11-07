@@ -139,7 +139,7 @@ export const tokens = {
       "ambient": {
         "canvasTop": "#1B2036",
         "canvasBottom": "#33243A",
-        "glow": "#45302C",
+        "glow": "#40303A",
         "spark": "#E7D9B0"
       },
       "caption": {
@@ -509,6 +509,41 @@ export const tokens = {
     {
       "fg": "ink.pens.Walnut",
       "bg": "surface.hover",
+      "min": 3
+    },
+    {
+      "fg": "ink.pens.Ink",
+      "bg": "surface.page",
+      "min": 3
+    },
+    {
+      "fg": "ink.pens.Indigo",
+      "bg": "surface.page",
+      "min": 3
+    },
+    {
+      "fg": "ink.pens.Brick",
+      "bg": "surface.page",
+      "min": 3
+    },
+    {
+      "fg": "ink.pens.Fern",
+      "bg": "surface.page",
+      "min": 3
+    },
+    {
+      "fg": "ink.pens.Plum",
+      "bg": "surface.page",
+      "min": 3
+    },
+    {
+      "fg": "ink.pens.Amber",
+      "bg": "surface.page",
+      "min": 3
+    },
+    {
+      "fg": "ink.pens.Walnut",
+      "bg": "surface.page",
       "min": 3
     },
     {

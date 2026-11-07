@@ -1,6 +1,14 @@
 // The record control in the command bar (Phase 9): Record and its options when idle, and Stop, Pause, and Flag
 // while recording. The command bar passes `toolProps` so the arrow keys move between its tools.
+import { FlagIcon } from '@phosphor-icons/react/dist/csr/Flag';
+import { PauseIcon } from '@phosphor-icons/react/dist/csr/Pause';
+import { PlayIcon } from '@phosphor-icons/react/dist/csr/Play';
+import { RecordIcon } from '@phosphor-icons/react/dist/csr/Record';
+import { SlidersHorizontalIcon } from '@phosphor-icons/react/dist/csr/SlidersHorizontal';
+import { StopIcon } from '@phosphor-icons/react/dist/csr/Stop';
 import { lazy, Suspense, useRef, useState } from 'react';
+import { useSizeClass } from '../../../state/layout';
+import type { IconComponent } from '../../../ui';
 import { useFlag } from '../../../app/flags';
 import { ariaKeyShortcuts, formatChord, useKeysFor } from '../../../commands/keymap';
 import { executeCommand } from '../../../commands/registry';
@@ -15,14 +23,35 @@ import { isRunning, recordingUi } from './state';
 
 const Options = lazy(() => import('./OptionsPanel'));
 
+/** An icon before the name, and the name beside a hidden semibold copy so the button keeps its width. */
+function NamedLabel({ Icon, name }: { Icon: IconComponent; name: string }) {
+  const medium = useSizeClass() === 'medium';
+  return (
+    <>
+      {!medium && (
+        <span className={tools.toolIcon} aria-hidden="true" data-tool-icon="">
+          <Icon aria-hidden />
+        </span>
+      )}
+      <span className={tools.label}>
+        <span>{name}</span>
+        <span className={tools.labelSizer} aria-hidden="true">
+          {name}
+        </span>
+      </span>
+    </>
+  );
+}
+
 interface ToolProps {
   command: CommandId;
+  Icon: IconComponent;
   name: MessageKey;
   toolProps: CommandBarComponentProps['toolProps'];
   disabled?: boolean;
 }
 
-function Tool({ command, name, toolProps, disabled }: ToolProps) {
+function Tool({ command, Icon, name, toolProps, disabled }: ToolProps) {
   const keys = useKeysFor(command);
   return (
     <Tooltip label={t(name)} shortcut={keys[0] ? formatChord(keys[0]) : null}>
@@ -30,11 +59,12 @@ function Tool({ command, name, toolProps, disabled }: ToolProps) {
         type="button"
         {...toolProps}
         className={tools.tool}
+        data-kind="named"
         aria-disabled={disabled || undefined}
         aria-keyshortcuts={keys.length ? ariaKeyShortcuts(keys) : undefined}
         onClick={() => !disabled && void executeCommand(command, undefined, 'commandBar')}
       >
-        {t(name)}
+        <NamedLabel Icon={Icon} name={t(name)} />
       </button>
     </Tooltip>
   );
@@ -51,16 +81,23 @@ export function RecordControl({ toolProps }: CommandBarComponentProps) {
     <span style={{ display: 'inline-flex', alignItems: 'center' }} role="group" aria-label={t('audio.bar.group')}>
       {running ? (
         <>
-          <Tool command="audio.stop" name="audio.bar.stop" toolProps={toolProps} />
+          <Tool command="audio.stop" Icon={StopIcon} name="audio.bar.stop" toolProps={toolProps} />
           <Tool
             command="audio.pause"
+            Icon={ui.phase === 'paused' ? PlayIcon : PauseIcon}
             name={ui.phase === 'paused' ? 'audio.bar.resume' : 'audio.bar.pause'}
             toolProps={toolProps}
           />
-          {flags && <Tool command="audio.flag" name="audio.bar.flag" toolProps={toolProps} />}
+          {flags && <Tool command="audio.flag" Icon={FlagIcon} name="audio.bar.flag" toolProps={toolProps} />}
         </>
       ) : (
-        <Tool command="audio.record" name="audio.bar.record" toolProps={toolProps} disabled={waiting} />
+        <Tool
+          command="audio.record"
+          Icon={RecordIcon}
+          name="audio.bar.record"
+          toolProps={toolProps}
+          disabled={waiting}
+        />
       )}
       {/* Options stays while recording, so the microphone can be switched without stopping. */}
       <button
@@ -68,11 +105,12 @@ export function RecordControl({ toolProps }: CommandBarComponentProps) {
         type="button"
         {...toolProps}
         className={tools.tool}
+        data-kind="named"
         aria-haspopup="dialog"
         aria-expanded={open}
         onClick={() => setOpen((shown) => !shown)}
       >
-        {t('audio.bar.options')}
+        <NamedLabel Icon={SlidersHorizontalIcon} name={t('audio.bar.options')} />
       </button>
       <Popover anchor={anchor} label={t('audio.options.title')} open={open} onClose={() => setOpen(false)}>
         <Suspense fallback={null}>

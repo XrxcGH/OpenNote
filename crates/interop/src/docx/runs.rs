@@ -1,18 +1,44 @@
-//! Runs of text for Word: marks, links, and pictures.
+//! Runs of text for Word: marks, links, pictures, note references, comment ranges, and suggestions.
 
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 
+use super::numbering::Lists;
 use super::parts::{xml_escape, NS_R};
+use super::rpr::{run_props, RunContext};
 use super::Media;
-use crate::doc::{Inline, Marks, Script};
-use crate::palette::{highlight_hex, pen_hex};
+use crate::doc::data::{inline_markdown, Element, NoteKind, TextData};
+use crate::doc::{Inline, Marks};
 
 /// One inch is 914,400 English Metric Units, and a pixel is one 96th of an inch.
 const EMU_PER_PIXEL: u64 = 9_525;
 /// The text width of a Letter page with one-inch margins.
 const MAX_WIDTH_EMU: u64 = 6 * 914_400 + 457_200;
+/// The largest `ST_PositiveCoordinate` in ECMA-376 Part 1 (DrawingML), the bound of `wp:extent` and `a:ext`.
+const MAX_COORDINATE_EMU: u64 = 27_273_042_316_900;
 
-/// What the body needs to remember while it writes: relationships, list numbers, and IDs.
+/// The notes, comments, and their extensions that the body made.
+#[derive(Debug, Default)]
+pub(super) struct Annotations {
+    /// `w:footnote` elements, without the separators.
+    pub footnotes: Vec<String>,
+    /// `w:endnote` elements, without the separators.
+    pub endnotes: Vec<String>,
+    /// `w:comment` elements.
+    pub comments: Vec<String>,
+    /// `w15:commentEx` elements: replies and resolved state.
+    pub comments_ex: Vec<String>,
+}
+
+/// The comments that are open in the text, and how many runs of each are still to come.
+#[derive(Debug, Default)]
+struct CommentRanges {
+    /// The runs of each comment ID in the current text part that are still to be written.
+    left: HashMap<String, usize>,
+    /// The Word IDs of each open comment: the comment's, then its replies'.
+    open: BTreeMap<String, Vec<u32>>,
+}
+
+/// What the body needs to remember while it writes: relationships, lists, notes, comments, and IDs.
 pub(super) struct State<'a> {
     media: &'a HashMap<String, Media>,
     /// Relationship elements for the links and pictures so far.
@@ -23,14 +49,41 @@ pub(super) struct State<'a> {
     /// The files to write under `word/media/`, each with its name.
     pub files: Vec<(String, &'a Media)>,
     drawing_id: u32,
-    /// The numbered lists so far, as `(level, start)`.
-    pub ordered: Vec<(u32, u64)>,
     /// The next bookmark ID.
     pub bookmark_id: u32,
+    /// The lists.
+    pub lists: Lists,
+    /// The faces the device lists.
+    faces: &'a [String],
+    /// The font of `+mono`.
+    pub mono: String,
+    /// The names of the styles the sheet defines.
+    pub style_names: Vec<String>,
+    /// The records of the text part being written, and the elements by path.
+    pub data: Option<&'a TextData>,
+    pub elements: HashMap<Vec<usize>, Element>,
+    /// Where the writer is in the blocks of the text part.
+    pub path: Vec<usize>,
+    /// The definition and the current list of each list ID of the text part.
+    pub list_defs: HashMap<String, usize>,
+    pub list_nums: HashMap<String, usize>,
+    /// The latest list of each list ID in the document, for styles tied to a list.
+    pub doc_list_nums: HashMap<String, usize>,
+    /// The notes and comments so far.
+    pub notes: Annotations,
+    comments: CommentRanges,
+    /// The next ID of a comment, insertion, deletion, or format change.
+    annotation_id: u32,
+    /// The next `w14:paraId`.
+    para_id: u32,
+    /// Whether runs go to a note or a comment, which have no relationships of their own.
+    sub_part: bool,
+    /// Whether authors and dates are left out.
+    pub remove_personal: bool,
 }
 
 impl<'a> State<'a> {
-    pub fn new(media: &'a HashMap<String, Media>) -> State<'a> {
+    pub fn new(media: &'a HashMap<String, Media>, faces: &'a [String], mono: &str) -> State<'a> {
         State {
             media,
             rels: Vec::new(),
@@ -39,12 +92,36 @@ impl<'a> State<'a> {
             pictures: HashMap::new(),
             files: Vec::new(),
             drawing_id: 1,
-            ordered: Vec::new(),
             bookmark_id: 1,
+            lists: Lists::new(),
+            faces,
+            mono: mono.to_owned(),
+            style_names: Vec::new(),
+            data: None,
+            elements: HashMap::new(),
+            path: Vec::new(),
+            list_defs: HashMap::new(),
+            list_nums: HashMap::new(),
+            doc_list_nums: HashMap::new(),
+            notes: Annotations::default(),
+            comments: CommentRanges::default(),
+            annotation_id: 1,
+            para_id: 1,
+            sub_part: false,
+            remove_personal: false,
         }
     }
 
-    fn relationship(&mut self, kind: &str, target: &str, external: bool) -> String {
+    /// The context of run properties.
+    pub fn ctx(&self) -> RunContext<'_> {
+        RunContext {
+            faces: self.faces,
+            mono: &self.mono,
+        }
+    }
+
+    /// Adds a relationship of the document part and returns its ID.
+    pub fn relationship(&mut self, kind: &str, target: &str, external: bool) -> String {
         let id = format!("rId{}", self.next_rel);
         self.next_rel += 1;
         let mode = if external { " TargetMode=\"External\"" } else { "" };
@@ -53,6 +130,67 @@ impl<'a> State<'a> {
             xml_escape(target)
         ));
         id
+    }
+
+    /// Starts a text part: its records, and the comments its runs carry.
+    pub fn begin_text(&mut self, data: Option<&'a TextData>, elements: HashMap<Vec<usize>, Element>) {
+        self.data = data;
+        self.elements = elements;
+        self.path.clear();
+        self.list_defs.clear();
+        self.list_nums.clear();
+        self.comments = CommentRanges::default();
+    }
+
+    /// Counts the runs of each comment in the blocks, so each range ends after its last run.
+    pub fn count_comments(&mut self, inlines: &[Inline]) {
+        for inline in inlines {
+            if let Inline::Text { marks, .. } = inline {
+                for id in &marks.comments {
+                    *self.comments.left.entry(id.clone()).or_default() += 1;
+                }
+            }
+        }
+    }
+
+    /// Ends the text part: any comment still open ends here.
+    pub fn end_text(&mut self) -> String {
+        let open = std::mem::take(&mut self.comments.open);
+        let mut out = String::new();
+        for ids in open.values() {
+            out.push_str(&comment_ends(ids));
+        }
+        self.data = None;
+        self.elements.clear();
+        out
+    }
+
+    /// A fresh `w14:paraId`, eight hexadecimal digits below 0x80000000.
+    pub fn next_para_id(&mut self) -> String {
+        let id = format!("{:08X}", 0x1000_0000 + self.para_id);
+        self.para_id += 1;
+        id
+    }
+
+    fn next_annotation(&mut self) -> u32 {
+        let id = self.annotation_id;
+        self.annotation_id += 1;
+        id
+    }
+
+    /// The author and date attributes of a comment or change, or a plain author when personal information is
+    /// removed.
+    fn who(&self, author: &str, time: &str) -> String {
+        if self.remove_personal {
+            return " w:author=\"Author\"".to_owned();
+        }
+        // `w:date` is an `xsd:dateTime`, so a time that is not a timestamp is left out rather than written.
+        let date = match opennote_core::Timestamp::parse(time) {
+            Ok(_) if !time.bytes().any(|b| b.is_ascii_lowercase()) => format!(" w:date=\"{time}\""),
+            Ok(stamp) => format!(" w:date=\"{stamp}\""),
+            Err(_) => String::new(),
+        };
+        format!(" w:author=\"{}\"{date}", xml_escape(author))
     }
 
     /// Writes inlines as runs. `bold` makes every run bold, for headers.
@@ -68,19 +206,39 @@ impl<'a> State<'a> {
                 Inline::HardBreak => out.push_str("<w:r><w:br/></w:r>"),
                 Inline::SoftBreak => out.push_str("<w:r><w:t xml:space=\"preserve\"> </w:t></w:r>"),
                 Inline::Image { dest, alt } => out.push_str(&self.picture(dest, alt)),
-                // Footnotes come with the version 2 Word writer.
-                Inline::Note { .. } => {}
+                Inline::Note { id, .. } => out.push_str(&self.note_reference(id)),
             }
         }
         out
     }
 
     fn text_run(&mut self, text: &str, marks: &Marks) -> String {
-        let run = format!(
-            "<w:r>{}<w:t xml:space=\"preserve\">{}</w:t></w:r>",
-            run_props(marks),
+        let mut before = String::new();
+        if !self.sub_part {
+            before = self.comment_starts(&marks.comments);
+        }
+        let change = self.format_change(marks);
+        let props = run_props(marks, &self.ctx(), &change);
+        let deleted = marks.deletion.is_some() && !self.sub_part;
+        let element = if deleted { "w:delText" } else { "w:t" };
+        let mut run = format!(
+            "<w:r>{props}<{element} xml:space=\"preserve\">{}</{element}></w:r>",
             xml_escape(text)
         );
+        if !self.sub_part {
+            run = self.wrap_change(run, marks);
+        }
+        let run = self.link(run, marks);
+        let mut out = before;
+        out.push_str(&run);
+        if !self.sub_part {
+            out.push_str(&self.comment_ends_after(&marks.comments));
+        }
+        out
+    }
+
+    /// A link around a run: an anchor inside the document, or an external address through a relationship.
+    fn link(&mut self, run: String, marks: &Marks) -> String {
         let Some(dest) = &marks.link else {
             return run;
         };
@@ -93,7 +251,7 @@ impl<'a> State<'a> {
         let external = ["http:", "https:", "mailto:"]
             .iter()
             .any(|scheme| dest.starts_with(scheme));
-        if !external {
+        if !external || self.sub_part {
             return run;
         }
         let id = match self.links.get(dest) {
@@ -107,9 +265,165 @@ impl<'a> State<'a> {
         format!("<w:hyperlink r:id=\"{id}\" w:history=\"1\">{run}</w:hyperlink>")
     }
 
+    /// The author and date of a suggestion record, or an unknown author when the record is missing.
+    fn change_who(&self, id: &str) -> String {
+        let record = self.data.and_then(|d| d.suggestions.get(id));
+        self.who(
+            record.map_or("Unknown", |r| r.author.as_str()),
+            record.map_or("", |r| r.time.as_str()),
+        )
+    }
+
+    /// An insertion or deletion around a run. Text that one suggestion inserted and another deletes is both.
+    fn wrap_change(&mut self, mut run: String, marks: &Marks) -> String {
+        if let Some(id) = &marks.deletion {
+            let n = self.next_annotation();
+            run = format!("<w:del w:id=\"{n}\"{}>{run}</w:del>", self.change_who(id));
+        }
+        if let Some(id) = &marks.insertion {
+            let n = self.next_annotation();
+            run = format!("<w:ins w:id=\"{n}\"{}>{run}</w:ins>", self.change_who(id));
+        }
+        run
+    }
+
+    /// `w:rPrChange` for a format change: the run's properties before the change.
+    fn format_change(&mut self, marks: &Marks) -> String {
+        let Some(id) = &marks.format_change else {
+            return String::new();
+        };
+        if self.sub_part {
+            return String::new();
+        }
+        let before_marks = self
+            .data
+            .and_then(|d| d.suggestions.get(id))
+            .and_then(|r| r.before.as_deref())
+            .map(inline_markdown)
+            .and_then(|inlines| {
+                inlines.into_iter().find_map(|i| match i {
+                    Inline::Text { marks, .. } => Some(marks),
+                    _ => None,
+                })
+            })
+            .unwrap_or_default();
+        let who = self.change_who(id);
+        let n = self.next_annotation();
+        let before = run_props(&before_marks, &self.ctx(), "");
+        let before = if before.is_empty() {
+            "<w:rPr/>".to_owned()
+        } else {
+            before
+        };
+        format!("<w:rPrChange w:id=\"{n}\"{who}>{before}</w:rPrChange>")
+    }
+
+    /// Opens the comments that start at this run, writing each comment and its replies.
+    fn comment_starts(&mut self, ids: &[String]) -> String {
+        let mut out = String::new();
+        for id in ids {
+            if self.comments.open.contains_key(id) {
+                continue;
+            }
+            let Some(comment) = self.data.and_then(|d| d.comments.get(id)) else {
+                continue;
+            };
+            let mut word_ids = Vec::new();
+            let parent = self.next_annotation();
+            word_ids.push(parent);
+            let parent_para = self.comment_xml(parent, &comment.author, &comment.time, &comment.markdown);
+            let done = if comment.resolved { "1" } else { "0" };
+            self.notes.comments_ex.push(format!(
+                "<w15:commentEx w15:paraId=\"{parent_para}\" w15:done=\"{done}\"/>"
+            ));
+            for reply in &comment.replies {
+                let n = self.next_annotation();
+                word_ids.push(n);
+                let para = self.comment_xml(n, &reply.author, &reply.time, &reply.markdown);
+                self.notes.comments_ex.push(format!(
+                    "<w15:commentEx w15:paraId=\"{para}\" w15:paraIdParent=\"{parent_para}\" w15:done=\"{done}\"/>"
+                ));
+            }
+            for n in &word_ids {
+                out.push_str(&format!("<w:commentRangeStart w:id=\"{n}\"/>"));
+            }
+            self.comments.open.insert(id.clone(), word_ids);
+        }
+        out
+    }
+
+    /// Closes the comments whose last run this was.
+    fn comment_ends_after(&mut self, ids: &[String]) -> String {
+        let mut out = String::new();
+        for id in ids {
+            let Some(left) = self.comments.left.get_mut(id) else {
+                continue;
+            };
+            *left = left.saturating_sub(1);
+            if *left == 0 {
+                if let Some(word_ids) = self.comments.open.remove(id) {
+                    out.push_str(&comment_ends(&word_ids));
+                }
+            }
+        }
+        out
+    }
+
+    /// Writes one `w:comment` and returns the `w14:paraId` of its paragraph.
+    fn comment_xml(&mut self, n: u32, author: &str, time: &str, markdown: &str) -> String {
+        let para_id = self.next_para_id();
+        let who = self.who(author, time);
+        let inlines = inline_markdown(markdown);
+        let runs = self.sub_runs(&inlines);
+        self.notes.comments.push(format!(
+            "<w:comment w:id=\"{n}\"{who}><w:p w14:paraId=\"{para_id}\"><w:pPr><w:pStyle w:val=\"CommentText\"/></w:pPr>\
+             <w:r><w:rPr><w:rStyle w:val=\"CommentReference\"/></w:rPr><w:annotationRef/></w:r>{runs}</w:p></w:comment>"
+        ));
+        para_id
+    }
+
+    /// Runs for a note or a comment, which have no relationships: links keep their text, and pictures their
+    /// description.
+    fn sub_runs(&mut self, inlines: &[Inline]) -> String {
+        let outer = self.sub_part;
+        self.sub_part = true;
+        let runs = self.runs(inlines, false);
+        self.sub_part = outer;
+        runs
+    }
+
+    /// A footnote or endnote reference, which writes its note. A reference whose note is missing, or one inside a
+    /// note, writes nothing.
+    fn note_reference(&mut self, id: &str) -> String {
+        if self.sub_part {
+            return String::new();
+        }
+        let Some(note) = self.data.and_then(|d| d.notes.get(id)) else {
+            return String::new();
+        };
+        let (kind, style, reference, list) = match note.kind {
+            NoteKind::Foot => ("footnote", "Footnote", "footnoteRef", &self.notes.footnotes),
+            NoteKind::End => ("endnote", "Endnote", "endnoteRef", &self.notes.endnotes),
+        };
+        let n = list.len() + 1;
+        let inlines = note.inlines();
+        let runs = self.sub_runs(&inlines);
+        let xml = format!(
+            "<w:{kind} w:id=\"{n}\"><w:p><w:pPr><w:pStyle w:val=\"{style}Text\"/></w:pPr>\
+             <w:r><w:rPr><w:rStyle w:val=\"{style}Reference\"/></w:rPr><w:{reference}/></w:r>\
+             <w:r><w:t xml:space=\"preserve\"> </w:t></w:r>{runs}</w:p></w:{kind}>"
+        );
+        match note.kind {
+            NoteKind::Foot => self.notes.footnotes.push(xml),
+            NoteKind::End => self.notes.endnotes.push(xml),
+        }
+        format!("<w:r><w:rPr><w:rStyle w:val=\"{style}Reference\"/></w:rPr><w:{kind}Reference w:id=\"{n}\"/></w:r>")
+    }
+
     /// A picture run, or the description in brackets when the picture is not in the file.
     fn picture(&mut self, dest: &str, alt: &str) -> String {
-        let Some(media) = self.media.get(dest) else {
+        let media = if self.sub_part { None } else { self.media.get(dest) };
+        let Some(media) = media else {
             let name = if alt.is_empty() { "image" } else { alt };
             return format!("<w:r><w:t xml:space=\"preserve\">[{}]</w:t></w:r>", xml_escape(name));
         };
@@ -130,14 +444,38 @@ impl<'a> State<'a> {
     }
 }
 
-/// The size of a picture in EMU, scaled down to fit the text width.
+/// The ends of a comment and its replies, each with its reference run.
+fn comment_ends(ids: &[u32]) -> String {
+    let mut out = String::new();
+    for n in ids {
+        out.push_str(&format!(
+            "<w:commentRangeEnd w:id=\"{n}\"/><w:r><w:rPr><w:rStyle w:val=\"CommentReference\"/></w:rPr>\
+             <w:commentReference w:id=\"{n}\"/></w:r>"
+        ));
+    }
+    out
+}
+
+/// The size of a picture in EMU, scaled down to fit the text width and the largest coordinate.
 fn extent(media: &Media) -> (u64, u64) {
     let (width, height) = (u64::from(media.width.max(1)), u64::from(media.height.max(1)));
     let (cx, cy) = (width * EMU_PER_PIXEL, height * EMU_PER_PIXEL);
-    if cx <= MAX_WIDTH_EMU {
-        (cx, cy)
+    // In u128: a picture header can claim 2^32 - 1 pixels a side, and `cy * MAX_WIDTH_EMU` overflows u64.
+    // The result is at most `side`, so it fits back in u64.
+    let scale = |side: u64, to: u64, from: u64| {
+        u64::try_from(u128::from(side) * u128::from(to) / u128::from(from))
+            .unwrap_or(side)
+            .max(1)
+    };
+    let (cx, cy) = if cx > MAX_WIDTH_EMU {
+        (MAX_WIDTH_EMU, scale(cy, MAX_WIDTH_EMU, cx))
     } else {
-        (MAX_WIDTH_EMU, cy * MAX_WIDTH_EMU / cx)
+        (cx, cy)
+    };
+    if cy > MAX_COORDINATE_EMU {
+        (scale(cx, MAX_COORDINATE_EMU, cy), MAX_COORDINATE_EMU)
+    } else {
+        (cx, cy)
     }
 }
 
@@ -157,52 +495,29 @@ fn drawing(rid: &str, id: u32, (cx, cy): (u64, u64), alt: &str) -> String {
     )
 }
 
-/// The properties of a run, in the order the schema wants them.
-fn run_props(marks: &Marks) -> String {
-    let mut out = String::new();
-    if marks.link.is_some() {
-        out.push_str("<w:rStyle w:val=\"Hyperlink\"/>");
-    }
-    if marks.code {
-        out.push_str("<w:rFonts w:ascii=\"Consolas\" w:hAnsi=\"Consolas\" w:cs=\"Consolas\"/>");
-    }
-    if marks.strong {
-        out.push_str("<w:b/>");
-    }
-    if marks.emphasis {
-        out.push_str("<w:i/>");
-    }
-    if marks.strike {
-        out.push_str("<w:strike/>");
-    }
-    if let Some(hex) = marks.color.as_deref().and_then(pen_hex) {
-        out.push_str(&format!("<w:color w:val=\"{hex}\"/>"));
-    }
-    if let Some(half_points) = marks.size.as_deref().and_then(size_half_points) {
-        out.push_str(&format!("<w:sz w:val=\"{half_points}\"/>"));
-    }
-    if marks.underline {
-        out.push_str("<w:u w:val=\"single\"/>");
-    }
-    if let Some(name) = &marks.highlight {
-        out.push_str(&format!(
-            "<w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"{}\"/>",
-            highlight_hex(name)
-        ));
-    }
-    match marks.script {
-        Some(Script::Sub) => out.push_str("<w:vertAlign w:val=\"subscript\"/>"),
-        Some(Script::Sup) => out.push_str("<w:vertAlign w:val=\"superscript\"/>"),
-        None => {}
-    }
-    if out.is_empty() {
-        out
-    } else {
-        format!("<w:rPr>{out}</w:rPr>")
-    }
-}
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-/// `w:sz` is in half-points, so `large` (15 points at the 12 point body) is 30.
-fn size_half_points(size: &str) -> Option<u32> {
-    crate::doc::size_points(size).map(|points| (points * 2.0).round() as u32)
+    fn media(width: u32, height: u32) -> Media {
+        Media {
+            bytes: Vec::new(),
+            ext: "png".to_owned(),
+            width,
+            height,
+        }
+    }
+
+    #[test]
+    fn a_huge_picture_header_scales_without_overflow_and_stays_in_st_positive_coordinate() {
+        // 4,294,967,295 px square: wider than the text, so the text width on both sides.
+        assert_eq!(extent(&media(u32::MAX, u32::MAX)), (MAX_WIDTH_EMU, MAX_WIDTH_EMU));
+        // 1 x 4,294,967,295 px: 9,525 EMU wide and 40,909,563,484,875 EMU tall, above the
+        // 27,273,042,316,900 bound. Width by hand: floor(27,273,042,316,900 / 4,294,967,295) = 6,349.
+        assert_eq!(extent(&media(1, u32::MAX)), (6_349, MAX_COORDINATE_EMU));
+        // An ordinary picture keeps its size: 100 x 50 px is 952,500 x 476,250 EMU.
+        assert_eq!(extent(&media(100, 50)), (952_500, 476_250));
+        // 1,248 px wide is 11,887,200 EMU, twice the text width, so the height halves: 400 px is 3,810,000 EMU, written as 1,905,000.
+        assert_eq!(extent(&media(1_248, 400)), (MAX_WIDTH_EMU, 1_905_000));
+    }
 }

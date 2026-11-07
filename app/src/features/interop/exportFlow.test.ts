@@ -1,7 +1,8 @@
 // @vitest-environment node
 // What an export covers (page, section, notebook) and the export flow, on the sample library and the web fake.
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import { setRemovePersonal } from '../exportPrefs';
 import { createWebInterop } from '../../platform/web/interop';
 import { createMemoryNotesService } from '../../services/notes/memory';
 import type { NodeId } from '../../services/notes/types';
@@ -77,6 +78,31 @@ describe('the format the dialog opens on', () => {
     const { interop, notes, target } = await setup('p-mitosis');
     const flow = createExportFlow({ interop, notes, target, format: 'docx', announce: () => {} });
     expect(flow.state.get()).toMatchObject({ format: 'docx', scope: 'page' });
+  });
+});
+
+describe('the Word choices', () => {
+  it('sends Remove personal information with a Word export, off until turned on, and only for Word', async () => {
+    const stored = new Map<string, string>();
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => stored.get(key) ?? null,
+      setItem: (key: string, value: string) => void stored.set(key, value),
+    });
+    const sent = async (format: 'docx' | 'markdown') => {
+      const { flow, interop, detach } = await setup('s-lectures');
+      flow.setFormat(format);
+      await flow.start();
+      detach();
+      return interop.log.exports[0];
+    };
+    try {
+      expect(await sent('docx')).toMatchObject({ format: 'docx', word: { removePersonal: false } });
+      setRemovePersonal(true);
+      expect(await sent('docx')).toMatchObject({ format: 'docx', word: { removePersonal: true } });
+      expect(await sent('markdown')).not.toHaveProperty('word');
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });
 

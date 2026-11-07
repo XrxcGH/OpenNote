@@ -1,7 +1,7 @@
 // The Export dialog: choose what to export (this page, section, or notebook), a format, and a folder; export with
 // progress and Cancel; read the summary. The host makes a new folder or file, so nothing is overwritten.
 
-import { useEffect, useState, useSyncExternalStore } from 'react';
+import { useEffect, useId, useState, useSyncExternalStore } from 'react';
 import { isEnabled } from '../../app/flags';
 import type { ExportFormat, ExportScope, InteropClient } from '../../platform/interop';
 import type { NotesService } from '../../services/notes/types';
@@ -11,7 +11,7 @@ import { Button, Dialog, RadioCard, RadioGroup, Switch, TextField, announce } fr
 import type { DialogAction } from '../../ui';
 import { createExportFlow } from './exportFlow';
 import { CheckFirstSwitch } from '../a11yCheck';
-import { pageTitleOn, setPageTitle } from '../exportPrefs';
+import { pageTitleOn, removePersonalOn, setPageTitle, setRemovePersonal } from '../exportPrefs';
 import { LatexFields } from './LatexFields';
 import { SendExtras } from './SendExtras';
 import { NO_SHARE_CHOICES } from './exportFlow';
@@ -147,6 +147,7 @@ function Options({
       </div>
       {state.format !== 'share' && <SendExtras flow={flow} folder={state.folder} />}
       {state.format === 'pdf' && <PageTitleSwitch />}
+      {state.format === 'docx' && <RemovePersonalSwitch />}
       <CheckFirstSwitch />
       {state.error && (
         <p role="alert" className={styles.error}>
@@ -170,6 +171,28 @@ function PageTitleSwitch() {
           setOn(value);
         }}
       />
+    </>
+  );
+}
+
+/** Whether a Word export leaves out authors' names and dates. Off until turned on, and remembered. */
+function RemovePersonalSwitch() {
+  const [on, setOn] = useState(removePersonalOn);
+  const helpId = useId();
+  return (
+    <>
+      <Switch
+        label={t('interop.export.removePersonal')}
+        checked={on}
+        describedBy={helpId}
+        onChange={(value) => {
+          setRemovePersonal(value);
+          setOn(value);
+        }}
+      />
+      <p id={helpId} className={styles.note}>
+        {t('interop.export.removePersonalHelp')}
+      </p>
     </>
   );
 }
