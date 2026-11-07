@@ -8,28 +8,10 @@ import type { EditorState, Transaction } from '@tiptap/pm/state';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import { editorExtensions } from './kit';
+import { formattingMarks } from './invisiblesStore';
 import './invisibles.module.css';
 
-let marksOn = false;
-const listeners = new Set<() => void>();
-
-/**
- * Whether formatting marks show. One switch for every editor, like Word's button. The editor layer keeps its own tiny
- * store, because it may not import the app's state; the command in features/page reads and flips it.
- */
-export const formattingMarks = {
-  get: (): boolean => marksOn,
-  set(next: boolean | ((before: boolean) => boolean)): void {
-    const value = typeof next === 'function' ? next(marksOn) : next;
-    if (value === marksOn) return;
-    marksOn = value;
-    for (const listener of [...listeners]) listener();
-  },
-  subscribe(listener: () => void): () => void {
-    listeners.add(listener);
-    return () => void listeners.delete(listener);
-  },
-};
+export { formattingMarks };
 
 /** The characters that get a mark, and the kind CSS draws for each. */
 export const MARK_KINDS: Readonly<Record<string, string>> = {

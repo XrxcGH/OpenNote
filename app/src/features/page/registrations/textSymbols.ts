@@ -1,7 +1,7 @@
 // The registrations of the symbol dialog, Alt+X, the special spaces and hyphens, and Show formatting marks (lane
 // text:special-chars). This file loads at start-up, so it holds only definitions; the code loads when a command runs.
 import { chord } from '../../../commands/registry';
-import { formattingMarks } from '../../../editor/extensions/invisibles';
+import { formattingMarks } from '../../../editor/extensions/invisiblesStore';
 import { commandBar, commands } from '../../../registries';
 import { t } from '../../../strings/t';
 import type { MessageKey } from '../../../strings/t';
@@ -121,3 +121,6 @@ commandBar.register({
   priority: 30,
   presentation: 'toggle',
 });
+
+// The marks extension loads after start-up, the way the other editor extensions do, so the first load stays small.
+void import('../../../editor/extensions/invisibles').catch(() => undefined);

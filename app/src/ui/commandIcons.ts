@@ -26,6 +26,7 @@ import { ListNumbersIcon } from '@phosphor-icons/react/dist/csr/ListNumbers';
 import { MicrophoneIcon } from '@phosphor-icons/react/dist/csr/Microphone';
 import { NotePencilIcon } from '@phosphor-icons/react/dist/csr/NotePencil';
 import { NotebookIcon } from '@phosphor-icons/react/dist/csr/Notebook';
+import { ParagraphIcon } from '@phosphor-icons/react/dist/csr/Paragraph';
 import { RecordIcon } from '@phosphor-icons/react/dist/csr/Record';
 import { ShareNetworkIcon } from '@phosphor-icons/react/dist/csr/ShareNetwork';
 import { TextAUnderlineIcon } from '@phosphor-icons/react/dist/csr/TextAUnderline';
@@ -60,6 +61,7 @@ export const HOME_ICONS: Readonly<Record<string, IconComponent>> = {
   'block.checklist': ListChecksIcon,
   'outline.promote': TextOutdentIcon,
   'outline.demote': TextIndentIcon,
+  'text.formattingMarks': ParagraphIcon,
   'block.toggleCheck': CheckSquareIcon,
   'checklist.checkAll': ChecksIcon,
   'page.find': BinocularsIcon,
