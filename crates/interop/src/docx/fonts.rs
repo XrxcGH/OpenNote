@@ -81,6 +81,20 @@ pub struct EmbedFont {
     pub bytes: Vec<u8>,
 }
 
+/// Every face of the bundled fonts as a file to embed ([`crate::bundled_fonts::FACES`]). [`embed`] keeps the faces
+/// of the families a document uses.
+pub fn bundled_embeds() -> Vec<EmbedFont> {
+    crate::bundled_fonts::FACES
+        .iter()
+        .map(|face| EmbedFont {
+            family: face.family.to_owned(),
+            bold: face.bold,
+            italic: face.italic,
+            bytes: face.bytes.to_vec(),
+        })
+        .collect()
+}
+
 /// The class Word uses to substitute a font it lacks (`ST_FontFamily`), and whether its glyphs have one width.
 fn class(name: &str) -> (&'static str, bool) {
     let lower = name.to_ascii_lowercase();

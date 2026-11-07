@@ -518,3 +518,59 @@ fn notes_and_comments_keep_their_links_and_pictures_through_their_own_relationsh
         "the picture, not its description"
     );
 }
+
+#[test]
+fn the_bundled_fonts_embed_only_the_faces_of_families_the_document_uses() {
+    let offered = bundled_embeds();
+    assert_eq!(offered.len(), crate::bundled_fonts::FACES.len());
+    let markdown = "<span data-font=\"Carlito\">a</span> <span data-font=\"Literata\">*b*</span>";
+    let mut setup = Setup::default();
+    setup.options.embed_fonts = offered;
+    let bytes = build(&input(vec![text_part(markdown, json!({}))], setup)).expect("builds");
+    let parts = read_parts(&bytes);
+    let text = |name: &str| -> String {
+        let (_, part) = parts
+            .iter()
+            .find(|(n, _)| n == name)
+            .unwrap_or_else(|| panic!("{name}"));
+        String::from_utf8_lossy(part).into_owned()
+    };
+    let table = text("word/fontTable.xml");
+    let font = |family: &str| -> String {
+        let at = table
+            .find(&format!("<w:font w:name=\"{family}\">"))
+            .unwrap_or_else(|| panic!("{family} in {table}"));
+        table[at..at + table[at..].find("</w:font>").expect("an end")].to_owned()
+    };
+    // Carlito and the code font of the Code style have four static faces each. Literata and the theme's
+    // OpenNote Sans are variable fonts, one file per slope.
+    for family in ["Carlito", fonts::APP_MONO] {
+        let xml = font(family);
+        for element in ["embedRegular", "embedBold", "embedItalic", "embedBoldItalic"] {
+            assert!(xml.contains(&format!("<w:{element} ")), "{element}: {xml}");
+        }
+    }
+    for family in ["Literata", fonts::APP_SANS] {
+        let xml = font(family);
+        assert!(
+            xml.contains("<w:embedRegular ") && xml.contains("<w:embedItalic "),
+            "{xml}"
+        );
+        assert!(!xml.contains("<w:embedBold "), "{xml}");
+    }
+    assert!(
+        !table.contains("w:name=\"Caladea\""),
+        "an unused family is not embedded: {table}"
+    );
+    // ECMA-376 Part 1, 17.8.1: only the first 32 bytes are obfuscated, so the rest is the face's own file.
+    let originals: Vec<&[u8]> = crate::bundled_fonts::FACES.iter().map(|f| f.bytes).collect();
+    let embedded: Vec<&(String, Vec<u8>)> = parts.iter().filter(|(n, _)| n.starts_with("word/fonts/")).collect();
+    assert_eq!(embedded.len(), 12, "4 + 4 + 2 + 2 faces");
+    for (name, file) in embedded {
+        assert!(
+            originals.iter().any(|o| o.len() == file.len() && o[32..] == file[32..]),
+            "{name} is a bundled face"
+        );
+    }
+    assert!(text("word/settings.xml").contains("<w:embedTrueTypeFonts/>"));
+}
