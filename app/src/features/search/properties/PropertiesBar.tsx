@@ -14,7 +14,7 @@ import { newId } from '../../../editor/ids';
 import type { OpenPage } from '../../../services/pages/types';
 import type { PageSuggestion } from '../../../services/search/types';
 import { t } from '../../../strings/t';
-import { Button, TextField } from '../../../ui';
+import { Button } from '../../../ui';
 import type { IconProps } from '../../../ui/icons';
 import { maybeSearchClient } from '../client';
 import { FIELD_TYPES, readFields, viewPatch } from './model';
@@ -50,7 +50,12 @@ function PageLink({ field, onChange }: { field: Field; onChange(patch: Partial<F
   }, [text, field.label]);
   return (
     <div className={styles.linkField}>
-      <TextField label={field.name} value={text} onChange={setText} />
+      <input
+        className={styles.input}
+        aria-label={field.name}
+        value={text}
+        onChange={(event) => setText(event.target.value)}
+      />
       {found.length > 0 && (
         <ul className={styles.suggestions} aria-label={t('qolSearch.properties.pages')}>
           {found.map((page) => (
@@ -137,7 +142,11 @@ function Value({ field, onChange }: { field: Field; onChange(patch: Partial<Fiel
   }
 }
 
-export function PropertiesBar({ page }: { page: OpenPage }) {
+/**
+ * The properties header. The sync queue of the page view, when given, carries the edits, so they take their turn after
+ * typed text and the Undo button and Ctrl+Z can take them back (Beta 8 walk B2-B13-2). Without one they go to the page.
+ */
+export function PropertiesBar({ page, sync }: { page: OpenPage; sync?: Pick<OpenPage, 'send'> }) {
   const [fields, setFields] = useState<Field[]>(() => readFields(page.initial.view));
   const [open, setOpen] = useState(false);
   const [adding, setAdding] = useState<FieldType>('text');
@@ -163,20 +172,24 @@ export function PropertiesBar({ page }: { page: OpenPage }) {
       setFields(next);
       if (timer.current) clearTimeout(timer.current);
       const send = () =>
-        void page.send({ edits: [{ edit: 'setPage', view: viewPatch(latest.current) }] }).catch(() => undefined);
+        void (sync ?? page)
+          .send({ edits: [{ edit: 'setPage', view: viewPatch(latest.current) }] })
+          .catch(() => undefined);
       if (now) send();
       else timer.current = setTimeout(send, 500);
     },
-    [page],
+    [page, sync],
   );
   useEffect(
     () => () => {
       if (timer.current) {
         clearTimeout(timer.current);
-        void page.send({ edits: [{ edit: 'setPage', view: viewPatch(latest.current) }] }).catch(() => undefined);
+        void (sync ?? page)
+          .send({ edits: [{ edit: 'setPage', view: viewPatch(latest.current) }] })
+          .catch(() => undefined);
       }
     },
-    [page],
+    [page, sync],
   );
 
   const toggle = () => {
@@ -249,7 +262,7 @@ export function PropertiesBar({ page }: { page: OpenPage }) {
                 />
                 {field.type === 'choice' && (
                   <input
-                    className={styles.input}
+                    className={`${styles.input} ${styles.options}`}
                     aria-label={t('qolSearch.properties.optionsOf', { name: field.name })}
                     placeholder={t('qolSearch.properties.optionsHint')}
                     defaultValue={(field.options ?? []).join(', ')}

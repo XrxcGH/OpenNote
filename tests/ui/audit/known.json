@@ -307,7 +307,6 @@
   "tool.kitelectrical | target-small | div.form > div.field > input.input",
   "tool.kitelectrical | target-small | div.form > div.field > select.input",
   "tool.kitelectrical | target-small | div.kit > div[role=tablist].tabs > button[role=tab].tab",
-  "command | target-small | div.body > div.choices > button.button",
   "tool.kit-humanities | target-small | section.tool > div[role=tablist].tabs > button[role=tab].tab",
   "tool.kit-humanities | target-small | section.tool > label.field > select"
  ]

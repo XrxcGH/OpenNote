@@ -51,3 +51,35 @@ describe('the properties panel and Escape', () => {
     editor.remove();
   });
 });
+
+describe('property edits', () => {
+  it('go through the page sync queue, so Undo can take them back (Beta 8 walk B2-B13-2)', async () => {
+    const sent: unknown[] = [];
+    const page = {
+      initial: { view: { properties: { fields: [{ id: 'a', name: 'Topic', type: 'text', value: 'Cells' }] } } },
+      onFrame: () => () => undefined,
+      send: () => Promise.reject(new Error('Property edits must go through the queue.')),
+    } as unknown as OpenPage;
+    const sync = { send: (batch: unknown) => (sent.push(batch), Promise.resolve()) } as unknown as Pick<
+      OpenPage,
+      'send'
+    >;
+    renderUi(<PropertiesBar page={page} sync={sync} />);
+    await userEvent.click(fold());
+    await userEvent.click(document.querySelector<HTMLButtonElement>('button[aria-label^="Remove"]')!);
+    expect(sent).toEqual([{ edits: [{ edit: 'setPage', view: { properties: null } }] }]);
+  });
+
+  it('lines every row up the same: Remove ends the first line, and a page link has no label of its own (B2-B13-1)', async () => {
+    const fields = [
+      { id: 'a', name: 'Stage', type: 'choice', value: 'Open', options: ['Open', 'Done'] },
+      { id: 'b', name: 'Related', type: 'page', value: null },
+    ];
+    const page = { ...stub, initial: { view: { properties: { fields } } } } as unknown as OpenPage;
+    renderUi(<PropertiesBar page={page} />);
+    await userEvent.click(fold());
+    const top = (label: string) => document.querySelector(`[aria-label="${label}"]`)!.getBoundingClientRect().top;
+    expect(Math.abs(top('Remove Stage') - top('Stage'))).toBeLessThan(12);
+    expect(document.querySelector('[aria-label="Related"]')!.closest('label')).toBeNull();
+  });
+});
