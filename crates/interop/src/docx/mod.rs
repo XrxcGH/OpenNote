@@ -18,7 +18,7 @@ pub(crate) mod zip;
 #[cfg(test)]
 mod tests;
 
-use std::collections::{BTreeSet, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 use opennote_core::Timestamp;
 
@@ -30,7 +30,7 @@ pub use self::units::NUMBER_FORMATS;
 
 use self::body::Frame;
 use self::parts::{content_types, core_props, document_rels, root_rels, xml_escape, Extras};
-use self::runs::State;
+use self::runs::{State, SubPart};
 use self::section::{sect_pr, HeaderParts};
 use self::zip::ZipWriter;
 use crate::doc::data::TextData;
@@ -211,24 +211,13 @@ pub fn build(input: &WordInput) -> Result<Vec<u8>> {
         archive.add(&format!("word/fonts/{name}"), bytes)?;
     }
     archive.add("word/theme/theme1.xml", fonts::theme_xml(&setup.theme).as_bytes())?;
-    for (name, part) in [
+    let annotations = [
         ("footnotes", &footnotes),
         ("endnotes", &endnotes),
         ("comments", &comments),
         ("commentsExtended", &comments_ex),
-    ] {
-        if let Some(xml) = part {
-            archive.add(&format!("word/{name}.xml"), xml.as_bytes())?;
-        }
-    }
-    for (part, rels) in &state.sub_rels {
-        if !rels.is_empty() {
-            archive.add(
-                &format!("word/_rels/{}.xml.rels", part.name()),
-                parts::rels_xml(&rels.concat()).as_bytes(),
-            )?;
-        }
-    }
+    ];
+    add_annotation_parts(&mut archive, &annotations, &state.sub_rels)?;
     for (name, _, xml) in &headers.files {
         archive.add(&format!("word/{name}"), xml.as_bytes())?;
     }
@@ -370,6 +359,29 @@ fn body_xml<'a>(state: &mut State<'a>, parts: &'a [Part], headers: &mut HeaderPa
 }
 
 /// Relationship IDs of headers and footers, apart from those of links and pictures.
+/// Adds the notes and comments parts that have content, and the relationships part of each that has links or
+/// pictures.
+fn add_annotation_parts(
+    archive: &mut ZipWriter,
+    annotations: &[(&str, &Option<String>)],
+    sub_rels: &BTreeMap<SubPart, Vec<String>>,
+) -> Result<()> {
+    for (name, part) in annotations {
+        if let Some(xml) = part {
+            archive.add(&format!("word/{name}.xml"), xml.as_bytes())?;
+        }
+    }
+    for (part, rels) in sub_rels {
+        if !rels.is_empty() {
+            archive.add(
+                &format!("word/_rels/{}.xml.rels", part.name()),
+                parts::rels_xml(&rels.concat()).as_bytes(),
+            )?;
+        }
+    }
+    Ok(())
+}
+
 struct RelIds {
     next: u32,
 }
