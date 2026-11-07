@@ -64,7 +64,7 @@ export function sheetDialect(syntax: SheetSyntax): Dialect {
         strings: true,
         brackets: true,
         colon: true,
-        ...(excel ? { quotedNames: true, nestedBrackets: true } : {}),
+        ...(excel ? { quotedNames: true, nestedBrackets: true, errorLiterals: true } : {}),
       },
       infix: setOf('+', '-', '*', '/', '^', '&', '=', '<>', '<', '>', '<=', '>='),
       prefix: excel ? setOf('-', '+', '√', '@') : setOf('-', '+', '√'),

@@ -1,10 +1,22 @@
 import { describe, expect, it } from 'vitest';
-import { createTable, setCellInput, setColumnFormula } from './edit';
+import { calculateTable, createTable, setCellInput, setColumnFormula } from './edit';
+import type { FnSpec2 } from './formula/fn';
 import { convertFormula, STORED, syntaxOf } from './formula/lexer';
 import { parseFormula } from './formula/parser';
 import { DE_DE, EN_US } from './locale';
-import { recalculateWithCycles } from './recalc';
-import { ERROR_TOKENS, err, type Value } from './values';
+import type { Table } from './model';
+import { quickMath } from './quickMath';
+import {
+  DEFAULT_ENV,
+  errorOrigin,
+  needsCalculation,
+  recalculate,
+  recalculateWithCycles,
+  spillRange,
+  type EngineEnv,
+} from './recalc';
+import { bookErrorOrigin, recalculateBook, setBookCellInput } from './workbook';
+import { ERROR_TOKENS, arrayOf, err, isArray, toNumber, toText, type Value } from './values';
 
 const DATA = [
   ['10', '2'],
@@ -333,5 +345,394 @@ describe('cells and cycles', () => {
   it('treats a formula that no longer parses as a value error', () => {
     const table = createTable([{ name: 'A', formula: '1+' }], [['']], EN_US);
     expect(table.rows[0].cells[0].value).toEqual(err('VALUE'));
+  });
+});
+
+// Stand-ins for library functions that other lanes add (SEQUENCE in fn-arrays, VLOOKUP in fn-lookup), written from
+// their documented behavior and kept to what these tests need. They come in through the engine's `functions`.
+const meta = { signature: '', example: '' };
+const SEQUENCE: FnSpec2 = {
+  name: 'SEQUENCE',
+  family: 'arrays',
+  params: [
+    { name: 'rows', kind: 'number' },
+    { name: 'columns', kind: 'number', optional: true },
+  ],
+  run: ([rows, cols]) => {
+    const r = toNumber(rows);
+    const c = cols === undefined ? 1 : toNumber(cols);
+    if (typeof r !== 'number' || typeof c !== 'number') return err('VALUE');
+    return arrayOf(Array.from({ length: r }, (_, i) => Array.from({ length: c }, (_, j) => i * c + j + 1)));
+  },
+  meta,
+};
+const VLOOKUP: FnSpec2 = {
+  name: 'VLOOKUP',
+  family: 'lookup',
+  params: [
+    { name: 'lookup_value', kind: 'value' },
+    { name: 'table_array', kind: 'range' },
+    { name: 'col_index_num', kind: 'number' },
+    { name: 'range_lookup', kind: 'bool', optional: true },
+  ],
+  run: ([value, table, index]) => {
+    if (!isArray(table)) return err('VALUE');
+    const n = Number(index);
+    if (n < 1 || n > table.cols) return err('REF');
+    for (let r = 0; r < table.rows; r++) {
+      if (table.data[r * table.cols] === value) return table.data[r * table.cols + n - 1];
+    }
+    return err('NA');
+  },
+  meta,
+};
+let counter = 0;
+/** REFTO("A2"): a reference named by text, as INDIRECT gives, so what it reads is only known when it runs. */
+const REFTO: FnSpec2 = {
+  name: 'REFTO',
+  family: 'lookup',
+  returnsRef: true,
+  params: [{ name: 'text', kind: 'text' }],
+  run: ([text]) => {
+    const t = toText(text);
+    if (typeof t !== 'string') return t;
+    const m = /^([A-Z])(\d+)$/.exec(t);
+    if (!m) return err('REF');
+    const c = m[1].charCodeAt(0) - 65;
+    const r = Number(m[2]) - 1;
+    return { kind: 'ref', r1: r, c1: c, r2: r, c2: c };
+  },
+  meta,
+};
+const ENV: EngineEnv = {
+  today: () => 46_000 + counter,
+  functions: new Map([
+    ['SEQUENCE', SEQUENCE],
+    ['VLOOKUP', VLOOKUP],
+    ['REFTO', REFTO],
+  ]),
+};
+
+const LETTERS = ['A', 'B', 'C', 'D'];
+
+/** A table with Excel's rules (data.sheet.v 1) and number columns A to D. */
+function sheet(data: string[][], extra: Partial<Table> = {}): Table {
+  const columns = LETTERS.map((name) => ({ name, type: 'number' as const }));
+  const table = createTable(columns, data, EN_US, ENV, 1);
+  return Object.keys(extra).length === 0 ? table : recalculate({ ...table, ...extra }, ENV);
+}
+
+function type(t: Table, ref: string, raw: string): Table {
+  const col = ref.charCodeAt(0) - 65;
+  const row = Number(ref.slice(1)) - 1;
+  return setCellInput(t, { row, col, raw }, EN_US, ENV);
+}
+const at = (t: Table, ref: string): Value => t.rows[Number(ref.slice(1)) - 1].cells[ref.charCodeAt(0) - 65].value;
+const column = (t: Table, col: number): Value[] => t.rows.map((r) => r.cells[col].value);
+const blank = (rows: number): string[][] => Array.from({ length: rows }, () => ['', '', '', '']);
+const row1 = (...values: string[]): string[][] => [values];
+
+describe('arrays and spill (ADR 0059)', () => {
+  it('spills SEQUENCE, blocks on a typed cell, and spills again when it is cleared (lane test)', () => {
+    let t = type(sheet(blank(4)), 'A1', '=SEQUENCE(3)');
+    expect(column(t, 0)).toEqual([1, 2, 3, null]);
+    expect(t.rows[1].cells[0].spill).toBe(true);
+    expect(spillRange(t, 0, 0)).toEqual({ s: 0, r1: 0, c1: 0, r2: 2, c2: 0 });
+    t = type(t, 'A2', 'x');
+    expect(at(t, 'A1')).toEqual(err('SPILL'));
+    expect(at(t, 'A2')).toBe('x');
+    expect(at(t, 'A3')).toBe(null);
+    expect(errorOrigin(t, 0, 0)).toMatchObject({ code: 'SPILL', kind: 'spill', cell: { table: 0, col: 0, row: 1 } });
+    t = type(t, 'A2', '');
+    expect(column(t, 0)).toEqual([1, 2, 3, null]);
+    t = type(t, 'B1', '=SUM(A1#)');
+    expect(at(t, 'B1')).toBe(6);
+  });
+
+  it('orders a reader of a spill after it, whichever was typed first', () => {
+    let t = type(sheet(blank(4)), 'B1', '=SUM(A1#)');
+    expect(at(t, 'B1')).toEqual(err('REF'));
+    t = type(t, 'B2', '=A3*10');
+    t = type(t, 'A1', '=SEQUENCE(3)');
+    expect(at(t, 'B1')).toBe(6);
+    expect(at(t, 'B2')).toBe(30);
+    t = type(t, 'A1', '=SEQUENCE(2)');
+    expect(column(t, 0)).toEqual([1, 2, null, null]);
+    expect(at(t, 'B1')).toBe(3);
+    expect(at(t, 'B2')).toBe(0);
+  });
+
+  it('spills ranges and array constants, and refuses to spill past the table', () => {
+    let t = sheet([
+      ['1', '', '', ''],
+      ['2', '', '', ''],
+      ['3', '', '', ''],
+    ]);
+    t = type(t, 'B1', '=A1:A3*2');
+    expect(column(t, 1)).toEqual([2, 4, 6]);
+    t = type(t, 'C1', '={1,2;3,4}');
+    expect([at(t, 'C1'), at(t, 'D1'), at(t, 'C2'), at(t, 'D2')]).toEqual([1, 2, 3, 4]);
+    t = type(t, 'D3', '=SEQUENCE(2)');
+    expect(at(t, 'D3')).toEqual(err('SPILL'));
+    expect(errorOrigin(t, 3, 2)).toMatchObject({ kind: 'spill' });
+  });
+
+  it('broadcasts operators: a column against a row, and #N/A where sizes differ', () => {
+    let t = type(sheet(blank(3)), 'A1', '={1;2}+{10,20}');
+    expect([at(t, 'A1'), at(t, 'B1'), at(t, 'A2'), at(t, 'B2')]).toEqual([11, 21, 12, 22]);
+    t = type(t, 'C1', '={1;2;3}+{1;2}');
+    expect(column(t, 2)).toEqual([2, 4, err('NA')]);
+  });
+
+  it('reads one value with @ and keeps a legacy array formula in its block', () => {
+    let t = sheet([
+      ['1', '', '', ''],
+      ['2', '', '', ''],
+      ['3', '', '', ''],
+    ]);
+    t = type(t, 'B2', '=@A1:A3');
+    expect(at(t, 'B2')).toBe(2);
+    expect(at(t, 'B3')).toBe(null);
+    const legacyCell = { raw: '={1;2}', value: null, formula: '{1;2}', array: { rows: 3, cols: 1 } };
+    const rows = t.rows.map((row, r) =>
+      r === 0 ? { ...row, cells: row.cells.map((c, i) => (i === 2 ? legacyCell : c)) } : row,
+    );
+    const legacy = recalculate({ ...t, rows }, ENV);
+    expect(column(legacy, 2)).toEqual([1, 2, err('NA')]);
+  });
+
+  it('gives #SPILL! for an array in a calculated column, and #CALC! for a LAMBDA left uncalled', () => {
+    const t = sheet([
+      ['1', '', '', ''],
+      ['2', '', '', ''],
+    ]);
+    const result = setColumnFormula(t, 1, '{1,2}', ENV);
+    expect(result.ok && column(result.table, 1)).toEqual([err('SPILL'), err('SPILL')]);
+    expect(at(type(t, 'C1', '=LAMBDA(x,x)'), 'C1')).toEqual(err('CALC'));
+  });
+});
+
+describe('LET, LAMBDA, and names (ADR 0062)', () => {
+  it('binds LET names, calls a LAMBDA in place, and recurses through a named LAMBDA (lane test)', () => {
+    const names = [{ name: 'Fact', ref: 'LAMBDA(n, IF(n<2,1,n*Fact(n-1)))' }];
+    let t = sheet(blank(2), { names });
+    t = type(t, 'A1', '=LET(x,2,y,x*3,x+y)');
+    t = type(t, 'B1', '=LAMBDA(x,x+1)(2)');
+    t = type(t, 'C1', '=Fact(10)');
+    expect([at(t, 'A1'), at(t, 'B1'), at(t, 'C1')]).toEqual([8, 3, 3628800]);
+  });
+
+  it('knows optional parameters with ISOMITTED, LAMBDA values in LET, and ranges in LET', () => {
+    let t = sheet([
+      ['1', '', '', ''],
+      ['2', '', '', ''],
+      ['3', '', '', ''],
+    ]);
+    t = type(t, 'B1', '=LAMBDA(a,[b],IF(ISOMITTED(b),a,a+b))(1)');
+    t = type(t, 'B2', '=LAMBDA(a,[b],IF(ISOMITTED(b),a,a+b))(1,2)');
+    t = type(t, 'C1', '=LET(f,LAMBDA(x,x*x),f(4)+f(1))');
+    t = type(t, 'D1', '=LET(r,A1:A3,SUM(r))');
+    expect([at(t, 'B1'), at(t, 'B2'), at(t, 'C1'), at(t, 'D1')]).toEqual([1, 3, 17, 6]);
+    expect(at(type(t, 'C2', '=LAMBDA(x,x)(1,2)'), 'C2')).toEqual(err('VALUE'));
+  });
+
+  it('stops recursion deeper than 1,024 with #NUM!', () => {
+    const names = [{ name: 'Down', ref: 'LAMBDA(n, IF(n=0, 0, Down(n-1)))' }];
+    let t = sheet(blank(1), { names });
+    t = type(t, 'A1', '=Down(100)');
+    t = type(t, 'B1', '=Down(5000)');
+    expect(at(t, 'A1')).toBe(0);
+    expect(at(t, 'B1')).toEqual(err('NUM'));
+  });
+
+  it('reads constant, range, and formula names', () => {
+    const names = [
+      { name: 'Rate', ref: '0.5' },
+      { name: 'Prices', ref: 'A1:A3' },
+      { name: 'Twice', ref: 'SUM(Prices)*2' },
+    ];
+    const data = [
+      ['10', '', '', ''],
+      ['20', '', '', ''],
+      ['30', '', '', ''],
+    ];
+    let t = sheet(data, { names });
+    t = type(t, 'B1', '=A1*Rate');
+    t = type(t, 'B2', '=SUM(Prices)');
+    t = type(t, 'B3', '=Twice');
+    expect(column(t, 1)).toEqual([5, 60, 120]);
+    t = type(t, 'A1', '40');
+    expect(column(t, 1)).toEqual([20, 90, 180]);
+    expect(at(type(t, 'C1', '=Nope+1'), 'C1')).toEqual(err('NAME'));
+  });
+});
+
+describe('iterative and manual calculation (ADR 0065)', () => {
+  it('converges A1 = (A1+10)/2 with iteration on, and shows Circular with it off (lane test)', () => {
+    const on = type(sheet(blank(1), { iterate: { max: 100, change: 0.001 } }), 'A1', '=(A1+10)/2');
+    expect(Math.abs((at(on, 'A1') as number) - 10)).toBeLessThan(0.001);
+    const off = type(sheet(blank(1)), 'A1', '=(A1+10)/2');
+    expect(at(off, 'A1')).toEqual(err('CYCLE'));
+    expect(recalculateWithCycles(off, ENV).cycles).toEqual([{ col: 0, row: 0 }]);
+  });
+
+  it('stops after the most passes allowed', () => {
+    const t = type(sheet(blank(1), { iterate: { max: 3, change: 0.001 } }), 'A1', '=A1+1');
+    expect(at(t, 'A1')).toBe(3);
+  });
+
+  it('waits for F9 in manual calculation, except for a formula typed now', () => {
+    let t = sheet(row1('1', '', '', ''), { calc: 'manual' });
+    t = type(t, 'B1', '=A1*2');
+    expect(at(t, 'B1')).toBe(2);
+    t = type(t, 'A1', '5');
+    expect(at(t, 'B1')).toBe(2);
+    expect(needsCalculation(t)).toBe(true);
+    t = calculateTable(t, ENV);
+    expect(at(t, 'B1')).toBe(10);
+  });
+
+  it('recalculates volatile functions on every edit', () => {
+    let t = type(sheet(row1('1', '', '', '')), 'B1', '=TODAY()');
+    const before = at(t, 'B1') as number;
+    counter++;
+    t = type(t, 'A1', '2');
+    expect(at(t, 'B1')).toBe(before + 1);
+  });
+
+  it('follows a reference that is only known when the formula runs', () => {
+    let t = sheet([
+      ['1', '', '', ''],
+      ['2', '', '', ''],
+    ]);
+    t = type(t, 'B1', '=REFTO("A2")*10');
+    expect(at(t, 'B1')).toBe(20);
+    t = type(t, 'A2', '7');
+    expect(at(t, 'B1')).toBe(70);
+  });
+});
+
+describe('other tables on the page (ADR 0062)', () => {
+  const sales = (): Table => ({
+    ...createTable(
+      [{ name: 'Region' }, { name: 'Amount', type: 'number' }],
+      [
+        ['East', '10'],
+        ['West', '20'],
+      ],
+      EN_US,
+      ENV,
+      1,
+    ),
+    name: 'Sales',
+  });
+
+  it('recalculates Sales[Amount] in another table when a Sales cell changes (lane test)', () => {
+    const report = createTable(
+      [{ name: 'Total', type: 'number' }],
+      [['=SUM(Sales[Amount])'], ['=Sales!B2*2']],
+      EN_US,
+      ENV,
+      1,
+    );
+    let book = recalculateBook([sales(), report], ENV);
+    expect(column(book[1], 0)).toEqual([30, 40]);
+    book = setBookCellInput(book, 0, { row: 0, col: 1, raw: '100' }, EN_US, ENV);
+    expect(column(book[1], 0)).toEqual([120, 40]);
+    book = setBookCellInput(book, 0, { row: 1, col: 1, raw: '1' }, EN_US, ENV);
+    expect(column(book[1], 0)).toEqual([101, 2]);
+  });
+
+  it('names tables Table1, Table2 by default, and reads page names from any table', () => {
+    const first = {
+      ...sheet(row1('4', '', '', '')),
+      names: [{ name: 'Shared', ref: 'A1*10', scope: 'page' as const }],
+    };
+    const second = createTable([{ name: 'X', type: 'number' }], [['=Table1!A1+1'], ['=Shared']], EN_US, ENV, 1);
+    const book = recalculateBook([first, second], ENV);
+    expect(column(book[1], 0)).toEqual([5, 40]);
+    const broken = createTable([{ name: 'X', type: 'number' }], [['=Nowhere!A1']], EN_US, ENV, 1);
+    expect(at(recalculateBook([broken], ENV)[0], 'A1')).toEqual(err('REF'));
+  });
+
+  it('reads this row of a column with [@Col] in a calculated column', () => {
+    const t = createTable(
+      [
+        { name: 'Qty', type: 'number' },
+        { name: 'Price', type: 'number' },
+        { name: 'Total', type: 'number', formula: '[@Qty]*[@Price]' },
+        { name: 'Share', type: 'number', formula: 'Table1[@Total]/SUM(Table1[Total])' },
+      ],
+      [
+        ['2', '5'],
+        ['3', '10'],
+      ],
+      EN_US,
+      ENV,
+      1,
+    );
+    expect(column(t, 2)).toEqual([10, 30]);
+    expect(column(t, 3)).toEqual([0.25, 0.75]);
+  });
+});
+
+describe('error origins', () => {
+  it('records the VLOOKUP node and its lookup value (lane test)', () => {
+    let t = sheet([
+      ['1', '10', '', ''],
+      ['2', '20', '', ''],
+      ['3', '30', '', ''],
+    ]);
+    t = type(t, 'C1', '=VLOOKUP(9,A1:B3,2,FALSE)');
+    expect(at(t, 'C1')).toEqual(err('NA'));
+    const origin = errorOrigin(t, 2, 0);
+    expect(origin).toMatchObject({ code: 'NA', kind: 'function', name: 'VLOOKUP', start: 0 });
+    expect(origin?.args?.[0]).toBe(9);
+    expect(origin?.args?.[1]).toEqual({ rows: 3, cols: 2 });
+    expect(at(type(t, 'C2', '=VLOOKUP(2,A1:B3,2,FALSE)'), 'C2')).toBe(20);
+  });
+
+  it('follows an error to the cell it came from, the operator, the name, and the cycle', () => {
+    let t = sheet(row1('1', '0', '', ''));
+    t = type(t, 'C1', '=A1/B1');
+    t = type(t, 'D1', '=C1+1');
+    expect(errorOrigin(t, 2, 0)).toMatchObject({ code: 'DIV0', kind: 'operator', name: '/' });
+    expect(errorOrigin(t, 3, 0)).toMatchObject({ code: 'DIV0', kind: 'cell', cell: { table: 0, col: 2, row: 0 } });
+    t = type(t, 'C1', '=nothing');
+    expect(errorOrigin(t, 2, 0)).toMatchObject({ code: 'NAME', kind: 'name', name: 'nothing' });
+    t = type(t, 'C1', '=D1');
+    expect(errorOrigin(t, 2, 0)).toMatchObject({ kind: 'cycle' });
+    t = type(t, 'C1', '1');
+    expect(errorOrigin(t, 2, 0)).toBeUndefined();
+  });
+
+  it('keeps origins per table on a page', () => {
+    const book = recalculateBook([sheet(row1('=1/0', '', '', ''))], ENV);
+    expect(bookErrorOrigin(book, 0, 0, 0)).toMatchObject({ code: 'DIV0', kind: 'operator' });
+  });
+});
+
+describe('quick math beside Excel rules', () => {
+  it('keeps the calculator textbook rules while tables use Excel rules', () => {
+    expect(quickMath('-2^2=', EN_US)).toMatchObject({ value: -4 });
+    expect(quickMath('2^3^2=', EN_US)).toMatchObject({ value: 512 });
+    expect(at(type(sheet(blank(1)), 'A1', '=-2^2'), 'A1')).toBe(4);
+  });
+});
+
+describe('engine state', () => {
+  it('gives the same results editing one table twice from the same starting point', () => {
+    const base = sheet(row1('1', '=A1*2', '', ''));
+    const a = type(base, 'A1', '3');
+    const b = type(base, 'A1', '4');
+    expect([at(a, 'B1'), at(b, 'B1'), at(base, 'B1')]).toEqual([6, 8, 2]);
+    expect(at(type(a, 'A1', '5'), 'B1')).toBe(10);
+  });
+
+  it('recalculates from scratch under another env', () => {
+    const t = sheet(row1('1', '', '', ''));
+    expect(at(setCellInput(t, { row: 0, col: 1, raw: '=A1+1' }, EN_US, DEFAULT_ENV), 'B1')).toBe(2);
+    const unknown = setCellInput(t, { row: 0, col: 1, raw: '=SEQUENCE(1)' }, EN_US, DEFAULT_ENV);
+    expect(at(unknown, 'B1')).toEqual(err('NAME'));
   });
 });
