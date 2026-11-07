@@ -1,7 +1,7 @@
-// The keys of a focused code editor, and of one paused in the debugger. Owner: code:L01. shared:x-shared wrote the
-// first cases from the plan's key table; code:L01 gave the editor's commands their real IDs
-// (features/codestudio/editor/commands.ts). code.run, code.breakpoint.toggle, code.debug.*, and code.editor.keepKey
-// stay stand-ins until their lanes (code:L03, code:L14b, code:L19) register them.
+// The keys of a focused code editor, and of one paused in the debugger. The owner is code:L01.
+// The first cases came from the plan's key table (shared:x-shared). The editor's commands now have their real IDs
+// (features/codestudio/editor/commands.ts). The run, breakpoint, debug, and keepKey commands stay stand-ins until
+// their lanes (code:L03, code:L14b, code:L19) register them.
 //
 // `code.editor.keepKey` stands for the chords that the code editor keeps from the text program. The code editor
 // sits inside the page editor's scope, so without it Ctrl+` would make inline code. F10 steps over only while a

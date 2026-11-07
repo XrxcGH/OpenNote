@@ -1,4 +1,4 @@
-// Tab and Shift+Tab in every code editor, the studio's and the code cells' (DESIGN 5.3.1, owner decision of
+// Tab and Shift+Tab in every code editor, the studio's, and the code cells' (DESIGN 5.3.1, owner decision of
 // 2026-11-01). Tab indents and never accepts a suggestion. Shift+Tab outdents.
 //
 // The indent unit per language: Python 4 spaces (PEP 8); JavaScript and TypeScript 2; C, C++, Java, C#, Kotlin,

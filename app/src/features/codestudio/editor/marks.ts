@@ -1,4 +1,4 @@
-// Smaller editor extensions: indent guides, expand and shrink selection, breakpoint markers with the current-line
+// Smaller editor extensions: indent guides, expand, and shrink selection, breakpoint markers with the current-line
 // arrow (for the debugger lanes), and inline values (for the trace replay).
 
 import { selectParentSyntax } from '@codemirror/commands';

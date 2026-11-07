@@ -79,18 +79,23 @@ afterEach(() => {
   unmountAll();
 });
 
-describe('with the dispatcher', () => {
+/** Installs the app's dispatcher for the tests of one describe block. */
+function withDispatcher(): void {
   let stop: () => void = () => {};
   beforeAll(() => {
     stop = installDispatcher(window);
   });
   afterAll(() => stop());
+}
 
-  const acceptRuns = () => {
-    const def = commands.get('code.completion.accept');
-    if (!def) throw new Error('code.completion.accept is not registered');
-    return vi.spyOn(def, 'run');
-  };
+const acceptRuns = () => {
+  const def = commands.get('code.completion.accept');
+  if (!def) throw new Error('code.completion.accept is not registered');
+  return vi.spyOn(def, 'run');
+};
+
+describe('with the dispatcher: accepting and asking', () => {
+  withDispatcher();
 
   it('inserts a shown suggestion once and keeps the page tab', async () => {
     const editor = await mount({ language: 'python', text: 'pri' });
@@ -135,6 +140,10 @@ describe('with the dispatcher', () => {
     await wait(300);
     expect(editor.getText()).toBe('prin');
   });
+});
+
+describe('with the dispatcher: the page tabs', () => {
+  withDispatcher();
 
   it('switches the page tab when suggestions are Off and nothing shows', async () => {
     withCodeSettings({ suggestions: 'off' });

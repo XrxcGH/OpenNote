@@ -1,4 +1,4 @@
-// A read-only diff view, side by side or inline, for model-written fixes and test output (lanes code:L13b and
+// A read-only diff view, side by side, or inline, for model-written fixes and test output (lanes code:L13b and
 // code:L15). The line diff is the longest common subsequence of lines (the textbook dynamic program), which is fine
 // for the file sizes the studio allows; very long inputs fall back to one replaced block.
 

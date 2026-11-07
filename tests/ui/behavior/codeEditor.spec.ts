@@ -1,5 +1,5 @@
 // The code editor in the running app (code:L01, DESIGN 5.3 and 5.3.1). The studio window arrives in B12, so a test
-// hook mounts an editor on top of the app: typing, folding, several carets, find and replace, leaving with the
+// hook mounts an editor on top of the app: typing, folding, several carets, find, and replace, leaving with the
 // keyboard, touch caret placement, and the Ctrl+Tab rules with two page tabs open.
 import type { Page } from '@playwright/test';
 import { expect, test } from '../fixtures';

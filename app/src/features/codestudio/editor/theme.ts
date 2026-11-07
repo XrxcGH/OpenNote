@@ -79,7 +79,7 @@ const base = EditorView.theme({
   '.cm-ghost-accept[hidden]': { display: 'none' },
   '.cm-ghost-menu': {
     position: 'absolute',
-    zIndex: '10',
+    zIndex: 'var(--layer-dropdown)',
     display: 'flex',
     flexDirection: 'column',
     padding: 'var(--space-1)',
@@ -94,7 +94,7 @@ const base = EditorView.theme({
     background: 'transparent',
     color: 'var(--color-text-primary)',
   },
-  '.cm-thinking': { color: 'var(--color-text-muted)', animation: 'cm-thinking 1s steps(3) infinite' },
+  '.cm-thinking': { color: 'var(--color-text-muted)', animation: 'cm-thinking 400ms ease-in-out infinite alternate' },
   '@keyframes cm-thinking': { from: { opacity: '0.4' }, to: { opacity: '1' } },
   '@media (prefers-reduced-motion: reduce)': { '.cm-thinking': { animation: 'none' } },
   '.cm-breakpoint-gutter .cm-gutterElement': { cursor: 'pointer', minWidth: '1.2em' },

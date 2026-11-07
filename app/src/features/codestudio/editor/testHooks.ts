@@ -27,7 +27,7 @@ export function installCodeEditorTestHooks(): void {
       bottom: '16px',
       width: '520px',
       height: '260px',
-      zIndex: '50',
+      zIndex: 'var(--layer-overlay)',
     });
     document.body.append(host);
     const editor = createCodeEditor(host, { language: options.language as never, text: options.text });

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 // The code editor's keymap (DESIGN 5.3). Known answers: VS Code's documented default keybindings for Windows name
-// the command each chord runs; the code editor runs the matching command, with every app feature registered, so
-// a chord the app uses elsewhere (F8, Ctrl+D, Ctrl+/, Ctrl+H, Ctrl+G) goes to the code editor while it has focus.
+// the command each chord runs. The code editor runs the matching command with every app feature registered. So a
+// chord the app uses elsewhere (F8, Ctrl+D, Ctrl+/, Ctrl+H, Ctrl+G) goes to the code editor while it has focus.
 // The completion keys follow the owner decision instead: Tab indents (tab.test.ts) and Ctrl+Tab accepts.
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import '../../../features';

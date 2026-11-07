@@ -57,7 +57,7 @@ test.describe('NVDA in the code editor', () => {
       args: ['--force-renderer-accessibility'],
     });
     const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
-    let spoken: string[] = [];
+    let spoken: string[];
     try {
       await openEditor(page);
       await nvda.start().catch((error: unknown) => {

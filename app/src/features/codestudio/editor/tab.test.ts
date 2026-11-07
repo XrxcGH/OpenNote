@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 // Tab and Shift+Tab (owner decision of 2026-11-01, DESIGN 5.3.1): Tab indents in every state and never accepts a
 // suggestion; Escape then Tab, Ctrl+M, or a read-only editor let Tab move focus. Expected texts are hand-worked from
-// the indent rules: PEP 8's 4 spaces for Python, 2 for JavaScript, gofmt's and make's tab character.
+// the indent rules: PEP 8's 4 spaces for Python, 2 for JavaScript, gofmt's, and make's tab character.
 import { completionStatus, snippet, startCompletion } from '@codemirror/autocomplete';
 import { EditorSelection } from '@codemirror/state';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
