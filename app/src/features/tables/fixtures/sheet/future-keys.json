@@ -1,0 +1,173 @@
+{
+  "name": "keys of a later version at every level",
+  "data": {
+    "header": true,
+    "columns": [
+      {
+        "id": "01m3sbcmt0000000000000k001",
+        "width": 120
+      },
+      {
+        "id": "01m3sbcmt0000000000000k002",
+        "width": 120
+      },
+      {
+        "id": "01m3sbcmt0000000000000k003",
+        "width": 120
+      }
+    ],
+    "rows": [
+      {
+        "id": "01m3sbcmt0000000000000r001",
+        "cells": {
+          "01m3sbcmt0000000000000k001": {
+            "markdown": "A1"
+          },
+          "01m3sbcmt0000000000000k002": {
+            "markdown": "B1"
+          },
+          "01m3sbcmt0000000000000k003": {
+            "markdown": "C1"
+          }
+        }
+      },
+      {
+        "id": "01m3sbcmt0000000000000r002",
+        "cells": {
+          "01m3sbcmt0000000000000k001": {
+            "markdown": "A2"
+          },
+          "01m3sbcmt0000000000000k002": {
+            "markdown": "B2"
+          },
+          "01m3sbcmt0000000000000k003": {
+            "markdown": "C2"
+          }
+        }
+      },
+      {
+        "id": "01m3sbcmt0000000000000r003",
+        "cells": {
+          "01m3sbcmt0000000000000k001": {
+            "markdown": "A3"
+          },
+          "01m3sbcmt0000000000000k002": {
+            "markdown": "B3"
+          },
+          "01m3sbcmt0000000000000k003": {
+            "markdown": "C3"
+          }
+        }
+      }
+    ],
+    "sheet": {
+      "v": 2,
+      "futureTop": {
+        "b": 1,
+        "a": [
+          3,
+          {
+            "z": 1,
+            "y": 2
+          }
+        ]
+      },
+      "styles": {
+        "0qp9wh": {
+          "fill": "#fde68a",
+          "font": {
+            "bold": true,
+            "kern": "auto"
+          },
+          "glow": {
+            "radius": 2
+          }
+        }
+      },
+      "table": {
+        "style": "0qp9wh",
+        "look": "banded-indigo",
+        "sparkle": true
+      },
+      "cols": {
+        "01m3sbcmt0000000000000k001": {
+          "style": "0qp9wh",
+          "pin": "left"
+        }
+      },
+      "rows": {
+        "01m3sbcmt0000000000000r002": {
+          "height": 28,
+          "wobble": 1
+        }
+      },
+      "cells": {
+        "01m3sbcmt0000000000000r003": {
+          "01m3sbcmt0000000000000k003": "0qp9wh"
+        }
+      },
+      "merges": {
+        "m1": {
+          "from": ["01m3sbcmt0000000000000r001", "01m3sbcmt0000000000000k001"],
+          "to": ["01m3sbcmt0000000000000r001", "01m3sbcmt0000000000000k002"],
+          "by": "device-a"
+        },
+        "m2": {
+          "cells": ["01m3sbcmt0000000000000r002", "01m3sbcmt0000000000000r003"]
+        }
+      },
+      "names": {
+        "TaxRate": {
+          "ref": "0.0825",
+          "scope": "workbook"
+        }
+      },
+      "validation": {
+        "v1": {
+          "ranges": [
+            {
+              "col": "01m3sbcmt0000000000000k002"
+            },
+            {
+              "rows": ["01m3sbcmt0000000000000r001", "01m3sbcmt0000000000000r002"]
+            }
+          ],
+          "kind": "regex",
+          "pattern": "^[a-z]+$"
+        }
+      },
+      "conditional": {
+        "c1": {
+          "order": 1,
+          "ranges": [
+            {
+              "col": "01m3sbcmt0000000000000k003"
+            }
+          ],
+          "type": "sparkline",
+          "color": "fern"
+        }
+      },
+      "notes": {
+        "01m3sbcmt0000000000000r001": {
+          "01m3sbcmt0000000000000k001": {
+            "markdown": "Check.",
+            "at": "2026-11-01T10:00:00.000Z",
+            "author": "device-a"
+          }
+        }
+      },
+      "values": {
+        "01m3sbcmt0000000000000r002": {
+          "01m3sbcmt0000000000000k002": {
+            "e": "#LATER!"
+          }
+        }
+      },
+      "valuesOf": "fnv1a:0000000000000000",
+      "links": {
+        "Other page": "01m3sbcmt0000000000000p001"
+      }
+    }
+  }
+}
