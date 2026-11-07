@@ -1,10 +1,13 @@
 //! Notes, comments, and tracked changes while the body is read: their records, and the marks and
 //! references that name them (spec 6.10).
 
+use std::collections::HashMap;
+
 use serde_json::{Map, Value};
 
 use super::{Change, Item, Reader};
 use crate::doc::{Inline, Marks};
+use crate::import::word::package::Rel;
 use crate::import::word::TrackedChanges;
 use crate::import::xmltree::Element;
 
@@ -26,7 +29,7 @@ fn author_of(author: Option<&str>) -> String {
     }
 }
 
-impl Reader<'_> {
+impl<'a> Reader<'a> {
     /// Starts a tracked change: an insertion or a deletion. Returns whether it was entered.
     pub(super) fn enter_change(&mut self, e: &Element) -> bool {
         let insert = matches!(e.name.as_str(), "w:ins" | "w:moveto");
@@ -135,7 +138,11 @@ impl Reader<'_> {
                 "time".to_owned(),
                 Value::from(time_of(comment.date.as_deref(), &self.now)),
             );
-            record.insert("markdown".to_owned(), Value::from(self.nested_markdown(&comment.body)));
+            let rels = sources.comment_rels.as_ref().unwrap_or(self.rels);
+            record.insert(
+                "markdown".to_owned(),
+                Value::from(self.nested_markdown(&comment.body, rels)),
+            );
             let replies: Vec<Value> = sources
                 .replies(&word_id)
                 .into_iter()
@@ -147,7 +154,10 @@ impl Reader<'_> {
                         "time".to_owned(),
                         Value::from(time_of(reply.date.as_deref(), &self.now)),
                     );
-                    r.insert("markdown".to_owned(), Value::from(self.nested_markdown(&reply.body)));
+                    r.insert(
+                        "markdown".to_owned(),
+                        Value::from(self.nested_markdown(&reply.body, rels)),
+                    );
                     Value::Object(r)
                 })
                 .collect();
@@ -162,9 +172,9 @@ impl Reader<'_> {
     }
 
     /// The text of a note or comment as inline Markdown: its paragraphs joined by hard breaks. Changes inside it
-    /// are settled, since its record cannot hold suggestions.
-    pub(super) fn nested_markdown(&mut self, e: &Element) -> String {
-        let mut reader = Reader::new(self.rels, self.styles, self.numbering);
+    /// are settled, since its record cannot hold suggestions. `rels` are the relationships of the part that holds it.
+    pub(super) fn nested_markdown(&mut self, e: &Element, rels: &'a HashMap<String, Rel>) -> String {
+        let mut reader = Reader::new(rels, self.styles, self.numbering);
         reader.theme = self.theme.clone();
         reader.nested = true;
         reader.changes = if self.changes == TrackedChanges::Reject {
@@ -199,10 +209,15 @@ impl Reader<'_> {
     /// `[^id]` (spec 7.12). Inside a table, or without its text, only a count in the report is left.
     pub(super) fn note(&mut self, e: &Element, end: bool, out: &mut Vec<Inline>) {
         let source = self.sources.and_then(|s| {
-            let notes = if end { &s.endnotes } else { &s.footnotes };
-            e.attr("w:id").and_then(|id| notes.get(id))
+            let (notes, rels) = if end {
+                (&s.endnotes, &s.endnote_rels)
+            } else {
+                (&s.footnotes, &s.footnote_rels)
+            };
+            let rels = rels.as_ref().unwrap_or(self.rels);
+            e.attr("w:id").and_then(|id| notes.get(id)).map(|note| (note, rels))
         });
-        let Some(source) = source else {
+        let Some((source, rels)) = source else {
             self.stats.note_marks += 1;
             return;
         };
@@ -221,7 +236,7 @@ impl Reader<'_> {
         } else {
             self.stats.footnotes += 1;
         }
-        record.insert("markdown".to_owned(), Value::from(self.nested_markdown(source)));
+        record.insert("markdown".to_owned(), Value::from(self.nested_markdown(source, rels)));
         self.records.notes.insert(id.clone(), Value::Object(record));
         out.push(Inline::Note {
             id,

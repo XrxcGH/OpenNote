@@ -336,7 +336,7 @@ fn zip_entry(bytes: &[u8], wanted: &str) -> Option<String> {
 }
 
 #[test]
-fn a_word_export_with_remove_personal_information_leaves_the_dates_out() {
+fn a_word_export_leaves_the_dates_out_or_embeds_the_bundled_fonts_on_request() {
     let dir = tempfile::tempdir().expect("a temp folder");
     let (bridge, imported) = imported_bridge(dir.path());
     let pages = pages_of(&imported.tree);
@@ -362,7 +362,15 @@ fn a_word_export_with_remove_personal_information_leaves_the_dates_out() {
     };
     let private = export_with(Some(r#"{"removePersonal":true}"#), "private");
     let plain = export_with(None, "plain");
+    let embedded = export_with(Some(r#"{"embedFonts":true}"#), "embedded");
     bridge.shutdown();
+    // Embedding puts the bundled fonts the document uses into word/fonts/, and only when asked.
+    let table = zip_entry(&embedded, "word/fontTable.xml").expect("the font table");
+    assert!(table.contains("<w:embedRegular "), "{table}");
+    let settings = zip_entry(&embedded, "word/settings.xml").expect("the settings");
+    assert!(settings.contains("<w:embedTrueTypeFonts/>"), "{settings}");
+    let table = zip_entry(&plain, "word/fontTable.xml").expect("the font table");
+    assert!(!table.contains("<w:embed"), "{table}");
     let settings = zip_entry(&private, "word/settings.xml").expect("the settings");
     assert!(
         settings.contains("<w:removePersonalInformation/><w:removeDateAndTime/>"),
