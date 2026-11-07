@@ -143,6 +143,31 @@ impl<'a> PageBuilder<'a> {
         }
     }
 
+    /// Adds blocks as one text block with its element IDs, element styles, and other `data` keys such as `paras`
+    /// (spec 6.6 to 6.11). The blocks stay together, so the IDs keep matching their elements.
+    pub fn push_text_block(
+        &mut self,
+        blocks: &[DocBlock],
+        ids: Vec<opennote_core::ElementId>,
+        styles: BTreeMap<opennote_core::ElementId, String>,
+        extra: JsonMap,
+    ) {
+        self.flush_text();
+        let markdown = crate::doc::write::to_markdown(blocks);
+        self.pieces.push(BlockData::Text(TextData {
+            markdown: Arc::from(markdown),
+            ids,
+            styles,
+            extra,
+            ..TextData::default()
+        }));
+    }
+
+    /// The page, for importers that set its view, style sheet, or theme.
+    pub fn page_mut(&mut self) -> &mut Page {
+        &mut self.page
+    }
+
     /// Gives the last table its column types as smart-table data (`data.smart`), so it opens as a smart table.
     /// Text columns get no entry. A page with no table is left alone.
     pub(crate) fn type_last_table(&mut self, kinds: &[crate::import::ColumnKind]) {
