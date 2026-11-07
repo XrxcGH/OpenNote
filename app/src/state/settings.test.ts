@@ -102,6 +102,26 @@ describe('schema version 2', () => {
   });
 });
 
+const BAD_INDENTS: [string, Record<string, { tabSize: number; insertSpaces: boolean }>][] = [
+  ['a tab size of 0', { python: { tabSize: 0, insertSpaces: true } }],
+  ['a tab size of 9', { python: { tabSize: 9, insertSpaces: true } }],
+  ['an id with capitals', { 'C++': { tabSize: 4, insertSpaces: true } }],
+  ['an id that starts with a hyphen', { '-c': { tabSize: 4, insertSpaces: true } }],
+];
+
+describe('code.indent in a browser', () => {
+  it('keeps a valid language id and tab size', async () => {
+    start();
+    await updateSettings({ code: { indent: { 'objective-c': { tabSize: 8, insertSpaces: true } } } });
+    expect(getSettings().code.indent['objective-c']).toEqual({ tabSize: 8, insertSpaces: true });
+  });
+
+  it.each(BAD_INDENTS)('rejects %s, as Rust does', async (_label, indent) => {
+    const platform = start();
+    await expect(platform.settings.update({ code: { indent } })).rejects.toMatchObject({ field: 'code.indent' });
+  });
+});
+
 describe('settings from an older shell', () => {
   it("fills fields the host doesn't send with defaults, and keeps what it sends", async () => {
     const platform = createWebPlatform();

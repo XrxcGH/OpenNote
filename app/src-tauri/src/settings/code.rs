@@ -164,6 +164,19 @@ const TAB_LANGUAGES: [&str; 2] = ["go", "makefile"];
 /// Languages that indent by 2 spaces by default. Every other language uses 4 (code DESIGN section 5.3.1).
 const TWO_SPACE_LANGUAGES: [&str; 7] = ["javascript", "typescript", "sql", "lua", "ruby", "r", "dart"];
 
+/// Whether a key of `code.indent` is a language id, such as `python`, `cpp`, or `objective-c`. An id has 1 to
+/// 24 lowercase ASCII letters, digits, and inner hyphens, and starts with a letter. The web settings client
+/// checks the same rule. So does the code studio's language list.
+pub fn is_language_id(id: &str) -> bool {
+    let bytes = id.as_bytes();
+    (1..=24).contains(&bytes.len())
+        && bytes[0].is_ascii_lowercase()
+        && bytes[bytes.len() - 1] != b'-'
+        && bytes
+            .iter()
+            .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || *b == b'-')
+}
+
 /// The indent a language uses when a person has not changed it.
 pub fn default_indent(language: &str) -> CodeIndent {
     let tab_size = if TWO_SPACE_LANGUAGES.contains(&language) { 2 } else { 4 };
@@ -194,10 +207,7 @@ impl CodeSettings {
     }
 
     pub fn check(&self, check: &mut Check) {
-        let ids_ok = self.indent.len() <= Self::MAX_INDENT_LANGUAGES
-            && self.indent.keys().all(|id| {
-                (1..=24).contains(&id.len()) && id.bytes().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit())
-            });
+        let ids_ok = self.indent.len() <= Self::MAX_INDENT_LANGUAGES && self.indent.keys().all(|id| is_language_id(id));
         check.that("code.indent", ids_ok, "A language id isn't a short lowercase name.");
         let sizes_ok = self.indent.values().all(|indent| (1..=8).contains(&indent.tab_size));
         check.that("code.indent", sizes_ok, "A tab size is outside 1 to 8.");
@@ -301,6 +311,37 @@ mod tests {
         settings.indent.clear();
         settings.indent.insert("C++".into(), default_indent("cpp"));
         assert_eq!(checked(&settings).as_deref(), Some("code.indent"));
+    }
+
+    #[test]
+    fn language_ids_are_short_lowercase_names_with_inner_hyphens() {
+        for id in [
+            "python",
+            "cpp",
+            "c",
+            "objective-c",
+            "x86-64",
+            "abcdefghijklmnopqrstuvwx",
+        ] {
+            assert!(is_language_id(id), "{id}");
+        }
+        for id in [
+            "",
+            "C++",
+            "Python",
+            "-c",
+            "c-",
+            "1c",
+            "c sharp",
+            "abcdefghijklmnopqrstuvwxy",
+        ] {
+            assert!(!is_language_id(id), "{id}");
+        }
+        let mut settings = CodeSettings::default();
+        settings
+            .indent
+            .insert("objective-c".into(), default_indent("objective-c"));
+        assert_eq!(checked(&settings), None);
     }
 
     #[test]
