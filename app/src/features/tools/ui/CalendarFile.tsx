@@ -8,6 +8,7 @@ import { Button, announce } from '../../../ui';
 import { addDays, parseIcs, planIcsImport, updateFromFile } from '../upcoming';
 import type { UpcomingItem } from '../upcoming';
 import { dateIn } from '../upcoming/zone';
+import { CalendarExport } from './CalendarExport';
 import { zone } from './upcomingShared';
 import { examsStore, setExams, setTimetable, timetableStore } from './upcomingStores';
 import styles from './tools.module.css';
@@ -75,6 +76,7 @@ export function CalendarFile({ items, onItems, setNote }: FileProps) {
       <Button variant="quiet" onClick={() => picker.current?.click()}>
         {t('smart.tools.upcoming.importFile')}
       </Button>
+      <CalendarExport items={items} exams={exams} slots={slots} setNote={setNote} />
       <input ref={picker} type="file" accept=".ics,text/calendar" hidden onChange={(event) => void choose(event)} />
       {pending ? (
         <div className={styles.card} role="group" aria-label={t('study.calendar.found', { name: pending.source })}>

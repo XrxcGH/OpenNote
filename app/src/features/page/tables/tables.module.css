@@ -48,6 +48,15 @@
     padding-block: 1px;
   }
 
+  /*
+   * Frozen rows stick to the top of the scroller, so the scroller must scroll up and down (render.css freezes the
+   * rows; the table sets data-frozen-rows). A table with frozen rows gets a height limit and scrolls inside it.
+   */
+  .scroller:has(:global(table[data-frozen-rows])) {
+    overflow-y: auto;
+    max-block-size: min(70vh, 40rem);
+  }
+
   /* The cell editor, like the text editor, keeps spaces as typed; ProseMirror warns when it is left to wrap normally. */
   .scroller > :global(.ProseMirror) {
     white-space: pre-wrap;

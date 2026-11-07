@@ -2,6 +2,7 @@
 // tab that was last open comes back, and a command from the palette can pick one.
 import '../text';
 import { Suspense, useEffect, useRef, useState } from 'react';
+import { useKitReopen } from '../../kits/useKitReopen';
 import { t } from '../../../../strings/t';
 import { followMathTab, savedMathTab, saveMathTab } from '../open';
 import { MATH_TOOLS } from '../meta';
@@ -16,6 +17,8 @@ const current = (): string => {
 export function MathKitTool() {
   const [tab, setTab] = useState(current);
   const list = useRef<HTMLDivElement>(null);
+  const body = useRef<HTMLDivElement>(null);
+  useKitReopen('math', tab, body);
   useEffect(() => followMathTab(() => setTab(current())), []);
   const pick = (id: string, focus = false) => {
     setTab(id);
@@ -60,7 +63,15 @@ export function MathKitTool() {
           </button>
         ))}
       </div>
-      <div id="kitmath-panel" role="tabpanel" aria-labelledby={`kitmath-tab-${tab}`} className={styles.panel}>
+      <div
+        id="kitmath-panel"
+        ref={body}
+        data-kit-form="math"
+        data-kit-tool={tab}
+        role="tabpanel"
+        aria-labelledby={`kitmath-tab-${tab}`}
+        className={styles.panel}
+      >
         {Body ? (
           <Suspense fallback={null}>
             <Body />

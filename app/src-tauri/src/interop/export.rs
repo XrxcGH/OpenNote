@@ -148,13 +148,21 @@ pub struct WordChoices {
     /// Leave the names of authors and the dates out of the file, as Word's "Remove personal information" does.
     #[serde(default)]
     pub remove_personal: bool,
+    /// Embed the app's bundled fonts that the document uses, so the file looks the same on a device without them.
+    #[serde(default)]
+    pub embed_fonts: bool,
 }
 
 impl WordChoices {
-    /// The writer's options for these choices. The device's faces and font embedding are not offered yet.
+    /// The writer's options for these choices. The device's faces are not offered yet.
     pub fn options(&self) -> WordOptions {
         WordOptions {
             remove_personal: self.remove_personal,
+            embed_fonts: if self.embed_fonts {
+                opennote_interop::docx::bundled_embeds()
+            } else {
+                Vec::new()
+            },
             ..WordOptions::default()
         }
     }

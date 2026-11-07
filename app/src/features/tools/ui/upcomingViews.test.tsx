@@ -1,7 +1,7 @@
 // Upcoming's week and month views, repeating to-dos typed in words, and a class that opens its section. A recording is
 // never asked for here: the Record button is only checked to be there.
 import { screen, waitFor, within } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import { renderUi } from '../../../test';
 import { UpcomingTool } from './UpcomingTool';
@@ -110,5 +110,23 @@ describe('a class with a section', () => {
     );
     expect(screen.getByRole('button', { name: 'Open the page for Biology 101' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Record Biology 101' })).toBeTruthy();
+  });
+});
+
+describe('exporting a calendar file', () => {
+  it('saves the dated tasks and the exams as an .ics file next to the import control', async () => {
+    const made: Blob[] = [];
+    const url = vi.spyOn(URL, 'createObjectURL').mockImplementation((blob) => {
+      made.push(blob as Blob);
+      return 'blob:calendar';
+    });
+    renderUi(<UpcomingTool />);
+    await addTask('Read chapter 4 today');
+    await userEvent.click(screen.getByRole('button', { name: 'Export a calendar file' }));
+    await waitFor(() => expect(made).toHaveLength(1));
+    const text = await made[0].text();
+    expect(text).toContain('BEGIN:VCALENDAR');
+    expect(text).toContain('SUMMARY:Read chapter 4');
+    url.mockRestore();
   });
 });
