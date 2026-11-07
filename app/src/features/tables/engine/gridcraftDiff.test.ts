@@ -100,6 +100,13 @@ const KNOWN: Record<string, string> = {
 /** Functions that cannot be compared with a fixed answer: their result depends on the day it runs. */
 const NOT_COMPARABLE = new Set(['TODAY']);
 
+/** Functions the other engine's shared set does not cover. Their cases are fixtures of the family's own test. */
+const OWN_FIXTURES = new Set([
+  ...['IFNA', 'IFS', 'SWITCH', 'XOR', 'TRUE', 'FALSE', 'LET', 'LAMBDA', 'ISOMITTED', 'CELL', 'ERROR.TYPE', 'INFO'],
+  ...['ISDATE', 'ISEMAIL', 'ISERR', 'ISERROR', 'ISEVEN', 'ISFORMULA', 'ISLOGICAL', 'ISNA', 'ISNONTEXT', 'ISNUMBER'],
+  ...['ISODD', 'ISREF', 'ISTEXT', 'ISURL', 'N', 'NA', 'SHEET', 'SHEETS', 'TYPE'],
+]);
+
 const DATE_RESULTS = new Set(['DATE']);
 
 function opennote(formula: string): Value {
@@ -139,7 +146,9 @@ const tool = findTool('gridcraft-cli');
 describe('the formula function set', () => {
   it('has a differential case for every function', () => {
     const covered = new Set(Object.keys(CASES));
-    const missing = Object.keys(FUNCTIONS).filter((name) => !covered.has(name) && !NOT_COMPARABLE.has(name));
+    const missing = Object.keys(FUNCTIONS).filter(
+      (name) => !covered.has(name) && !NOT_COMPARABLE.has(name) && !OWN_FIXTURES.has(name),
+    );
     expect(missing, 'add cases for these functions to CASES').toEqual([]);
   });
 });
