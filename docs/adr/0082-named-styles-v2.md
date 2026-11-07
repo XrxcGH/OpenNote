@@ -26,3 +26,18 @@ Ten styles are editable today, but they live in this device's `localStorage` (`a
 ## Consequences
 
 Every key is optional and version 1 readers keep it, so this needs no version bump (ADR 0078). Built-in style sets for OpenNote, Word, Word for Microsoft 365, and Google Docs come with fixture files from those apps. The styles dialog becomes the Format pane's style mode.
+
+## Implementation notes
+
+Beta 10 (`text:styles`) built this in `app/src/features/page/styles/`.
+
+- `store.ts` loads each notebook's styles through the bridge and does the one-time copy from local storage. A failed write keeps the local copy. The browser build has no notebook files, so local storage stays its store.
+- `resolve.ts` follows `R-STY-6`. The page sheet merges into the notebook's styles key by key (`R-STY-7`) before the chain is walked.
+- `cssVars.ts` replaces the static style sheet. Every style key becomes a custom property, read by generated rules. A changed value swaps a variable, so the editor sees no transaction.
+- Applying a style is one editor transaction. Style changes are notebook changes with an Undo toast.
+- The style commands, the gallery data, and the `data-pstyle` decorations are behind the `text.styles2` flag.
+
+Two parts differ from the decision above:
+
+- The bridge reads and writes only `styles`, so a notebook's `theme` can't be saved yet. Theme tokens resolve through the page's theme and then the app's fonts. Choosing a style set writes the set's theme fonts as font names.
+- The DOCX captures of owner decision N5 were not delivered before B10.2. The Word and Google Docs fixtures are hand-written WordprocessingML with the apps' documented defaults. A sanitized capture can replace each file, and the set test then checks the set against it.
