@@ -16,8 +16,9 @@ export function isProjectPath(path: string): boolean {
   return path.split('/').every((part) => part !== '' && part !== '.' && part !== '..' && !part.includes(':'));
 }
 
-/** "./a/b.txt" and "a//b.txt" as the project path "a/b.txt"; null when it leaves the project. */
+/** "./a/b.txt" and "a//b.txt" as the project path "a/b.txt"; null when it leaves the project or is absolute. */
 export function normalPath(path: string): string | null {
+  if (/^([/\\]|[A-Za-z]:)/.test(path)) return null;
   const parts = path
     .replace(/\\/g, '/')
     .split('/')

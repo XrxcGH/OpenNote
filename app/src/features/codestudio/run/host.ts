@@ -1,8 +1,8 @@
 // The page's side of running code (DESIGN 4.1 and 4.2). Every run gets a fresh worker. The worker is ended when the
 // run is done, at the time limit, or at Stop.
 //
-// To start fast, the host keeps a warm worker per active runtime: loaded, but not yet locked down. The next run takes
-// it, and the host loads another when the page is idle. A warm worker nobody used for two minutes is ended, so its
+// To start fast, the host keeps one warm worker, for the active runtime: loaded, but not yet locked down. The next run
+// takes it, and the host loads another when the page is idle. A warm worker nobody used for two minutes is ended, so its
 // memory returns. At most two runs go at once; more wait. Nothing from a worker is read before protocol.ts accepts
 // it, and output is only ever text.
 
@@ -106,6 +106,8 @@ export interface RunHostOptions {
 /** Two minutes (DESIGN 4.2). */
 export const IDLE_RELEASE_MS = 2 * 60 * 1000;
 export const MAX_RUNS = 2;
+/** Warm workers kept at once: one, for the active runtime (DESIGN 4.2). */
+export const MAX_WARM = 1;
 
 const defaultIdle = (task: () => void): void => {
   const idle = (globalThis as { requestIdleCallback?: (callback: () => void) => number }).requestIdleCallback;
@@ -159,6 +161,9 @@ export class RunHost {
   /** Loads a worker for `runtime` now, so its next run starts without loading. */
   warm(runtime: RuntimeId): void {
     if (this.disposed || this.warmWorkers.has(runtime)) return;
+    // The oldest warm workers go first, so a runtime no longer in use does not keep its memory.
+    const over = this.warmWorkers.size - MAX_WARM + 1;
+    for (const other of [...this.warmWorkers.keys()].slice(0, Math.max(0, over))) this.release(other);
     const worker = this.create(runtime);
     const warm: Warm = {
       worker,
@@ -232,7 +237,10 @@ export class RunHost {
         post = session.post;
         if (stopped) session.stop();
       };
-      if (this.running < this.maxRuns && !this.disposed) {
+      if (this.disposed) {
+        // A disposed host starts nothing: the run ends at once.
+        start(true);
+      } else if (this.running < this.maxRuns) {
         start(false);
       } else {
         const waiting: Waiting = { order, callbacks, start };
@@ -293,6 +301,7 @@ export class RunHost {
     /** When the program started, as a performance.now() time; null before. */
     let started: number | null = null;
     let kept = 0;
+    let cut = false;
     let version: string | undefined;
     let interactive = false;
     const notes = new Set<RunNote>();
@@ -302,7 +311,7 @@ export class RunHost {
       clearTimeout(timer);
       worker.terminate();
       finish = () => undefined;
-      if (kept >= limits.outputChars) notes.add('output-cut');
+      if (cut) notes.add('output-cut');
       if (end?.inputEnded) notes.add('input-ended');
       if (request.stdin.mode === 'interactive' && started !== null && !interactive)
         notes.add('interactive-unavailable');
@@ -333,12 +342,11 @@ export class RunHost {
           callbacks.onStarted?.();
         },
         out: (stream, text) => {
-          const room = limits.outputChars - kept;
-          if (room <= 0) return notes.add('output-cut');
-          const piece = text.slice(0, room);
-          if (piece.length < text.length) notes.add('output-cut');
+          // A worker that cut sends one character past the limit, so output exactly at the limit is not cut.
+          const piece = text.slice(0, Math.max(0, limits.outputChars - kept));
+          if (piece.length < text.length) cut = true;
           kept += piece.length;
-          callbacks.onOutput?.(stream, piece);
+          if (piece !== '') callbacks.onOutput?.(stream, piece);
         },
         done: (end) => finish(end.status, end.message, end),
       });

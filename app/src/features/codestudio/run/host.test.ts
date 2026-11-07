@@ -127,6 +127,15 @@ describe('warm pool', () => {
     expect(workers.map((worker) => worker.runtime)).toEqual(['lua', 'sql']);
   });
 
+  it('keeps one warm worker in all, for the runtime warmed last', () => {
+    const runs = host();
+    runs.warm('lua');
+    runs.warm('sql');
+    expect(workers[0]!.terminated).toBe(true);
+    expect(runs.warmState('lua')).toBe('none');
+    expect(runs.warmState('sql')).toBe('loading');
+  });
+
   it('shows the rest of the loading when the warm worker is still loading', async () => {
     const runs = host();
     runs.warm('lua');
@@ -229,6 +238,20 @@ describe('limits', () => {
     expect(out).toBe('1234567890');
     expect((await handle.done).notes).toContain('output-cut');
   });
+
+  it('does not say output was cut when it is exactly at the limit', async () => {
+    const runs = host();
+    let out = '';
+    const handle = runs.run(
+      { ...order, limits: { ...RUN_LIMITS, outputChars: 5 } },
+      { onOutput: (_, text) => (out += text) },
+    );
+    workers[0]!.say({ kind: 'started' });
+    workers[0]!.say({ kind: 'out', stream: 'out', text: '12345' });
+    workers[0]!.say({ kind: 'done', status: 'ok', message: '' });
+    expect(out).toBe('12345');
+    expect((await handle.done).notes).toEqual([]);
+  });
 });
 
 describe('the run end', () => {
@@ -272,5 +295,24 @@ describe('the run end', () => {
     runs.run(order);
     runs.dispose();
     expect(workers.every((worker) => worker.terminated)).toBe(true);
+  });
+
+  it('ends a run asked of a disposed host at once, without a worker', async () => {
+    const runs = host();
+    runs.dispose();
+    expect((await runs.run(order).done).status).toBe('stopped');
+    expect(workers).toHaveLength(0);
+  });
+
+  it('ends the warm worker whose load failed and gives the next run a fresh one', async () => {
+    const runs = host();
+    runs.warm('lua');
+    workers[0]!.say({ kind: 'done', status: 'failed', message: 'network' });
+    const handle = runs.run({ ...order, runtime: 'lua' });
+    expect(workers).toHaveLength(2);
+    expect(workers[1]!.sent).toEqual([expect.objectContaining({ kind: 'run', runtime: 'lua' })]);
+    workers[1]!.say({ kind: 'started' });
+    workers[1]!.say({ kind: 'done', status: 'ok', message: '' });
+    expect((await handle.done).status).toBe('ok');
   });
 });

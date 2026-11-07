@@ -4,6 +4,7 @@
 
 import type { DiagnosticMapper, RunFile, RuntimeDiagnostic } from '../contracts/run';
 import { normalPath } from './mount';
+import { MESSAGE_LIMITS } from './protocol';
 
 /**
  * One error form. The regular expression must have the named groups `file` and `line`; `column`, `message`, and
@@ -56,7 +57,10 @@ export function patternMapper(patterns: readonly ErrorPattern[]): DiagnosticMapp
   };
 }
 
-/** Runs an adapter's mapper safely: a mapper that throws reports nothing. */
+/**
+ * Runs an adapter's mapper safely: a mapper that throws reports nothing. Each message and kind is cut to the
+ * protocol's cap, because the page drops a whole diagnostic message when one item is over it.
+ */
 export function mapDiagnostics(
   mapper: DiagnosticMapper | undefined,
   errorText: string,
@@ -64,7 +68,14 @@ export function mapDiagnostics(
 ): RuntimeDiagnostic[] {
   if (!mapper || errorText === '') return [];
   try {
-    return mapper.map(errorText, files).slice(0, MAX_DIAGNOSTICS);
+    return mapper
+      .map(errorText, files)
+      .slice(0, MAX_DIAGNOSTICS)
+      .map((item) => ({
+        ...item,
+        message: item.message.slice(0, MESSAGE_LIMITS.shortChars),
+        kind: item.kind.slice(0, MESSAGE_LIMITS.shortChars),
+      }));
   } catch {
     return [];
   }

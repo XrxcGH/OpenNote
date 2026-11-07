@@ -4,6 +4,7 @@
 import { describe, expect, it } from 'vitest';
 import { patternMapper, mapDiagnostics } from './diagnostics';
 import { Mount, normalPath } from './mount';
+import { MESSAGE_LIMITS, readMessage } from './protocol';
 import { seeded, xorshift32 } from './random';
 import { Stdin, jspiAvailable } from './stdin';
 
@@ -77,6 +78,15 @@ describe('the project mount', () => {
     expect(normalPath('a//b/./c.txt')).toBe('a/b/c.txt');
     expect(normalPath('a/../b')).toBeNull();
   });
+
+  it('refuses absolute paths instead of making them project paths', () => {
+    const mount = new Mount([]);
+    expect(normalPath('/etc/passwd')).toBeNull();
+    expect(normalPath('\\x.txt')).toBeNull();
+    expect(normalPath('c:x.txt')).toBeNull();
+    expect(mount.write('/etc/passwd', 'x')).toBe(false);
+    expect(mount.written()).toEqual([]);
+  });
 });
 
 describe('seeded randomness', () => {
@@ -135,6 +145,13 @@ describe('diagnostic mapping', () => {
       { file: 'lib/util.c', line: 2, column: 5, message: "use of undeclared identifier 'z'", kind: 'error' },
       { file: 'lib/util.c', line: 2, column: 1, message: 'no newline', kind: 'warning' },
     ]);
+  });
+
+  it('cuts a long error line to the message cap, so the page still takes every diagnostic', () => {
+    const long = `lib/util.c:1:1: error: ${'x'.repeat(5000)}\nlib/util.c:2:3: error: short\n`;
+    const items = mapDiagnostics(clang, long, files);
+    expect(items.map((item) => item.message.length)).toEqual([MESSAGE_LIMITS.shortChars, 5]);
+    expect(readMessage({ kind: 'diagnostic', items })).toEqual({ kind: 'diagnostic', items });
   });
 
   it('reports nothing from a mapper that throws', () => {

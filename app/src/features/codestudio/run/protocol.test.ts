@@ -130,6 +130,30 @@ describe('page messages inside the worker', () => {
     expect(readRequest({ ...request, args: Array.from({ length: MESSAGE_LIMITS.args + 1 }, () => 'a') })).toBeNull();
     const big = { path: 'main.py', text: 'x'.repeat(RUN_LIMITS.sourceChars + 1) };
     expect(readRequest({ ...request, files: [big] })).toBeNull();
+    expect(readRequest({ ...request, files: [...request.files, { path: 'main.py', text: 'again' }] })).toBeNull();
+  });
+
+  it('drops written files outside the project', () => {
+    for (const path of ['../../x', '/etc/passwd', 'C:/x.txt', 'a\\b.txt', 'a/./b.txt']) {
+      expect(readMessage({ kind: 'done', status: 'ok', message: '', written: [{ path, text: 'x' }] })).toBeNull();
+    }
+    const twice = [
+      { path: 'out.txt', text: 'a' },
+      { path: 'out.txt', text: 'b' },
+    ];
+    expect(readMessage({ kind: 'done', status: 'ok', message: '', written: twice })).toBeNull();
+  });
+
+  it('reads a test result from its checked fields only', () => {
+    const result = { id: 't1', name: 'adds', status: 'pass', timeMs: 3 };
+    expect(readMessage({ kind: 'test', result: { ...result, timeMs: Number.NaN } })).toBeNull();
+    expect(readMessage({ kind: 'test', result: { ...result, timeMs: Number.POSITIVE_INFINITY } })).toBeNull();
+    expect(readMessage({ kind: 'test', result: { ...result, location: { file: 'a.py', line: 0 } } })).toBeNull();
+    const read = readMessage({
+      kind: 'test',
+      result: { ...result, message: 'ok', location: { file: 'a.py', line: 2, extra: 1 }, html: '<b>' },
+    });
+    expect(read).toEqual({ kind: 'test', result: { ...result, message: 'ok', location: { file: 'a.py', line: 2 } } });
   });
 
   it('reads load, input, and end of input', () => {

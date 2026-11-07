@@ -19,6 +19,7 @@ import type {
 import { TRACE_LIMITS } from '../contracts/debug';
 import type { TraceEvent } from '../contracts/debug';
 import type { TestResult, TestStatus } from '../contracts/testing';
+import { isProjectPath } from './mount';
 
 /** The page's own limits: a run asks for less, never more. The same values as code cells. */
 export const RUN_LIMITS: RunLimits = {
@@ -121,21 +122,38 @@ function readTest(value: unknown): TestResult | null {
   if (!isObject(value)) return null;
   const { id, name, status, timeMs } = value;
   if (!isText(id, MESSAGE_LIMITS.shortChars) || !isText(name, MESSAGE_LIMITS.shortChars)) return null;
-  if (!TEST_STATUSES.includes(status as TestStatus) || typeof timeMs !== 'number' || timeMs < 0) return null;
+  if (!TEST_STATUSES.includes(status as TestStatus) || typeof timeMs !== 'number') return null;
+  if (!Number.isFinite(timeMs) || timeMs < 0) return null;
+  // Rebuilt from the checked fields, so nothing else a worker adds reaches the page.
+  const result: TestResult = { id, name, status: status as TestStatus, timeMs };
   for (const key of ['expected', 'actual', 'message'] as const) {
-    if (value[key] !== undefined && !isText(value[key], MESSAGE_LIMITS.textChars)) return null;
+    const text = value[key];
+    if (text === undefined) continue;
+    if (!isText(text, MESSAGE_LIMITS.textChars)) return null;
+    result[key] = text;
   }
-  return value as unknown as TestResult;
+  const { location } = value;
+  if (location !== undefined) {
+    if (!isObject(location) || !isText(location.file, PROJECT_LIMITS.pathChars) || !isLine(location.line)) {
+      return null;
+    }
+    result.location = { file: location.file, line: location.line };
+  }
+  return result;
 }
 
-/** Files the worker wrote, within the project limits; null when any is not. */
+/** Project files within the project limits, each path a project path and named once; null when any is not. */
 export function readFiles(value: unknown): RunFile[] | null {
   if (!Array.isArray(value) || value.length > PROJECT_LIMITS.files) return null;
   const files: RunFile[] = [];
+  const paths = new Set<string>();
   let total = 0;
   for (const file of value) {
-    if (!isObject(file) || !isText(file.path, PROJECT_LIMITS.pathChars) || file.path === '') return null;
+    if (!isObject(file) || typeof file.path !== 'string' || !isProjectPath(file.path) || paths.has(file.path)) {
+      return null;
+    }
     if (!isText(file.text, PROJECT_LIMITS.fileBytes)) return null;
+    paths.add(file.path);
     total += file.text.length;
     files.push({ path: file.path, text: file.text });
   }

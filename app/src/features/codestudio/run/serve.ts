@@ -95,7 +95,8 @@ export function serve(registry: AdapterRegistry, scope: WorkerScope = globalThis
     }
     const random = seeded(request.seed);
     seedMathRandom(random);
-    const output = new OutputGate(send, request.limits.outputChars);
+    // One character past the limit, so the page can tell output that was cut from output exactly at the limit.
+    const output = new OutputGate(send, request.limits.outputChars + 1);
     const emit: Emit = (message) => {
       if (message.kind === 'out') return output.write(message.stream, message.text);
       if (message.kind === 'started' || message.kind === 'done' || message.kind === 'loading') return;
@@ -111,14 +112,19 @@ export function serve(registry: AdapterRegistry, scope: WorkerScope = globalThis
     const stdin = new Stdin(request.stdin.text, interactive, ask);
     const files = new Mount(request.files);
     send({ kind: 'started', ...(adapter.version ? { version: adapter.version } : {}), interactive });
-    const end = await adapter.run(request, emit, {
-      stdin,
-      files,
-      random: random.random,
-      randomBytes: random.fill,
-      deadline: performance.now() + request.limits.timeMs,
-    });
-    output.flush();
+    let end: Awaited<ReturnType<RuntimeAdapter['run']>>;
+    try {
+      end = await adapter.run(request, emit, {
+        stdin,
+        files,
+        random: random.random,
+        randomBytes: random.fill,
+        deadline: performance.now() + request.limits.timeMs,
+      });
+    } finally {
+      // Output the program wrote before a failure still reaches the page.
+      output.flush();
+    }
     const items = mapDiagnostics(adapter.diagnostics, output.errorText, request.files);
     if (items.length > 0) send({ kind: 'diagnostic', items });
     const written = files.written();
@@ -141,7 +147,8 @@ export function serve(registry: AdapterRegistry, scope: WorkerScope = globalThis
     const message = readHostMessage(event.data);
     if (!message) return;
     if (message.kind === 'load') {
-      load(message.runtime).catch(() => undefined);
+      // A warm load that fails says so, so the page ends this worker and the next run loads a fresh one.
+      load(message.runtime).catch(fail);
     } else if (message.kind === 'input' || message.kind === 'eof') {
       const reply = answer;
       answer = null;
