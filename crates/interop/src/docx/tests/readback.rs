@@ -293,7 +293,7 @@ fn marks(rpr: &El) -> Marks {
     }
     if let Some(b) = rpr.child("w:bdr") {
         m.text_box = Some(match (b.attr("w:val"), b.attr("w:sz")) {
-            (Some("single"), Some("12")) => "thick".to_owned(),
+            (Some("single" | "thick"), Some("12")) => "thick".to_owned(),
             (val, _) => val.unwrap_or_default().to_owned(),
         });
         m.box_color = b.attr("w:color").and_then(hex);

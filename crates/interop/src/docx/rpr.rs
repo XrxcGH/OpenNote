@@ -200,10 +200,10 @@ fn decorations(marks: &Marks) -> String {
     if let Some(style) = &marks.text_box {
         let color = marks.box_color.as_deref().and_then(color_hex);
         let color = color.unwrap_or_else(|| "auto".to_owned());
-        let (val, size) = match style.as_str() {
-            "thick" => ("single", 12),
-            other => (other, 4),
-        };
+        // ST_Border "thick" is a single line; 12 eighths make it 1.5 pt, so readers that go by either the
+        // value or the width see a thick box.
+        let size = if style == "thick" { 12 } else { 4 };
+        let val = style.as_str();
         out.push_str(&format!(
             "<w:bdr w:val=\"{val}\" w:sz=\"{size}\" w:space=\"0\" w:color=\"{color}\"/>"
         ));
