@@ -106,6 +106,8 @@ pub(super) struct Writer<'a> {
     pub listed: Vec<String>,
     /// Whether a bibliography has been written.
     pub bibliography: bool,
+    /// The polyglossia names of the languages the text marks, in order of first use.
+    pub languages: Vec<&'static str>,
 }
 
 impl<'a> Writer<'a> {
@@ -124,6 +126,7 @@ impl<'a> Writer<'a> {
             cited: Vec::new(),
             listed: Vec::new(),
             bibliography: false,
+            languages: Vec::new(),
         }
     }
 

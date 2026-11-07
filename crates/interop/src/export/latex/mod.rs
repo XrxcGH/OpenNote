@@ -334,6 +334,7 @@ fn build(
             stem: &file_stem(&plan.title),
             edited,
             with_bibliography: bib.is_some(),
+            languages: &writer.languages,
         },
         &mut writer.missing,
     );

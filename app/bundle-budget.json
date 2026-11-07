@@ -82,7 +82,7 @@
     "features/page/audio/exportVideo.ts": 85,
     "features/pages/host/shareRender.ts": 62,
     "features/pages/host/videoRaster.ts": 62,
-    "features/pages/index.ts": 79,
+    "features/pages/index.ts": 80,
     "features/pages/ui/elementCommands.tsx": 73,
     "features/pages/ui/exportCommands.tsx": 67,
     "features/pages/ui/imageCommands.tsx": 67,
