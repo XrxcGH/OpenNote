@@ -37,6 +37,8 @@ export const kitAero = {
   insertEquation: 'Equation',
   insertTable: 'Result table',
   insertSteps: 'Steps as a list',
+  insertLive: 'Live calculation block',
+  liveInserted: 'Added a live calculation block. Use Open in tool to change it.',
   insertPicture: 'Plot as picture',
   insertThisTable: 'Insert this table',
   inserted: 'Inserted into the page.',

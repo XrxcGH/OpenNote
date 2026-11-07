@@ -27,7 +27,8 @@ export const FootnoteRef = Node.create({
       getAttrs: (element: HTMLElement) => (isElementId(element.getAttribute('data-footnote') ?? '') ? null : false),
     },
   ],
-  renderHTML: ({ node }) => ['span', { 'data-footnote': String(node.attrs.id) }],
+  // The footnotes lane's style sheet draws the number and its name, such as "Footnote 3" (editor/notes/view.ts).
+  renderHTML: ({ node }) => ['span', { 'data-footnote': String(node.attrs.id), role: 'doc-noteref' }],
 });
 
 export function footnoteRefExtensions(_host: EditorHost): Extensions {

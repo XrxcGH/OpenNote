@@ -25,6 +25,8 @@ export const kitMolBio = {
   insertEquation: 'Insert equation',
   insertTable: 'Insert results table',
   insertSteps: 'Insert steps',
+  insertLive: 'Live calculation block',
+  liveInserted: 'Added a live calculation block. Use Open in tool to change it.',
   insertShort: 'Insert',
   insertPicture: 'Insert picture',
   insertThis: 'Insert {what}',

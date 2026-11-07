@@ -22,7 +22,8 @@ function attrsMatch(mark: Mark, attrs: Record<string, unknown>): boolean {
   return Object.entries(attrs).every(([key, value]) => mark.attrs[key] === value);
 }
 
-/** Whether every character in the selection has the mark, or the caret will type with it. */
+/** Whether every character in the selection has the mark, or the caret will type with it. A selection of several
+ * ranges counts only the text of its ranges. */
 export function isMarkActive(state: EditorState, name: string, attrs?: Record<string, unknown>): boolean {
   const type = state.schema.marks[name] as MarkType | undefined;
   if (!type) return false;
@@ -30,12 +31,14 @@ export function isMarkActive(state: EditorState, name: string, attrs?: Record<st
   if (state.selection.empty) return marksAtSelection(state).some(matches);
   let all = true;
   let any = false;
-  state.doc.nodesBetween(state.selection.from, state.selection.to, (node: PMNode) => {
-    if (!node.isText) return true;
-    any = true;
-    if (!node.marks.some(matches)) all = false;
-    return false;
-  });
+  for (const range of state.selection.ranges) {
+    state.doc.nodesBetween(range.$from.pos, range.$to.pos, (node: PMNode) => {
+      if (!node.isText) return true;
+      any = true;
+      if (!node.marks.some(matches)) all = false;
+      return false;
+    });
+  }
   return any && all;
 }
 

@@ -1,21 +1,27 @@
 // The paste pipeline's pure core (Phase 4 design, 15.1): classify, normalize the HTML of the source, split out tables,
 // name the images, and parse the rest with the editor schema, whose parse rules are the allowlist. Nothing here
 // reads the clipboard, loads an image, or touches the page.
-import { DOMParser as PMDOMParser, Fragment } from '@tiptap/pm/model';
+import { Fragment } from '@tiptap/pm/model';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import { newId as makeId } from '../../../editor/ids';
 import { textSchema } from '../../../editor/schema/schema';
 import type { PasteInput as RegistryInput } from '../registries';
+import { PARA_DATA } from '../../../editor/clipboard/paraData';
 import { parseHtml } from './dom';
 import { collectImageRequests, dropUnknownImages } from './images';
+import { keepSourceFormatting } from './normalize/keep';
+import { dropUnwanted } from './normalize/common';
+import { webHygiene } from './normalize/web';
 import { codePieces, codeText } from './normalize/vscode';
+import { pasteParser } from './paraRules';
+import { choiceFor, isOpenNoteCopy, mergeOpenNote, OPENNOTE_SOURCE } from './options';
 import { joinBrokenLines } from './pdf';
 import { detectSource } from './sources';
 import { looksLikeMarkdown, parsePastedMarkdown, plainTextPieces } from '../../../editor/markdown/paste';
 import { extractTables, tabTableData, tableMarker } from './tables';
 import { tidyDoc } from './tidy';
 import { MAX_HTML_LENGTH } from './types';
-import type { ImageRequest, PasteInput, PasteOptions, PasteResult, PastedPiece, TableData } from './types';
+import type { ImageRequest, PasteChoice, PasteInput, PasteOptions, PasteResult, PastedPiece, TableData } from './types';
 
 const { nodes } = textSchema;
 
@@ -63,33 +69,78 @@ function imagesOf(pieces: readonly PastedPiece[]): ImageRequest[] {
   return [...found.values()];
 }
 
-function fromHtml(html: string, input: PasteInput, newId: () => string): PasteResult | null {
+/** Text only: the text of the paste, one paragraph for each line. */
+function textOnly(input: PasteInput, body: HTMLElement, source: string): PasteResult {
+  const text = input.text ?? body.innerText ?? body.textContent ?? '';
+  return {
+    source,
+    pieces: plainTextPieces(text),
+    images: [],
+    plainFallback: false,
+    joinedText: null,
+    choice: 'textOnly',
+  };
+}
+
+const KEEPS = new Set(['word', 'gdocs', 'onenote', 'web']);
+
+function fromHtml(html: string, input: PasteInput, newId: () => string, options: PasteOptions): PasteResult | null {
   const doc = parseHtml(html);
   const body = doc.body;
   const forRegistry = { ...registryInput(input), html };
-  const def = detectSource(forRegistry, doc);
-  const source = def?.id ?? 'web';
+  const own = !!options.fidelity && isOpenNoteCopy(body);
+  const def = own ? null : detectSource(forRegistry, doc);
+  const source = own ? OPENNOTE_SOURCE : (def?.id ?? 'web');
   if (source === 'vscode') {
     const pieces = codePieces(input.text ?? codeText(body));
-    return pieces.length === 0 ? null : { source, pieces, images: [], plainFallback: false, joinedText: null };
+    return pieces.length === 0
+      ? null
+      : { source, pieces, images: [], plainFallback: false, joinedText: null, choice: null };
   }
-  def?.normalize(doc, forRegistry);
+  const choice: PasteChoice = options.fidelity
+    ? (options.mode ?? choiceFor(source, options.defaults))
+    : 'mergeFormatting';
+  if (choice === 'textOnly') return textOnly(input, body, source);
+  // Paragraph formatting never comes from the HTML itself, except OpenNote's own copy.
+  if (!own) body.querySelectorAll(`[${PARA_DATA}]`).forEach((element) => element.removeAttribute(PARA_DATA));
+  // A highlight color on a mark comes only from the Keep source pass below, never from the pasted markup.
+  if (!own) body.querySelectorAll('mark[data-color]').forEach((element) => element.removeAttribute('data-color'));
+  if (choice === 'keepSource' && KEEPS.has(source)) keepSourceFormatting(body);
+  if (own) {
+    dropUnwanted(body);
+    webHygiene(body, forRegistry);
+    if (choice === 'mergeFormatting') mergeOpenNote(body);
+  } else def?.normalize(doc, forRegistry);
   dropUnknownImages(body);
   const tables = extractTables(body, newId);
-  const pieces = splitPieces(PMDOMParser.fromSchema(textSchema).parse(body), tables);
+  const pieces = splitPieces(pasteParser().parse(body), tables);
   if (pieces.length === 0) return null;
-  return { source, pieces, images: imagesOf(pieces), plainFallback: false, joinedText: null };
+  return { source, pieces, images: imagesOf(pieces), plainFallback: false, joinedText: null, choice };
 }
 
 function fromText(text: string, newId: () => string, plainFallback: boolean): PasteResult {
   const grid = tabTableData(text, newId);
   if (grid) {
-    return { source: 'plain', pieces: [{ kind: 'table', data: grid }], images: [], plainFallback, joinedText: null };
+    return {
+      source: 'plain',
+      pieces: [{ kind: 'table', data: grid }],
+      images: [],
+      plainFallback,
+      joinedText: null,
+      choice: null,
+    };
   }
   const markdown = looksLikeMarkdown(text);
   const pieces = markdown ? parsePastedMarkdown(text, newId) : plainTextPieces(text);
   const joinedText = markdown ? null : joinBrokenLines(text);
-  return { source: markdown ? 'markdown' : 'plain', pieces, images: imagesOf(pieces), plainFallback, joinedText };
+  return {
+    source: markdown ? 'markdown' : 'plain',
+    pieces,
+    images: imagesOf(pieces),
+    plainFallback,
+    joinedText,
+    choice: null,
+  };
 }
 
 /**
@@ -106,12 +157,13 @@ export function sanitizePaste(input: PasteInput, options: PasteOptions = {}): Pa
       images: [],
       plainFallback: false,
       joinedText: null,
+      choice: null,
     };
   }
   const html = input.html?.trim() ? input.html : null;
   const tooLarge = html !== null && html.length > MAX_HTML_LENGTH;
   if (html !== null && !tooLarge) {
-    const result = fromHtml(html, input, newId);
+    const result = fromHtml(html, input, newId, options);
     if (result) return result;
   }
   return fromText(input.text ?? '', newId, tooLarge);

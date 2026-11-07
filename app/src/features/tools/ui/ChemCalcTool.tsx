@@ -1,8 +1,10 @@
 // The chemistry calculators window: balancing, molar mass, stoichiometry, gas laws, solutions, and titration. Each tab
 // holds one or more forms (chemForms.tsx) over the methods in ../chem/calc.
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { t } from '../../../strings/t';
+import { useKitReopen } from '../kits/useKitReopen';
 import { ChemForm } from './ChemForm';
+import { CHEMCALC_STORE, CHEMCALC_TAB_EVENT } from './chemCalcOpen';
 import { CALC_TABS, SUB_FORMS } from './chemForms';
 import type { CalcTab } from './chemForms';
 import chem from './chem.module.css';
@@ -12,7 +14,7 @@ import { useSelectedTabInView } from './tabScroll';
 import { moveBetweenTabs } from './tabKeys';
 import styles from './tools.module.css';
 
-const STORE = 'chemcalc';
+const STORE = CHEMCALC_STORE;
 
 export function ChemCalcTool() {
   const saved = loadStored<{ tab?: CalcTab; sub?: Record<string, string> }>(STORE, {});
@@ -21,6 +23,17 @@ export function ChemCalcTool() {
   );
   const [sub, setSub] = useState<Record<string, string>>(saved.sub ?? {});
   const strip = useRef<HTMLDivElement>(null);
+  const panel = useRef<HTMLDivElement>(null);
+  useKitReopen('chemcalc', tab, panel);
+  // Open in tool from a live calculation block picks the tab while the window is open.
+  useEffect(() => {
+    const follow = () => {
+      const now = loadStored<{ tab?: CalcTab }>(STORE, {});
+      if (CALC_TABS.includes(now.tab as CalcTab)) setTab(now.tab as CalcTab);
+    };
+    window.addEventListener(CHEMCALC_TAB_EVENT, follow);
+    return () => window.removeEventListener(CHEMCALC_TAB_EVENT, follow);
+  }, []);
   useSelectedTabInView(strip, tab);
   const forms = SUB_FORMS[tab];
   const current = forms.find((f) => f.id === sub[tab]) ?? forms[0];
@@ -58,6 +71,9 @@ export function ChemCalcTool() {
       </div>
       <div
         id="chem-panel"
+        ref={panel}
+        data-kit-form="chemcalc"
+        data-kit-tool={tab}
         role="tabpanel"
         aria-labelledby={`chem-tab-${tab}`}
         className={`${extra.scroll} ${chem.panel}`}
