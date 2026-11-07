@@ -41,6 +41,8 @@ export interface DrawnTable {
   rows: Drawn[];
   /** By row and column position. */
   cells: Drawn[][];
+  /** The rows whose cells were drawn anew when this came from an earlier drawing; unset when every row was. */
+  changed?: ReadonlySet<number>;
 }
 
 const empty = (): Drawn => ({ vars: {}, data: {} });
@@ -157,12 +159,28 @@ interface View {
   grid: boolean;
   frozenRows: number;
   frozenCols: number;
+  /** The last shown frozen row and column (by table position), where the freeze line draws; -1 for none. */
+  edgeRow: number;
+  edgeCol: number;
   rowHidden: boolean[];
   colHidden: boolean[];
   visRows: number[];
   visCols: number[];
   styles: CellStyle[][];
   texts: RowCell[][];
+}
+
+/** The text and kind of each shown cell of one shown row. */
+function textRow(input: DrawInput, v: Pick<View, 'visCols' | 'styles'>, r: number, vr: number): RowCell[] {
+  const row = input.table.rows[r];
+  return v.visCols.map((c, vc) => {
+    const col = input.table.columns[c];
+    const typed = row.cells[col.id]?.markdown ?? '';
+    const shown = input.shown?.(row.id, col.id);
+    const text = shown?.text ?? typed;
+    const kind = shown?.kind ?? (typed.startsWith('=') && !shown ? 'text' : kindOf(text));
+    return { text, kind, align: v.styles[vr][vc].align ?? {} };
+  });
 }
 
 function viewOf(input: DrawInput): View {
@@ -184,28 +202,63 @@ function viewOf(input: DrawInput): View {
   const styles = visRows.map((r) =>
     visCols.map((c) => resolve(sheet, view, table.rows[r].id, table.columns[c].id, hooks).style),
   );
-  const texts: RowCell[][] = visRows.map((r, vr) =>
-    visCols.map((c, vc) => {
-      const row = table.rows[r];
-      const col = table.columns[c];
-      const typed = row.cells[col.id]?.markdown ?? '';
-      const shown = input.shown?.(row.id, col.id);
-      const text = shown?.text ?? typed;
-      const kind = shown?.kind ?? (typed.startsWith('=') && !shown ? 'text' : kindOf(text));
-      return { text, kind, align: styles[vr][vc].align ?? {} };
-    }),
-  );
-  return {
+  const frozenRows = freezeOf(own(freeze, 'rows'), table.rows.length);
+  const frozenCols = freezeOf(own(freeze, 'cols'), table.columns.length);
+  const v: View = {
     grid: own(settings, 'grid') !== false,
-    frozenRows: freezeOf(own(freeze, 'rows'), table.rows.length),
-    frozenCols: freezeOf(own(freeze, 'cols'), table.columns.length),
+    frozenRows,
+    frozenCols,
+    // The edge is the last frozen line that shows: a hidden last row or column hands it to the one before.
+    edgeRow: visRows.filter((i) => i < frozenRows).at(-1) ?? -1,
+    edgeCol: visCols.filter((i) => i < frozenCols).at(-1) ?? -1,
     rowHidden,
     colHidden,
     visRows,
     visCols,
     styles,
-    texts,
+    texts: [],
   };
+  v.texts = visRows.map((r, vr) => textRow(input, v, r, vr));
+  return v;
+}
+
+/** True when `next` has the same rows and columns, sheet, and scheme as `last`: only the text can differ. */
+function sameShape(last: DrawInput, next: DrawInput): boolean {
+  if (
+    last.sheet !== next.sheet ||
+    last.scheme !== next.scheme ||
+    last.hooks !== next.hooks ||
+    last.hiddenRows !== next.hiddenRows ||
+    last.table.header !== next.table.header ||
+    last.table.rows.length !== next.table.rows.length ||
+    last.table.columns.length !== next.table.columns.length
+  )
+    return false;
+  return (
+    last.table.rows.every((r, i) => r.id === next.table.rows[i].id) &&
+    last.table.columns.every((c, i) => c.id === next.table.columns[i].id)
+  );
+}
+
+/** The view of `input` from the view of `last`, working out again only the rows whose text changed. */
+function updatedView(last: View, lastInput: DrawInput, input: DrawInput, changed: Set<number>): View {
+  const sameShown = lastInput.shown === input.shown;
+  const texts = last.texts.map((old, vr) => {
+    const r = last.visRows[vr];
+    const a = lastInput.table.rows[r];
+    const b = input.table.rows[r];
+    if (a === b && sameShown) return old;
+    const typedSame = last.visCols.every((c) => {
+      const id = input.table.columns[c].id;
+      return a.cells[id]?.markdown === b.cells[id]?.markdown;
+    });
+    if (typedSame && sameShown) return old;
+    const next = textRow(input, last, r, vr);
+    if (next.every((t, vc) => t.text === old[vc].text && t.kind === old[vc].kind)) return old;
+    changed.add(r);
+    return next;
+  });
+  return { ...last, texts };
 }
 
 /** The data attributes of the cell that centers or spills text across its empty neighbors. */
@@ -227,8 +280,8 @@ function spanData(row: readonly RowCell[], vc: number, data: Record<string, stri
 
 /** Freeze panes and the markers beside hidden lines, which depend on the cell's place in the table. */
 function placeData(v: View, r: number, c: number, vr: number, vc: number, data: Record<string, string>): void {
-  if (r < v.frozenRows) data['data-frozen-row'] = r === v.frozenRows - 1 ? 'edge' : '';
-  if (c < v.frozenCols) data['data-frozen-col'] = c === v.frozenCols - 1 ? 'edge' : '';
+  if (r < v.frozenRows) data['data-frozen-row'] = r === v.edgeRow ? 'edge' : '';
+  if (c < v.frozenCols) data['data-frozen-col'] = c === v.edgeCol ? 'edge' : '';
   // A double line on the edge next to hidden rows and columns.
   if (v.visRows[vr + 1] !== undefined && v.visRows[vr + 1] > r + 1) data['data-hidden-below'] = '';
   if (vr === 0 && r > 0) data['data-hidden-above'] = '';
@@ -258,32 +311,59 @@ function drawCell(input: DrawInput, v: View, vr: number, vc: number, d: Drawn): 
   placeData(v, v.visRows[vr], v.visCols[vc], vr, vc, d.data);
 }
 
-/** Everything the stylesheet needs to draw a table: one `Drawn` per table, row, and cell. */
-export function drawTable(input: DrawInput): DrawnTable {
+/** What a drawing remembers, so the next one can reuse what did not change. */
+const MEMOS = new WeakMap<DrawnTable, { input: DrawInput; view: View }>();
+
+/** One shown row's cells, drawn; the cells of hidden columns draw nothing. */
+function drawRowCells(input: DrawInput, v: View, vr: number): Drawn[] {
+  const cells = input.table.columns.map(() => empty());
+  v.visCols.forEach((c, vc) => drawCell(input, v, vr, vc, cells[c]));
+  cells.forEach((d, c) => v.colHidden[c] && (d.data['data-col-hidden'] = ''));
+  return cells;
+}
+
+/**
+ * Everything the stylesheet needs to draw a table: one `Drawn` per table, row, and cell. Give the result of the
+ * last drawing as `previous` and, when only text changed, just the rows with changed text are drawn again (their
+ * numbers are in `changed`); the other rows share their `Drawn` objects with `previous`.
+ */
+export function drawTable(input: DrawInput, previous?: DrawnTable): DrawnTable {
   const { sheet, table, scheme } = input;
+  const memo = previous ? MEMOS.get(previous) : undefined;
+  if (previous && memo && sameShape(memo.input, input)) {
+    const changed = new Set<number>();
+    const v = updatedView(memo.view, memo.input, input, changed);
+    const cells = previous.cells.map((row, r) => (changed.has(r) ? drawRowCells(input, v, v.visRows.indexOf(r)) : row));
+    const out: DrawnTable = { table: previous.table, rows: previous.rows, cells, changed };
+    MEMOS.set(out, { input, view: v });
+    return out;
+  }
   const v = viewOf(input);
   const out: DrawnTable = {
     table: empty(),
     rows: table.rows.map(() => empty()),
     cells: table.rows.map(() => table.columns.map(() => empty())),
   };
-  out.table.vars['--sheet-grid'] = v.grid ? 'var(--sheet-grid-color, var(--color-border-subtle))' : 'transparent';
   out.table.vars['--sheet-ink'] = themeColor('text', scheme);
   out.table.data['data-sheet'] = '';
   if (!v.grid) out.table.data['data-no-grid'] = '';
+  // The table's scroller reads these (tables.module.css): frozen rows need a box that scrolls up and down.
+  if (v.edgeRow >= 0) out.table.data['data-frozen-rows'] = '';
+  if (v.edgeCol >= 0) out.table.data['data-frozen-cols'] = '';
 
   table.rows.forEach((row, r) => {
     const d = out.rows[r];
     const settingsOfRow = ownObject(ownObject(sheet, 'rows'), row.id);
     if (v.rowHidden[r]) d.data['data-row-hidden'] = '';
+    // The header row repeats on each printed page (render.css).
+    else if (r === 0 && table.header === true) d.data['data-header-row'] = '';
     const height = own(settingsOfRow, 'height');
     if (typeof height === 'number' && height > 0) {
       d.vars['--row-h'] = `${height}${UNITS.height}`;
       d.data[own(settingsOfRow, 'exact') === true ? 'data-row-exact' : 'data-row-min'] = '';
     }
   });
-  v.visRows.forEach((r, vr) => v.visCols.forEach((c, vc) => drawCell(input, v, vr, vc, out.cells[r][c])));
-  // Cells of hidden columns draw nothing.
-  out.cells.forEach((cells) => cells.forEach((d, c) => v.colHidden[c] && (d.data['data-col-hidden'] = '')));
+  v.visRows.forEach((r, vr) => (out.cells[r] = drawRowCells(input, v, vr)));
+  MEMOS.set(out, { input, view: v });
   return out;
 }

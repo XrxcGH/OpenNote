@@ -2,9 +2,10 @@
 
 export { drawTable, styleText } from './draw';
 export type { Drawn, DrawInput, DrawnTable, Shown } from './draw';
-export { sheetRenderPlugin, decorationsFor, currentScheme, sheetRenderKey } from './plugin';
+export { sheetRenderPlugin, decorationsFor, currentScheme, sheetRenderKey, refreshSheetRender } from './plugin';
 export type { SheetRenderOptions, SheetSource } from './plugin';
 export { measureTable } from './measure';
+export type { CellProps, Measured, MeasureOptions } from './measure';
 export { kindOf, textAlign, verticalAlign } from './align';
 export type { ValueKind } from './align';
 export { BORDER_LINES, heavier, resolvedSides, cssLine } from './borders';

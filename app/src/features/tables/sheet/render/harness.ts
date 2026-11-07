@@ -36,7 +36,14 @@ export interface Harness {
 }
 
 /** The `<table>` a table's decorations give, with ID `id`. */
-export function tableHtml(id: string, h: Harness, scheme: Scheme, hiddenRows?: ReadonlySet<string>): string {
+export function tableHtml(
+  id: string,
+  h: Harness,
+  scheme: Scheme,
+  hiddenRows?: ReadonlySet<string>,
+  /** Write the header row in a thead, as the print and export markup does. */
+  thead = false,
+): string {
   const drawn = drawTable({ sheet: h.sheet, table: h.table, scheme, hiddenRows });
   const attrs = (d: { vars: Record<string, string>; data: Record<string, string> }, extra = '') => {
     const style = styleText(d.vars);
@@ -46,18 +53,18 @@ export function tableHtml(id: string, h: Harness, scheme: Scheme, hiddenRows?: R
   const shown = h.widths.filter((_, c) => drawn.cells[0]?.[c]?.data['data-col-hidden'] === undefined);
   drawn.table.vars.width = `${shown.reduce((a, b) => a + b, 0)}px`;
   const cols = h.widths.map((w) => `<col style="width:${w}px">`).join('');
-  const rows = h.table.rows
-    .map((row, r) => {
-      const cells = h.table.columns
-        .map((col, c) => {
-          const text = escapeHtml(row.cells[col.id]?.markdown ?? '');
-          return `<td${attrs(drawn.cells[r][c], ' data-cell')}><p>${text}</p></td>`;
-        })
-        .join('');
-      return `<tr${attrs(drawn.rows[r])}>${cells}</tr>`;
-    })
-    .join('');
-  return `<table id="${id}"${attrs(drawn.table)}><colgroup>${cols}</colgroup><tbody>${rows}</tbody></table>`;
+  const rowsHtml = h.table.rows.map((row, r) => {
+    const cells = h.table.columns
+      .map((col, c) => {
+        const text = escapeHtml(row.cells[col.id]?.markdown ?? '');
+        return `<td${attrs(drawn.cells[r][c], ' data-cell')}><p>${text}</p></td>`;
+      })
+      .join('');
+    return `<tr${attrs(drawn.rows[r])}>${cells}</tr>`;
+  });
+  const head = thead && h.table.header === true && rowsHtml.length > 0 ? `<thead>${rowsHtml[0]}</thead>` : '';
+  const rows = (head ? rowsHtml.slice(1) : rowsHtml).join('');
+  return `<table id="${id}"${attrs(drawn.table)}><colgroup>${cols}</colgroup>${head}<tbody>${rows}</tbody></table>`;
 }
 
 /** A sheet and table built cell by cell. */

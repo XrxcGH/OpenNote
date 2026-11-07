@@ -2,7 +2,8 @@
 // scheme. A custom color is drawn as stored in both schemes. The text color "Automatic" is whichever of the two
 // text tokens has the higher WCAG contrast against the fill.
 
-import { automaticTextColor, contrastRatio, hexToRgb } from '../../../../ui/color/math';
+import { automaticTextColor, contrastRatio, hexToRgb, rgbToHex } from '../../../../ui/color/math';
+import type { Rgb } from '../../../../ui/color/math';
 import { resolveColor, themeColor } from '../../../../ui/color/parse';
 import type { Scheme } from '../../../../ui/color/parse';
 import type { Fill } from '../model';
@@ -17,7 +18,11 @@ export function textTokens(): { dark: string; light: string } {
 /** The text color for a background: the light token on dark fills, the dark token on light ones. */
 export function automaticText(background: string): string {
   const { dark, light } = textTokens();
-  return automaticTextColor(background, dark, light);
+  const pick = automaticTextColor(background, dark, light);
+  // A mid gray reaches 4.5 with neither token: pure black or white does.
+  return contrast(pick, background) >= 4.5
+    ? pick
+    : automaticTextColor(background, rgbToHex([0, 0, 0]), rgbToHex([255, 255, 255]));
 }
 
 /** The WCAG contrast ratio of two `#rrggbb` colors, or 1 when either is not one. */
@@ -74,6 +79,14 @@ const SHADE: Readonly<Record<string, number>> = {
   darkGray: 0.75,
 };
 
+/** `top` at `share` (0 to 1) over `back`, channel by channel in sRGB, as `#rrggbb`; `back` when either is not a hex. */
+export function mixHex(top: string, back: string, share: number): string {
+  const a = hexToRgb(top);
+  const b = hexToRgb(back);
+  if (!a || !b) return back;
+  return rgbToHex([0, 1, 2].map((i) => Math.round(a[i] * share + b[i] * (1 - share))) as unknown as Rgb);
+}
+
 /** The fill of a cell as CSS. Unknown fills draw as no fill. */
 export function drawFill(fill: Fill | undefined, scheme: Scheme): DrawnFill {
   if (fill === undefined || fill === 'none') return {};
@@ -96,7 +109,8 @@ export function drawFill(fill: Fill | undefined, scheme: Scheme): DrawnFill {
   const shade = Object.hasOwn(SHADE, fill.pattern) ? SHADE[fill.pattern] : undefined;
   if (shade !== undefined) {
     const mix = `color-mix(in srgb, ${ink} ${shade * 100}%, ${back ?? 'transparent'})`;
-    return { color: mix, under: back ?? ink };
+    // The shade the person sees is the ink at `shade` over the back (the page, when there is no back color).
+    return { color: mix, under: mixHex(ink, back ?? themeColor('background', scheme), shade) };
   }
   const image = pattern(fill.pattern, ink);
   return image ? { ...(back ? { color: back } : {}), image, under: back } : {};

@@ -89,7 +89,8 @@ describe('borders', () => {
     const on = draw({}).cells[0][0].vars;
     expect(on['--cell-bt']).toContain('var(--sheet-grid)');
     const off = draw({ table: { grid: false } });
-    expect(off.table.vars['--sheet-grid']).toBe('transparent');
+    // The grid color is the stylesheet's (an inline value would beat the forced-colors rule); the table says "off".
+    expect(off.table.vars['--sheet-grid']).toBeUndefined();
     expect(off.table.data['data-no-grid']).toBe('');
   });
 
@@ -258,6 +259,28 @@ describe('rows, hidden lines, freeze panes', () => {
     expect(drawn.cells[0][0].data['data-frozen-col']).toBe('');
     expect(drawn.cells[1][3].data['data-frozen-row']).toBeUndefined();
     expect(draw({ table: { freeze: { rows: 99 } } }).cells[3][0].data['data-frozen-row']).toBe('edge');
+    expect(drawn.table.data['data-frozen-rows']).toBe('');
+    expect(drawn.table.data['data-frozen-cols']).toBe('');
+    expect(draw({}).table.data['data-frozen-rows']).toBeUndefined();
+  });
+
+  it('puts the freeze edge on the last frozen row and column that show', () => {
+    const sheet: Sheet = {
+      table: { freeze: { rows: 2, cols: 2 } },
+      rows: { [R(2)]: { hidden: true } },
+      cols: { [K(2)]: { hidden: true } },
+    };
+    const drawn = draw(sheet);
+    expect(drawn.cells[0][0].data['data-frozen-row']).toBe('edge');
+    expect(drawn.cells[0][0].data['data-frozen-col']).toBe('edge');
+  });
+
+  it('marks the header row so it can repeat on each printed page', () => {
+    const t = makeTable(range(1, 3), range(1, 2), true);
+    expect(draw({}, t).rows[0].data['data-header-row']).toBe('');
+    expect(draw({}, t).rows[1].data['data-header-row']).toBeUndefined();
+    expect(draw({}, table).rows[0].data['data-header-row']).toBeUndefined();
+    expect(draw({ rows: { [R(1)]: { hidden: true } } }, t).rows[0].data['data-header-row']).toBeUndefined();
   });
 });
 
@@ -310,3 +333,71 @@ function lookRatios(name: string, t: TableLike): number[] {
       .map((vars) => contrast(vars['--cell-color'], vars['--cell-fill'])),
   );
 }
+
+describe('drawing again after a text change', () => {
+  const sheet = styled({}, table, [1, 1], { fill: '#1e293b', align: { wrap: 'overflow' } });
+  const edited = (t: TableLike, row: number, texts: Record<string, string>): TableLike => ({
+    ...t,
+    rows: t.rows.map((r, i) =>
+      i === row
+        ? {
+            ...r,
+            cells: { ...r.cells, ...Object.fromEntries(Object.entries(texts).map(([k, v]) => [k, { markdown: v }])) },
+          }
+        : r,
+    ),
+  });
+
+  it('draws only the rows whose text changed, and gives what a full drawing gives', () => {
+    const first = draw(sheet);
+    const next = edited(table, 2, { [K(1)]: 'A long line of words' });
+    const again = drawTable({ sheet, table: next, scheme: 'light' }, first);
+    expect([...(again.changed ?? [])]).toEqual([2]);
+    expect(again.cells[0]).toBe(first.cells[0]);
+    expect(again.cells[3]).toBe(first.cells[3]);
+    expect(again.cells[2]).not.toBe(first.cells[2]);
+    expect(again.table).toBe(first.table);
+    expect(JSON.parse(JSON.stringify(again.cells))).toEqual(
+      JSON.parse(JSON.stringify(drawTable({ sheet, table: next, scheme: 'light' }).cells)),
+    );
+    // Text that is the same draws nothing again, even in a new row object.
+    const same = drawTable({ sheet, table: edited(table, 1, {}), scheme: 'light' }, first);
+    expect(same.changed?.size).toBe(0);
+  });
+
+  it('draws everything again when the sheet changes', () => {
+    const first = draw(sheet);
+    const again = drawTable(
+      { sheet: styled(sheet, table, [2, 2], { fill: '#fef3c7' }), table, scheme: 'light' },
+      first,
+    );
+    expect(again.changed).toBeUndefined();
+    expect(again.cells[2]).not.toBe(first.cells[2]);
+  });
+});
+
+describe('automatic text on shaded patterns', () => {
+  // WCAG 2.x relative luminance, written out here so the test does not share code with the module.
+  const lum = (hex: string) => {
+    const [r, g, b] = [1, 3, 5].map((i) => {
+      const v = parseInt(hex.slice(i, i + 2), 16) / 255;
+      return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+    });
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  };
+  const ratio = (a: string, b: string) => {
+    const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x);
+    return (hi + 0.05) / (lo + 0.05);
+  };
+
+  it.each([
+    ['darkGray', '#404040'],
+    ['mediumGray', '#808080'],
+    ['lightGray', '#bfbfbf'],
+    ['gray125', '#e0e0e0'],
+  ])('reads on %s black over white, which shows about %s', (pattern, shown) => {
+    const sheet = styled({}, table, [1, 1], { fill: { pattern, color: '#000000', back: '#ffffff' } } as StyleChange);
+    const color = draw(sheet).cells[0][0].vars['--cell-color'];
+    expect(ratio(color, shown)).toBeGreaterThanOrEqual(4.5);
+  });
+});

@@ -4,6 +4,8 @@
 // shrink to fit, borders on a shared edge, sticky freeze panes, hidden lines, and forced colors. The table is the
 // HTML the render decorations give (harness.ts), so the test needs no editor, only the real stylesheet.
 
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import type { Page } from '@playwright/test';
 import {
   Builder,
@@ -202,4 +204,102 @@ test('in forced colors a filled cell gets an outline instead of its fill @forced
   );
   const outline = await page.locator('td').evaluate((el) => getComputedStyle(el).outlineStyle);
   expect(outline).toBe('solid');
+});
+
+// The table block's own scroller rules (tables.module.css), with the module syntax made plain CSS.
+const scrollerCss = () =>
+  readFileSync(join(import.meta.dirname, '../../../app/src/features/page/tables/tables.module.css'), 'utf8').replace(
+    /:global\(([^()]*)\)/g,
+    '$1',
+  );
+
+test('frozen header rows stay in view inside the real table scroller', async ({ page }) => {
+  const head = `<style>${harnessCss()}${scrollerCss()}</style>`;
+  const table = tableHtml('t', freezeFixture(), 'light');
+  const body = `<div class="wrapper"><div class="scroller" id="s" style="width:320px"><div class="ProseMirror">${table}</div></div></div>`;
+  await page.setContent(`<!doctype html><html data-theme="light"><head>${head}</head><body>${body}</body></html>`);
+  await page.evaluate(`${MEASURE_SOURCE}(document.getElementById('t'))`);
+  await page.locator('#s').evaluate((el) => {
+    el.scrollTop = 250;
+  });
+  const scroller = await box(page, '#s');
+  const header = await box(page, 'tr:nth-child(1) td:nth-child(3)');
+  expect(await page.locator('#s').evaluate((el) => el.scrollTop)).toBeGreaterThan(100);
+  expect(header.top).toBeGreaterThanOrEqual(scroller.top - 0.5);
+  expect(header.top).toBeLessThanOrEqual(scroller.top + 1.5);
+  // A table without frozen rows keeps the scroller as it was: no height limit.
+  await page.evaluate(() => document.querySelector('table')!.removeAttribute('data-frozen-rows'));
+  expect(await page.locator('#s').evaluate((el) => getComputedStyle(el).overflowY)).toBe('hidden');
+});
+
+test('header cells stay bold with no look, and a font weight from the look wins', async ({ page }) => {
+  const b = new Builder(2, 1, 100).text(1, 1, 'Head').text(2, 1, 'Body');
+  b.table = { ...b.table, header: true };
+  const html = tableHtml('t', b.build(), 'light').replace('<td', '<th').replace('</td>', '</th>');
+  await page.setContent(
+    `<!doctype html><html data-theme="light"><head><style>${harnessCss()}</style></head><body>${html}</body></html>`,
+  );
+  const weights = await page.locator('td, th').evaluateAll((c) => c.map((e) => getComputedStyle(e).fontWeight));
+  expect(weights).toEqual(['700', '400']);
+});
+
+test('fill alignment limits the repeated text to 2,000 characters', async ({ page }) => {
+  const b = new Builder(1, 2, 100);
+  b.text(1, 1, 'ab').style(1, 1, { align: { h: 'fill' } });
+  b.text(1, 2, `e${'́'.repeat(2000)}`).style(1, 2, { align: { h: 'fill' } });
+  await show(page, b.build());
+  const lengths = await page
+    .locator('td')
+    .evaluateAll((c) => c.map((e) => (e.getAttribute('data-fill-text') ?? '').length));
+  expect(lengths[0]).toBeGreaterThan(4);
+  expect(lengths[0]).toBeLessThanOrEqual(2000);
+  expect(lengths[1]).toBeLessThanOrEqual(2000);
+  const huge = new Builder(1, 1, 100).text(1, 1, 'x'.repeat(3000)).style(1, 1, { align: { h: 'fill' } });
+  await show(page, huge.build());
+  expect(await page.locator('td').evaluate((e) => e.hasAttribute('data-fill-text'))).toBe(false);
+});
+
+test('a thead repeats at the top of every printed page, the header row of the print and export markup', async ({
+  page,
+}) => {
+  const b = new Builder(150, 2, 200);
+  b.table = { ...b.table, header: true };
+  b.text(1, 1, 'HEADERONE').text(1, 2, 'HEADERTWO');
+  for (let r = 2; r <= 150; r += 1) b.text(r, 1, `row ${r}`).text(r, 2, `value ${r}`);
+  b.settings({ look: 'light-fern' });
+  const html = tableHtml('t', b.build(), 'light', undefined, true);
+  await page.setContent(
+    `<!doctype html><html data-theme="light"><head><style>${harnessCss()}</style></head><body>${html}</body></html>`,
+  );
+  const pdf = await page.pdf({ format: 'Letter' });
+  const { getDocument } = await import('pdfjs-dist/legacy/build/pdf.mjs');
+  const doc = await getDocument({ data: new Uint8Array(pdf), useSystemFonts: true }).promise;
+  expect(doc.numPages).toBeGreaterThan(2);
+  for (let n = 1; n <= doc.numPages; n += 1) {
+    const content = await (await doc.getPage(n)).getTextContent();
+    const text = content.items.map((i) => ('str' in i ? i.str : '')).join(' ');
+    expect(text, `page ${n}`).toContain('HEADERONE');
+  }
+});
+
+test('in forced colors borders and gridlines use the system line color @forced', async ({ page }) => {
+  await page.emulateMedia({ forcedColors: 'active' });
+  const b = new Builder(1, 2, 100).text(1, 1, 'A').text(1, 2, 'B');
+  b.style(1, 1, { border: { b: { style: 'thick', color: '#1e293b' } } });
+  await page.setContent(
+    `<!doctype html><html><head><style>${harnessCss()}</style></head><body>${tableHtml('t', b.build(), 'light')}</body></html>`,
+  );
+  const colors = await page
+    .locator('td')
+    .first()
+    .evaluate((el) => {
+      const s = getComputedStyle(el);
+      return [s.borderBottomColor, s.borderRightColor];
+    });
+  const canvasText = await page.evaluate(() => {
+    const probe = document.body.appendChild(document.createElement('i'));
+    probe.style.color = 'CanvasText';
+    return getComputedStyle(probe).color;
+  });
+  expect(colors).toEqual([canvasText, canvasText]);
 });

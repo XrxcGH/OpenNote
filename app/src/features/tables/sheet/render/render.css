@@ -9,6 +9,11 @@
   table[data-sheet] {
     border-collapse: collapse;
     box-shadow: none;
+    --sheet-grid: var(--sheet-grid-color, var(--color-border-subtle));
+  }
+
+  table[data-sheet][data-no-grid] {
+    --sheet-grid: transparent;
   }
 
   table[data-sheet] :is(td, th)[data-cell] {
@@ -26,13 +31,18 @@
     color: var(--cell-color, inherit);
     font-family: var(--cell-font, inherit);
     font-size: var(--cell-size, inherit);
-    font-weight: var(--cell-weight, normal);
+    font-weight: var(--cell-weight, inherit);
     font-style: var(--cell-style, normal);
     text-decoration: var(--cell-deco, none);
     text-align: var(--cell-h, start);
     vertical-align: var(--cell-v, top);
     direction: var(--cell-dir, inherit);
     overflow-wrap: anywhere;
+  }
+
+  /* Header cells stay bold unless the look says otherwise. */
+  table[data-sheet] th[data-cell] {
+    font-weight: var(--cell-weight, 700);
   }
 
   table[data-sheet] :is(td, th)[data-cell][data-distributed] {
@@ -193,7 +203,7 @@
 
   /* Forced colors drop fills, so a filled cell gets an outline, and gridlines use the system line color. */
   @media (forced-colors: active) {
-    table[data-sheet] {
+    table[data-sheet]:not([data-no-grid]) {
       --sheet-grid: CanvasText;
     }
 
@@ -201,7 +211,12 @@
       color: CanvasText;
       background-color: Canvas;
       background-image: none;
+      border-color: CanvasText;
       forced-color-adjust: none;
+    }
+
+    table[data-sheet] :is(td, th)[data-cell]:is([data-frozen-row], [data-frozen-col]) {
+      background-color: Canvas;
     }
 
     table[data-sheet] :is(td, th)[data-cell][data-filled] {
@@ -210,7 +225,12 @@
     }
   }
 
-  /* Printing: a header row repeats on each page when the table has a thead. */
+  /*
+   * Printing: a thead repeats on each page. The editor's own tables have no thead. Their header is the first tr
+   * of a tbody that the editor manages, and a browser repeats only a real thead. So the header repeats in the print
+   * and export markup (pages/export/blocks.ts), which writes a thead. The decorations mark the header row
+   * (data-header-row) for whoever writes that markup from the sheet.
+   */
   @media print {
     table[data-sheet] > thead {
       display: table-header-group;
