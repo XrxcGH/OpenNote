@@ -223,6 +223,64 @@ describe('the calculator modes', () => {
   });
 });
 
+describe('the calculator keys, angle unit, and history', () => {
+  it('repeats the last step when = is pressed again, and says what % means', async () => {
+    localStorage.setItem('opennote.tools.calculator.tab', JSON.stringify('basic'));
+    renderUi(<CalculatorTool />);
+    expect(screen.getByText(/200\+15% is 200\.15/)).toBeTruthy();
+    for (const key of ['9', '7', '−', '3']) await userEvent.click(screen.getByRole('button', { name: key }));
+    await userEvent.click(screen.getByRole('button', { name: 'Equals' }));
+    expect(document.getElementById('calc-result')!.textContent).toBe('= 94');
+    await userEvent.click(screen.getByRole('button', { name: 'Equals' }));
+    expect(document.getElementById('calc-result')!.textContent).toBe('= 91');
+  });
+
+  it('clears the expression on Escape and keeps the window; an empty field leaves Escape to the window', async () => {
+    const closed = vi.fn();
+    const { container } = renderUi(
+      <div
+        role="presentation"
+        onKeyDown={(event) => {
+          if (event.key === 'Escape' && !event.defaultPrevented) closed();
+        }}
+      >
+        <CalculatorTool />
+      </div>,
+    );
+    expect(container).toBeTruthy();
+    await userEvent.fill(screen.getByRole('textbox', { name: 'Expression' }), '2+3');
+    await userEvent.keyboard('{Escape}');
+    expect((screen.getByRole('textbox', { name: 'Expression' }) as HTMLInputElement).value).toBe('');
+    expect(closed).not.toHaveBeenCalled();
+    await userEvent.keyboard('{Escape}');
+    expect(closed).toHaveBeenCalledTimes(1);
+  });
+
+  it('cycles the angle unit through degrees, radians, and gradians', async () => {
+    renderUi(<CalculatorTool />);
+    const unit = () => screen.getByRole('button', { name: /^(Degrees|Radians|Gradians)$/ });
+    expect(unit().textContent).toBe('Degrees');
+    await userEvent.click(unit());
+    expect(unit().textContent).toBe('Radians');
+    await userEvent.click(unit());
+    expect(unit().textContent).toBe('Gradians');
+    await userEvent.fill(screen.getByRole('textbox', { name: 'Expression' }), 'sin(100)');
+    await userEvent.keyboard('{Enter}');
+    expect(document.getElementById('calc-result')!.textContent).toBe('= 1');
+  });
+
+  it('breaks a history entry with a very long number inside the panel', async () => {
+    renderUi(<CalculatorTool />);
+    await userEvent.fill(screen.getByRole('textbox', { name: 'Expression' }), '1'.repeat(80));
+    await userEvent.keyboard('{Enter}');
+    const entry = screen
+      .getAllByRole('button')
+      .find((button) => button.getAttribute('aria-label')?.includes('11111111'));
+    expect(entry).toBeTruthy();
+    expect(getComputedStyle(entry!).overflowWrap).toBe('anywhere');
+  });
+});
+
 describe('the calculator popped out, and its answer format', () => {
   it('writes the answer in scientific notation to the fewest significant figures typed', async () => {
     renderUi(<CalculatorTool />);

@@ -13,6 +13,8 @@ export const kitMath = {
     insertAnswer: 'Insert answer',
     insertEquation: 'Insert equation',
     insertSteps: 'Insert steps',
+    insertLive: 'Live calculation block',
+    liveInserted: 'Added a live calculation block. Use Open in tool to change it.',
     insertTable: 'Insert table',
     inserted: 'Inserted into the page.',
     noPage: 'Click in a page first, then insert.',

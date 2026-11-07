@@ -4553,6 +4553,68 @@
       "flag": "page.tables"
     },
     {
+      "id": "insert.symbol",
+      "title": "Symbol",
+      "category": "insert",
+      "keys": [],
+      "flag": "text.symbols"
+    },
+    {
+      "id": "text.altX",
+      "title": "Switch between a character and its code",
+      "category": "insert",
+      "keys": [
+        "Alt+X"
+      ],
+      "flag": "text.symbols"
+    },
+    {
+      "id": "text.nbsp",
+      "title": "Insert nonbreaking space",
+      "category": "insert",
+      "keys": [
+        "Ctrl+Shift+Space"
+      ],
+      "flag": "text.symbols"
+    },
+    {
+      "id": "text.nbHyphen",
+      "title": "Insert nonbreaking hyphen",
+      "category": "insert",
+      "keys": [],
+      "flag": "text.symbols"
+    },
+    {
+      "id": "text.softHyphen",
+      "title": "Insert optional hyphen",
+      "category": "insert",
+      "keys": [],
+      "flag": "text.symbols"
+    },
+    {
+      "id": "text.emDash",
+      "title": "Insert em dash",
+      "category": "insert",
+      "keys": [],
+      "flag": "text.symbols"
+    },
+    {
+      "id": "text.enDash",
+      "title": "Insert en dash",
+      "category": "insert",
+      "keys": [],
+      "flag": "text.symbols"
+    },
+    {
+      "id": "text.formattingMarks",
+      "title": "Show formatting marks",
+      "category": "view",
+      "keys": [
+        "Ctrl+Alt+8"
+      ],
+      "flag": "text.symbols"
+    },
+    {
       "id": "tutor.open",
       "title": "Open the tutor",
       "category": "view",
@@ -5211,7 +5273,8 @@
       "title": "Go to the next tab",
       "category": "navigation",
       "keys": [
-        "Ctrl+Tab"
+        "Ctrl+Tab",
+        "Ctrl+PageDown"
       ],
       "flag": "qol.tabs"
     },
@@ -5220,7 +5283,8 @@
       "title": "Go to the previous tab",
       "category": "navigation",
       "keys": [
-        "Ctrl+Shift+Tab"
+        "Ctrl+Shift+Tab",
+        "Ctrl+PageUp"
       ],
       "flag": "qol.tabs"
     },
