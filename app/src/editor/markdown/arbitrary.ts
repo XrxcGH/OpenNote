@@ -4,8 +4,18 @@
 import * as fc from 'fast-check';
 import type { Mark, Node as PMNode } from '@tiptap/pm/model';
 import { textSchema } from '../schema/schema';
-import { CALLOUT_TYPES, FOLDS, HIGHLIGHT_COLORS, TEXT_SIZES } from '../schema/specs';
+import {
+  BOX_STYLES,
+  CALLOUT_TYPES,
+  FOLDS,
+  HIGHLIGHT_COLORS,
+  OTF_FEATURES,
+  PEN_COLORS,
+  TEXT_SIZES,
+  UNDERLINE_STYLES,
+} from '../schema/specs';
 import { isSpaceChar } from './flanking';
+import { showsOnSpaces } from './leaves';
 
 const { nodes, marks } = textSchema;
 
@@ -62,23 +72,87 @@ const HREFS = [
   'https://example.com/caf\u00e9',
 ];
 
+/** Colors of every kind of Appendix D.7. */
+// checks-disable-next-line brand-consistency: document content, not interface styling
+const COLORS = ['ink', 'walnut', 'mint', 'honey', '#aa0000', '#00aaff', 'theme:accent1', 'theme:background'];
+const IDS = ['01m3sbcmt0000000000000c001', '01m3sbcmt0000000000000c002', '7zzzzzzzzzzzzzzzzzzzzzzzzz'];
+/** Tags of a later version, which stay foreign marks (R-INL-7). */
+const FOREIGN_TAGS = [
+  '<span data-glow="soft">',
+  '<span data-glow="hard">',
+  '<span data-a="1" data-b="x y">',
+  '<u data-x="1">',
+  '<ins data-by="later">',
+  '<s data-x="a*b_c[d]\\e">',
+  '<mark data-color="honey">',
+  '<span data-size="0.5">',
+  '<del data-line="single">',
+  '<span lang="en-us">',
+];
+const pick = <T>(list: readonly T[]) => fc.constantFrom(...list);
+const points = (min: number, max: number, step: number) =>
+  fc
+    .integer({ min: Math.ceil(min / step), max: Math.floor(max / step) })
+    .map((n) => String(Number((n * step).toFixed(2))));
+
+/** One generator for each mark of SPEC 7.10, with values from its grammar. */
 const markFactories: readonly fc.Arbitrary<Mark>[] = [
   fc.constant(marks.bold.create()),
   fc.constant(marks.italic.create()),
-  fc.constant(marks.strike.create()),
-  fc.constant(marks.underline.create()),
+  fc.constantFrom(null, 'double').map((line) => marks.strike.create({ line })),
+  fc
+    .tuple(fc.option(pick(UNDERLINE_STYLES.slice(1)), { nil: null }), fc.option(pick(COLORS), { nil: null }))
+    .map(([line, color]) => marks.underline.create({ line, color })),
   fc.constant(marks.highlight.create()),
-  fc.constantFrom(...HIGHLIGHT_COLORS).map((color) => marks.highlight.create({ color })),
+  fc
+    // checks-disable-next-line brand-consistency: document content, not interface styling
+    .constantFrom(...HIGHLIGHT_COLORS, '#ffee00', 'fern', 'theme:accent2')
+    .map((color) => marks.highlight.create({ color })),
   // checks-disable-next-line brand-consistency: document content, not interface styling
-  fc.constantFrom('ink', 'red', '#aa0000', '#00AAff').map((color) => marks.textColor.create({ color })),
-  fc.constantFrom(...TEXT_SIZES).map((size) => marks.textSize.create({ size })),
+  fc.constantFrom(...PEN_COLORS, '#aa0000', 'rose', 'theme:text').map((color) => marks.textColor.create({ color })),
+  fc.oneof(pick(TEXT_SIZES), points(1, 1638, 0.5)).map((size) => marks.textSize.create({ size })),
   fc.constant(marks.subscript.create()),
   fc.constant(marks.superscript.create()),
   fc.constantFrom(...HREFS).map((href) => marks.link.create({ href })),
+  pick(['start', 'end']).map((float) => marks.float.create({ float })),
+  pick(IDS).map((comment) => marks.comment.create({ comment })),
+  pick(IDS).map((ins) => marks.insertion.create({ ins })),
+  pick(IDS).map((del) => marks.deletion.create({ del })),
+  pick(IDS).map((fmt) => marks.formatChange.create({ fmt })),
+  pick(['rtl', 'ltr']).map((dir) => marks.dir.create({ dir })),
+  pick(['en', 'fr-CA', 'zh-Hant-TW', 'es-419', 'zxx']).map((lang) => marks.lang.create({ lang })),
+  pick(['citation', 'quote2', 'u-key-term']).map((style) => marks.charStyle.create({ style })),
+  pick(['100', '200', '300', '500', '600', '800', '900']).map((weight) => marks.weight.create({ weight })),
+  pick(COLORS).map((shade) => marks.shade.create({ shade })),
+  pick(['Georgia', 'Noto Sans JP 2', 'Mincho \u660e\u671d', '+body', '+mono', 'X']).map((font) =>
+    marks.font.create({ font }),
+  ),
+  pick(['small', 'all']).map((caps) => marks.caps.create({ caps })),
+  points(-1584, 1584, 0.05)
+    .filter((t) => t !== '0')
+    .map((tracking) => marks.tracking.create({ tracking })),
+  fc
+    .integer({ min: 1, max: 600 })
+    .filter((n) => n !== 100)
+    .map((n) => marks.scale.create({ scale: String(n) })),
+  points(-1584, 1584, 0.5)
+    .filter((h) => h !== '0')
+    .map((shift) => marks.shift.create({ shift })),
+  fc.oneof(fc.constant('0'), points(1, 1638, 0.5)).map((kern) => marks.kern.create({ kern })),
+  fc
+    .subarray([...OTF_FEATURES], { minLength: 1, maxLength: 3 })
+    .map((list) => marks.otf.create({ otf: [...list].sort().join(' ') })),
+  pick(['emboss', 'engrave', 'outline', 'shadow', 'outline shadow', 'emboss shadow']).map((effect) =>
+    marks.effect.create({ effect }),
+  ),
+  fc
+    .tuple(pick(BOX_STYLES), fc.option(pick(COLORS), { nil: null }))
+    .map(([style, color]) => marks.box.create({ style, color })),
+  pick(FOREIGN_TAGS).map((tag) => marks.foreign.create({ tag })),
 ];
 
 const markSet = fc
-  .subarray([...markFactories.keys()], { maxLength: 3 })
+  .subarray([...markFactories.keys()], { maxLength: 4 })
   .chain((picked) =>
     fc
       .tuple(...picked.map((i) => markFactories[i]))
@@ -92,8 +166,13 @@ const textSegment = fc.tuple(words, markSet, fc.boolean()).map(([text, set, code
   // A link at the start of a paragraph with `]:` in its code reads as a reference definition. Markdown has no
   // way around that, so the generator leaves `]` out of code.
   if (code) return { kind: 'text', text: text.replace(/]/g, ')'), marks: marks.code.create().addToSet(set) };
-  return { kind: 'text', text: set.length > 0 ? trimmed(text) : text, marks: set };
+  // R-WS-1: marks that show on spaces keep the spaces at their edges, so only the others need trimmed text.
+  return { kind: 'text', text: set.some((mark) => !showsOnSpaces(mark)) ? trimmed(text) : text, marks: set };
 });
+
+const footnoteSegment = fc
+  .tuple(pick(IDS), markSet)
+  .map(([id, set]): Segment => ({ kind: 'node', node: nodes.footnoteRef.create({ id }, null, set) }));
 
 const mathSource = fc.stringMatching(/^[a-z0-9^+=-]{1,6}$/);
 
@@ -111,6 +190,7 @@ const segment = fc.oneof(
   { weight: 1, arbitrary: fc.constant<Segment>({ kind: 'break' }) },
   { weight: 1, arbitrary: imageSegment },
   { weight: 1, arbitrary: mathSegment },
+  { weight: 1, arbitrary: footnoteSegment },
 );
 
 /** Inline nodes. A break is kept only between two other pieces. */
@@ -238,6 +318,12 @@ export const markdownSource: fc.Arbitrary<string> = fc
           '<mark>',
           '</mark>',
           '<span data-size="small">',
+          '<span data-font="Georgia">',
+          '<span data-glow="soft">',
+          '<u data-line="wave">',
+          '</u>',
+          '</span>',
+          '[^01m3sbcmt0000000000000c001]',
           '$x$',
           '\\\n',
           '    ',
