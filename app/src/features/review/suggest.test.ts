@@ -3,6 +3,7 @@
 // `<span data-ins="ID">`, `<span data-del="ID">`, `<span data-fmt="ID">`). It also follows the rules in the ADR.
 // Typing makes one insertion with the person's name. A deletion stays as a deletion mark. Accept or reject settles
 // them.
+import { Fragment, Slice } from '@tiptap/pm/model';
 import { EditorState, TextSelection } from '@tiptap/pm/state';
 import type { Transaction } from '@tiptap/pm/state';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -158,6 +159,31 @@ describe('suggesting mode', () => {
     state = state.apply(state.tr.setSelection(TextSelection.create(state.doc, first!.from, first!.to)));
     expect(nextChange(state, 1)?.text).toBe('y');
     expect(nextChange(state, -1)).toBeNull();
+  });
+});
+
+describe('suggestions across paragraphs', () => {
+  it('a deletion across two paragraphs joins them on Accept and keeps them apart on Reject', () => {
+    const tracker = testTracker();
+    let state = suggestingState('One [two\n\nthree ]four', tracker);
+    state = state.apply(state.tr.deleteSelection());
+    expect(changeRanges(state.doc).map((change) => change.kind)).toEqual(['del']);
+    expect(markdownOf(run(state, decide(state, pick(state.doc), 'accept')))).toBe('One four');
+    expect(markdownOf(run(state, decide(state, pick(state.doc), 'reject')))).toBe('One two\n\nthree four');
+  });
+
+  it('pasting two paragraphs splits one; Reject all joins it again, and Accept all keeps the split', () => {
+    const tracker = testTracker();
+    let state = suggestingState('Start[] end', tracker);
+    const { paragraph } = state.schema.nodes;
+    const pasted = Fragment.from([
+      paragraph.create(null, state.schema.text('A')),
+      paragraph.create(null, state.schema.text('B')),
+    ]);
+    state = state.apply(state.tr.replaceSelection(new Slice(pasted, 1, 1)));
+    expect(changeRanges(state.doc).map((change) => [change.kind, change.text])).toEqual([['ins', 'A B']]);
+    expect(markdownOf(run(state, decide(state, pick(state.doc), 'reject')))).toBe('Start end');
+    expect(markdownOf(run(state, decide(state, pick(state.doc), 'accept')))).toBe('StartA\n\nB end');
   });
 });
 

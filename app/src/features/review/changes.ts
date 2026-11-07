@@ -9,7 +9,7 @@ import { META_COMMAND } from '../../editor/meta';
 import { parseTextBlock } from '../../editor/markdown';
 import { SUGGESTION_MARKS } from './records';
 import { changeRanges, touches } from './ranges';
-import type { Change } from './ranges';
+import type { Change, Span } from './ranges';
 import { REVIEW_META } from './suggest';
 
 export type Decision = 'accept' | 'reject';
@@ -46,6 +46,22 @@ function beforeContent(doc: PMNode, change: Change, before: string | undefined) 
 }
 
 /**
+ * The parts of a change to remove. A suggestion across paragraphs has one part per paragraph, and the paragraph
+ * breaks between them belong to it: a deletion across two paragraphs deleted the break, and a pasted or typed
+ * paragraph inserted one. So parts with only breaks between them make one span, and removing it joins the
+ * paragraphs. A break at the very edge of a suggestion has no text to carry a mark, so it stays.
+ */
+function removalSpans(doc: PMNode, change: Change): Span[] {
+  const out: Span[] = [];
+  for (const span of change.spans) {
+    const last = out[out.length - 1];
+    if (last && doc.textBetween(last.to, span.from, '', '￼') === '') last.to = span.to;
+    else out.push({ ...span });
+  }
+  return out;
+}
+
+/**
  * The transaction that accepts or rejects `changes`, or null when there are none. `beforeOf` gives a format
  * change's Markdown from before it.
  */
@@ -65,7 +81,8 @@ export function decide(
     const remove = (change.kind === 'ins') === (decision === 'reject') && change.kind !== 'fmt';
     const restore =
       change.kind === 'fmt' && decision === 'reject' ? beforeContent(state.doc, change, beforeOf(change.id)) : null;
-    for (const span of [...change.spans].reverse()) {
+    const spans = remove ? removalSpans(state.doc, change) : change.spans;
+    for (const span of [...spans].reverse()) {
       const from = tr.mapping.map(span.from, 1);
       const to = tr.mapping.map(span.to, -1);
       if (from >= to) continue;

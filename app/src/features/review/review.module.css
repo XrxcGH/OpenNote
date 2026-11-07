@@ -60,6 +60,8 @@
       border-block-end: 1px dashed Highlight;
       forced-color-adjust: none;
       color: CanvasText;
+      /* No tint: CanvasText on a light tint can vanish in a dark contrast theme. The underline is the cue. */
+      background-color: transparent;
     }
   }
 }

@@ -7,6 +7,8 @@ import type { Node as PMNode } from '@tiptap/pm/model';
 import { parseTextBlock } from '../../editor/markdown';
 import type { AppliedFrame, BlockJson, EditBatch } from '../../services/pages/types';
 import type { MountedPage } from '../page';
+import { t } from '../../strings/t';
+import { say } from './actions';
 import { ReviewModel } from './model';
 import type { ReviewEdit } from './model';
 import { changeRanges, commentRanges } from './ranges';
@@ -98,15 +100,28 @@ function resolvedStyle(model: ReviewModel): { update(): void; remove(): void } {
   };
 }
 
-/** The page's text blocks in reading order, with the documents they show. */
-function shownDocs(layer: MountedPage['layer'], seams: TextSeams): { id: string; doc: PMNode }[] {
-  return layer
-    .blocks()
-    .filter(isText)
-    .map((block) => ({
-      id: block.id,
-      doc: seams.liveDoc(layer.view(block.id)) ?? parseTextBlock(String(block.data.markdown ?? '')),
-    }));
+/**
+ * The page's text blocks in reading order, with the documents they show. A block without a live editor is parsed
+ * once per Markdown, so listing the comments again does not parse every block again.
+ */
+function shownDocs(layer: MountedPage['layer'], seams: TextSeams): () => { id: string; doc: PMNode }[] {
+  const parsed = new Map<string, { markdown: string; doc: PMNode }>();
+  return () => {
+    const blocks = layer.blocks().filter(isText);
+    const ids = new Set(blocks.map((block) => block.id));
+    for (const id of [...parsed.keys()].filter((one) => !ids.has(one))) parsed.delete(id);
+    return blocks.map((block) => {
+      const live = seams.liveDoc(layer.view(block.id));
+      if (live) return { id: block.id, doc: live };
+      const markdown = String(block.data.markdown ?? '');
+      let cached = parsed.get(block.id);
+      if (cached?.markdown !== markdown) {
+        cached = { markdown, doc: parseTextBlock(markdown) };
+        parsed.set(block.id, cached);
+      }
+      return { id: block.id, doc: cached.doc };
+    });
+  };
 }
 
 /** The page's comments and suggestions in reading order, with their records. */
@@ -138,7 +153,7 @@ export function attachReview(mounted: MountedPage, seams: TextSeams): PageReview
   const frame = (applied: AppliedFrame) => applyFrame(model, applied);
   const rider = (block: string, before: string, after: string) =>
     layer.block(block) ? model.rider(block, before, after) : [];
-  const docs = () => shownDocs(layer, seams);
+  const docs = shownDocs(layer, seams);
   const stops = [
     layer.onChange(readBlocks),
     sync.onStep(frame),
@@ -154,7 +169,12 @@ export function attachReview(mounted: MountedPage, seams: TextSeams): PageReview
     send(block, data) {
       model.apply(block, data);
       const batch: EditBatch = { edits: [{ edit: 'patchBlock', block, data }] };
-      void sync.send(batch).catch(() => undefined);
+      // When the core refuses the change (a read-only page, say), the pane goes back to what the core holds.
+      void sync.send(batch).catch(() => {
+        const stored = layer.block(block);
+        if (stored) model.setBlock(block, stored.data);
+        say(t('textReview.sendFailed'));
+      });
     },
     blockOf: (editor) => editor.view.dom.closest<HTMLElement>('[data-block]')?.dataset.block ?? null,
     onChange: (listener) => model.onChange(listener),

@@ -66,6 +66,9 @@ export const textReview = {
   goToText: 'Go to text',
   resolved: 'Resolved',
   when: '{author}, {time}',
+  tooLong: 'Too long.',
+  repliesFull: 'No more replies fit.',
+  sendFailed: 'Comment not saved.',
   // The compare view.
   formattingChanged: 'Formatting changed: {details}',
   markAdded: '{mark} added to “{text}”',

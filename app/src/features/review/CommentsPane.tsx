@@ -1,7 +1,7 @@
 // The comments pane (ADR 0086): the page's comments in reading order, each with the text it covers, its author and
 // time, its text, and its replies. A comment can be answered, resolved, reopened, deleted, or followed to its text.
 // The comment at the caret is marked. Comments are notes on their ranges for screen readers (text DESIGN.md 12).
-import { useEffect, useReducer, useState } from 'react';
+import { useEffect, useId, useMemo, useReducer, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { XIcon } from '@phosphor-icons/react/dist/csr/X';
 import { escapeParagraphText, parseTextBlock } from '../../editor/markdown';
@@ -12,7 +12,7 @@ import { targetEditor } from '../page';
 import { deleteComment, goToComment, setResolved } from './actions';
 import { commentsAt } from './comments';
 import type { PageComment, PageReview } from './page';
-import { stamp } from './records';
+import { MAX_REPLIES, fitsRecord, stamp } from './records';
 import type { CommentJson } from './records';
 import { authorName, reviewPrefs, setReviewPrefs } from './state';
 import styles from './review.module.css';
@@ -35,8 +35,9 @@ function when(time: string): string {
 
 function Editor(props: { label: string; action: string; autoFocus?: boolean; onSubmit(text: string): void }) {
   const [text, setText] = useState('');
+  const tooLong = !fitsRecord(markdownOf(text));
   const submit = () => {
-    if (!text.trim()) return;
+    if (!text.trim() || tooLong) return;
     props.onSubmit(text);
     setText('');
   };
@@ -46,17 +47,25 @@ function Editor(props: { label: string; action: string; autoFocus?: boolean; onS
       submit();
     }
   };
+  const helpId = useId();
   return (
     <div>
       <textarea
         className={styles.input}
         aria-label={props.label}
+        aria-describedby={tooLong ? helpId : undefined}
+        aria-invalid={tooLong || undefined}
         value={text}
         autoFocus={props.autoFocus}
         onChange={(event) => setText(event.target.value)}
         onKeyDown={onKeyDown}
       />
-      <Button variant="primary" disabled={!text.trim()} onClick={submit}>
+      {tooLong && (
+        <p id={helpId} className={styles.meta}>
+          {t('textReview.tooLong')}
+        </p>
+      )}
+      <Button variant="primary" disabled={!text.trim() || tooLong} onClick={submit}>
         {props.action}
       </Button>
     </div>
@@ -69,10 +78,11 @@ function Item({ review, comment, active }: { review: PageReview; comment: PageCo
   const author = record?.author ?? t('textReview.unknownAuthor');
   const send = (patch: Partial<CommentJson>) => review.send(block, { comments: { [id]: patch } });
   const postText = (text: string) => send({ markdown: markdownOf(text) });
-  const reply = (text: string) =>
-    send({
-      replies: [...(record?.replies ?? []), { author: authorName(), time: stamp(), markdown: markdownOf(text) }],
-    });
+  const replies = record?.replies ?? [];
+  const reply = (text: string) => {
+    if (replies.length >= MAX_REPLIES) return;
+    send({ replies: [...replies, { author: authorName(), time: stamp(), markdown: markdownOf(text) }] });
+  };
   const labelId = `comment-${id}`;
   return (
     <li
@@ -98,8 +108,11 @@ function Item({ review, comment, active }: { review: PageReview; comment: PageCo
           <p className={styles.body}>{plain(one.markdown)}</p>
         </div>
       ))}
-      {record && record.markdown !== '' && !record.resolved && (
+      {record && record.markdown !== '' && !record.resolved && record.replies.length < MAX_REPLIES && (
         <Editor label={t('textReview.replyText')} action={t('textReview.reply')} onSubmit={reply} />
+      )}
+      {record && !record.resolved && record.replies.length >= MAX_REPLIES && (
+        <p className={styles.meta}>{t('textReview.repliesFull')}</p>
       )}
       <div className={styles.actions}>
         <Button variant="quiet" onClick={() => goToComment(review, block, id)}>
@@ -126,19 +139,33 @@ function activeComment(review: PageReview): string | null {
 }
 
 export function CommentsPane({ review, onClose }: { review: PageReview; onClose(): void }) {
-  const [, refresh] = useReducer((count: number) => count + 1, 0);
+  const [version, refresh] = useReducer((count: number) => count + 1, 0);
+  const [active, setActive] = useState(() => activeComment(review));
   const [name, setName] = useState(reviewPrefs.get().author);
   useEffect(() => {
-    const stops = [review.onChange(refresh), review.mounted.pool.onActiveChange(refresh)];
-    const onSelection = () => refresh();
+    const update = () => {
+      refresh();
+      setActive(activeComment(review));
+    };
+    const stops = [review.onChange(update), review.mounted.pool.onActiveChange(update)];
+    // A caret move only changes which comment is marked. The list is read again only when the text changed.
+    let shown = targetEditor()?.state.doc;
+    const onSelection = () => {
+      const doc = targetEditor()?.state.doc;
+      if (doc !== shown) {
+        shown = doc;
+        refresh();
+      }
+      setActive(activeComment(review));
+    };
     document.addEventListener('selectionchange', onSelection);
     return () => {
       stops.forEach((stop) => stop());
       document.removeEventListener('selectionchange', onSelection);
     };
   }, [review]);
-  const comments = review.comments();
-  const active = activeComment(review);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- `version` counts the changes that make the list stale.
+  const comments = useMemo(() => review.comments(), [review, version]);
   return (
     <section aria-labelledby="comments-pane-title">
       <div className={styles.header}>

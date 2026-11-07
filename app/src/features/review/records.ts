@@ -51,6 +51,9 @@ export const MAX_RECORD_BYTES = 64 * 1024;
 /** The most replies a comment holds (spec 16). */
 export const MAX_REPLIES = 256;
 
+/** Whether Markdown fits in a record. The core counts UTF-8 bytes and drops a longer one when it reads the page. */
+export const fitsRecord = (markdown: string) => new TextEncoder().encode(markdown).length <= MAX_RECORD_BYTES;
+
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   !!value && typeof value === 'object' && !Array.isArray(value);
 

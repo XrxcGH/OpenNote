@@ -14,7 +14,10 @@ import { stageComment } from './model';
 import { attachReview } from './page';
 import type { PageReview, TextSeams } from './page';
 import { closePane, openPane } from './pane';
+import { MAX_RECORD_BYTES, MAX_REPLIES } from './records';
+import type { CommentJson } from './records';
 import { setReviewPrefs } from './state';
+import { toastStore } from '../../state/toasts';
 
 vi.mock('../../ui/toast', () => ({ showToast: vi.fn() }));
 
@@ -23,7 +26,10 @@ const AT = '2026-11-07T09:00:00.000Z';
 const NAME = 'Avery Quinn';
 
 /** A page view with one text block whose editor is real, and a sync that records what it sends. */
-function fakePage(test: TestEditor) {
+function fakePage(
+  test: TestEditor,
+  options: { stored?: Record<string, unknown>; live?: boolean; reject?: boolean } = {},
+) {
   test.root.dataset.block = 'b1';
   const block = (): BlockJson => ({
     id: 'b1',
@@ -31,7 +37,7 @@ function fakePage(test: TestEditor) {
     order: 'a0',
     created: AT,
     modified: AT,
-    data: { markdown: markdownOf(test.editor.state) },
+    data: { markdown: markdownOf(test.editor.state), ...options.stored },
   });
   const frame = document.body.appendChild(document.createElement('div'));
   const viewport = frame.appendChild(document.createElement('div'));
@@ -48,7 +54,7 @@ function fakePage(test: TestEditor) {
     sync: {
       send: (batch: EditBatch) => {
         sent.push(batch);
-        return Promise.resolve();
+        return options.reject ? Promise.reject(new Error('read-only')) : Promise.resolve();
       },
       onStep: () => () => undefined,
     },
@@ -60,7 +66,7 @@ function fakePage(test: TestEditor) {
       rider = given;
       return () => (rider = null);
     },
-    liveDoc: () => test.editor.state.doc,
+    liveDoc: () => (options.live === false ? null : test.editor.state.doc),
   };
   const review = attachReview(mounted, seams);
   /** What the text sync does after a change: build the batch with the riders' edits. */
@@ -154,5 +160,73 @@ describe('the comments pane', () => {
     goToComment(page.review, 'b1', C1);
     const { from, to } = test.editor.state.selection;
     expect(test.editor.state.doc.textBetween(from, to)).toBe('two');
+  });
+});
+
+describe('the comments pane limits (spec 16)', () => {
+  it('refuses a comment over 64 KiB of UTF-8 and a reply past 256 replies (spec 16)', async () => {
+    expect(MAX_RECORD_BYTES).toBe(65536);
+    expect(MAX_REPLIES).toBe(256);
+    test = mountEditor('One <span data-comment="' + C1 + '">two</span> three');
+    const record: CommentJson = { author: NAME, time: AT, markdown: '', replies: [], resolved: false };
+    const page = fakePage(test, { stored: { comments: { [C1]: record } } });
+    review = page.review;
+    act(() => openPane(page.review));
+    const item = await screen.findByRole('listitem');
+    const box = within(item).getByRole('textbox', { name: 'Comment text' });
+    const post = () => within(item).getByRole('button', { name: 'Post' });
+    // 65,536 one-byte characters fit exactly.
+    fireEvent.change(box, { target: { value: 'a'.repeat(65536) } });
+    expect(post().hasAttribute('disabled')).toBe(false);
+    expect(within(item).queryByText(/Too long/)).toBeNull();
+    // 32,769 two-byte characters are 65,538 bytes: one character more than fits.
+    fireEvent.change(box, { target: { value: 'é'.repeat(32769) } });
+    expect(post().hasAttribute('disabled')).toBe(true);
+    expect(within(item).getByText(/Too long/)).toBeTruthy();
+    act(() => fireEvent.keyDown(box, { key: 'Enter', ctrlKey: true }));
+    expect(page.sent).toEqual([]);
+
+    const reply = { author: NAME, time: AT, markdown: 'Yes.' };
+    act(() =>
+      page.review.model.setBlock('b1', {
+        comments: { [C1]: { ...record, markdown: 'Why?', replies: Array(255).fill(reply) } },
+      }),
+    );
+    expect(within(item).getByRole('textbox', { name: 'Reply' })).toBeTruthy();
+    act(() =>
+      page.review.model.setBlock('b1', {
+        comments: { [C1]: { ...record, markdown: 'Why?', replies: Array(256).fill(reply) } },
+      }),
+    );
+    expect(within(item).queryByRole('textbox', { name: 'Reply' })).toBeNull();
+    expect(within(item).getByText('No more replies fit.')).toBeTruthy();
+  });
+});
+
+describe('the comments pane records', () => {
+  it('puts back what the core holds when it refuses a record-only change', async () => {
+    test = mountEditor('One <span data-comment="' + C1 + '">two</span> three');
+    const record: CommentJson = { author: NAME, time: AT, markdown: 'Why?', replies: [], resolved: false };
+    const page = fakePage(test, { stored: { comments: { [C1]: record } }, reject: true });
+    review = page.review;
+    page.review.send('b1', { comments: { [C1]: { resolved: true } } });
+    expect(page.review.model.comment(C1)?.record.resolved).toBe(true);
+    await vi.waitFor(() => expect(page.review.model.comment(C1)?.record.resolved).toBe(false));
+    const { current, queue } = toastStore.get();
+    expect([current, ...queue].map((toast) => toast?.message)).toContain('Comment not saved.');
+  });
+
+  it('parses a block without an editor once per Markdown, and a caret move does not list the comments again', async () => {
+    test = mountEditor('One <span data-comment="' + C1 + '">two</span> three');
+    const page = fakePage(test, { live: false });
+    review = page.review;
+    const [first] = page.review.docs();
+    expect(page.review.docs()[0].doc).toBe(first.doc);
+    const comments = vi.spyOn(page.review, 'comments');
+    act(() => openPane(page.review));
+    await screen.findByRole('listitem');
+    const before = comments.mock.calls.length;
+    act(() => void document.dispatchEvent(new Event('selectionchange')));
+    expect(comments.mock.calls.length).toBe(before);
   });
 });
