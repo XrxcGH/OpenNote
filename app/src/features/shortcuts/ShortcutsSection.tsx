@@ -23,10 +23,7 @@ export default function ShortcutsSection() {
         {offered && (
           <RadioCard value="onenote" label={t('shortcuts.set.onenote')} description={t('shortcuts.set.onenoteHelp')} />
         )}
-        {/* The Google Docs set is offered once its keys land; a settings file that already names it still shows it. */}
-        {preset === 'docs' && (
-          <RadioCard value="docs" label={t('shortcuts.set.docs')} description={t('shortcuts.set.docsHelp')} />
-        )}
+        <RadioCard value="docs" label={t('shortcuts.set.docs')} description={t('shortcuts.set.docsHelp')} />
       </RadioGroup>
       <ShortcutList level={2} />
     </div>

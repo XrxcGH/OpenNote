@@ -106,8 +106,14 @@ function register({ id, title, keywords, category = 'format', flag = 'page.edito
         }
       : {}),
     ...(on ? { checked: withEditor(on, false) } : {}),
-    run: (_ctx, args) => withFormatting((m) => m.runFormatting(id, args)),
+    run: (_ctx, args) => withFormatting((m) => m.runFormatting(wordStep(id), args)),
   });
+}
+
+/** With the version 2 controls on, Ctrl+> and Ctrl+< step the size on Word's list instead of the four named sizes. */
+function wordStep(id: string): string {
+  if (!isEnabled('text.v2Controls')) return id;
+  return id === 'format.larger' ? 'format.growFont' : id === 'format.smaller' ? 'format.shrinkFont' : id;
 }
 
 const markOn = (name: string) => (editor: Editor) => isMarkActive(editor.state, name);
