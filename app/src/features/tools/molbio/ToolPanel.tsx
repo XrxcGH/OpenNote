@@ -6,6 +6,7 @@ import { useEffect, useId, useMemo, useState } from 'react';
 import { createStore, useStore } from '../../../state/store';
 import { t } from '../../../strings/t';
 import { Button, announce } from '../../../ui';
+import { insertLive as keepLive } from '../kits/liveInsert';
 import { insertIntoPage } from '../ui/insert';
 import { figureSvg } from './figure';
 import { FigureView } from './FigureView';
@@ -148,6 +149,25 @@ function InsertBar({ result }: { result: KitOk }) {
           {t('kitMolBio.insertSteps')}
         </Button>
       ) : null}
+      <Button
+        variant="quiet"
+        onClick={(event) => {
+          void keepLive(event.currentTarget, {
+            summary: say(result.answer.key, result.answer.vars),
+            rows: result.rows.map((row) => ({
+              label: say(row.key, row.vars),
+              value: row.word ? say(row.word) : String(row.value ?? ''),
+              unit: '',
+            })),
+            ...(result.latex ? { latex: result.latex } : {}),
+          }).then((ok) => {
+            missed.set(!ok);
+            announce(t(ok ? 'kitMolBio.liveInserted' : 'kitMolBio.noPage'));
+          });
+        }}
+      >
+        {t('kitMolBio.insertLive')}
+      </Button>
       <MissedInsert />
     </div>
   );

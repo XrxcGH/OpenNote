@@ -10,6 +10,7 @@ import { Button } from '../../ui';
 import { LANGUAGES, LIMITS } from './sandbox/protocol';
 import type { CodeLanguage, Stream } from './sandbox/protocol';
 import type { RunHandle, RunResult } from './sandbox/run';
+import { explainSandboxError } from './explain';
 import { indentAt } from './indent';
 import styles from './codecell.module.css';
 
@@ -209,7 +210,7 @@ export function CodeCellPanel({ language, source, readOnly, onChange, announce }
             ? t('codeCells.noOutput')
             : output.map((piece, index) => (
                 <span key={index} className={piece.stream === 'err' ? styles.err : undefined}>
-                  {piece.text}
+                  {piece.stream === 'err' ? explainSandboxError(piece.text) : piece.text}
                 </span>
               ))}
           {truncated ? <span className={styles.err}>{`\n${t('codeCells.status.truncated')}`}</span> : null}
