@@ -183,7 +183,10 @@ fn a_face_name_splits_into_its_family_and_weight() {
     for (face, expected) in [
         ("Segoe UI Semibold", Some(("Segoe UI", 600))),
         ("Segoe UI Light", Some(("Segoe UI", 300))),
-        ("Arial Black", Some(("Arial", 900))),
+        ("Segoe UI Black", Some(("Segoe UI", 900))),
+        ("Arial Black", None),
+        ("Franklin Gothic Medium", None),
+        ("Segoe UI Semilight", None),
         ("Source Sans Pro ExtraLight", Some(("Source Sans Pro", 200))),
         ("Fira Sans Semi Bold", Some(("Fira Sans", 600))),
         ("Segoe UI", None),
@@ -284,7 +287,7 @@ fn only_bundled_fonts_that_the_document_uses_are_embedded() {
         family: family.to_owned(),
         bold: false,
         italic: false,
-        bytes,
+        bytes: bytes.into(),
     };
     let mut setup = Setup::default();
     setup.options.embed_fonts = vec![
@@ -517,6 +520,26 @@ fn notes_and_comments_keep_their_links_and_pictures_through_their_own_relationsh
         !all["word/footnotes.xml"].contains("[Graph]"),
         "the picture, not its description"
     );
+    // Every part that can hold a picture declares the DrawingML prefixes, so it parses.
+    for part in ["document", "footnotes", "endnotes", "comments"] {
+        let name = format!("word/{part}.xml");
+        schema::check_part(&name, &all[&name]);
+    }
+    // The import reads each note's and comment's links and pictures through the part's own relationships.
+    let (_, data) = readback::import_text(&build(&word).expect("builds"));
+    let notes: Vec<&str> = data.notes.values().map(|n| n.markdown.as_str()).collect();
+    assert!(
+        notes
+            .iter()
+            .any(|m| m.contains("[the site](https://example.org/a)") && m.contains("![Graph](")),
+        "{notes:?}"
+    );
+    assert!(
+        notes.iter().any(|m| m.contains("[us](mailto:team@example.org)")),
+        "{notes:?}"
+    );
+    let comments: Vec<&str> = data.comments.values().map(|c| c.markdown.as_str()).collect();
+    assert_eq!(comments, ["Read [this](https://example.org/b)."]);
 }
 
 #[test]

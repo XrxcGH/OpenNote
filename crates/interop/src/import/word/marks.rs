@@ -114,11 +114,12 @@ pub(super) fn marks_of(props: &RunProps, theme: &Theme, script: TextScript) -> M
         if is_code_font(&font) {
             marks.code = true;
         } else if let Some((family, weight)) = named_face(props, script, &font) {
-            // A face named on the run, such as "Segoe UI Semibold", is its family at a weight, which also gives
-            // the bold (ADR 0083). Theme fonts stay as they are.
+            // A face named on the run, such as "Segoe UI Semibold", is its family at a weight (ADR 0083). The
+            // face's weight wins over a w:b on the run, so a light face never reads as both bold and light.
+            // Theme fonts stay as they are.
             marks.font = grammar::font_name(family).then(|| family.to_owned());
             marks.weight = Some(weight.to_string());
-            marks.strong &= weight < 600;
+            marks.strong = false;
         } else if grammar::font_name(&font) {
             marks.font = Some(font);
         }

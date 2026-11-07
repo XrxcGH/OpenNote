@@ -1,5 +1,6 @@
 //! Fonts: `fontTable.xml`, `theme1.xml`, and the optional embedding of bundled fonts (ECMA-376 Part 1, 17.8).
 
+use std::borrow::Cow;
 use std::collections::BTreeSet;
 
 use super::parts::{xml_escape, NS_R, NS_W, XML_HEADER};
@@ -77,8 +78,9 @@ pub struct EmbedFont {
     pub bold: bool,
     /// Whether the face is italic.
     pub italic: bool,
-    /// The file. A WOFF2 file must be decompressed first.
-    pub bytes: Vec<u8>,
+    /// The file. A WOFF2 file must be decompressed first. A bundled face borrows its bytes, so offering every
+    /// bundled face copies none of them.
+    pub bytes: Cow<'static, [u8]>,
 }
 
 /// Every face of the bundled fonts as a file to embed ([`crate::bundled_fonts::FACES`]). [`embed`] keeps the faces
@@ -90,7 +92,7 @@ pub fn bundled_embeds() -> Vec<EmbedFont> {
             family: face.family.to_owned(),
             bold: face.bold,
             italic: face.italic,
-            bytes: face.bytes.to_vec(),
+            bytes: Cow::Borrowed(face.bytes),
         })
         .collect()
 }

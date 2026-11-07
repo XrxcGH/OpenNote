@@ -12,7 +12,15 @@ use super::*;
 /// without a device face, `otf` `zero`, `float`, or `foreign`. And some share a Word form with another
 /// mark: point sizes 10, 15, and 18 are the size names, and a highlight that is not one of the 16 is shading.
 fn arb_marks() -> impl Strategy<Value = Marks> {
-    let font = prop::option::of(prop::sample::select(vec!["Georgia", "+body", "+heading", "Segoe UI"]));
+    let font = prop::option::of(prop::sample::select(vec![
+        "Georgia",
+        "+body",
+        "+heading",
+        "Segoe UI",
+        "Arial Black",
+        "Franklin Gothic Medium",
+        "Segoe UI Semilight",
+    ]));
     let size = prop::option::of(prop::sample::select(vec![
         "small", "large", "xlarge", "10.5", "11", "24", "7.5",
     ]));

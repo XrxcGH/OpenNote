@@ -46,7 +46,8 @@ fn canonical(blocks: &[Block], data: &TextData) -> String {
 }
 
 /// The text part of the T3 document: a comment with a reply, an insertion, a deletion, a format change, a
-/// footnote with marks, and an endnote. Times carry milliseconds, as the import writes them.
+/// footnote with marks and a link, and an endnote. Times carry milliseconds, as the import writes them. The links
+/// in the footnote and the comment go through the notes' and comments' own relationships parts.
 fn annotated_part() -> Part {
     let markdown = format!(
         "Plain **bold** <span data-comment=\"{ID3}\">commented</span> <span data-ins=\"{ID1}\">added</span> \
@@ -55,11 +56,11 @@ fn annotated_part() -> Part {
     );
     let records = json!({
         "notes": {
-            NOTE1: {"kind": "foot", "markdown": "A **footnote** in *two* marks."},
+            NOTE1: {"kind": "foot", "markdown": "A **footnote** in *two* marks, see [the site](https://example.org/a)."},
             NOTE2: {"kind": "end", "markdown": "An endnote."}
         },
         "comments": {
-            ID3: {"author": "Sam", "time": "2026-10-01T09:00:00.000Z", "markdown": "Check this.",
+            ID3: {"author": "Sam", "time": "2026-10-01T09:00:00.000Z", "markdown": "Check [this](https://example.org/b).",
                 "replies": [{"author": "Ana", "time": "2026-10-02T09:00:00.000Z", "markdown": "Done."}],
                 "resolved": true}
         },

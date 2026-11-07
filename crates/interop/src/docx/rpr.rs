@@ -31,7 +31,7 @@ fn weight_names(weight: u16) -> &'static [&'static str] {
     match weight {
         100 => &["Thin", "Hairline"],
         200 => &["ExtraLight", "Extra Light", "UltraLight", "Ultra Light"],
-        300 => &["Light", "Semilight", "SemiLight"],
+        300 => &["Light"],
         500 => &["Medium"],
         600 => &["Semibold", "Semi Bold", "Demibold", "Demi Bold"],
         800 => &["ExtraBold", "Extra Bold", "UltraBold", "Ultra Bold"],
@@ -40,8 +40,39 @@ fn weight_names(weight: u16) -> &'static [&'static str] {
     }
 }
 
-/// The device's face of `family` at `weight`, as the device spells it, when it lists one.
+/// The families whose weights go by face names of their own, such as "Segoe UI Semibold". Only these turn a
+/// weight into a face name and back, so a family whose own name ends in a weight's name, such as "Arial Black"
+/// or "Franklin Gothic Medium", stays the family it is. "Segoe UI Semilight" is a face of its own as well: its
+/// weight is 350, which no weight name gives.
+const WEIGHT_FAMILIES: [&str; 13] = [
+    "Segoe UI",
+    "Source Sans Pro",
+    "Source Sans 3",
+    "Fira Sans",
+    "Roboto",
+    "Open Sans",
+    "Noto Sans",
+    "Noto Serif",
+    super::fonts::APP_SANS,
+    "Literata",
+    super::fonts::APP_MONO,
+    "Carlito",
+    "Caladea",
+];
+
+/// Whether a family's weights go by face names: [`WEIGHT_FAMILIES`], ignoring case.
+fn has_weight_faces(family: &str) -> bool {
+    WEIGHT_FAMILIES
+        .iter()
+        .any(|known| known.eq_ignore_ascii_case(family.trim()))
+}
+
+/// The device's face of `family` at `weight`, as the device spells it, when it lists one and the family is one
+/// of [`WEIGHT_FAMILIES`].
 pub fn weight_face<'a>(family: &str, weight: u16, faces: &'a [String]) -> Option<&'a str> {
+    if !has_weight_faces(family) {
+        return None;
+    }
     weight_names(weight).iter().find_map(|name| {
         let wanted = format!("{family} {name}");
         faces
@@ -52,13 +83,13 @@ pub fn weight_face<'a>(family: &str, weight: u16, faces: &'a [String]) -> Option
 }
 
 /// The family and weight of a face name such as "Segoe UI Semibold", the inverse of [`weight_face`]. `None`
-/// when the name does not end in a weight's name after a family.
+/// when the name does not end in a weight's name after one of [`WEIGHT_FAMILIES`].
 pub fn split_weight_face(face: &str) -> Option<(&str, u16)> {
     [100u16, 200, 300, 500, 600, 800, 900].into_iter().find_map(|weight| {
         weight_names(weight).iter().find_map(|name| {
             let cut = face.len().checked_sub(name.len() + 1)?;
             let (family, tail) = (face.get(..cut)?, face.get(cut..)?);
-            (tail.starts_with(' ') && tail[1..].eq_ignore_ascii_case(name) && !family.trim().is_empty())
+            (tail.starts_with(' ') && tail[1..].eq_ignore_ascii_case(name) && has_weight_faces(family))
                 .then_some((family, weight))
         })
     })

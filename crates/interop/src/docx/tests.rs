@@ -122,7 +122,7 @@ fn every_written_part_is_well_formed_and_follows_the_schema_order() {
         family: fonts::APP_SANS.to_owned(),
         bold: false,
         italic: false,
-        bytes: schema::tiny_font(0),
+        bytes: schema::tiny_font(0).into(),
     }];
     let all = files(&input(parts, setup));
     let mut checked = 0;

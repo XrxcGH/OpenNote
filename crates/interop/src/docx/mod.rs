@@ -436,15 +436,13 @@ fn title_xml(state: &mut State<'_>, text: &str, bookmark: Option<&str>) -> Strin
 
 fn document_xml(body: &str) -> String {
     format!(
-        "{}<w:document xmlns:w=\"{}\" xmlns:r=\"{}\" {} \
-         xmlns:wp=\"http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing\" \
-         xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" \
-         xmlns:pic=\"http://schemas.openxmlformats.org/drawingml/2006/picture\" mc:Ignorable=\"w14\"><w:body>{body}\
+        "{}<w:document xmlns:w=\"{}\" xmlns:r=\"{}\" {} {} mc:Ignorable=\"w14\"><w:body>{body}\
          </w:body></w:document>",
         parts::XML_HEADER,
         parts::NS_W,
         parts::NS_R,
-        parts::NS_EXTENSIONS
+        parts::NS_EXTENSIONS,
+        parts::NS_DRAWING
     )
 }
 
