@@ -181,6 +181,17 @@ describe('a new text box', () => {
     expect(rig.orders[draft]).toBe(held?.order);
     expect(rig.orders[draft] > 'a0').toBe(true);
   });
+
+  it('says it is unsaved until its first change is in the core, so nothing is put after it before then', async () => {
+    const rig = await syncRig(syncPage(['Oct 3, 2026']));
+    const draft = blockId(9);
+    rig.mount(draft, '', { block: { id: draft, type: 'text' } });
+    expect(rig.syncs.get(draft)?.unsaved).toBe(true);
+    expect(rig.syncs.get(A)?.unsaved).toBe(false);
+    rig.type(draft, 'Typed');
+    await tick(150);
+    expect(rig.syncs.get(draft)?.unsaved).toBe(false);
+  });
 });
 
 describe('a change the core refuses', () => {

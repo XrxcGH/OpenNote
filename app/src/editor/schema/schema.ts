@@ -5,6 +5,7 @@ import type { Extensions } from '@tiptap/core';
 import { Table, TableCell, TableHeader, TableRow } from '@tiptap/extension-table';
 import type { Schema } from '@tiptap/pm/model';
 import type { MarkName } from './constants';
+import { FootnoteRef } from '../extensions/footnoteRef';
 import * as marks from './marks';
 import * as nodes from './nodes';
 
@@ -24,7 +25,8 @@ export type TextNodeName =
   | 'text'
   | 'hardBreak'
   | 'image'
-  | 'mathInline';
+  | 'mathInline'
+  | 'footnoteRef';
 export type TableNodeName =
   | 'doc'
   | 'table'
@@ -35,20 +37,41 @@ export type TableNodeName =
   | 'text'
   | 'hardBreak'
   | 'image'
-  | 'mathInline';
+  | 'mathInline'
+  | 'footnoteRef';
 
-/** SPEC 7.7's marks, in nesting order, outermost first. */
+/** SPEC 7.10's marks, in nesting order (R-MRK-24), outermost first. */
 export const markExtensions: Extensions = [
+  marks.Float,
   marks.Link,
+  marks.Comment,
+  marks.Insertion,
+  marks.Deletion,
+  marks.FormatChange,
+  marks.Dir,
+  marks.Lang,
+  marks.CharStyle,
   marks.Bold,
+  marks.Weight,
   marks.Italic,
   marks.Strike,
   marks.Underline,
   marks.Highlight,
+  marks.Shade,
   marks.TextColor,
+  marks.Font,
   marks.TextSize,
+  marks.Caps,
+  marks.Tracking,
+  marks.Scale,
+  marks.Shift,
+  marks.Kern,
+  marks.Otf,
+  marks.Effect,
+  marks.Box,
   marks.Subscript,
   marks.Superscript,
+  marks.Foreign,
   marks.Code,
 ];
 
@@ -70,6 +93,7 @@ export const textExtensions: Extensions = [
   nodes.MathBlock,
   nodes.MathInline,
   nodes.ImageNode,
+  FootnoteRef,
   ...markExtensions,
 ];
 
@@ -127,6 +151,7 @@ export const tableExtensions: Extensions = [
   nodes.HardBreak,
   nodes.MathInline,
   nodes.ImageNode,
+  FootnoteRef,
   ...markExtensions,
 ];
 

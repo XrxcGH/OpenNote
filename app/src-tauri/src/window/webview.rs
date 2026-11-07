@@ -254,6 +254,39 @@ pub fn driver_browser_args(requested: Option<&str>) -> Option<String> {
     (!requested.is_empty()).then(|| format!("{WRY_BROWSER_ARGS} {requested}"))
 }
 
+/// Gives a window of a build driven by WebDriver the browser arguments the main window has. WebView2 creates one
+/// environment for a user data folder and refuses a second window of the process, with a different set of arguments,
+/// for the same folder. So every window that shares the folder, the quick capture, page, and tool windows, takes the
+/// arguments through here, or it is never created and its command fails. Other builds change nothing.
+#[cfg(feature = "test-endpoints")]
+pub fn with_driver_args<'a, R: tauri::Runtime, M: tauri::Manager<R>>(
+    builder: tauri::WebviewWindowBuilder<'a, R, M>,
+) -> tauri::WebviewWindowBuilder<'a, R, M> {
+    #[cfg(windows)]
+    if let Some(args) = driver_browser_args(std::env::var("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS").ok().as_deref()) {
+        return builder.additional_browser_args(&args);
+    }
+    builder
+}
+
+/// A builder for a window that shares the main window's user data folder, with the browser arguments of
+/// [`with_driver_args`]. The print window of a PDF export takes this, so a build driven by WebDriver can print.
+pub fn new_window<'a, R: tauri::Runtime, M: tauri::Manager<R>>(
+    manager: &'a M,
+    label: &str,
+    url: tauri::WebviewUrl,
+) -> tauri::WebviewWindowBuilder<'a, R, M> {
+    with_driver_args(tauri::WebviewWindowBuilder::new(manager, label, url))
+}
+
+/// Gives a window of a build driven by WebDriver the browser arguments the main window has; here it changes nothing.
+#[cfg(not(feature = "test-endpoints"))]
+pub fn with_driver_args<'a, R: tauri::Runtime, M: tauri::Manager<R>>(
+    builder: tauri::WebviewWindowBuilder<'a, R, M>,
+) -> tauri::WebviewWindowBuilder<'a, R, M> {
+    builder
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
