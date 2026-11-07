@@ -150,6 +150,14 @@ export interface ExportRequest {
   history?: boolean;
   /** LaTeX: the options and the citation library. */
   latex?: LatexOptions;
+  /** Word: the choices of the export dialog. */
+  word?: WordChoices;
+}
+
+/** What a Word export asks besides the folder. */
+export interface WordChoices {
+  /** Leave the names of authors and the dates out of the file, as Word's "Remove personal information" does. */
+  removePersonal: boolean;
 }
 
 export interface ExportResult {

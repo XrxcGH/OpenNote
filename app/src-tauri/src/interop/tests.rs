@@ -227,6 +227,7 @@ fn request(format: ExportFormat, scope: ExportScope, folder: &Path, pages: &[Str
         password: None,
         history: false,
         latex: None,
+        word: None,
     }
 }
 
@@ -307,6 +308,73 @@ fn a_section_export_and_a_word_export_each_write_their_files() {
         .files
         .iter()
         .any(|path| path.extension().is_some_and(|ext| ext == "html")));
+}
+
+/// The text of one entry of a ZIP file, read from its local header (APPNOTE 4.3.7): stored or deflated.
+fn zip_entry(bytes: &[u8], wanted: &str) -> Option<String> {
+    use std::io::Read as _;
+    let u16_at = |at: usize| usize::from(u16::from_le_bytes([bytes[at], bytes[at + 1]]));
+    let u32_at = |at: usize| u32::from_le_bytes([bytes[at], bytes[at + 1], bytes[at + 2], bytes[at + 3]]) as usize;
+    let mut at = 0;
+    while at + 30 <= bytes.len() && u32_at(at) == 0x0403_4b50 {
+        let (method, packed, name_len, extra_len) = (u16_at(at + 8), u32_at(at + 18), u16_at(at + 26), u16_at(at + 28));
+        let name = std::str::from_utf8(&bytes[at + 30..at + 30 + name_len]).ok()?;
+        let start = at + 30 + name_len + extra_len;
+        let data = &bytes[start..start + packed];
+        if name == wanted {
+            let mut text = String::new();
+            if method == 8 {
+                flate2::read::DeflateDecoder::new(data).read_to_string(&mut text).ok()?;
+            } else {
+                text = String::from_utf8(data.to_vec()).ok()?;
+            }
+            return Some(text);
+        }
+        at = start + packed;
+    }
+    None
+}
+
+#[test]
+fn a_word_export_with_remove_personal_information_leaves_the_dates_out() {
+    let dir = tempfile::tempdir().expect("a temp folder");
+    let (bridge, imported) = imported_bridge(dir.path());
+    let pages = pages_of(&imported.tree);
+    let export_with = |word: Option<&str>, name: &str| {
+        let out = dir.path().join(name);
+        fs::create_dir_all(&out).expect("an output folder");
+        let mut request = request(ExportFormat::Docx, ExportScope::Section, &out, &pages);
+        // The interface sends the choice in camelCase.
+        request.word = word.map(|json| serde_json::from_str(json).expect("the choices"));
+        let done = bridge
+            .with(|bridge| {
+                let source = TreeSource::build(bridge, &request).expect("the source");
+                Ok(export::run(&source, &request, &NoPdfRenderer, &Control::none()))
+            })
+            .expect("the bridge")
+            .expect("the Word export");
+        let file = done
+            .files
+            .iter()
+            .find(|path| path.extension().is_some_and(|ext| ext == "docx"))
+            .expect("a .docx file");
+        fs::read(file).expect("the file")
+    };
+    let private = export_with(Some(r#"{"removePersonal":true}"#), "private");
+    let plain = export_with(None, "plain");
+    bridge.shutdown();
+    let settings = zip_entry(&private, "word/settings.xml").expect("the settings");
+    assert!(
+        settings.contains("<w:removePersonalInformation/><w:removeDateAndTime/>"),
+        "{settings}"
+    );
+    let core = zip_entry(&private, "docProps/core.xml").expect("the properties");
+    assert!(!core.contains("dcterms:created"), "{core}");
+    // Without the choice the file keeps its dates, as before.
+    let settings = zip_entry(&plain, "word/settings.xml").expect("the settings");
+    assert!(!settings.contains("removePersonalInformation"), "{settings}");
+    let core = zip_entry(&plain, "docProps/core.xml").expect("the properties");
+    assert!(core.contains("dcterms:created"), "{core}");
 }
 
 #[test]
