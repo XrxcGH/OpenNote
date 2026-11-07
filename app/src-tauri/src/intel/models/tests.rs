@@ -363,3 +363,30 @@ fn a_pack_is_installed_only_when_every_file_is_there_and_remove_takes_its_folder
     models.remove(spec.id).unwrap();
     assert!(!dir.path().join("translate-en-es").exists());
 }
+
+#[test]
+fn a_range_the_server_counts_in_other_bytes_restarts_the_file() {
+    use super::source::range_answer;
+    assert_eq!(range_answer(206, Some("bytes 5-10/11"), 5), Ok(Some(true)));
+    assert_eq!(range_answer(200, None, 5), Ok(Some(false)));
+    // jsDelivr counts a range in compressed bytes: these answers are not the bytes asked for.
+    assert_eq!(range_answer(206, Some("bytes 0-99/3438516"), 5_000_000), Ok(None));
+    assert_eq!(range_answer(206, None, 5), Ok(None));
+    assert_eq!(range_answer(416, Some("bytes */3438516"), 5_000_000), Ok(None));
+    assert!(range_answer(404, None, 0).is_err());
+    assert!(range_answer(416, None, 0).is_err());
+}
+
+#[test]
+fn the_code_models_follow_the_language_models() {
+    let kinds: Vec<_> = catalog().map(|spec| spec.kind).collect();
+    let last_language = kinds.iter().rposition(|kind| *kind == "language").unwrap();
+    let first_meaning = kinds.iter().position(|kind| *kind == "meaning").unwrap();
+    assert!(kinds[last_language + 1..first_meaning]
+        .iter()
+        .all(|kind| *kind == "code"));
+    assert_eq!(
+        super::catalog::CODE.len(),
+        kinds.iter().filter(|kind| **kind == "code").count()
+    );
+}

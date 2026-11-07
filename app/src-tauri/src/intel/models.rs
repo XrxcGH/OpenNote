@@ -151,6 +151,7 @@ pub fn catalog() -> impl Iterator<Item = &'static ModelSpec> {
     SPEECH
         .iter()
         .chain(catalog::LANGUAGE)
+        .chain(catalog::CODE)
         .chain(catalog::MEANING)
         .chain(catalog::TRANSLATE)
 }
@@ -240,9 +241,13 @@ struct Job {
     error: Option<&'static str>,
 }
 
+/// The specs one downloader knows: the models, or the code studio's runtime packs (ADR 0070).
+pub type Specs = Arc<dyn Fn() -> Box<dyn Iterator<Item = &'static ModelSpec>> + Send + Sync>;
+
 struct Inner {
     dir: PathBuf,
     source: Arc<dyn Source>,
+    specs: Specs,
     jobs: Mutex<HashMap<&'static str, Job>>,
 }
 
@@ -256,11 +261,23 @@ impl Models {
     }
 
     pub fn with_source(dir: PathBuf, source: Arc<dyn Source>) -> Models {
+        Models::with_specs(dir, source, Arc::new(|| Box::new(catalog())))
+    }
+
+    /// A downloader for other specs than the models, such as the runtime packs. It keeps every rule: the size
+    /// cap, the checksum, resume, cancel, and the refusal while Work offline or safe mode is on.
+    pub fn with_specs(dir: PathBuf, source: Arc<dyn Source>, specs: Specs) -> Models {
         Models(Arc::new(Inner {
             dir,
             source,
+            specs,
             jobs: Mutex::new(HashMap::new()),
         }))
+    }
+
+    /// The spec with this ID among the ones this downloader knows.
+    pub fn spec(&self, id: &str) -> Option<&'static ModelSpec> {
+        (self.0.specs)().find(|spec| spec.id == id)
     }
 
     fn jobs(&self) -> std::sync::MutexGuard<'_, HashMap<&'static str, Job>> {
@@ -278,13 +295,13 @@ impl Models {
 
     /// The path of the model's first file, if the whole model is on disk.
     pub fn installed_path(&self, id: &str) -> Option<PathBuf> {
-        let spec = spec_of(id)?;
+        let spec = self.spec(id)?;
         is_installed(&self.0.dir, spec).then(|| self.0.dir.join(spec.main().file))
     }
 
     pub fn list(&self) -> ModelList {
         let jobs = self.jobs();
-        let models = catalog()
+        let models = (self.0.specs)()
             .map(|spec| {
                 let installed = is_installed(&self.0.dir, spec);
                 let job = jobs.get(spec.id);
@@ -324,7 +341,9 @@ impl Models {
 
     /// Starts or resumes a download on a thread of its own. `blocked` says why none may run now.
     pub fn start(&self, id: &str, blocked: Option<DownloadError>) -> Result<(), DownloadError> {
-        let spec = spec_of(id).ok_or_else(|| DownloadError::Disk("That model isn't in the catalog.".to_owned()))?;
+        let spec = self
+            .spec(id)
+            .ok_or_else(|| DownloadError::Disk("That model isn't in the catalog.".to_owned()))?;
         if let Some(reason) = blocked {
             return Err(reason);
         }
@@ -377,7 +396,9 @@ impl Models {
     }
 
     fn remove_waiting(&self, id: &str, wait_steps: u32) -> Result<(), DownloadError> {
-        let spec = spec_of(id).ok_or_else(|| DownloadError::Disk("That model isn't in the catalog.".to_owned()))?;
+        let spec = self
+            .spec(id)
+            .ok_or_else(|| DownloadError::Disk("That model isn't in the catalog.".to_owned()))?;
         self.cancel(id);
         // Wait for the thread to let go of the file. It sees the flag between reads, and a read can last as long as
         // the connection's timeout, so the wait is longer than that. If it still runs, nothing is deleted, and the
