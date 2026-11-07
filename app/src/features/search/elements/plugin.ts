@@ -1,8 +1,8 @@
 // Element tags and links in the text editor (Phase 8). A paragraph, heading, or list item can carry a tag such as
 // "To do" and an ID that a link points at. The page editor keeps these as node attributes, but it writes only the
 // Markdown. So this plugin loads the attributes from the block data and shows each tag as a badge with an icon and a
-// name. After a change it writes the IDs, tags, and checked boxes back with `patchBlock`. A block that has no IDs,
-// tags, or links stays as it was, because the plugin writes nothing for it.
+// name. After a change it writes the IDs, tags, checked boxes, and paragraph formatting (`paras`) back with
+// `patchBlock`. A block that has no IDs, tags, or links stays as it was, because the plugin writes nothing for it.
 import { Extension } from '@tiptap/core';
 import { Plugin, PluginKey, TextSelection } from '@tiptap/pm/state';
 import type { EditorState } from '@tiptap/pm/state';
@@ -10,6 +10,7 @@ import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import type { EditorView } from '@tiptap/pm/view';
 import { getLocation } from '../../../app/location';
 import type { EditorHost } from '../../../editor/host';
+import { LISTS_META } from '../../../editor/extensions/listItem';
 import { newId } from '../../../editor/ids';
 import { META_HIGHLIGHT } from '../../../editor/meta';
 import { t } from '../../../strings/t';
@@ -201,7 +202,7 @@ class ElementLayer {
     const cached = this.cacheKey ? known.get(this.cacheKey) : undefined;
     this.sent = cached && cached.base === base ? cached.data : lineDataOf(base);
     this.tracked = hasLineData(this.sent);
-    if (this.tracked) this.apply(this.sent);
+    if (this.tracked) this.apply(this.sent, base?.lists);
     this.stopFrames = mounted.page.onFrame((frame) => {
       const changed = frame.blocks.find((candidate) => candidate.id === block);
       if (changed) setTimeout(() => this.reload(changed.data), FRAME_DELAY_MS);
@@ -212,13 +213,16 @@ class ElementLayer {
     if (this.dead) return;
     this.sent = lineDataOf(data);
     this.tracked = this.tracked || hasLineData(this.sent);
-    if (this.tracked) this.apply(this.sent);
+    if (this.tracked) this.apply(this.sent, data.lists);
   }
 
-  private apply(data: LineData): void {
+  /** Sets the elements' data, and gives the editor the block's list definitions for its numbering. */
+  private apply(data: LineData, lists: unknown): void {
     if (this.view.isDestroyed) return;
     const tr = this.view.state.tr;
-    if (!applyLineData(tr, data)) return;
+    const changed = applyLineData(tr, data);
+    if (lists !== undefined) tr.setMeta(LISTS_META, lists);
+    if (!changed && lists === undefined) return;
     this.suspended = true;
     try {
       this.view.dispatch(tr.setMeta(META_HIGHLIGHT, true).setMeta('addToHistory', false).setMeta(REFRESH, true));

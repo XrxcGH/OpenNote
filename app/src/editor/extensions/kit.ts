@@ -19,6 +19,9 @@ import { calloutExtensions } from './callout';
 import { codeBlockExtensions } from './codeBlock';
 import { crossBlockExtensions } from './crossBlock';
 import { foldingExtensions } from './folding';
+import { fontExtensions } from './font';
+import { footnoteRefExtensions } from './footnoteRef';
+import { foreignExtensions } from './foreign';
 import { highlightExtensions } from './highlight';
 import { imageExtensions } from './image';
 import { keysExtensions } from './keys';
@@ -52,19 +55,39 @@ export interface EditorExtensionDef {
 
 export const editorExtensions: Registry<EditorExtensionDef> = createRegistry<EditorExtensionDef>('editor extensions');
 
-/** The marks in SPEC 7.7 nesting order, which is also their order in the schema. */
+/** The marks in SPEC 7.10 nesting order (R-MRK-24), which is also their order in the schema. */
 function markKit(host: EditorHost): Extensions {
   return [
+    marks.Float,
     marks.Link,
+    marks.Comment,
+    marks.Insertion,
+    marks.Deletion,
+    marks.FormatChange,
+    marks.Dir,
+    marks.Lang,
+    marks.CharStyle,
     marks.Bold,
+    marks.Weight,
     marks.Italic,
     marks.Strike,
     marks.Underline,
     ...highlightExtensions(host),
+    marks.Shade,
     ...textColorExtensions(host),
+    ...fontExtensions(host),
     ...textSizeExtensions(host),
+    marks.Caps,
+    marks.Tracking,
+    marks.Scale,
+    marks.Shift,
+    marks.Kern,
+    marks.Otf,
+    marks.Effect,
+    marks.Box,
     marks.Subscript,
     marks.Superscript,
+    ...foreignExtensions(host),
     marks.Code,
   ];
 }
@@ -99,6 +122,7 @@ function textKit(host: EditorHost): Extensions {
     ...equationNumbersExtensions(host),
     ...graphFenceExtensions(host),
     ...imageExtensions(host),
+    ...footnoteRefExtensions(host),
     ...markKit(host),
     ...behaviorKit(host),
     ...crossBlockExtensions(host),
@@ -121,6 +145,7 @@ function tableKit(host: EditorHost): Extensions {
     nodes.HardBreak,
     ...mathInlineExtensions(host),
     ...imageExtensions(host),
+    ...footnoteRefExtensions(host),
     ...markKit(host),
     ...behaviorKit(host),
     ...tableKitExtensions(host),

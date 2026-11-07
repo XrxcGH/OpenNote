@@ -6,6 +6,8 @@ export const shared = {
     dataSummary: '{rows, plural, one {# row} other {# rows}}; columns: {columns}',
     dataHint: 'Paste from a spreadsheet, or type values with commas or tabs and the column names on the first line.',
     fileTooLarge: 'That file is larger than 5 MB, so it was not opened.',
+    fileRead: 'Read {name}.',
+    fileFailed: 'The file could not be read.',
     none: 'None',
     pickColumn: 'Choose a column…',
     example: 'Example',

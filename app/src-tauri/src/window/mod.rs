@@ -165,13 +165,7 @@ fn build_main(app: &AppHandle) -> tauri::Result<WebviewWindow> {
         .disable_drag_drop_handler()
         .on_navigation(is_app_url)
         .zoom_hotkeys_enabled(false);
-    #[cfg(all(windows, feature = "test-endpoints"))]
-    let builder =
-        match webview::driver_browser_args(std::env::var("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS").ok().as_deref()) {
-            Some(args) => builder.additional_browser_args(&args),
-            None => builder,
-        };
-    let window = builder.build()?;
+    let window = webview::with_driver_args(builder).build()?;
     perf::mark("windowCreated", None);
     webview::configure(&window);
     let lost = window.clone();

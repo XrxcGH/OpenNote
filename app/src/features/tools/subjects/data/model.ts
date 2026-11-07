@@ -1,6 +1,6 @@
 // The data set every subject tool reads: named columns of numbers, categories, dates, or free text. Missing values
-// are kept as null, so a tool can say how many it left out. Dates are days since 1970-01-01 (fractions are the
-// time of day), the convention of the smart tables.
+// are kept as null, so a tool can say how many it left out. Dates are serials, days since 1899-12-30 (fractions
+// are the time of day), the convention of the smart tables and of spreadsheets.
 
 export type ColumnKind = 'number' | 'category' | 'date' | 'text';
 

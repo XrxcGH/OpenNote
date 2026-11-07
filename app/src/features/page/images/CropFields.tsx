@@ -1,6 +1,7 @@
 // The crop fields of "Size and position" (Phase 4 ARCHITECTURE.md section 12.4): how much is cut from each side,
 // in percent, and "Reset crop", so cropping works from the keyboard. WP3's popover shows them for an image, and
 // each change is one undo step through applyCrop.
+import './text';
 import { useId, useState } from 'react';
 import { t } from '../../../strings/t';
 import { Button } from '../../../ui';

@@ -1,0 +1,50 @@
+name: nightly-sheet-oracle
+
+# The LibreOffice oracle of ADR 0060 (DESIGN.md section 8.3 of the tables plan). Every night it installs LibreOffice
+# Calc, proves the oracle reproduces its sample fixture, and recomputes every function fixture's calc-oracle cases.
+# A changed value fails the job: either the engine's fixtures drifted or LibreOffice changed, and both need a look.
+# Ordinary CI never needs LibreOffice, because the values are committed.
+#
+# Like nightly.yml, the job gets only the permissions it needs, persists no git credentials, pins its actions to full
+# commit SHAs, and uses no secret.
+on:
+  schedule:
+    - cron: '41 3 * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: nightly-sheet-oracle
+  cancel-in-progress: false
+
+jobs:
+  oracle:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+      - name: Install LibreOffice Calc
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libreoffice-calc-nogui
+          soffice --version
+      - name: Oracle tests
+        env:
+          SHEET_ORACLE_REQUIRED: '1'
+        run: node --test tools/sheet-oracle/oracle.test.ts
+      - name: Recompute the calc-oracle values of every function fixture
+        run: |
+          shopt -s nullglob
+          status=0
+          for fixture in app/src/features/tables/fixtures/fn/*.json; do
+            node tools/sheet-oracle/oracle.ts "$fixture" --check || status=1
+          done
+          exit $status

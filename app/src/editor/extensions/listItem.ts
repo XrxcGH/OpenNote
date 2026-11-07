@@ -1,5 +1,6 @@
 // List items (ARCHITECTURE.md section 8.2; owner: WP4): Enter and Backspace in lists, and task items with a real
-// checkbox. A normalizer joins adjacent lists of one kind, which canonical Markdown can't keep apart.
+// checkbox. A normalizer joins adjacent lists of one kind, which canonical Markdown can't keep apart. Another keeps
+// each ordered list's Markdown start number at the number its first item shows (R-LIST-3).
 //
 // A task item's node view puts a native checkbox in the item's marker box, named by the item's text, and leaves
 // the item's content in a block of its own. It looks like the static `toDOM` rendering, whose marker draws the same
@@ -13,6 +14,9 @@ import type { NodeView, ViewMutationRecord } from '@tiptap/pm/view';
 import { t } from '../../strings/t';
 import type { EditorHost } from '../host';
 import { META_COMMAND, META_REMOTE } from '../meta';
+import { carriedParaAttrs } from '../paragraph/carry';
+import { readLists, shownStarts } from '../paragraph/numbering';
+import type { ListDefinitions } from '../paragraph/numbering';
 import { ListItem } from '../schema/nodes';
 import styles from './content.module.css';
 
@@ -21,14 +25,18 @@ const LISTS = new Set(['bulletList', 'orderedList']);
 /** Attributes a new item never copies from the one it was split from: element IDs and tags stay unique. */
 const FRESH = { id: null, tags: [], style: null, tagChecked: false };
 
-/** Enter: a new item after this one. A new task starts unchecked; an empty item leaves the list. */
+/**
+ * Enter: a new item after this one, with the item's paragraph formatting but not its ID (text DESIGN.md 2.3). A new
+ * task starts unchecked; an empty item leaves the list.
+ */
 function splitItem(editor: Editor): boolean {
   const { state } = editor;
   const { $from } = state.selection;
   const item = $from.node(-1);
   if (item?.type.name !== 'listItem' || $from.index(-1) !== 0) return false;
   const checked = item.attrs.checked === null ? null : false;
-  return splitListItem(state.schema.nodes.listItem, { ...FRESH, checked })(state, editor.view.dispatch);
+  const attrs = { ...carriedParaAttrs(item.attrs), ...FRESH, checked };
+  return splitListItem(state.schema.nodes.listItem, attrs)(state, editor.view.dispatch);
 }
 
 /** Backspace at the start of an item's first paragraph lifts the item out one level. */
@@ -85,6 +93,81 @@ function joinListsPlugin(): Plugin {
         if ($pos.nodeBefore && $pos.nodeAfter && $pos.nodeBefore.type === $pos.nodeAfter.type) tr.join(pos);
       }
       return tr.docChanged ? tr.setMeta(META_COMMAND, true) : null;
+    },
+  });
+}
+
+/** The meta a transaction carries to give the editor its block's `data.lists`. */
+export const LISTS_META = 'opennote.lists';
+
+interface StartsState {
+  lists: ListDefinitions;
+  /** Whether any list item names a list. Only then can a start number change, so other documents pay nothing. */
+  active: boolean;
+}
+
+const startsKey = new PluginKey<StartsState>('opennoteListStarts');
+
+const namesList = (node: PMNode) => node.type.name === 'listItem' && node.attrs.list != null;
+
+/** Whether a list item in the document names a list. */
+function hasListRefs(doc: PMNode): boolean {
+  let found = false;
+  doc.descendants((node) => {
+    if (found || node.isTextblock) return false;
+    found = namesList(node);
+    return !found;
+  });
+  return found;
+}
+
+/** Whether a list item that names a list is inside a range the transaction changed. */
+function touchesListRefs(tr: Transaction): boolean {
+  let found = false;
+  tr.mapping.maps.forEach((map, index) => {
+    const rest = tr.mapping.slice(index + 1);
+    map.forEach((_oldStart, _oldEnd, newStart, newEnd) => {
+      if (found) return;
+      const from = Math.max(0, rest.map(newStart, -1));
+      const to = Math.min(tr.doc.content.size, rest.map(newEnd, 1));
+      tr.doc.nodesBetween(from, to, (node) => {
+        if (found || node.isTextblock) return false;
+        found = namesList(node);
+        return !found;
+      });
+    });
+  });
+  return found;
+}
+
+/**
+ * Sets each ordered list's start number to the number its first item shows, when the item names a list (R-LIST-3).
+ * So the Markdown that version 1 readers see numbers on from the list before it. A list of plain items keeps its own.
+ */
+function listStartsPlugin(): Plugin<StartsState> {
+  return new Plugin<StartsState>({
+    key: startsKey,
+    state: {
+      init: (_config, state) => ({ lists: new Map(), active: hasListRefs(state.doc) }),
+      apply(tr, old) {
+        const meta: unknown = tr.getMeta(LISTS_META);
+        const lists = meta === undefined ? old.lists : readLists(meta);
+        if (meta !== undefined) return { lists, active: hasListRefs(tr.doc) };
+        if (!tr.docChanged) return old;
+        return { lists, active: old.active ? hasListRefs(tr.doc) : touchesListRefs(tr) };
+      },
+    },
+    appendTransaction(transactions: readonly Transaction[], _old: EditorState, state: EditorState) {
+      const own = startsKey.getState(state);
+      if (!own?.active) return null;
+      if (!transactions.some((tr) => tr.docChanged || tr.getMeta(LISTS_META) !== undefined)) return null;
+      if (transactions.every((tr) => tr.getMeta(META_REMOTE))) return null;
+      const starts = shownStarts(state.doc, own.lists);
+      if (starts.length === 0) return null;
+      const tr = state.tr;
+      for (const { pos, start } of starts) tr.setNodeAttribute(pos, 'start', start);
+      if (transactions.every((each) => each.getMeta('addToHistory') === false)) tr.setMeta('addToHistory', false);
+      return tr.setMeta(META_COMMAND, true);
     },
   });
 }
@@ -178,7 +261,7 @@ export function listItemExtensions(_host: EditorHost): Extensions {
           node.attrs.checked === null ? plainItemView(node) : new TaskItemView(node, editor, getPos);
       },
       addProseMirrorPlugins() {
-        return [joinListsPlugin()];
+        return [joinListsPlugin(), listStartsPlugin()];
       },
     }),
   ];

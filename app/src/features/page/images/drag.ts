@@ -7,6 +7,15 @@ const ARROWS: Readonly<Record<string, readonly [number, number]>> = {
   ArrowDown: [0, 1],
 };
 
+/**
+ * Marks a handle that follows its own drag, so a finger on it is not taken for a one-finger pan once it passes the
+ * touch slop (viewport/gestures.ts). Without it a finger resize kept only the moves before the pan took the pointer.
+ */
+export function ownsItsDrag<T extends HTMLElement>(handle: T): T {
+  handle.dataset.ownDrag = '';
+  return handle;
+}
+
 /** Follows a drag from a pointer down until it ends, calling `move` with the distance in page units. */
 export function trackDrag(
   event: PointerEvent,
@@ -17,7 +26,11 @@ export function trackDrag(
   event.preventDefault();
   event.stopPropagation();
   const target = event.currentTarget as HTMLElement;
-  target.setPointerCapture?.(event.pointerId);
+  try {
+    target.setPointerCapture?.(event.pointerId);
+  } catch {
+    // A pointer that already ended can't be captured; its up event follows.
+  }
   const origin = { x: event.clientX, y: event.clientY };
   const onMove = (moveEvent: PointerEvent) =>
     move((moveEvent.clientX - origin.x) / zoom, (moveEvent.clientY - origin.y) / zoom, moveEvent);

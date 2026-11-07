@@ -1,6 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import type { PageFact } from '../../services/search/types';
-import { emptyCollection, groupRows, matches, propertyNames, satisfies, sortRows, toRow, withValue } from './engine';
+import {
+  boardColumns,
+  emptyCollection,
+  groupRows,
+  matches,
+  propertyNames,
+  satisfies,
+  sortRows,
+  toRow,
+  withValue,
+} from './engine';
 
 const fact = (title: string, fields: unknown[], tags: string[] = [], section = 's1'): PageFact => ({
   page: title.toLowerCase(),
@@ -78,6 +88,22 @@ describe('collections', () => {
     ]);
     const weekly = { ...emptyCollection('c', 'x'), groupBy: 'Due', groupDate: 'week' as const };
     expect(groupRows(rows, weekly, words).map((group) => group.key)).toEqual(['2026-10-05', '2026-10-12', '~']);
+  });
+
+  it('gives a board a column for every choice and for no value (Beta 8 walk B2-B13-4)', () => {
+    const options = ['Open', 'Doing', 'Closed'];
+    const staged = [
+      toRow(fact('Plan', [{ id: 'a', name: 'Stage', type: 'choice', value: 'Doing', options }])),
+      toRow(fact('Notes', [{ id: 'a', name: 'Stage', type: 'choice', value: 'Doing', options }])),
+    ];
+    const def = { ...emptyCollection('c', 'x'), groupBy: 'Stage' };
+    const columns = boardColumns(groupRows(staged, def, words), staged, def, words);
+    expect(columns.map((group) => [group.label, group.rows.length])).toEqual([
+      ['Closed', 0],
+      ['Doing', 2],
+      ['Open', 0],
+      ['No value', 0],
+    ]);
   });
 
   it('lists property names by use and sets a value', () => {

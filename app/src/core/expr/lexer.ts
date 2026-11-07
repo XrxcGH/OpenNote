@@ -11,6 +11,7 @@ export type TokenKind =
   | 'str' // "text". `text` is the content without the quotes.
   | 'col' // [Column name]. `text` is the content without the brackets.
   | 'id' // {column id}. `text` is the content without the braces.
+  | 'qname' // 'Quoted name', before "!" in a spreadsheet reference. `text` is the name without the quotes.
   | 'op' // An operator, in its plain form: "+", "-", "*", "/", "^", "<=", and so on.
   | 'lparen'
   | 'rparen'
@@ -53,6 +54,14 @@ export interface LexSpec {
   brackets: boolean;
   /** ":" in a range. */
   colon: boolean;
+  /** 'Quoted names' with a doubled quote for a quote, as in 'Q1 budget'!A1. */
+  quotedNames?: boolean;
+  /**
+   * Brackets inside brackets, as in Table[[#Headers],[Col]] and [@[Unit price]]. When a "[" opens right after the
+   * first one (after an optional "@"), the token runs to the matching "]" and keeps the inner brackets. Otherwise
+   * "]]" stays an escaped "]", as in [Unit price [EUR]]].
+   */
+  nestedBrackets?: boolean;
   /**
    * A mark that groups digits in threes, as in 1,200. Only a mark followed by exactly three digits counts, so a
    * dialect that also separates arguments with this mark reads max(1,200) as one number. Give such a dialect a
@@ -276,9 +285,28 @@ class Lexer {
     if (this.plan.separators.has(char)) return token('sep', char, at, at + 1);
     if (spec.colon && char === ':') return token('colon', char, at, at + 1);
     if (spec.strings && char === '"') return this.delimited('str', '"');
-    if (spec.brackets && char === '[') return this.delimited('col', ']');
+    if (spec.brackets && char === '[') return this.bracket();
+    if (spec.quotedNames === true && char === "'") return this.delimited('qname', "'");
     if (spec.brackets && char === '{') return this.delimited('id', '}');
     return null;
+  }
+
+  /** [Column name], or with nested brackets the whole of Table[[#Headers],[Col]] after the table's name. */
+  private bracket(): Token {
+    const { source, at } = this;
+    const nested = this.spec.nestedBrackets === true && /^\[\s*@?\s*\[/.test(source.slice(at, at + 40));
+    if (!nested) return this.delimited('col', ']');
+    let depth = 0;
+    for (let i = at; i < source.length; i += 1) {
+      // An apostrophe escapes the next character, as in [Q'#] for a column named "Q#".
+      if (source[i] === "'") i += 1;
+      else if (source[i] === '[') depth += 1;
+      else if (source[i] === ']') {
+        depth -= 1;
+        if (depth === 0) return token('col', source.slice(at + 1, i), at, i + 1);
+      }
+    }
+    throw new ExprError('unclosed-bracket', at, ']', { length: 1 });
   }
 
   private delimited(kind: TokenKind, close: string): Token {
