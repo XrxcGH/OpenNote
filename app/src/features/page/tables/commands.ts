@@ -3,7 +3,7 @@
 // table, so they register from this chunk: in idle time after start-up, or when a table block first loads.
 import { menuItemsFor } from '../../../commands/menus';
 import { commandContext } from '../../../commands/registry';
-import type { TableOp } from '../../../editor/commands/tables';
+import type { StructureOp, TableOp } from '../../../editor/commands/tables';
 import { commands, contextMenus } from '../../../registries';
 import { t } from '../../../strings/t';
 import type { MessageKey } from '../../../strings/t';
@@ -81,4 +81,45 @@ registerAppMenu('table', (context) => {
   const own = menuItemsFor('page.table', commandContext('menu'));
   const items = [...edit.items, ...own.map((item, i) => (i === 0 ? { ...item, separatorBefore: true } : item))];
   return { label: t('tables.menu.label'), items };
+});
+
+/** Each structure command (ADR 0056, DESIGN 13.2): its op, its context menu group, and its Excel chord in Grid mode. */
+const STRUCTURE: readonly { id: string; op: StructureOp; group?: string; keys?: readonly string[] }[] = [
+  { id: 'fitRows', op: { op: 'fitRows' }, group: 'size' },
+  { id: 'fitColumns', op: { op: 'fitColumns' }, group: 'size' },
+  { id: 'distributeRows', op: { op: 'distributeRows' } },
+  { id: 'distributeColumns', op: { op: 'distributeColumns' } },
+  { id: 'hideRows', op: { op: 'hideRows' }, group: 'hide', keys: ['Ctrl+9'] },
+  { id: 'unhideRows', op: { op: 'unhideRows' }, group: 'hide', keys: ['Ctrl+Shift+9'] },
+  { id: 'hideColumns', op: { op: 'hideColumns' }, group: 'hide', keys: ['Ctrl+0'] },
+  { id: 'unhideColumns', op: { op: 'unhideColumns' }, group: 'hide', keys: ['Ctrl+Shift+0'] },
+  { id: 'freezeTopRow', op: { op: 'freezeTopRow' } },
+  { id: 'freezeFirstColumn', op: { op: 'freezeFirstColumn' } },
+  { id: 'freezeAtCaret', op: { op: 'freezeAtCaret' } },
+  { id: 'unfreeze', op: { op: 'unfreeze' } },
+  { id: 'groupRows', op: { op: 'groupRows' }, keys: ['Alt+Shift+Right'] },
+  { id: 'ungroupRows', op: { op: 'ungroupRows' }, keys: ['Alt+Shift+Left'] },
+  { id: 'groupColumns', op: { op: 'groupColumns' } },
+  { id: 'ungroupColumns', op: { op: 'ungroupColumns' } },
+  { id: 'clearOutlineRows', op: { op: 'clearOutline', axis: 'rows' } },
+  { id: 'clearOutlineColumns', op: { op: 'clearOutline', axis: 'columns' } },
+  { id: 'insertCellsDown', op: { op: 'insertCells', shift: 'down' }, group: 'cells', keys: ['Ctrl+Shift+='] },
+  { id: 'insertCellsRight', op: { op: 'insertCells', shift: 'right' }, group: 'cells' },
+  { id: 'deleteCellsUp', op: { op: 'deleteCells', shift: 'up' }, group: 'cells', keys: ['Ctrl+-'] },
+  { id: 'deleteCellsLeft', op: { op: 'deleteCells', shift: 'left' }, group: 'cells' },
+];
+
+STRUCTURE.forEach(({ id, op, group, keys }, order) => {
+  const command = `table.structure.${id}` as const;
+  commands.register({
+    id: command,
+    title: `sheetStructure.commands.${id}` as MessageKey,
+    keywords: 'sheetStructure.commands.keywords',
+    category: 'table',
+    when: () => table() !== null,
+    enabled: () => table()?.can(op) ?? false,
+    run: async () => void (await table()?.run(op)),
+    ...(keys ? { keys: keys as never, scope: 'tableGrid' as const } : {}),
+  });
+  if (group) contextMenus.register({ id: command, menu: 'page.table', command, group, order: 20 + order });
 });
