@@ -1,5 +1,6 @@
 // The side-by-side view of a page and its conflict copy: this version on one side, the other on the other, and the
 // choice to keep this one, keep the other one, or keep both as separate pages. Nothing changes until a choice.
+// A block type with a view in the conflict registry shows that view for its changed blocks (ADR 0089).
 
 import { useEffect, useState } from 'react';
 import { shellCall } from '../../platform/shellqol';
@@ -8,13 +9,14 @@ import { t } from '../../strings/t';
 import { Dialog, showToast } from '../../ui';
 import { showDialog } from './dialogHost';
 import { reloadPage } from './ExternalNotice';
+import { splitByView, type ConflictBlock, type ConflictChoice as Choice } from './conflict/registry';
 import styles from './Conflict.module.css';
-
-type Choice = 'keepMine' | 'keepTheirs' | 'keepBoth';
 
 interface Texts {
   readonly mine: string;
   readonly theirs: string;
+  /** The blocks that differ, when the shell sends them. */
+  readonly blocks?: readonly ConflictBlock[];
 }
 
 function ConflictContent(props: {
@@ -50,6 +52,9 @@ function ConflictContent(props: {
     showToast({ message: t(`qol.conflict.done.${choice}`) });
   };
   const other = props.device || t('qol.conflict.otherDevice');
+  const { registered, others } = splitByView(texts?.blocks);
+  // The text view stays for every block without a view of its own, and when only page fields differ.
+  const showText = others.length > 0 || registered.length === 0;
   return (
     <Dialog
       title={t('qol.conflict.title')}
@@ -70,7 +75,11 @@ function ConflictContent(props: {
     >
       {failed && <p>{t('qol.conflict.unreadable')}</p>}
       {!failed && !texts && <p>{t('qol.conflict.loading')}</p>}
-      {texts && (
+      {texts &&
+        registered.map(({ block, View }) => (
+          <View key={block.id} block={block} otherDevice={other} resolve={(choice) => void resolve(choice)} />
+        ))}
+      {texts && showText && (
         <div className={styles.columns}>
           <section aria-labelledby="conflict-mine">
             <h3 id="conflict-mine">{t('qol.conflict.mine')}</h3>

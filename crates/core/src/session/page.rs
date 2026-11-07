@@ -337,6 +337,13 @@ impl PageHandle {
         self.session.conflict_page(rev).map(|(_, _, page)| page.plain_text())
     }
 
+    /// The blocks that differ between the page now and the other version of a conflict, as JSON, so each block
+    /// type can show its own compare view (ADR 0089).
+    pub fn conflict_blocks(&self, rev: RevisionId) -> Result<Vec<serde_json::Value>, CoreError> {
+        let (_, _, other) = self.session.conflict_page(rev)?;
+        Ok(crate::merge::differing_blocks_json(&self.session.state().page, &other))
+    }
+
     /// The other version of a conflict, read-only.
     pub fn open_conflict(&self, rev: RevisionId) -> Result<Envelope, CoreError> {
         self.session.open_conflict(rev)
