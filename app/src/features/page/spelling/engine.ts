@@ -1,9 +1,21 @@
 // The page's spelling service (ARCHITECTURE.md section 16.3). Results are cached by text and languages, and checks
 // are scheduled so typing never waits for them. Some words are hidden without checking again: the personal
-// dictionary, words ignored this session, and words in all capitals or with digits.
-import type { SpellingService } from '../../../editor/host';
+// dictionary, words ignored this session, and words in all capitals or with digits. A run or a paragraph with its
+// own `lang` is checked in that language only, one request per language (lane text:language-direction). Text set
+// to "do not check spelling" never reaches the engine.
+import type { SpellingService, SpellLang } from '../../../editor/host';
 import type { SpellRange } from '../../../editor/extensions/spellingText';
 import type { SpellingClient } from '../../../platform/types';
+import { piecesOf, resolveLanguage } from './languages';
+import type { Piece } from './languages';
+
+/** A textblock's text and the parts of it in their own language. */
+export interface SpellItem {
+  readonly text: string;
+  readonly langs?: readonly SpellLang[];
+}
+
+const itemOf = (entry: string | SpellItem): SpellItem => (typeof entry === 'string' ? { text: entry } : entry);
 
 export interface SpellingRules {
   enabled: boolean;
@@ -23,10 +35,11 @@ export type ChangeKind = 'results' | 'rules';
 
 export interface SpellingEngine extends SpellingService {
   /** Checks texts that have no results yet: 'now' for the textblocks in view, 'idle' for the rest. */
-  check(texts: readonly string[], priority: 'now' | 'idle'): void;
+  check(texts: readonly (string | SpellItem)[], priority: 'now' | 'idle'): void;
   /** Called after results arrive, or after the rules change and every textblock needs reading again. */
   onChange(listener: (kind: ChangeKind) => void): () => void;
-  suggest(word: string): Promise<string[]>;
+  /** Suggestions in the word's own language when it has one, else in the page's languages. */
+  suggest(word: string, lang?: string): Promise<string[]>;
   ignore(word: string): void;
   addWord(word: string): Promise<void>;
   removeWord(word: string): Promise<void>;
@@ -107,9 +120,9 @@ class Engine implements SpellingEngine {
   private readonly words: WordRules;
   private readonly cache = new Lru<readonly SpellRange[]>(CACHE_SIZE);
   private readonly listeners = new Set<(kind: ChangeKind) => void>();
-  private readonly now = new Set<string>();
-  private readonly idle = new Set<string>();
-  private readonly typing = new Map<string, string>();
+  private readonly now = new Map<string, SpellItem>();
+  private readonly idle = new Map<string, SpellItem>();
+  private readonly typing = new Map<string, SpellItem>();
   private readonly inFlight = new Set<string>();
   private typingTimer: ReturnType<typeof setTimeout> | null = null;
   private pumping = false;
@@ -134,8 +147,10 @@ class Engine implements SpellingEngine {
     return this.rules.languages.join(',');
   }
 
-  private keyOf(text: string): string {
-    return `${this.languageKey()}\u0001${text}`;
+  /** The cache key: the page's languages, the text's own languages and where they are, and the text. */
+  private keyOf(item: SpellItem): string {
+    const own = item.langs?.map((span) => `${span.start}+${span.length}=${span.lang}`).join(';') ?? '';
+    return `${this.languageKey()}\u0002${own}\u0001${item.text}`;
   }
 
   private notify(kind: ChangeKind): void {
@@ -154,33 +169,58 @@ class Engine implements SpellingEngine {
   };
 
   /** Takes up to 200 waiting texts, at most 128 K characters, from `source`. */
-  private takeBatch(source: Set<string>): string[] {
-    const batch: string[] = [];
+  private takeBatch(source: Map<string, SpellItem>): { key: string; item: SpellItem }[] {
+    const batch: { key: string; item: SpellItem }[] = [];
     let chars = 0;
-    for (const text of source) {
-      if (batch.length === MAX_ITEMS || chars + text.length > MAX_CHARS) break;
-      source.delete(text);
-      if (this.cache.has(this.keyOf(text)) || this.inFlight.has(text)) continue;
-      batch.push(text);
-      chars += text.length;
+    for (const [key, item] of source) {
+      if (batch.length === MAX_ITEMS || chars + item.text.length > MAX_CHARS) break;
+      source.delete(key);
+      if (this.cache.has(key) || this.inFlight.has(key)) continue;
+      batch.push({ key, item });
+      chars += item.text.length;
     }
     return batch;
   }
 
-  private async send(batch: readonly string[]): Promise<void> {
-    const key = this.languageKey();
-    batch.forEach((text) => this.inFlight.add(text));
+  /**
+   * Checks a batch: the page's languages get each text with its own-language parts blanked, and each other
+   * language gets its parts, one request per language. A part whose language has no checker is not checked.
+   */
+  private async send(batch: readonly { key: string; item: SpellItem }[]): Promise<void> {
+    batch.forEach(({ key }) => this.inFlight.add(key));
     try {
-      const items = batch.map((text, index) => ({ id: String(index), text }));
-      const results = await this.client.check(items, [...this.rules.languages]);
-      for (const result of results) {
-        const text = batch[Number(result.id)];
-        if (text !== undefined) this.cache.set(`${key}\u0001${text}`, result.errors);
+      const installed = batch.some(({ item }) => item.langs?.length) ? await this.languages() : [];
+      const groups = new Map<string, { languages: string[]; pieces: Piece[] }>();
+      batch.forEach(({ item }, index) => {
+        for (const piece of piecesOf(item, index)) {
+          const resolved = piece.lang === null ? null : resolveLanguage(piece.lang, installed);
+          if (piece.lang !== null && resolved === null) continue;
+          const languages = resolved === null ? [...this.rules.languages] : [resolved];
+          const group = groups.get(languages.join(',')) ?? { languages, pieces: [] };
+          group.pieces.push(piece);
+          groups.set(languages.join(','), group);
+        }
+      });
+      const errors = batch.map((): SpellRange[] => []);
+      for (const { languages, pieces } of groups.values()) {
+        const items = pieces.map((piece, index) => ({ id: String(index), text: piece.text }));
+        for (const result of await this.client.check(items, languages)) {
+          const piece = pieces[Number(result.id)];
+          if (!piece) continue;
+          const shifted = result.errors.map((error) => ({ start: error.start + piece.offset, length: error.length }));
+          errors[piece.item].push(...shifted);
+        }
       }
+      batch.forEach(({ key }, index) =>
+        this.cache.set(
+          key,
+          errors[index].sort((a, b) => a.start - b.start),
+        ),
+      );
     } catch {
       // A failed check leaves its texts unchecked; the next change asks again.
     } finally {
-      batch.forEach((text) => this.inFlight.delete(text));
+      batch.forEach(({ key }) => this.inFlight.delete(key));
     }
   }
 
@@ -202,34 +242,35 @@ class Engine implements SpellingEngine {
     }
   }
 
-  private queue(texts: Iterable<string>, into: Set<string>): void {
-    for (const text of texts) {
-      if (text.trim() && !this.cache.has(this.keyOf(text))) into.add(text);
+  private queue(items: Iterable<SpellItem>, into: Map<string, SpellItem>): void {
+    for (const item of items) {
+      const key = this.keyOf(item);
+      if (item.text.trim() && !this.cache.has(key)) into.set(key, item);
     }
     void this.pump();
   }
 
-  errorsFor = (text: string): readonly SpellRange[] | null => {
+  errorsFor = (text: string, langs?: readonly SpellLang[]): readonly SpellRange[] | null => {
     if (!this.active() || !text.trim()) return [];
-    const errors = this.cache.get(this.keyOf(text));
+    const errors = this.cache.get(this.keyOf({ text, langs }));
     if (!errors) return null;
     return errors.filter((error) => !this.words.skips(text.slice(error.start, error.start + error.length)));
   };
 
-  requestCheck = (key: string, text: string): void => {
+  requestCheck = (key: string, text: string, langs?: readonly SpellLang[]): void => {
     if (!this.active()) return;
-    this.typing.set(key, text);
+    this.typing.set(key, langs?.length ? { text, langs } : { text });
     if (this.typingTimer) clearTimeout(this.typingTimer);
     this.typingTimer = setTimeout(() => {
       this.typingTimer = null;
-      const texts = [...this.typing.values()];
+      const items = [...this.typing.values()];
       this.typing.clear();
-      this.queue(texts, this.now);
+      this.queue(items, this.now);
     }, this.timing.typingDelayMs);
   };
 
-  check(texts: readonly string[], priority: 'now' | 'idle'): void {
-    if (this.active()) this.queue(texts, priority === 'now' ? this.now : this.idle);
+  check(texts: readonly (string | SpellItem)[], priority: 'now' | 'idle'): void {
+    if (this.active()) this.queue(texts.map(itemOf), priority === 'now' ? this.now : this.idle);
   }
 
   onChange(listener: (kind: ChangeKind) => void): () => void {
@@ -237,9 +278,11 @@ class Engine implements SpellingEngine {
     return () => void this.listeners.delete(listener);
   }
 
-  async suggest(word: string): Promise<string[]> {
+  async suggest(word: string, lang?: string): Promise<string[]> {
     if (!this.active()) return [];
-    return this.client.suggest(word, this.rules.languages).catch(() => []);
+    const own = lang ? resolveLanguage(lang, await this.languages()) : null;
+    if (lang && !own) return [];
+    return this.client.suggest(word, own ? [own] : this.rules.languages).catch(() => []);
   }
 
   ignore(word: string): void {

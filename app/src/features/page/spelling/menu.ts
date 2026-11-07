@@ -15,6 +15,7 @@ import type { MenuAnchor, MenuItemSpec } from '../../../ui';
 import { shownPool } from '../pool/shown';
 import { spellingEngine } from './current';
 import type { SpellingEngine } from './engine';
+import { langAt } from './languages';
 
 export interface SpellingMenuOptions {
   editor: Editor;
@@ -22,6 +23,8 @@ export interface SpellingMenuOptions {
   to: number;
   word: string;
   engine: SpellingEngine;
+  /** The word's own language, when its run or paragraph has one. */
+  lang?: string;
   /** F7 says the word and its first suggestion. */
   announceWord: boolean;
   anchor?: MenuAnchor;
@@ -54,7 +57,7 @@ export function spellingItems(options: SpellingMenuOptions, suggestions: readonl
 
 /** Opens the spelling menu for the word between `from` and `to`. */
 export async function openSpellingMenu(options: SpellingMenuOptions): Promise<string | null> {
-  const suggestions = await options.engine.suggest(options.word);
+  const suggestions = await options.engine.suggest(options.word, options.lang);
   if (options.announceWord) {
     const first = suggestions[0] ? ` ${t('spelling.first', { word: suggestions[0] })}` : '';
     announce(t('spelling.misspelled', { word: options.word, count: suggestions.length }) + first);
@@ -109,6 +112,7 @@ export function spellingContextMenu(event: MouseEvent): boolean {
   const anchor: MenuAnchor | undefined = keyboard ? undefined : { x: event.clientX, y: event.clientY };
   const more = editMenu({ target: target as Element, host, anchor: anchor ?? host }).items;
   const word = editor.state.doc.textBetween(from, to);
-  void openSpellingMenu({ editor, from, to, word, engine, announceWord: false, anchor, more });
+  const lang = langAt(extracted.langs, error.start);
+  void openSpellingMenu({ editor, from, to, word, engine, lang, announceWord: false, anchor, more });
   return true;
 }

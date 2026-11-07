@@ -18,10 +18,20 @@ export interface EditingSettingsView {
 }
 
 /** Spelling results for the text of one textblock, from the page's cache. */
+/** A part of a textblock's text in its own language (spellingText's LangSpan). */
+export interface SpellLang {
+  readonly start: number;
+  readonly length: number;
+  readonly lang: string;
+}
+
 export interface SpellingService {
-  /** UTF-16 ranges of the misspelled words, or null when the text hasn't been checked yet. */
-  errorsFor(textblockText: string): readonly { start: number; length: number }[] | null;
-  requestCheck(key: string, text: string): void;
+  /**
+   * UTF-16 ranges of the misspelled words, or null when the text hasn't been checked yet. `langs` are the parts in
+   * their own language; the rest is in the page's languages.
+   */
+  errorsFor(text: string, langs?: readonly SpellLang[]): readonly { start: number; length: number }[] | null;
+  requestCheck(key: string, text: string, langs?: readonly SpellLang[]): void;
 }
 
 export interface EditorHost {

@@ -9,11 +9,24 @@ export interface SpellRange {
   readonly length: number;
 }
 
+/** A part of a textblock's text in a language other than the page's: a `lang` on a run or on the paragraph. */
+export interface LangSpan {
+  readonly start: number;
+  readonly length: number;
+  readonly lang: string;
+}
+
 /** A textblock's text as the checker sees it, and the DOM text nodes it came from. */
 export interface TextblockText {
   readonly text: string;
   readonly nodes: readonly { node: Text; at: number }[];
+  /** The parts in their own language, in order. Absent when all the text is in the page's languages. */
+  readonly langs?: readonly LangSpan[];
 }
+
+/** The language that means "do not check spelling" (BCP 47's "no linguistic content"). */
+export const NO_PROOF = 'zxx';
+const LANG = /^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$/;
 
 /** The elements whose text is checked: paragraphs, headings, and callout titles. Code blocks never are. */
 export const TEXTBLOCK_SELECTOR = 'p, h1, h2, h3, h4, h5, h6, [data-callout-title]';
@@ -28,29 +41,60 @@ const isAtom = (element: Element) =>
   element.hasAttribute('data-math') ||
   element.getAttribute('contenteditable') === 'false';
 
+/** An element's own `lang`, when it is a language tag. */
+const ownLang = (element: Element): string | null => {
+  const value = element.getAttribute('lang');
+  return value !== null && LANG.test(value) ? value : null;
+};
+
+/** The paragraph's language: its own `lang`, or its list item's. The page's language is not a paragraph's. */
+const paragraphLang = (element: Element): string | null =>
+  ownLang(element) ?? (element.parentElement?.localName === 'li' ? ownLang(element.parentElement) : null);
+
 /**
  * The text of a textblock element, with inline code, math, images, web addresses, and email addresses replaced by
  * spaces, so offsets still line up with the words around them. Each inline atom counts as one character. Read aloud
- * passes `mask` false to keep code and addresses.
+ * passes `mask` false to keep code and addresses. Text set to "do not check spelling" is masked too, so it is never
+ * sent, and text in another language is listed in `langs`.
  */
 export function textblockText(element: Element, mask = true): TextblockText {
   let text = '';
   const nodes: { node: Text; at: number }[] = [];
-  const walk = (parent: Node, masked: boolean) => {
+  const langs: LangSpan[] = [];
+  const mark = (start: number, length: number, lang: string | null) => {
+    if (lang === null || length === 0) return;
+    const last = langs[langs.length - 1];
+    if (last && last.lang === lang && last.start + last.length === start) {
+      langs[langs.length - 1] = { start: last.start, length: last.length + length, lang };
+    } else langs.push({ start, length, lang });
+  };
+  const walk = (parent: Node, masked: boolean, lang: string | null) => {
     for (let child = parent.firstChild; child; child = child.nextSibling) {
       if (child.nodeType === Node.TEXT_NODE) {
         const data = (child as Text).data;
         nodes.push({ node: child as Text, at: text.length });
+        mark(text.length, data.length, lang);
         text += masked ? ' '.repeat(data.length) : data;
       } else if (child instanceof Element) {
         if (SKIPPED.some((name) => child.classList.contains(name))) continue;
-        if (isAtom(child)) text += ' ';
-        else walk(child, masked || (mask && child.localName === 'code'));
+        if (isAtom(child)) {
+          mark(text.length, 1, lang);
+          text += ' ';
+          continue;
+        }
+        const inner = ownLang(child) ?? lang;
+        walk(child, masked || (mask && (child.localName === 'code' || inner === NO_PROOF)), inner);
       }
     }
   };
-  walk(element, false);
-  return { text: mask ? text.replace(ADDRESS, (match) => ' '.repeat(match.length)) : text, nodes };
+  const base = paragraphLang(element);
+  walk(element, mask && base === NO_PROOF, base);
+  const own = langs.filter((span) => span.lang !== NO_PROOF);
+  return {
+    text: mask ? text.replace(ADDRESS, (match) => ' '.repeat(match.length)) : text,
+    nodes,
+    ...(own.length ? { langs: own } : {}),
+  };
 }
 
 /** Whether a textblock element is checked: not in a code block or a widget. */
@@ -83,6 +127,7 @@ export function rangeOver(extracted: TextblockText, start: number, length: numbe
 
 interface Entry {
   text: string;
+  langs?: readonly LangSpan[];
   errors: readonly SpellRange[];
   ranges: Range[];
   waiting: boolean;
@@ -128,13 +173,13 @@ export class SpellingHighlights {
     // repaints the whole page in Chromium, 17 ms a key with 200 squiggles in view, so unchanged ones stay put.
     const old = this.entries.get(element);
     if (old && sameRanges(old.ranges, ranges)) {
-      this.entries.set(element, { text: extracted.text, errors, ranges: old.ranges, waiting });
+      this.entries.set(element, { text: extracted.text, langs: extracted.langs, errors, ranges: old.ranges, waiting });
       return;
     }
     this.drop(element);
     const highlight = this.registry();
     ranges.forEach((range) => highlight?.add(range));
-    this.entries.set(element, { text: extracted.text, errors, ranges, waiting });
+    this.entries.set(element, { text: extracted.text, langs: extracted.langs, errors, ranges, waiting });
   }
 
   /**
@@ -186,15 +231,17 @@ export class SpellingHighlights {
   /** Shows the element's cached errors, or carries its old ones and asks for a check. */
   refresh(element: Element, service: SpellingService, request: boolean, key?: string): string | null {
     const extracted = textblockText(element);
-    const errors = service.errorsFor(extracted.text);
+    const errors = service.errorsFor(extracted.text, extracted.langs);
     if (errors) {
       this.show(element, extracted, errors);
       return null;
     }
     const entry = this.entries.get(element);
-    if (entry?.text === extracted.text) entry.waiting = true;
-    else this.carry(element, extracted);
-    if (request) service.requestCheck(key ?? extracted.text, extracted.text);
+    if (entry?.text === extracted.text) {
+      entry.waiting = true;
+      entry.langs = extracted.langs;
+    } else this.carry(element, extracted);
+    if (request) service.requestCheck(key ?? extracted.text, extracted.text, extracted.langs);
     return extracted.text;
   }
 
@@ -206,8 +253,8 @@ export class SpellingHighlights {
     return this.guard;
   }
 
-  /** The element's text and errors, as last shown. */
-  entry(element: Element): { text: string; errors: readonly SpellRange[] } | null {
+  /** The element's text, its languages, and its errors, as last shown. */
+  entry(element: Element): { text: string; langs?: readonly LangSpan[]; errors: readonly SpellRange[] } | null {
     return this.entries.get(element) ?? null;
   }
 
