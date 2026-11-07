@@ -34,8 +34,26 @@ export async function openEmptyPage(options: LaunchOptions = {}): Promise<AppSes
   return session;
 }
 
-/** The client point of a page-unit point, through the page's own layers. */
+/** The world's client position, which changes while the page scrolls a new caret or box into view. */
+const worldTop = (browser: Browser) =>
+  browser.execute(() => {
+    const world = document.querySelector<HTMLElement>('h1[data-page-title]')!.parentElement!.parentElement!;
+    return Math.round(world.getBoundingClientRect().top);
+  });
+
+/**
+ * The client point of a page-unit point, through the page's own layers. It waits for the page to stop scrolling
+ * first, because the page scrolls a box that was just typed in into view, and a click at a point worked out before
+ * that lands where the page used to be.
+ */
 export async function clientPoint(browser: Browser, x: number, y: number): Promise<{ x: number; y: number }> {
+  let top = await worldTop(browser);
+  for (let tries = 0; tries < 20; tries += 1) {
+    await browser.pause(120);
+    const now = await worldTop(browser);
+    if (now === top) break;
+    top = now;
+  }
   return browser.execute(
     (x, y) => {
       // The title band is the world's first child, so its grandparent is the world.
@@ -71,7 +89,10 @@ export async function clickAt(browser: Browser, point: { x: number; y: number })
     .perform();
 }
 
-/** The floating text boxes, by name, with their page-unit positions from their inline styles. */
+/**
+ * The floating text boxes, by name, with their page-unit positions. A box's left is its inline style. Its top is
+ * the custom property --frame-y, because the stylesheet places it, snapped to the rules on ruled paper.
+ */
 export async function textBoxes(
   browser: Browser,
 ): Promise<{ block: string; name: string; text: string; left: number; top: number }[]> {
@@ -83,7 +104,7 @@ export async function textBoxes(
         name: root.getAttribute('aria-label') ?? '',
         text: root.textContent ?? '',
         left: parseFloat(wrapper.style.left),
-        top: parseFloat(wrapper.style.top),
+        top: parseFloat(wrapper.style.getPropertyValue('--frame-y') || wrapper.style.top),
       };
     }),
   );
@@ -94,4 +115,34 @@ export async function makeBox(browser: Browser, x: number, y: number, text: stri
   await clickAt(browser, await clientPoint(browser, x, y));
   await browser.keys(text);
   await browser.waitUntil(async () => (await textBoxes(browser)).some((box) => box.text === text), { timeout: 5_000 });
+}
+
+/**
+ * Waits for `work`, and when it fails says where every text box was and what had focus, so a timeout on a position
+ * or a count shows what the page held instead.
+ */
+export async function explain<T>(browser: Browser, work: Promise<T>): Promise<T> {
+  try {
+    return await work;
+  } catch (error) {
+    const boxes = await browser
+      .execute(() => {
+        const active = document.activeElement as HTMLElement | null;
+        const boxes = [...document.querySelectorAll<HTMLElement>('[data-block-id]')].map((wrapper) => {
+          const rect = wrapper.getBoundingClientRect();
+          return {
+            block: wrapper.dataset.blockId,
+            text: wrapper.textContent?.slice(0, 30),
+            frameY: wrapper.style.getPropertyValue('--frame-y'),
+            left: wrapper.style.left,
+            rect: [rect.left, rect.top, rect.width, rect.height].map(Math.round),
+          };
+        });
+        const focus = active ? `${active.tagName} ${active.getAttribute('aria-label')} ${active.dataset.blockId}` : '';
+        return JSON.stringify({ focus, scroll: window.scrollY, boxes });
+      })
+      .catch(() => 'unavailable');
+    const reason = error instanceof Error ? error.message : String(error);
+    throw new Error(`${reason} Page: ${boxes}`, { cause: error });
+  }
 }

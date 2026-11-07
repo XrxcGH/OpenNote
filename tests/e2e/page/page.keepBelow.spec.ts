@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { after, describe, it } from 'node:test';
 import { skipReason } from '../harness.ts';
 import type { AppSession } from '../harness.ts';
-import { clickAt, clientPoint, makeBox, openEmptyPage, textBoxes } from './pageSession.ts';
+import { explain, makeBox, openEmptyPage, textBoxes } from './pageSession.ts';
 
 describe('keep-below', { skip: skipReason() }, () => {
   let session: AppSession | undefined;
@@ -25,12 +25,34 @@ describe('keep-below', { skip: skipReason() }, () => {
           .closest<HTMLElement>('[data-block-id]')!.offsetHeight,
     );
     await makeBox(browser, 100, 200 + height + 10, 'Below');
-    await clickAt(browser, await clientPoint(browser, 110, 210));
+    // A box is placed with its first line centered on the click, so its top is not the point that was clicked.
+    const lowerTop = (await textBoxes(browser))[1]!.top;
+    // Back to the upper box from the keyboard: Escape selects the lower box, Shift+Tab goes to the one before it in
+    // reading order, and Enter edits it. A click on a box that is already drawn does not move the caret.
+    await browser.keys('Escape');
+    await browser.keys(['Shift', 'Tab']);
+    await browser.keys('Enter');
+    await explain(
+      browser,
+      browser.waitUntil(
+        () =>
+          browser.execute(
+            () => document.activeElement?.closest<HTMLElement>('[data-block-id]')?.textContent === 'Above',
+          ),
+        { timeout: 5_000 },
+      ),
+    );
     await browser.keys(['End', 'Enter', 'A', 'n', 'o', 't', 'h', 'e', 'r']);
-    await browser.waitUntil(async () => (await textBoxes(browser))[1]!.top > 200 + height + 10, { timeout: 5_000 });
-    const moved = (await textBoxes(browser))[1]!.top - (200 + height + 10);
+    await explain(
+      browser,
+      browser.waitUntil(async () => (await textBoxes(browser))[1]!.top > lowerTop, { timeout: 5_000 }),
+    );
+    const moved = (await textBoxes(browser))[1]!.top - lowerTop;
     assert.ok(moved > 10, 'the lower box moved down by the new line');
     await browser.keys(['Control', 'z']);
-    await browser.waitUntil(async () => (await textBoxes(browser))[1]!.top === 200 + height + 10, { timeout: 5_000 });
+    await explain(
+      browser,
+      browser.waitUntil(async () => (await textBoxes(browser))[1]!.top === lowerTop, { timeout: 5_000 }),
+    );
   });
 });
