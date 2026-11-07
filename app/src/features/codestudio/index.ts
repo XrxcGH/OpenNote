@@ -6,3 +6,11 @@ export * from './contracts';
 
 /** Loads the studio window's chunk (features/codestudio/window, code:L04). */
 export const loadCodeStudioWindow = () => import('./window');
+
+/** The Code group of the Models panel, with the runtime packs (features/codestudio/packs, code:L18). */
+export const loadCodeDownloads = () => import('./packs/CodeDownloads');
+export type { CodeDownloadsStyles } from './packs/CodeDownloads';
+export { packFileUrl } from './packs/client';
+
+/** Settings, then Code, then Downloads: opens the Models panel at its Code group. */
+export const openCodeDownloads = () => import('./packs/store').then((module) => module.openCodeDownloads());
