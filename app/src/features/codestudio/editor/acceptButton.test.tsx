@@ -1,7 +1,7 @@
 // The Accept button at the end of ghost text, for mouse, touch, and pen (DESIGN 5.3.1). It shows after a touch or
 // pen press or while the mouse hovers the ghost text (the default setting), never after keyboard-only typing;
 // its press keeps the caret, selection, and focus in the editor; a long-press or right-click opens its menu.
-import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { registerCodeEditorCommands } from './commands';
 import type { CodeEditor } from './create';
 import { configureTestCommands, ghostAt, mount, resetSettings, unmountAll, withCodeSettings } from './testEditor';
@@ -130,5 +130,32 @@ describe('pressing the button', () => {
     const editor = await withGhost();
     pointer(button(editor), 'pointerdown', 'pen', { button: 2, buttons: 2 });
     expect(editor.root.querySelectorAll('[role="menuitem"]')).toHaveLength(4);
+  });
+
+  it('opens the menu once for a barrel press, though the browser also sends its own contextmenu', async () => {
+    const editor = await withGhost();
+    const now = vi.spyOn(Date, 'now').mockReturnValue(10_000);
+    pointer(button(editor), 'pointerdown', 'pen', { button: 2, buttons: 2 });
+    const menu = editor.root.querySelector('.cm-ghost-menu');
+    expect(menu).not.toBeNull();
+    // The browser's contextmenu for the same press: the menu stays as it is, not closed and reopened.
+    const echo = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
+    button(editor).dispatchEvent(echo);
+    expect(editor.root.querySelector('.cm-ghost-menu')).toBe(menu);
+    expect(menu?.isConnected).toBe(true);
+    // A right-click later opens the menu again.
+    now.mockReturnValue(20_000);
+    button(editor).dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
+    expect(editor.root.querySelector('.cm-ghost-menu')).not.toBe(menu);
+    expect(editor.root.querySelectorAll('[role="menuitem"]')).toHaveLength(4);
+    now.mockRestore();
+  });
+
+  it('calls the editor’s context menu once for a barrel press in the text', async () => {
+    const onContextMenu = vi.fn();
+    const editor = await mount({ language: 'python', text: 'x = 1', onContextMenu });
+    pointer(editor.view.contentDOM, 'pointerdown', 'pen', { button: 2, buttons: 2 });
+    editor.view.contentDOM.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
+    expect(onContextMenu).toHaveBeenCalledTimes(1);
   });
 });

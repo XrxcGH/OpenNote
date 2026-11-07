@@ -7,6 +7,8 @@
 export const ZOOM_MIN = 0.5;
 export const ZOOM_MAX = 3;
 export const ZOOM_STEP = 0.1;
+/** How long after a pen barrel press the browser's own contextmenu for it is dropped. */
+export const BARREL_MENU_MS = 1000;
 
 export function clampZoom(value: number): number {
   return Math.round(Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, value)) * 100) / 100;
@@ -25,6 +27,10 @@ export interface TouchOptions {
 export function installTouch(root: HTMLElement, options: TouchOptions): () => void {
   const touches = new Map<number, { x: number; y: number }>();
   let pinch: { distance: number; zoom: number } | null = null;
+  // The barrel press opens the menu at once, from a contextmenu event made here. The browser then sends its own
+  // contextmenu for the same press, which is dropped, so the menu opens once.
+  const made = new WeakSet<Event>();
+  let dropUntil = 0;
 
   const distance = () => {
     const [a, b] = [...touches.values()];
@@ -44,6 +50,8 @@ export function installTouch(root: HTMLElement, options: TouchOptions): () => vo
           clientX: event.clientX,
           clientY: event.clientY,
         });
+        made.add(menu);
+        dropUntil = Date.now() + BARREL_MENU_MS;
         event.target?.dispatchEvent(menu);
       }
       return;
@@ -67,6 +75,13 @@ export function installTouch(root: HTMLElement, options: TouchOptions): () => vo
     if (touches.size < 2) pinch = null;
   };
 
+  const dropEcho = (event: MouseEvent) => {
+    if (made.has(event) || Date.now() > dropUntil) return;
+    dropUntil = 0;
+    event.preventDefault();
+    event.stopPropagation();
+  };
+
   const menu = (event: MouseEvent) => {
     if (!options.onContextMenu || event.defaultPrevented) return;
     event.preventDefault();
@@ -77,8 +92,10 @@ export function installTouch(root: HTMLElement, options: TouchOptions): () => vo
   root.addEventListener('pointermove', move, { passive: false });
   root.addEventListener('pointerup', up);
   root.addEventListener('pointercancel', up);
+  root.addEventListener('contextmenu', dropEcho, true);
   root.addEventListener('contextmenu', menu);
   return () => {
+    root.removeEventListener('contextmenu', dropEcho, true);
     root.removeEventListener('pointerdown', down);
     root.removeEventListener('pointermove', move);
     root.removeEventListener('pointerup', up);

@@ -7,7 +7,13 @@ import type { Extension } from '@codemirror/state';
 import type { EditorView } from '@codemirror/view';
 import { t } from '../../../strings/t';
 import { announce } from '../../../ui/announce';
-import type { Diagnostic } from '../contracts';
+import type { Diagnostic, Fix } from '../contracts';
+import { inDocument } from './ghost';
+
+/** Every edit of the fix lies in a document of `length`, so applying it cannot throw. */
+function fits(fix: Fix, length: number): boolean {
+  return fix.edits.every(({ from, to }) => inDocument(from, length) && inDocument(to, length) && from <= to);
+}
 
 function toCodeMirror(item: Diagnostic, length: number): CmDiagnostic {
   const from = Math.max(0, Math.min(item.from, length));
@@ -17,15 +23,19 @@ function toCodeMirror(item: Diagnostic, length: number): CmDiagnostic {
     severity: item.severity,
     source: item.source,
     message: item.code ? `${item.message} (${item.code})` : item.message,
-    actions: (item.fixes ?? []).map((fix) => ({
-      name: fix.title,
-      apply: (view: EditorView) => {
-        view.dispatch({
-          changes: fix.edits.map(({ from: a, to, insert }) => ({ from: a, to, insert })),
-          userEvent: 'input.fix',
-        });
-      },
-    })),
+    actions: (item.fixes ?? [])
+      .filter((fix) => fits(fix, length))
+      .map((fix) => ({
+        name: fix.title,
+        apply: (view: EditorView) => {
+          // The text may have changed since the problems came in: a fix that no longer fits does nothing.
+          if (!fits(fix, view.state.doc.length)) return;
+          view.dispatch({
+            changes: fix.edits.map(({ from: a, to, insert }) => ({ from: a, to, insert })),
+            userEvent: 'input.fix',
+          });
+        },
+      })),
   };
 }
 

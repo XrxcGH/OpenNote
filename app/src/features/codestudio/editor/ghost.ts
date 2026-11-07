@@ -7,6 +7,7 @@ import { Facet, StateEffect, StateField } from '@codemirror/state';
 import type { EditorState } from '@codemirror/state';
 import { Decoration, EditorView, WidgetType } from '@codemirror/view';
 import type { GhostSuggestion } from '../contracts';
+import { BARREL_MENU_MS } from './touch';
 
 export interface GhostState {
   /** Where the text goes. */
@@ -87,6 +88,8 @@ function acceptButton(actions: GhostActions): HTMLButtonElement {
   button.hidden = !actions.buttonVisible();
   let timer: ReturnType<typeof setTimeout> | undefined;
   let menuOpened = false;
+  // A secondary or barrel press opens the menu on pointerdown; the browser's contextmenu for that press follows.
+  let pressOpenedAt = -Infinity;
   const stopTimer = () => clearTimeout(timer);
   button.addEventListener('pointerdown', (event) => {
     event.preventDefault();
@@ -95,6 +98,7 @@ function acceptButton(actions: GhostActions): HTMLButtonElement {
     // The pen's barrel button arrives as the secondary button.
     if (event.button === 2 || (event.pointerType === 'pen' && (event.buttons & 2) !== 0)) {
       menuOpened = true;
+      pressOpenedAt = Date.now();
       actions.openMenu(button);
       return;
     }
@@ -112,6 +116,11 @@ function acceptButton(actions: GhostActions): HTMLButtonElement {
   button.addEventListener('contextmenu', (event) => {
     event.preventDefault();
     stopTimer();
+    // The same press already opened the menu: keep it open instead of closing and reopening it.
+    if (Date.now() - pressOpenedAt <= BARREL_MENU_MS) {
+      pressOpenedAt = -Infinity;
+      return;
+    }
     menuOpened = true;
     actions.openMenu(button);
   });
@@ -199,10 +208,15 @@ export function nextLine(text: string): string {
   return end === -1 ? text : text.slice(0, end);
 }
 
+/** A position a change can use: a whole number from 0 to the document's length. */
+export function inDocument(pos: number, length: number): boolean {
+  return Number.isInteger(pos) && pos >= 0 && pos <= length;
+}
+
 /** Inserts all or part of the ghost text as one undo step. Returns the inserted text, or null without ghost text. */
 export function acceptGhost(view: EditorView, part: AcceptPart): string | null {
   const ghost = ghostOf(view.state);
-  if (!ghost) return null;
+  if (!ghost || !inDocument(ghost.from, view.state.doc.length)) return null;
   const piece = part === 'all' ? ghost.text : part === 'word' ? nextWord(ghost.text) : nextLine(ghost.text);
   const rest = ghost.text.slice(piece.length);
   const at = ghost.from + piece.length;

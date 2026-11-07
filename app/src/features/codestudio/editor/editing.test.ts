@@ -8,6 +8,8 @@ import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { registerCodeEditorCommands } from './commands';
 import { PROJECT_LANGUAGES } from '../contracts';
 import { loadLanguage } from './languages';
+import { getSettings, settingsStore } from '../../../state/settings';
+import { setPseudoLocale, t } from '../../../strings/t';
 import { configureTestCommands, mount, press, resetSettings, unmountAll, withCodeSettings } from './testEditor';
 
 beforeAll(() => {
@@ -152,6 +154,75 @@ describe('search, go to line, wrap, zoom, read-only', () => {
   it('folds a block', async () => {
     const editor = await mount({ language: 'python', text: 'def f():\n    return 1\n', caret: 0 });
     expect(editor.view.dom.querySelector('.cm-foldGutter')).not.toBeNull();
+  });
+});
+
+describe('CodeMirror’s own text comes from the strings files', () => {
+  // Every phrase name the bundled CodeMirror packages ask for: search, go to line, folding, problems, completions.
+  const NAMES = [
+    'Find',
+    'Replace',
+    'next',
+    'previous',
+    'all',
+    'match case',
+    'regexp',
+    'by word',
+    'replace',
+    'replace all',
+    'close',
+    'current match',
+    'on line',
+    'replaced $ matches',
+    'replaced match on line $',
+    'Go to line',
+    'go',
+    'Fold line',
+    'Unfold line',
+    'Folded lines',
+    'Unfolded lines',
+    'to',
+    'folded code',
+    'unfold',
+    'Diagnostics',
+    'No diagnostics',
+    'Completions',
+    'Control character',
+    'Selection deleted',
+  ];
+
+  it('shows the pseudo-locale in the search panel and in every phrase', async () => {
+    setPseudoLocale(true);
+    try {
+      const editor = await mount({ language: 'python', text: 'def f(x):\n    return x\n' });
+      for (const name of NAMES) expect(editor.view.state.phrase(name), name).not.toBe(name);
+      editor.run('find');
+      const field = editor.view.dom.querySelector<HTMLInputElement>('.cm-search input[name="search"]');
+      expect(field?.placeholder).toBe(t('codeStudio.editor.phrases.find'));
+      const close = editor.view.dom.querySelector('.cm-search button[name="close"]');
+      expect(close?.getAttribute('aria-label')).toBe(t('codeStudio.editor.phrases.close'));
+    } finally {
+      setPseudoLocale(false);
+    }
+  });
+});
+
+describe('settings changes', () => {
+  it('does nothing when the store reports the same settings, and reacts to a real change', async () => {
+    let transactions = 0;
+    const editor = await mount({
+      language: 'python',
+      text: 'if x:\n  y = 1\n',
+      extensions: [EditorView.updateListener.of((update) => (transactions += update.transactions.length))],
+    });
+    const before = transactions;
+    settingsStore.set({ settings: getSettings(), readOnly: true });
+    expect(transactions).toBe(before);
+    withCodeSettings({ indent: { python: { tabSize: 4, insertSpaces: true } } });
+    expect(transactions).toBe(before + 1);
+    editor.view.dispatch({ selection: { anchor: 0 } });
+    press(editor, 'Tab');
+    expect(editor.getText()).toBe('    if x:\n  y = 1\n');
   });
 });
 

@@ -36,6 +36,8 @@ export type EditorAction =
 export interface CodeEditorHandle {
   /** The element with data-scope="codeEditor". */
   readonly root: HTMLElement;
+  /** The editable text (CodeMirror's content element). The search panel and dialogs sit outside it. */
+  readonly content: HTMLElement;
   readonly readOnly: boolean;
   /** Ghost text shows. */
   hasGhost(): boolean;
@@ -56,6 +58,16 @@ export function registerCodeEditor(handle: CodeEditorHandle): () => void {
 export function focusedCodeEditor(active: Element | null = document.activeElement): CodeEditorHandle | null {
   if (!active) return null;
   for (const handle of mounted) if (handle.root.contains(active)) return handle;
+  return null;
+}
+
+/**
+ * The editor whose text holds focus now, or null. Focus in the editor's own search panel or go-to-line field does
+ * not count, so an editing key typed there leaves the document alone (VS Code's editorTextFocus).
+ */
+export function textFocusedCodeEditor(active: Element | null = document.activeElement): CodeEditorHandle | null {
+  if (!active) return null;
+  for (const handle of mounted) if (handle.content.contains(active)) return handle;
   return null;
 }
 

@@ -14,7 +14,7 @@ import { getSettings } from '../../../state/settings';
 import { announce } from '../../../ui/announce';
 import { t } from '../../../strings/t';
 import type { MessageKey } from '../../../strings/t';
-import { focusedCodeEditor, getTabMovesFocus, setTabMovesFocus } from './views';
+import { focusedCodeEditor, getTabMovesFocus, setTabMovesFocus, textFocusedCodeEditor } from './views';
 import type { CodeEditorHandle, EditorAction } from './views';
 
 interface Row {
@@ -27,6 +27,8 @@ interface Row {
   enabled?: (editor: CodeEditorHandle) => boolean;
   /** Changes the text, so a read-only editor turns it off. */
   edits?: boolean;
+  /** Also runs while focus is in the editor's search panel or go-to-line field, not only in its text. */
+  panel?: boolean;
 }
 
 const suggestionsOn = () => getSettings().code.suggestions !== 'off';
@@ -165,6 +167,7 @@ export const CODE_EDITOR_ROWS: readonly Row[] = [
   {
     id: 'code.editor.find',
     action: 'find',
+    panel: true,
     title: 'codeStudio.editor.commands.find',
     keys: ['Ctrl+F'],
     refines: 'page.find',
@@ -172,12 +175,19 @@ export const CODE_EDITOR_ROWS: readonly Row[] = [
   {
     id: 'code.editor.replace',
     action: 'replace',
+    panel: true,
     title: 'codeStudio.editor.commands.replace',
     keys: ['Ctrl+H'],
     refines: 'page.replace',
     edits: true,
   },
-  { id: 'code.editor.goToLine', action: 'goToLine', title: 'codeStudio.editor.commands.goToLine', keys: ['Ctrl+G'] },
+  {
+    id: 'code.editor.goToLine',
+    action: 'goToLine',
+    panel: true,
+    title: 'codeStudio.editor.commands.goToLine',
+    keys: ['Ctrl+G'],
+  },
   {
     id: 'code.editor.expandSelection',
     action: 'expandSelection',
@@ -192,10 +202,17 @@ export const CODE_EDITOR_ROWS: readonly Row[] = [
     keys: ['Alt+Shift+Left'],
     refines: 'outline.promote',
   },
-  { id: 'code.editor.wordWrap', action: 'wordWrap', title: 'codeStudio.editor.commands.wordWrap', keys: ['Alt+Z'] },
+  {
+    id: 'code.editor.wordWrap',
+    action: 'wordWrap',
+    panel: true,
+    title: 'codeStudio.editor.commands.wordWrap',
+    keys: ['Alt+Z'],
+  },
   {
     id: 'code.editor.zoomIn',
     action: 'zoomIn',
+    panel: true,
     title: 'codeStudio.editor.commands.zoomIn',
     keys: ['Ctrl+='],
     refines: 'format.subscript',
@@ -203,6 +220,7 @@ export const CODE_EDITOR_ROWS: readonly Row[] = [
   {
     id: 'code.editor.zoomOut',
     action: 'zoomOut',
+    panel: true,
     title: 'codeStudio.editor.commands.zoomOut',
     keys: ['Ctrl+-'],
     refines: 'format.strike',
@@ -210,6 +228,7 @@ export const CODE_EDITOR_ROWS: readonly Row[] = [
   {
     id: 'code.problem.next',
     action: 'problemNext',
+    panel: true,
     title: 'codeStudio.editor.commands.problemNext',
     keys: ['F8'],
     refines: 'history.nextChange',
@@ -217,6 +236,7 @@ export const CODE_EDITOR_ROWS: readonly Row[] = [
   {
     id: 'code.problem.previous',
     action: 'problemPrevious',
+    panel: true,
     title: 'codeStudio.editor.commands.problemPrevious',
     keys: ['Shift+F8'],
     refines: 'history.previousChange',
@@ -224,6 +244,7 @@ export const CODE_EDITOR_ROWS: readonly Row[] = [
 ];
 
 function rowCommand(row: Row): CommandDef {
+  const target = () => (row.panel ? focusedCodeEditor() : textFocusedCodeEditor());
   return defineCommand({
     id: row.id,
     title: row.title,
@@ -235,14 +256,14 @@ function rowCommand(row: Row): CommandDef {
     allowRepeat: row.action.startsWith('move') || row.action.startsWith('copy') || row.action.startsWith('cursor'),
     palette: false,
     flag: 'code.studio',
-    when: () => focusedCodeEditor() !== null,
+    when: () => target() !== null,
     enabled: () => {
-      const editor = focusedCodeEditor();
+      const editor = target();
       if (!editor || (row.edits && editor.readOnly)) return false;
       return !row.enabled || row.enabled(editor);
     },
     run: () => {
-      focusedCodeEditor()?.run(row.action);
+      target()?.run(row.action);
     },
   });
 }

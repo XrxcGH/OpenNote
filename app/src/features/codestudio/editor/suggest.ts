@@ -6,7 +6,16 @@ import type { EditorView, ViewUpdate } from '@codemirror/view';
 import { getSettings } from '../../../state/settings';
 import type { GhostSuggestion } from '../contracts';
 import { GETTING_AFTER_MS, SuggestionAnnouncer } from './announce';
-import { acceptGhost, ghostField, ghostOf, insertSuggestion, setGhost, setThinking, thinkingField } from './ghost';
+import {
+  acceptGhost,
+  ghostField,
+  ghostOf,
+  inDocument,
+  insertSuggestion,
+  setGhost,
+  setThinking,
+  thinkingField,
+} from './ghost';
 import type { AcceptPart } from './ghost';
 import type { EditorLanguage } from './indent';
 import { ABANDON_MS, AUTO_PAUSE_MS } from './types';
@@ -73,8 +82,10 @@ export class Suggestions {
     if (this.hasGhost()) this.host.view.dispatch({ effects: setGhost.of(null) });
   }
 
+  /** Shows ghost text. A suggestion that starts outside the document is dropped: accepting it could not insert. */
   show(suggestions: readonly GhostSuggestion[] | null): void {
-    const shown = suggestions ? list(suggestions) : [];
+    const length = this.host.view.state.doc.length;
+    const shown = (suggestions ? list(suggestions) : []).filter((item) => inDocument(item.from, length));
     this.host.view.dispatch({ effects: setGhost.of(shown.length ? shown : null) });
     if (shown[0]) this.announcer.suggestion(shown[0].text);
   }

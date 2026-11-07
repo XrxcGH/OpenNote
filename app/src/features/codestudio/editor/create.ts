@@ -64,6 +64,8 @@ class Controller implements CodeEditor {
   /** Escape armed "Tab leaves the editor" for the next key press. */
   private armed = false;
   private destroyed = false;
+  /** The settings onSettings last acted on. */
+  private seen = getSettings();
 
   constructor(
     container: HTMLElement,
@@ -116,6 +118,10 @@ class Controller implements CodeEditor {
         keydown: (event) => {
           if (!NOT_DISARMING.has(event.key)) this.armed = false;
         },
+        // A click or tap in the text disarms too: the person is back to editing. CodeMirror keeps its own
+        // two-second "Escape, then Tab leaves" state, which only keys clear, so it is cleared here as well.
+        pointerdown: (_event, view) => this.disarm(view),
+        mousedown: (_event, view) => this.disarm(view),
         blur: () => {
           this.armed = false;
           this.suggestions.cancel();
@@ -161,6 +167,10 @@ class Controller implements CodeEditor {
 
   // --- State the commands read.
 
+  get content(): HTMLElement {
+    return this.view.contentDOM;
+  }
+
   get readOnly(): boolean {
     return this.ro;
   }
@@ -202,13 +212,19 @@ class Controller implements CodeEditor {
   }
 
   private onSettings(): void {
+    // The store tells every change. Nothing to do when the settings object is the same, and the indentation is
+    // detected again over the whole text only when the indent settings changed.
+    const settings = getSettings();
+    if (settings === this.seen) return;
+    const indentChanged = settings.code.indent !== this.seen.code.indent;
+    this.seen = settings;
     this.description.textContent = descriptionText();
     this.matching = commandMatcher();
     const effects = [
       this.conf.keys.reconfigure(registryKeys(this.matching)),
       this.conf.completion.reconfigure(this.completion()),
     ];
-    const style = this.resolveIndent(this.view.state.doc.toString());
+    const style = indentChanged ? this.resolveIndent(this.view.state.doc.toString()) : this.indentStyle;
     if (style.size !== this.indentStyle.size || style.tabs !== this.indentStyle.tabs) {
       this.indentStyle = style;
       effects.push(this.conf.indent.reconfigure(this.indentExtension()));
@@ -231,6 +247,11 @@ class Controller implements CodeEditor {
     const spec = back ? outdentSpec(view.state, this.indentStyle) : indentSpec(view.state, this.indentStyle);
     view.dispatch({ ...spec, effects: setGhost.of(null) });
     return true;
+  }
+
+  private disarm(view: EditorView): void {
+    this.armed = false;
+    view.setTabFocusMode(false);
   }
 
   /** Escape cancels a request. Otherwise it closes the list or ghost text, or stops a run, and arms "Tab leaves". */

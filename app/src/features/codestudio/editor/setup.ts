@@ -33,15 +33,55 @@ import { chordMatches } from '../../../commands/chords';
 import { keysFor } from '../../../commands/keymap';
 import type { CommandContext, CommandDef } from '../../../commands/types';
 import { getSettings } from '../../../state/settings';
+import { t } from '../../../strings/t';
 import type { CompletionSource, ProjectLanguage } from '../contracts';
 import { CODE_EDITOR_COMMANDS } from './commands';
 import { ghostField, thinkingField } from './ghost';
 import { debugGutter, markExtensions } from './marks';
 import { problemExtensions } from './problems';
 
+/**
+ * CodeMirror's built-in English, from the strings files. The left side is CodeMirror's phrase name, so it stays as
+ * CodeMirror spells it.
+ */
+export function editorPhrases(): Record<string, string> {
+  return {
+    Find: t('codeStudio.editor.phrases.find'),
+    Replace: t('codeStudio.editor.phrases.replace'),
+    next: t('codeStudio.editor.phrases.next'),
+    previous: t('codeStudio.editor.phrases.previous'),
+    all: t('codeStudio.editor.phrases.all'),
+    'match case': t('codeStudio.editor.phrases.matchCase'),
+    regexp: t('codeStudio.editor.phrases.regexp'),
+    'by word': t('codeStudio.editor.phrases.byWord'),
+    replace: t('codeStudio.editor.phrases.replaceOne'),
+    'replace all': t('codeStudio.editor.phrases.replaceAll'),
+    close: t('codeStudio.editor.phrases.close'),
+    'current match': t('codeStudio.editor.phrases.currentMatch'),
+    'on line': t('codeStudio.editor.phrases.onLine'),
+    'replaced $ matches': t('codeStudio.editor.phrases.replacedMatches'),
+    'replaced match on line $': t('codeStudio.editor.phrases.replacedOnLine'),
+    'Go to line': t('codeStudio.editor.phrases.goToLine'),
+    go: t('codeStudio.editor.phrases.go'),
+    'Fold line': t('codeStudio.editor.phrases.foldLine'),
+    'Unfold line': t('codeStudio.editor.phrases.unfoldLine'),
+    'Folded lines': t('codeStudio.editor.phrases.foldedLines'),
+    'Unfolded lines': t('codeStudio.editor.phrases.unfoldedLines'),
+    to: t('codeStudio.editor.phrases.to'),
+    'folded code': t('codeStudio.editor.phrases.foldedCode'),
+    unfold: t('codeStudio.editor.phrases.unfold'),
+    Diagnostics: t('codeStudio.editor.phrases.diagnostics'),
+    'No diagnostics': t('codeStudio.editor.phrases.noDiagnostics'),
+    Completions: t('codeStudio.editor.phrases.completions'),
+    'Control character': t('codeStudio.editor.phrases.controlCharacter'),
+    'Selection deleted': t('codeStudio.editor.phrases.selectionDeleted'),
+  };
+}
+
 /** Gutters, history, selection, brackets, search, snippets, and the default keymaps. */
 export function editingExtensions(onBreakpointToggle?: (line: number) => void): Extension {
   return [
+    EditorState.phrases.of(editorPhrases()),
     lineNumbers(),
     highlightActiveLineGutter(),
     foldGutter(),

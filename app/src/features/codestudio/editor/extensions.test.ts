@@ -2,7 +2,7 @@
 // The extension points the later code lanes use: problems with F8 and its read-out, breakpoints and the current
 // line, inline values, the diff view, ghost text alternatives and partial accepts, and the completion list host.
 import { completionStatus, startCompletion } from '@codemirror/autocomplete';
-import { diagnosticCount } from '@codemirror/lint';
+import { diagnosticCount, forEachDiagnostic } from '@codemirror/lint';
 import { undo } from '@codemirror/commands';
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { announcements, clearAnnouncements } from '../../../ui/announce';
@@ -40,6 +40,30 @@ describe('problems', () => {
     press(editor, 'F8');
     expect(editor.view.state.selection.main.from).toBe(12);
     expect(announcements()).toContain("Line 2: Undefined name 'totl' (F821)");
+  });
+
+  it('offers only fixes whose edits lie in the text, and a fix that no longer fits does nothing', async () => {
+    const editor = await mount({ language: 'python', text: 'prnt(x)', caret: 0 });
+    const edit = (from: number, to: number) => ({ title: `fix ${from}`, edits: [{ from, to, insert: 'print' }] });
+    editor.showProblems([
+      {
+        file: 'main.py',
+        from: 0,
+        to: 4,
+        severity: 'error',
+        code: 'F821',
+        message: "Undefined name 'prnt'",
+        source: 'pyflakes',
+        fixes: [edit(0, 4), edit(999, 999), edit(-5, 2), edit(3, 1)],
+      },
+    ]);
+    const actions: { name: string; apply: (view: typeof editor.view, from: number, to: number) => void }[] = [];
+    forEachDiagnostic(editor.view.state, (item) => actions.push(...(item.actions ?? [])));
+    expect(actions.map((action) => action.name)).toEqual(['fix 0']);
+    // The text shrinks after the problems came in: the offered fix now reaches past the end.
+    editor.setText('pr');
+    expect(() => actions[0]?.apply(editor.view, 0, 0)).not.toThrow();
+    expect(editor.getText()).toBe('pr');
   });
 });
 
@@ -109,6 +133,20 @@ describe('ghost text', () => {
     expect(editor.getText()).toBe('print(total)');
     undo(editor.view);
     expect(editor.getText()).toBe('pri');
+  });
+
+  it('drops a suggestion that starts outside the document', async () => {
+    const editor = await mount({ language: 'python', text: 'pri' });
+    for (const from of [999, -5, 1.5, Number.NaN]) {
+      editor.showGhost([{ from, text: 'nt()', origin: 'pattern', confidence: 1 }]);
+      expect(editor.hasGhost()).toBe(false);
+      expect(() => editor.acceptSuggestion('all')).not.toThrow();
+      expect(editor.getText()).toBe('pri');
+    }
+    // A good alternative next to a bad one still shows.
+    editor.showGhost([{ from: 999, text: 'x', origin: 'pattern', confidence: 1 }, ghostAt(editor, 'nt()')]);
+    expect(editor.acceptSuggestion('all')).toBe('nt()');
+    expect(editor.getText()).toBe('print()');
   });
 
   it('moves between alternatives with Alt+] and Alt+[', async () => {

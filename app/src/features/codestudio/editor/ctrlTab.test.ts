@@ -17,6 +17,7 @@ import type { CodeEditor } from './create';
 import {
   configureTestCommands,
   ghostAt,
+  keyEvent,
   mount,
   press,
   resetSettings,
@@ -193,6 +194,24 @@ describe('with the dispatcher: the page tabs', () => {
     );
     expect(active()).toBe('t2');
     expect(editor.getText()).toBe('pri');
+  });
+
+  it('leaves the document alone for editing keys typed in the search field', async () => {
+    const editor = await mount({ language: 'python', text: 'a\nb\nc', caret: 0 });
+    editor.showGhost([ghostAt(editor, 'x = 1')]);
+    editor.run('find');
+    const field = editor.view.dom.querySelector<HTMLInputElement>('.cm-search input[name="search"]');
+    if (!field) throw new Error('the search panel did not open');
+    field.focus();
+    expect(document.activeElement).toBe(field);
+    const type = (key: string, mods: Parameters<typeof keyEvent>[1]) => field.dispatchEvent(keyEvent(key, mods));
+    type('k', { ctrl: true, shift: true });
+    type('ArrowDown', { alt: true });
+    type('/', { ctrl: true });
+    expect(editor.getText()).toBe('a\nb\nc');
+    type('Tab', { ctrl: true });
+    expect(editor.getText()).toBe('a\nb\nc');
+    expect(active()).toBe('t2');
   });
 
   it('keeps Ctrl+Tab from the editor’s parent', async () => {

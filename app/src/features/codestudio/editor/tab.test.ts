@@ -175,6 +175,17 @@ describe('leaving the editor', () => {
     expect(press(editor, 'Tab').defaultPrevented).toBe(true);
   });
 
+  it('disarms on a click or a tap in the text', async () => {
+    for (const type of ['mousedown', 'pointerdown']) {
+      const editor = await mount({ language: 'python', text: '' });
+      press(editor, 'Escape');
+      editor.view.contentDOM.dispatchEvent(new MouseEvent(type, { bubbles: true, cancelable: true }));
+      expect(press(editor, 'Tab').defaultPrevented).toBe(true);
+      expect(text(editor)).toBe('    ');
+      unmountAll();
+    }
+  });
+
   it('makes Tab move focus after Ctrl+M, and indent again after a second Ctrl+M', async () => {
     const editor = await mount({ language: 'python', text: 'x', caret: 0 });
     press(editor, 'm', { ctrl: true });
