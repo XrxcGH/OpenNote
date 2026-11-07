@@ -140,6 +140,11 @@ pub fn install_status(paths: State<'_, Paths>) -> IpcResult<InstallStatus> {
 /// Opens the Windows folder picker. Returns `None` when the person cancels.
 #[tauri::command]
 pub async fn install_pick_folder(window: WebviewWindow, initial: Option<String>) -> IpcResult<Option<String>> {
+    // The end-to-end build answers from its environment, because a spec cannot reach the Windows picker.
+    #[cfg(feature = "test-endpoints")]
+    if let Some(folder) = crate::test_pick::answer(crate::interop::pick::PickKind::Folder) {
+        return Ok(Some(folder));
+    }
     let owner = crate::desktop::dialog_owner(&window);
     tauri::async_runtime::spawn_blocking(move || pick_folder(owner, initial))
         .await

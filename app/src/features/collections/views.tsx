@@ -5,6 +5,7 @@ import { t } from '../../strings/t';
 import { Button } from '../../ui';
 import { displayValue, fieldNamed } from '../search';
 import type { Field } from '../search';
+import { boardColumns } from './engine';
 import type { CollectionDef, Group, Row } from './engine';
 import styles from './collections.module.css';
 
@@ -169,9 +170,10 @@ export function GalleryView({ groups, names, onOpen }: ViewProps) {
   );
 }
 
-export function BoardView({ groups, names, def, onOpen, onEdit }: ViewProps) {
+export function BoardView({ groups: found, rows, names, def, onOpen, onEdit }: ViewProps) {
   const [over, setOver] = useState<string | null>(null);
   if (!def.groupBy) return <p className={styles.note}>{t('qolSearch.collections.boardNeedsGroup')}</p>;
+  const groups = boardColumns(found, rows, def, { none: t('qolSearch.collections.noValue'), ...words() });
   const movable = !groups.some((group) =>
     group.rows.some((row) => fieldNamed(row.fields, def.groupBy)?.type === 'date'),
   );

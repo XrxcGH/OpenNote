@@ -61,6 +61,7 @@ export const shortcuts = {
     format: 'Format',
     insert: 'Insert',
     table: 'Tables',
+    code: 'Code editor',
     object: 'Objects',
   },
   fixed: {

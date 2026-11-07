@@ -48,7 +48,9 @@ export type ToolId =
   | 'kit-math'
   | 'kit-mechdyn'
   | 'kit-physics'
-  | 'kitmusic';
+  | 'kitmusic'
+  /** The code studio (code:L04 builds the window from Beta 12). */
+  | 'code';
 
 export interface ToolDef {
   id: ToolId;
@@ -104,6 +106,7 @@ export const TOOLS: readonly ToolDef[] = [
   { id: 'kit-math', title: 'kitMath.title', width: 560 },
   { id: 'kit-mechdyn', title: 'kitMechDyn.title', width: 560 },
   { id: 'kit-physics', title: 'kitPhysics.title', width: 560 },
+  { id: 'code', title: 'codeStudio.studio.title', width: 640 },
 ];
 
 export const isToolId = (value: unknown): value is ToolId => TOOLS.some((tool) => tool.id === value);

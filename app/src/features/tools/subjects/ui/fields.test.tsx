@@ -2,15 +2,15 @@
 // A matrix names a bad cell, and the seed field refuses a bad seed. The coefficient table gives verdicts in words.
 // A figure goes on the page as a block that reopens its tool. At phone width in the dark theme nothing scrolls the
 // page sideways.
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { useState } from 'react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { page } from 'vitest/browser';
+import { page, userEvent } from 'vitest/browser';
 import { expectNoAxeViolations, renderUi } from '../../../../test';
 import { INSERT_EVENT, SUBJECT_TABLES_EVENT } from '../../flags';
 import { registerKit, resetKits, takeKitInputs } from '../../kits/registry';
 import { mountKitFigure } from '../figure/block';
-import { ColumnPicker, DataField, MatrixField, SeedField } from './fields';
+import { ColumnPicker, DataField, ListField, MatrixField, SeedField } from './fields';
 import type { DataInput, MatrixInputValue, RoleValue } from './input';
 import { emptyMatrix, readDataInput } from './input';
 import { CoefficientTable, SvgDiagram } from './output';
@@ -64,7 +64,7 @@ describe('subject fields', () => {
   it('reads typed data, then a table from the open page', async () => {
     const { container } = renderUi(<DataHarness />);
     fireEvent.change(screen.getByLabelText('Data'), { target: { value: 'x\n1\n2\n3' } });
-    expect(screen.getByText('3 rows and 1 columns.')).toBeTruthy();
+    expect(screen.getByText('3 rows and 1 column.')).toBeTruthy();
 
     const answer = (event: Event) => {
       (event as CustomEvent<{ blocks: unknown }>).detail.blocks = [TABLE];
@@ -77,6 +77,37 @@ describe('subject fields', () => {
     const response = screen.getByLabelText('Response') as HTMLSelectElement;
     expect([...response.options].map((o) => o.textContent)).toEqual(['Choose a column', 'dose', 'response']);
     await expectNoAxeViolations(container);
+  });
+
+  it('says which file it read, and says when a damaged file could not be read', async () => {
+    renderUi(<DataHarness />);
+    const box = screen.getByLabelText('Data') as HTMLTextAreaElement;
+    const picker = screen.getByLabelText('Choose a CSV, TSV, or text file');
+    fireEvent.change(box, { target: { value: 'keep\n1' } });
+    await userEvent.upload(picker, new File(['x,y\n1,2\n3,4'], 'scores.csv', { type: 'text/csv' }));
+    expect(await screen.findByText('Read scores.csv.')).toBeTruthy();
+    expect(screen.getByText('2 rows and 2 columns.')).toBeTruthy();
+    // A binary file is not data: the box keeps its text, and the last file's name goes away.
+    const bytes = new Uint8Array([0x50, 0x4b, 0x03, 0x04, 0x00, 0x00, 0xff, 0xfe, 0x00, 0x01, 0x80, 0x81, 0x00, 0x02]);
+    await userEvent.upload(picker, new File([bytes], 'broken.xlsx'));
+    expect(await screen.findByText('The file could not be read.')).toBeTruthy();
+    expect(box.value).toBe('x,y\n1,2\n3,4');
+    expect(screen.queryByText('Read scores.csv.')).toBeNull();
+    expect(screen.getByText('2 rows and 2 columns.')).toBeTruthy();
+  });
+
+  it('counts a single value, cell, row, and column in the singular', () => {
+    function Lines() {
+      const [text, setText] = useState('4');
+      return <ListField label="Values" value={text} onChange={setText} />;
+    }
+    renderUi(<Lines />);
+    expect(screen.getByText(/1 value\./)).toBeTruthy();
+    cleanup();
+    renderUi(<DataHarness />);
+    fireEvent.change(screen.getByLabelText('Data'), { target: { value: 'x\n1\n2\n3\n4\nabc' } });
+    expect(screen.getByText('5 rows and 1 column.')).toBeTruthy();
+    expect(screen.getByText(/^1 cell was not read and counts as missing\./)).toBeTruthy();
   });
 
   it('says when no page answers', () => {
