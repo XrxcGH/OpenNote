@@ -10,7 +10,10 @@
 import { createHash } from 'node:crypto';
 import { readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
+import process from 'node:process';
 import { fileURLToPath } from 'node:url';
+
+const { fetch } = globalThis;
 
 const VERSION = '314.0.7';
 const BASE = `https://cdn.jsdelivr.net/pyodide/v${VERSION}/full/`;
