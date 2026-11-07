@@ -1,0 +1,182 @@
+// The font box, size box, weight list, and substitution table in a real browser: type-ahead, the size message,
+// the open list's paint time with 1,000 fonts, and axe in both themes.
+import { fireEvent, screen } from '@testing-library/react';
+import { useState } from 'react';
+import { describe, expect, it, vi } from 'vitest';
+import type { FontFamily } from '../../platform/types';
+import { FAKE_FONTS } from '../../platform/web/fonts';
+import { expectNoAxeViolations, renderUi } from '../../test';
+import { FontPicker } from './FontPicker';
+import { FontSubstitutions } from './FontSubstitutions';
+import { createCatalog } from './service';
+import { SizeBox } from './SizeBox';
+import { WeightPicker } from './WeightPicker';
+
+const base = FAKE_FONTS[0].faces[0];
+
+function many(count: number): FontFamily[] {
+  return Array.from({ length: count }, (_, i) => ({
+    name: `Family ${String(i).padStart(4, '0')}`,
+    generic: 'sans-serif' as const,
+    monospace: false,
+    faces: [base],
+  }));
+}
+
+const NAMED = createCatalog({
+  families: ['Arial', 'Georgia', 'Times New Roman', 'Verdana'].map((name) => ({ ...many(1)[0], name })),
+});
+const box = () => screen.getByRole('combobox', { name: 'Font' });
+
+describe('the font box', () => {
+  it('type-ahead "Times" then Enter picks Times New Roman', () => {
+    const onPick = vi.fn();
+    renderUi(<FontPicker catalog={NAMED} value="Arial" onPick={onPick} />);
+    fireEvent.focus(box());
+    fireEvent.change(box(), { target: { value: 'Times' } });
+    const active = document.getElementById(box().getAttribute('aria-activedescendant') ?? '');
+    expect(active?.textContent).toBe('Times New Roman');
+    fireEvent.keyDown(box(), { key: 'Enter' });
+    expect(onPick).toHaveBeenCalledWith('Times New Roman');
+  });
+
+  it('keeps a typed name the device lacks, and refuses a bad one', () => {
+    const onPick = vi.fn();
+    renderUi(<FontPicker catalog={NAMED} value="Arial" onPick={onPick} />);
+    fireEvent.change(box(), { target: { value: 'Aptos' } });
+    fireEvent.keyDown(box(), { key: 'Enter' });
+    expect(onPick).toHaveBeenCalledWith('Aptos');
+    fireEvent.change(box(), { target: { value: 'x"; display: none' } });
+    fireEvent.keyDown(box(), { key: 'Enter' });
+    expect(screen.getByRole('alert').textContent).toContain('Enter a font name');
+    expect(onPick).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows the notice for a missing font, and is blank for a mixed selection', () => {
+    const { unmount } = renderUi(<FontPicker catalog={NAMED} value="Calibri" onPick={vi.fn()} />);
+    expect(screen.getByText('(not installed: showing Carlito)')).toBeTruthy();
+    expect((box() as HTMLInputElement).value).toBe('Calibri');
+    expect(box().getAttribute('aria-describedby')).not.toBeNull();
+    unmount();
+    renderUi(<FontPicker catalog={NAMED} value={null} onPick={vi.fn()} />);
+    expect((box() as HTMLInputElement).value).toBe('');
+  });
+
+  it('opens a 1,000-font list in under 50 ms and draws only the rows in view', () => {
+    const catalog = createCatalog({ families: many(1000) });
+    renderUi(<FontPicker catalog={catalog} value="Family 0000" onPick={vi.fn()} />);
+    const started = performance.now();
+    fireEvent.keyDown(box(), { key: 'ArrowDown' });
+    const list = screen.getByRole('listbox', { name: 'Fonts' });
+    const elapsed = performance.now() - started;
+    expect(list.querySelectorAll('[role="option"]').length).toBeLessThan(30);
+    expect(list.querySelector('[role="option"]')?.getAttribute('aria-setsize')).toBe('1005');
+    expect(elapsed).toBeLessThan(50);
+  });
+
+  it('draws each visible name in its own face', () => {
+    renderUi(<FontPicker catalog={NAMED} value="Arial" onPick={vi.fn()} />);
+    fireEvent.keyDown(box(), { key: 'ArrowDown' });
+    const georgia = screen.getByRole('option', { name: 'Georgia' });
+    expect(georgia.style.fontFamily).toContain('Georgia');
+  });
+
+  for (const theme of ['light', 'dark'] as const) {
+    it(`has no axe violations when open, in the ${theme} theme`, async () => {
+      const { container } = renderUi(<FontPicker catalog={NAMED} value="Calibri" onPick={vi.fn()} />, { theme });
+      fireEvent.keyDown(box(), { key: 'ArrowDown' });
+      expect(box().getAttribute('aria-expanded')).toBe('true');
+      await expectNoAxeViolations(container);
+    });
+  }
+});
+
+describe('the size box', () => {
+  function Harness({ onCommit }: { onCommit(points: number): void }) {
+    const [value, setValue] = useState<number | null>(11);
+    return (
+      <SizeBox
+        value={value}
+        onCommit={(points) => {
+          setValue(points);
+          onCommit(points);
+        }}
+      />
+    );
+  }
+  const size = () => screen.getByRole('combobox', { name: 'Font size' });
+
+  it.each([
+    ['12pt', 12],
+    ['1in', 72],
+    ['16px', 12],
+    ['10.5', 10.5],
+  ])('commits %s as %s points', (typed, points) => {
+    const onCommit = vi.fn();
+    renderUi(<Harness onCommit={onCommit} />);
+    fireEvent.change(size(), { target: { value: typed } });
+    fireEvent.keyDown(size(), { key: 'Enter' });
+    expect(onCommit).toHaveBeenCalledWith(points);
+  });
+
+  it.each(['0', '1639'])('refuses %s with the range message', (typed) => {
+    const onCommit = vi.fn();
+    renderUi(<Harness onCommit={onCommit} />);
+    fireEvent.change(size(), { target: { value: typed } });
+    fireEvent.keyDown(size(), { key: 'Enter' });
+    expect(screen.getByRole('alert').textContent).toBe('The number must be between 1 and 1638.');
+    expect(size().getAttribute('aria-invalid')).toBe('true');
+    expect(onCommit).not.toHaveBeenCalled();
+  });
+
+  it('chooses from the list with arrows and Enter, and Escape goes back', () => {
+    const onCommit = vi.fn();
+    renderUi(<Harness onCommit={onCommit} />);
+    fireEvent.keyDown(size(), { key: 'ArrowDown' }); // Opens on 11.
+    fireEvent.keyDown(size(), { key: 'ArrowDown' });
+    fireEvent.keyDown(size(), { key: 'Enter' });
+    expect(onCommit).toHaveBeenCalledWith(12);
+    fireEvent.change(size(), { target: { value: '99' } });
+    fireEvent.keyDown(size(), { key: 'Escape' });
+    expect((size() as HTMLInputElement).value).toBe('12');
+  });
+
+  it('is blank for a mixed selection and has no axe violations', async () => {
+    const { container } = renderUi(<SizeBox value={null} onCommit={vi.fn()} />);
+    expect((size() as HTMLInputElement).value).toBe('');
+    fireEvent.click(size());
+    await expectNoAxeViolations(container);
+  });
+});
+
+describe('the weight list', () => {
+  it('a family with faces 300, 400, 600, and 700 lists them, and Semibold sets 600', () => {
+    const onPick = vi.fn();
+    const fake: FontFamily = {
+      ...many(1)[0],
+      faces: [300, 400, 600, 700].map((weight) => ({ ...base, weight })),
+    };
+    renderUi(<WeightPicker family={fake} weight={400} onPick={onPick} />);
+    const select = screen.getByRole('combobox', { name: 'Font weight' });
+    expect([...select.querySelectorAll('option')].map((o) => o.textContent)).toEqual([
+      'Light',
+      'Regular',
+      'Semibold',
+      'Bold',
+    ]);
+    fireEvent.change(select, { target: { value: '600' } });
+    expect(onPick).toHaveBeenCalledWith(600);
+  });
+});
+
+describe('the substitution table', () => {
+  it('lists only the missing fonts, with the automatic stand-in named', async () => {
+    const { container } = renderUi(<FontSubstitutions catalog={NAMED} used={['Arial', 'Calibri', 'Aptos', '+body']} />);
+    expect(screen.getAllByRole('row')).toHaveLength(3);
+    const calibri = screen.getByRole('combobox', { name: 'Shown as: Calibri' });
+    expect(calibri.querySelector('option')?.textContent).toBe('Automatic (Carlito)');
+    const aptos = screen.getByRole('combobox', { name: 'Shown as: Aptos' });
+    expect(aptos.querySelector('option')?.textContent).toBe('Automatic (OpenNote Sans)');
+    await expectNoAxeViolations(container);
+  });
+});
