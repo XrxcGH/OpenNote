@@ -36,3 +36,9 @@ We will write the function library in the repository, one file per family under 
 - Family lanes can work in parallel with disjoint files.
 - formula.js may serve as a development-only cross-check if the owner agrees (PLAN.md decision 8); it never ships.
 - LibreOffice is a development and nightly CI tool only; it is never bundled.
+
+## Implementation notes
+
+- `engine/formula/fn/types.ts` defines `FnSpec2`; `fn/index.ts` builds the registry from one file per family and refuses two functions with one name. `functions.ts` adapts `FnSpec2` to the current compiler until arrays land: a first parameter of kind `range` makes an aggregate, and a `lazy` parameter makes a special form.
+- The numeric kits live in `app/src/core/num/`; `features/tools/kits/num/` re-exports them.
+- `tools/sheet-oracle/oracle.ts` writes cases into a `.fods` file with one sheet per case and the formulas in Excel's syntax (the `msoxl:` formula namespace), converts it to CSV with LibreOffice, and reads the raw values. `--write` fills the `calc-oracle` cases and records the LibreOffice version; `--check` fails on a changed value. The `nightly-sheet-oracle` workflow runs both.

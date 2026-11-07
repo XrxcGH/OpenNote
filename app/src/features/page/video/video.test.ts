@@ -146,7 +146,9 @@ describe('the content security policy', () => {
   it('loads nothing remote for media, scripts, or objects', () => {
     for (const name of ['media-src', 'img-src', 'connect-src', 'default-src']) {
       expect(
-        directive(name).filter((source) => /^https?:\/\/(?!(opennote-asset|ipc)\.localhost)/.test(source)),
+        directive(name).filter((source) =>
+          /^https?:\/\/(?!(opennote-asset|opennote-pack|ipc)\.localhost)/.test(source),
+        ),
       ).toEqual([]);
     }
     expect(directive('frame-src')).toContain('https://www.youtube-nocookie.com');

@@ -1,6 +1,7 @@
 // Getting images onto the page (Phase 4 ARCHITECTURE.md sections 12.1, 12.2, and 6.1): each image goes through the
 // page's import queue, and one batch adds the assets and inserts the image blocks. On a freeform page they float
 // just below the current text box, or at the drop point; on a flow page they flow after the current block.
+import './text';
 import { newId } from '../../../editor/ids';
 import type { BlockId, Edit, Frame, ImportedAsset, NewBlock, OpenPage, PageRect } from '../../../services/pages/types';
 import { t } from '../../../strings/t';
@@ -51,19 +52,25 @@ export type Placement = { kind: 'point'; x: number; y: number } | { kind: 'after
 
 const queues = new WeakMap<OpenPage, ImportQueue>();
 
-/** The quiet progress bar: it appears after 300 ms with "Adding 12 images" and goes when the queue is empty. */
-function progressFor(host: () => HTMLElement | null): (state: { pending: number }) => void {
+/**
+ * The quiet progress bar: it appears after 300 ms with "Adding 12 images" (or what `label` says for the count) and goes
+ * when nothing is pending. Attachments use it too.
+ */
+export function progressFor(
+  host: () => HTMLElement | null,
+  label: (count: number) => string = (count) => t('images.adding', { count }),
+): (state: { pending: number }) => void {
   let element: HTMLElement | null = null;
   let timer: ReturnType<typeof setTimeout> | null = null;
   let total = 0;
   const render = (pending: number) => {
     if (!element) return;
     const bar = element.querySelector('progress')!;
-    const label = t('images.adding', { count: total });
-    element.firstChild!.textContent = label;
+    const said = label(total);
+    element.firstChild!.textContent = said;
     bar.max = total;
     bar.value = total - pending;
-    bar.setAttribute('aria-label', label);
+    bar.setAttribute('aria-label', said);
   };
   return ({ pending }) => {
     if (pending === 0) {

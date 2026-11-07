@@ -69,11 +69,11 @@ describe('reading dates', () => {
     expect(parseDate(text, order as 'mdy' | 'dmy')).toBeNull();
   });
 
-  it('counts days since 1970, and converts Excel serials', () => {
-    expect(parseDate('1970-01-02', 'mdy')).toBe(1);
+  it('counts days since 1899-12-30, and converts Excel serials', () => {
+    expect(parseDate('1899-12-31', 'mdy')).toBe(1);
     expect(daysToIso(excelSerialToDays(45565))).toBe('2024-09-30');
     expect(daysToIso(excelSerialToDays(61))).toBe('1900-03-01');
-    expect(daysToIso(-1)).toBe('1969-12-31');
+    expect(daysToIso(-1)).toBe('1899-12-29');
   });
 });
 
@@ -84,7 +84,7 @@ describe('typed input', () => {
     expect(parseInput(column('percent'), '25', EN_US)).toBe(0.25);
     expect(parseInput(column('percent'), '25%', EN_US)).toBe(0.25);
     expect(parseInput(column('number'), '7%', EN_US)).toBe(0.07);
-    expect(parseInput(column('date'), '30.09.2026', DE_DE)).toBe(20726);
+    expect(parseInput(column('date'), '30.09.2026', DE_DE)).toBe(46295);
     expect(parseInput(column('checkbox'), 'Yes', EN_US)).toBe(true);
     expect(parseInput(column('checkbox'), '[ ]', EN_US)).toBe(false);
     expect(parseInput(column('text'), ' a ', EN_US)).toBe(' a ');
@@ -111,8 +111,8 @@ describe('canonical text', () => {
     ['number', -3, '-3'],
     ['number', 1e21, '1e+21'],
     ['percent', 0.25, '0.25'],
-    ['date', 20726, '2026-09-30'],
-    ['date', 20726.5, '2026-09-30T12:00'],
+    ['date', 46295, '2026-09-30'],
+    ['date', 46295.5, '2026-09-30T12:00'],
     ['checkbox', true, '[x]'],
     ['checkbox', false, '[ ]'],
     ['text', '**Seed** trays', '**Seed** trays'],
@@ -147,7 +147,7 @@ describe('display text', () => {
     expect(formatValue(0.256, column('percent'), EN_US)).toBe('25.6%');
     expect(formatValue(0.256, column('percent', { decimals: 0 }), EN_US)).toBe('26%');
     expect(formatValue(3.14159, column('number', { decimals: 2 }), EN_US)).toBe('3.14');
-    expect(formatValue(20726, column('date'), EN_US)).toBe('Sep 30, 2026');
+    expect(formatValue(46295, column('date'), EN_US)).toBe('Sep 30, 2026');
   });
 
   it('shows errors as words and text in typed columns as typed', () => {

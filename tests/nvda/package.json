@@ -1,0 +1,10 @@
+{
+  "name": "opennote-nvda-tests",
+  "private": true,
+  "type": "module",
+  "description": "Guidepup and its setup tool for the nightly NVDA run, kept away from the repository's own packages so no other job installs them.",
+  "devDependencies": {
+    "@guidepup/guidepup": "0.35.0",
+    "@guidepup/setup": "0.29.1"
+  }
+}

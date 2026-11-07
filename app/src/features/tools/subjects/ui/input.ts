@@ -21,9 +21,20 @@ export interface DataInput {
 
 export const emptyDataInput = (): DataInput => ({ text: '', table: null });
 
-/** Reads a data field. Blank text is an empty data set. */
-export const readDataInput = (input: DataInput): DataSet =>
-  input.text.trim() === '' ? emptyDataSet() : parseDataText(input.text, { decimal: input.decimal ?? 'auto' });
+let lastRead: { text: string; decimal: DecimalChoice; data: DataSet } | null = null;
+
+/**
+ * Reads a data field. Blank text is an empty data set. A tool reads the same text in its fields and again in its
+ * calculation on every change, so the last reading is kept: a big paste is parsed once, not once per reader.
+ */
+export function readDataInput(input: DataInput): DataSet {
+  if (input.text.trim() === '') return emptyDataSet();
+  const decimal = input.decimal ?? 'auto';
+  if (lastRead && lastRead.text === input.text && lastRead.decimal === decimal) return lastRead.data;
+  const data = parseDataText(input.text, { decimal });
+  lastRead = { text: input.text, decimal, data };
+  return data;
+}
 
 /** A page table as tab-separated text, the way a data field keeps it. Tabs and line breaks in cells become spaces. */
 export function tableText(table: PageTable): string {

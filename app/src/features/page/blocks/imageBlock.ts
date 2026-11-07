@@ -2,11 +2,12 @@
 // at the size the asset table gives, so layout never shifts and the page never decodes an image to learn its size.
 // The crop is plain layout in percent, so every WebView and print show the same part. A selected image shows its
 // handles, a small toolbar, and a "No alt text" badge when it has neither a description nor the decorative mark.
+import '../images/text';
 import type { AssetJson, BlockJson, Frame } from '../../../services/pages/types';
 import { t } from '../../../strings/t';
 import { assetTable } from '../images/assets';
 import type { AssetTable } from '../images/assets';
-import { arrowStep, trackDrag } from '../images/drag';
+import { arrowStep, ownsItsDrag, trackDrag } from '../images/drag';
 import type { Crop, Handle, Rect } from '../images/geometry';
 import { cropOf, FREEFORM_MAX_WIDTH, HANDLES, heightFor, initialSize, resizeRect } from '../images/geometry';
 import { shownImageIds } from '../images/shown';
@@ -117,6 +118,9 @@ class ImageView implements BlockView, ImageHandle {
     element.dataset.appMenu = 'page.image';
     this.frameElement = element.appendChild(document.createElement('div'));
     this.frameElement.className = styles.frame;
+    // The picture is the block's body: dragging it moves the image in Select and type, as a grip moves a text box
+    // (objects/objectsTool.ts). A click still selects it, and the handles at its edges still resize it.
+    this.frameElement.dataset.blockDrag = '';
     element.addEventListener('pointerdown', (event) => this.onPointerDown(event));
     element.addEventListener('dblclick', () => {
       if (this.editable()) void import('../images/cropMode').then(({ startCrop }) => startCrop(this));
@@ -391,7 +395,7 @@ class ImageView implements BlockView, ImageHandle {
   private addGapHandle(): void {
     const wrap = this.wrap();
     if (wrap !== 'left' && wrap !== 'right') return;
-    const button = this.element.appendChild(document.createElement('button'));
+    const button = ownsItsDrag(this.element.appendChild(document.createElement('button')));
     button.type = 'button';
     button.className = `${styles.handle} ${styles.gapHandle}`;
     button.dataset.side = wrap;
@@ -406,7 +410,7 @@ class ImageView implements BlockView, ImageHandle {
   private addHandles(): void {
     const handles = this.floating() ? HANDLES : (['se'] as const);
     for (const handle of handles) {
-      const button = this.element.appendChild(document.createElement('button'));
+      const button = ownsItsDrag(this.element.appendChild(document.createElement('button')));
       button.type = 'button';
       button.className = `${styles.handle} ${styles[handle]}`;
       button.tabIndex = -1;

@@ -34,6 +34,8 @@ describe('commands work from the keyboard', { skip: skipReason() }, () => {
     await browser.$('[role="option"]').waitForExist({ timeout: 5_000 });
     await browser.keys(Key.Enter);
     await browser.waitUntil(async () => (await toggle.getAttribute('aria-checked')) !== before, { timeout: 5_000 });
+    // The palette closes after it runs the command; a chord sent while it is still closing goes nowhere.
+    await box.waitForExist({ reverse: true, timeout: 5_000 });
   });
 
   it('Ctrl+/ lists the shortcuts, and Escape closes the list', async () => {

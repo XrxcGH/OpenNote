@@ -1,4 +1,5 @@
 // The Add captions to a video command: the video block with the caret, or the only video on the page.
+import './text';
 import { t } from '../../../strings/t';
 import { showToast } from '../../../ui';
 import { shownLayer } from '../mount';

@@ -126,6 +126,9 @@ export const graph3d = {
       exact: 'Exactly {value}',
       steps: 'Steps',
       bad: 'Check the curves and the limits: {message}',
+      badNumbers: 'From, To, and the axis position must be numbers, such as 0 or pi/2.',
+      badOrder: 'From must be less than To. Enter the smaller x in From and the larger x in To.',
+      badCurve: 'Enter the outer curve, such as sqrt(x).',
       stepDiskSetup:
         'Turning about the horizontal line y = {k} gives washers of outer radius R(x) and inner radius r(x).',
       stepShellSetup:
