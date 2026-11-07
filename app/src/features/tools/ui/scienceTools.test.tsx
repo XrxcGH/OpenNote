@@ -6,7 +6,7 @@ import { expectNoAxeViolations, renderUi } from '../../../test';
 import { INSERT_EVENT } from '../flags';
 import { ConstantsTool } from './ConstantsTool';
 import { LatexTool, convertPaste } from './LatexTool';
-import { SigFigsTool, shapeNumber } from './SigFigsTool';
+import { SigFigsTool, figureCount, shapeNumber } from './SigFigsTool';
 
 interface Detail {
   text?: string;
@@ -37,6 +37,12 @@ describe('the constants picker', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Insert the value of Planck constant' }));
     await userEvent.click(screen.getByRole('button', { name: 'Insert the symbol and value of Planck constant' }));
     expect(inserted.map((one) => one.text)).toEqual(['h', '6.62607015×10⁻³⁴ J s', 'h = 6.62607015×10⁻³⁴ J s']);
+  });
+
+  it('finds the gravitational constant by the adjective, as well as by gravitation', async () => {
+    renderUi(<ConstantsTool />);
+    await userEvent.fill(screen.getByRole('textbox', { name: 'Search constants' }), 'gravitational constant');
+    expect(screen.getByText('Newtonian constant of gravitation')).toBeTruthy();
   });
 
   it('inserts an equation when asked to, and shows the uncertainty and the calculator name', async () => {
@@ -105,6 +111,17 @@ describe('Insert LaTeX', () => {
       .toContain('LaTeX problem');
   });
 
+  it('does not insert source that does not draw, so a selected equation is never replaced by raw text', async () => {
+    renderUi(<LatexTool />);
+    await userEvent.fill(screen.getByRole('textbox', { name: 'LaTeX' }), '\frac{a');
+    await expect
+      .poll(() => screen.queryByRole('alert')?.textContent ?? '', { timeout: 20_000 })
+      .toContain('LaTeX problem');
+    const insert = screen.getByRole('button', { name: 'Insert equation' }) as HTMLButtonElement;
+    expect(insert.disabled).toBe(true);
+    expect(inserted).toEqual([]);
+  });
+
   it('turns pasted marks into a shape', () => {
     expect(convertPaste('$$a^2$$')).toEqual({ source: 'a^2', display: true });
     expect(convertPaste('\\(a^2\\)')).toEqual({ source: 'a^2', display: false });
@@ -127,6 +144,18 @@ describe('the significant-figures helper', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Scientific' }));
     expect(screen.getByText('1×10³')).toBeTruthy();
     await expectNoAxeViolations(container);
+  });
+
+  it('refuses a figure count below one instead of saying it rounded to it', async () => {
+    renderUi(<SigFigsTool />);
+    await userEvent.fill(screen.getByRole('textbox', { name: 'Number' }), '0.0004567');
+    await userEvent.fill(screen.getByRole('spinbutton', { name: 'Round to this many figures' }), '-1');
+    expect(screen.queryByText(/Rounded to/)).toBeNull();
+    expect(screen.getByText(/whole number of figures from 1 to 50/)).toBeTruthy();
+    expect(figureCount('-1')).toBeNull();
+    expect(figureCount('0')).toBeNull();
+    expect(figureCount('3')).toBe(3);
+    expect(shapeNumber('0.0004567', '-1', 'plain')).toBe('0.0004567');
   });
 
   it('calculates by the rules and says which rule it used', async () => {

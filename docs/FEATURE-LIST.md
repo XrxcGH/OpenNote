@@ -727,8 +727,8 @@ Open it with the command "Open the code studio".
 | Open in new tab | Opens the page in a new tab. | Ctrl+Enter |
 | Duplicate tab | Opens the current page again in a second tab. |  |
 | Close tab | Closes the current tab. | Ctrl+W |
-| Go to the next tab | Goes to the next tab. | Ctrl+Tab |
-| Go to the previous tab | Goes to the previous tab. | Ctrl+Shift+Tab |
+| Go to the next tab | Goes to the next tab. | Ctrl+Tab, Ctrl+PageDown |
+| Go to the previous tab | Goes to the previous tab. | Ctrl+Shift+Tab, Ctrl+PageUp |
 | Reopen closed tab | Opens the tab you closed last. | Ctrl+Shift+T |
 | Open in new window | Opens the page in a new window. |  |
 | Focus mode | Hides the panes and bars so only the page shows. | F11 |

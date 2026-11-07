@@ -21,7 +21,8 @@ Thirteen tool windows work engineering, science, math, earth science, and reason
 
 ## Live calculation blocks
 
-- In the solid mechanics, fluids and heat transfer, and dynamics and control kits, Insert, then Live calculation block, keeps the calculation on the page.
+- Every kit can keep a calculation on the page: choose Live calculation block beside the other Insert buttons (in the solid mechanics, fluids and heat transfer, and dynamics and control kits it is in the Insert menu). This includes aerospace, engineering mathematics, physics, chemistry and materials, the chemistry calculators, earth sciences, economics and finance, and molecular biology.
+- The block saves what was typed in the tool's fields, including its choices, so Open in tool puts them back.
 - The block shows the tool, the answer, and the key results. Search and export keep the numbers.
 - Open in tool reopens the tool with the values the block saved, so you can change one and work it again.
 - The mechanisms and dynamics kit has a calculation block of its own that works the same way.
