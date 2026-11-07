@@ -1,20 +1,34 @@
 // Smart tables without an editor (Phase 7): how typed cells become a typed table, what a cell shows, fill, sort,
 // filter, number formats, totals, and the chart a table gives. The operations run against a fake table block that
 // keeps the data a real one would send.
-import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { describe, expect, it, vi } from 'vitest';
+import { tableDataToDoc } from '../../../editor/table/mapping';
 import { createMarkdownCache } from '../../../editor/markdown';
 import type { TableData } from '../../../editor/schema/specs';
 import type { TableExtraHost } from '../../page';
 import { EN_US, formatValue } from '../engine';
+import type { Table } from '../engine';
+import type { WorkerLike } from '../engine/worker/client';
+import { respond } from '../engine/worker/run';
+import { contribute } from '../sheet';
+import { applyToTable, fingerprint, readSheet, sheetPatch } from '../sheet/model';
+import type { Sheet } from '../sheet/model';
+import { applyPatch } from '../sheet/model/json';
+import type { Json } from '../sheet/model/json';
+import { gridOfData, PageBook, valuesPatch } from './book';
+import { buildDecorations, errorLabel, spillEdges } from './display';
+import { dataMenu } from './menu';
 import { EMPTY_SMART, pruneSmart, readSmart, smartPatch, withColumn } from './data';
 import type { SmartData } from './data';
 import { filledText, shiftFormula } from './fill';
-import { buildModel, inferType, shownFor } from './model';
-import type { Grid } from './model';
+import { buildModel, inferType, prepareModel, shownFor } from './model';
+import type { Grid, SmartModel } from './model';
 import { addChart, fill, filterBy, setFormat, setTotal, sortColumn } from './ops';
 import { applyView, deleteView, matchesView, renameView, saveView, updateView, viewNameProblem } from './savedViews';
 import type { Range, SmartInstance } from './ops';
 
+const BETA8 = '../../../../../docs/format/fixtures/table-sheet/beta8-smart.json';
 const COLUMNS = ['item', 'qty', 'price', 'total'];
 const TEXT = [
   ['Item', 'Qty', 'Price', 'Total'],
@@ -328,5 +342,194 @@ describe('saved views', () => {
     expect(readSmart({ smart: { saved: [{ id: 'a', name: '' }, { id: 'b', name: 'x' }, 7] } }).saved).toEqual([
       { id: 'b', name: 'x', filters: [] },
     ]);
+  });
+});
+
+describe('the sheet integration', () => {
+  const ROWS = [
+    ['Item', 'Qty', 'Price', 'Total'],
+    ['Pen', '2', '1.5', '=B1*C1'],
+    ['Ink', '3', '4', '=D1*2'],
+  ];
+  const withSheet = (texts: readonly (readonly string[])[], sheet: Record<string, unknown> = {}) => ({
+    ...dataOf(texts),
+    sheet,
+  });
+  const resultsOf = (data: TableData, stored: Record<string, unknown>) =>
+    buildModel(gridOfData(data), readSmart(stored), EN_US, readSheet(stored)).table;
+
+  it('writes the results of every dependent formula with the edit that changed an input (ADR 0061)', () => {
+    const stored = withSheet(ROWS);
+    const first = valuesPatch(stored, stored, undefined, resultsOf(stored, stored));
+    // 2 x 1.5 = 3, and 3 x 2 = 6, worked by hand.
+    expect(first).toEqual({
+      sheet: {
+        values: { row1: { total: 3 }, row2: { total: 6 } },
+        valuesOf: fingerprint({ ...stored, smart: undefined }),
+      },
+    });
+    const saved = { ...stored, sheet: first!.sheet as Record<string, unknown> };
+    const edited = dataOf(ROWS.map((row, r) => (r === 1 ? ['Pen', '4', '1.5', '=B1*C1'] : row)));
+    const patch = valuesPatch(saved, edited, undefined, resultsOf(edited, saved));
+    // 4 x 1.5 = 6 in Total of the edited row, and 6 x 2 = 12 in the formula that reads it.
+    expect(patch?.sheet).toEqual({
+      values: { row1: { total: 6 }, row2: { total: 12 } },
+      valuesOf: fingerprint({ ...edited, smart: undefined }),
+    });
+    // Undo is the inverse merge patch: it puts back both the cells and the values.
+    const after = applyPatch(saved.sheet as Json, patch!.sheet as Json) as Sheet;
+    expect(sheetPatch(after, saved.sheet as Sheet)).toEqual({
+      sheet: { values: { row1: { total: 3 }, row2: { total: 6 } }, valuesOf: (first!.sheet as Sheet).valuesOf },
+    });
+  });
+
+  it('keeps a page Beta 8 wrote without data.sheet until a formatting command gives it one', () => {
+    const page = JSON.parse(readFileSync(new URL(BETA8, import.meta.url), 'utf8')) as {
+      page: { blocks: { data: Record<string, unknown> }[] };
+    };
+    const stored = page.page.blocks[0].data;
+    const data = stored as unknown as TableData;
+    const results = resultsOf(data, stored);
+    const formulas = results.rows.flatMap((row) => row.cells.filter((cell) => cell.formula !== undefined));
+    expect(formulas).toHaveLength(4);
+    expect(formulas.every((cell) => cell.value !== null)).toBe(true);
+    expect(valuesPatch(stored, data, undefined, results)).toBeNull();
+    expect(Object.keys(stored)).toEqual(['header', 'columns', 'rows', 'smart']);
+    // Bold for the whole table: the first formatting command gives the block a sheet, then results are cached.
+    const formatted = applyToTable({}, { ...data, smart: stored.smart }, { font: { bold: true } });
+    const patch = valuesPatch(stored, data, formatted.patch ?? undefined, results);
+    const sheet = patch?.sheet as Sheet;
+    expect(sheet.styles).toBeDefined();
+    // The totals read their own row, so SUM and AVERAGE are circular, cached as Excel's #REF! (DESIGN 6.7). COUNTIF
+    // gives an error too: circular once its family lane lands, an unknown name before.
+    const circular = { e: '#REF!' };
+    expect(Object.values(sheet.values as Record<string, unknown>)).toEqual([
+      {
+        '01m3sbcmt0000000000000k003': circular,
+        '01m3sbcmt0000000000000k004': { e: expect.stringMatching(/^#(REF!|NAME\?)$/) },
+        '01m3sbcmt0000000000000k006': circular,
+        '01m3sbcmt0000000000000k007': circular,
+      },
+    ]);
+  });
+
+  it('shows the Excel error token with the words in a tooltip and a description for screen readers', () => {
+    const data = dataOf([...ROWS.slice(0, 1), ['x', '0', '1', '=C1/B1']]);
+    const model = buildModel(gridOfData(data), EMPTY_SMART, EN_US);
+    expect(shownFor(model, EMPTY_SMART, 0, 3, EN_US)).toEqual({ text: '#DIV/0!', kind: 'error', error: 'DIV0' });
+    const set = buildDecorations(tableDataToDoc(data), model, EMPTY_SMART, EN_US, (typed) => typed);
+    const attrs = set
+      .find()
+      .map((found) => (found as unknown as { type: { attrs: Record<string, string> } }).type.attrs);
+    expect(attrs).toEqual([
+      expect.objectContaining({
+        'data-shown': '#DIV/0!',
+        title: 'Divide by 0',
+        'aria-description': 'Divide by zero error',
+      }),
+    ]);
+  });
+
+  it('shows Circular for a cell in a circle of formulas, and says #BUSY! in words', () => {
+    const model = buildModel(gridOfData(dataOf([...ROWS.slice(0, 1), ['x', '1', '=D1', '=C1']])), EMPTY_SMART, EN_US);
+    expect(shownFor(model, EMPTY_SMART, 0, 2, EN_US)).toMatchObject({ text: 'Circular', error: 'CYCLE' });
+    expect(errorLabel('BUSY')).toEqual({ words: 'Still calculating', description: 'Still calculating' });
+  });
+
+  it('outlines the cells a formula spills over', () => {
+    const shown = {
+      table: {
+        columns: [],
+        rows: [
+          {
+            id: 'r0',
+            cells: [
+              { raw: '=X', formula: 'X', value: 1 },
+              { raw: '', value: 2, spill: true },
+            ],
+          },
+          {
+            id: 'r1',
+            cells: [
+              { raw: '', value: 3, spill: true },
+              { raw: '', value: 4, spill: true },
+            ],
+          },
+        ],
+      },
+    } as unknown as SmartModel;
+    expect([...spillEdges(shown)]).toEqual([
+      ['0,0', 'tl'],
+      ['0,1', 'tr'],
+      ['1,0', 'bl'],
+      ['1,1', 'rb'],
+    ]);
+  });
+
+  it('calculates a page of 30,000 cells in the worker and hands every table its results', async () => {
+    const head = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+    const body = Array.from({ length: 3000 }, (_, r) => ['1', '2', '3', '4', '5', '6', '7', '8', '9', `=A${r + 1}+1`]);
+    const raw = prepareModel({ header: true, columnIds: head, texts: [head, ...body] }, EMPTY_SMART, EN_US).raw;
+    const posted: number[] = [];
+    const book = new PageBook({
+      spawn: () => {
+        const worker: WorkerLike = {
+          onmessage: null,
+          postMessage: (request) => {
+            posted.push(request.tables[0].rows.length);
+            queueMicrotask(() => worker.onmessage?.({ data: respond(request) }));
+          },
+          terminate: () => {},
+        };
+        return worker;
+      },
+    });
+    const got: { busy: boolean; value: unknown }[] = [];
+    const busy: boolean[] = [];
+    const member = {
+      element: { compareDocumentPosition: () => 0 } as unknown as Element,
+      raw: () => raw,
+      calculated: (table: Table, isBusy: boolean) => got.push({ busy: isBusy, value: table.rows[2].cells[9].value }),
+      working: (on: boolean) => busy.push(on),
+    };
+    book.join(member);
+    expect(book.usesWorker()).toBe(true);
+    expect(book.calculateNow(member)).toBeNull();
+    book.refresh();
+    await vi.waitFor(() => expect(got).toHaveLength(1));
+    expect(posted).toEqual([3000]);
+    // A3 is 1, so =A3+1 is 2.
+    expect(got).toEqual([{ busy: false, value: 2 }]);
+    expect(busy).toEqual([true, false]);
+    // The same cells again: no second trip to the worker.
+    expect(book.calculateNow(member)?.rows[2].cells[9].value).toBe(2);
+    book.leave(member);
+  });
+
+  it('adds what the spreadsheet lanes put in the Data menu after the items it always had', () => {
+    const before = dataMenu(fake().inst).map((item) => item.id);
+    const take = contribute(
+      {
+        kind: 'command',
+        lane: 'data-tools',
+        command: { id: 'sheetTest.dedupe', title: 'tables.name', category: 'table', run: () => {} },
+      },
+      {
+        kind: 'menuItem',
+        item: { id: 'dedupe', lane: 'data-tools', menu: 'data', command: 'sheetTest.dedupe', group: 'g', order: 1 },
+      },
+      // A menu item whose command is not there is left out.
+      {
+        kind: 'menuItem',
+        item: { id: 'gone', lane: 'data-tools', menu: 'data', command: 'x.gone', group: 'g', order: 2 },
+      },
+    );
+    try {
+      const after = dataMenu(fake().inst);
+      expect(after.map((item) => item.id)).toEqual([...before, 'sheet.dedupe']);
+      expect(after.at(-1)).toMatchObject({ label: expect.stringContaining('Table'), separatorBefore: true });
+    } finally {
+      take();
+    }
   });
 });

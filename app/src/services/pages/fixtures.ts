@@ -172,6 +172,23 @@ function ruledTable(order: number): BlockJson {
   return block('table', order, data as unknown as Record<string, unknown>);
 }
 
+/** A table from rows of cell text, the first row its header, with `extra` keys in its data (data.sheet, say). */
+function tableOf(order: number, texts: readonly (readonly string[])[], extra: Record<string, unknown> = {}): BlockJson {
+  const columns = texts[0].map(() => ({ id: fixtureId(), width: 120 }));
+  const rows = texts.map((line) => ({
+    id: fixtureId(),
+    cells: Object.fromEntries(columns.map((column, c) => [column.id, { markdown: line[c] ?? '' }])),
+  }));
+  return block('table', order, { header: true, columns, rows, ...extra });
+}
+
+/** 3,000 rows of 10 cells, the last a formula: 30,000 cells, past the worker's threshold of 20,000. */
+function bigTable(order: number): BlockJson {
+  const head = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+  const body = Array.from({ length: 3000 }, (_, r) => [...head.slice(0, 9).map((_, c) => `${r + c}`), `=A${r + 1}+1`]);
+  return tableOf(order, [head, ...body]);
+}
+
 function build(): Record<string, () => PageFixture> {
   return {
     sampler: () =>
@@ -182,6 +199,21 @@ function build(): Record<string, () => PageFixture> {
         block('image', 3, { asset: null, alt: 'A cropped image', crop: { x: 0.1, y: 0.1, w: 0.5, h: 0.5 } }),
       ]),
     smart: () => page('Smart notes', [text(0, 'Start here.'), table(1, 4)]),
+    // A table that already has data.sheet, so its formula results are cached with each edit (ADR 0061).
+    sheetTable: () =>
+      page('Sheet notes', [
+        text(0, 'Start here.'),
+        tableOf(
+          1,
+          [
+            ['Item', 'Qty', 'Total'],
+            ['Pen', '2', '=B1+3'],
+            ['Ink', '5', '=C1+B2'],
+          ],
+          { sheet: { table: { grid: true } } },
+        ),
+      ]),
+    bigTable: () => page('Big table', [text(0, 'Start here.'), bigTable(1)]),
     short: () => page('Short note', [text(0, '# Short note\n\nA few words to type after.')]),
     twentyPage: () => page('A twenty-page note', [text(0, longNoteMarkdown())]),
     twentyPageOutline: () => page('An outline', [text(0, outlineMarkdown())]),
@@ -240,6 +272,8 @@ function build(): Record<string, () => PageFixture> {
 export type PageFixtureName =
   | 'sampler'
   | 'smart'
+  | 'sheetTable'
+  | 'bigTable'
   | 'short'
   | 'twentyPage'
   | 'twentyPageOutline'

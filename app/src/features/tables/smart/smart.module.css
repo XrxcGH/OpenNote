@@ -38,6 +38,54 @@
     display: none;
   }
 
+  /* A formula with no room to spill: its cell shows #SPILL! with a dashed edge, as the spill would need. */
+  .spillBlocked {
+    outline: 1px dashed var(--color-status-danger);
+    outline-offset: -2px;
+  }
+
+  /* Still calculating in the worker: the token stays quiet, not red. */
+  .busy::after {
+    color: var(--color-text-secondary);
+  }
+
+  /* The outline of a spill range, drawn on the sides of the range each cell is on. */
+  [data-spill] {
+    --spill-line: var(--color-accent-primary);
+  }
+
+  [data-spill*='t'] {
+    box-shadow: inset 0 1px 0 var(--spill-line);
+  }
+
+  [data-spill*='b'] {
+    box-shadow: inset 0 -1px 0 var(--spill-line);
+  }
+
+  [data-spill*='l'] {
+    border-inline-start-color: var(--spill-line);
+  }
+
+  [data-spill*='r'] {
+    border-inline-end-color: var(--spill-line);
+  }
+
+  [data-spill*='t'][data-spill*='b'] {
+    box-shadow:
+      inset 0 1px 0 var(--spill-line),
+      inset 0 -1px 0 var(--spill-line);
+  }
+
+  @media (forced-colors: active) {
+    [data-spill] {
+      --spill-line: Highlight;
+    }
+
+    .spillBlocked {
+      outline-color: CanvasText;
+    }
+  }
+
   .strip {
     display: none;
     font-family: var(--font-ui);

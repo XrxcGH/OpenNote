@@ -12,6 +12,15 @@ import type { TableData } from '../../../editor/schema/specs';
 import type { BlockJson } from '../../../services/pages/types';
 import type { TableExtraHandle, TableExtraHost } from '../../page';
 import { columnLetter, formatValue, totalsRow, hasTotals } from '../engine';
+import type { Table } from '../engine';
+import { readSheet } from '../sheet/model';
+import type { Sheet } from '../sheet/model';
+import { applyPatch } from '../sheet/model/json';
+import type { Json } from '../sheet/model/json';
+import { currentScheme, refreshSheetRender, sheetRenderKey, sheetRenderPlugin } from '../sheet/render';
+import type { SheetSource } from '../sheet/render';
+import { bookFor, gridOfData, sheetAfter, valuesPatch } from './book';
+import type { BookMember, PageBook } from './book';
 import { chartSpec } from './chartSpec';
 import { Chrome } from './Chrome';
 import type { ChartItem, ChromeProps } from './Chrome';
@@ -20,8 +29,8 @@ import { readSmart, sameSmart, smartPatch } from './data';
 import { buildDecorations, displayKey, displayPlugin, displayState, gridOf } from './display';
 import { appLocale } from './locale';
 import { chartMenu, dataMenu, CHART_KINDS } from './menu';
-import type { SmartModel } from './model';
-import { buildModel } from './model';
+import type { Prepared, SmartModel } from './model';
+import { finishModel, prepareModel } from './model';
 import { changeChart, chooseView, filterBy, removeChart, setCellText } from './ops';
 import { autoSummary, factsOf } from './ChartAccess';
 import type { Range, SmartInstance } from './ops';
@@ -100,10 +109,17 @@ function rangeOf(editor: TableExtraHost['editor']): Range | null {
 const typedLabel = (typed: string) => t('smart.table.typed', { typed });
 
 /** One smart table: its state, what it draws over the cells, and the strip and charts under them. */
-class SmartTable implements SmartInstance, TableExtraHandle {
+class SmartTable implements SmartInstance, TableExtraHandle, BookMember {
   readonly locale = appLocale();
+  readonly element: Element;
   private current: SmartData;
   private latest: SmartModel | null = null;
+  private readonly book: PageBook;
+  private prepared: { key: string; smart: SmartData; sheet: unknown; value: Prepared } | null = null;
+  /** The page's last results for this table, and the cells they were calculated from. */
+  private result: { raw: Table; table: Table } | null = null;
+  private edited: { key: string; stored: unknown; patch: Record<string, unknown> | null } | null = null;
+  private source: { data: unknown; value: SheetSource | null } | null = null;
   // The editor may have focus already, when the extra finishes loading after a click.
   private active: boolean;
   private menuOpen = false;
@@ -115,10 +131,14 @@ class SmartTable implements SmartInstance, TableExtraHandle {
 
   constructor(readonly host: TableExtraHost) {
     this.editor = host.editor;
+    this.element = host.element;
     this.current = readSmart(host.data());
     this.active = this.editor.isFocused || host.element.contains(document.activeElement);
     host.element.append(this.mount);
+    this.book = bookFor(host.page);
+    this.book.join(this);
     this.editor.registerPlugin(displayPlugin());
+    this.editor.registerPlugin(sheetRenderPlugin({ source: () => this.sheetSource(), scheme: currentScheme }));
     this.editor.on('transaction', this.onTransaction);
     this.editor.on('selectionUpdate', this.onSelection);
     this.editor.on('focus', this.onFocus);
@@ -133,12 +153,89 @@ class SmartTable implements SmartInstance, TableExtraHandle {
   caret = () => cellAt(this.editor.state);
   range = (): Range | null => rangeOf(this.editor);
 
-  /** The table as the editor holds it right now. */
-  model(): SmartModel {
+  /** The block's data.sheet, when it has one. */
+  private sheet(): Sheet | undefined {
+    const data = this.host.data();
+    return data.sheet && typeof data.sheet === 'object' ? readSheet(data) : undefined;
+  }
+
+  /** The cells the editor holds, read by the columns' types, before the formulas run. */
+  private prepare(): Prepared {
     const data = this.host.table();
     const columnIds = data.columns.map((column) => column.id);
-    this.latest = buildModel(gridOf(this.editor.state.doc, data.header, columnIds), this.current, this.locale);
+    const grid = gridOf(this.editor.state.doc, data.header, columnIds);
+    const key = JSON.stringify(grid);
+    const stored = this.host.data().sheet;
+    const known = this.prepared;
+    if (known && known.key === key && known.smart === this.current && known.sheet === stored) return known.value;
+    const value = prepareModel(grid, this.current, this.locale, this.sheet());
+    this.prepared = { key, smart: this.current, sheet: stored, value };
+    return value;
+  }
+
+  raw = (): Table => this.prepare().raw;
+
+  /** The model of `table`, or of the cells before calculation when `table` was made from another shape. */
+  private finish(prepared: Prepared, table: Table): SmartModel {
+    const raw = prepared.raw;
+    const fits = table.rows.length === raw.rows.length && table.columns.length === raw.columns.length;
+    this.latest = finishModel(prepared, fits ? table : raw, this.current);
     return this.latest;
+  }
+
+  /** The table as the editor holds it right now, calculated with the rest of the page. */
+  model(): SmartModel {
+    const prepared = this.prepare();
+    const known = this.result?.raw === prepared.raw ? this.result.table : null;
+    return this.finish(prepared, known ?? this.book.calculateNow(this) ?? this.result?.table ?? prepared.raw);
+  }
+
+  /** The worker calculates the page: the table says it is busy, for screen readers and the UI tests. */
+  working(on: boolean): void {
+    if (on) this.host.element.setAttribute('aria-busy', 'true');
+    else this.host.element.removeAttribute('aria-busy');
+  }
+
+  /** The page's results for this table: draw them. Display only, so no undo step. */
+  calculated(table: Table, busy: boolean): void {
+    if (this.gone || this.editor.isDestroyed) return;
+    const prepared = this.prepare();
+    if (!busy) this.result = { raw: prepared.raw, table };
+    const shown = this.finish(prepared, table);
+    const set = buildDecorations(this.editor.state.doc, shown, this.current, this.locale, typedLabel);
+    this.editor.view.dispatch(this.editor.state.tr.setMeta(displayKey, set).setMeta('addToHistory', false));
+    this.render(shown);
+  }
+
+  /**
+   * The formula results of the table an edit leaves, for the same patch (ADR 0061), as data.sheet.values. Only a
+   * table that has data.sheet gets them, and only where sheet writes are on. On a page the worker calculates, the
+   * results arrive after the edit is sent, so the cache stays marked stale (valuesOf) until an edit finds it fresh.
+   */
+  withEdit(data: TableData, extra?: Record<string, unknown>): Record<string, unknown> | null {
+    if (!this.host.flag('tables.sheetWrites')) return null;
+    const stored = this.host.data();
+    const sheet = sheetAfter(stored, extra);
+    if (!sheet) return null;
+    const key = JSON.stringify([data.header, data.columns, data.rows, extra ?? null]);
+    if (this.edited && this.edited.key === key && this.edited.stored === stored) return this.edited.patch;
+    const smart = extra?.smart === undefined ? stored.smart : applyPatch(stored.smart as Json, extra.smart as Json);
+    const prepared = prepareModel(gridOfData(data), readSmart({ smart }), this.locale, sheet);
+    const results = this.book.calculateNow(this, prepared.raw);
+    const patch = results ? valuesPatch(stored, data, extra, results) : null;
+    this.edited = { key, stored, patch };
+    return patch;
+  }
+
+  /** What the sheet render plugin draws: the block's sheet and cells, the same object until the data changes. */
+  private sheetSource(): SheetSource | null {
+    const data = this.host.data();
+    if (this.source?.data === data) return this.source.value;
+    const sheet = this.sheet();
+    const table = this.host.table();
+    const value: SheetSource | null = sheet ? { sheet, table } : null;
+    this.source = { data, value };
+    return value;
   }
 
   async commit(next: SmartData, change?: (data: TableData) => TableData | null): Promise<void> {
@@ -209,13 +306,11 @@ class SmartTable implements SmartInstance, TableExtraHandle {
     return this.withMenu(openMenu({ label: t('smart.chart.options'), items, anchor, returnFocus: anchor }));
   }
 
+  /** Calculates the page again; every table of it draws its results when they come (calculated). */
   private refresh(): void {
     if (this.gone || this.editor.isDestroyed) return;
     clearTimeout(this.timer);
-    const shown = this.model();
-    const set = buildDecorations(this.editor.state.doc, shown, this.current, this.locale, typedLabel);
-    this.editor.view.dispatch(this.editor.state.tr.setMeta(displayKey, set).setMeta('addToHistory', false));
-    this.render(shown);
+    this.book.refresh();
   }
 
   private readonly onTransaction = ({ transaction }: { transaction: { docChanged: boolean } }) => {
@@ -243,6 +338,8 @@ class SmartTable implements SmartInstance, TableExtraHandle {
   };
 
   update(block: BlockJson): void {
+    if (this.source && this.source.data !== block.data && !this.editor.isDestroyed)
+      refreshSheetRender(this.editor.view);
     const next = readSmart(block.data);
     if (sameSmart(next, this.current)) return;
     this.current = next;
@@ -253,12 +350,14 @@ class SmartTable implements SmartInstance, TableExtraHandle {
     this.gone = true;
     clearTimeout(this.timer);
     live.delete(this);
+    this.book.leave(this);
     if (lastFocused === this) lastFocused = null;
     if (!this.editor.isDestroyed) {
       this.editor.off('transaction', this.onTransaction);
       this.editor.off('selectionUpdate', this.onSelection);
       this.editor.off('focus', this.onFocus);
       this.editor.unregisterPlugin(displayState);
+      this.editor.unregisterPlugin(sheetRenderKey);
     }
     this.host.element.removeEventListener('focusin', this.onFocus);
     this.host.element.removeEventListener('focusout', this.onFocusOut);

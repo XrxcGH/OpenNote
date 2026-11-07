@@ -24,12 +24,101 @@ test('recalculates when the data changes', async ({ page }) => {
   await expect(shown(page, 2, 2)).toHaveAttribute('data-shown', '120');
 });
 
-test('reports a formula that cannot work in words', async ({ page }) => {
+test('shows the Excel error token, with the words in a tooltip and for screen readers', async ({ page }) => {
   await openSmart(page);
   await fillSales(page);
   await setCell(page, 3, 2, '=B3/0');
   await shown(page, 0, 0).click();
-  await expect(shown(page, 3, 2)).toHaveAttribute('data-shown', /divide/i);
+  await expect(shown(page, 3, 2)).toHaveAttribute('data-shown', '#DIV/0!');
+  await expect(shown(page, 3, 2)).toHaveAttribute('title', 'Divide by 0');
+  await expect(shown(page, 3, 2)).toHaveAttribute('aria-description', 'Divide by zero error');
+});
+
+interface HeldTable {
+  rows: { id: string; cells: Record<string, { markdown: string }> }[];
+  columns: { id: string }[];
+  sheet?: { values?: Record<string, Record<string, unknown>> };
+}
+
+/** The table block's data as the page service holds it. */
+function heldTable(page: import('@playwright/test').Page): Promise<HeldTable> {
+  return page.evaluate(() => {
+    const hooks = (
+      window as unknown as {
+        __OPENNOTE_TEST__: { pagesHeld(): { blocks: { type: string; data: Record<string, unknown> }[] } };
+      }
+    ).__OPENNOTE_TEST__;
+    return hooks.pagesHeld().blocks.find((block) => block.type === 'table')!.data as unknown as HeldTable;
+  });
+}
+
+/** The cached results of the held table's last column, by data row, and the typed text of B1. */
+async function cachedTotals(page: import('@playwright/test').Page): Promise<{ b1: string; totals: unknown[] }> {
+  const data = await heldTable(page);
+  const last = data.columns[data.columns.length - 1].id;
+  return {
+    b1: data.rows[1].cells[data.columns[1].id].markdown,
+    totals: data.rows.slice(1).map((row) => data.sheet?.values?.[row.id]?.[last] ?? null),
+  };
+}
+
+test('opens and saves a table without data.sheet and never adds one', async ({ page }) => {
+  await openSmart(page);
+  await fillSales(page);
+  await expect(shown(page, 2, 2)).toHaveAttribute('data-shown', '90');
+  await expect.poll(async () => JSON.stringify(await heldTable(page))).toContain('0.6');
+  expect(Object.keys(await heldTable(page))).not.toContain('sheet');
+});
+
+test('writes the results with the edit that changes them, and Undo takes back both', async ({ page }) => {
+  await openSmart(page, 'sheetTable');
+  // Pen: 2 + 3 = 5; Ink: 5 + 5 = 10. Opening writes nothing.
+  await expect(shown(page, 2, 2)).toHaveAttribute('data-shown', '10');
+  await setCell(page, 1, 1, '4');
+  await shown(page, 0, 0).click();
+  // 4 + 3 = 7, and 7 + 5 = 12, in the same patch as the 4.
+  await expect.poll(() => cachedTotals(page)).toEqual({ b1: '4', totals: [7, 12] });
+  await shown(page, 1, 0).click();
+  await page.keyboard.press('Control+z');
+  await expect.poll(() => cachedTotals(page)).toEqual({ b1: '2', totals: [null, null] });
+});
+
+test('recalculates 30,000 cells in the worker with every frame under 16 ms', async ({ page }) => {
+  test.slow();
+  await openSmart(page, 'bigTable');
+  const wrapper = page
+    .locator('[data-block-id]')
+    .filter({ has: page.locator('table') })
+    .first();
+  await expect(shown(page, 1, 9)).toHaveAttribute('data-shown', '1', { timeout: 60_000 });
+  await expect(wrapper).not.toHaveAttribute('aria-busy', 'true');
+  // While the worker works, the page answers a message posted in each frame within the frame.
+  const watch = page.evaluate(
+    () =>
+      new Promise<number[]>((resolve) => {
+        const lags: number[] = [];
+        let seen = false;
+        const busy = () => document.querySelector('[aria-busy="true"]') !== null;
+        const frame = () => {
+          if (busy()) {
+            seen = true;
+            const channel = new MessageChannel();
+            const sent = performance.now();
+            channel.port1.onmessage = () => lags.push(performance.now() - sent);
+            channel.port2.postMessage(null);
+          } else if (seen) return resolve(lags);
+          requestAnimationFrame(frame);
+        };
+        requestAnimationFrame(frame);
+        setTimeout(() => resolve(lags), 45_000);
+      }),
+  );
+  await setCell(page, 1, 0, '7');
+  await shown(page, 0, 0).click();
+  const lags = await watch;
+  expect(lags.length).toBeGreaterThan(0);
+  expect(Math.max(...lags)).toBeLessThan(16);
+  await expect(shown(page, 1, 9)).toHaveAttribute('data-shown', '8');
 });
 
 test('sorts a column and puts the rows back with undo', async ({ page }) => {
