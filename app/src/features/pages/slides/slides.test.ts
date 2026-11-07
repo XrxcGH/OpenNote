@@ -153,3 +153,13 @@ describe('slides from a freeform page', () => {
     expect(html).toContain('A text box.');
   });
 });
+
+describe('slide text', () => {
+  it('renders a paragraph as typed, with no gap inside a word', () => {
+    const page = pageOf([textBlock('Preface text.')]);
+    const [slide] = slidesOf(page);
+    const html = slideHtml(slide, ctx(page));
+    expect(html).toContain('Preface text.');
+    expect(html).not.toMatch(/t\s+ext/);
+  });
+});
