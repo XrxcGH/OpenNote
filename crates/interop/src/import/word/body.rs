@@ -470,8 +470,10 @@ impl<'a> Reader<'a> {
             _ => start,
         };
         counters[level] = Some(shown);
-        for deeper in counters.iter_mut().skip(level + 1) {
-            *deeper = None;
+        for (n, deeper) in counters.iter_mut().enumerate().skip(level + 1) {
+            if self.numbering.restarts_after(num_id, n as u32, level as u32) {
+                *deeper = None;
+            }
         }
         shown
     }
