@@ -2,7 +2,7 @@
 // (up to positions), which the property tests check for every dialect. The text uses the plain operator forms, so
 // pasted symbols such as the multiplication sign come out as "*".
 
-import type { BinaryNode, Node } from './ast';
+import type { BinaryNode, CellAbs, Node, StructNode } from './ast';
 import { lettersFromColumn } from './refs';
 import { formatUnit } from './unitsyntax';
 
@@ -13,6 +13,11 @@ export interface PrintOptions {
   separator?: ',' | ';';
   /** Put spaces around + - and comparisons, and after separators. */
   spaced?: boolean;
+  /**
+   * Write for the spreadsheet rules of the sheet dialect (ADR 0058): a leading sign binds tighter than "^", and "^"
+   * groups left to right, so -(2^2) and 2^(3^2) keep their brackets.
+   */
+  excel?: boolean;
 }
 
 // How tightly each kind of node holds together. A child that holds less tightly than its place needs brackets.
@@ -23,7 +28,11 @@ const SUM = 30;
 const PRODUCT = 40;
 const SIGN = 50;
 const POWER = 60;
+/** A sign under the spreadsheet rules, which binds tighter than a power. */
+const EXCEL_SIGN = 65;
 const POSTFIX = 70;
+/** The reference operators: the space between two references and the comma inside brackets. */
+const REFERENCE = 90;
 const ATOM = 100;
 
 const BINARY_POWER: Readonly<Record<BinaryNode['op'], number>> = {
@@ -46,12 +55,14 @@ function isNegativeNumber(node: Node): boolean {
   return node.type === 'num' && (node.value < 0 || Object.is(node.value, -0));
 }
 
-function power(node: Node): number {
+function power(node: Node, excel: boolean): number {
   switch (node.type) {
     case 'binary':
       return BINARY_POWER[node.op];
     case 'unary':
-      return SIGN;
+      return excel ? EXCEL_SIGN : SIGN;
+    case 'refop':
+      return node.op === ' ' ? REFERENCE : CONVERT;
     case 'postfix':
       return POSTFIX;
     case 'convert':
@@ -59,7 +70,7 @@ function power(node: Node): number {
     case 'quantity':
       return SIGN;
     case 'num':
-      return isNegativeNumber(node) ? SIGN : ATOM;
+      return isNegativeNumber(node) ? (excel ? EXCEL_SIGN : SIGN) : ATOM;
     default:
       return ATOM;
   }
@@ -86,7 +97,7 @@ class Printer {
       case 'col':
         return node.by === 'id' ? `{${node.key}}` : `[${node.key.replaceAll(']', ']]')}]`;
       case 'cell':
-        return `${lettersFromColumn(node.col)}${node.row + 1}`;
+        return cellText(node.col, node.row, node.abs);
       case 'range':
         return this.range(node);
       case 'unary':
@@ -101,7 +112,34 @@ class Printer {
         return `${this.number(node.value)} ${formatUnit(node.unit)}`;
       case 'convert':
         return `${this.child(node.value, CONVERT)} in ${formatUnit(node.unit)}`;
+      case 'array':
+        return this.array(node);
+      case 'refop':
+        return node.op === ' '
+          ? `${this.child(node.left, REFERENCE)} ${this.child(node.right, REFERENCE + 1)}`
+          : `(${this.node(node.left)}${this.separator()}${this.node(node.right)})`;
+      case 'qualified':
+        return `${node.quoted ? `'${node.scope.replaceAll("'", "''")}'` : node.scope}!${this.child(node.ref, ATOM)}`;
+      case 'struct':
+        return structText(node);
+      case 'spill':
+        return `${this.child(node.ref, ATOM)}#`;
     }
+  }
+
+  private array(node: Extract<Node, { type: 'array' }>): string {
+    // Rows are separated by ";" and items by ",", or by "\" where the comma is the decimal mark.
+    const item = this.options.decimal === ',' ? '\\' : ',';
+    const rows: string[] = [];
+    for (let r = 0; r < node.rows; r++) {
+      rows.push(
+        node.items
+          .slice(r * node.cols, (r + 1) * node.cols)
+          .map((n) => this.node(n))
+          .join(item),
+      );
+    }
+    return `{${rows.join(';')}}`;
   }
 
   private separator(): string {
@@ -116,25 +154,33 @@ class Printer {
   }
 
   private range(node: Extract<Node, { type: 'range' }>): string {
-    const first = lettersFromColumn(node.col1);
-    const second = lettersFromColumn(node.col2);
-    if (node.row2 === Infinity) return `${first}:${second}`;
-    return `${first}${node.row1 + 1}:${second}${node.row2 + 1}`;
+    const [a, b] = node.abs ?? [undefined, undefined];
+    const dollar = (on: boolean | undefined): string => (on === true ? '$' : '');
+    if (node.row2 === Infinity) {
+      return `${dollar(a?.col)}${lettersFromColumn(node.col1)}:${dollar(b?.col)}${lettersFromColumn(node.col2)}`;
+    }
+    if (node.col2 === Infinity) return `${dollar(a?.row)}${node.row1 + 1}:${dollar(b?.row)}${node.row2 + 1}`;
+    return `${cellText(node.col1, node.row1, a)}:${cellText(node.col2, node.row2, b)}`;
   }
 
   /** The child text, in brackets when the child holds together less tightly than `needed`. */
   private child(node: Node, needed: number): string {
     const text = this.node(node);
-    return power(node) < needed ? `(${text})` : text;
+    return power(node, this.options.excel === true) < needed ? `(${text})` : text;
   }
 
   private unary(node: Extract<Node, { type: 'unary' }>): string {
-    return `${node.op}${this.child(node.arg, SIGN)}`;
+    return `${node.op}${this.child(node.arg, this.options.excel === true ? EXCEL_SIGN : SIGN)}`;
   }
 
   private binary(node: BinaryNode): string {
     const own = BINARY_POWER[node.op];
-    const rightAssociative = node.op === '^';
+    const rightAssociative = node.op === '^' && this.options.excel !== true;
+    if (node.op === '^' && this.options.excel === true) {
+      // Under the spreadsheet rules "^" groups left to right, and a sign on either side binds tighter.
+      return `${this.child(node.left, own)}^${this.child(node.right, own + 1)}`;
+    }
+
     // A left-associative operator brackets an equal-strength child on the right: a-(b-c). A power does the opposite.
     if (node.implicit === true && node.op === '*') {
       // Side by side, the right operand cannot start with a sign, which would read as a subtraction.
@@ -163,7 +209,39 @@ class Printer {
   }
 }
 
+function cellText(col: number, row: number, abs: CellAbs | undefined): string {
+  return `${abs?.col === true ? '$' : ''}${lettersFromColumn(col)}${abs?.row === true ? '$' : ''}${row + 1}`;
+}
+
+/** A name in a structured reference, with Excel's escape (an apostrophe) before [ ] # and '. */
+function structName(name: string): string {
+  return name.replace(/[[\]#']/g, "'$&");
+}
+
+function structText(node: StructNode): string {
+  const parts: string[] = node.items.map((item) => `[${item}]`);
+  const cols =
+    node.col1 === undefined
+      ? ''
+      : node.col2 === undefined
+        ? `[${structName(node.col1)}]`
+        : `[${structName(node.col1)}]:[${structName(node.col2)}]`;
+  let inner: string;
+  if (node.thisRow) {
+    inner =
+      node.col2 === undefined && node.col1 !== undefined && /^[\w.]+$/.test(node.col1) ? `@${node.col1}` : `@${cols}`;
+  } else if (parts.length === 0 && node.col2 === undefined && node.col1 !== undefined) {
+    inner = structName(node.col1);
+  } else if (parts.length === 1 && cols === '') {
+    inner = parts[0].slice(1, -1);
+  } else {
+    inner = [...parts, ...(cols === '' ? [] : [cols])].join(',');
+  }
+  return `${node.table ?? ''}[${inner}]`;
+}
+
 /** Writes `node` as expression text. */
+
 export function formatExpression(node: Node, options: PrintOptions = {}): string {
   return new Printer(options).node(node);
 }

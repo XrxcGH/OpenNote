@@ -35,7 +35,8 @@ describe('precedence and operators', () => {
     ['2+3*4', 14],
     ['(2+3)*4', 20],
     ['10/4', 2.5],
-    ['0.1+0.2', 0.3],
+    // Results keep the full double (ADR 0058); a cell shows 15 digits, 0.3.
+    ['0.1+0.2', 0.1 + 0.2],
     ['1&2+3', '15'],
     ['"a"&"b"', 'ab'],
     ['1<2', true],
@@ -62,7 +63,7 @@ describe('references', () => {
   });
 
   it('means the whole column inside an aggregate', () => {
-    expect(calc('[Price]/SUM([Price])')).toEqual([0.666666666666667, 0.333333333333333]);
+    expect(calc('[Price]/SUM([Price])')).toEqual([10 / 15, 5 / 15]);
   });
 
   it('reads A1 cells and ranges by data row', () => {
@@ -114,7 +115,7 @@ describe('functions', () => {
     ['LEFT("abc",1)&LEN("ab")', 'a2'],
     ['UPPER(LEFT("abc",2))&RIGHT("abc",1)', 'ABc'],
     ['TRIM("  a   b ")', 'a b'],
-    ['DATE(2026,9,30)', 20726],
+    ['DATE(2026,9,30)', 46295],
     ['YEAR(DATE(2026,9,30))*10000+MONTH(DATE(2026,9,30))*100+DAY(DATE(2026,9,30))', 20260930],
     ['DAYS(DATE(2026,3,1),DATE(2026,2,1))', 28],
   ])('%s gives %j', (formula, expected) => {

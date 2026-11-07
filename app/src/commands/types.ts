@@ -53,6 +53,8 @@ export type CommandCategory =
   | 'format'
   | 'insert'
   | 'table'
+  /** The code editor's commands: the shortcut list's "Code editor" group. */
+  | 'code'
   | 'object';
 export type FocusZone =
   'titleBar' | 'commandBar' | 'notebooks' | 'pages' | 'page' | 'textInput' | 'dialog' | 'palette' | 'none';

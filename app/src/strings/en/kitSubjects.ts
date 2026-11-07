@@ -45,11 +45,12 @@ export const kitSubjects = {
     tableName: 'Table {number}',
     useTable: 'Use this table',
     tableUsed: 'Using table {number} from the page.',
-    summary: '{rows} rows and {columns} columns.',
-    summaryOne: '1 row and {columns} columns.',
+    summary: '{rows, plural, one {# row} other {# rows}} and {columns, plural, one {# column} other {# columns}}.',
     nothing: 'No data yet.',
     truncated: 'Only the first {max} rows are used.',
-    problems: '{count} cells could not be read and count as missing. The first is "{text}" in {column}, row {row}.',
+    problems:
+      '{count, plural, one {# cell was not read and counts} other {# cells were not read and count}} as missing.',
+    problemFirst: 'The first is "{text}" in {column}, row {row}.',
     kind: {
       number: 'number',
       category: 'category',
@@ -97,7 +98,7 @@ export const kitSubjects = {
   list: {
     hint: 'One value per line.',
     notNumber: 'Line {line} is not a number: "{text}".',
-    count: '{count} values.',
+    count: '{count, plural, one {# value} other {# values}}.',
   },
   seed: {
     label: 'Seed',

@@ -3,7 +3,7 @@
 // helper shows the limits and the change of variables with its Jacobian. It works each inner integral by hand where
 // the rules allow, and gives the value. Every answer is also found numerically, so a step the rules cannot do still
 // ends in a number, and a symbolic answer is checked against it.
-import { antiderivative, collect, definite, quadrature } from './integrate';
+import { antiderivative, checkedQuadrature, collect, definite } from './integrate';
 import {
   SolverError,
   build,
@@ -135,6 +135,19 @@ export function solveIntegral(input: IntegralInput): IntegralResult {
     steps.push(step('integralIntegrand', greekText(show(integrand))));
   }
 
+  // Limits that run backward flip the sign. Say so, so a negative answer for a positive integrand is no surprise.
+  limits.forEach((one, i) => {
+    const [lo, hi] = bounds[i].map((bound) => (namesIn(bound).size === 0 ? compile(bound, [])([]) : NaN));
+    if (lo > hi)
+      steps.push(
+        step('integralReversed', undefined, {
+          variable: letter(one.variable),
+          lower: one.lower.trim(),
+          upper: one.upper.trim(),
+        }),
+      );
+  });
+
   // By hand, from the inside out.
   let current: Node | null = integrand;
   for (let i = 0; i < limits.length && current; i += 1) {
@@ -191,7 +204,7 @@ export function numericValue(
   const values = variables.map(() => 0);
   const coarse = variables.length > 1;
   const level = (i: number): number =>
-    quadrature(
+    checkedQuadrature(
       (t) => {
         values[i] = t;
         return i === 0 ? f(values) : level(i - 1);
@@ -199,6 +212,12 @@ export function numericValue(
       lo[i](values),
       hi[i](values),
       coarse,
+      ({ kind, at }) => {
+        throw new SolverError(
+          kind === 'diverges' ? 'integral-diverges' : 'integral-undefined',
+          `${letter(variables[i])} = ${numberText(at)}`,
+        );
+      },
     );
   return level(variables.length - 1);
 }

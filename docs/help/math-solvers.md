@@ -25,6 +25,8 @@ Every answer worked by hand is also found numerically, and the steps show the ha
 
 The limits of an inner integral may use the variables of the integrals outside it, such as y from 0 to x. The region, or its shadow on the xy-plane, is drawn.
 
+If a limit runs backward, such as 2 to 0, the steps say so; swapping the limits flips the sign of the value. If the integral has no finite value, the solver says so instead of printing a number. That happens when the integrand grows like 1/x or faster toward a limit, such as 1/x from 0 to 1, or is not defined at a point inside the limits, such as 1/x from −1 to 1.
+
 ## Differential equations
 
 - **Separable**: type dy/dx, such as `x*y` or `-0.5*(y - 20)`.
@@ -32,6 +34,8 @@ The limits of an inner integral may use the variables of the integrals outside i
 - **Second-order linear**: type the numbers a, b, and c for a·y″ + b·y′ + c·y = g(x), and g(x), which can be 0 or a sum of polynomials, exponentials, sines, and cosines.
 
 Give the starting point x₀ and y(x₀) (and y′(x₀) for second order), and the range to draw. The graph shows the solution through that point over the slope field. A second-order equation also gets a phase plane: y′ against y.
+
+Clear y(x₀) (or y′(x₀) for second order) to get the general solution, with the constants C or C₁ and C₂ left in. There is no graph then, because the constants are not known. A first-order answer is simplified, such as 2 − 2e^(−2x). A separable equation needs the starting point.
 
 ## Transforms
 

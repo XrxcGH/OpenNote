@@ -331,6 +331,12 @@ pub const TOOLS: &[Tool] = &[
         width: 420.0,
         height: 560.0,
     },
+    Tool {
+        id: "code",
+        title: "Code studio",
+        width: 640.0,
+        height: 720.0,
+    },
 ];
 
 /// The tool with this name, or `None`. Nothing from the interface reaches a window label or a script unless it

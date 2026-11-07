@@ -1,12 +1,12 @@
 // Compare groups with the ANOVA family: one-way, two-way, repeated measures, mixed designs, and effect sizes.
-import { useMemo } from 'react';
+import { useDeferredValue, useMemo } from 'react';
 import type { KitToolProps } from '../../kits/types';
 import { columnNamed, labelsOf } from '../../subjects/data/model';
 import { DataField } from '../../subjects/ui/fields';
 import { readDataInput, type DataInput } from '../../subjects/ui/input';
 import { parseColumns, numericColumn, parseGroups, parseNumbers, readProbability } from '../num/data';
 import { check } from '../report';
-import { ColumnSelect } from '../ui/columns';
+import { chosenName, ColumnSelect } from '../ui/columns';
 import { Choice, DataBox, Field, Panel, Row, say, useInputs, useReport } from '../ui/parts';
 import { Results } from '../ui/Results';
 import { effectReport, mixedReport, oneWayReport, repeatedReport, twoWayReport } from './engine';
@@ -59,15 +59,12 @@ const k = (key: string) => say(`kitStatInfer.groups.${key}`);
 function twoWayData(s: State) {
   const data = readDataInput(s.data);
   check(data.columns.length >= 3, 'threeColumns');
-  const [fa, fb, fy] = [
-    s.factorA || data.columns[0].name,
-    s.factorB || data.columns[1].name,
-    s.response || data.columns[2].name,
-  ];
-  const a = columnNamed(data, fa);
-  const b = columnNamed(data, fb);
-  const y = columnNamed(data, fy);
-  check(a !== null && b !== null && y !== null && y.kind === 'number', 'chooseColumns');
+  const a = columnNamed(data, chosenName(s.factorA, data.columns[0].name));
+  const b = columnNamed(data, chosenName(s.factorB, data.columns[1].name));
+  const y = columnNamed(data, chosenName(s.response, data.columns[2].name));
+  check(a !== null, 'chooseRole', { role: k('factorA') });
+  check(b !== null, 'chooseRole', { role: k('factorB') });
+  check(y !== null && y.kind === 'number', 'chooseNumberRole', { role: k('response') });
   const la = labelsOf(a);
   const lb = labelsOf(b);
   const rows: { a: string; b: string; y: number }[] = [];
@@ -114,13 +111,14 @@ function build(s: State) {
 }
 
 function TwoWayFields({ s, set }: { s: State; set: (patch: Partial<State>) => void }) {
-  const data = useMemo(() => readDataInput(s.data), [s.data]);
+  const settled = useDeferredValue(s.data);
+  const data = useMemo(() => readDataInput(settled), [settled]);
   const names = data.columns.map((c) => c.name);
   const pick = (name: 'factorA' | 'factorB' | 'response', fallback: number) => (
     <ColumnSelect
       data={data}
       label={k(name)}
-      value={s[name] || names[fallback] || ''}
+      value={chosenName(s[name], names[fallback])}
       onChange={(value) => set({ [name]: value })}
       any={name !== 'response'}
     />

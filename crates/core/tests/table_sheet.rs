@@ -73,14 +73,18 @@ fn fixture_table_sheet_pages_write_back_exactly() {
     }
 }
 
-/// A page without `data.sheet` keeps format version 1 on save.
+/// A page without `data.sheet` keeps format version 1 on save, unless its cells hold a version 2 text feature
+/// (`R-STAMP-8` to `R-STAMP-11`, whose rows apply to table cells too). Of these fixtures only `v.json` does: its
+/// cell `<span data-x="1">=x</span>` is a foreign mark (`R-INL-7`), so it stays at version 2 by `R-STAMP-8`.
 #[test]
 fn fixture_a_table_without_a_sheet_keeps_version_1() {
+    const TEXT_V2: [&str; 1] = ["v.json"];
     for (name, case) in cases() {
         let mut page = case["page"].clone();
         page["blocks"][0]["data"].as_object_mut().unwrap().remove("sheet");
+        let version = if TEXT_V2.contains(&name.as_str()) { 2 } else { 1 };
         let value: Value = serde_json::from_slice(&write_page(&read(&page))).unwrap();
-        assert_eq!(value["formatVersion"], json!(1), "{name}");
+        assert_eq!(value["formatVersion"], json!(version), "{name}");
         assert_eq!(value["minReaderVersion"], json!(1), "{name}");
     }
 }
