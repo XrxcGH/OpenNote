@@ -13,6 +13,8 @@ use crate::doc::{Inline, Marks};
 const EMU_PER_PIXEL: u64 = 9_525;
 /// The text width of a Letter page with one-inch margins.
 const MAX_WIDTH_EMU: u64 = 6 * 914_400 + 457_200;
+/// The largest `ST_PositiveCoordinate` in ECMA-376 Part 1 (DrawingML), the bound of `wp:extent` and `a:ext`.
+const MAX_COORDINATE_EMU: u64 = 27_273_042_316_900;
 
 /// The notes, comments, and their extensions that the body made.
 #[derive(Debug, Default)]
@@ -454,14 +456,26 @@ fn comment_ends(ids: &[u32]) -> String {
     out
 }
 
-/// The size of a picture in EMU, scaled down to fit the text width.
+/// The size of a picture in EMU, scaled down to fit the text width and the largest coordinate.
 fn extent(media: &Media) -> (u64, u64) {
     let (width, height) = (u64::from(media.width.max(1)), u64::from(media.height.max(1)));
     let (cx, cy) = (width * EMU_PER_PIXEL, height * EMU_PER_PIXEL);
-    if cx <= MAX_WIDTH_EMU {
-        (cx, cy)
+    // In u128: a picture header can claim 2^32 - 1 pixels a side, and `cy * MAX_WIDTH_EMU` overflows u64.
+    // The result is at most `side`, so it fits back in u64.
+    let scale = |side: u64, to: u64, from: u64| {
+        u64::try_from(u128::from(side) * u128::from(to) / u128::from(from))
+            .unwrap_or(side)
+            .max(1)
+    };
+    let (cx, cy) = if cx > MAX_WIDTH_EMU {
+        (MAX_WIDTH_EMU, scale(cy, MAX_WIDTH_EMU, cx))
     } else {
-        (MAX_WIDTH_EMU, cy * MAX_WIDTH_EMU / cx)
+        (cx, cy)
+    };
+    if cy > MAX_COORDINATE_EMU {
+        (scale(cx, MAX_COORDINATE_EMU, cy), MAX_COORDINATE_EMU)
+    } else {
+        (cx, cy)
     }
 }
 
@@ -479,4 +493,31 @@ fn drawing(rid: &str, id: u32, (cx, cy): (u64, u64), alt: &str) -> String {
          <a:prstGeom prst=\"rect\"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic>\
          </wp:inline></w:drawing></w:r>"
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn media(width: u32, height: u32) -> Media {
+        Media {
+            bytes: Vec::new(),
+            ext: "png".to_owned(),
+            width,
+            height,
+        }
+    }
+
+    #[test]
+    fn a_huge_picture_header_scales_without_overflow_and_stays_in_st_positive_coordinate() {
+        // 4,294,967,295 px square: wider than the text, so the text width on both sides.
+        assert_eq!(extent(&media(u32::MAX, u32::MAX)), (MAX_WIDTH_EMU, MAX_WIDTH_EMU));
+        // 1 x 4,294,967,295 px: 9,525 EMU wide and 40,909,563,484,875 EMU tall, above the
+        // 27,273,042,316,900 bound. Width by hand: floor(27,273,042,316,900 / 4,294,967,295) = 6,349.
+        assert_eq!(extent(&media(1, u32::MAX)), (6_349, MAX_COORDINATE_EMU));
+        // An ordinary picture keeps its size: 100 x 50 px is 952,500 x 476,250 EMU.
+        assert_eq!(extent(&media(100, 50)), (952_500, 476_250));
+        // 1,248 px wide is 11,887,200 EMU, twice the text width, so the height halves: 400 px is 3,810,000 EMU, written as 1,905,000.
+        assert_eq!(extent(&media(1_248, 400)), (MAX_WIDTH_EMU, 1_905_000));
+    }
 }

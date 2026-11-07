@@ -1,7 +1,7 @@
 // The Export dialog: choose what to export (this page, section, or notebook), a format, and a folder; export with
 // progress and Cancel; read the summary. The host makes a new folder or file, so nothing is overwritten.
 
-import { useEffect, useState, useSyncExternalStore } from 'react';
+import { useEffect, useId, useState, useSyncExternalStore } from 'react';
 import { isEnabled } from '../../app/flags';
 import type { ExportFormat, ExportScope, InteropClient } from '../../platform/interop';
 import type { NotesService } from '../../services/notes/types';
@@ -178,17 +178,21 @@ function PageTitleSwitch() {
 /** Whether a Word export leaves out authors' names and dates. Off until turned on, and remembered. */
 function RemovePersonalSwitch() {
   const [on, setOn] = useState(removePersonalOn);
+  const helpId = useId();
   return (
     <>
       <Switch
         label={t('interop.export.removePersonal')}
         checked={on}
+        describedBy={helpId}
         onChange={(value) => {
           setRemovePersonal(value);
           setOn(value);
         }}
       />
-      <p className={styles.note}>{t('interop.export.removePersonalHelp')}</p>
+      <p id={helpId} className={styles.note}>
+        {t('interop.export.removePersonalHelp')}
+      </p>
     </>
   );
 }

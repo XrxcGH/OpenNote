@@ -26,10 +26,26 @@ pub fn style_id(name: &str) -> String {
         "citation" => "Citation".to_owned(),
         _ => match name.strip_prefix('h').and_then(|n| n.parse::<u8>().ok()) {
             Some(level @ 1..=9) => format!("Heading{level}"),
+            // A user style named like a fixed style would write a second w:styleId of that value.
+            _ if FIXED_STYLE_IDS.iter().any(|id| id.eq_ignore_ascii_case(name)) => format!("{name}-user"),
             _ => name.to_owned(),
         },
     }
 }
+
+/// The IDs of the styles that `styles_xml` always writes after the sheet's own (`FIXED_STYLES`).
+const FIXED_STYLE_IDS: [&str; 10] = [
+    "CommentReference",
+    "CommentText",
+    "EndnoteReference",
+    "EndnoteText",
+    "Footer",
+    "FootnoteReference",
+    "FootnoteText",
+    "Header",
+    "Hyperlink",
+    "ListParagraph",
+];
 
 /// The name Word shows for a built-in style, or `None` for a user style.
 fn built_in_name(name: &str) -> Option<String> {

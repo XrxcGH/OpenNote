@@ -135,6 +135,8 @@ describe('Export', () => {
       await userEvent.click(within(dialog).getByRole('radio', { name: /Word document/ }));
       const remove = within(dialog).getByRole('switch', { name: 'Remove personal information' });
       expect(remove.getAttribute('aria-checked')).toBe('false');
+      const helpId = remove.getAttribute('aria-describedby') ?? '';
+      expect(document.getElementById(helpId)?.textContent).toMatch(/^Leaves the names of authors/);
       await userEvent.click(remove);
       await userEvent.click(within(dialog).getByRole('button', { name: 'Choose a folder…' }));
       await within(dialog).findByText('C:\\Users\\Sample\\Documents');

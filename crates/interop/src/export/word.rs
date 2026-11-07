@@ -27,6 +27,9 @@ use crate::report::{PageReport, Report, ReportKind};
 use crate::run::{Control, Phase, Unit};
 use crate::source::NoteSource;
 
+/// The largest ST_DecimalNumber (xsd:int) in ECMA-376 Part 1.
+const MAX_DECIMAL_NUMBER: u64 = 2_147_483_647;
+
 /// Exports to `out_dir/<title>.docx`, or `out_dir/<title> (2).docx` and so on, so nothing is overwritten.
 pub fn export_docx(source: &dyn NoteSource, scope: Scope, out_dir: &Path) -> Result<Exported> {
     export_docx_with(source, scope, out_dir, &Control::none())
@@ -265,7 +268,8 @@ fn page_setup(page: &Page) -> PageSetup {
             let start = numbers
                 .get("start")
                 .and_then(Value::as_u64)
-                .and_then(|s| u32::try_from(s).ok());
+                // w:start has the type ST_DecimalNumber (xsd:int), so at most 2,147,483,647.
+                .map(|s| u32::try_from(s.min(MAX_DECIMAL_NUMBER)).unwrap_or(u32::MAX));
             (format.to_owned(), start)
         });
     PageSetup {

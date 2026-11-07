@@ -329,3 +329,64 @@ fn a_break_block_is_a_page_break() {
     let doc = document(vec![Part::Blocks(parse_page("a").blocks), Part::PageBreak]);
     assert!(doc.contains("<w:r><w:br w:type=\"page\"/></w:r>"));
 }
+
+#[test]
+fn a_page_number_start_above_st_decimal_number_is_clamped() {
+    // ECMA-376 Part 1: w:start has the type ST_DecimalNumber (xsd:int), so at most 2,147,483,647.
+    let doc = page_doc(json!({"pageNumbers": {"start": 4_000_000_000_u64}}));
+    assert!(doc.contains("w:start=\"2147483647\""), "{doc}");
+    let doc = page_doc(json!({"pageNumbers": {"start": 2_147_483_647_u64}}));
+    assert!(doc.contains("w:start=\"2147483647\""), "{doc}");
+}
+
+#[test]
+fn a_user_style_named_like_a_fixed_style_gets_its_own_style_id() {
+    let fixed = [
+        "CommentReference",
+        "CommentText",
+        "EndnoteReference",
+        "EndnoteText",
+        "Footer",
+        "FootnoteReference",
+        "FootnoteText",
+        "Header",
+        "Hyperlink",
+        "ListParagraph",
+    ];
+    let mut sheet = serde_json::Map::new();
+    for name in fixed {
+        sheet.insert(name.to_owned(), json!({"type": "character", "textColor": "#112233"}));
+    }
+    // Only a malformed notebook file holds such a name; a style based on it still points at it.
+    sheet.insert(
+        "u-child".to_owned(),
+        json!({"type": "character", "basedOn": "Hyperlink"}),
+    );
+    let setup = Setup {
+        styles: styles::sheet_from_json(&Value::Object(sheet)),
+        ..Setup::default()
+    };
+    let parts = vec![text_part("Body.", json!({}))];
+    let all = files(&input(parts, setup));
+    let styles_xml = &all["word/styles.xml"];
+    let mut ids: Vec<&str> = styles_xml
+        .split("w:styleId=\"")
+        .skip(1)
+        .map(|rest| &rest[..rest.find('"').expect("a quote")])
+        .collect();
+    let count = ids.len();
+    ids.sort_unstable();
+    ids.dedup();
+    assert_eq!(ids.len(), count, "every w:styleId is unique: {styles_xml}");
+    for name in fixed {
+        assert!(ids.contains(&name), "the fixed {name} style is kept");
+        assert!(
+            ids.contains(&format!("{name}-user").as_str()),
+            "the user {name} style is renamed"
+        );
+    }
+    assert!(
+        styles_xml.contains("<w:basedOn w:val=\"Hyperlink-user\"/>"),
+        "{styles_xml}"
+    );
+}
