@@ -363,25 +363,6 @@ fn open_type(rpr: &El) -> Option<String> {
     (!tokens.is_empty()).then(|| tokens.join(" "))
 }
 
-/// Imports a written file with the crate's Word import, and returns the blocks of its text.
-pub fn import(docx: &[u8]) -> Vec<Block> {
-    let dir = tempfile::tempdir().expect("a temp folder");
-    let path = dir.path().join("generated.docx");
-    std::fs::write(&path, docx).expect("writes");
-    let world = crate::testing::TestEnv::new();
-    let mut sink = crate::MemorySink::default();
-    crate::import_docx(&path, &world.env(), &mut sink).expect("imports");
-    let mut blocks = Vec::new();
-    for (_, imported) in &sink.pages {
-        for block in imported.page.blocks.iter() {
-            if let opennote_core::model::BlockData::Text(text) = &block.data {
-                blocks.extend(crate::doc::parse::parse_page(&text.markdown).blocks);
-            }
-        }
-    }
-    blocks
-}
-
 /// Imports a written file as one page with the crate's Word import, and returns its text blocks and their records.
 pub fn import_text(docx: &[u8]) -> (Vec<Block>, crate::doc::data::TextData) {
     let dir = tempfile::tempdir().expect("a temp folder");

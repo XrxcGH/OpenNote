@@ -192,7 +192,7 @@ fn arb_para() -> impl Strategy<Value = Value> {
 }
 
 /// Paragraphs with neighboring runs of equal marks joined, as every reader joins them.
-fn joined(blocks: &[Block]) -> Vec<Block> {
+pub(super) fn joined(blocks: &[Block]) -> Vec<Block> {
     blocks
         .iter()
         .map(|block| match block {
@@ -237,37 +237,59 @@ proptest! {
         prop_assert_eq!(read_runs, expected, "{}", doc);
     }
 
-    /// The crate's Word import reads back what it knows of an export: the text and the marks of version 1.
+    /// The crate's Word import gives back the model of a generated document: every mark and paragraph key that
+    /// it reads.
     #[test]
-    fn export_then_import_keeps_the_text_and_version_1_marks(
-        runs in prop::collection::vec((any::<bool>(), any::<bool>(), any::<bool>(), any::<bool>(),
-            prop::option::of(prop::sample::select(vec!["small", "large", "xlarge"]))), 1..5),
+    fn export_then_import_equals_the_model(
+        runs in prop::collection::vec(arb_import_marks(), 1..4),
+        para in arb_import_para(),
     ) {
-        let inlines: Vec<crate::doc::Inline> = runs
-            .iter()
-            .enumerate()
-            .flat_map(|(i, (strong, emphasis, strike, underline, size))| {
-                let marks = Marks {
-                    strong: *strong,
-                    emphasis: *emphasis,
-                    strike: *strike,
-                    underline: *underline,
-                    size: size.map(str::to_owned),
-                    ..Marks::none()
-                };
-                let mut out = vec![crate::doc::Inline::marked(format!("word{i}"), marks)];
-                out.push(crate::doc::Inline::text(" "));
-                out
-            })
-            .collect();
-        let mut inlines = inlines;
-        inlines.pop();
-        let original = vec![Block::Paragraph(inlines)];
-        let parts = vec![
-            Part::Title { text: "Generated".to_owned(), bookmark: None },
-            Part::Blocks(original.clone()),
-        ];
-        let imported = readback::import(&build(&input(parts, Setup::default())).expect("builds"));
-        prop_assert_eq!(joined(&imported), joined(&original));
+        let runs: Vec<(String, Marks)> = runs.into_iter().enumerate().map(|(i, m)| (format!("w{i}"), m)).collect();
+        let (part, expected_para) = super::roundtrip::one_paragraph(&runs, para);
+        let original = match &part {
+            Part::Text { blocks, .. } => blocks.clone(),
+            _ => unreachable!("a text part"),
+        };
+        let bytes = build(&input(vec![part], Setup::default())).expect("builds");
+        let (blocks, data) = readback::import_text(&bytes);
+        prop_assert_eq!(joined(&blocks), joined(&original));
+        let para = data.ids.first().and_then(|id| data.paras.get(id)).cloned().unwrap_or_default();
+        prop_assert_eq!(para, expected_para);
     }
+}
+
+/// The marks of [`arb_marks`] that the crate's Word import reads back exactly. Four are left out until the
+/// import reads them (a hand-over to text:docx-import-v2): theme colors come back as the nearest pen, the
+/// `+body` and `+heading` font tokens as nothing, `ltr` as nothing, and ligatures turned off (`liga-none`,
+/// `clig-none`) as nothing.
+fn arb_import_marks() -> impl Strategy<Value = Marks> {
+    arb_marks().prop_map(|mut m| {
+        if m.color.as_deref().is_some_and(|c| c.starts_with("theme:")) {
+            m.color = None;
+        }
+        if m.font.as_deref().is_some_and(|f| f.starts_with('+')) {
+            m.font = None;
+        }
+        if m.dir.as_deref() == Some("ltr") {
+            m.dir = None;
+        }
+        m.otf = m.otf.filter(|o| !o.contains("-none"));
+        m
+    })
+}
+
+/// The paragraph keys of [`arb_para`] that the import reads back as paragraph keys. An outline level makes a
+/// heading and shading makes a callout on import, and the import does not read `w:noProof` on the paragraph
+/// mark as language `zxx`.
+fn arb_import_para() -> impl Strategy<Value = Value> {
+    arb_para().prop_map(|mut p| {
+        if let Some(map) = p.as_object_mut() {
+            map.remove("outline");
+            map.remove("shade");
+            if map.get("lang") == Some(&json!("zxx")) {
+                map.remove("lang");
+            }
+        }
+        p
+    })
 }

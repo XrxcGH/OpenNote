@@ -4,6 +4,7 @@
 mod features;
 mod props;
 mod readback;
+mod roundtrip;
 mod schema;
 mod sections;
 
