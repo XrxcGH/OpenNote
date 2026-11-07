@@ -1,18 +1,43 @@
 // The Find bar: Ctrl+F finds, Ctrl+H also replaces. It sits over the top of the page, counts the matches in a live
 // status, and highlights them on the page. Enter, Shift+Enter, F3, and Shift+F3 move between them. Replace and
 // Replace all change the page as one step, so one Ctrl+Z undoes them.
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent, RefObject } from 'react';
 import { useFlag } from '../../../app/flags';
 import { useStore } from '../../../state/store';
 import { t } from '../../../strings/t';
-import { announce, Button, Switch, TextField } from '../../../ui';
+import { announce, Button, openMenu, Switch, TextField } from '../../../ui';
 import type { MountedPage } from '../mount';
 import { closeFind, findRequest } from '../qol/stores';
 import styles from '../qol/qol.module.css';
+import { criterionOf, FORMAT_KINDS, invalidCriteria } from './format';
+import type { FormatCriterion, FormatKind } from './format';
 import type { FindOptions } from './match';
-import { clearHighlights, collectMatches, highlight, replaceMatches, reveal } from './search';
-import type { FindMatch } from './search';
+import { clearHighlights, highlight, replaceMatches, reveal, searchPage } from './search';
+import type { FindMatch, SearchResult } from './search';
+
+/** The formats typed into a format editor: a value per kind, `on` for bold, italic, and underline, empty for none. */
+type FormatState = Readonly<Partial<Record<FormatKind, string>>>;
+
+function criteriaOf(state: FormatState): FormatCriterion[] {
+  return FORMAT_KINDS.flatMap(({ id }) => {
+    const value = state[id] ?? '';
+    const criterion = value === '' ? null : criterionOf(id, value);
+    return criterion ? [criterion] : [];
+  });
+}
+
+/** The special characters of plain text and wildcard queries, with the text each one adds to the query. */
+const SPECIAL_CHARS = [
+  ['paragraph', '^p'],
+  ['tab', '^t'],
+  ['any', '^?'],
+  ['digit', '^#'],
+  ['letter', '^$'],
+  ['lineBreak', '^l'],
+  ['nbsp', '^s'],
+  ['caret', '^^'],
+] as const;
 
 /** The page's text changes while the bar is open (typing, undo, a box mounting); matches follow it this often. */
 const REFRESH_MS = 200;
@@ -62,15 +87,23 @@ function useOpenFocus(
 }
 
 /** The matches for the query, kept up to date while the page changes, and drawn on the page. */
-function useMatches(mounted: MountedPage, open: boolean, query: string, options: FindOptions) {
+function useMatches(
+  mounted: MountedPage,
+  open: boolean,
+  query: string,
+  options: FindOptions,
+  formats: readonly FormatCriterion[],
+) {
   const [matches, setMatches] = useState<FindMatch[]>([]);
+  const [problem, setProblem] = useState<SearchResult['problem']>(null);
   const [current, setCurrent] = useState(0);
   const wantReveal = useRef(false);
   const refresh = useCallback(() => {
-    const next = collectMatches(mounted, query, options);
-    setMatches(next);
-    setCurrent((at) => (next.length === 0 ? 0 : Math.min(at, next.length - 1)));
-  }, [mounted, query, options]);
+    const next = searchPage(mounted, query, options, formats);
+    setMatches(next.matches);
+    setProblem(next.problem);
+    setCurrent((at) => (next.matches.length === 0 ? 0 : Math.min(at, next.matches.length - 1)));
+  }, [mounted, query, options, formats]);
 
   useEffect(() => {
     if (!open) return;
@@ -103,7 +136,7 @@ function useMatches(mounted: MountedPage, open: boolean, query: string, options:
     wantReveal.current = true;
     setCurrent((at) => (at + step + matches.length) % matches.length);
   };
-  return { matches, current, setCurrent, go, refresh };
+  return { matches, problem, current, setCurrent, go, refresh };
 }
 
 interface RowProps {
@@ -112,15 +145,49 @@ interface RowProps {
   options: FindOptions;
   onOptions(next: FindOptions): void;
   matches: readonly FindMatch[];
+  problem: SearchResult['problem'];
+  formats: FormatState;
+  onFormats(next: FormatState): void;
   current: number;
   go(step: number): void;
   close(): void;
 }
 
+function FormatEditor(props: { state: FormatState; onChange(next: FormatState): void; label: string }) {
+  const { state, onChange, label } = props;
+  const set = (id: FormatKind, value: string) => onChange({ ...state, [id]: value });
+  const invalid = invalidCriteria(criteriaOf(state)).length > 0;
+  return (
+    <div role="group" aria-label={label}>
+      <div className={styles.findOptions}>
+        {FORMAT_KINDS.filter((kind) => kind.key === null).map(({ id }) => (
+          <Switch
+            key={id}
+            label={t(`textFind.kind.${id}`)}
+            checked={(state[id] ?? '') !== ''}
+            onChange={(on) => set(id, on ? 'on' : '')}
+          />
+        ))}
+      </div>
+      {FORMAT_KINDS.filter((kind) => kind.key !== null).map(({ id }) => (
+        <div key={id} className={styles.findField}>
+          <TextField label={t(`textFind.kind.${id}`)} value={state[id] ?? ''} onChange={(value) => set(id, value)} />
+        </div>
+      ))}
+      {invalid && <span role="status">{t('textFind.formatInvalid')}</span>}
+      <Button variant="quiet" onClick={() => onChange({})}>
+        {t('textFind.formatClear')}
+      </Button>
+    </div>
+  );
+}
+
 function FindRow(props: RowProps) {
-  const { query, matches, current, go, close, options } = props;
+  const { query, matches, current, go, close, options, problem } = props;
+  const [formatOpen, setFormatOpen] = useState(false);
+  const hasFormats = criteriaOf(props.formats).length > 0;
   const status =
-    query === ''
+    query === '' && !hasFormats
       ? ''
       : matches.length === 0
         ? t('pageExtras.find.none')
@@ -134,6 +201,7 @@ function FindRow(props: RowProps) {
           onChange={props.onQuery}
           onCommit={() => go(1)}
           onCancel={close}
+          error={problem ? t(`textFind.problem.${problem}`) : undefined}
         />
       </div>
       <div className={styles.findRow}>
@@ -158,10 +226,37 @@ function FindRow(props: RowProps) {
           checked={options.wholeWord}
           onChange={(wholeWord) => props.onOptions({ ...options, wholeWord })}
         />
+        <Switch
+          label={t('textFind.regex')}
+          checked={!!options.regex}
+          onChange={(regex) => props.onOptions({ ...options, regex, wildcards: regex ? false : options.wildcards })}
+        />
+        <Switch
+          label={t('textFind.wildcards')}
+          checked={!!options.wildcards}
+          onChange={(wildcards) => props.onOptions({ ...options, wildcards, regex: wildcards ? false : options.regex })}
+        />
+        <Button
+          disabled={!!options.regex}
+          onClick={(event) => {
+            const anchor = event.currentTarget as HTMLElement;
+            void openMenu({
+              label: t('textFind.specialMenu'),
+              anchor,
+              items: SPECIAL_CHARS.map(([id, code]) => ({ id: code, label: `${t(`textFind.chars.${id}`)} (${code})` })),
+            }).then((code) => code && props.onQuery(query + code));
+          }}
+        >
+          {t('textFind.special')}
+        </Button>
+        <Button aria-expanded={formatOpen} onClick={() => setFormatOpen(!formatOpen)}>
+          {formatOpen ? t('textFind.formatHide') : t('textFind.formatShow')}
+        </Button>
         <Button variant="quiet" onClick={close}>
           {t('pageExtras.find.close')}
         </Button>
       </div>
+      {formatOpen && <FormatEditor label={t('textFind.formatFind')} state={props.formats} onChange={props.onFormats} />}
     </>
   );
 }
@@ -173,9 +268,12 @@ interface ReplaceProps {
   empty: boolean;
   replace(all: boolean): void;
   close(): void;
+  formats: FormatState;
+  onFormats(next: FormatState): void;
 }
 
-function ReplaceRow({ value, onChange, enabled, empty, replace, close }: ReplaceProps) {
+function ReplaceRow({ value, onChange, enabled, empty, replace, close, formats, onFormats }: ReplaceProps) {
+  const [formatOpen, setFormatOpen] = useState(false);
   return (
     <>
       <div className={styles.findField}>
@@ -195,7 +293,11 @@ function ReplaceRow({ value, onChange, enabled, empty, replace, close }: Replace
         <Button onClick={() => replace(true)} disabled={empty || !enabled}>
           {t('pageExtras.find.replaceAll')}
         </Button>
+        <Button aria-expanded={formatOpen} onClick={() => setFormatOpen(!formatOpen)}>
+          {formatOpen ? t('textFind.formatHide') : t('textFind.formatShow')}
+        </Button>
       </div>
+      {formatOpen && <FormatEditor label={t('textFind.formatReplace')} state={formats} onChange={onFormats} />}
     </>
   );
 }
@@ -207,6 +309,9 @@ export function FindBar({ mounted }: { mounted: MountedPage }) {
   const [typed, setTyped] = useState('');
   const [replacement, setReplacement] = useState('');
   const [options, setOptions] = useState<FindOptions>({ caseSensitive: false, wholeWord: false });
+  const [findFormats, setFindFormats] = useState<FormatState>({});
+  const [replaceFormats, setReplaceFormats] = useState<FormatState>({});
+  const criteria = useMemo(() => criteriaOf(findFormats), [findFormats]);
   const root = useRef<HTMLDivElement>(null);
   const originRef = useRef<Caret | null>(null);
   const selected = useOpenFocus(mounted, open, request.nonce, root, originRef);
@@ -216,7 +321,7 @@ export function FindBar({ mounted }: { mounted: MountedPage }) {
     setSeen(selected);
     if (selected) setTyped(selected);
   }
-  const { matches, current, setCurrent, go, refresh } = useMatches(mounted, open, typed, options);
+  const { matches, problem, current, setCurrent, go, refresh } = useMatches(mounted, open, typed, options, criteria);
 
   const close = () => {
     const match = matches[current];
@@ -235,7 +340,10 @@ export function FindBar({ mounted }: { mounted: MountedPage }) {
   };
   const replace = async (all: boolean) => {
     const list = all ? matches : matches.slice(current, current + 1);
-    const count = await replaceMatches(mounted, list, typed, replacement).catch(() => 0);
+    // No replacement text with formats chosen keeps the found text and sets the formats on it.
+    const formats = criteriaOf(replaceFormats);
+    const spec = { text: replacement === '' && formats.length > 0 ? null : replacement, formats, options };
+    const count = await replaceMatches(mounted, list, spec).catch(() => 0);
     announce(count > 0 ? t('pageExtras.find.replaced', { count }) : t('pageExtras.find.none'));
     refresh();
   };
@@ -264,6 +372,9 @@ export function FindBar({ mounted }: { mounted: MountedPage }) {
         options={options}
         onOptions={setOptions}
         matches={matches}
+        problem={problem}
+        formats={findFormats}
+        onFormats={setFindFormats}
         current={current}
         go={go}
         close={close}
@@ -274,6 +385,8 @@ export function FindBar({ mounted }: { mounted: MountedPage }) {
           onChange={setReplacement}
           enabled={!mounted.page.readOnly}
           empty={matches.length === 0}
+          formats={replaceFormats}
+          onFormats={setReplaceFormats}
           replace={(all) => void replace(all)}
           close={close}
         />

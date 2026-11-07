@@ -1,4 +1,43 @@
 // Finding and replacing by format.
 // Owner: text:find-format (B11 and B12). text:scaffold registered it in the string index, and the owner fills it in.
 
-export const textFind = {} as const;
+export const textFind = {
+  regex: 'Regular expressions',
+  wildcards: 'Wildcards',
+  special: 'Special',
+  specialMenu: 'Special characters',
+  formatFind: 'Find format',
+  formatReplace: 'Replace format',
+  formatShow: 'Format',
+  formatHide: 'Hide format',
+  formatNone: 'No format',
+  formatClear: 'Clear formats',
+  formatInvalid: 'A format value is not valid and is left out.',
+  kind: {
+    bold: 'Bold',
+    italic: 'Italic',
+    underline: 'Underline',
+    font: 'Font',
+    size: 'Size',
+    color: 'Text color',
+    highlight: 'Highlight',
+    style: 'Character style',
+    language: 'Language',
+  },
+  chars: {
+    paragraph: 'Paragraph mark',
+    tab: 'Tab',
+    any: 'Any character',
+    digit: 'Any digit',
+    letter: 'Any letter',
+    lineBreak: 'Manual line break',
+    nbsp: 'Nonbreaking space',
+    caret: 'Caret',
+  },
+  problem: {
+    tooLong: 'The pattern is too long. Use at most 250 characters.',
+    invalid: 'The pattern is not valid.',
+    unsafe: 'The pattern repeats a repeated part, which can take too long. Simplify it.',
+    slow: 'The search took too long and stopped. Narrow the pattern.',
+  },
+} as const;
