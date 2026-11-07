@@ -257,6 +257,11 @@ function Entry({ value, label, placeholder, invalid, onChange, onRun }: EntryPro
           onChange={(event) => onChange(event.target.value)}
           onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
             if (event.key === 'Enter' && !event.nativeEvent.isComposing) onRun();
+            // Escape clears what was typed; with the field already empty it closes the window as before.
+            if (event.key === 'Escape' && value) {
+              event.preventDefault();
+              onChange('');
+            }
           }}
         />
       </label>

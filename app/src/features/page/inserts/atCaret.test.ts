@@ -100,4 +100,21 @@ describe('after worked steps', () => {
     insertTextAtCaret(mounted.editor, html);
     expect(kinds(mounted)).toEqual(['paragraph', 'paragraph', 'orderedList', 'paragraph', 'paragraph', 'orderedList']);
   });
+
+  it('puts an answer on its own line below a heading, never into the title', () => {
+    mounted = mountEditor('## Saturday, October 31, 2026');
+    mounted.editor.commands.focus('end');
+    expect(insertTextAtCaret(mounted.editor, '4')).toBe(true);
+    expect(kinds(mounted)).toEqual(['heading', 'paragraph']);
+    expect(mounted.editor.state.doc.firstChild?.textContent).toBe('Saturday, October 31, 2026');
+    expect(mounted.editor.state.doc.lastChild?.textContent).toBe('4');
+  });
+
+  it('puts a display equation below a heading', () => {
+    mounted = mountEditor('## Work');
+    mounted.editor.commands.focus('end');
+    expect(insertMathAtCaret(mounted.editor, 'x=2', true)).toBe(true);
+    // The page may add a line after a closing equation; the equation itself comes straight after the heading.
+    expect(kinds(mounted).slice(0, 2)).toEqual(['heading', 'mathBlock']);
+  });
 });
