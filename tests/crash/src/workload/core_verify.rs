@@ -2,7 +2,7 @@
 //! `verify_notebook` must find nothing wrong. Every page must equal the replayed script at a step no lower than
 //! its last acknowledgment, nothing may be lost or duplicated, and a second recovery must change nothing.
 
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -139,21 +139,36 @@ impl VerifyState {
             return Err(format!("page {page} is in the tree twice"));
         }
         let trash = notebook.trash().map_err(|e| format!("trash: {e}"))?;
-        let trashed: BTreeSet<String> = trash
+        let trashed: BTreeMap<String, String> = trash
             .iter()
-            .flat_map(|item| &item.contents)
-            .map(|id| id.to_string())
+            .flat_map(|item| item.contents.iter().map(|id| (id.to_string(), item.id.to_string())))
             .collect();
         let edited = manifest.pages.iter().map(|page| (page, true, None));
         let scratch = self.expected.iter().map(|(page, trash)| (page, false, trash.as_ref()));
         for (page, must_be_in_tree, trash) in edited.chain(scratch) {
             let in_tree = counts.contains_key(page);
             let expired = trash.is_some_and(|(_, deleted)| may_have_expired(*deleted, iteration));
-            if !in_tree && (must_be_in_tree || !(trashed.contains(page) || expired)) {
+            if !in_tree && (must_be_in_tree || !(trashed.contains_key(page) || expired)) {
                 return Err(format!("page {page} is lost: it is in neither the tree nor Trash"));
             }
         }
+        self.follow_unannounced(&counts, &trashed, iteration);
         Ok(())
+    }
+
+    /// A tree change that finished may be killed before the writer could say so, or finish in recovery. The
+    /// next checks hold each scratch page to where this one found it. A page found in a Trash item no marker
+    /// named went there in this iteration, so its item may expire 30 days of iterations from now and no sooner.
+    fn follow_unannounced(&mut self, counts: &BTreeMap<String, u32>, trashed: &BTreeMap<String, String>, now: u64) {
+        for (page, place) in &mut self.expected {
+            if counts.contains_key(page) {
+                *place = None;
+            } else if let Some(item) = trashed.get(page) {
+                if place.as_ref().is_none_or(|(known, _)| known != item) {
+                    *place = Some((item.clone(), now));
+                }
+            }
+        }
     }
 }
 
@@ -241,12 +256,65 @@ mod tests {
     use opennote_core::session::notebook::{NodePlacement, NodeRef, ParentRef};
     use opennote_core::store::layout::NotebookLayout;
 
-    use super::{may_have_expired, recover, snapshot, Manifest, Paths};
+    use super::{may_have_expired, recover, snapshot, Manifest, Markers, Paths, VerifyState};
 
     #[test]
     fn trash_items_may_expire_after_thirty_days_of_iterations() {
         assert!(!may_have_expired(5, 5 + 719));
         assert!(may_have_expired(5, 5 + 720));
+    }
+
+    /// The nightly run failed at iteration 965 with "page … is lost". A writer deleted a scratch page and was
+    /// killed before it said so, so the check kept expecting the page in the tree. It accepted the page in Trash,
+    /// but 720 iterations later the Trash expiry purged it, and the check didn't know the item could expire.
+    #[test]
+    fn a_page_deleted_without_a_marker_may_expire_from_the_iteration_the_check_found_it_in_trash() {
+        let dir = tempfile::tempdir().unwrap();
+        let paths = Paths {
+            notebook: dir.path().join("notebooks").join("Kill"),
+            data: dir.path().join("data"),
+        };
+        super::super::core::setup(&paths).unwrap();
+        let manifest = Manifest::load(&paths.data).unwrap();
+        let section = manifest.section_id().unwrap();
+        let at_end = NodePlacement {
+            parent: ParentRef::Section(section),
+            before: None,
+        };
+        let mut state = VerifyState::new(&paths, 7).unwrap();
+        let (core, notebook) = recover(&paths.data, &manifest, 0).unwrap();
+        let page = notebook.create_page(section, at_end).unwrap();
+        notebook.delete(&[NodeRef::Page(page)]).unwrap();
+        // The writer said it made the page, and was killed before it could say it deleted it.
+        let mut markers = Markers::default();
+        markers.tree.push(vec!["create".into(), page.to_string()]);
+        state.check_tree(&notebook, &manifest, (0, &markers)).unwrap();
+        notebook.close().unwrap();
+        drop(core);
+
+        let quiet = Markers::default();
+        for iteration in [1, 719, 721] {
+            let (core, notebook) = recover(&paths.data, &manifest, iteration).unwrap();
+            let in_trash = notebook
+                .trash()
+                .unwrap()
+                .iter()
+                .any(|item| item.contents.iter().any(|id| id.to_string() == page.to_string()));
+            assert_eq!(in_trash, iteration < 720, "iteration {iteration}");
+            state.check_tree(&notebook, &manifest, (iteration, &quiet)).unwrap();
+            notebook.close().unwrap();
+            drop(core);
+        }
+
+        // A page that is gone before its Trash item could expire is still lost.
+        let mut lost = Markers::default();
+        lost.tree
+            .push(vec!["create".into(), "01m3s9twr0pwe2r1dv68abp9q9".into()]);
+        let (core, notebook) = recover(&paths.data, &manifest, 722).unwrap();
+        let error = state.check_tree(&notebook, &manifest, (722, &lost)).unwrap_err();
+        assert!(error.contains("is lost"), "{error}");
+        notebook.close().unwrap();
+        drop(core);
     }
 
     /// The nightly run failed at iteration 750 with "a second recovery changed the notebook". Opening queues the
