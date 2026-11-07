@@ -22,7 +22,7 @@ export interface CodeProjectBlockProps {
 /** A file name for the export, from the project's name. */
 function zipName(name: string): string {
   const cleaned = [...name].map((char) => (char.charCodeAt(0) < 32 || '\\/:*?"<>|'.includes(char) ? ' ' : char));
-  return `${cleaned.join('').trim().slice(0, 80) || 'project'}.zip`;
+  return `${cleaned.join('').trim().slice(0, 80) || t('codeStudio.project.block')}.zip`;
 }
 
 export function mountCodeProject(container: HTMLElement, initial: CodeProjectBlockProps) {
@@ -73,11 +73,13 @@ export function mountCodeProject(container: HTMLElement, initial: CodeProjectBlo
       }
       say(importSummary(plan));
     } catch (error) {
-      say(
-        t(
-          error instanceof ZipError ? 'codeStudio.project.exchange.notZip' : 'codeStudio.project.exchange.importFailed',
-        ),
-      );
+      const key =
+        error instanceof ZipError
+          ? error.code === 'tooBig'
+            ? 'codeStudio.project.exchange.zipTooBig'
+            : 'codeStudio.project.exchange.notZip'
+          : 'codeStudio.project.exchange.importFailed';
+      say(t(key));
     }
   };
 

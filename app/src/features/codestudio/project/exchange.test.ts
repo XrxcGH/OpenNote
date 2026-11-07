@@ -2,6 +2,7 @@
 // .ZIP format (APPNOTE 4.3), and import skips what a project cannot hold, with the reason.
 import { describe, expect, it } from 'vitest';
 import { crc32 } from '../../../core/ink/bytes';
+import { t } from '../../../strings/t';
 import type { CodeProject } from '../contracts';
 import { entriesOf, exportZip, fileDownload, importSummary, manifestOf, planImport } from './exchange';
 import { readProject, starterProject } from './model';
@@ -78,6 +79,54 @@ describe('project zip', () => {
     expect(back.runtime).toBe('python-full');
   });
 
+  it('restores the settings into the untouched starter that Insert gives, and the starter file gives way', async () => {
+    const starter = starterProject(t('codeStudio.project.starterName'), t('codeStudio.project.starterMain'));
+    const project = sample();
+    const back = imported(starter, await readZip(exportZip(project), 1 << 20));
+    expect(back.files).toEqual(project.files);
+    expect(back.tests).toEqual(project.tests);
+    expect(back.main).toBe('f07');
+    expect(back.name).toBe('Two sum');
+    expect(back.runtime).toBe('python-full');
+    expect(back.settings).toEqual(project.settings);
+    expect(back.stdin).toBe('4\n');
+    expect(back.args).toEqual(['--fast']);
+  });
+
+  it('keeps the name and settings of a starter the user has changed, and replaces main.py by path', async () => {
+    const starter = starterProject(t('codeStudio.project.starterName'), 'print(1)\n');
+    const back = imported(starter, await readZip(exportZip(sample()), 1 << 20));
+    expect(back.name).toBe('Untitled project');
+    expect(back.runtime).toBe('python-quick');
+    expect(back.files.f01.text).toBe(sample().files.f07.text);
+  });
+
+  it('takes only test cases of the stored shape, and lists the others as skipped', async () => {
+    const good = sample().tests.t01;
+    const hostile = [
+      { ...good, id: 'ok', extra: 'not stored', compare: { mode: 'exact', junk: 1 } },
+      { ...good, id: 'noOrder', order: undefined },
+      { ...good, id: '__proto__', name: 'Prototype' },
+      { ...good, id: 'badKind', kind: 'shell' },
+      { ...good, id: 'bad id!' },
+      { ...good, id: 'badArgs', args: [1] },
+      'not a case',
+    ];
+    const entries = ((await readZip(exportZip(sample()), 1 << 20)) as ZipEntry[]).map((entry) =>
+      entry.path === 'opennote-tests.json'
+        ? { ...entry, bytes: encoder.encode(JSON.stringify({ format: 'opennote-code-project', tests: hostile })) }
+        : entry,
+    );
+    const plan = planImport(empty(), entries);
+    expect(plan.skipped.map((skip) => skip.reason)).toEqual(['test', 'test', 'test', 'test', 'test', 'test']);
+    expect(plan.skipped[5].path).toBe('opennote-tests.json #7');
+    const back = imported(empty(), entries);
+    expect(Object.keys(back.tests)).toEqual(['ok']);
+    expect(back.tests.ok).toEqual({ ...good, id: 'ok' });
+    expect(Object.getPrototypeOf(back.tests)).toBe(Object.prototype);
+    expect(importSummary(plan)).toContain('Prototype (not a test case OpenNote can read)');
+  });
+
   it('holds each file at its path, opennote-project.json, opennote-tests.json, and no README over the own one', async () => {
     const entries = (await readZip(exportZip(sample()), 1 << 20)) as ZipEntry[];
     expect(entries.map((entry) => entry.path)).toEqual([
@@ -107,6 +156,53 @@ describe('project zip', () => {
     // Importing it back leaves the generated README out.
     const back = imported(empty(), entries);
     expect(Object.values(back.files).map((file) => file.path)).not.toContain('README.md');
+  });
+});
+
+/**
+ * An archive with one stored entry and `count` central entries that all point at its local header. APPNOTE 4.3.12
+ * gives each central entry a local offset, and nothing in the format stops them sharing one.
+ */
+function sharedHeaders(entryBytes: number, count: number): Uint8Array {
+  const one = writeZip([{ path: 'a.txt', bytes: new Uint8Array(entryBytes).fill(97) }]);
+  const localLength = 30 + 5 + entryBytes;
+  const central = one.subarray(localLength, localLength + 46 + 5);
+  const out = new Uint8Array(localLength + central.length * count + 22);
+  out.set(one.subarray(0, localLength));
+  for (let i = 0; i < count; i++) out.set(central, localLength + i * central.length);
+  const end = new DataView(out.buffer, localLength + central.length * count);
+  end.setUint32(0, 0x06054b50, true);
+  end.setUint16(8, count, true);
+  end.setUint16(10, count, true);
+  end.setUint32(12, central.length * count, true);
+  end.setUint32(16, localLength, true);
+  return out;
+}
+
+describe('hostile archives', () => {
+  it('refuses central entries that share one local header at once, without copying them', async () => {
+    const archive = sharedHeaders(1024 * 1024, 300);
+    const start = performance.now();
+    await expect(entriesOf([{ name: 'x.zip', bytes: archive }])).rejects.toEqual(new ZipError('corrupt'));
+    expect(performance.now() - start).toBeLessThan(1000);
+  });
+
+  it('refuses more entries than a project and its three export files hold, before opening the rest', async () => {
+    // 200 files and 3 export files fit; one more does not.
+    const fits = Array.from({ length: 203 }, (_, i) => ({ path: `f${i}.txt`, bytes: new Uint8Array(0) }));
+    expect(await entriesOf([{ name: 'ok.zip', bytes: writeZip(fits) }])).toHaveLength(203);
+    const over = [...fits, { path: 'one-more.txt', bytes: new Uint8Array(0) }];
+    const error = await entriesOf([{ name: 'x.zip', bytes: writeZip(over) }]).catch((caught: unknown) => caught);
+    expect(error).toEqual(new ZipError('tooBig'));
+  });
+
+  it('refuses an archive that unpacks past 4 MiB of project and 3 MiB of export files', async () => {
+    // Seven distinct 1 MiB entries are 7 MiB, the cap; an eighth passes it.
+    const mib = (i: number) => ({ path: `m${i}.txt`, bytes: new Uint8Array(1024 * 1024).fill(97 + i) });
+    const seven = Array.from({ length: 7 }, (_, i) => mib(i));
+    expect(await entriesOf([{ name: 'ok.zip', bytes: writeZip(seven) }])).toHaveLength(7);
+    const eight = writeZip([...seven, mib(7)]);
+    await expect(entriesOf([{ name: 'x.zip', bytes: eight }])).rejects.toEqual(new ZipError('tooBig'));
   });
 });
 

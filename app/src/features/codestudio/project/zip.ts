@@ -2,6 +2,9 @@
 // (APPNOTE.TXT, sections 4.3 and 4.4). The writer stores files without compression, with UTF-8 names (flag bit 11)
 // and a fixed date, so the same project always gives the same bytes. The reader takes stored and deflated entries
 // (method 0 and 8); it refuses encrypted and ZIP64 archives, and never inflates an entry past the size it may hold.
+//
+// A hostile archive can point many entries at one local header, or list 65,535 entries. So the reader caps the
+// entry count and the total unpacked size. It stops before it opens anything past them.
 
 import { crc32 } from '../../../core/ink/bytes';
 
@@ -17,7 +20,7 @@ export interface ZipSkipped {
 }
 
 export class ZipError extends Error {
-  constructor(readonly code: 'notZip' | 'zip64' | 'encrypted' | 'method' | 'corrupt') {
+  constructor(readonly code: 'notZip' | 'zip64' | 'encrypted' | 'method' | 'corrupt' | 'tooBig') {
     super(`zip: ${code}`);
   }
 }
@@ -136,11 +139,23 @@ async function inflate(data: Uint8Array, limit: number): Promise<Uint8Array | nu
   return out;
 }
 
+/** The most an archive may hold: entries (folders left out) and unpacked bytes over all opened entries. */
+export interface ZipCaps {
+  entries: number;
+  totalBytes: number;
+}
+
 /**
  * The entries of an archive, folders left out. An entry larger than `maxBytes` is listed as skipped, unopened.
- * Throws ZipError when the bytes are not an archive this reader takes.
+ * Throws ZipError when the bytes are not an archive this reader takes, and ZipError('tooBig') as soon as the
+ * archive lists more entries or more unpacked bytes than `caps` allows. Two entries that share one local header
+ * are corrupt.
  */
-export async function readZip(bytes: Uint8Array, maxBytes: number): Promise<(ZipEntry | ZipSkipped)[]> {
+export async function readZip(
+  bytes: Uint8Array,
+  maxBytes: number,
+  caps: ZipCaps = { entries: 0xffff, totalBytes: Number.MAX_SAFE_INTEGER },
+): Promise<(ZipEntry | ZipSkipped)[]> {
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   let end = -1;
   for (let i = bytes.length - 22; i >= Math.max(0, bytes.length - 22 - 0xffff); i--) {
@@ -155,6 +170,8 @@ export async function readZip(bytes: Uint8Array, maxBytes: number): Promise<(Zip
   if (count === 0xffff || offset === 0xffffffff) throw new ZipError('zip64');
   const decoder = new TextDecoder();
   const out: (ZipEntry | ZipSkipped)[] = [];
+  const seen = new Set<number>();
+  let total = 0;
   let at = offset;
   for (let n = 0; n < count; n++) {
     if (at + 46 > bytes.length || view.getUint32(at, true) !== CENTRAL) throw new ZipError('corrupt');
@@ -170,25 +187,32 @@ export async function readZip(bytes: Uint8Array, maxBytes: number): Promise<(Zip
     const path = decoder.decode(bytes.subarray(at + 46, at + 46 + nameLength));
     at += 46 + nameLength + extraLength + commentLength;
     if (path.endsWith('/')) continue;
+    if (out.length >= caps.entries) throw new ZipError('tooBig');
     if (flags & 1) throw new ZipError('encrypted');
     if (packed === 0xffffffff || size === 0xffffffff || local === 0xffffffff) throw new ZipError('zip64');
-    if (local + 30 > bytes.length || view.getUint32(local, true) !== LOCAL) throw new ZipError('corrupt');
+    if (seen.has(local) || local + 30 > bytes.length || view.getUint32(local, true) !== LOCAL) {
+      throw new ZipError('corrupt');
+    }
+    seen.add(local);
     const start = local + 30 + view.getUint16(local + 26, true) + view.getUint16(local + 28, true);
     if (start + packed > bytes.length) throw new ZipError('corrupt');
     if (size > maxBytes) {
       out.push({ path, tooBig: true });
       continue;
     }
+    // The declared size counts before anything is opened, and the inflater may not pass what is left.
+    if (total + size > caps.totalBytes) throw new ZipError('tooBig');
     const data = bytes.subarray(start, start + packed);
     let content: Uint8Array | null;
     if (method === 0) content = data;
-    else if (method === 8) content = await inflate(data, maxBytes);
+    else if (method === 8) content = await inflate(data, Math.min(maxBytes, caps.totalBytes - total));
     else throw new ZipError('method');
     if (content === null) {
       out.push({ path, tooBig: true });
       continue;
     }
     if (content.length !== size || crc32(content) !== crc) throw new ZipError('corrupt');
+    total += size;
     out.push({ path, bytes: content.slice() });
   }
   return out;

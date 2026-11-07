@@ -4,18 +4,29 @@
 // limits goes in, and everything else is listed as skipped with the reason.
 
 import { t } from '../../../strings/t';
-import { CODE_PROJECT_VERSION, PROJECT_LIMITS } from '../contracts';
+import { CODE_PROJECT_VERSION, COMPARE_MODES, PROJECT_LIMITS, TEST_KINDS } from '../contracts';
 import type { CodeFile, CodeProject, TestCase } from '../contracts';
 import { RESERVED_ROOT_FILES, nextId, nextOrder, readProject, sortedFiles } from './model';
 import { pathKey, pathProblemAmong } from './paths';
 import { limitRefusal, replacing } from './store';
 import type { Refusal } from './store';
 import { looksLikeZip, readZip, writeZip } from './zip';
-import type { ZipEntry } from './zip';
+import type { ZipCaps, ZipEntry } from './zip';
 
 export const MANIFEST = 'opennote-project.json';
 export const TESTS_FILE = 'opennote-tests.json';
 const README = 'README.md';
+/** The export files an archive holds beside the project's own files. */
+const EXPORT_FILES = 3;
+/**
+ * The most a .zip may unpack to before import refuses it unread: a full project and the three export files, each
+ * of those within the file limit.
+ */
+export const ZIP_CAPS: ZipCaps = {
+  entries: PROJECT_LIMITS.files + EXPORT_FILES,
+  totalBytes: PROJECT_LIMITS.projectBytes + EXPORT_FILES * PROJECT_LIMITS.fileBytes,
+};
+const ID = /^[A-Za-z0-9_-]{1,32}$/;
 /** What opennote-project.json says it is, so import knows an OpenNote export from any other JSON file. */
 const MANIFEST_FORMAT = 'opennote-code-project';
 
@@ -76,7 +87,7 @@ export function fileDownload(project: CodeProject, id: string): { name: string; 
   return { name: file.path.slice(file.path.lastIndexOf('/') + 1), bytes: encoder.encode(file.text) };
 }
 
-export type SkipReason = 'binary' | 'path' | 'tooBig';
+export type SkipReason = 'binary' | 'path' | 'tooBig' | 'test';
 
 export interface ImportPlan {
   /** The merge patch to send, or null when nothing changes. */
@@ -121,10 +132,63 @@ function parseJson(bytes: Uint8Array | undefined): Record<string, unknown> | nul
   }
 }
 
+const isText = (value: unknown) => value === undefined || typeof value === 'string';
+const isFiniteNumber = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value);
+
+/** An imported test case of the stored shape (contracts/testing.ts), or null. */
+function testCase(value: unknown): TestCase | null {
+  if (!isMap(value)) return null;
+  const { id, name, kind, expected, compare, order, args, timeMs, rowsOrdered } = value;
+  // `__proto__` and the other Object.prototype names fit the ID pattern, but as keys they would not be data.
+  if (
+    typeof id !== 'string' ||
+    !ID.test(id) ||
+    id in Object.prototype ||
+    typeof name !== 'string' ||
+    typeof expected !== 'string'
+  )
+    return null;
+  if (!(TEST_KINDS as readonly unknown[]).includes(kind) || !isFiniteNumber(order)) return null;
+  if (!isMap(compare) || !(COMPARE_MODES as readonly unknown[]).includes(compare.mode)) return null;
+  if (compare.tolerance !== undefined && !isFiniteNumber(compare.tolerance)) return null;
+  if (compare.relative !== undefined && typeof compare.relative !== 'boolean') return null;
+  if (!isText(value.stdin) || !isText(value.fn) || !isText(value.callArgs)) return null;
+  if (args !== undefined && !(Array.isArray(args) && args.every((arg) => typeof arg === 'string'))) return null;
+  if (timeMs !== undefined && !(isFiniteNumber(timeMs) && timeMs > 0)) return null;
+  if (rowsOrdered !== undefined && typeof rowsOrdered !== 'boolean') return null;
+  // Only the stored fields go in, so an import cannot write anything else into the page.
+  const keys = ['id', 'name', 'kind', 'stdin', 'args', 'fn', 'callArgs', 'expected', 'rowsOrdered', 'timeMs', 'order'];
+  const out: Record<string, unknown> = {};
+  for (const key of keys) if (value[key] !== undefined) out[key] = value[key];
+  const spec: Record<string, unknown> = { mode: compare.mode };
+  if (compare.tolerance !== undefined) spec.tolerance = compare.tolerance;
+  if (compare.relative !== undefined) spec.relative = compare.relative;
+  out.compare = spec;
+  return out as unknown as TestCase;
+}
+
+/**
+ * Whether a project is still the starter that Insert gives: one main.py with the starter text, the starter name,
+ * and no tests, input, or arguments. Importing an export into it restores the export's settings.
+ */
+export function isFreshStarter(project: CodeProject): boolean {
+  const files = Object.values(project.files);
+  return (
+    files.length === 1 &&
+    files[0].path === 'main.py' &&
+    files[0].text === t('codeStudio.project.starterMain') &&
+    project.name === t('codeStudio.project.starterName') &&
+    Object.keys(project.tests).length === 0 &&
+    project.stdin === '' &&
+    project.args.length === 0
+  );
+}
+
 /**
  * What importing these entries into the project would do. An OpenNote export restores each file's ID and order
- * where they are free, and its tests. Into an empty project it also restores the name and the settings. A file
- * whose path is already in the project replaces that file's text.
+ * where they are free, and its tests. Into an empty project, or the untouched starter, it also restores the name
+ * and the settings, and the starter's file gives way to the export's files. A file whose path is already in the
+ * project replaces that file's text. A test case that is not of the stored shape is listed as skipped.
  */
 export function planImport(
   project: CodeProject,
@@ -148,8 +212,9 @@ export function planImport(
     }
   }
 
-  const empty = Object.keys(project.files).length === 0;
-  const files: Record<string, CodeFile> = { ...project.files };
+  const fresh = manifest !== null && (Object.keys(project.files).length === 0 || isFreshStarter(project));
+  // Into a fresh project the starter's file goes, so the export's own IDs and paths come back.
+  const files: Record<string, CodeFile> = fresh ? {} : { ...project.files };
   const filePatch: Record<string, unknown> = {};
   for (const [path, entry] of byPath) {
     if (manifest && (path === MANIFEST || (path === TESTS_FILE && testsFile))) continue;
@@ -187,20 +252,32 @@ export function planImport(
     plan.added.push(normalized);
   }
 
+  // When nothing came in, the starter's file stays, so a project always keeps a file.
+  if (fresh && Object.keys(files).length === 0) Object.assign(files, project.files);
+  else if (fresh) {
+    // A starter file the export does not bring back is deleted, and one whose ID it reuses is replaced whole.
+    for (const id of Object.keys(project.files)) {
+      filePatch[id] = id in filePatch ? replacing(project.files[id], filePatch[id]) : null;
+    }
+  }
   const patch: Record<string, unknown> = {};
   if (Object.keys(filePatch).length > 0) patch.files = filePatch;
   const tests: Record<string, TestCase> = { ...project.tests };
   if (testsFile && Array.isArray(testsFile.tests)) {
     const testPatch: Record<string, unknown> = {};
-    for (const test of testsFile.tests) {
-      if (!isMap(test) || typeof test.id !== 'string') continue;
-      const id = test.id;
-      testPatch[id] = replacing(tests[id], test);
-      tests[id] = test as unknown as TestCase;
+    for (const [index, item] of testsFile.tests.entries()) {
+      const test = testCase(item);
+      if (!test) {
+        const label = isMap(item) && typeof item.name === 'string' ? item.name : `${TESTS_FILE} #${index + 1}`;
+        plan.skipped.push({ path: label, reason: 'test' });
+        continue;
+      }
+      testPatch[test.id] = replacing(Object.hasOwn(tests, test.id) ? tests[test.id] : undefined, test);
+      tests[test.id] = test;
     }
     if (Object.keys(testPatch).length > 0) patch.tests = testPatch;
   }
-  if (manifest && empty) Object.assign(patch, settingsFrom(manifest, files));
+  if (manifest && fresh) Object.assign(patch, settingsFrom(manifest, files));
   else if (!files[project.main] && Object.keys(files).length > 0) patch.main = sortedFiles(files)[0][0];
 
   const next = readProject({ ...projectData(project), ...patch, files, tests });
@@ -209,7 +286,7 @@ export function planImport(
   return plan;
 }
 
-/** The fields an export restores into an empty project. */
+/** The fields an export restores into an empty project or the untouched starter. */
 function settingsFrom(manifest: Record<string, unknown>, files: Record<string, CodeFile>): Record<string, unknown> {
   const out: Record<string, unknown> = { v: CODE_PROJECT_VERSION };
   for (const key of ['name', 'language', 'runtime', 'stdin'] as const) {
@@ -233,7 +310,7 @@ export async function entriesOf(
   const out: (ZipEntry | { path: string; tooBig: true })[] = [];
   for (const file of files) {
     if (file.name.toLowerCase().endsWith('.zip') || looksLikeZip(file.bytes)) {
-      out.push(...withoutCommonFolder(await readZip(file.bytes, PROJECT_LIMITS.fileBytes)));
+      out.push(...withoutCommonFolder(await readZip(file.bytes, PROJECT_LIMITS.fileBytes, ZIP_CAPS)));
     } else if (file.bytes.length > PROJECT_LIMITS.fileBytes) {
       out.push({ path: file.name, tooBig: true });
     } else {
@@ -248,7 +325,7 @@ export function importSummary(plan: ImportPlan): string {
   if (plan.refusal) return plan.refusal.message;
   const parts = [t('codeStudio.project.exchange.imported', { count: plan.added.length + plan.replaced.length })];
   if (plan.skipped.length > 0) {
-    const key = { binary: 'skipBinary', path: 'skipPath', tooBig: 'skipTooBig' } as const;
+    const key = { binary: 'skipBinary', path: 'skipPath', tooBig: 'skipTooBig', test: 'skipTest' } as const;
     const list = plan.skipped.map((skip) => t(`codeStudio.project.exchange.${key[skip.reason]}`, { path: skip.path }));
     parts.push(t('codeStudio.project.exchange.skipped', { count: plan.skipped.length, list: list.join(', ') }));
   }

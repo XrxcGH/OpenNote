@@ -179,12 +179,20 @@ function testChange(project: CodeProject, id: string, test: TestCase | null): Ch
   return { patch: { tests: { [id]: replacing(project.tests[id], { ...test, id }) } }, value: undefined };
 }
 
-/** Whether new text for a file keeps the file and project limits. */
-function textRefusal(project: CodeProject, file: CodeFile, text: string): Refusal | null {
-  if (utf8Bytes(text) > PROJECT_LIMITS.fileBytes) {
+/** Whether new text for a file keeps the file and project limits. `size` gives a file's UTF-8 bytes by ID. */
+function textRefusal(
+  project: CodeProject,
+  id: string,
+  text: string,
+  size: (id: string, text: string) => number,
+): Refusal | null {
+  const file = project.files[id];
+  const bytes = utf8Bytes(text);
+  if (bytes > PROJECT_LIMITS.fileBytes) {
     return refusal('fileTooBig', { path: file.path, max: MIB(PROJECT_LIMITS.fileBytes) });
   }
-  const total = projectBytes(project.files) - utf8Bytes(file.text) + utf8Bytes(text);
+  let total = bytes;
+  for (const [other, entry] of Object.entries(project.files)) if (other !== id) total += size(other, entry.text);
   return total > PROJECT_LIMITS.projectBytes
     ? refusal('projectTooBig', { max: MIB(PROJECT_LIMITS.projectBytes) })
     : null;
@@ -195,6 +203,8 @@ class Store implements ProjectStore {
   private readOnly: boolean;
   private readonly pending = new Map<string, string>();
   private timer: ReturnType<typeof setTimeout> | null = null;
+  /** Each file's UTF-8 size for the text it was counted at, so a keystroke encodes only the changed text. */
+  private readonly sizes = new Map<string, { text: string; bytes: number }>();
 
   constructor(private readonly options: ProjectStoreOptions) {
     this.data = options.data;
@@ -214,12 +224,20 @@ class Store implements ProjectStore {
     return project;
   }
 
+  private sizeOf(id: string, text: string): number {
+    const known = this.sizes.get(id);
+    if (known && known.text === text) return known.bytes;
+    const bytes = utf8Bytes(text);
+    this.sizes.set(id, { text, bytes });
+    return bytes;
+  }
+
   editFile(id: string, text: string): Outcome {
     if (!this.editable) return refusal('readOnly');
     const project = this.project();
     const file = project.files[id];
     if (!file) return refusal('noFile');
-    const over = textRefusal(project, file, text);
+    const over = textRefusal(project, id, text, (other, current) => this.sizeOf(other, current));
     if (over) return over;
     this.pending.set(id, text);
     if (this.timer !== null) clearTimeout(this.timer);
