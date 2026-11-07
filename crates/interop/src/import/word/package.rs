@@ -5,7 +5,10 @@ use std::io::{Read, Seek};
 
 use opennote_core::Timestamp;
 
-use super::styles::{Numbering, Styles};
+use super::notes::{read_notes, Sources};
+use super::numbering::Numbering;
+use super::styles::Styles;
+use super::theme::Theme;
 use crate::archive::{ArchiveLimits, ZipArchive};
 use crate::dates::parse_date;
 use crate::error::{InteropError, Result};
@@ -56,6 +59,14 @@ pub(super) struct Package<R: Read + Seek> {
     pub styles: Styles,
     pub numbering: Numbering,
     pub props: CoreProps,
+    /// The theme's fonts and colors.
+    pub theme: Theme,
+    /// The text of footnotes, endnotes, and comments.
+    pub sources: Sources,
+    /// `settings.xml`.
+    pub settings: Option<Element>,
+    /// The folder of the document part, such as `word`.
+    dir: String,
     /// Names of parts that hold content this import does not read.
     pub unread_parts: Vec<&'static str>,
     /// The bytes that the parts and pictures have unpacked so far.
@@ -88,6 +99,36 @@ impl<R: Read + Seek> Package<R> {
         let props = xml_part(&mut archive, "docProps/core.xml", &mut unpacked)?
             .map(|e| read_props(&e))
             .unwrap_or_default();
+        let part = |archive: &mut ZipArchive<R>, unpacked: &mut u64, file: &str| {
+            let target = rels
+                .values()
+                .find(|r| !r.external && r.target.rsplit('/').next() == Some(file))
+                .map_or_else(|| file.to_owned(), |r| r.target.trim_start_matches('/').to_owned());
+            let path = if target.starts_with(&format!("{dir}/")) {
+                target
+            } else {
+                format!("{dir}/{target}")
+            };
+            xml_part(archive, &path, unpacked)
+        };
+        let theme = match part(&mut archive, &mut unpacked, "theme1.xml")? {
+            Some(root) => Theme::read(&root),
+            None => xml_part(&mut archive, &format!("{dir}/theme/theme1.xml"), &mut unpacked)?
+                .map(|root| Theme::read(&root))
+                .unwrap_or_default(),
+        };
+        let mut sources = Sources::default();
+        if let Some(root) = part(&mut archive, &mut unpacked, "footnotes.xml")? {
+            sources.footnotes = read_notes(&root, "w:footnote");
+        }
+        if let Some(root) = part(&mut archive, &mut unpacked, "endnotes.xml")? {
+            sources.endnotes = read_notes(&root, "w:endnote");
+        }
+        if let Some(root) = part(&mut archive, &mut unpacked, "comments.xml")? {
+            let extended = part(&mut archive, &mut unpacked, "commentsExtended.xml")?;
+            sources.read_comments(&root, extended.as_ref());
+        }
+        let settings = part(&mut archive, &mut unpacked, "settings.xml")?;
         let unread_parts = unread(&archive, &dir);
         Ok(Package {
             archive,
@@ -96,11 +137,26 @@ impl<R: Read + Seek> Package<R> {
             styles,
             numbering,
             props,
+            theme,
+            sources,
+            settings,
+            dir,
             unread_parts,
             unpacked,
             budget: MAX_DOCUMENT_BYTES,
             over_budget: 0,
         })
+    }
+
+    /// An XML part that a relationship of the document names, such as a header.
+    pub fn part(&mut self, target: &str) -> Option<Element> {
+        let path = target.trim_start_matches('/');
+        let path = if path.starts_with(&format!("{}/", self.dir)) {
+            path.to_owned()
+        } else {
+            format!("{}/{path}", self.dir)
+        };
+        xml_part(&mut self.archive, &path, &mut self.unpacked).ok().flatten()
     }
 
     /// The bytes of a part that a relationship names, relative to the document's folder. A picture that would
@@ -218,15 +274,7 @@ fn unread<R: Read + Seek>(archive: &ZipArchive<R>, dir: &str) -> Vec<&'static st
         })
     };
     let mut found = Vec::new();
-    for (pattern, label) in [
-        ("footnotes", "footnotes"),
-        ("endnotes", "endnotes"),
-        ("comments", "comments"),
-        ("header", "headers"),
-        ("footer", "footers"),
-        ("charts/", "charts"),
-        ("embeddings/", "embedded objects"),
-    ] {
+    for (pattern, label) in [("charts/", "charts"), ("embeddings/", "embedded objects")] {
         if has(pattern) {
             found.push(label);
         }
