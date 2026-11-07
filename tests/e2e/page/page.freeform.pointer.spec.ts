@@ -19,10 +19,17 @@ describe('freeform pages by pointer', { skip: skipReason() }, () => {
     const { browser } = session;
     await clickAt(browser, await clientPoint(browser, 500, 300));
     await clickAt(browser, await clientPoint(browser, 600, 500));
-    assert.deepEqual(await textBoxes(browser), [], 'an untouched caret leaves nothing behind');
+    // A click makes a caret, a draft text box that joins the page with its first typed character. Clicking
+    // elsewhere removes the untouched draft, so only the latest caret is left, and it holds no text.
+    const carets = await textBoxes(browser);
+    assert.deepEqual(
+      carets.map((caret) => ({ text: caret.text, left: caret.left })),
+      [{ text: '', left: 600 }],
+      'an untouched caret leaves nothing behind but the next caret',
+    );
     await makeBox(browser, 400, 260, 'Stomata');
     const [box] = await textBoxes(browser);
-    assert.match(box?.name ?? '', /^Text box d+ of d+/);
+    assert.match(box?.name ?? '', /^Text box \d+ of \d+/);
     assert.equal(box?.left, 400);
   });
 
