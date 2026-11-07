@@ -4,20 +4,49 @@
  */
 @layer components {
   .host {
-    position: relative;
-    overflow: hidden;
-    border-block-end: 1px solid var(--color-border-subtle);
-    background: var(--color-surface-raised);
-  }
-
-  .bar {
     display: flex;
-    align-items: stretch;
+    align-items: center;
     gap: var(--space-2);
     padding-inline: var(--space-2);
     block-size: 44px;
+    border-block-end: 1px solid var(--color-border-subtle);
+    background: var(--color-surface-raised);
     color: var(--color-text-secondary);
     font: var(--type-caption-size) / var(--type-caption-line) var(--font-ui);
+  }
+
+  .control {
+    flex: none;
+  }
+
+  /* Hidden, not removed, so the clip keeps its place while there is no text block. */
+  .control[hidden] {
+    display: inline-block;
+    visibility: hidden;
+  }
+
+  /* The clip is the part that follows the text: the bar inside it is shifted to where the content box starts. */
+  .clip {
+    position: relative;
+    flex: 1 1 0;
+    min-inline-size: 0;
+    block-size: 44px;
+    overflow: hidden;
+  }
+
+  .shift {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+  }
+
+  .bar {
+    block-size: 44px;
+  }
+
+  .needsText {
+    margin: 0;
+    line-height: 44px;
   }
 
   .selector,
@@ -35,7 +64,6 @@
 
   .track {
     position: relative;
-    flex: none;
     block-size: 44px;
     background: var(--color-surface-page);
     touch-action: none;
@@ -65,10 +93,14 @@
     inset-block-start: 0;
     display: grid;
     place-items: center;
-    outline: none;
     /* The track picks the marker under the pointer, so the overlapping 44 px boxes never block each other. */
     pointer-events: none;
     cursor: ew-resize;
+  }
+
+  /* The ring is drawn on the glyph; the box keeps a transparent one, which forced colors show. */
+  .marker:focus {
+    outline: var(--size-focus-ring-width) solid transparent;
   }
 
   .marker:focus-visible .glyph {
@@ -125,5 +157,34 @@
 
   .marker[data-align='bar'] .glyph {
     clip-path: polygon(40% 0, 60% 0, 60% 100%, 40% 100%);
+  }
+
+  /* Forced colors replace background colors with Canvas, which would hide the glyphs: draw them in system colors. */
+  @media (forced-colors: active) {
+    .track {
+      border: 1px solid CanvasText;
+    }
+
+    .tick {
+      stroke: CanvasText;
+    }
+
+    .tickText {
+      fill: CanvasText;
+    }
+
+    .glyph {
+      forced-color-adjust: none;
+      background: CanvasText;
+    }
+
+    .marker[data-dragging] .glyph {
+      background: Highlight;
+    }
+
+    .marker:focus-visible .glyph {
+      outline: 2px solid Highlight;
+      outline-offset: 2px;
+    }
   }
 }

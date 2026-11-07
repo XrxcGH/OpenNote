@@ -24,6 +24,7 @@ import {
   withoutTab,
 } from './geometry';
 import type { MarkerKind, TabType } from './geometry';
+import { isPalm, useWatchPen } from './palm';
 import { RULER_UNITS, TICKS, fromPoints, roundPoints, shownNumber, snapPoints } from './units';
 import type { RulerUnit } from './units';
 import styles from './ruler.module.css';
@@ -37,10 +38,10 @@ export interface RulerBarProps {
   indent: Indent;
   tabs: readonly TabStop[];
   tabType: TabType;
-  onTabType(type: TabType): void;
-  onUnit(unit: RulerUnit): void;
   onIndent(next: Indent): void;
   onTabs(next: TabStop[]): void;
+  /** After a pointer drag or click ends: the host gives focus back to the text. */
+  onRelease?(): void;
 }
 
 export interface Marker {
@@ -101,11 +102,6 @@ function markerName(marker: Marker): string {
     return t('textRuler.marker.tab', { type: t(`textRuler.tabName.${marker.tab!.align}` as MessageKey) });
   }
   return t(`textRuler.marker.${marker.kind}` as MessageKey);
-}
-
-/** The value a marker shows, in points: indents from their own edge, tab stops from the left. */
-function shownPoints(marker: Marker, at: number, width: number): number {
-  return marker.kind === 'right' ? width - at : at;
 }
 
 export function valueText(points: number, unit: RulerUnit): string {
@@ -177,14 +173,18 @@ function useEdits(props: RulerBarProps, grid: number): Edits {
     const next = movedIndent(marker.kind, indent, marker.kind === 'right' ? width - at : at, width);
     if (JSON.stringify(next) === JSON.stringify(indent)) return;
     props.onIndent(next);
-    const value = marker.kind === 'right' ? next.end : marker.kind === 'first' ? firstLineAt(next) : next.start;
-    announce(t('textRuler.announced', { name: markerName(marker), value: valueText(value, unit) }));
+    announce(t('textRuler.announced', { name: markerName(marker), value: valueText(at, unit) }));
   };
 
   /** A click on the bare ruler adds a stop of the selected type, or sets the indent for the two indent types. */
   const addAt = (x: number) => {
     const at = roundPoints(clamp(dragValue(0, x, zoom, grid, false), 0, width));
-    if (tabType === 'first' || tabType === 'hanging') return props.onIndent(movedIndent(tabType, indent, at, width));
+    if (tabType === 'first' || tabType === 'hanging') {
+      props.onIndent(movedIndent(tabType, indent, at, width));
+      const name = t(`textRuler.marker.${tabType}` as MessageKey);
+      announce(t('textRuler.announced', { name, value: valueText(at, unit) }));
+      return;
+    }
     if (!isTabAlign(tabType)) return;
     const next = withTab(tabs, { pos: at, align: tabType, leader: 'none' });
     if (!next) return;
@@ -196,7 +196,7 @@ function useEdits(props: RulerBarProps, grid: number): Edits {
   return { commit, addAt, remove };
 }
 
-/** The arrow keys move a marker one step of the grid (Alt: half a point; Shift: four steps); Home and End go to the ends. */
+/** Arrow keys move a marker one grid step (Alt: half a point; Shift: four steps); Home and End go to the ends. */
 function markerKey(marker: Marker, edits: Edits, grid: number, width: number) {
   return (event: KeyboardEvent) => {
     const step = (event.altKey ? 0.5 : grid) * (event.shiftKey ? 4 : 1);
@@ -214,6 +214,7 @@ function markerKey(marker: Marker, edits: Edits, grid: number, width: number) {
 /** The track's pointer handling: pick a marker, start a drag past the threshold, and commit on release. */
 function useTrackPointer(props: RulerBarProps, markers: readonly Marker[], edits: Edits, grid: number) {
   const { zoom, width } = props;
+  useWatchPen();
   const track = useRef<HTMLDivElement>(null);
   const press = useRef<Press | null>(null);
   const [drag, setDrag] = useState<{ id: string; at: number } | null>(null);
@@ -227,7 +228,7 @@ function useTrackPointer(props: RulerBarProps, markers: readonly Marker[], edits
   };
 
   const onPointerDown = (event: PointerEvent) => {
-    if (event.button !== 0 || !track.current) return;
+    if (event.button !== 0 || !track.current || isPalm(event)) return;
     const { x, y, height } = local(event);
     const marker = pickMarker(markers, x, y, height, zoom);
     press.current = { marker, pointer: event.pointerId, x: event.clientX, y: event.clientY, started: false };
@@ -254,13 +255,21 @@ function useTrackPointer(props: RulerBarProps, markers: readonly Marker[], edits
     capture(track.current, event.pointerId, false);
     end();
     const { marker } = current;
-    if (!current.started) return marker ? undefined : edits.addAt(local(event).x);
-    if (!marker) return;
+    // The pointer is done: the text gets focus back, so typing goes on where it was.
+    const release = () => props.onRelease?.();
+    if (!current.started) {
+      if (!marker) edits.addAt(local(event).x);
+      return release();
+    }
+    if (!marker) return release();
     const box = local(event);
     // A tab stop dragged off the ruler, above, or below it, is removed.
     const outside = box.y < 0 ? box.y : box.y > box.height ? box.y - box.height : 0;
-    if (marker.kind === 'tab' && offRuler(outside)) return edits.remove(marker);
-    edits.commit(marker, clamp(dragValue(marker.at, event.clientX - current.x, zoom, grid, event.altKey), 0, width));
+    if (marker.kind === 'tab' && offRuler(outside)) edits.remove(marker);
+    else {
+      edits.commit(marker, clamp(dragValue(marker.at, event.clientX - current.x, zoom, grid, event.altKey), 0, width));
+    }
+    release();
   };
 
   return { track, drag, handlers: { onPointerDown, onPointerMove, onPointerUp, onPointerCancel: end } };
@@ -278,7 +287,9 @@ interface MarkerViewProps {
 
 /** A marker: a slider with its value in the unit, and a 44 px box that is a target for pen and touch. */
 function MarkerView({ marker, at, dragging, unit, zoom, width, onKeyDown }: MarkerViewProps) {
-  const shown = shownPoints(marker, at, width);
+  // Every marker shows its place from the left edge, so ArrowRight raises the value of all of them, the right
+  // indent included, and Home and End are the minimum and the maximum.
+  const shown = at;
   return (
     <span
       data-marker={marker.id}
@@ -302,24 +313,49 @@ function MarkerView({ marker, at, dragging, unit, zoom, width, onKeyDown }: Mark
   );
 }
 
+/** The tab-type selector: it sits in the ruler's margin, outside the part that follows the text. */
+export function TabTypeButton({ tabType, onTabType }: { tabType: TabType; onTabType(type: TabType): void }) {
+  const nextType = TAB_TYPES[(TAB_TYPES.indexOf(tabType) + 1) % TAB_TYPES.length];
+  return (
+    <button
+      type="button"
+      className={styles.selector}
+      title={t('textRuler.tabTypeHint')}
+      aria-label={t('textRuler.tabTypeLabel')}
+      onClick={() => onTabType(nextType)}
+    >
+      {t(`textRuler.tabType.${tabType}` as MessageKey)}
+    </button>
+  );
+}
+
+/** The units choice, outside the part that follows the text. */
+export function UnitSelect({ unit, onUnit }: { unit: RulerUnit; onUnit(unit: RulerUnit): void }) {
+  return (
+    <select
+      className={styles.units}
+      aria-label={t('textRuler.unitLabel')}
+      value={unit}
+      onChange={(event) => onUnit(event.target.value as RulerUnit)}
+    >
+      {RULER_UNITS.map((u) => (
+        <option key={u} value={u}>
+          {t(`textRuler.unitName.${u}` as MessageKey)}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+/** The track: its left edge is the left edge of the content box, so the host places it where the text starts. */
 export function RulerBar(props: RulerBarProps) {
-  const { unit, zoom, width, indent, tabs, tabType } = props;
+  const { unit, zoom, width, indent, tabs } = props;
   const grid = snapPoints(unit);
   const markers = markersOf(indent, tabs, width);
   const edits = useEdits(props, grid);
   const { track, drag, handlers } = useTrackPointer(props, markers, edits, grid);
-  const nextType = TAB_TYPES[(TAB_TYPES.indexOf(tabType) + 1) % TAB_TYPES.length];
   return (
     <div className={styles.bar} role="group" aria-label={t('textRuler.label')} data-ruler>
-      <button
-        type="button"
-        className={styles.selector}
-        title={t('textRuler.tabTypeHint')}
-        aria-label={t('textRuler.tabTypeLabel')}
-        onClick={() => props.onTabType(nextType)}
-      >
-        {t(`textRuler.tabType.${tabType}` as MessageKey)}
-      </button>
       <div
         ref={track}
         className={styles.track}
@@ -341,18 +377,6 @@ export function RulerBar(props: RulerBarProps) {
           />
         ))}
       </div>
-      <select
-        className={styles.units}
-        aria-label={t('textRuler.unitLabel')}
-        value={unit}
-        onChange={(event) => props.onUnit(event.target.value as RulerUnit)}
-      >
-        {RULER_UNITS.map((u) => (
-          <option key={u} value={u}>
-            {t(`textRuler.unitName.${u}` as MessageKey)}
-          </option>
-        ))}
-      </select>
     </div>
   );
 }

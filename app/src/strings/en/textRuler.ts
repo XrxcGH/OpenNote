@@ -47,7 +47,6 @@ export const textRuler = {
     end: 'Right',
     decimal: 'Decimal',
     bar: 'Bar',
-    clear: 'Cleared',
   },
   announced: '{name}, {value}.',
   removed: '{name} removed.',

@@ -22,8 +22,6 @@ function setup(
       indent={options.indent ?? { start: 0, end: 0, first: 0 }}
       tabs={options.tabs ?? []}
       tabType={options.tabType ?? 'start'}
-      onTabType={() => undefined}
-      onUnit={() => undefined}
       onIndent={onIndent}
       onTabs={onTabs}
     />,

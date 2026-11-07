@@ -2,7 +2,7 @@
 
 Every tool, action, and feature in OpenNote, grouped by category, with one sentence each. `npm run docs:features` makes this page. The commands, tool windows, title bar items, settings sections, and setup steps come from what the app registers, so a new one shows up here or fails the tests. The feature sentences come from [FEATURES.md](FEATURES.md), which also says what has been tested by hand and which flag turns each one on. The [help pages](help/README.md) explain how to use them. [docs/screens](screens/README.md) has every picture in light and dark.
 
-The app registers 900 commands and 48 tool windows. 24 of the windows are subject and engineering kits. The count includes the ink commands, which register when a page first shows its ink, and the commands that register once start-up is done or with the first page: on-device intelligence, the second pass of page commands, and the code block and table commands. The command palette (Ctrl+K) runs every command not marked as left out of it. Some commands need a feature flag, which FEATURES.md names. The keys shown are the defaults of the standard shortcut set.
+The app registers 901 commands and 48 tool windows. 24 of the windows are subject and engineering kits. The count includes the ink commands, which register when a page first shows its ink, and the commands that register once start-up is done or with the first page: on-device intelligence, the second pass of page commands, and the code block and table commands. The command palette (Ctrl+K) runs every command not marked as left out of it. Some commands need a feature flag, which FEATURES.md names. The keys shown are the defaults of the standard shortcut set.
 
 ## Contents
 
@@ -715,6 +715,7 @@ Open it with the command "Open the code studio".
 | Extract selection to a new page | Moves the selection to a new page and leaves a link to it. |  |
 | Merge pages | Merges the selected pages into one page, each under its own heading. |  |
 | Split page at headings | Splits the page into separate pages at its headings. |  |
+| Ruler | Shows or hides the ruler above the text, with the indents and the tab stops. |  |
 | Open command palette (not in the palette) | Opens the command palette to find and run any command. | Ctrl+K |
 | Go to a page | Finds a page by name and opens it. | Ctrl+O |
 | Pin page | Pins the page to the top of the pages pane. |  |
