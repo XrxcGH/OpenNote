@@ -8,6 +8,7 @@ import { DEFAULT_SETTINGS } from '../../state/settings';
 import type { Platform } from '../types';
 import { createWebAccounts } from './accounts';
 import { createWebAudio } from './audio';
+import { createWebFonts, createWebNotebookStyles } from './fonts';
 import { createWebConnectors } from './connectors';
 import { createWebSync } from './sync';
 import { createWebDiagnostics } from './diagnostics';
@@ -92,6 +93,8 @@ export function createWebPlatform(options: WebPlatformOptions = {}): WebPlatform
     interop: createWebInterop(),
     notesSnapshot: snapshot,
     notesCore: null,
+    fonts: createWebFonts(),
+    notebookStyles: createWebNotebookStyles(),
     perf: createWebPerf(),
     log: log.log,
     setOs: os.set,

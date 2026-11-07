@@ -4,6 +4,7 @@ import { isEnabled } from '../../app/flags';
 import type { BootData, Platform } from '../types';
 import { createTauriExports } from './exports';
 import { createTauriAudio } from './audio';
+import { createTauriFonts, createTauriNotebookStyles } from './fonts';
 import { createTauriAccounts } from './accounts';
 import { createTauriConnectors } from './connectors';
 import { createTauriSync } from './sync';
@@ -60,6 +61,8 @@ export function createTauriPlatform(boot: BootData): Platform {
     notesSnapshot: !isEnabled('storage.core') && isEnabled('notes.memorySnapshot') ? createTauriSnapshot() : null,
     notesCore: isEnabled('storage.core') ? createTauriNotesCore() : null,
     interop: createTauriInterop(),
+    fonts: createTauriFonts(),
+    notebookStyles: createTauriNotebookStyles(),
     perf: createTauriPerf(),
     log: tauriLog,
   };
