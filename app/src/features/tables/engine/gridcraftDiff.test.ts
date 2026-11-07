@@ -9,6 +9,7 @@ import { spawnSync } from 'node:child_process';
 import { describe, expect, it } from 'vitest';
 import { findTool } from '../../../../../tests/crosscheck/tools';
 import { createTable, setColumnFormula } from './edit';
+import { REGISTRY } from './formula/fn';
 import { FUNCTIONS } from './formula/functions';
 import { EN_US } from './locale';
 import { ERROR_TOKENS, type Value } from './values';
@@ -98,7 +99,13 @@ const KNOWN: Record<string, string> = {
 };
 
 /** Functions that cannot be compared with a fixed answer: their result depends on the day it runs. */
-const NOT_COMPARABLE = new Set(['TODAY']);
+const NOT_COMPARABLE = new Set([
+  'TODAY',
+  // The rest of the math family is checked by fn/math.test.ts and fixtures/fn/math.json, with hand-worked answers.
+  ...[...REGISTRY.values()]
+    .filter((spec) => spec.family === 'math' && CASES[spec.name] === undefined)
+    .map((s) => s.name),
+]);
 
 const DATE_RESULTS = new Set(['DATE']);
 
