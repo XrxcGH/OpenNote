@@ -29,6 +29,29 @@ pub(super) struct Annotations {
     pub comments_ex: Vec<String>,
 }
 
+/// A part besides the document that holds runs: notes and comments. Each has relationships of its own
+/// (ECMA-376 Part 1, 11.3.4, 11.3.7, and 11.3.2), so its links and pictures work.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub(super) enum SubPart {
+    /// `footnotes.xml`.
+    Footnotes,
+    /// `endnotes.xml`.
+    Endnotes,
+    /// `comments.xml`.
+    Comments,
+}
+
+impl SubPart {
+    /// The part's file name under `word/`, without `.xml`.
+    pub fn name(self) -> &'static str {
+        match self {
+            SubPart::Footnotes => "footnotes",
+            SubPart::Endnotes => "endnotes",
+            SubPart::Comments => "comments",
+        }
+    }
+}
+
 /// The comments that are open in the text, and how many runs of each are still to come.
 #[derive(Debug, Default)]
 struct CommentRanges {
@@ -41,11 +64,14 @@ struct CommentRanges {
 /// What the body needs to remember while it writes: relationships, lists, notes, comments, and IDs.
 pub(super) struct State<'a> {
     media: &'a HashMap<String, Media>,
-    /// Relationship elements for the links and pictures so far.
+    /// Relationship elements of the document part for the links and pictures so far.
     pub rels: Vec<String>,
+    /// Relationship elements of the notes and comments parts. IDs are unique across all parts.
+    pub sub_rels: BTreeMap<SubPart, Vec<String>>,
     next_rel: u32,
-    links: HashMap<String, String>,
-    pictures: HashMap<String, String>,
+    /// The relationship ID of each link and picture, by the part that holds it.
+    links: HashMap<(Option<SubPart>, String), String>,
+    pictures: HashMap<(Option<SubPart>, String), String>,
     /// The files to write under `word/media/`, each with its name.
     pub files: Vec<(String, &'a Media)>,
     drawing_id: u32,
@@ -76,8 +102,8 @@ pub(super) struct State<'a> {
     annotation_id: u32,
     /// The next `w14:paraId`.
     para_id: u32,
-    /// Whether runs go to a note or a comment, which have no relationships of their own.
-    sub_part: bool,
+    /// The note or comment part that runs go to, if not the document.
+    sub_part: Option<SubPart>,
     /// Whether authors and dates are left out.
     pub remove_personal: bool,
 }
@@ -87,6 +113,7 @@ impl<'a> State<'a> {
         State {
             media,
             rels: Vec::new(),
+            sub_rels: BTreeMap::new(),
             next_rel: 10,
             links: HashMap::new(),
             pictures: HashMap::new(),
@@ -107,7 +134,7 @@ impl<'a> State<'a> {
             comments: CommentRanges::default(),
             annotation_id: 1,
             para_id: 1,
-            sub_part: false,
+            sub_part: None,
             remove_personal: false,
         }
     }
@@ -120,12 +147,17 @@ impl<'a> State<'a> {
         }
     }
 
-    /// Adds a relationship of the document part and returns its ID.
+    /// Adds a relationship of the part being written (the document, a notes part, or the comments part) and
+    /// returns its ID.
     pub fn relationship(&mut self, kind: &str, target: &str, external: bool) -> String {
         let id = format!("rId{}", self.next_rel);
         self.next_rel += 1;
         let mode = if external { " TargetMode=\"External\"" } else { "" };
-        self.rels.push(format!(
+        let rels = match self.sub_part {
+            Some(part) => self.sub_rels.entry(part).or_default(),
+            None => &mut self.rels,
+        };
+        rels.push(format!(
             "<Relationship Id=\"{id}\" Type=\"{NS_R}/{kind}\" Target=\"{}\"{mode}/>",
             xml_escape(target)
         ));
@@ -214,24 +246,24 @@ impl<'a> State<'a> {
 
     fn text_run(&mut self, text: &str, marks: &Marks) -> String {
         let mut before = String::new();
-        if !self.sub_part {
+        if self.sub_part.is_none() {
             before = self.comment_starts(&marks.comments);
         }
         let change = self.format_change(marks);
         let props = run_props(marks, &self.ctx(), &change);
-        let deleted = marks.deletion.is_some() && !self.sub_part;
+        let deleted = marks.deletion.is_some() && self.sub_part.is_none();
         let element = if deleted { "w:delText" } else { "w:t" };
         let mut run = format!(
             "<w:r>{props}<{element} xml:space=\"preserve\">{}</{element}></w:r>",
             xml_escape(text)
         );
-        if !self.sub_part {
+        if self.sub_part.is_none() {
             run = self.wrap_change(run, marks);
         }
         let run = self.link(run, marks);
         let mut out = before;
         out.push_str(&run);
-        if !self.sub_part {
+        if self.sub_part.is_none() {
             out.push_str(&self.comment_ends_after(&marks.comments));
         }
         out
@@ -251,14 +283,15 @@ impl<'a> State<'a> {
         let external = ["http:", "https:", "mailto:"]
             .iter()
             .any(|scheme| dest.starts_with(scheme));
-        if !external || self.sub_part {
+        if !external {
             return run;
         }
-        let id = match self.links.get(dest) {
+        let key = (self.sub_part, dest.clone());
+        let id = match self.links.get(&key) {
             Some(id) => id.clone(),
             None => {
                 let id = self.relationship("hyperlink", dest, true);
-                self.links.insert(dest.clone(), id.clone());
+                self.links.insert(key, id.clone());
                 id
             }
         };
@@ -292,7 +325,7 @@ impl<'a> State<'a> {
         let Some(id) = &marks.format_change else {
             return String::new();
         };
-        if self.sub_part {
+        if self.sub_part.is_some() {
             return String::new();
         }
         let before_marks = self
@@ -374,7 +407,7 @@ impl<'a> State<'a> {
         let para_id = self.next_para_id();
         let who = self.who(author, time);
         let inlines = inline_markdown(markdown);
-        let runs = self.sub_runs(&inlines);
+        let runs = self.sub_runs(SubPart::Comments, &inlines);
         self.notes.comments.push(format!(
             "<w:comment w:id=\"{n}\"{who}><w:p w14:paraId=\"{para_id}\"><w:pPr><w:pStyle w:val=\"CommentText\"/></w:pPr>\
              <w:r><w:rPr><w:rStyle w:val=\"CommentReference\"/></w:rPr><w:annotationRef/></w:r>{runs}</w:p></w:comment>"
@@ -382,11 +415,10 @@ impl<'a> State<'a> {
         para_id
     }
 
-    /// Runs for a note or a comment, which have no relationships: links keep their text, and pictures their
-    /// description.
-    fn sub_runs(&mut self, inlines: &[Inline]) -> String {
+    /// Runs for a note or a comment. Their links and pictures are relationships of the note's or comment's part.
+    fn sub_runs(&mut self, part: SubPart, inlines: &[Inline]) -> String {
         let outer = self.sub_part;
-        self.sub_part = true;
+        self.sub_part = Some(part);
         let runs = self.runs(inlines, false);
         self.sub_part = outer;
         runs
@@ -395,19 +427,31 @@ impl<'a> State<'a> {
     /// A footnote or endnote reference, which writes its note. A reference whose note is missing, or one inside a
     /// note, writes nothing.
     fn note_reference(&mut self, id: &str) -> String {
-        if self.sub_part {
+        if self.sub_part.is_some() {
             return String::new();
         }
         let Some(note) = self.data.and_then(|d| d.notes.get(id)) else {
             return String::new();
         };
-        let (kind, style, reference, list) = match note.kind {
-            NoteKind::Foot => ("footnote", "Footnote", "footnoteRef", &self.notes.footnotes),
-            NoteKind::End => ("endnote", "Endnote", "endnoteRef", &self.notes.endnotes),
+        let (kind, style, reference, list, part) = match note.kind {
+            NoteKind::Foot => (
+                "footnote",
+                "Footnote",
+                "footnoteRef",
+                &self.notes.footnotes,
+                SubPart::Footnotes,
+            ),
+            NoteKind::End => (
+                "endnote",
+                "Endnote",
+                "endnoteRef",
+                &self.notes.endnotes,
+                SubPart::Endnotes,
+            ),
         };
         let n = list.len() + 1;
         let inlines = note.inlines();
-        let runs = self.sub_runs(&inlines);
+        let runs = self.sub_runs(part, &inlines);
         let xml = format!(
             "<w:{kind} w:id=\"{n}\"><w:p><w:pPr><w:pStyle w:val=\"{style}Text\"/></w:pPr>\
              <w:r><w:rPr><w:rStyle w:val=\"{style}Reference\"/></w:rPr><w:{reference}/></w:r>\
@@ -422,18 +466,25 @@ impl<'a> State<'a> {
 
     /// A picture run, or the description in brackets when the picture is not in the file.
     fn picture(&mut self, dest: &str, alt: &str) -> String {
-        let media = if self.sub_part { None } else { self.media.get(dest) };
-        let Some(media) = media else {
+        let Some(media) = self.media.get(dest) else {
             let name = if alt.is_empty() { "image" } else { alt };
             return format!("<w:r><w:t xml:space=\"preserve\">[{}]</w:t></w:r>", xml_escape(name));
         };
-        let rid = match self.pictures.get(dest) {
+        let key = (self.sub_part, dest.to_owned());
+        let rid = match self.pictures.get(&key) {
             Some(rid) => rid.clone(),
             None => {
-                let name = format!("image{}.{}", self.files.len() + 1, media.ext);
+                // A picture that another part already holds shares its file.
+                let name = match self.files.iter().position(|(_, m)| std::ptr::eq(*m, media)) {
+                    Some(i) => self.files[i].0.clone(),
+                    None => {
+                        let name = format!("image{}.{}", self.files.len() + 1, media.ext);
+                        self.files.push((name.clone(), media));
+                        name
+                    }
+                };
                 let rid = self.relationship("image", &format!("media/{name}"), false);
-                self.files.push((name, media));
-                self.pictures.insert(dest.to_owned(), rid.clone());
+                self.pictures.insert(key, rid.clone());
                 rid
             }
         };

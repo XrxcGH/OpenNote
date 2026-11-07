@@ -2,7 +2,7 @@
 
 Every tool, action, and feature in OpenNote, grouped by category, with one sentence each. `npm run docs:features` makes this page. The commands, tool windows, title bar items, settings sections, and setup steps come from what the app registers, so a new one shows up here or fails the tests. The feature sentences come from [FEATURES.md](FEATURES.md), which also says what has been tested by hand and which flag turns each one on. The [help pages](help/README.md) explain how to use them. [docs/screens](screens/README.md) has every picture in light and dark.
 
-The app registers 886 commands and 48 tool windows. 24 of the windows are subject and engineering kits. The count includes the ink commands, which register when a page first shows its ink, and the commands that register once start-up is done or with the first page: on-device intelligence, the second pass of page commands, and the code block and table commands. The command palette (Ctrl+K) runs every command not marked as left out of it. Some commands need a feature flag, which FEATURES.md names. The keys shown are the defaults of the standard shortcut set.
+The app registers 894 commands and 48 tool windows. 24 of the windows are subject and engineering kits. The count includes the ink commands, which register when a page first shows its ink, and the commands that register once start-up is done or with the first page: on-device intelligence, the second pass of page commands, and the code block and table commands. The command palette (Ctrl+K) runs every command not marked as left out of it. Some commands need a feature flag, which FEATURES.md names. The keys shown are the defaults of the standard shortcut set.
 
 ## Contents
 
@@ -173,6 +173,14 @@ Open it with the command "Open the code studio".
 | Open in another editor | Opens the page's Markdown file in another editor, such as VS Code or Notepad. |  |
 | Undo | Undoes the last change to the page. | Ctrl+Z |
 | Redo | Redoes the last change you undid on the page. | Ctrl+Y, Ctrl+Shift+Z |
+| Symbol | Opens the Symbol dialog to search by name or code and insert a symbol or a special character. |  |
+| Switch between a character and its code | Turns a Unicode code before the caret into its character, or a character into its code. | Alt+X |
+| Insert nonbreaking space | Inserts a nonbreaking space that keeps two words on the same line. | Ctrl+Shift+Space |
+| Insert nonbreaking hyphen | Inserts a nonbreaking hyphen that never breaks a line. |  |
+| Insert optional hyphen | Inserts an optional hyphen that shows only where a word breaks at the end of a line. |  |
+| Insert em dash | Inserts an em dash. |  |
+| Insert en dash | Inserts an en dash. |  |
+| Show formatting marks | Shows or hides marks for paragraphs, spaces, tabs, and special characters. | Ctrl+Alt+8 |
 | Select the page title | Selects the page title so you can rename the page. |  |
 | Undo | Undoes the last change. | Ctrl+Z |
 | Redo | Redoes the last change you undid. | Ctrl+Y, Ctrl+Shift+Z |
@@ -719,8 +727,8 @@ Open it with the command "Open the code studio".
 | Open in new tab | Opens the page in a new tab. | Ctrl+Enter |
 | Duplicate tab | Opens the current page again in a second tab. |  |
 | Close tab | Closes the current tab. | Ctrl+W |
-| Go to the next tab | Goes to the next tab. | Ctrl+Tab |
-| Go to the previous tab | Goes to the previous tab. | Ctrl+Shift+Tab |
+| Go to the next tab | Goes to the next tab. | Ctrl+Tab, Ctrl+PageDown |
+| Go to the previous tab | Goes to the previous tab. | Ctrl+Shift+Tab, Ctrl+PageUp |
 | Reopen closed tab | Opens the tab you closed last. | Ctrl+Shift+T |
 | Open in new window | Opens the page in a new window. |  |
 | Focus mode | Hides the panes and bars so only the page shows. | F11 |

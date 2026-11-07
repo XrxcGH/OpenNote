@@ -99,6 +99,10 @@ export const smart = {
       angle: 'Angle unit',
       degrees: 'Degrees',
       radians: 'Radians',
+      gradians: 'Gradians',
+      percentNote:
+        'A percent sign divides by 100, so 15% is 0.15 and 200+15% is 200.15. ' +
+        'For 15% of 200, type 200×15%. Press = again to repeat the last step.',
       memoryStore: 'Store answer in memory',
       memoryRecall: 'Add memory to the expression',
       memoryClear: 'Clear memory',
@@ -135,6 +139,7 @@ export const smart = {
       addLabel: 'Task and when it is due',
       placeholder: 'Read chapter 4 Fri 5 PM',
       importFile: 'Import a calendar file',
+      exportFile: 'Export a calendar file',
       importFailed: 'OpenNote could not read that file as a calendar.',
       imported: '{count, plural, one {# item} other {# items}} added from the calendar file.',
       empty: 'Nothing due. Add a task above, or import a calendar file.',

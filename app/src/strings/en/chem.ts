@@ -10,6 +10,8 @@ export const chem = {
   insertAnswer: 'Insert answer',
   insertSteps: 'Insert with steps',
   insertGraph: 'Insert graph',
+  insertLive: 'Live calculation block',
+  liveInserted: 'Added a live calculation block. Use Open in tool to change it.',
   f: {
     equation: 'Equation',
     formula: 'Formula',

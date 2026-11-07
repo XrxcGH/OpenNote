@@ -137,6 +137,70 @@ fn a_weight_names_the_device_face_and_is_bold_from_600() {
 }
 
 #[test]
+fn a_weight_face_imports_back_as_its_family_and_weight() {
+    let faces = vec!["Segoe UI Semibold".to_owned(), "Segoe UI Light".to_owned()];
+    let markdown = concat!(
+        "<span data-font=\"Segoe UI\"><span data-weight=\"600\">semi</span></span> ",
+        "<span data-font=\"Segoe UI\"><span data-weight=\"300\">light</span></span> ",
+        "<span data-font=\"Segoe UI\">**bold**</span>"
+    );
+    let mut setup = Setup::default();
+    setup.options.faces = faces;
+    let bytes = build(&input(vec![text_part(markdown, json!({}))], setup)).expect("builds");
+    let (blocks, _) = readback::import_text(&bytes);
+    let Some(Block::Paragraph(inlines)) = blocks.first() else {
+        panic!("a paragraph: {blocks:?}");
+    };
+    let marks_of = |word: &str| -> Marks {
+        inlines
+            .iter()
+            .find_map(|inline| match inline {
+                crate::doc::Inline::Text { text, marks } if text == word => Some(marks.clone()),
+                _ => None,
+            })
+            .unwrap_or_else(|| panic!("{word} in {inlines:?}"))
+    };
+    let semi = marks_of("semi");
+    assert_eq!(
+        (semi.font.as_deref(), semi.weight.as_deref(), semi.strong),
+        (Some("Segoe UI"), Some("600"), false),
+        "Semibold is Segoe UI at 600, and its w:b is the weight's"
+    );
+    let light = marks_of("light");
+    assert_eq!(
+        (light.font.as_deref(), light.weight.as_deref(), light.strong),
+        (Some("Segoe UI"), Some("300"), false)
+    );
+    let bold = marks_of("bold");
+    assert_eq!(
+        (bold.font.as_deref(), bold.weight.as_deref(), bold.strong),
+        (Some("Segoe UI"), None, true)
+    );
+}
+
+#[test]
+fn a_face_name_splits_into_its_family_and_weight() {
+    for (face, expected) in [
+        ("Segoe UI Semibold", Some(("Segoe UI", 600))),
+        ("Segoe UI Light", Some(("Segoe UI", 300))),
+        ("Segoe UI Black", Some(("Segoe UI", 900))),
+        ("Arial Black", None),
+        ("Franklin Gothic Medium", None),
+        ("Segoe UI Semilight", None),
+        ("Source Sans Pro ExtraLight", Some(("Source Sans Pro", 200))),
+        ("Fira Sans Semi Bold", Some(("Fira Sans", 600))),
+        ("Segoe UI", None),
+        ("Semibold", None),
+        ("Georgia", None),
+        ("Boldface", None),
+        // A doubled space before the weight still names the family without its trailing space.
+        ("Segoe UI  Light", Some(("Segoe UI", 300))),
+    ] {
+        assert_eq!(split_weight_face(face), expected, "{face}");
+    }
+}
+
+#[test]
 fn styles_come_from_the_notebook_and_the_page_sheet() {
     let notebook = styles::sheet_from_json(&json!({
         "normal": {"font": "Georgia", "sizePt": 11, "line": {"rule": "multiple", "value": 1.15}},
@@ -225,7 +289,7 @@ fn only_bundled_fonts_that_the_document_uses_are_embedded() {
         family: family.to_owned(),
         bold: false,
         italic: false,
-        bytes,
+        bytes: bytes.into(),
     };
     let mut setup = Setup::default();
     setup.options.embed_fonts = vec![
@@ -389,4 +453,149 @@ fn a_user_style_named_like_a_fixed_style_gets_its_own_style_id() {
         styles_xml.contains("<w:basedOn w:val=\"Hyperlink-user\"/>"),
         "{styles_xml}"
     );
+}
+
+#[test]
+fn notes_and_comments_keep_their_links_and_pictures_through_their_own_relationships() {
+    let markdown = format!(
+        "![Graph](pic) Text[^{ID1}] <span data-comment=\"{ID2}\">here</span> [site](https://example.org/a)[^{ID3}]"
+    );
+    let records = json!({
+        "notes": {
+            ID1: {"kind": "foot", "markdown": "See [the site](https://example.org/a) and ![Graph](pic)."},
+            ID3: {"kind": "end", "markdown": "Mail [us](mailto:team@example.org)."}
+        },
+        "comments": {ID2: {"author": "Sam", "time": "2026-10-01T09:00:00Z", "markdown": "Read [this](https://example.org/b)."}}
+    });
+    let mut word = input(vec![text_part(&markdown, records)], Setup::default());
+    word.media.insert(
+        "pic".to_owned(),
+        Media {
+            bytes: vec![0x89, b'P', b'N', b'G'],
+            ext: "png".to_owned(),
+            width: 40,
+            height: 20,
+        },
+    );
+    let all = files(&word);
+    let rel_id = |xml: &str, attr: &str| -> String {
+        let start = xml.find(attr).unwrap_or_else(|| panic!("{attr} in {xml}")) + attr.len();
+        xml[start..start + xml[start..].find('"').expect("a closing quote")].to_owned()
+    };
+    // Each part names its own relationship, which its own relationships part holds with the right target.
+    for (part, attr, target) in [
+        (
+            "footnotes",
+            "<w:hyperlink r:id=\"",
+            "Target=\"https://example.org/a\" TargetMode=\"External\"",
+        ),
+        ("footnotes", "r:embed=\"", "Target=\"media/image1.png\""),
+        (
+            "endnotes",
+            "<w:hyperlink r:id=\"",
+            "Target=\"mailto:team@example.org\" TargetMode=\"External\"",
+        ),
+        (
+            "comments",
+            "<w:hyperlink r:id=\"",
+            "Target=\"https://example.org/b\" TargetMode=\"External\"",
+        ),
+    ] {
+        let xml = &all[&format!("word/{part}.xml")];
+        let id = rel_id(xml, attr);
+        let rels = &all[&format!("word/_rels/{part}.xml.rels")];
+        let rel = rels
+            .split("<Relationship ")
+            .find(|r| r.contains(&format!("Id=\"{id}\"")))
+            .unwrap_or_else(|| panic!("{id} in {rels}"));
+        assert!(rel.contains(target), "{part}: {rel}");
+        assert!(
+            !all["word/_rels/document.xml.rels"].contains(&format!("Id=\"{id}\"")),
+            "IDs are unique across parts"
+        );
+        schema::check_part(&format!("word/_rels/{part}.xml.rels"), rels);
+    }
+    // The body and the footnote share one picture file.
+    assert_eq!(all.keys().filter(|k| k.starts_with("word/media/")).count(), 1);
+    assert!(all["word/document.xml"].contains("r:embed=\"rId"));
+    assert!(
+        !all["word/footnotes.xml"].contains("[Graph]"),
+        "the picture, not its description"
+    );
+    // Every part that can hold a picture declares the DrawingML prefixes, so it parses.
+    for part in ["document", "footnotes", "endnotes", "comments"] {
+        let name = format!("word/{part}.xml");
+        schema::check_part(&name, &all[&name]);
+    }
+    // The import reads each note's and comment's links and pictures through the part's own relationships.
+    let (_, data) = readback::import_text(&build(&word).expect("builds"));
+    let notes: Vec<&str> = data.notes.values().map(|n| n.markdown.as_str()).collect();
+    assert!(
+        notes
+            .iter()
+            .any(|m| m.contains("[the site](https://example.org/a)") && m.contains("![Graph](")),
+        "{notes:?}"
+    );
+    assert!(
+        notes.iter().any(|m| m.contains("[us](mailto:team@example.org)")),
+        "{notes:?}"
+    );
+    let comments: Vec<&str> = data.comments.values().map(|c| c.markdown.as_str()).collect();
+    assert_eq!(comments, ["Read [this](https://example.org/b)."]);
+}
+
+#[test]
+fn the_bundled_fonts_embed_only_the_faces_of_families_the_document_uses() {
+    let offered = bundled_embeds();
+    assert_eq!(offered.len(), crate::bundled_fonts::FACES.len());
+    let markdown = "<span data-font=\"Carlito\">a</span> <span data-font=\"Literata\">*b*</span>";
+    let mut setup = Setup::default();
+    setup.options.embed_fonts = offered;
+    let bytes = build(&input(vec![text_part(markdown, json!({}))], setup)).expect("builds");
+    let parts = read_parts(&bytes);
+    let text = |name: &str| -> String {
+        let (_, part) = parts
+            .iter()
+            .find(|(n, _)| n == name)
+            .unwrap_or_else(|| panic!("{name}"));
+        String::from_utf8_lossy(part).into_owned()
+    };
+    let table = text("word/fontTable.xml");
+    let font = |family: &str| -> String {
+        let at = table
+            .find(&format!("<w:font w:name=\"{family}\">"))
+            .unwrap_or_else(|| panic!("{family} in {table}"));
+        table[at..at + table[at..].find("</w:font>").expect("an end")].to_owned()
+    };
+    // Carlito and the code font of the Code style have four static faces each. Literata and the theme's
+    // OpenNote Sans are variable fonts, one file per slope.
+    for family in ["Carlito", fonts::APP_MONO] {
+        let xml = font(family);
+        for element in ["embedRegular", "embedBold", "embedItalic", "embedBoldItalic"] {
+            assert!(xml.contains(&format!("<w:{element} ")), "{element}: {xml}");
+        }
+    }
+    for family in ["Literata", fonts::APP_SANS] {
+        let xml = font(family);
+        assert!(
+            xml.contains("<w:embedRegular ") && xml.contains("<w:embedItalic "),
+            "{xml}"
+        );
+        assert!(!xml.contains("<w:embedBold "), "{xml}");
+    }
+    assert!(
+        !table.contains("w:name=\"Caladea\""),
+        "an unused family is not embedded: {table}"
+    );
+    // ECMA-376 Part 1, 17.8.1: only the first 32 bytes are obfuscated, so the rest is the face's own file.
+    let originals: Vec<&[u8]> = crate::bundled_fonts::FACES.iter().map(|f| f.bytes).collect();
+    let embedded: Vec<&(String, Vec<u8>)> = parts.iter().filter(|(n, _)| n.starts_with("word/fonts/")).collect();
+    assert_eq!(embedded.len(), 12, "4 + 4 + 2 + 2 faces");
+    for (name, file) in embedded {
+        assert!(
+            originals.iter().any(|o| o.len() == file.len() && o[32..] == file[32..]),
+            "{name} is a bundled face"
+        );
+    }
+    assert!(text("word/settings.xml").contains("<w:embedTrueTypeFonts/>"));
 }

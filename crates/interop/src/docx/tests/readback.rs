@@ -293,7 +293,7 @@ fn marks(rpr: &El) -> Marks {
     }
     if let Some(b) = rpr.child("w:bdr") {
         m.text_box = Some(match (b.attr("w:val"), b.attr("w:sz")) {
-            (Some("single"), Some("12")) => "thick".to_owned(),
+            (Some("single" | "thick"), Some("12")) => "thick".to_owned(),
             (val, _) => val.unwrap_or_default().to_owned(),
         });
         m.box_color = b.attr("w:color").and_then(hex);
@@ -363,18 +363,22 @@ fn open_type(rpr: &El) -> Option<String> {
     (!tokens.is_empty()).then(|| tokens.join(" "))
 }
 
-/// Imports a written file with the crate's Word import, and returns the blocks of its text.
-pub fn import(docx: &[u8]) -> Vec<Block> {
+/// Imports a written file as one page with the crate's Word import, and returns its text blocks and their records.
+pub fn import_text(docx: &[u8]) -> (Vec<Block>, crate::doc::data::TextData) {
     let sink = import_sink(docx);
     let mut blocks = Vec::new();
+    let mut data = crate::doc::data::TextData::default();
     for (_, imported) in &sink.pages {
         for block in imported.page.blocks.iter() {
             if let opennote_core::model::BlockData::Text(text) = &block.data {
                 blocks.extend(crate::doc::parse::parse_page(&text.markdown).blocks);
+                let ids: Vec<String> = text.ids.iter().map(|id| id.to_string()).collect();
+                let styles = text.styles.iter().map(|(k, v)| (k.to_string(), v.clone())).collect();
+                data = crate::doc::data::TextData::read(&ids, &styles, &text.extra);
             }
         }
     }
-    blocks
+    (blocks, data)
 }
 
 /// What the crate's Word import makes of a file.
@@ -384,6 +388,6 @@ pub fn import_sink(docx: &[u8]) -> crate::MemorySink {
     std::fs::write(&path, docx).expect("writes");
     let world = crate::testing::TestEnv::new();
     let mut sink = crate::MemorySink::default();
-    crate::import_docx(&path, &world.env(), &mut sink).expect("imports");
+    crate::import_docx_with(&path, crate::WordPages::Single, &world.env(), &mut sink).expect("imports");
     sink
 }
