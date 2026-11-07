@@ -27,7 +27,9 @@ function text(input: string, locale: Locale = EN_US): PasteResult {
 const types = (r: PasteResult): string[] => r.table.columns.map((c) => c.type);
 const names = (r: PasteResult): string[] => r.table.columns.map((c) => c.name);
 const values = (r: PasteResult): Value[][] => r.table.rows.map((row) => row.cells.map((c) => c.value));
-const day = (iso: string): number => Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10)) / 86_400_000;
+/** The serial of an ISO date: days since 1899-12-30, which is 25569 days before 1970-01-01. */
+const day = (iso: string): number =>
+  Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10)) / 86_400_000 + 25_569;
 
 describe('delimited text', () => {
   it('reads RFC 4180 quoting', () => {

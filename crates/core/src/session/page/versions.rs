@@ -331,6 +331,9 @@ impl PageSession {
             )
         };
         let bytes = self.ctx.backend.read_asset(&dir, &asset, range.clone())?;
+        // The range read, not the one asked for: an open end (`bytes=0-`) asks up to u64::MAX, and a Content-Range
+        // that says so makes the media element refuse the file.
+        let range = range.map(|asked| asked.start..asked.start.saturating_add(bytes.len() as u64));
         Ok(AssetBytes {
             mime: asset.mime,
             total: asset.bytes,

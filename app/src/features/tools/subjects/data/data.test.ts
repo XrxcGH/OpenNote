@@ -73,7 +73,8 @@ describe('reading units and dates', () => {
 });
 
 describe('cells that only start with digits', () => {
-  const days = (y: number, m: number, d: number) => Date.UTC(y, m - 1, d) / 86_400_000;
+  // Serials count from 1899-12-30, which is 25569 days before 1970-01-01.
+  const days = (y: number, m: number, d: number) => Date.UTC(y, m - 1, d) / 86_400_000 + 25_569;
 
   it('reads a column of slash dates as dates, month first or day first', () => {
     const text = ['when', '03/04/2024', '05/06/2024', '07/08/2024'].join('\n');

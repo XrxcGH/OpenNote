@@ -1,4 +1,5 @@
 // The video block's renderer: a React card inside the block's wrapper, loaded on first use.
+import './text';
 import { createRoot } from 'react-dom/client';
 import type { BlockJson } from '../../../services/pages/types';
 import { t } from '../../../strings/t';

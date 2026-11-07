@@ -74,7 +74,7 @@
     "features/accounts/tasks/auto.ts": 201,
     "features/accounts/tasks/commands.ts": 201,
     "features/ink/index.ts": 67,
-    "features/math/index.ts": 224,
+    "features/math/index.ts": 231,
     "features/math/solvers/ui/SolversTool.tsx": 61,
     "features/page/audio/exportVideo.ts": 85,
     "features/pages/host/shareRender.ts": 62,
@@ -85,7 +85,7 @@
     "features/pages/ui/imageCommands.tsx": 67,
     "features/pages/ui/presentCommands.tsx": 67,
     "features/pdf/importPdf.ts": 69,
-    "features/tables/index.ts": 73,
+    "features/tables/index.ts": 79,
     "features/tools/index.ts": 366,
     "features/engineering/control/ui/ControlKit.tsx": 312,
     "features/engineering/index.ts": 205,
@@ -123,7 +123,9 @@
     "features/engineering/mechdyn": 12,
     "features/engineering/aero/ui/KitAeroTool.tsx": 214,
     "features/engineering/solids/ui/SolidsKit.tsx": 119,
-    "features/engineering/thermo/ui/ThermoKit.tsx": 390
+    "features/engineering/thermo/ui/ThermoKit.tsx": 393,
+    "features/study/ui/exam/ExamResults.tsx": 42
   },
-  "lazyDefaultKb": 40
+  "lazyDefaultKb": 40,
+  "bundledFontsKb": { "carlito": 460, "caladea": 150 }
 }

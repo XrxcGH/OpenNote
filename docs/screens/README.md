@@ -27,7 +27,7 @@ Real pictures of OpenNote, in the light and the dark theme, taken on the beta 8 
 
 The list of pictures, with their categories and captions, is `docs/tools/screens.json`. `tests/ui/docscap/capture.spec.ts` takes them, with more scenes in `more.ts` and `scenes/` beside it (see the spec for the command). `npm run docs:features` puts them in [the feature list](../FEATURE-LIST.md).
 
-Each picture is a screenshot of the web build that the interface tests use, with the clock set to September 30, 2026. The web build runs the same interface on a fake host. A few details differ from a Windows install. The About page says the channel is Development, and the recording options list one default microphone.
+Each picture is a screenshot of the web build that the interface tests use, with the clock set to September 30, 2026. The web build runs the same interface on a fake host. A few details differ from a Windows install. The recording options list one default microphone, and the General page names a made-up notes folder. The two About pictures are the exception: they are taken from the real Windows window (see [Real window pictures](#real-window-pictures)), so they show the true version, channel, and system text.
 
 Most pictures are 1280 by 800 pixels. A few use another size, such as the Draw tab and some ink pictures (1600 by 900), the compact layout (400 by 800), and the Quick note window (520 by 420).
 
@@ -218,7 +218,7 @@ Every name below has two files, one ending in `-light.png` and one in `-dark.png
 
 ## Real window pictures
 
-These pictures show the real Windows app window (the beta 8 build), including the OpenNote title bar and its caption buttons. They are not browser renders. They live in `docs/screens/real/` and show a sample biology page with typed text, a table, and a stroke written with synthetic pen input.
+These pictures show the real Windows app window (a fresh build of the beta branch, at 150 percent display scale, 1924 by 1204 pixels), including the OpenNote title bar and its caption buttons. They are not browser renders. They live in `docs/screens/real/` and show a sample biology page with typed text, a table, and a stroke written with synthetic pen input.
 
 - `real/real-workspace-light.png`: the full window in the light theme, with the notebook list, page list, typed lines, a table, and handwriting.
 - `real/real-workspace-dark.png`: the same window in the neutral dark gray theme.
@@ -227,3 +227,4 @@ These pictures show the real Windows app window (the beta 8 build), including th
 - `real/real-settings-dark.png`: Settings on the Appearance page in the dark theme.
 - `real/real-tool-window-dark.png`: the Chemistry calculators panel open beside a page, in the dark theme.
 - `real/real-title-bar-light.png`: the top 120 pixels of the light window, showing the single title bar, tabs, and caption buttons (taken at 150 percent display scale).
+- `settings-about-light.png` and `settings-about-dark.png` in this folder: the About page from the same real window, with the true version, channel, WebView2 version, and the list of what works on this computer. They replace the web-build pictures, which showed the development version and raw flag keys.
