@@ -130,5 +130,6 @@
     "features/study/ui/exam/ExamResults.tsx": 42
   },
   "lazyDefaultKb": 40,
-  "bundledFontsKb": { "carlito": 460, "caladea": 150 }
+  "bundledFontsKb": { "carlito": 460, "caladea": 150 },
+  "wordEmbedFontsKb": 1000
 }
