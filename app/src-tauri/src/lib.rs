@@ -187,6 +187,7 @@ fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
     shellqol::start(app.handle());
+    fonts::warm();
     page_extras::attach::sweep_old_copies();
     api::start(app.handle());
     e2e_sync::start(app.handle());

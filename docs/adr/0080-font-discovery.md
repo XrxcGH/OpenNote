@@ -23,3 +23,15 @@ We will add the `fontdb` crate (MIT, with `ttf-parser`, MIT or Apache-2.0) to th
 ## Consequences
 
 `app/src-tauri/Cargo.toml` and `Cargo.lock` gain the crate, and `THIRD_PARTY_NOTICES.md` its notice. A benchmark holds the first call under 150 ms for 1,000 families on the reference laptop. Revisit if `fontdb` stops being maintained.
+
+## Implementation notes
+
+`fonts_list` takes an optional `refresh` flag and returns families sorted by name. Each family has a generic class (from `OS/2` `sFamilyClass`, then PANOSE) and a monospace flag; each face has its weight, style, stretch, `fsType` permission, units per em, `usWinAscent`, `usWinDescent`, `sTypoLineGap`, x-height, and cap height. A face installed twice counts once. The module writes no log line. Tests build small TrueType files from the OpenType table layouts, because the shipped fonts are woff2 and `fontdb` reads only TrueType and OpenType.
+
+## Verification notes
+
+The first call reads font files from disk. The benchmark now writes 1,000 font files to a temp folder and times `load_fonts_dir` plus the scan. In a debug build on this laptop, loading took about 100 ms and loading plus listing about 130 ms, and the scan reads faces on up to 8 threads.
+
+A real device is slower: with the first scan code (one thread) this laptop's 246 families (474 faces) took about 3.9 s cold and about 100 ms warm. So the 150 ms budget holds for the folder benchmark, not for a cold disk. The app therefore starts the scan in the background at launch (`fonts::warm`), and the first `fonts_list` call waits only for what is left of it.
+
+A variable font lists one face per named instance (`fvar`), with its `wght` and `wdth` values; `variable` and `instance` mark them. `usWinAscent`, `usWinDescent`, and `fsType` are read as unsigned values straight from the `OS/2` bytes. Faces also report `subsettable` (`fsType` bit 8 clear) and `bitmapOnly` (bit 9 set).
