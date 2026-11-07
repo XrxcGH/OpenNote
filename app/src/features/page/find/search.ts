@@ -2,6 +2,7 @@
 // them. The text comes from each box as it is now (the editor's, or the last text drawn), never from the layer's
 // copy of the block, which is out of date while someone types. Highlights use the CSS Custom Highlight API, so
 // they sit over the editors and the static text alike without changing either.
+import type { Node as PMNode } from '@tiptap/pm/model';
 import { unfoldAroundDom } from '../../../editor/commands/fold';
 import { serializeTextBlock } from '../../../editor/markdown';
 import type { BlockId, Edit } from '../../../services/pages/types';
@@ -10,10 +11,11 @@ import { liveText } from '../blocks/textBlock';
 import type { LazyBlockView } from '../blocks/textBlock';
 import type { MountedPage } from '../mount';
 import { readingLock } from '../qol/stores';
-import { leafText, matchesInDoc, replaceInDoc } from './match';
+import { blockTexts, leafText, matchesInDoc, replaceInDoc } from './match';
 import type { DocMatch, FindOptions, ReplaceSpec } from './match';
 import type { FormatCriterion } from './format';
 import { patternProblem } from './pattern';
+import { scanTexts } from './scan';
 import type { PatternProblem } from './pattern';
 
 export interface FindMatch extends DocMatch {
@@ -51,6 +53,42 @@ export function searchPage(
     }
   }
   return { matches, problem: performance.now() > until ? 'slow' : null };
+}
+
+/**
+ * The same search, with a regular expression or wildcard pattern run in a worker, so a pattern that backtracks
+ * without end cannot freeze the page: it stops at the time limit with the problem 'slow'.
+ */
+export async function searchPageAsync(
+  mounted: MountedPage,
+  query: string,
+  options: FindOptions,
+  formats: readonly FormatCriterion[] = [],
+  budgetMs = SEARCH_BUDGET_MS,
+): Promise<SearchResult> {
+  if (query === '' || !(options.regex || options.wildcards)) return searchPage(mounted, query, options, formats);
+  const problem = patternProblem(query, options);
+  if (problem) return { matches: [], problem };
+  const boxes: { block: BlockId; doc: PMNode }[] = [];
+  for (const block of mounted.layer.blocks()) {
+    if (block.type !== 'text') continue;
+    const live = liveText(mounted.layer.view(block.id));
+    if (live) boxes.push({ block: block.id, doc: live.liveDoc() });
+  }
+  const scanned = await scanTexts(
+    boxes.flatMap(({ doc }) => blockTexts(doc)),
+    query,
+    options,
+    budgetMs,
+  );
+  if (scanned === 'slow') return { matches: [], problem: 'slow' };
+  let at = 0;
+  const matches: FindMatch[] = [];
+  for (const { block, doc } of boxes) {
+    const finder = () => scanned[at++] ?? [];
+    for (const match of matchesInDoc(doc, query, options, formats, Infinity, finder)) matches.push({ ...match, block });
+  }
+  return { matches, problem: null };
 }
 
 /** Every match on the page, in reading order. */

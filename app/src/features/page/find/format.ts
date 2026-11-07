@@ -4,7 +4,7 @@
 // when no replacement text is given. The marks and their values are the ones of inline version 2.
 import type { Mark, Node as PMNode } from '@tiptap/pm/model';
 import type { Transaction } from '@tiptap/pm/state';
-import { validRunAttrs } from '../../../editor/commands/runFormat';
+import { EXCLUDED, validRunAttrs } from '../../../editor/commands/runFormat';
 import type { TextRange } from './match';
 
 export interface FormatCriterion {
@@ -29,12 +29,17 @@ export const FORMAT_KINDS = [
 
 export type FormatKind = (typeof FORMAT_KINDS)[number]['id'];
 
+/** The value that stands for any value of a mark. */
+export const ANY = '*';
+
 /** The criterion of a format kind with its value (ignored for bold, italic, and underline), or null when empty. */
 export function criterionOf(kind: FormatKind, value: string): FormatCriterion | null {
   const entry = FORMAT_KINDS.find((candidate) => candidate.id === kind);
   if (!entry) return null;
   if (entry.key === null) return { mark: entry.mark };
   const text = value.trim();
+  // `*` is any value of the mark: a criterion with no attributes fits every mark of that name.
+  if (text === ANY) return { mark: entry.mark };
   return text === '' ? null : { mark: entry.mark, attrs: { [entry.key]: text } };
 }
 
@@ -79,9 +84,6 @@ export function rangeFits(block: PMNode, start: number, end: number, criteria: r
   });
   return fits && seen;
 }
-
-/** The marks a mark replaces: setting bold takes off a numeric weight, and the reverse. */
-const EXCLUDED: Readonly<Record<string, readonly string[]>> = { bold: ['weight'] };
 
 /** The criteria whose value does not fit the mark's grammar, such as a color that is not a color. */
 export function invalidCriteria(criteria: readonly FormatCriterion[]): FormatCriterion[] {

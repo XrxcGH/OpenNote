@@ -10,10 +10,12 @@ import { announce, Button, openMenu, Switch, TextField } from '../../../ui';
 import type { MountedPage } from '../mount';
 import { closeFind, findRequest } from '../qol/stores';
 import styles from '../qol/qol.module.css';
-import { criterionOf, FORMAT_KINDS, invalidCriteria } from './format';
+import { ANY, criterionOf, FORMAT_KINDS, invalidCriteria } from './format';
 import type { FormatCriterion, FormatKind } from './format';
 import type { FindOptions } from './match';
-import { clearHighlights, highlight, replaceMatches, reveal, searchPage } from './search';
+import { MAX_PATTERN_LENGTH } from './pattern';
+import { PEN_COLORS } from '../../../editor/schema/constants';
+import { clearHighlights, highlight, replaceMatches, reveal, searchPageAsync } from './search';
 import type { FindMatch, SearchResult } from './search';
 
 /** The formats typed into a format editor: a value per kind, `on` for bold, italic, and underline, empty for none. */
@@ -98,11 +100,16 @@ function useMatches(
   const [problem, setProblem] = useState<SearchResult['problem']>(null);
   const [current, setCurrent] = useState(0);
   const wantReveal = useRef(false);
+  const latest = useRef(0);
   const refresh = useCallback(() => {
-    const next = searchPage(mounted, query, options, formats);
-    setMatches(next.matches);
-    setProblem(next.problem);
-    setCurrent((at) => (next.matches.length === 0 ? 0 : Math.min(at, next.matches.length - 1)));
+    // Only the newest search is shown: a slower, older one that ends later is dropped.
+    const run = ++latest.current;
+    void searchPageAsync(mounted, query, options, formats).then((next) => {
+      if (run !== latest.current) return;
+      setMatches(next.matches);
+      setProblem(next.problem);
+      setCurrent((at) => (next.matches.length === 0 ? 0 : Math.min(at, next.matches.length - 1)));
+    });
   }, [mounted, query, options, formats]);
 
   useEffect(() => {
@@ -153,10 +160,16 @@ interface RowProps {
   close(): void;
 }
 
-function FormatEditor(props: { state: FormatState; onChange(next: FormatState): void; label: string }) {
-  const { state, onChange, label } = props;
+function FormatEditor(props: {
+  state: FormatState;
+  onChange(next: FormatState): void;
+  label: string;
+  /** Find may ask for any value of a mark; Replace needs a value to set. */
+  allowAny?: boolean;
+}) {
+  const { state, onChange, label, allowAny } = props;
   const set = (id: FormatKind, value: string) => onChange({ ...state, [id]: value });
-  const invalid = invalidCriteria(criteriaOf(state)).length > 0;
+  const invalid = invalidCriteria(criteriaOf(state).filter((criterion) => !allowAny || criterion.attrs)).length > 0;
   return (
     <div role="group" aria-label={label}>
       <div className={styles.findOptions}>
@@ -169,16 +182,61 @@ function FormatEditor(props: { state: FormatState; onChange(next: FormatState): 
           />
         ))}
       </div>
-      {FORMAT_KINDS.filter((kind) => kind.key !== null).map(({ id }) => (
-        <div key={id} className={styles.findField}>
-          <TextField label={t(`textFind.kind.${id}`)} value={state[id] ?? ''} onChange={(value) => set(id, value)} />
-        </div>
-      ))}
+      {FORMAT_KINDS.filter((kind) => kind.key !== null).map(({ id }) => {
+        const any = allowAny && state[id] === ANY;
+        return (
+          <div key={id} className={styles.findField}>
+            {!any && (
+              <TextField
+                label={t(`textFind.kind.${id}`)}
+                value={state[id] ?? ''}
+                onChange={(value) => set(id, value)}
+              />
+            )}
+            {allowAny && (
+              <Switch
+                label={t('textFind.formatAny', { kind: t(`textFind.kind.${id}`) })}
+                checked={!!any}
+                onChange={(on) => set(id, on ? ANY : '')}
+              />
+            )}
+          </div>
+        );
+      })}
+      <span>{t('textFind.formatColors', { names: PEN_COLORS.join(', ') })}</span>
       {invalid && <span role="status">{t('textFind.formatInvalid')}</span>}
       <Button variant="quiet" onClick={() => onChange({})}>
         {t('textFind.formatClear')}
       </Button>
     </div>
+  );
+}
+
+function SearchSwitches({ options, onOptions }: { options: FindOptions; onOptions(next: FindOptions): void }) {
+  return (
+    <>
+      <Switch
+        label={t('pageExtras.find.matchCase')}
+        checked={options.caseSensitive || (!!options.wildcards && !options.regex)}
+        disabled={!!options.wildcards && !options.regex}
+        onChange={(caseSensitive) => onOptions({ ...options, caseSensitive })}
+      />
+      <Switch
+        label={t('pageExtras.find.wholeWord')}
+        checked={options.wholeWord}
+        onChange={(wholeWord) => onOptions({ ...options, wholeWord })}
+      />
+      <Switch
+        label={t('textFind.regex')}
+        checked={!!options.regex}
+        onChange={(regex) => onOptions({ ...options, regex, wildcards: regex ? false : options.wildcards })}
+      />
+      <Switch
+        label={t('textFind.wildcards')}
+        checked={!!options.wildcards}
+        onChange={(wildcards) => onOptions({ ...options, wildcards, regex: wildcards ? false : options.regex })}
+      />
+    </>
   );
 }
 
@@ -201,7 +259,7 @@ function FindRow(props: RowProps) {
           onChange={props.onQuery}
           onCommit={() => go(1)}
           onCancel={close}
-          error={problem ? t(`textFind.problem.${problem}`) : undefined}
+          error={problem ? t(`textFind.problem.${problem}`, { max: MAX_PATTERN_LENGTH }) : undefined}
         />
       </div>
       <div className={styles.findRow}>
@@ -216,26 +274,7 @@ function FindRow(props: RowProps) {
         </span>
       </div>
       <div className={styles.findOptions}>
-        <Switch
-          label={t('pageExtras.find.matchCase')}
-          checked={options.caseSensitive}
-          onChange={(caseSensitive) => props.onOptions({ ...options, caseSensitive })}
-        />
-        <Switch
-          label={t('pageExtras.find.wholeWord')}
-          checked={options.wholeWord}
-          onChange={(wholeWord) => props.onOptions({ ...options, wholeWord })}
-        />
-        <Switch
-          label={t('textFind.regex')}
-          checked={!!options.regex}
-          onChange={(regex) => props.onOptions({ ...options, regex, wildcards: regex ? false : options.wildcards })}
-        />
-        <Switch
-          label={t('textFind.wildcards')}
-          checked={!!options.wildcards}
-          onChange={(wildcards) => props.onOptions({ ...options, wildcards, regex: wildcards ? false : options.regex })}
-        />
+        <SearchSwitches options={options} onOptions={props.onOptions} />
         <Button
           disabled={!!options.regex}
           onClick={(event) => {
@@ -243,7 +282,10 @@ function FindRow(props: RowProps) {
             void openMenu({
               label: t('textFind.specialMenu'),
               anchor,
-              items: SPECIAL_CHARS.map(([id, code]) => ({ id: code, label: `${t(`textFind.chars.${id}`)} (${code})` })),
+              items: SPECIAL_CHARS.map(([id, code]) => ({
+                id: code,
+                label: t('textFind.specialItem', { label: t(`textFind.chars.${id}`), code }),
+              })),
             }).then((code) => code && props.onQuery(query + code));
           }}
         >
@@ -256,7 +298,9 @@ function FindRow(props: RowProps) {
           {t('pageExtras.find.close')}
         </Button>
       </div>
-      {formatOpen && <FormatEditor label={t('textFind.formatFind')} state={props.formats} onChange={props.onFormats} />}
+      {formatOpen && (
+        <FormatEditor label={t('textFind.formatFind')} state={props.formats} onChange={props.onFormats} allowAny />
+      )}
     </>
   );
 }

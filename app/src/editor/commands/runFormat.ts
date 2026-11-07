@@ -69,7 +69,7 @@ export function spanKey(name: string): string | null {
 }
 
 /** Marks that setting one takes off: bold and weight (R-MRK-27), subscript and superscript. */
-const EXCLUDED: Readonly<Record<string, readonly string[]>> = {
+export const EXCLUDED: Readonly<Record<string, readonly string[]>> = {
   bold: ['weight'],
   weight: ['bold'],
   subscript: ['superscript'],

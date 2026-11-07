@@ -4,6 +4,7 @@
 // format.ts, the page-wide search is in search.ts, and the highlights are in highlights.ts.
 import { Fragment } from '@tiptap/pm/model';
 import type { Node as PMNode } from '@tiptap/pm/model';
+import { canJoin } from '@tiptap/pm/transform';
 import { EditorState } from '@tiptap/pm/state';
 import { applyFormats, formatRuns, rangeFits } from './format';
 import type { FormatCriterion } from './format';
@@ -37,20 +38,32 @@ export interface ReplaceSpec {
 
 const PLAIN: PatternOptions = { caseSensitive: false, wholeWord: false };
 
-/** The matches of `query` in `text`, left to right, never overlapping. A bad pattern has no matches. */
-export function findInText(text: string, query: string, options: FindOptions): TextRange[] {
+/** A way to find the matches in the text of one textblock. */
+export type TextFinder = (text: string) => TextRange[];
+
+/** The matches of the pattern in each text, one list per text. The pattern is compiled once. */
+export function findInTexts(texts: readonly string[], query: string, options: FindOptions): TextRange[][] {
   const compiled = compilePattern(query, options);
-  if (!compiled?.pattern || text === '') return [];
+  return texts.map((text) => (compiled?.pattern ? scan(text, compiled.pattern) : []));
+}
+
+function scan(text: string, pattern: RegExp): TextRange[] {
+  if (text === '') return [];
   const found: TextRange[] = [];
-  for (const match of (text + PARAGRAPH_MARK).matchAll(compiled.pattern)) {
+  for (const match of (text + PARAGRAPH_MARK).matchAll(pattern)) {
     const start = match.index;
+    // A match starts in the text, or is exactly the paragraph mark at its end. Nothing starts past the mark.
+    if (start > text.length) continue;
     const end = Math.min(text.length, start + match[0].length);
-    const tookMark = start + match[0].length > text.length;
-    if (end > start || (tookMark && start >= text.length)) {
-      found.push({ start, end, groups: Array.from(match, (part) => part ?? '') });
-    }
+    const mark = start === text.length && match[0].startsWith(PARAGRAPH_MARK);
+    if (end > start || mark) found.push({ start, end, groups: Array.from(match, (part) => part ?? '') });
   }
   return found;
+}
+
+/** The matches of `query` in `text`, left to right, never overlapping. A bad pattern has no matches. */
+export function findInText(text: string, query: string, options: FindOptions): TextRange[] {
+  return findInTexts([text], query, options)[0];
 }
 
 /** The text of a textblock as it is searched: a hard break is a line break character, other nodes one placeholder. */
@@ -60,6 +73,23 @@ export function blockText(node: PMNode): string {
   return node.textBetween(0, node.content.size, '', leafText);
 }
 
+/** The searched text of every textblock of a document, in order. */
+export function blockTexts(doc: PMNode): string[] {
+  const texts: string[] = [];
+  doc.descendants((node) => {
+    if (!node.isTextblock) return true;
+    texts.push(blockText(node));
+    return false;
+  });
+  return texts;
+}
+
+/** A finder that compiles the pattern once, for every textblock. */
+function compiledFinder(query: string, options: FindOptions): TextFinder {
+  const compiled = query === '' ? null : compilePattern(query, options);
+  return (text) => (compiled?.pattern ? scan(text, compiled.pattern) : []);
+}
+
 /** Every match in a document, in order. With formats and no query, the runs that have the formats. */
 export function matchesInDoc(
   doc: PMNode,
@@ -67,9 +97,11 @@ export function matchesInDoc(
   options: FindOptions,
   formats: readonly FormatCriterion[] = [],
   until = Infinity,
+  find?: TextFinder,
 ): DocMatch[] {
   const found: DocMatch[] = [];
   if (query === '' && formats.length === 0) return found;
+  const finder = find ?? compiledFinder(query, options);
   let textblock = 0;
   doc.descendants((node, pos) => {
     if (!node.isTextblock) return true;
@@ -78,9 +110,7 @@ export function matchesInDoc(
     const ranges =
       query === ''
         ? formatRuns(node, formats).map((range) => ({ ...range, groups: [text.slice(range.start, range.end)] }))
-        : findInText(text, query, options).filter(
-            (range) => formats.length === 0 || rangeFits(node, range.start, range.end, formats),
-          );
+        : finder(text).filter((range) => formats.length === 0 || rangeFits(node, range.start, range.end, formats));
     for (const range of ranges)
       found.push({ ...range, textblock, from: pos + 1 + range.start, to: pos + 1 + range.end });
     textblock += 1;
@@ -118,6 +148,12 @@ export function replaceInDoc(doc: PMNode, matches: readonly DocMatch[], replacem
     if (content.size === 0) tr.delete(match.from, match.to);
     else tr.replaceWith(match.from, match.to, content);
     applyFormats(tr, match.from, match.from + content.size, spec.formats ?? []);
+    // A match that took the paragraph mark joins the paragraph with the next one, as Word does. The last
+    // paragraph of a box has none after it, so only its text changes.
+    if (match.groups?.[0]?.endsWith(PARAGRAPH_MARK)) {
+      const boundary = match.from + content.size + 1;
+      if (boundary < tr.doc.content.size && canJoin(tr.doc, boundary)) tr.join(boundary);
+    }
   }
   return tr.doc;
 }

@@ -98,7 +98,7 @@ function wildcardSource(query: string): string | null {
 export function isUnsafeRegex(source: string): boolean {
   // Each open group: whether it holds a repeat or an alternative.
   const stack: { repeats: boolean; chooses: boolean }[] = [];
-  const quantifierAt = (at: number): { repeat: boolean; end: number } | null => {
+  const quantifierAt = (at: number): { repeat: boolean; count?: number; end: number } | null => {
     const char = source[at];
     if (char === '*' || char === '+') return { repeat: true, end: at + 1 };
     if (char === '?') return { repeat: false, end: at + 1 };
@@ -107,7 +107,8 @@ export function isUnsafeRegex(source: string): boolean {
     const body = close < 0 ? '' : source.slice(at + 1, close);
     if (!/^\d+(,\d*)?$/.test(body)) return null;
     // `{3}` and `{0,1}` cannot grow without bound; anything else may.
-    return { repeat: body !== '0,1' && !/^\d+$/.test(body), end: close + 1 };
+    const count = /^\d+$/.test(body) ? Number(body) : 0;
+    return { repeat: body !== '0,1' && count === 0 && !/^\d+$/.test(body), count, end: close + 1 };
   };
   let inClass = false;
   for (let i = 0; i < source.length; i += 1) {
@@ -135,6 +136,9 @@ export function isUnsafeRegex(source: string): boolean {
       const group = stack.pop();
       const quantifier = quantifierAt(i + 1);
       if (group && quantifier?.repeat && (group.repeats || group.chooses)) return true;
+      // A group that repeats or chooses, taken a fixed number of times, still multiplies its work: `(.*a){12}`.
+      const times = quantifier?.count ?? 0;
+      if (group && ((times > 1 && group.repeats) || (times >= 8 && group.chooses))) return true;
       const parent = stack[stack.length - 1];
       if (parent && group) {
         parent.repeats ||= group.repeats || !!quantifier?.repeat;
@@ -167,7 +171,9 @@ export function compilePattern(query: string, options: PatternOptions): Compiled
   const source = options.wholeWord ? `(?<!${WORD_CHAR})(?:${body})(?!${WORD_CHAR})` : body;
   try {
     // The `m` flag lets ^ and $ match at the start and end of a paragraph, which is a line of the searched text.
-    return { pattern: new RegExp(source, `g${options.caseSensitive ? '' : 'i'}mu`) };
+    // Wildcards always match case, as Word's do, whatever the Match case switch says.
+    const matchCase = options.caseSensitive || (!!options.wildcards && !options.regex);
+    return { pattern: new RegExp(source, `g${matchCase ? '' : 'i'}mu`) };
   } catch {
     return { problem: 'invalid' };
   }

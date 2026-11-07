@@ -41,6 +41,14 @@ Press Ctrl+Enter to check or uncheck an item. Finished items move down, and the 
 | Stop accidental edits and ink | Press Ctrl+K and choose Lock page. Choose it again to turn the lock off. |
 | Make the caret easier to see | The caret follows the Windows text cursor settings: its thickness, its blinking, and the indicator color. Turn on Settings, Accessibility, Text cursor in Windows, or choose a width in OpenNote's settings. |
 
+### Find by format, special characters, and patterns
+
+- Choose Format in the Find bar to find text by bold, italic, underline, font, size, text color, highlight, or character style. Turn on Any for a color or highlight to find every one. In Replace, choose Format to set formats on the replacement, or on the found text when the replacement is empty.
+- Choose Special to add a paragraph mark (^p), tab (^t), any character (^?), digit (^#), letter (^$), manual line break (^l), nonbreaking space (^s), or caret (^^). Replacing a paragraph mark joins that paragraph with the next one.
+- Turn on Wildcards for ?, *, [abc], [!abc], <, >, {n,m}, and @. Wildcards always match case.
+- Turn on Regular expressions to use a full pattern. In the replacement, $1 to $9 give the parts in parentheses.
+- A pattern may have at most 250 characters. A pattern that takes more than a moment stops with a message. Make it simpler.
+
 ## Templates, series, and the source
 
 - Start a page from a template when you make it.

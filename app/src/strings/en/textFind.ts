@@ -10,7 +10,9 @@ export const textFind = {
   formatReplace: 'Replace format',
   formatShow: 'Format',
   formatHide: 'Hide format',
-  formatNone: 'No format',
+  formatAny: 'Any {kind}',
+  formatColors: 'Colors: {names}.',
+  specialItem: '{label} ({code})',
   formatClear: 'Clear formats',
   formatInvalid: 'A format value is not valid and is left out.',
   kind: {
@@ -35,7 +37,7 @@ export const textFind = {
     caret: 'Caret',
   },
   problem: {
-    tooLong: 'The pattern is too long. Use at most 250 characters.',
+    tooLong: 'The pattern is too long. Use at most {max} characters.',
     invalid: 'The pattern is not valid.',
     unsafe: 'The pattern repeats a repeated part, which can take too long. Simplify it.',
     slow: 'The search took too long and stopped. Narrow the pattern.',
