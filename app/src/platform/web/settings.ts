@@ -25,12 +25,30 @@ const CHOICES: Record<string, readonly unknown[]> = {
   'text.darkCustomBackgrounds': ['exact', 'soften'],
   'tables.newTableKeys': ['spreadsheet', 'document'],
   'tables.formulaBar': [true, false],
+  'code.pythonRuntime': ['quick', 'full'],
+  'code.suggestions': ['off', 'onRequest', 'automaticRules', 'automaticModel'],
+  'code.acceptButton': ['touchOrPen', 'always', 'never'],
+  'code.diagnostics': ['errors', 'warnings', 'everything'],
+  'code.cStandard': ['c99', 'c11', 'c17', 'c23'],
+  'code.cppStandard': ['cpp14', 'cpp17', 'cpp20', 'cpp23'],
+};
+
+/** The code group's number ranges, as Rust checks them (settings/code.rs). */
+const RANGES: Record<string, readonly [number, number]> = {
+  'code.timeLimitSeconds': [1, 60],
+  'code.memoryLimitMib': [16, 256],
 };
 
 function invalidField(settings: Settings): IpcError | null {
   for (const [path, choices] of Object.entries(CHOICES)) {
     const value = path.split('.').reduce<unknown>((node, key) => (node as Record<string, unknown>)?.[key], settings);
     if (!choices.includes(value)) return { code: 'invalid', message: `${path} can't be ${String(value)}`, field: path };
+  }
+  for (const [path, [min, max]] of Object.entries(RANGES)) {
+    const value = path.split('.').reduce<unknown>((node, key) => (node as Record<string, unknown>)?.[key], settings);
+    if (typeof value !== 'number' || value < min || value > max) {
+      return { code: 'invalid', message: `${path} must be ${min} to ${max}`, field: path };
+    }
   }
   const scale = settings.appearance.uiScale;
   if (typeof scale !== 'number' || scale < 90 || scale > 150) {

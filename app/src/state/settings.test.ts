@@ -64,7 +64,30 @@ describe('schema version 2', () => {
         darkCustomBackgrounds: 'exact',
       },
       tables: { newTableKeys: 'spreadsheet', formulaBar: true },
-      code: {},
+      code: {
+        indent: {},
+        pythonRuntime: 'quick',
+        timeLimitSeconds: 10,
+        memoryLimitMib: 64,
+        formatOnSave: false,
+        completionList: true,
+        suggestions: 'automaticRules',
+        acceptButton: 'touchOrPen',
+        announceSuggestions: true,
+        diagnostics: 'everything',
+        cStandard: 'c17',
+        cppStandard: 'cpp20',
+        compilerWarnings: true,
+      },
+    });
+  });
+
+  it('keeps a code setting and rejects one outside its range', async () => {
+    const platform = start();
+    await updateSettings({ code: { suggestions: 'onRequest' } });
+    expect(getSettings().code.suggestions).toBe('onRequest');
+    await expect(platform.settings.update({ code: { timeLimitSeconds: 600 } })).rejects.toMatchObject({
+      field: 'code.timeLimitSeconds',
     });
   });
 
