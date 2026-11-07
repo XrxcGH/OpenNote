@@ -1,9 +1,10 @@
 // The tool windows (Phase 10), opened from the command palette. In the app they dock beside the page; "Open in its
 // own window" moves one to a window of its own, where the app can make one. Opening a tool that is already open
 // brings it forward. The layer mounts on first use, so nothing here costs anything until a tool is opened.
-import { useEffect, useLayoutEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useLayoutEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import type { Root } from 'react-dom/client';
+import { isEnabled } from '../../../app/flags';
 import { createStore, useStore } from '../../../state/store';
 import { t } from '../../../strings/t';
 import { showToast } from '../../../ui';
@@ -31,6 +32,13 @@ interface Layer {
   used: readonly ToolId[];
 }
 
+// The code studio loads the first time its window opens (code:L04 owns the window).
+const CodeStudioWindow = lazy(() =>
+  import('../../codestudio')
+    .then((studio) => studio.loadCodeStudioWindow())
+    .then((loaded) => ({ default: loaded.CodeStudioWindow })),
+);
+
 const layer = createStore<Layer>({ open: [], pinned: [], epoch: 0, widths: {}, used: [] }, 'tool windows');
 let root: Root | null = null;
 
@@ -38,6 +46,15 @@ export function ToolBody({ tool }: { tool: ToolId }) {
   if (tool === 'timers') return <TimersTool />;
   if (tool === 'calculator') return <CalculatorTool />;
   if (tool === 'upcoming') return <UpcomingTool />;
+  if (tool === 'code')
+    // A popped window that names the studio stays empty and loads nothing while code.studio is off.
+    return (
+      isEnabled('code.studio') && (
+        <Suspense fallback={null}>
+          <CodeStudioWindow />
+        </Suspense>
+      )
+    );
   return <ExtraToolBody tool={tool} />;
 }
 

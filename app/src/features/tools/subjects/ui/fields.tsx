@@ -17,6 +17,8 @@ import kitStyles from '../../kits/ui/kit.module.css';
 import styles from './subjects.module.css';
 import type { DataInput, LongWideValue, MatrixInputValue, RoleSpec, RoleValue } from './input';
 import { columnsFor, readList, readMatrix, resizeMatrix, tableText } from './input';
+import type { FileStatus } from './fileRead';
+import { useFileRead } from './fileRead';
 import { sayS } from './words';
 
 /** Asks the open page for its blocks; null when no page answers (none is open, or this window is popped out). */
@@ -34,21 +36,15 @@ export function DataSummary({ data }: { data: DataSet }) {
       <p className={styles.status}>
         {data.columns.length === 0
           ? sayS('data.nothing')
-          : data.rows === 1
-            ? sayS('data.summaryOne', { columns: data.columns.length })
-            : sayS('data.summary', { rows: data.rows, columns: data.columns.length })}
+          : sayS('data.summary', { rows: data.rows, columns: data.columns.length })}
       </p>
       {data.truncated && (
         <p className={styles.warning}>{sayS('data.truncated', { max: MAX_ROWS.toLocaleString('en-US') })}</p>
       )}
       {first && (
         <p className={styles.warning}>
-          {sayS('data.problems', {
-            count: data.problems.length,
-            text: first.text,
-            column: first.column,
-            row: first.row,
-          })}
+          {sayS('data.problems', { count: data.problems.length })}{' '}
+          {sayS('data.problemFirst', { text: first.text, column: first.column, row: first.row })}
         </p>
       )}
     </div>
@@ -96,37 +92,74 @@ export interface DataFieldProps {
   data: DataSet;
 }
 
-export function DataField({ label, value, onChange, data }: DataFieldProps) {
-  const id = useId();
-  const file = useRef<HTMLInputElement>(null);
+interface PageTablesProps {
+  value: DataInput;
+  onChange(next: DataInput): void;
+  /** Said under the field: the open page has no tables, or no page answered. */
+  onNote(text: string): void;
+}
+
+/** A button that finds the tables on the open page, and a list to pick one to use as the data. */
+function PageTables({ value, onChange, onNote }: PageTablesProps) {
   const [tables, setTables] = useState<PageTable[] | null>(null);
   const [chosen, setChosen] = useState(0);
-  const [note, setNote] = useState('');
-
-  const findTables = () => {
+  const find = () => {
     const blocks = pageBlocks();
-    if (blocks === null) return setNote(sayS('data.noPage'));
+    if (blocks === null) return onNote(sayS('data.noPage'));
     const found = tablesOf(blocks);
     setTables(found);
     setChosen(0);
-    setNote(found.length === 0 ? sayS('data.noTables') : '');
+    onNote(found.length === 0 ? sayS('data.noTables') : '');
   };
-  const useTable = () => {
+  const use = () => {
     const table = tables?.[chosen];
     if (!table) return;
     onChange({ ...value, text: tableText(table), table: table.number });
     announce(sayS('data.tableUsed', { number: table.number }));
   };
-  const readFile = async (event: ChangeEvent<HTMLInputElement>) => {
+  return (
+    <>
+      <Button onClick={find}>{sayS('data.findTables')}</Button>
+      {tables && tables.length > 0 && (
+        <>
+          <label className={kitStyles.field}>
+            <span>{sayS('data.table')}</span>
+            <select
+              className={kitStyles.input}
+              value={chosen}
+              onChange={(event) => setChosen(Number(event.target.value))}
+            >
+              {tables.map((table, i) => (
+                <option key={table.id} value={i}>
+                  {sayS('data.tableName', { number: table.number })}
+                </option>
+              ))}
+            </select>
+          </label>
+          <Button onClick={use}>{sayS('data.useTable')}</Button>
+        </>
+      )}
+    </>
+  );
+}
+
+export function DataField({ label, value, onChange, data }: DataFieldProps) {
+  const id = useId();
+  const file = useRef<HTMLInputElement>(null);
+  const [note, setNote] = useState('');
+  const upload = useFileRead((text) => {
+    setNote('');
+    onChange({ ...value, text, table: null });
+  });
+  // Any other change to the text (typed, or from a page table) is no longer the file that was read.
+  const change = (next: DataInput) => {
+    upload.clear();
+    onChange(next);
+  };
+  const pick = (event: ChangeEvent<HTMLInputElement>) => {
     const picked = event.target.files?.[0];
     event.target.value = '';
-    if (!picked) return;
-    try {
-      onChange({ ...value, text: await picked.text(), table: null });
-      announce(sayS('data.fileRead', { name: picked.name }));
-    } catch {
-      setNote(sayS('data.fileFailed'));
-    }
+    if (picked) void upload.read(picked);
   };
 
   return (
@@ -142,7 +175,7 @@ export function DataField({ label, value, onChange, data }: DataFieldProps) {
         autoComplete="off"
         value={value.text}
         aria-describedby={`${id}-hint`}
-        onChange={(event) => onChange({ ...value, text: event.target.value, table: null })}
+        onChange={(event) => change({ ...value, text: event.target.value, table: null })}
       />
       <span id={`${id}-hint`} className={kitStyles.hint}>
         {sayS('data.textHint')}
@@ -157,29 +190,11 @@ export function DataField({ label, value, onChange, data }: DataFieldProps) {
           className={styles.hiddenFile}
           tabIndex={-1}
           aria-label={sayS('data.fileLabel')}
-          onChange={(event) => void readFile(event)}
+          onChange={pick}
         />
-        <Button onClick={findTables}>{sayS('data.findTables')}</Button>
-        {tables && tables.length > 0 && (
-          <>
-            <label className={kitStyles.field}>
-              <span>{sayS('data.table')}</span>
-              <select
-                className={kitStyles.input}
-                value={chosen}
-                onChange={(event) => setChosen(Number(event.target.value))}
-              >
-                {tables.map((table, i) => (
-                  <option key={table.id} value={i}>
-                    {sayS('data.tableName', { number: table.number })}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <Button onClick={useTable}>{sayS('data.useTable')}</Button>
-          </>
-        )}
+        <PageTables value={value} onChange={change} onNote={setNote} />
       </div>
+      <FileNote status={upload.status} />
       {note && (
         <p className={styles.warning} role="status">
           {note}
@@ -187,6 +202,20 @@ export function DataField({ label, value, onChange, data }: DataFieldProps) {
       )}
       <DataSummary data={data} />
     </fieldset>
+  );
+}
+
+/** Which file the data came from, or that the last file could not be read. */
+function FileNote({ status }: { status: FileStatus }) {
+  if (!status) return null;
+  return status === 'failed' ? (
+    <p className={styles.warning} role="status">
+      {sayS('data.fileFailed')}
+    </p>
+  ) : (
+    <p className={kitStyles.hint} role="status">
+      {sayS('data.fileRead', { name: status.name })}
+    </p>
   );
 }
 

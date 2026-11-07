@@ -38,6 +38,7 @@ const CATEGORIES: readonly CommandCategory[] = [
   'format',
   'insert',
   'table',
+  'code',
   'object',
   'updates',
   'help',
