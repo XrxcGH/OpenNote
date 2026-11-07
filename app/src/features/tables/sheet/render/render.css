@@ -119,7 +119,8 @@
   }
 
   table[data-sheet] :is(td, th)[data-cell][data-fill-repeat][data-fill-text]::after {
-    content: attr(data-fill-text);
+    /* The empty alternative keeps the repeat out of the accessible name; the cell's own text is read. */
+    content: attr(data-fill-text) / '';
     position: absolute;
     inset: 0;
     padding: inherit;
@@ -201,6 +202,16 @@
       1px 0 0 var(--color-border-control);
   }
 
+  /*
+   * A selected cell (tables.module.css .selectedCell) must show over a fill and over a frozen cell's background, so
+   * these rules match the cell rules above in weight and come after them.
+   */
+  table[data-sheet] :is(td, th)[data-cell].selectedCell,
+  table[data-sheet] :is(td, th)[data-cell][data-frozen-row].selectedCell,
+  table[data-sheet] :is(td, th)[data-cell][data-frozen-col].selectedCell {
+    background-color: var(--color-surface-selected);
+  }
+
   /* Forced colors drop fills, so a filled cell gets an outline, and gridlines use the system line color. */
   @media (forced-colors: active) {
     table[data-sheet]:not([data-no-grid]) {
@@ -212,7 +223,6 @@
       background-color: Canvas;
       background-image: none;
       border-color: CanvasText;
-      forced-color-adjust: none;
     }
 
     table[data-sheet] :is(td, th)[data-cell]:is([data-frozen-row], [data-frozen-col]) {
@@ -222,6 +232,13 @@
     table[data-sheet] :is(td, th)[data-cell][data-filled] {
       outline: 1px solid CanvasText;
       outline-offset: -2px;
+    }
+
+    table[data-sheet] :is(td, th)[data-cell].selectedCell,
+    table[data-sheet] :is(td, th)[data-cell][data-frozen-row].selectedCell,
+    table[data-sheet] :is(td, th)[data-cell][data-frozen-col].selectedCell {
+      background-color: Highlight;
+      color: HighlightText;
     }
   }
 

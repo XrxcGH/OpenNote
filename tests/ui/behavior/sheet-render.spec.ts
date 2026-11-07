@@ -303,3 +303,52 @@ test('in forced colors borders and gridlines use the system line color @forced',
   });
   expect(colors).toEqual([canvasText, canvasText]);
 });
+
+const SELECTED = 'rgb(214, 228, 255)';
+
+for (const forced of [false, true]) {
+  test(`a selected cell shows its selection over a fill and when frozen${forced ? ' in forced colors @forced' : ''}`, async ({
+    page,
+  }) => {
+    if (forced) await page.emulateMedia({ forcedColors: 'active' });
+    const b = new Builder(2, 1, 100).text(1, 1, 'Filled').style(1, 1, { fill: '#1e293b' }).build();
+    const body = tableHtml('t', b, 'light');
+    const css = `${harnessCss()} :root { --color-surface-selected: ${SELECTED}; }`;
+    await page.setContent(`<!doctype html><html><head><style>${css}</style></head><body>${body}</body></html>`);
+    await page
+      .locator('td')
+      .first()
+      .evaluate((el) => el.classList.add('selectedCell'));
+    const colors = await page
+      .locator('td')
+      .first()
+      .evaluate((el) => {
+        const s = getComputedStyle(el);
+        return [s.backgroundColor, s.color];
+      });
+    if (!forced) expect(colors[0]).toBe(SELECTED);
+    else {
+      const sys = await page.evaluate(() => {
+        const probe = document.createElement('div');
+        probe.style.cssText = 'background-color: Highlight; color: HighlightText';
+        document.body.append(probe);
+        const s = getComputedStyle(probe);
+        return [s.backgroundColor, s.color];
+      });
+      expect(colors).toEqual(sys);
+    }
+  });
+}
+
+test('in forced colors a highlighted run inside a filled cell does not keep its author colors @forced', async ({
+  page,
+}) => {
+  await page.emulateMedia({ forcedColors: 'active' });
+  const b = new Builder(1, 1, 100).text(1, 1, 'x').style(1, 1, { fill: '#1e293b' }).build();
+  const body = tableHtml('t', b, 'light')
+    .replace('<p>', '<p><span style="background:#ffff00;color:#000000">')
+    .replace('</p>', '</span></p>');
+  await page.setContent(`<!doctype html><html><head><style>${harnessCss()}</style></head><body>${body}</body></html>`);
+  const mark = await page.locator('span').evaluate((el) => getComputedStyle(el).backgroundColor);
+  expect(mark).not.toBe('rgb(255, 255, 0)');
+});

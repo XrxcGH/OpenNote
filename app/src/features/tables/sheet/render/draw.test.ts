@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { applyToRange, type Sheet, type StyleChange, type TableLike } from '../model';
 import { K, R, makeTable, range } from '../model/testing';
 import { kindOf, textAlign } from './align';
-import { heavier } from './borders';
+import { cssLine, heavier } from './borders';
 import { automaticText, contrast, textTokens } from './color';
 import { drawTable } from './draw';
 import { LOOK_NAMES, lookStyle } from './looks';
@@ -67,6 +67,10 @@ describe('alignment variables', () => {
 });
 
 describe('borders', () => {
+  it('writes a stored border width in points and a named style in pixels', () => {
+    expect(cssLine({ style: 'thin', color: '#000000', width: 3 }, '#000000')).toBe('3pt solid #000000');
+    expect(cssLine({ style: 'thin', color: '#000000' }, '#000000')).toBe('1px solid #000000');
+  });
   it('draws thick where B2 bottom is thin and B3 top is thick', () => {
     let sheet = styled({}, table, [2, 2], { border: { b: { style: 'thin', color: '#112233' } } });
     sheet = styled(sheet, table, [3, 2], { border: { t: { style: 'thick', color: '#445566' } } });
@@ -373,6 +377,24 @@ describe('drawing again after a text change', () => {
     );
     expect(again.changed).toBeUndefined();
     expect(again.cells[2]).not.toBe(first.cells[2]);
+  });
+
+  it('restyles rows when a conditional format depends on the text that changed', () => {
+    const rules: Sheet = { conditional: { c1: { order: 1, type: 'blank', ranges: [{ col: K(1) }], style: 'aaaaaa' } } };
+    const conditional = (_r: unknown, cell: { row: number; col: number }, _s: Sheet, t: TableLike) =>
+      t.rows[cell.row].cells[t.columns[cell.col].id]?.markdown === 'hot' ? [{ fill: '#ff0000' }] : [];
+    const input = { sheet: rules, scheme: 'light' as const, hooks: { conditional } };
+    const first = drawTable({ ...input, table });
+    expect(first.cells[0][0].vars['--cell-fill']).toBeUndefined();
+    const next = withCells(table, { [K(1)]: 'hot' });
+    const again = drawTable({ ...input, table: next }, first);
+    expect(again.cells[0][0].vars['--cell-fill']).toBe('#ff0000');
+    expect(again.cells[0][0].vars['--cell-fill']).toBe(
+      drawTable({ ...input, table: next }).cells[0][0].vars['--cell-fill'],
+    );
+    expect(again.cells[3]).toBe(first.cells[3]);
+    // And back: the fill goes when the text goes.
+    expect(drawTable({ ...input, table }, again).cells[0][0].vars['--cell-fill']).toBeUndefined();
   });
 });
 

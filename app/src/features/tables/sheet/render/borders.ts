@@ -77,6 +77,7 @@ export function resolvedSides(own: Borders | undefined, near: Neighbors): Record
 /** A CSS border value for a side in the given color. */
 export function cssLine(side: BorderSide, color: string): string {
   const line = BORDER_LINES[side.style];
-  const width = typeof side.width === 'number' && side.width > 0 ? side.width : line.width;
-  return `${width}px ${line.css} ${color}`;
+  // A stored width is in points (the schema); the named styles' widths are pixels.
+  const width = typeof side.width === 'number' && side.width > 0 ? `${side.width}pt` : `${line.width}px`;
+  return `${width} ${line.css} ${color}`;
 }

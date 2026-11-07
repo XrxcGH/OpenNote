@@ -5,6 +5,7 @@
 
 import { resolve, type CellStyle, type ResolveHooks, type Sheet, type TableLike } from '../model';
 import { own, ownObject } from '../model/json';
+import { getConditionalLayer } from '../model/rules';
 import { kindOf, textAlign, verticalAlign, type ValueKind } from './align';
 import { cssLine, resolvedSides, type Edge } from './borders';
 import { automaticText, colorOf, drawFill, type Scheme } from './color';
@@ -261,6 +262,28 @@ function updatedView(last: View, lastInput: DrawInput, input: DrawInput, changed
   return { ...last, texts };
 }
 
+/**
+ * True when a cell's style can depend on cell values: a conditional layer is set and the sheet has rules. Rules
+ * read other cells too (top 10, above average, duplicates), so a text edit can restyle any row.
+ */
+function dependsOnValues(input: DrawInput): boolean {
+  const layer = input.hooks?.conditional === undefined ? getConditionalLayer() : input.hooks.conditional;
+  return !!layer && ownObject(input.sheet, 'conditional') !== undefined;
+}
+
+/** The view worked out in full; `changed` gets the rows whose style or text differs, and their neighbors (borders). */
+function revisedView(last: View, input: DrawInput, changed: Set<number>): View {
+  const v = viewOf(input);
+  v.styles.forEach((row, vr) => {
+    const same =
+      JSON.stringify(row) === JSON.stringify(last.styles[vr]) &&
+      v.texts[vr].every((t, vc) => t.text === last.texts[vr][vc].text && t.kind === last.texts[vr][vc].kind);
+    if (same) return;
+    for (const k of [vr - 1, vr, vr + 1]) if (v.visRows[k] !== undefined) changed.add(v.visRows[k]);
+  });
+  return v;
+}
+
 /** The data attributes of the cell that centers or spills text across its empty neighbors. */
 function spanData(row: readonly RowCell[], vc: number, data: Record<string, string>): void {
   const spill = overflowCells(row, vc);
@@ -332,7 +355,9 @@ export function drawTable(input: DrawInput, previous?: DrawnTable): DrawnTable {
   const memo = previous ? MEMOS.get(previous) : undefined;
   if (previous && memo && sameShape(memo.input, input)) {
     const changed = new Set<number>();
-    const v = updatedView(memo.view, memo.input, input, changed);
+    const v = dependsOnValues(input)
+      ? revisedView(memo.view, input, changed)
+      : updatedView(memo.view, memo.input, input, changed);
     const cells = previous.cells.map((row, r) => (changed.has(r) ? drawRowCells(input, v, v.visRows.indexOf(r)) : row));
     const out: DrawnTable = { table: previous.table, rows: previous.rows, cells, changed };
     MEMOS.set(out, { input, view: v });
