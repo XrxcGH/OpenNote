@@ -126,7 +126,7 @@
     "features/engineering/mechdyn": 12,
     "features/engineering/aero/ui/KitAeroTool.tsx": 221,
     "features/engineering/solids/ui/SolidsKit.tsx": 119,
-    "features/engineering/thermo/ui/ThermoKit.tsx": 407,
+    "features/engineering/thermo/ui/ThermoKit.tsx": 412,
     "features/study/ui/exam/ExamResults.tsx": 42
   },
   "lazyDefaultKb": 40,
