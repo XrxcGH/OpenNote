@@ -12,11 +12,16 @@ const cell = (page: Page, row: number, column: number): Locator =>
 /** A cell's paragraph. A click on it is a click into the text; a click on the cell's padding selects the cell. */
 const inText = (page: Page, row: number, column: number): Locator => cell(page, row, column).locator('p').first();
 
-/** Grid mode on a cell: a click into its text, then Esc. */
+/**
+ * Grid mode on a cell: a click into its text, then Esc. A formula's result arrives after the click on a slow runner
+ * and redraws the cell, which drops the focus the click gave. The click and Esc repeat until the cell is selected.
+ */
 async function gridAt(page: Page, row: number, column: number): Promise<void> {
-  await inText(page, row, column).click();
-  await page.keyboard.press('Escape');
-  await expect(cell(page, row, column)).toHaveAttribute('aria-selected', 'true');
+  await expect(async () => {
+    await inText(page, row, column).click();
+    await page.keyboard.press('Escape');
+    await expect(cell(page, row, column)).toHaveAttribute('aria-selected', 'true', { timeout: 2000 });
+  }).toPass({ timeout: 20_000 });
 }
 
 const selected = (page: Page) => page.locator('table [aria-selected="true"]');
