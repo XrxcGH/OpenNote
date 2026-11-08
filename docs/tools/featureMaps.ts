@@ -89,6 +89,7 @@ export const SECTION_CATEGORY: Readonly<Record<string, Category>> = {
   'Statistics kit': 'Subject and catalog kits',
   'Psychology and behavior kit': 'Subject and catalog kits',
   'Life science tools': 'Subject and catalog kits',
+  'Text, table, and code program foundations': 'Writing and typing',
   'Appearance and layout': 'Settings and accessibility',
 };
 

@@ -179,3 +179,30 @@ describe('status pages', () => {
       expect(spec).toContain(key);
   });
 });
+
+describe('help index', () => {
+  it('links every help page', () => {
+    const index = read('help', 'README.md');
+    const pages = readdirSync(join(docs, 'help')).filter((f) => f.endsWith('.md') && f !== 'README.md');
+    expect(pages.filter((f) => !index.includes(`](${f})`))).toEqual([]);
+  });
+
+  it('links only pages that exist', () => {
+    const index = read('help', 'README.md');
+    const dead = [...index.matchAll(/\]\(([a-z0-9-]+\.md)\)/g)]
+      .map((m) => m[1])
+      .filter((f) => !existsSync(join(docs, 'help', f)));
+    expect(dead).toEqual([]);
+  });
+});
+
+describe('ADR index status', () => {
+  it('shows Accepted for a record whose file says Accepted', () => {
+    const index = read('adr', 'README.md');
+    const wrong = readdirSync(join(docs, 'adr'))
+      .filter((f) => /^\d{4}-.*\.md$/.test(f) && !f.startsWith('0000'))
+      .filter((f) => /^- Status: Accepted/m.test(read('adr', f)))
+      .filter((f) => !new RegExp(`\\]\\(${f}\\)[^\\n]*\\| Accepted`).test(index));
+    expect(wrong).toEqual([]);
+  });
+});

@@ -52,6 +52,24 @@ The app registers 900 commands and 48 tool windows. 24 of the windows are subjec
 - **Equation numbers and references.** A display equation with a label gets a number at its right edge, and an inline reference shows the number of the equation it names.
 - **Problem-set templates.** Problem set (Given, Find, Solution, Answer), Cornell notes, and Lab report in the new-page chooser, before the person's own templates.
 
+#### Text, table, and code program foundations
+
+- **Format version 2.** Notebooks and pages that hold version 2 data are stamped 2, with minWriterVersion, so an older OpenNote refuses a file it cannot keep intact.
+- **Run and paragraph formats.** Font, size, weight, footnote reference, and foreign marks are read and written as inline tags.
+- **Editor commands for formats.** Set and toggle commands cover every run and paragraph format.
+- **Footnotes and endnotes.** Insert, number in reading order, restart per document or at each Heading 1, edit in a notes area under the page, and jump between the reference and the note.
+- **Symbols and formatting marks.** The Symbol dialog searches by name or code.
+- **Copy and paste with formatting.** Copy writes inline CSS that Word and Google Docs keep.
+- **Bundled fonts and device fonts.** Carlito and Caladea stand in for Calibri and Cambria, and load only when a page uses them.
+- **Word import and export.** Import reads styles, themes, lists, notes, comments, and tracked changes into version 2 data.
+- **Shared color palette.** One palette for text and tables: theme colors with tints and shades, standard colors, recent colors per notebook, Automatic, No color, and More colors.
+- **Sheet cell styles in tables.** A table keeps cell styles, merges, rules, names, and cached results in data.sheet.
+- **Number format codes.** Format codes with sections, colors, and conditions, regional display, and currency, percent, and date column presets, all computed on the device.
+- **Excel-style formulas.** Formulas follow Excel's rules for text, numbers, errors, and dates, with a registry of functions, names, LET and LAMBDA, dynamic arrays that spill, and references across tables.
+- **Code studio foundations.** The contracts, settings, flags, and strings for the code studio: projects as a page block, runs, diagnostics, completion, a replay debugger, tests, and runtime packs.
+- **Code editor keys.** Tab indents in the code editor, Ctrl+Tab accepts a suggestion, and Ctrl+Page Down and Ctrl+Page Up change tabs, so the tab bar stays reachable.
+- **Calm shell polish.** Phosphor icons in the command bar, pens back on the bar at 1,280 px, calm pressed and selected states, notebook accent roles, and group dividers.
+
 ### Tool windows
 
 #### Code studio
