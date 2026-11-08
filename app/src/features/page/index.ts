@@ -16,6 +16,7 @@ export { shownStrokes } from './seams/inkStrokes';
 export { pageSelection } from './seams/selectionStore';
 export { shownPaper } from './seams/paper';
 export { shownPaginated } from './seams/paginated';
+export { textSeams } from './textSeams';
 export { transcriptActions } from './audio/transcripts/actionRegistry';
 export type { TranscriptAction, TranscriptContext } from './audio/transcripts/actionRegistry';
 export { usePrefs as usePageExtrasPrefs } from './qol/prefs';

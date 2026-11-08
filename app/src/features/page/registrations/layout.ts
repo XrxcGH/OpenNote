@@ -12,7 +12,8 @@ import { targetEditor } from '../formattingBar/target';
 import { pageCommandDef, type PageCommandId } from '../keys';
 import { blockRenderers, slashItems } from '../registries';
 import { shownPaginated } from '../seams/paginated';
-import { shownMounted } from '../pagesApi';
+import { mountedPageHooks, shownMounted } from '../pagesApi';
+import { textSeams } from '../textSeams';
 import { shownPool } from '../pool/shown';
 import { shownQueue } from '../sync/shown';
 import { breakBlockRenderer } from '../textLayout/breakBlock';
@@ -57,10 +58,10 @@ interface Def {
 
 const DEFS: readonly Def[] = [
   {
-    id: 'insert.pageBreak',
+    id: 'insert.pageBreakMenu',
     title: 'textLayout.commands.pageBreak',
     keywords: 'textLayout.commands.pageBreakKeywords',
-    when: (ctx) => havePage() && unlocked() && (ctx.source !== 'keyboard' || (paginated() && !inTask())),
+    when: () => havePage() && unlocked(),
     run: async () => {
       if (await (await loadBreak()).insertBreak('page')) announce(t('textLayout.announce.pageBreak'));
     },
@@ -125,6 +126,30 @@ const DEFS: readonly Def[] = [
   },
 ];
 
+// Ctrl+Enter (insert.pageBreak, registered by the text keys) reaches the page break through this seam while a page is
+// shown.
+const breakSeams = {
+  canBreakPage: () => havePage() && unlocked() && paginated() && !inTask(),
+  breakPage: () => {
+    void loadBreak()
+      .then((module) => module.insertBreak('page'))
+      .then((done) => {
+        if (done) announce(t('textLayout.announce.pageBreak'));
+      });
+  },
+};
+mountedPageHooks.register({
+  id: 'textLayout.breakSeams',
+  attach: () => {
+    textSeams.set((seams) => ({ ...seams, ...breakSeams }));
+    return () =>
+      textSeams.set((seams) => {
+        const { canBreakPage: _can, breakPage: _break, ...rest } = seams;
+        return rest;
+      });
+  },
+});
+
 for (const def of DEFS) {
   commands.register(
     pageCommandDef({
@@ -140,9 +165,9 @@ for (const def of DEFS) {
 }
 
 const ITEMS: readonly (readonly [PageCommandId, 'insert' | 'layout', string, number])[] = [
-  ['insert.pageBreak', 'insert', 'pageBreak', 10],
+  ['insert.pageBreakMenu', 'insert', 'pageBreak', 10],
   ['insert.columnBreak', 'insert', 'columnBreak', 10],
-  ['insert.pageBreak', 'layout', 'breaks', 20],
+  ['insert.pageBreakMenu', 'layout', 'breaks', 20],
   ['insert.columnBreak', 'layout', 'breaks', 19],
   ['layout.columns1', 'layout', 'columns', 30],
   ['layout.columns2', 'layout', 'columns', 29],
@@ -164,5 +189,5 @@ slashItems.register({
   group: 'advanced',
   order: 20,
   flag: FLAG,
-  command: 'insert.pageBreak' satisfies CommandId,
+  command: 'insert.pageBreakMenu' satisfies CommandId,
 });

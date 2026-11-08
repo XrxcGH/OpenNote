@@ -62,6 +62,7 @@ export const TEXT_KEYS = {
   },
   // text:page-layout: Word's and Docs' key for a column break. The layout commands have no chord.
   'insert.columnBreak': text(['Ctrl+Shift+Enter'], ['Ctrl+Shift+Enter'], []),
+  'insert.pageBreakMenu': text([], [], []),
   'layout.headerFooter': text([], []),
   'layout.lineNumbers': text([], []),
   'layout.verticalText': text([], []),
