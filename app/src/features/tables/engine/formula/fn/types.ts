@@ -3,12 +3,23 @@
 // never touch the same file. The descriptions people read (one line per function, one per argument) live in
 // app/src/strings/en/fn<Family>.ts under the function's name, written fresh in our own words.
 
-import { isError, isNumber, type FormulaError, type Value } from '../../values';
+import { isError, isNumber, type FormulaError, type RefValue, type Value } from '../../values';
 
 /** What the formula engine gives every function. */
 export interface Env {
   /** Today as a serial, read when a formula is calculated. */
   today: () => number;
+  /** The cell the formula runs in. Set only for a function with `wantsCaller`. */
+  caller?: Caller;
+}
+
+/** The calling cell, for ROW() and COLUMN() without an argument, INDIRECT's R1C1 text, and FORMULATEXT. */
+export interface Caller {
+  /** Zero-based row and column of the cell being calculated. */
+  readonly row: number;
+  readonly col: number;
+  /** The formula of a reference's top-left cell in stored form, without "=". Null when it holds none. */
+  formulaAt(ref: RefValue): string | null;
 }
 
 /**
@@ -17,10 +28,11 @@ export interface Env {
  * - number, text, bool: one value the function reads as that kind.
  * - range: every cell of a reference, or a value typed directly (see `direct`).
  * - array: an array. A single value comes as a one-by-one array.
+ * - ref: a reference as a RefValue, unions included. Other values come as they are.
  * - lambda: a function value, made by LAMBDA.
  * - lazy: not evaluated until the function asks, as IF's branches are.
  */
-export type ParamKind = 'value' | 'number' | 'text' | 'bool' | 'range' | 'array' | 'lambda' | 'lazy';
+export type ParamKind = 'value' | 'number' | 'text' | 'bool' | 'range' | 'array' | 'ref' | 'lambda' | 'lazy';
 
 export interface Param {
   /** The argument's name in the signature, such as "number" or "digits". */
@@ -78,6 +90,8 @@ export interface FnSpec2 {
   readonly volatile?: boolean;
   /** Returns a reference rather than a value, as OFFSET and INDEX do. */
   readonly returnsRef?: boolean;
+  /** Gets the calling cell in `env.caller`. */
+  readonly wantsCaller?: boolean;
   /** An error argument reaches the function instead of becoming its result. */
   readonly handlesErrors?: boolean;
   /** Computes the result. A function with lazy parameters is evaluated by the compiler itself and never runs this. */

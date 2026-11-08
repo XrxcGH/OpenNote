@@ -71,7 +71,9 @@ export class Engine {
   }
 
   makeCtx(): Ctx {
-    const ctx = newCtx([], { spillBox: (s, c, r) => spillBox(this, s, c, r) });
+    const formulaAt = (s: number, c: number, r: number): string | null =>
+      this.units.get(this.cellUnit.get(cellKey(s, c, r)) ?? this.colUnit.get(colKey(s, c)) ?? -1)?.formula ?? null;
+    const ctx = newCtx([], { spillBox: (s, c, r) => spillBox(this, s, c, r), formulaAt });
     ctx.sheets = this.sheets;
     return ctx;
   }

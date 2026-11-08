@@ -5,6 +5,9 @@
 //   reference for a function that returns references. A lambda parameter gets the value as it is. Other kinds get
 //   one value.
 // When a single-value parameter gets an array, the function runs once per item and the result is an array.
+//
+// A ref parameter gets a reference as a RefValue, as ROWS and AREAS want it. A function with `wantsCaller` gets the
+// calling cell in its environment.
 
 import type { Node } from '../../../../core/expr';
 import {
@@ -20,7 +23,7 @@ import {
 } from '../values';
 import { asArray, mapN } from '../arrays';
 import type { Box } from '../graph';
-import { isGroup, paramsOf, type FnSpec2, type Param } from './fn';
+import { isGroup, paramsOf, type Env, type FnSpec2, type Param } from './fn';
 import type { ArgSummary, ErrorOrigin } from './explain';
 import { cellsOf, colKey, constant, isBad, readBox, type Ctx, type Fn, type Host, type RefPart } from './context';
 
@@ -138,7 +141,7 @@ function aggregate(h: Host, spec: FnSpec2, node: Call): Fn {
 }
 
 /** Runs a function, once per item when a single-value parameter got an array. */
-function runLifted(spec: FnSpec2, values: Value[], scalar: boolean[], env: Host['scope']['env']): Value {
+function runLifted(spec: FnSpec2, values: Value[], scalar: boolean[], env: Env): Value {
   const handles = spec.handlesErrors === true;
   let lifted = false;
   for (let i = 0; i < values.length; i++) {
@@ -160,13 +163,26 @@ function runLifted(spec: FnSpec2, values: Value[], scalar: boolean[], env: Host[
   );
 }
 
+/** The environment a call runs in: the page's, with the calling cell for a function that wants it. */
+function envFor(h: Host, spec: FnSpec2, ctx: Ctx): Env {
+  if (spec.wantsCaller !== true) return h.scope.env;
+  const formulaAt = (ref: RefValue): string | null => {
+    const box = boxOf(h, ref);
+    return isBox(box) ? (ctx.rt.formulaAt?.(box.s, box.c1, box.r1) ?? null) : null;
+  };
+  return { ...h.scope.env, caller: { row: ctx.row, col: ctx.col, formulaAt } };
+}
+
 function plain(h: Host, spec: FnSpec2, node: Call): Fn {
-  const env = h.scope.env;
   const params = paramsFor(spec, node.args.length);
   const returnsRef = spec.returnsRef === true;
   if (returnsRef) h.dynamic = true;
   const parts: Fn[] = node.args.map((arg, i) => {
     const kind = params[i]?.kind ?? 'value';
+    if (kind === 'ref') {
+      const ref = h.refOrNull(arg);
+      return ref === null ? h.value(arg) : (ctx) => toRefValue(h, ref.fn(ctx));
+    }
     if (kind !== 'range' && kind !== 'array') return h.value(arg);
     const ref = h.refOrNull(arg);
     if (ref !== null && returnsRef && kind === 'range') return (ctx) => toRefValue(h, ref.fn(ctx));
@@ -181,7 +197,7 @@ function plain(h: Host, spec: FnSpec2, node: Call): Fn {
   const origin = originOf(spec, node);
   return (ctx) => {
     const values = parts.map((p) => p(ctx));
-    let v = runLifted(spec, values, scalar, env);
+    let v = runLifted(spec, values, scalar, envFor(h, spec, ctx));
     if (isRef(v)) v = readReturned(h, ctx, v);
     if (ctx.origin === null && isError(v) && !values.some((a) => a === v)) {
       ctx.origin = { ...origin, code: v.error, args: values.map(summarize) };
@@ -190,11 +206,18 @@ function plain(h: Host, spec: FnSpec2, node: Call): Fn {
   };
 }
 
-/** A reference given to a function that returns references. */
+/** A reference given to a function: one block, or a union with every area in `areas`. */
 function toRefValue(h: Host, box: Box | Box[] | Value): Value {
-  if (typeof box !== 'object' || box === null || !('s' in box)) {
-    return Array.isArray(box) ? err('VALUE') : (box as Value);
+  if (Array.isArray(box)) {
+    if (box.length === 0) return err('VALUE');
+    const areas = box.map((b) => oneRef(h, b));
+    return areas.length === 1 ? areas[0] : { ...areas[0], areas };
   }
+  if (typeof box !== 'object' || box === null || !('s' in box)) return box as Value;
+  return oneRef(h, box);
+}
+
+function oneRef(h: Host, box: Box): RefValue {
   const table = box.s === h.ownSheet ? undefined : h.book[box.s].name;
   return { kind: 'ref', ...(table === undefined ? {} : { table }), r1: box.r1, c1: box.c1, r2: box.r2, c2: box.c2 };
 }
@@ -219,22 +242,27 @@ function readReturned(h: Host, ctx: Ctx, ref: RefValue): Value {
   return readBox(ctx, box);
 }
 
-/** A call to a function that returns a reference, used where a reference is wanted. Null for other calls. */
+/**
+ * A call to a function that returns a reference, used where a reference is wanted. Null for other calls, and for a
+ * call whose first range argument is not a reference: INDEX({1,2;3,4},2,0) gives values, so it compiles as a value.
+ */
 export function compileCallRef(h: Host, spec: FnSpec2 | undefined, node: Call): RefPart | null {
   if (spec?.returnsRef !== true) return null;
   const params = paramsFor(spec, node.args.length);
+  const refs = node.args.map((arg, i) => (params[i]?.kind === 'range' ? h.refOrNull(arg) : null));
+  const first = params.findIndex((p) => p?.kind === 'range');
+  if (first >= 0 && first < node.args.length && refs[first] === null) return null;
   h.dynamic = true;
   if (spec.volatile === true) h.volatile = true;
   const parts: Fn[] = node.args.map((arg, i) => {
-    const ref = params[i]?.kind === 'range' ? h.refOrNull(arg) : null;
+    const ref = refs[i];
     return ref !== null ? (ctx) => toRefValue(h, ref.fn(ctx)) : h.value(arg);
   });
-  const env = h.scope.env;
   return {
     fn: (ctx) => {
       const v = spec.run(
         parts.map((p) => p(ctx)),
-        env,
+        envFor(h, spec, ctx),
       );
       if (isError(v)) return v;
       if (!isRef(v)) return err('VALUE');
