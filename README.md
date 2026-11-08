@@ -53,6 +53,8 @@ You keep notebooks, sections, and pages in a notes folder you choose, as plain f
 
 ### Write and draw
 
+The Word-level text, Excel-level table, and code studio foundations are on the beta branch behind flags that are off.
+
 - [Typed notes](docs/help/typed-notes.md): text, headings, lists, checklists, tables, code, callouts, Markdown, templates, and find and replace, with typed web and e-mail addresses turning into links, pasted tables and spreadsheet cells becoming tables, and copies that give other apps plain text.
 - [Moving between blocks](docs/help/moving-between-blocks.md): keys that move between text, pictures, tables, and code without the mouse.
 - [Document structure](docs/help/document-structure.md): equation numbers and references, formula sheets, practice mode, problem-set templates, and figures.

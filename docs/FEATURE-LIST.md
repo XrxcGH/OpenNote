@@ -67,7 +67,7 @@ The app registers 900 commands and 48 tool windows. 24 of the windows are subjec
 - **Number format codes.** Format codes with sections, colors, and conditions, regional display, and currency, percent, and date column presets, all computed on the device.
 - **Excel-style formulas.** Formulas follow Excel's rules for text, numbers, errors, and dates, with a registry of functions, names, LET and LAMBDA, dynamic arrays that spill, and references across tables.
 - **Code studio foundations.** The contracts, settings, flags, and strings for the code studio: projects as a page block, runs, diagnostics, completion, a replay debugger, tests, and runtime packs.
-- **Code editor keys.** Tab indents in the code editor, Ctrl+Tab accepts a suggestion, and Ctrl+Page Down and Ctrl+Page Up change tabs, so the tab bar stays reachable.
+- **Code editor keys.** Tab indents in the code editor, and Ctrl+Page Down and Ctrl+Page Up change tabs, so the tab bar stays reachable.
 - **Calm shell polish.** Phosphor icons in the command bar, pens back on the bar at 1,280 px, calm pressed and selected states, notebook accent roles, and group dividers.
 
 ### Tool windows
@@ -875,7 +875,7 @@ Open it with the command "Open the code studio".
 - **Daily notes calendar.** A small month calendar opens the daily note for any day.
 - **Series pages.** A series groups pages that repeat, such as a weekly meeting or a lab log.
 - **Page properties.** Fields on a page, such as status, due date, course, author, rating, and a link to another page.
-- **Collections.** A collection is a saved view of pages chosen by a search, a tag, a section, or property values, such as "open assignments for Bio 201, grouped by due week".
+- **Collections.** A collection is a saved view of pages chosen by a search, a tag, a section, or property values, such as "open assignments for one class, grouped by due week".
 - **Page embeds.** Typing `![[` and choosing a page, a heading, or a paragraph shows it live inside another page.
 - **Graph view.** Shows pages as dots and links as lines, for a whole notebook or for the pages within 1 to 3 links of the open one.
 - **Canvas of cards.** A canvas is an open board of cards: pages, typed notes, images, PDFs, web addresses, and groups, joined by labeled arrows.

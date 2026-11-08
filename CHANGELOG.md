@@ -14,21 +14,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
-The current build is beta 8. The version files still say 0.1.0-beta.7. Betas 5 to 7 have no section of their own here; the wiki's development updates say what they added.
+The current build is beta 8. The block below lists Beta 9 to 12 work on the beta branch. The version files still say 0.1.0-beta.7. Betas 5 to 7 have no section of their own here; the wiki's development updates say what they added.
 
 ### Added
 
 - Format version 2 for text, tables, and code. A file is stamped 2 only when it holds version 2 data, and an older OpenNote refuses a file it cannot keep intact.
-- Text formatting at Word and Google Docs level, behind the `text.v2Controls` flag: font, size, weight, paragraph and list formats, commands for each, a format painter, change case, footnotes and endnotes, the Symbol dialog, Alt+X, and formatting marks.
+- Text formatting at Word and Google Docs level, behind the `text.v2Controls` flag. It covers font, size, weight, paragraph and list formats, footnotes and endnotes, the Symbol dialog, Alt+X, and formatting marks. Commands for each format are in the command catalog. The format painter, change case, repeat, and select similar are in the catalog too, and keys and buttons for them wait for the controls lane.
 - Copy writes formatting that Word and Google Docs keep, and paste keeps the source formatting, with Paste Options.
 - Word import reads styles, themes, lists, notes, comments, and tracked changes. Word export writes every version 2 format, can embed bundled fonts, and can remove personal information.
 - Carlito and Caladea load on demand as stand-ins for Calibri and Cambria, and the app lists the device's fonts with their metrics.
 - A shared color palette for text and tables.
 - Tables at Excel and Google Sheets level, behind the `tables.sheetWrites` flag: cell styles in `data.sheet`, number format codes, Excel-style formulas, names, LET and LAMBDA, dynamic arrays, and references across tables. The drawing layer is not wired into the table editor yet.
 - The code studio's contracts, settings, flags, and strings. The code studio is off until the `code.studio` flag is on.
-- Tab indents in the code editor and Ctrl+Tab accepts a suggestion there. Ctrl+Page Down and Ctrl+Page Up also change tabs.
+- Tab indents in the code editor, and Ctrl+Page Down and Ctrl+Page Up change tabs. Ctrl+Tab will accept a suggestion when code lane L01 lands.
 - Calmer shell polish: Phosphor icons in the command bar, pens back on the bar at 1,280 px, and calm pressed and selected states.
-- ADRs 0056 to 0088 record these designs. Records 0081 and 0088 are Accepted, and 0083 and 0084 are Accepted for what is built.
+- ADRs 0056 to 0088 record these designs. Records 0081, 0084, and 0088 are Accepted. Record 0083 is Accepted for the writer.
 
 ### Changed
 
