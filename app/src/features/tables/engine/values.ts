@@ -7,8 +7,13 @@ import { parseDate } from './dates';
 export type ErrorCode =
   'DIV0' | 'VALUE' | 'REF' | 'NAME' | 'NUM' | 'NA' | 'NULL' | 'SPILL' | 'CALC' | 'FIELD' | 'BUSY' | 'CYCLE';
 
+/** Why a function gave an error, where the code alone says too little. 'tooMany': an array past the size cap. */
+export type ErrorReason = 'tooMany';
+
 export interface FormulaError {
   readonly error: ErrorCode;
+  /** Set only by a function that knows more than the code says. Equal codes are the same error. */
+  readonly reason?: ErrorReason;
 }
 
 /** What a cell holds. */

@@ -186,7 +186,8 @@ function plain(h: Host, spec: FnSpec2, node: Call): Fn {
     let v = runLifted(spec, values, scalar, env);
     if (isRef(v)) v = readReturned(h, ctx, v);
     if (ctx.origin === null && isError(v) && !values.some((a) => a === v)) {
-      ctx.origin = { ...origin, code: v.error, args: values.map(summarize) };
+      const reason = v.reason === undefined ? {} : { reason: v.reason };
+      ctx.origin = { ...origin, code: v.error, args: values.map(summarize), ...reason };
     }
     return v;
   };
