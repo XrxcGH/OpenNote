@@ -2,7 +2,7 @@
 
 Every tool, action, and feature in OpenNote, grouped by category, with one sentence each. `npm run docs:features` makes this page. The commands, tool windows, title bar items, settings sections, and setup steps come from what the app registers, so a new one shows up here or fails the tests. The feature sentences come from [FEATURES.md](FEATURES.md), which also says what has been tested by hand and which flag turns each one on. The [help pages](help/README.md) explain how to use them. [docs/screens](screens/README.md) has every picture in light and dark.
 
-The app registers 936 commands and 48 tool windows. 24 of the windows are subject and engineering kits. The count includes the ink commands, which register when a page first shows its ink, and the commands that register once start-up is done or with the first page: on-device intelligence, the second pass of page commands, and the code block and table commands. The command palette (Ctrl+K) runs every command not marked as left out of it. Some commands need a feature flag, which FEATURES.md names. The keys shown are the defaults of the standard shortcut set.
+The app registers 945 commands and 48 tool windows. 24 of the windows are subject and engineering kits. The count includes the ink commands, which register when a page first shows its ink, and the commands that register once start-up is done or with the first page: on-device intelligence, the second pass of page commands, and the code block and table commands. The command palette (Ctrl+K) runs every command not marked as left out of it. Some commands need a feature flag, which FEATURES.md names. The keys shown are the defaults of the standard shortcut set.
 
 ## Contents
 
@@ -132,6 +132,8 @@ Open it with the command "Open the code studio".
 | Crop image | Crops the edges of the selected image. |  |
 | Alt text… | Writes the alt text that screen readers read for the image, or marks it decorative. |  |
 | Copy as Markdown | Copies the selection as Markdown text. |  |
+| Page break | Starts a new page after the paragraph at the caret, from the Insert tab or the slash menu. |  |
+| Column break | Moves the text after the caret to the next column of the text box. | Ctrl+Shift+Enter |
 | Insert footnote | Inserts a footnote at the caret. Its note shows under the page, numbered in reading order. |  |
 | Insert endnote | Inserts an endnote at the caret. Its note collects at the end of the page. |  |
 | Go to note or reference | Jumps between a note reference and its note. |  |
@@ -748,6 +750,13 @@ Open it with the command "Open the code studio".
 | Delete page history | Deletes the saved older versions of this page. |  |
 | Next change | Jumps to the next change between the two versions. | F8 |
 | Previous change | Jumps to the previous change between the two versions. | Shift+F8 |
+| One column | Sets the text box with the caret to one column. |  |
+| 2 columns | Sets the text box with the caret to two columns. |  |
+| 3 columns | Sets the text box with the caret to three columns. |  |
+| 4 columns | Sets the text box with the caret to four columns. |  |
+| Vertical text | Turns vertical writing on or off for the floating text box with the caret. |  |
+| Line numbers | Turns line numbers on or off in print. |  |
+| Header and footer | Opens a dialog for the header, the footer, and the page number format that print uses. |  |
 | Extract selection to a new page | Moves the selection to a new page and leaves a link to it. |  |
 | Merge pages | Merges the selected pages into one page, each under its own heading. |  |
 | Split page at headings | Splits the page into separate pages at its headings. |  |
