@@ -151,7 +151,8 @@ function permut([n, k]: number[]): number {
   const b = Math.trunc(k);
   if (a < 0 || b < 0 || a < b) return NaN;
   let p = 1;
-  for (let i = 0; i < b; i++) p *= a - i;
+  // Every factor but the last is at least 2, so the product overflows within about 1,024 steps: stop there.
+  for (let i = 0; i < b && Number.isFinite(p); i++) p *= a - i;
   return p;
 }
 

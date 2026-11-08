@@ -17,6 +17,8 @@ import { leastSquares } from './regression';
 import { failed, type Run } from './statsKit';
 
 const MAX_SEASON = 8760;
+/** The most steps a filled timeline may span; a wider one is #NUM!, so the work and memory stay bounded. */
+export const MAX_SLOTS = 10000;
 
 interface Series {
   readonly y: number[];
@@ -24,13 +26,21 @@ interface Series {
   readonly step: number;
 }
 
-function aggregate(values: number[], how: number): number {
+/** The numbers at one time, and how many items (numbers or not) were there, for aggregation 3. */
+interface Group {
+  readonly numbers: number[];
+  items: number;
+}
+
+function aggregate(group: Group, how: number): number {
+  const values = group.numbers;
   const s = [...values].sort((a, b) => a - b);
   const total = values.reduce((a, b) => a + b, 0);
   switch (how) {
     case 2:
-    case 3:
       return values.length;
+    case 3:
+      return group.items;
     case 4:
       return s[s.length - 1];
     case 5:
@@ -51,42 +61,51 @@ function seriesOf(values: Value, timeline: Value, completion: number, how: numbe
   const v = asArray(values).data;
   const t = asArray(timeline).data;
   if (v.length !== t.length) return err('NA');
-  const byTime = new Map<number, number[]>();
+  const byTime = new Map<number, Group>();
   for (let i = 0; i < t.length; i++) {
     const [time, value] = [t[i], v[i]];
     if (isError(time)) return time;
     if (isError(value)) return value;
     if (typeof time !== 'number') return err('VALUE');
-    const list = byTime.get(time) ?? [];
-    if (typeof value === 'number') list.push(value);
-    byTime.set(time, list);
+    const group = byTime.get(time) ?? { numbers: [], items: 0 };
+    if (typeof value === 'number') group.numbers.push(value);
+    if (value !== null && value !== '') group.items += 1;
+    byTime.set(time, group);
   }
   const times = [...byTime.keys()].sort((a, b) => a - b);
   if (times.length < 3) return err('NUM');
-  const step = Math.min(...times.slice(1).map((x, i) => x - times[i]));
+  let step = Infinity;
+  for (let i = 1; i < times.length; i++) step = Math.min(step, times[i] - times[i - 1]);
   const span = Math.round((times[times.length - 1] - times[0]) / step);
+  // Check the width before anything is allocated: one slot per step of a wide timeline would freeze the app.
+  if (!(span < MAX_SLOTS)) return err('NUM');
   if (times.some((x) => Math.abs((x - times[0]) / step - Math.round((x - times[0]) / step)) > 1e-6)) return err('NUM');
   const slots: (number | null)[] = new Array<number | null>(span + 1).fill(null);
   for (const time of times) {
-    const list = byTime.get(time) as number[];
-    if (list.length > 0) slots[Math.round((time - times[0]) / step)] = aggregate(list, how);
+    const group = byTime.get(time) as Group;
+    const counted = how === 3 ? group.items : group.numbers.length;
+    if (counted > 0) slots[Math.round((time - times[0]) / step)] = aggregate(group, how);
   }
   return { y: fill(slots, completion), start: times[0], step };
 }
 
-/** Fills missing slots with zeros or by straight lines between known neighbors. */
-function fill(slots: (number | null)[], completion: number): number[] {
+/** Fills missing slots with zeros or by straight lines between known neighbors, in one pass. */
+export function fill(slots: readonly (number | null)[], completion: number): number[] {
   if (completion === 0) return slots.map((x) => x ?? 0);
-  const known = slots.flatMap((x, i) => (x === null ? [] : [i]));
-  return slots.map((x, i) => {
-    if (x !== null) return x;
-    const before = known.filter((k) => k < i).pop();
-    const after = known.find((k) => k > i);
-    if (before === undefined) return slots[after as number] as number;
-    if (after === undefined) return slots[before] as number;
-    const [a, b] = [slots[before] as number, slots[after] as number];
-    return a + ((b - a) * (i - before)) / (after - before);
-  });
+  const out = new Array<number>(slots.length);
+  let before = -1;
+  for (let i = 0; i < slots.length; i++) {
+    const x = slots[i];
+    if (x === null) continue;
+    out[i] = x;
+    // Fill the gap since the last known slot: flat before the first one, a straight line between two.
+    const from = before < 0 ? x : (slots[before] as number);
+    for (let j = before + 1; j < i; j++) out[j] = before < 0 ? x : from + ((x - from) * (j - before)) / (i - before);
+    before = i;
+  }
+  const last = before < 0 ? 0 : (slots[before] as number);
+  for (let j = before + 1; j < slots.length; j++) out[j] = last;
+  return out;
 }
 
 /** The season length with the strongest autocorrelation peak of the series less its line, or 1 for none. */
@@ -129,18 +148,43 @@ interface Model {
   readonly sse: number;
 }
 
-/** Start values from a fit of a line plus season dummies. */
-function startOf(y: number[], m: number): { level: number; trend: number; season: number[] } {
-  const idx = y.map((_, i) => i);
-  const dummies = Array.from({ length: Math.max(0, m - 1) }, (_, p) => y.map((_, i) => (i % m === p + 1 ? 1 : 0)));
-  const fit = leastSquares([idx, ...dummies], y, true);
-  const raw = [0, ...fit.coef.slice(1)];
-  const shift = m > 1 ? raw.reduce((a, b) => a + b, 0) / m : 0;
-  return { level: fit.intercept + shift - fit.coef[0], trend: fit.coef[0], season: raw.map((s) => s - shift) };
+interface Start {
+  readonly level: number;
+  readonly trend: number;
+  readonly season: readonly number[];
 }
 
-function run(y: number[], m: number, alpha: number, beta: number, gamma: number): Model {
-  const st = startOf(y, m);
+/**
+ * Start values from the least-squares fit of a line plus one intercept per season position. The slope is the
+ * within-position estimate: the sum of (i - mean i of its position)(y - mean y of its position) over the sum of the
+ * squares. Each position's intercept is its mean y less the slope times its mean i. This is O(n), where a fit with
+ * m - 1 dummy columns is O(n m^2).
+ */
+export function startOf(y: readonly number[], m: number): Start {
+  const k = Math.max(1, m);
+  const count = new Array<number>(k).fill(0);
+  const sumI = new Array<number>(k).fill(0);
+  const sumY = new Array<number>(k).fill(0);
+  y.forEach((v, i) => {
+    count[i % k] += 1;
+    sumI[i % k] += i;
+    sumY[i % k] += v;
+  });
+  let sxy = 0;
+  let sxx = 0;
+  y.forEach((v, i) => {
+    const p = i % k;
+    const di = i - sumI[p] / count[p];
+    sxy += di * (v - sumY[p] / count[p]);
+    sxx += di * di;
+  });
+  const trend = sxx > 0 ? sxy / sxx : 0;
+  const intercepts = count.map((c, p) => (c > 0 ? (sumY[p] - trend * sumI[p]) / c : 0));
+  const shift = intercepts.reduce((a, b) => a + b, 0) / k;
+  return { level: shift - trend, trend, season: intercepts.map((g) => g - shift) };
+}
+
+function run(y: number[], m: number, alpha: number, beta: number, gamma: number, st: Start): Model {
   let { level, trend } = st;
   const season = m > 1 ? [...st.season] : [0];
   const fitted: number[] = [];
@@ -175,22 +219,24 @@ function golden(f: (x: number) => number, start: number): number {
 export function fitModel(y: number[], m: number): Model {
   const grid = [0.01, 0.1, 0.3, 0.5, 0.7, 0.9, 0.99];
   const gammas = m > 1 ? grid : [0];
-  let best = run(y, m, 0.5, 0.1, 0);
+  // The start values do not depend on the weights, so they are fitted once.
+  const st = startOf(y, m);
+  let best = run(y, m, 0.5, 0.1, 0, st);
   for (const a of grid) {
     for (const b of grid) {
       for (const g of gammas) {
-        const model = run(y, m, a, b, g);
+        const model = run(y, m, a, b, g, st);
         if (model.sse < best.sse) best = model;
       }
     }
   }
   let { alpha, beta, gamma } = best;
   for (let round = 0; round < 3; round++) {
-    alpha = golden((x) => run(y, m, x, beta, gamma).sse, alpha);
-    beta = golden((x) => run(y, m, alpha, x, gamma).sse, beta);
-    if (m > 1) gamma = golden((x) => run(y, m, alpha, beta, x).sse, gamma);
+    alpha = golden((x) => run(y, m, x, beta, gamma, st).sse, alpha);
+    beta = golden((x) => run(y, m, alpha, x, gamma, st).sse, beta);
+    if (m > 1) gamma = golden((x) => run(y, m, alpha, beta, x, st).sse, gamma);
   }
-  const refined = run(y, m, alpha, beta, gamma);
+  const refined = run(y, m, alpha, beta, gamma, st);
   return refined.sse <= best.sse ? refined : best;
 }
 
@@ -254,15 +300,27 @@ const confint: Run = ([target, values, timeline, levelV, ...rest]) => {
   if (level <= 0 || level >= 1) return err('NUM');
   const { alpha, beta, gamma, m, sse } = o.model;
   const sigma2 = sse / o.series.y.length;
-  // The variance of an h-step forecast for the AAA model: sigma^2 (1 + sum of c_j^2 for j < h), where
-  // c_j = alpha (1 + j beta) + gamma (1 - alpha) on whole seasons.
-  let factor = 1;
-  for (let j = 1; j < Math.max(1, Math.round(h)); j++) {
-    const c = alpha * (1 + j * beta) + (m > 1 && j % m === 0 ? gamma * (1 - alpha) : 0);
-    factor += c * c;
-  }
-  return finish(normInv((1 + level) / 2) * Math.sqrt(sigma2 * factor));
+  return finish(normInv((1 + level) / 2) * Math.sqrt(sigma2 * varianceFactor(alpha, beta, gamma, m, h)));
 };
+
+/**
+ * The variance factor of an h-step forecast for the AAA model: 1 + the sum of c_j^2 for 1 <= j < round(h). Here
+ * c_j = A + B j, plus G on whole seasons, with A = alpha, B = alpha beta, and G = gamma (1 - alpha). The sum has a
+ * closed form, so a far target costs no more than a near one.
+ */
+export function varianceFactor(alpha: number, beta: number, gamma: number, m: number, h: number): number {
+  const n = Math.max(1, Math.round(h)) - 1;
+  const [a, b, g] = [alpha, alpha * beta, gamma * (1 - alpha)];
+  const s1 = (n * (n + 1)) / 2;
+  const s2 = (n * (n + 1) * (2 * n + 1)) / 6;
+  let factor = 1 + n * a * a + 2 * a * b * s1 + b * b * s2;
+  if (m > 1) {
+    // On j = m q for q = 1..Q, each c_j^2 gains 2 G (A + B m q) + G^2.
+    const q = Math.floor(n / m);
+    factor += q * (2 * g * a + g * g) + g * b * m * q * (q + 1);
+  }
+  return factor;
+}
 
 const seasonality: Run = ([values, timeline, completion, how]) => {
   const o = prepare(values, timeline, [1, completion, how]);

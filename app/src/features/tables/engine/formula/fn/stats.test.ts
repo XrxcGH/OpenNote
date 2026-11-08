@@ -14,6 +14,8 @@ import norris from '../../../fixtures/fn/nist/Norris.json';
 import { fnStats, type FnText } from '../../../../../strings/en/fnStats';
 import { REGISTRY, paramsOf } from '.';
 import { loadStatistics, onStatisticsLoaded, statisticsLoaded } from './statsKit';
+import { fill, runs as etsRuns, startOf } from './forecastEts';
+import { leastSquares } from './regression';
 
 const COLUMNS = 'ABCDEFGHIJKLMNOP'.split('').map((name) => ({ name, type: 'number' as const }));
 const RESULT = { row: 0, col: 8 };
@@ -360,5 +362,143 @@ describe('the fixture of known answers', () => {
         expect(have[i], c.formula).toBe(want);
       }
     });
+  });
+});
+
+// Phi(1) from the table of the normal law (Abramowitz and Stegun, table 26.1).
+const PHI1 = 0.8413447460685429;
+
+describe('discrete laws with huge arguments', () => {
+  beforeAll(() => loadStatistics());
+
+  it('PERMUT stops once the product overflows', () => {
+    expect(code(calc('PERMUT(1E300,1E300)'))).toBe('#NUM!');
+    expect(code(calc('PERMUT(2E8,2E8)'))).toBe('#NUM!');
+    expect(calc('PERMUT(100,3)')).toBe(970200);
+  });
+
+  it('BINOM.INV, CRITBINOM, and BINOM.DIST.RANGE bisect or subtract past a thousand trials', () => {
+    // The median of a symmetric binomial law with an even number of trials is half of them.
+    expect(calc('BINOM.INV(1E7,0.5,0.5)')).toBe(5e6);
+    expect(calc('BINOM.INV(1E9,0.5,0.5)')).toBe(5e8);
+    expect(calc('CRITBINOM(1E7,0.5,0.5)')).toBe(5e6);
+    const top = calc('BINOM.INV(1E7,0.5,1)') as number;
+    expect(top).toBeGreaterThan(5e6 + 7 * 1581);
+    expect(top).toBeLessThan(5e6 + 9 * 1581);
+    near(calc('BINOM.DIST.RANGE(1E6,0.5,0,1E6)'), 1, 12);
+    // Half, plus half the central term C(n, n/2) / 2^n = sqrt(2 / (pi n)) (1 - 1 / (4 n)).
+    near(calc('BINOM.DIST.RANGE(1E6,0.5,0,500000)'), 0.5 + Math.sqrt(2 / (Math.PI * 1e6)) * (1 - 2.5e-7) * 0.5, 10);
+    near(calc('BINOM.DIST.RANGE(1E9,0.5,0,1E9)'), 1, 12);
+  });
+
+  it('HYPGEOM.DIST sums from k away from the mode', () => {
+    // Draws, successes, and half the population alike: the law is symmetric about 250000.
+    const lower = calc('HYPGEOM.DIST(249999,500000,500000,1000000,TRUE)') as number;
+    const upper = calc('HYPGEOM.DIST(250000,500000,500000,1000000,TRUE)') as number;
+    near(lower + upper, 1, 9);
+    // The central term is about 1 / sqrt(2 pi var), var = n K (N - K) (N - n) / (N^2 (N - 1)).
+    const sd = Math.sqrt(6.25e22 / (1e12 * 999999));
+    near(upper - lower, 1 / (sd * Math.sqrt(2 * Math.PI)), 4);
+    const big = calc('HYPGEOM.DIST(5E8,1E9,1E9,2E9,TRUE)') as number;
+    expect(big).toBeGreaterThan(0.49);
+    expect(big).toBeLessThan(0.51);
+    near(calc('HYPGEOM.DIST(1,4,8,20,TRUE)'), 0.46542827657378744, 12);
+  });
+});
+
+describe('the F and t laws at many degrees of freedom', () => {
+  beforeAll(() => loadStatistics());
+
+  it('the F law keeps its digits at a million and ten billion degrees of freedom', () => {
+    // With equal degrees of freedom, the law of F is the law of 1 / F. So F <= 1 has probability one half.
+    near(calc('F.DIST(1,1E6,1E6,TRUE)'), 0.5, 12);
+    near(calc('F.DIST(1,1E10,1E10,TRUE)'), 0.5, 10);
+    near(calc('F.DIST.RT(1,1E6,1E6)'), 0.5, 12);
+    near(calc('FDIST(1,1E6,1E6)'), 0.5, 12);
+    near(calc('F.INV(0.5,1E6,1E6)'), 1, 12);
+    near(calc('F.INV.RT(0.5,1E6,1E6)'), 1, 12);
+    near(calc('FINV(0.5,1E6,1E6)'), 1, 12);
+    // As d2 grows, d1 F tends to chi-squared with d1 degrees of freedom: for d1 = 2, P = 1 - e^-1.
+    near(calc('F.DIST(1,2,1E10,TRUE)'), 1 - Math.exp(-1), 9);
+    // ln F is near normal with variance 2 / d1 + 2 / d2 = 4E-6, so ln F = 0.002 is one deviation up.
+    near(calc('F.DIST(EXP(0.002),1E6,1E6,TRUE)'), PHI1, 5);
+    near(calc('F.DIST(1,1E6,1E6,FALSE)'), 1 / Math.sqrt(2 * Math.PI * 4e-6), 5);
+  });
+
+  it('the t functions take 1 to 1E10 degrees of freedom and become the normal law', () => {
+    expect(code(calc('T.DIST(1,1E15,TRUE)'))).toBe('#NUM!');
+    expect(code(calc('T.DIST.2T(1,1E11)'))).toBe('#NUM!');
+    expect(code(calc('T.INV(0.9,1E11)'))).toBe('#NUM!');
+    expect(code(calc('TDIST(1,1E11,1)'))).toBe('#NUM!');
+    near(calc('T.DIST(1,1E10,TRUE)'), PHI1, 10);
+    near(calc('T.DIST.RT(1,1E10)'), 1 - PHI1, 9);
+    near(calc('T.DIST(0,1E10,FALSE)'), 1 / Math.sqrt(2 * Math.PI), 10);
+    near(calc('T.INV(0.975,1E10)'), 1.959963984540054, 9);
+    near(calc('T.INV.2T(0.05,1E10)'), 1.959963984540054, 9);
+  });
+});
+
+describe('FORECAST.ETS work stays bounded', () => {
+  beforeAll(() => loadStatistics());
+
+  it('FORECAST.ETS refuses a timeline wider than ten thousand steps', () => {
+    expect(code(calc('FORECAST.ETS(200000,{1,2,3},{1,2,100001})'))).toBe('#NUM!');
+    expect(code(calc('FORECAST.ETS.SEASONALITY({1,2,3},{1,2,1E9})'))).toBe('#NUM!');
+    expect(code(calc('FORECAST.ETS.CONFINT(5,{1,2,3},{1,2,1E9})'))).toBe('#NUM!');
+  });
+
+  it('FORECAST.ETS fits a long series with a long season in bounded time', () => {
+    // 3000 points of a line plus a season of 1000: the forecast continues both exactly.
+    const n = 3000;
+    const wave = (i: number) => i + 1 + 5 * Math.sin((2 * Math.PI * i) / 1000);
+    const y = Array.from({ length: n }, (_, i) => wave(i));
+    const t = Array.from({ length: n }, (_, i) => i + 1);
+    const got = etsRuns['FORECAST.ETS']([n + 1, arrayOf([y]), arrayOf([t]), 1000], undefined as never);
+    near(got, wave(n), 9);
+  }, 20000);
+
+  it('the start values match a least-squares fit with season columns', () => {
+    const y = [3, 7, 4, 9, 5, 8, 6, 11, 7, 12, 8, 13, 9, 14];
+    const m = 3;
+    const dummies = [1, 2].map((p) => y.map((_, i) => (i % m === p ? 1 : 0)));
+    const fit = leastSquares([y.map((_, i) => i), ...dummies], y, true);
+    const raw = [0, fit.coef[1], fit.coef[2]];
+    const shift = (raw[0] + raw[1] + raw[2]) / 3;
+    const st = startOf(y, m);
+    near(st.trend, fit.coef[0], 12);
+    near(st.level, fit.intercept + shift - fit.coef[0], 12);
+    st.season.forEach((s, p) => expect(Math.abs(s - (raw[p] - shift))).toBeLessThan(1e-12));
+  });
+});
+
+describe('FORECAST.ETS parts', () => {
+  beforeAll(() => loadStatistics());
+
+  it('fills gaps in one pass: flat at the ends, straight lines between', () => {
+    expect(fill([null, 2, null, null, 8, null], 1)).toEqual([2, 2, 4, 6, 8, 8]);
+    expect(fill([null, 2, null, 8], 0)).toEqual([0, 2, 0, 8]);
+  });
+
+  it('FORECAST.ETS.CONFINT follows the AAA variance formula and takes a far target', () => {
+    const y = '{3,7,4,9,5,8,6,11,7,12,8,13}';
+    const t = '{1,2,3,4,5,6,7,8,9,10,11,12}';
+    const [a, b, g, rmse] = [1, 2, 3, 7].map((k) => calc(`FORECAST.ETS.STAT(${y},${t},${k})`) as number);
+    const m = calc(`FORECAST.ETS.SEASONALITY(${y},${t})`) as number;
+    for (const h of [1, 2, 5, 9, 25]) {
+      // sigma^2 (1 + sum of c_j^2 for j < h), c_j = alpha (1 + j beta), plus gamma (1 - alpha) on whole seasons.
+      let factor = 1;
+      for (let j = 1; j < h; j++) {
+        const c = a * (1 + j * b) + (m > 1 && j % m === 0 ? g * (1 - a) : 0);
+        factor += c * c;
+      }
+      near(calc(`FORECAST.ETS.CONFINT(${12 + h},${y},${t})`), 1.959963984540054 * rmse * Math.sqrt(factor), 9);
+    }
+    expect(typeof calc(`FORECAST.ETS.CONFINT(1E12,${y},${t})`)).toBe('number');
+  });
+
+  it('FORECAST.ETS aggregation 3 counts every value, numbers or not', () => {
+    // Counts of values 1, 2, 3 make a line, so the next is 4; counts of numbers are 1, 1, 1.
+    near(calc('FORECAST.ETS(4,{1,"b",3,"d","e",6},{1,2,2,3,3,3},1,1,3)'), 4, 9);
+    near(calc('FORECAST.ETS(4,{1,"b",3,"d","e",6},{1,2,2,3,3,3},1,1,2)'), 1, 9);
   });
 });

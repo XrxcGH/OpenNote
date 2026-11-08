@@ -1192,6 +1192,25 @@
       "tolerance": 1e-12,
       "source": "excel-doc: LINEST function",
       "note": "The points lie on y = 2x + 1."
+    },
+    {
+      "formula": "=FORECAST.ETS(200000,{1,2,3},{1,2,100001})",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "A step of 1 over 100000 steps passes the cap of 10000 filled steps."
+    },
+    {
+      "formula": "=F.DIST(1,1E6,1E6,TRUE)",
+      "expected": 0.5,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "With equal degrees of freedom F and 1/F share one law, so P(F <= 1) is one half."
+    },
+    {
+      "formula": "=T.DIST(1,1E15,TRUE)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Degrees of freedom run from 1 to 1E10, as for chi-squared and F."
     }
   ]
 }

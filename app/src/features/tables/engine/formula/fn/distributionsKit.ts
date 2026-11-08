@@ -76,6 +76,87 @@ export const gammaSf = (x: number, a: number, b: number): number => (x <= 0 ? 1 
 
 // Beta.
 
+/** At or above this parameter the incomplete beta takes the wide path below. */
+const WIDE = 1e5;
+
+/** ln(1 + u) - u, accurate for small u. */
+function log1pmx(u: number): number {
+  if (Math.abs(u) > 0.1) return Math.log1p(u) - u;
+  let power = u;
+  let sum = 0;
+  for (let k = 2; k < 80; k++) {
+    power *= -u;
+    const term = power / k;
+    sum += term;
+    if (Math.abs(term) <= 1e-17 * Math.abs(sum)) break;
+  }
+  return sum;
+}
+
+/** ln Gamma(x) less its Stirling form (x - 1/2) ln x - x + ln(2 pi) / 2: the Bernoulli series (DLMF 5.11.1) from 30. */
+function stirlingRest(x: number): number {
+  if (x < 30) return lgamma(x) - ((x - 0.5) * Math.log(x) - x + LN_SQRT_2PI);
+  const r = 1 / (x * x);
+  return (1 / 12 - r * (1 / 360 - r * (1 / 1260 - r / 1680))) / x;
+}
+
+/**
+ * The power term x^a y^b / B(a, b), with y = 1 - x, kept exact for large parameters. The caller passes y when it
+ * knows 1 - x exactly. Near the mean x0 = a / (a + b), the logs of the power and of B(a, b) each reach about a + b.
+ * Their difference has no such size. It is ln(a b / (a + b)) / 2 - ln(2 pi) / 2, less the Stirling rests, plus
+ * a (ln(1 + u) - u) + b (ln(1 + v) - v). Here u = x / x0 - 1 and v = y / (1 - x0) - 1, so a u + b v = 0.
+ */
+export function betaPower(x: number, a: number, b: number, y = 1 - x): number {
+  const s = a + b;
+  const u = (x * s - a) / a;
+  const v = (y * s - b) / b;
+  const ln =
+    0.5 * Math.log((a / s) * b) -
+    LN_SQRT_2PI -
+    stirlingRest(a) -
+    stirlingRest(b) +
+    stirlingRest(s) +
+    a * log1pmx(u) +
+    b * log1pmx(v);
+  return Math.exp(ln);
+}
+
+/** The continued fraction of I_x(a, b) (DLMF 8.17.22) by Lentz's method, with the exact power term above. */
+function betaIncFraction(x: number, a: number, b: number, y: number): number {
+  if (x <= 0) return 0;
+  if (y <= 0) return 1;
+  if (x > (a + 1) / (a + b + 2)) return 1 - betaIncFraction(y, b, a, x);
+  const tiny = 1e-300;
+  let f = 1;
+  let c = 1;
+  let d = 0;
+  // Near the mean the fraction needs about the square root of the larger parameter in terms.
+  for (let i = 0; i <= 4_000_000; i++) {
+    const m = Math.floor(i / 2);
+    let num: number;
+    if (i === 0) num = 1;
+    else if (i % 2 === 0) num = (m * (b - m) * x) / ((a + 2 * m - 1) * (a + 2 * m));
+    else num = -((a + m) * (a + b + m) * x) / ((a + 2 * m) * (a + 2 * m + 1));
+    d = 1 + num * d;
+    d = 1 / (Math.abs(d) < tiny ? tiny : d);
+    c = 1 + num / c;
+    if (Math.abs(c) < tiny) c = tiny;
+    const delta = c * d;
+    f *= delta;
+    if (Math.abs(delta - 1) < 2 ** -52) return (betaPower(x, a, b, y) / a) * (f - 1);
+  }
+  return NaN;
+}
+
+/**
+ * The regularized incomplete beta I_x(a, b), with y = 1 - x passed when the caller knows it exactly. The core
+ * routine serves parameters below WIDE. Larger ones, such as the F law at a million degrees of freedom or the
+ * binomial law at a billion trials, run out of its terms and lose digits in ln B(a, b), so they take the longer
+ * fraction with the exact power term.
+ */
+export const betaIncWide = (x: number, a: number, b: number, y = 1 - x): number =>
+  Math.max(a, b) >= WIDE ? betaIncFraction(x, a, b, y) : betaInc(x, a, b);
+
 export function betaPdf(x: number, a: number, b: number): number {
   if (x < 0 || x > 1) return 0;
   if (x === 0) return a === 1 ? b : a < 1 ? Infinity : 0;
@@ -85,32 +166,59 @@ export function betaPdf(x: number, a: number, b: number): number {
 
 // Student t.
 
-/** The upper tail P(T > t) for t >= 0. */
+/**
+ * Past this many degrees of freedom the fraction in x = df / (df + t^2) loses digits, since x carries 1 - x with
+ * only about 16 - log10(df) of them, so the t law is the normal law with two terms of its expansion in 1 / df.
+ */
+const T_NORMAL = 1e7;
+
+/**
+ * The upper tail P(T > t) for t >= 0: I_x(df / 2, 1 / 2) / 2 with x = df / (df + t^2). Many degrees of freedom
+ * take the wide path with 1 - x = t^2 / (df + t^2) worked out exactly, since 1 - x rounded would lose its digits.
+ */
 function tUpper(t: number, df: number): number {
-  return 0.5 * betaInc(df / (df + t * t), df / 2, 0.5);
+  if (df > T_NORMAL) {
+    // Abramowitz and Stegun 26.7.5: Phi(-t) + phi(t) (g1 / df + g2 / df^2), with the next term near 1E-21 here.
+    const t2 = t * t;
+    const g1 = (t2 * t + t) / 4;
+    const g2 = (t * (((3 * t2 - 7) * t2 - 5) * t2 - 3)) / 96;
+    return normCdf(-t) + normPdf(t) * (g1 / df + g2 / (df * df));
+  }
+  const [x, y] = [df / (df + t * t), (t * t) / (df + t * t)];
+  return 0.5 * (df >= 2 * WIDE ? betaIncWide(x, df / 2, 0.5, y) : betaInc(x, df / 2, 0.5));
 }
 
 export const tCdf = (t: number, df: number): number => (t >= 0 ? 1 - tUpper(t, df) : tUpper(-t, df));
 export const tSf = (t: number, df: number): number => (t >= 0 ? tUpper(t, df) : 1 - tUpper(-t, df));
 
 export function tPdf(t: number, df: number): number {
-  const lnc = lgamma((df + 1) / 2) - lgamma(df / 2) - 0.5 * Math.log(df * Math.PI);
+  // ln Gamma((df + 1) / 2) - ln Gamma(df / 2) - ln(df pi) / 2. For many degrees of freedom the two ln Gamma values
+  // nearly cancel, so with a = df / 2 it is a ln(1 + 1 / (2 a)) - 1/2 - ln(2 pi) / 2 plus the Stirling rests.
+  const a = df / 2;
+  const lnc =
+    df >= 2 * WIDE
+      ? a * Math.log1p(0.5 / a) - 0.5 - LN_SQRT_2PI + stirlingRest(a + 0.5) - stirlingRest(a)
+      : lgamma((df + 1) / 2) - lgamma(df / 2) - 0.5 * Math.log(df * Math.PI);
   return Math.exp(lnc - ((df + 1) / 2) * Math.log1p((t * t) / df));
 }
 
 // F.
 
 export function fCdf(x: number, d1: number, d2: number): number {
-  return x <= 0 ? 0 : betaInc((d1 * x) / (d1 * x + d2), d1 / 2, d2 / 2);
+  return x <= 0 ? 0 : betaIncWide((d1 * x) / (d1 * x + d2), d1 / 2, d2 / 2, d2 / (d1 * x + d2));
 }
 
 export function fSf(x: number, d1: number, d2: number): number {
-  return x <= 0 ? 1 : betaInc(d2 / (d2 + d1 * x), d2 / 2, d1 / 2);
+  return x <= 0 ? 1 : betaIncWide(d2 / (d2 + d1 * x), d2 / 2, d1 / 2, (d1 * x) / (d2 + d1 * x));
 }
 
 export function fPdf(x: number, d1: number, d2: number): number {
   if (x < 0) return 0;
   if (x === 0) return d1 === 2 ? 1 : d1 < 2 ? Infinity : 0;
+  // The density is the beta density of y = d1 x / (d1 x + d2) times dy/dx, which comes to betaPower(y) / x.
+  if (Math.max(d1, d2) >= 2 * WIDE) {
+    return betaPower((d1 * x) / (d1 * x + d2), d1 / 2, d2 / 2, d2 / (d1 * x + d2)) / x;
+  }
   const lnB = lgamma(d1 / 2) + lgamma(d2 / 2) - lgamma((d1 + d2) / 2);
   const ln =
     (d1 / 2) * Math.log(d1 / d2) + (d1 / 2 - 1) * Math.log(x) - ((d1 + d2) / 2) * Math.log1p((d1 * x) / d2) - lnB;
@@ -155,7 +263,7 @@ export function binomCdf(k: number, n: number, p: number): number {
     for (let i = 0; i <= k; i++) s += binomPmf(i, n, p);
     return Math.min(1, s);
   }
-  return betaInc(1 - p, n - k, k + 1);
+  return betaIncWide(1 - p, n - k, k + 1, p);
 }
 
 export function poissonPmf(k: number, m: number): number {
@@ -169,6 +277,37 @@ export function poissonPmf(k: number, m: number): number {
 }
 
 export const poissonCdf = (k: number, m: number): number => (m === 0 ? 1 : gammaQ(k + 1, m));
+
+/**
+ * P(X <= k) for a hypergeometric law with many terms. The terms fall away from the mode on each side. So the sum
+ * starts at k and runs away from the mode, by the ratio of neighboring terms, until the terms no longer count. Below
+ * the mode that is the lower tail; at or past it, the result is one less the upper tail past k. The work grows with
+ * the spread, not the population.
+ */
+export function hypgeomTail(k: number, draws: number, succ: number, pop: number): number {
+  const lnPmf = (i: number) => lnChoose(succ, i) + lnChoose(pop - succ, draws - i) - lnChoose(pop, draws);
+  const low = Math.max(0, draws - pop + succ);
+  const high = Math.min(draws, succ);
+  const mode = Math.floor(((draws + 1) * (succ + 1)) / (pop + 2));
+  // up(i) = pmf(i + 1) / pmf(i).
+  const up = (i: number) => ((succ - i) * (draws - i)) / ((i + 1) * (pop - succ - draws + i + 1));
+  let total = 0;
+  if (k < mode) {
+    let term = Math.exp(lnPmf(k));
+    for (let i = k; i >= low && term > 1e-17 * total; i--) {
+      total += term;
+      term /= up(i - 1);
+    }
+    return Math.min(1, total);
+  }
+  if (k >= high) return 1;
+  let term = Math.exp(lnPmf(k + 1));
+  for (let i = k + 1; i <= high && term > 1e-17 * total; i++) {
+    total += term;
+    term *= up(i);
+  }
+  return Math.max(0, 1 - total);
+}
 
 // Inverses.
 

@@ -15,6 +15,7 @@ import {
   gammaPdf,
   gammaSf,
   invert,
+  hypgeomTail,
   invertUpper,
   normCdf,
   normInv,
@@ -120,21 +121,22 @@ function fInvRt(p: number, d1: number, d2: number): number {
   return p === 1 ? 0 : invertUpper((x) => fSf(x, a, b), p, 0, 1);
 }
 
+// The t functions take 1 to 1E10 degrees of freedom, like chi-squared and F.
 function tDist(x: number, df: number, cumulative: boolean): number {
   const k = T(df);
-  if (k < 1) return bad;
+  if (!dfOk(k)) return bad;
   return cumulative ? tCdf(x, k) : tPdf(x, k);
 }
-const tDist2t = (x: number, df: number) => (x < 0 || T(df) < 1 ? bad : Math.min(1, 2 * tSf(x, T(df))));
-const tDistRt = (x: number, df: number) => (T(df) < 1 ? bad : tSf(x, T(df)));
+const tDist2t = (x: number, df: number) => (x < 0 || !dfOk(T(df)) ? bad : Math.min(1, 2 * tSf(x, T(df))));
+const tDistRt = (x: number, df: number) => (!dfOk(T(df)) ? bad : tSf(x, T(df)));
 /** The t value with P(T > t) = q, for 0 < q <= 0.5. */
 const tUpperInv = (q: number, k: number) => (q === 0.5 ? 0 : invertUpper((x) => tSf(x, k), q, 0, 1));
 function tInv(p: number, df: number): number {
   const k = T(df);
-  if (p <= 0 || p >= 1 || k < 1) return bad;
+  if (p <= 0 || p >= 1 || !dfOk(k)) return bad;
   return p < 0.5 ? -tUpperInv(p, k) : tUpperInv(1 - p, k);
 }
-const tInv2t = (p: number, df: number) => (p <= 0 || p > 1 || T(df) < 1 ? bad : tUpperInv(p / 2, T(df)));
+const tInv2t = (p: number, df: number) => (p <= 0 || p > 1 || !dfOk(T(df)) ? bad : tUpperInv(p / 2, T(df)));
 
 // Discrete laws.
 
@@ -148,6 +150,8 @@ function binomRange([n, p, s, s2]: number[]): number {
   const [m, a] = [T(n), T(s)];
   const b = s2 === undefined ? a : T(s2);
   if (m < 0 || p < 0 || p > 1 || a < 0 || a > m || b < a || b > m) return bad;
+  // Past the summing range of binomCdf, the difference of two distribution values costs two incomplete betas.
+  if (m > 1000) return Math.max(0, Math.min(1, binomCdf(b, m, p) - binomCdf(a - 1, m, p)));
   let total = 0;
   for (let i = a; i <= b; i++) total += binomPmf(i, m, p);
   return Math.min(1, total);
@@ -156,10 +160,21 @@ function binomRange([n, p, s, s2]: number[]): number {
 function binomInv(n: number, p: number, alpha: number): number {
   const m = T(n);
   if (m < 0 || p < 0 || p > 1 || alpha < 0 || alpha > 1) return bad;
+  const target = alpha * (1 - 1e-15);
+  if (m > 1000) {
+    // The smallest k with binomCdf(k) >= target, by bisection: about 30 incomplete betas for a billion trials.
+    let [lo, hi] = [-1, m];
+    while (hi - lo > 1) {
+      const mid = Math.floor((lo + hi) / 2);
+      if (binomCdf(mid, m, p) >= target) hi = mid;
+      else lo = mid;
+    }
+    return hi;
+  }
   let total = 0;
   for (let k = 0; k <= m; k++) {
     total += binomPmf(k, m, p);
-    if (total >= alpha * (1 - 1e-15)) return k;
+    if (total >= target) return k;
   }
   return m;
 }
@@ -179,6 +194,7 @@ function hypgeom(s: number, n: number, ms: number, np: number, cumulative: boole
   }
   const pmf = (i: number) => (choose(succ, i) * choose(pop - succ, draws - i)) / choose(pop, draws);
   if (!cumulative) return pmf(k);
+  if (k - low > 1000) return hypgeomTail(k, draws, succ, pop);
   let total = 0;
   for (let i = low; i <= k; i++) total += pmf(i);
   return Math.min(1, total);
@@ -372,7 +388,7 @@ export const runs: Readonly<Record<string, Run>> = {
   POISSON: numeric(([x, m, k]) => poisson(x, m, flag(k))),
   TDIST: c((x, df, tails) => {
     const k = T(tails);
-    if (x < 0 || T(df) < 1 || (k !== 1 && k !== 2)) return bad;
+    if (x < 0 || !dfOk(T(df)) || (k !== 1 && k !== 2)) return bad;
     return Math.min(1, k * tSf(x, T(df)));
   }),
   TINV: c(tInv2t),
