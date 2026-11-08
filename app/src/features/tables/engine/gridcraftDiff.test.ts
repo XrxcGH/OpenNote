@@ -9,6 +9,7 @@ import { spawnSync } from 'node:child_process';
 import { describe, expect, it } from 'vitest';
 import { findTool } from '../../../../../tests/crosscheck/tools';
 import { createTable, setColumnFormula } from './edit';
+import { REGISTRY } from './formula/fn';
 import { FUNCTIONS } from './formula/functions';
 import { EN_US } from './locale';
 import { ERROR_TOKENS, type Value } from './values';
@@ -132,6 +133,12 @@ function normalize(value: Value | Other): string {
   }
   if (value === null || value === '') return 'empty';
   return `${typeof value} ${String(value)}`;
+}
+
+// The statistical families are checked by fn/stats.test.ts and fixtures/fn/stats.json, with hand-worked answers.
+for (const spec of REGISTRY.values()) {
+  const statistical = spec.family === 'stats' || spec.family === 'statsCompat';
+  if (statistical && CASES[spec.name] === undefined) NOT_COMPARABLE.add(spec.name);
 }
 
 const tool = findTool('gridcraft-cli');

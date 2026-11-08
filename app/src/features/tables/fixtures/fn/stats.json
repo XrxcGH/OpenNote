@@ -1,0 +1,1197 @@
+{
+  "cases": [
+    {
+      "formula": "=AVEDEV(4,5,6,7,5,4,3)",
+      "expected": 1.0204081632653061,
+      "tolerance": 1e-12,
+      "source": "excel-doc: AVEDEV function",
+      "note": "Mean 34/7; the absolute deviations add to 50/7, over 7."
+    },
+    {
+      "formula": "=DEVSQ(4,5,8,7,11,4,3)",
+      "expected": 48,
+      "source": "excel-doc: DEVSQ function",
+      "note": "Mean 6; squared deviations 4, 1, 4, 1, 25, 4, 9."
+    },
+    {
+      "formula": "=GEOMEAN(4,5,8,7,11,4,3)",
+      "expected": 5.476986969656962,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "The seventh root of the product 147840."
+    },
+    {
+      "formula": "=HARMEAN(4,5,8,7,11,4,3)",
+      "expected": 5.028375962061728,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "Seven over the sum of the reciprocals."
+    },
+    {
+      "formula": "=GEOMEAN(2,-8)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "A value at or below zero has no geometric mean."
+    },
+    {
+      "formula": "=HARMEAN(1,0)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Zero has no reciprocal."
+    },
+    {
+      "formula": "=TRIMMEAN({4,5,6,7,2,3,4,5,1,2,3},0.2)",
+      "expected": 3.7777777777777777,
+      "tolerance": 1e-12,
+      "source": "excel-doc: TRIMMEAN function",
+      "note": "11 values: 20% gives 2.2, cut down to one from each end; 34 over 9."
+    },
+    {
+      "formula": "=TRIMMEAN({1,2,3},1)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "The percent must be below 1."
+    },
+    {
+      "formula": "=AVERAGE(2,4,9)",
+      "expected": 5,
+      "source": "hand",
+      "note": "15 over 3."
+    },
+    {
+      "formula": "=AVERAGEA(2,TRUE)",
+      "expected": 1.5,
+      "source": "hand",
+      "note": "TRUE counts as 1."
+    },
+    {
+      "formula": "=MEDIAN(5,1,3,2)",
+      "expected": 2.5,
+      "source": "hand",
+      "note": "Halfway between 2 and 3."
+    },
+    {
+      "formula": "=VAR.S(5)",
+      "expected": "#DIV/0!",
+      "source": "hand",
+      "note": "A sample variance needs two values."
+    },
+    {
+      "formula": "=STDEV.P(5)",
+      "expected": 0,
+      "source": "hand",
+      "note": "One value does not vary."
+    },
+    {
+      "formula": "=STDEVA(1,TRUE,4)",
+      "expected": 1.7320508075688772,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "Values 1, 1, 4: mean 2, squared deviations 1, 1, 4, over 2."
+    },
+    {
+      "formula": "=VARPA(0,2)",
+      "expected": 1,
+      "source": "hand",
+      "note": "Mean 1, squared deviations 1 and 1, over 2."
+    },
+    {
+      "formula": "=KURT({3,4,5,2,3,4,5,6,4,7})",
+      "expected": -0.15179963720841538,
+      "tolerance": 1e-12,
+      "source": "excel-doc: KURT function",
+      "note": "The documented formula with the sample standard deviation; the reference gives -0.151799637."
+    },
+    {
+      "formula": "=SKEW({3,4,5,2,3,4,5,6,4,7})",
+      "expected": 0.3595430714067975,
+      "tolerance": 1e-12,
+      "source": "excel-doc: SKEW function",
+      "note": "The documented formula; the reference gives 0.359543."
+    },
+    {
+      "formula": "=SKEW.P({3,4,5,2,3,4,5,6,4,7})",
+      "expected": 0.3031933393541439,
+      "tolerance": 1e-12,
+      "source": "excel-doc: SKEW.P function",
+      "note": "The population form; the reference gives 0.303193."
+    },
+    {
+      "formula": "=KURT(1,2,3)",
+      "expected": "#DIV/0!",
+      "source": "hand",
+      "note": "Kurtosis needs four values."
+    },
+    {
+      "formula": "=LARGE({3,5,3,5,4},3)",
+      "expected": 4,
+      "source": "hand",
+      "note": "Sorted down: 5, 5, 4."
+    },
+    {
+      "formula": "=SMALL({3,5,3,5,4},2)",
+      "expected": 3,
+      "source": "hand",
+      "note": "Sorted up: 3, 3."
+    },
+    {
+      "formula": "=SMALL({1,2},3)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "There is no third value."
+    },
+    {
+      "formula": "=PERCENTILE.EXC({1,2,3,4},0.4)",
+      "expected": 2,
+      "source": "hand",
+      "note": "Rank 0.4 x 5 = 2."
+    },
+    {
+      "formula": "=PERCENTILE.EXC({1,2,3,4},0.1)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Rank 0.5 is below the first value."
+    },
+    {
+      "formula": "=PERCENTILE.INC({1,2,3,4},1.5)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "k above 1."
+    },
+    {
+      "formula": "=QUARTILE.EXC({1,2,3,4,5,6,7},1)",
+      "expected": 2,
+      "source": "hand",
+      "note": "Rank 0.25 x 8 = 2."
+    },
+    {
+      "formula": "=QUARTILE.INC({1,2,3,4},5)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "The quartile goes from 0 to 4."
+    },
+    {
+      "formula": "=QUARTILE.INC({1,2,4,7,8,9,10,12},4)",
+      "expected": 12,
+      "source": "hand",
+      "note": "Quartile 4 is the largest value."
+    },
+    {
+      "formula": "=PERCENTRANK.INC({13,12,11,8,4,3,2,1,1,1},2)",
+      "expected": 0.333,
+      "source": "excel-doc: PERCENTRANK.INC function",
+      "note": "Three values below 2, over 9, cut to three digits."
+    },
+    {
+      "formula": "=PERCENTRANK.INC({13,12,11,8,4,3,2,1,1,1},4)",
+      "expected": 0.555,
+      "source": "excel-doc: PERCENTRANK.INC function",
+      "note": "5/9 cut, not rounded, to three digits."
+    },
+    {
+      "formula": "=PERCENTRANK.INC({13,12,11,8,4,3,2,1,1,1},5)",
+      "expected": 0.583,
+      "source": "excel-doc: PERCENTRANK.INC function",
+      "note": "A quarter of the way from 4 (5/9) to 8 (6/9)."
+    },
+    {
+      "formula": "=PERCENTRANK.INC({13,12,11,8,4,3,2,1,1,1},14)",
+      "expected": "#N/A",
+      "source": "hand",
+      "note": "Above the largest value."
+    },
+    {
+      "formula": "=PERCENTRANK.EXC({1,2,3,6,6,6,7,8,9},7)",
+      "expected": 0.7,
+      "source": "excel-doc: PERCENTRANK.EXC function",
+      "note": "Six values below 7: (6 + 1) / 10."
+    },
+    {
+      "formula": "=PERCENTRANK.EXC({1,2,3,6,6,6,7,8,9},5.43)",
+      "expected": 0.381,
+      "source": "excel-doc: PERCENTRANK.EXC function",
+      "note": "From 0.3 at 3 to 0.4 at 6, 2.43/3 of the way, cut to 0.381."
+    },
+    {
+      "formula": "=PERCENTRANK.EXC({1,2,3,6,6,6,7,8,9},5.43,1)",
+      "expected": 0.3,
+      "source": "excel-doc: PERCENTRANK.EXC function",
+      "note": "The same cut to one digit."
+    },
+    {
+      "formula": "=RANK.EQ(7,{7,3.5,3.5,1,2},1)",
+      "expected": 5,
+      "source": "excel-doc: RANK.EQ function",
+      "note": "Ascending: four values are below 7."
+    },
+    {
+      "formula": "=RANK.EQ(2,{7,3.5,3.5,1,2})",
+      "expected": 4,
+      "source": "excel-doc: RANK.EQ function",
+      "note": "Descending: three values are above 2."
+    },
+    {
+      "formula": "=RANK.AVG(3.5,{7,3.5,3.5,1,2})",
+      "expected": 2.5,
+      "source": "hand",
+      "note": "One value above, and the two 3.5s share places 2 and 3."
+    },
+    {
+      "formula": "=RANK.EQ(9,{7,3.5,3.5,1,2})",
+      "expected": "#N/A",
+      "source": "hand",
+      "note": "9 is not in the list."
+    },
+    {
+      "formula": "=MODE.SNGL(1,2,3)",
+      "expected": "#N/A",
+      "source": "hand",
+      "note": "No value repeats."
+    },
+    {
+      "formula": "=MODE.MULT(1,2,3,4,3,2,1,2,3)",
+      "expected": [2, 3],
+      "source": "excel-doc: MODE.MULT function",
+      "note": "2 and 3 appear three times each, in the order first seen."
+    },
+    {
+      "formula": "=FREQUENCY({79,85,78,85,50,81,95,88,97},{70,79,89})",
+      "expected": [1, 2, 4, 2],
+      "source": "excel-doc: FREQUENCY function",
+      "note": "At most 70; 71 to 79; 80 to 89; above 89."
+    },
+    {
+      "formula": "=PROB({0,1,2,3},{0.2,0.3,0.1,0.4},2)",
+      "expected": 0.1,
+      "source": "hand",
+      "note": "The chance of exactly 2."
+    },
+    {
+      "formula": "=PROB({0,1,2,3},{0.2,0.3,0.1,0.4},1,3)",
+      "expected": 0.8,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "0.3 + 0.1 + 0.4."
+    },
+    {
+      "formula": "=PROB({0,1},{0.2,0.3},1)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "The chances must add to 1."
+    },
+    {
+      "formula": "=SLOPE({2,3,9,1,8,7,5},{6,5,11,7,5,4,4})",
+      "expected": 0.3055555555555556,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "Means 5 and 6; Sxy = 11 and Sxx = 36."
+    },
+    {
+      "formula": "=INTERCEPT({2,3,9,1,8,7,5},{6,5,11,7,5,4,4})",
+      "expected": 3.166666666666667,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "5 - 6 x 11/36."
+    },
+    {
+      "formula": "=RSQ({2,3,9,1,8,7,5},{6,5,11,7,5,4,4})",
+      "expected": 0.05795019157088123,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "Sxy^2 / (Sxx Syy) with Syy = 58."
+    },
+    {
+      "formula": "=STEYX({2,3,9,1,8,7,5},{6,5,11,7,5,4,4})",
+      "expected": 3.305718950210041,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "The root of (Syy - Sxy^2/Sxx) / (n - 2)."
+    },
+    {
+      "formula": "=CORREL({3,2,4,5,6},{9,7,12,15,17})",
+      "expected": 0.9970544855015815,
+      "tolerance": 1e-12,
+      "source": "excel-doc: CORREL function",
+      "note": "Sxy 26, Sxx 10, Syy 68; the reference gives 0.997054486."
+    },
+    {
+      "formula": "=PEARSON({3,2,4,5,6},{9,7,12,15,17})",
+      "expected": 0.9970544855015815,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "The same as CORREL."
+    },
+    {
+      "formula": "=COVARIANCE.P({3,2,4,5,6},{9,7,12,15,17})",
+      "expected": 5.2,
+      "tolerance": 1e-12,
+      "source": "excel-doc: COVARIANCE.P function",
+      "note": "Sxy 26 over 5."
+    },
+    {
+      "formula": "=COVARIANCE.S({2,4,8},{5,11,12})",
+      "expected": 9.666666666666666,
+      "tolerance": 1e-12,
+      "source": "excel-doc: COVARIANCE.S function",
+      "note": "Sxy is 58/3, over 2."
+    },
+    {
+      "formula": "=CORREL({1,2},{1,2,3})",
+      "expected": "#N/A",
+      "source": "hand",
+      "note": "The arrays differ in size."
+    },
+    {
+      "formula": "=CORREL({1,1},{1,2})",
+      "expected": "#DIV/0!",
+      "source": "hand",
+      "note": "The first array does not vary."
+    },
+    {
+      "formula": "=FORECAST.LINEAR(30,{6,7,9,15,21},{20,28,31,38,40})",
+      "expected": 10.607253086419753,
+      "tolerance": 1e-12,
+      "source": "excel-doc: FORECAST.LINEAR function",
+      "note": "The least-squares line at x = 30; the reference gives 10.607253."
+    },
+    {
+      "formula": "=FORECAST(30,{6,7,9,15,21},{20,28,31,38,40})",
+      "expected": 10.607253086419753,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "FORECAST is FORECAST.LINEAR."
+    },
+    {
+      "formula": "=STANDARDIZE(42,40,1.5)",
+      "expected": 1.3333333333333333,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "(42 - 40) / 1.5."
+    },
+    {
+      "formula": "=STANDARDIZE(1,0,0)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "The standard deviation must be above 0."
+    },
+    {
+      "formula": "=FISHER(0.75)",
+      "expected": 0.9729550745276566,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "Half of ln(1.75 / 0.25); the reference gives 0.972955."
+    },
+    {
+      "formula": "=FISHERINV(0.5*LN(7))",
+      "expected": 0.75,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "tanh undoes FISHER."
+    },
+    {
+      "formula": "=FISHER(1)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "x must be strictly between -1 and 1."
+    },
+    {
+      "formula": "=PERMUT(100,3)",
+      "expected": 970200,
+      "source": "excel-doc: PERMUT function",
+      "note": "100 x 99 x 98."
+    },
+    {
+      "formula": "=PERMUT(2,3)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Cannot choose 3 of 2."
+    },
+    {
+      "formula": "=PERMUTATIONA(3,2)",
+      "expected": 9,
+      "source": "hand",
+      "note": "3 squared."
+    },
+    {
+      "formula": "=GAMMA(2.5)",
+      "expected": 1.329340388179137,
+      "tolerance": 1e-12,
+      "source": "dlmf: 5.4.6",
+      "note": "Gamma(5/2) = 3 sqrt(pi) / 4."
+    },
+    {
+      "formula": "=GAMMA(0.5)",
+      "expected": 1.7724538509055159,
+      "tolerance": 1e-12,
+      "source": "dlmf: 5.4.6",
+      "note": "Gamma(1/2) = sqrt(pi)."
+    },
+    {
+      "formula": "=GAMMA(0)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Gamma has poles at 0 and the negative whole numbers."
+    },
+    {
+      "formula": "=GAMMA(-1)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "A pole."
+    },
+    {
+      "formula": "=GAMMALN.PRECISE(4)",
+      "expected": 1.791759469228055,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "ln 3!."
+    },
+    {
+      "formula": "=GAMMALN(0)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "x must be above 0."
+    },
+    {
+      "formula": "=NORM.DIST(42,40,1.5,TRUE)",
+      "expected": 0.9087888,
+      "tolerance": 1e-7,
+      "source": "excel-doc: NORM.DIST function",
+      "note": "The documented value to seven digits."
+    },
+    {
+      "formula": "=NORM.DIST(42,40,1.5,FALSE)",
+      "expected": 0.10934004978399575,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "The density at z = 4/3, over the standard deviation."
+    },
+    {
+      "formula": "=NORM.INV(0.908789,40,1.5)",
+      "expected": 42.000002,
+      "tolerance": 1e-7,
+      "source": "excel-doc: NORM.INV function",
+      "note": "The documented value."
+    },
+    {
+      "formula": "=NORM.S.INV(0.5)",
+      "expected": 0,
+      "source": "hand",
+      "note": "The median of the standard normal."
+    },
+    {
+      "formula": "=NORM.S.DIST(-1,TRUE)",
+      "expected": 0.15865525393145696,
+      "tolerance": 1e-12,
+      "source": "table: standard normal",
+      "note": "Symmetry: 1 - Phi(1)."
+    },
+    {
+      "formula": "=NORM.S.DIST(2,TRUE)",
+      "expected": 0.977249868051821,
+      "tolerance": 1e-12,
+      "source": "table: standard normal",
+      "note": "Phi(2)."
+    },
+    {
+      "formula": "=NORM.S.DIST(-3,TRUE)",
+      "expected": 0.00134989803163009,
+      "tolerance": 1e-12,
+      "source": "table: standard normal",
+      "note": "The lower tail at -3."
+    },
+    {
+      "formula": "=NORM.DIST(1,0,0,TRUE)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "The standard deviation must be above 0."
+    },
+    {
+      "formula": "=NORM.S.INV(1)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "The probability must be below 1."
+    },
+    {
+      "formula": "=PHI(0.75)",
+      "expected": 0.30113743215480443,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "The standard normal density e^(-x^2/2) / sqrt(2 pi)."
+    },
+    {
+      "formula": "=GAUSS(2)",
+      "expected": 0.477249868051821,
+      "tolerance": 1e-12,
+      "source": "table: standard normal",
+      "note": "Phi(2) - 0.5."
+    },
+    {
+      "formula": "=LOGNORM.DIST(EXP(1),0,1,TRUE)",
+      "expected": 0.841344746068543,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "ln e = 1, so Phi(1)."
+    },
+    {
+      "formula": "=LOGNORM.DIST(1,0,1,FALSE)",
+      "expected": 0.3989422804014327,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "The density at ln 1 = 0, over x = 1."
+    },
+    {
+      "formula": "=LOGNORM.INV(0.841344746068543,0,1)",
+      "expected": 2.718281828459045,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "e to the inverse of Phi at that point, which is 1."
+    },
+    {
+      "formula": "=LOGNORM.DIST(0,0,1,TRUE)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "x must be above 0."
+    },
+    {
+      "formula": "=CONFIDENCE.NORM(0.05,2.5,50)",
+      "expected": 0.6929519121748374,
+      "tolerance": 1e-12,
+      "source": "excel-doc: CONFIDENCE.NORM function",
+      "note": "z at 0.975 times 2.5 over the root of 50; the reference gives 0.692952."
+    },
+    {
+      "formula": "=CONFIDENCE.T(0.05,1,50)",
+      "expected": 0.284196855,
+      "tolerance": 1e-8,
+      "source": "excel-doc: CONFIDENCE.T function",
+      "note": "The documented value."
+    },
+    {
+      "formula": "=CONFIDENCE.T(0.05,1,1)",
+      "expected": "#DIV/0!",
+      "source": "hand",
+      "note": "One value has no degrees of freedom."
+    },
+    {
+      "formula": "=Z.TEST({3,6,7,8,6,5,4,2,1,9},4)",
+      "expected": 0.090574,
+      "tolerance": 1e-5,
+      "source": "excel-doc: Z.TEST function",
+      "note": "The documented one-tailed value to six digits."
+    },
+    {
+      "formula": "=Z.TEST({3,6,7,8,6,5,4,2,1,9},6)",
+      "expected": 0.863043,
+      "tolerance": 1e-6,
+      "source": "excel-doc: Z.TEST function",
+      "note": "The documented one-tailed value to six digits."
+    },
+    {
+      "formula": "=EXPON.DIST(1,2,TRUE)",
+      "expected": 0.8646647167633873,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "1 - e^(-2)."
+    },
+    {
+      "formula": "=EXPON.DIST(1,2,FALSE)",
+      "expected": 0.2706705664732254,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "2 e^(-2)."
+    },
+    {
+      "formula": "=EXPON.DIST(-1,2,TRUE)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "x must be at least 0."
+    },
+    {
+      "formula": "=WEIBULL.DIST(1,2,1,TRUE)",
+      "expected": 0.6321205588285577,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "1 - e^(-(1/1)^2)."
+    },
+    {
+      "formula": "=WEIBULL.DIST(1,2,1,FALSE)",
+      "expected": 0.7357588823428847,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "(2/1)(1)^1 e^(-1)."
+    },
+    {
+      "formula": "=GAMMA.DIST(2,1,2,TRUE)",
+      "expected": 0.6321205588285577,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "Shape 1 is the exponential law with mean 2."
+    },
+    {
+      "formula": "=GAMMA.DIST(1,2,1,TRUE)",
+      "expected": 0.26424111765711533,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "Shape 2: 1 - e^(-x)(1 + x) at x = 1."
+    },
+    {
+      "formula": "=GAMMA.DIST(1,2,1,FALSE)",
+      "expected": 0.36787944117144233,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "x e^(-x) at x = 1."
+    },
+    {
+      "formula": "=GAMMA.INV(1-EXP(-1),1,2)",
+      "expected": 2,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "Undoes the exponential case above."
+    },
+    {
+      "formula": "=GAMMA.DIST(1,0,1,TRUE)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "The shape must be above 0."
+    },
+    {
+      "formula": "=CHISQ.DIST.RT(2,2)",
+      "expected": 0.36787944117144233,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "Two degrees of freedom: the upper tail is e^(-x/2)."
+    },
+    {
+      "formula": "=CHISQ.DIST(2,2,TRUE)",
+      "expected": 0.6321205588285577,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "The lower tail."
+    },
+    {
+      "formula": "=CHISQ.DIST(2,2,FALSE)",
+      "expected": 0.18393972058572117,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "The density e^(-x/2) / 2."
+    },
+    {
+      "formula": "=CHISQ.INV.RT(0.05,1)",
+      "expected": 3.8414588206941094,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "One degree of freedom is a squared normal: z at 0.975, squared."
+    },
+    {
+      "formula": "=CHISQ.INV(1-EXP(-1),2)",
+      "expected": 2,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "Undoes CHISQ.DIST at 2."
+    },
+    {
+      "formula": "=CHISQ.DIST(1,0,TRUE)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Degrees of freedom start at 1."
+    },
+    {
+      "formula": "=CHISQ.TEST({12,8,10},{10,10,10})",
+      "expected": 0.6703200460356393,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "Chi-squared 0.8 with 2 degrees of freedom: e^(-0.4)."
+    },
+    {
+      "formula": "=CHISQ.TEST({1,2},{1,0})",
+      "expected": "#DIV/0!",
+      "source": "hand",
+      "note": "An expected count of 0."
+    },
+    {
+      "formula": "=BETA.DIST(0.3,2,1,TRUE)",
+      "expected": 0.09,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "With alpha 2 and beta 1 the law is x^2."
+    },
+    {
+      "formula": "=BETA.DIST(0.3,2,1,FALSE)",
+      "expected": 0.6,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "The density 2x."
+    },
+    {
+      "formula": "=BETA.DIST(3,2,1,TRUE,2,4)",
+      "expected": 0.25,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "Scaled to 2 to 4: ((3 - 2)/2)^2."
+    },
+    {
+      "formula": "=BETA.INV(0.25,2,1,2,4)",
+      "expected": 3,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "Undoes the case above."
+    },
+    {
+      "formula": "=BETA.DIST(5,2,1,TRUE,2,4)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "x is outside the bounds."
+    },
+    {
+      "formula": "=F.DIST(3,2,2,TRUE)",
+      "expected": 0.75,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "With 2 and 2 degrees of freedom the law is x / (1 + x)."
+    },
+    {
+      "formula": "=F.DIST(3,2,2,FALSE)",
+      "expected": 0.0625,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "The density 1 / (1 + x)^2."
+    },
+    {
+      "formula": "=F.DIST.RT(3,2,2)",
+      "expected": 0.25,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "1 / (1 + x)."
+    },
+    {
+      "formula": "=F.INV(0.75,2,2)",
+      "expected": 3,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "Undoes F.DIST."
+    },
+    {
+      "formula": "=F.INV.RT(0.25,2,2)",
+      "expected": 3,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "Undoes F.DIST.RT."
+    },
+    {
+      "formula": "=F.TEST({1,2,3},{2,4,6})",
+      "expected": 0.4,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "Variances 1 and 4: F = 0.25, lower tail 0.2 with 2 and 2 degrees of freedom, doubled."
+    },
+    {
+      "formula": "=F.TEST({1},{2,3})",
+      "expected": "#DIV/0!",
+      "source": "hand",
+      "note": "Each array needs two values."
+    },
+    {
+      "formula": "=T.DIST(1,1,TRUE)",
+      "expected": 0.75,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "One degree of freedom is the Cauchy law: 1/2 + atan(1)/pi."
+    },
+    {
+      "formula": "=T.DIST(1,2,TRUE)",
+      "expected": 0.7886751345948129,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "Two degrees of freedom: 1/2 + x / (2 sqrt(2 + x^2))."
+    },
+    {
+      "formula": "=T.DIST(0,1,FALSE)",
+      "expected": 0.3183098861837907,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "The Cauchy density at 0."
+    },
+    {
+      "formula": "=T.DIST.2T(1,2)",
+      "expected": 0.42264973081037416,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "Both tails of the case above."
+    },
+    {
+      "formula": "=T.DIST.RT(1,2)",
+      "expected": 0.21132486540518708,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "The upper tail."
+    },
+    {
+      "formula": "=T.INV(0.75,1)",
+      "expected": 1,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "Undoes the Cauchy case."
+    },
+    {
+      "formula": "=T.INV(0.25,1)",
+      "expected": -1,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "The lower quartile of the Cauchy law."
+    },
+    {
+      "formula": "=T.INV.2T(1-1/SQRT(3),2)",
+      "expected": 1,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "Undoes T.DIST.2T."
+    },
+    {
+      "formula": "=T.DIST.2T(-1,2)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "x must be at least 0."
+    },
+    {
+      "formula": "=T.INV(0,2)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "The probability must be above 0."
+    },
+    {
+      "formula": "=T.TEST({2,4},{1,1},2,1)",
+      "expected": 0.2951672353008665,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "Paired differences 1 and 3: t = 2 with 1 degree of freedom, both tails."
+    },
+    {
+      "formula": "=T.TEST({2,4},{1,1},1,1)",
+      "expected": 0.14758361765043326,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "One tail."
+    },
+    {
+      "formula": "=T.TEST({1,3},{3,5},2,2)",
+      "expected": 0.29289321881345254,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "Pooled variance 2: t = -sqrt(2) with 2 degrees of freedom."
+    },
+    {
+      "formula": "=T.TEST({1,3},{3,5},2,3)",
+      "expected": 0.29289321881345254,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "Welch: the same t, and 2 degrees of freedom."
+    },
+    {
+      "formula": "=T.TEST({1,3},{3,5},3,2)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Tails must be 1 or 2."
+    },
+    {
+      "formula": "=T.TEST({1,3,5},{3,5},2,1)",
+      "expected": "#N/A",
+      "source": "hand",
+      "note": "A paired test needs arrays of one size."
+    },
+    {
+      "formula": "=BINOM.DIST(6,10,0.5,TRUE)",
+      "expected": 0.828125,
+      "source": "hand",
+      "note": "1 + 10 + 45 + 120 + 210 + 252 + 210 = 848, over 2^10."
+    },
+    {
+      "formula": "=BINOM.DIST(11,10,0.5,FALSE)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "More successes than trials."
+    },
+    {
+      "formula": "=BINOM.DIST.RANGE(10,0.5,4,6)",
+      "expected": 0.65625,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "210 + 252 + 210, over 2^10."
+    },
+    {
+      "formula": "=BINOM.DIST.RANGE(10,0.5,6)",
+      "expected": 0.205078125,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "Exactly 6."
+    },
+    {
+      "formula": "=BINOM.DIST.RANGE(10,0.5,6,4)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "The second count is below the first."
+    },
+    {
+      "formula": "=BINOM.INV(6,0.5,0.75)",
+      "expected": 4,
+      "source": "hand",
+      "note": "The running totals reach 42/64 at 3 and 57/64 at 4."
+    },
+    {
+      "formula": "=BINOM.INV(6,1.5,0.75)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "The probability is above 1."
+    },
+    {
+      "formula": "=NEGBINOM.DIST(10,5,0.25,FALSE)",
+      "expected": 0.05504866037517786,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "C(14, 4) 0.25^5 0.75^10; the reference gives 0.055049."
+    },
+    {
+      "formula": "=NEGBINOM.DIST(1,1,0.5,TRUE)",
+      "expected": 0.75,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "No failure (1/2) or one failure (1/4) before the first success."
+    },
+    {
+      "formula": "=NEGBINOM.DIST(1,0,0.5,FALSE)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "At least one success is needed."
+    },
+    {
+      "formula": "=HYPGEOM.DIST(1,4,8,20,FALSE)",
+      "expected": 0.3632610939112487,
+      "tolerance": 1e-12,
+      "source": "excel-doc: HYPGEOM.DIST function",
+      "note": "C(8,1) C(12,3) / C(20,4) = 8 x 220 / 4845."
+    },
+    {
+      "formula": "=HYPGEOM.DIST(1,4,8,20,TRUE)",
+      "expected": 0.46542827657378744,
+      "tolerance": 1e-12,
+      "source": "excel-doc: HYPGEOM.DIST function",
+      "note": "Adds the 495/4845 of no success."
+    },
+    {
+      "formula": "=HYPGEOM.DIST(5,4,8,20,FALSE)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "More successes than draws."
+    },
+    {
+      "formula": "=POISSON.DIST(2,5,TRUE)",
+      "expected": 0.12465201948308118,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "e^(-5) (1 + 5 + 25/2)."
+    },
+    {
+      "formula": "=POISSON.DIST(-1,5,TRUE)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "x must be at least 0."
+    },
+    {
+      "formula": "=NORMDIST(42,40,1.5,TRUE)",
+      "expected": 0.9087888,
+      "tolerance": 1e-7,
+      "source": "excel-doc: NORMDIST function",
+      "note": "As NORM.DIST."
+    },
+    {
+      "formula": "=BINOMDIST(6,10,0.5,FALSE)",
+      "expected": 0.205078125,
+      "source": "hand",
+      "note": "As BINOM.DIST."
+    },
+    {
+      "formula": "=CHIDIST(2,2)",
+      "expected": 0.36787944117144233,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "The upper tail, as CHISQ.DIST.RT."
+    },
+    {
+      "formula": "=EXPONDIST(1,2,TRUE)",
+      "expected": 0.8646647167633873,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "As EXPON.DIST."
+    },
+    {
+      "formula": "=POISSON(2,5,FALSE)",
+      "expected": 0.08422433748856836,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "As POISSON.DIST."
+    },
+    {
+      "formula": "=TDIST(1,1,2)",
+      "expected": 0.5,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "Both tails of the Cauchy law beyond 1."
+    },
+    {
+      "formula": "=TDIST(-1,1,2)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "TDIST needs x at least 0."
+    },
+    {
+      "formula": "=TINV(0.5,1)",
+      "expected": 1,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "The two-tailed inverse."
+    },
+    {
+      "formula": "=WEIBULL(1,2,1,TRUE)",
+      "expected": 0.6321205588285577,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "As WEIBULL.DIST."
+    },
+    {
+      "formula": "=GAMMADIST(1,2,1,FALSE)",
+      "expected": 0.36787944117144233,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "As GAMMA.DIST."
+    },
+    {
+      "formula": "=BETAINV(0.09,2,1)",
+      "expected": 0.3,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "As BETA.INV."
+    },
+    {
+      "formula": "=STDEVP(2,4,4,4,5,5,7,9)",
+      "expected": 2,
+      "source": "hand",
+      "note": "As STDEV.P."
+    },
+    {
+      "formula": "=VAR(1,2,3,4)",
+      "expected": 1.6666666666666667,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "As VAR.S."
+    },
+    {
+      "formula": "=PERCENTILE({1,2,3,4},0.3)",
+      "expected": 1.9,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "As PERCENTILE.INC."
+    },
+    {
+      "formula": "=MODE(1,2,2,3)",
+      "expected": 2,
+      "source": "hand",
+      "note": "As MODE.SNGL."
+    },
+    {
+      "formula": "=COUNTIF(A1:A3,\">4\")",
+      "cells": {
+        "A1": 1,
+        "A2": 5,
+        "A3": 9,
+        "B1": "x",
+        "B2": "y",
+        "B3": "x"
+      },
+      "expected": 2,
+      "source": "hand",
+      "note": "5 and 9."
+    },
+    {
+      "formula": "=COUNTIF(B1:B3,\"x\")",
+      "cells": {
+        "A1": 1,
+        "A2": 5,
+        "A3": 9,
+        "B1": "x",
+        "B2": "y",
+        "B3": "x"
+      },
+      "expected": 2,
+      "source": "hand",
+      "note": "Rows 1 and 3."
+    },
+    {
+      "formula": "=AVERAGEIF(B1:B3,\"x\",A1:A3)",
+      "cells": {
+        "A1": 1,
+        "A2": 5,
+        "A3": 9,
+        "B1": "x",
+        "B2": "y",
+        "B3": "x"
+      },
+      "expected": 5,
+      "source": "hand",
+      "note": "1 and 9."
+    },
+    {
+      "formula": "=MAXIFS(A1:A3,B1:B3,\"x\")",
+      "cells": {
+        "A1": 1,
+        "A2": 5,
+        "A3": 9,
+        "B1": "x",
+        "B2": "y",
+        "B3": "x"
+      },
+      "expected": 9,
+      "source": "hand",
+      "note": "1 and 9."
+    },
+    {
+      "formula": "=MINIFS(A1:A3,B1:B3,\"y\")",
+      "cells": {
+        "A1": 1,
+        "A2": 5,
+        "A3": 9,
+        "B1": "x",
+        "B2": "y",
+        "B3": "x"
+      },
+      "expected": 5,
+      "source": "hand",
+      "note": "Only row 2."
+    },
+    {
+      "formula": "=MAXIFS(A1:A3,B1:B3,\"z\")",
+      "cells": {
+        "A1": 1,
+        "A2": 5,
+        "A3": 9,
+        "B1": "x",
+        "B2": "y",
+        "B3": "x"
+      },
+      "expected": 0,
+      "source": "hand",
+      "note": "No match gives 0."
+    },
+    {
+      "formula": "=COUNTUNIQUE(1,2,2,\"a\")",
+      "expected": 3,
+      "source": "sheets-doc: COUNTUNIQUE",
+      "note": "1, 2, and a."
+    },
+    {
+      "formula": "=LINEST({1,9,5,7},{0,4,2,3})",
+      "expected": [2, 1],
+      "tolerance": 1e-12,
+      "source": "excel-doc: LINEST function",
+      "note": "The points lie on y = 2x + 1."
+    }
+  ]
+}
