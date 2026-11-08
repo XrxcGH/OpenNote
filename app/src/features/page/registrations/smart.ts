@@ -376,7 +376,15 @@ for (const spec of TABLE_COMMANDS) {
     category: inTable ? 'table' : 'insert',
     icon: spec.icon,
     flag: spec.flag ?? 'tables.smart',
-    ...(spec.keys ? { keys: spec.keys.map(chord), scope: 'editor.table' as const, allowInTextInput: true } : {}),
+    ...(spec.keys
+      ? {
+          keys: spec.keys.map(chord),
+          scope: 'editor.table' as const,
+          allowInTextInput: true,
+          // Ctrl+R aligns right in text (ADR 0085) and fills right in a table.
+          ...(spec.id === 'table.fillRight' ? { refines: 'para.alignEnd' } : {}),
+        }
+      : {}),
     when: () => currentTable.get() !== null,
     run: () => runSmart(spec.command),
   });

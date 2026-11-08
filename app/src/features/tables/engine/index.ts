@@ -15,10 +15,14 @@ export { toCanonical, parseCanonical } from './canonical';
 export { daysToIso, excelSerialToDays, parseDate, parseIsoDate, todayDays } from './dates';
 export {
   addRow,
+  calculateTable,
   checkFormulaInput,
   createTable,
   deleteRow,
+  deleteRows,
+  insertRows,
   makeCell,
+  moveRows,
   setCellInput,
   setColumnFormula,
   setColumnType,
@@ -32,12 +36,36 @@ export type { FormulaProblem, Syntax } from './formula/lexer';
 export { parseFormula } from './formula/parser';
 export { DE_DE, EN_US, FR_FR, parseLocaleNumber } from './locale';
 export type { DateOrder, Locale } from './locale';
-export { columnLetter, isMismatch, letterToColumn, parseInput } from './model';
-export type { Cell, Column, ColumnType, Row, Table, TotalKind } from './model';
+export { columnLetter, isMismatch, ITERATE_DEFAULTS, letterToColumn, parseInput } from './model';
+export type { Cell, Column, ColumnType, IterateSettings, Row, Table, TableName, TotalKind } from './model';
 export { formatQuickMath, quickMath } from './quickMath';
 export type { QuickMathResult } from './quickMath';
-export { recalculate, recalculateWithCycles } from './recalc';
-export type { CycleCell } from './recalc';
+// Keep one EngineEnv object per page: recalculateCells and recalculateBookCells compare it by identity, and a new
+// object rebuilds the page from scratch (ADR 0065).
+export {
+  errorOrigin,
+  needsCalculation,
+  recalculate,
+  recalculateCells,
+  recalculateWithCycles,
+  spillRange,
+} from './recalc';
+export type { CellRef, CycleCell, EngineEnv } from './recalc';
+export { explainOrigin, originSentence } from './formula/explain';
+export type { ErrorOrigin, OriginCell, OriginSentence, OriginSentenceValues } from './formula/explain';
+export { adjustFormula, adjustNames, adjustTable } from './refactor';
+export type { AdjustOptions, StructureChange } from './refactor';
+export {
+  bookCycles,
+  bookErrorOrigin,
+  bookSpillRange,
+  changeBookRows,
+  recalculateBook,
+  recalculateBookCells,
+  setBookCellInput,
+  tableNames,
+} from './workbook';
+export type { Workbook } from './workbook';
 export { sortedIndices, sortTable } from './sort';
 export type { SortKey } from './sort';
 export { columnTotal, hasTotals, totalsRow } from './totals';

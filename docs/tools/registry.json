@@ -960,7 +960,7 @@
       "title": "Strikethrough",
       "category": "format",
       "keys": [
-        "Ctrl+Shift+S"
+        "Ctrl+Shift+X"
       ],
       "flag": "page.editor"
     },
@@ -978,7 +978,7 @@
       "title": "Inline code",
       "category": "format",
       "keys": [
-        "Ctrl+E"
+        "Ctrl+`"
       ],
       "flag": "page.editor"
     },
@@ -986,14 +986,18 @@
       "id": "format.subscript",
       "title": "Subscript",
       "category": "format",
-      "keys": [],
+      "keys": [
+        "Ctrl+="
+      ],
       "flag": "page.editor"
     },
     {
       "id": "format.superscript",
       "title": "Superscript",
       "category": "format",
-      "keys": [],
+      "keys": [
+        "Ctrl++"
+      ],
       "flag": "page.editor"
     },
     {
@@ -1121,7 +1125,8 @@
       "title": "Bulleted list",
       "category": "format",
       "keys": [
-        "Ctrl+Shift+8"
+        "Ctrl+Shift+8",
+        "Ctrl+Shift+L"
       ],
       "flag": "page.editor"
     },
@@ -3942,6 +3947,48 @@
       "flag": "accounts.captions"
     },
     {
+      "id": "text.notes.footnote",
+      "title": "Insert footnote",
+      "category": "insert",
+      "keys": [],
+      "flag": "text.footnotes"
+    },
+    {
+      "id": "text.notes.endnote",
+      "title": "Insert endnote",
+      "category": "insert",
+      "keys": [],
+      "flag": "text.footnotes"
+    },
+    {
+      "id": "text.notes.goTo",
+      "title": "Go to note or reference",
+      "category": "editing",
+      "keys": [],
+      "flag": "text.footnotes"
+    },
+    {
+      "id": "text.notes.toEndnotes",
+      "title": "Convert all footnotes to endnotes",
+      "category": "editing",
+      "keys": [],
+      "flag": "text.footnotes"
+    },
+    {
+      "id": "text.notes.toFootnotes",
+      "title": "Convert all endnotes to footnotes",
+      "category": "editing",
+      "keys": [],
+      "flag": "text.footnotes"
+    },
+    {
+      "id": "text.notes.convertOne",
+      "title": "Convert this note",
+      "category": "editing",
+      "keys": [],
+      "flag": "text.footnotes"
+    },
+    {
       "id": "page.zoomIn",
       "title": "Zoom page in",
       "category": "view",
@@ -4487,6 +4534,83 @@
       "flag": "page.markdownSource"
     },
     {
+      "id": "styles.apply",
+      "title": "Apply style",
+      "category": "format",
+      "keys": [],
+      "flag": "text.styles2"
+    },
+    {
+      "id": "styles.update",
+      "title": "Update style to match selection",
+      "category": "format",
+      "keys": [],
+      "flag": "text.styles2"
+    },
+    {
+      "id": "styles.create",
+      "title": "New style from selection",
+      "category": "format",
+      "keys": [],
+      "flag": "text.styles2"
+    },
+    {
+      "id": "styles.modify",
+      "title": "Modify style",
+      "category": "format",
+      "keys": [],
+      "flag": "text.styles2"
+    },
+    {
+      "id": "styles.remove",
+      "title": "Delete style",
+      "category": "format",
+      "keys": [],
+      "flag": "text.styles2"
+    },
+    {
+      "id": "styles.hide",
+      "title": "Hide from the style gallery",
+      "category": "format",
+      "keys": [],
+      "flag": "text.styles2"
+    },
+    {
+      "id": "styles.show",
+      "title": "Show in the style gallery",
+      "category": "format",
+      "keys": [],
+      "flag": "text.styles2"
+    },
+    {
+      "id": "styles.moveUp",
+      "title": "Move earlier in the style gallery",
+      "category": "format",
+      "keys": [],
+      "flag": "text.styles2"
+    },
+    {
+      "id": "styles.moveDown",
+      "title": "Move later in the style gallery",
+      "category": "format",
+      "keys": [],
+      "flag": "text.styles2"
+    },
+    {
+      "id": "styles.chooseSet",
+      "title": "Choose a style set",
+      "category": "format",
+      "keys": [],
+      "flag": "text.styles2"
+    },
+    {
+      "id": "styles.pane",
+      "title": "Show or hide the Styles pane",
+      "category": "format",
+      "keys": [],
+      "flag": "text.styles2"
+    },
+    {
       "id": "page.undo",
       "title": "Undo",
       "category": "editing",
@@ -4509,6 +4633,227 @@
       "category": "insert",
       "keys": [],
       "flag": "page.tables"
+    },
+    {
+      "id": "format.allCaps",
+      "title": "All caps",
+      "category": "format",
+      "keys": [
+        "Ctrl+Shift+A"
+      ],
+      "flag": "text.v2Controls"
+    },
+    {
+      "id": "format.smallCaps",
+      "title": "Small caps",
+      "category": "format",
+      "keys": [
+        "Ctrl+Shift+K"
+      ],
+      "flag": "text.v2Controls"
+    },
+    {
+      "id": "format.cycleCase",
+      "title": "Cycle case",
+      "category": "format",
+      "keys": [
+        "Shift+F3"
+      ],
+      "flag": "text.v2Controls"
+    },
+    {
+      "id": "format.clearCharacter",
+      "title": "Clear character formatting",
+      "category": "format",
+      "keys": [
+        "Ctrl+Space"
+      ],
+      "flag": "text.v2Controls"
+    },
+    {
+      "id": "format.fontSizeUp",
+      "title": "Increase font size by 1 point",
+      "category": "format",
+      "keys": [
+        "Ctrl+]"
+      ],
+      "flag": "text.v2Controls"
+    },
+    {
+      "id": "format.fontSizeDown",
+      "title": "Decrease font size by 1 point",
+      "category": "format",
+      "keys": [
+        "Ctrl+["
+      ],
+      "flag": "text.v2Controls"
+    },
+    {
+      "id": "format.copyFormat",
+      "title": "Copy formatting",
+      "category": "format",
+      "keys": [
+        "Ctrl+Shift+C"
+      ],
+      "flag": "text.v2Controls"
+    },
+    {
+      "id": "format.pasteFormat",
+      "title": "Paste formatting",
+      "category": "format",
+      "keys": [
+        "Ctrl+Alt+Shift+V"
+      ],
+      "flag": "text.v2Controls"
+    },
+    {
+      "id": "format.repeat",
+      "title": "Repeat formatting",
+      "category": "format",
+      "keys": [
+        "F4"
+      ],
+      "flag": "text.v2Controls"
+    },
+    {
+      "id": "para.alignStart",
+      "title": "Align left",
+      "category": "format",
+      "keys": [
+        "Ctrl+L"
+      ],
+      "flag": "text.v2Controls"
+    },
+    {
+      "id": "para.alignCenter",
+      "title": "Center",
+      "category": "format",
+      "keys": [
+        "Ctrl+E"
+      ],
+      "flag": "text.v2Controls"
+    },
+    {
+      "id": "para.alignEnd",
+      "title": "Align right",
+      "category": "format",
+      "keys": [
+        "Ctrl+R"
+      ],
+      "flag": "text.v2Controls"
+    },
+    {
+      "id": "para.justify",
+      "title": "Justify",
+      "category": "format",
+      "keys": [
+        "Ctrl+J"
+      ],
+      "flag": "text.v2Controls"
+    },
+    {
+      "id": "para.distribute",
+      "title": "Distribute",
+      "category": "format",
+      "keys": [
+        "Ctrl+Shift+J"
+      ],
+      "flag": "text.v2Controls"
+    },
+    {
+      "id": "para.lineSingle",
+      "title": "Single line spacing",
+      "category": "format",
+      "keys": [
+        "Ctrl+1"
+      ],
+      "flag": "text.v2Controls"
+    },
+    {
+      "id": "para.lineDouble",
+      "title": "Double line spacing",
+      "category": "format",
+      "keys": [
+        "Ctrl+2"
+      ],
+      "flag": "text.v2Controls"
+    },
+    {
+      "id": "para.line15",
+      "title": "One and a half line spacing",
+      "category": "format",
+      "keys": [
+        "Ctrl+5"
+      ],
+      "flag": "text.v2Controls"
+    },
+    {
+      "id": "para.spaceBefore",
+      "title": "Space before",
+      "category": "format",
+      "keys": [],
+      "flag": "text.v2Controls"
+    },
+    {
+      "id": "para.indent",
+      "title": "Increase indent",
+      "category": "format",
+      "keys": [
+        "Ctrl+M"
+      ],
+      "flag": "text.v2Controls"
+    },
+    {
+      "id": "para.outdent",
+      "title": "Decrease indent",
+      "category": "format",
+      "keys": [
+        "Ctrl+Shift+M"
+      ],
+      "flag": "text.v2Controls"
+    },
+    {
+      "id": "para.hanging",
+      "title": "Hanging indent",
+      "category": "format",
+      "keys": [
+        "Ctrl+T"
+      ],
+      "flag": "text.v2Controls"
+    },
+    {
+      "id": "para.removeHanging",
+      "title": "Remove hanging indent",
+      "category": "format",
+      "keys": [],
+      "flag": "text.v2Controls"
+    },
+    {
+      "id": "para.reset",
+      "title": "Reset paragraph formatting",
+      "category": "format",
+      "keys": [
+        "Ctrl+Q"
+      ],
+      "flag": "text.v2Controls"
+    },
+    {
+      "id": "insert.pageBreak",
+      "title": "Insert page break",
+      "category": "insert",
+      "keys": [
+        "Ctrl+Enter"
+      ],
+      "flag": "text.v2Controls"
+    },
+    {
+      "id": "format.applyStyle",
+      "title": "Apply style",
+      "category": "format",
+      "keys": [
+        "Ctrl+Shift+S"
+      ],
+      "flag": "text.v2Controls"
     },
     {
       "id": "insert.symbol",
