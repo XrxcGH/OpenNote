@@ -31,6 +31,7 @@ export class PageBook {
   private readonly members = new Set<BookMember>();
   private client: RecalcClient | null = null;
   private generation = 0;
+  private busy = false;
   private last: { raws: readonly Table[]; results: readonly Table[] } | null = null;
   // One environment per page: the engine compares it by identity and starts over for a new one (ADR 0065).
   private readonly env: EngineEnv = { today: () => todayDays() };
@@ -92,6 +93,13 @@ export class PageBook {
     return results[at];
   }
 
+  /** Tells the members the worker started or stopped, once for each change. */
+  private working(members: readonly BookMember[], on: boolean): void {
+    if (this.busy === on) return;
+    this.busy = on;
+    members.forEach((member) => member.working?.(on));
+  }
+
   /** Calculates the page and gives every member its results: at once on a small page, from the worker on a large one. */
   refresh(): void {
     const { members, raws } = this.raws();
@@ -100,7 +108,7 @@ export class PageBook {
       if (generation !== this.generation) return;
       if (!busy) {
         this.last = { raws, results };
-        members.forEach((member) => member.working?.(false));
+        this.working(members, false);
       }
       members.forEach((member, i) => this.members.has(member) && member.calculated(results[i], busy));
     };
@@ -108,11 +116,18 @@ export class PageBook {
     if (known) return give(known, false);
     if (!needsWorker(raws, this.options.threshold ?? WORKER_CELLS)) return give(recalculateBook(raws, this.env), false);
     this.client ??= createRecalcClient(this.options);
-    const done = this.client.recalc(raws, this.env, (late) => give(late, false));
+    // The worker's answer: the tables stop being busy at once, and draw their results in a task of their own, so
+    // the task that brings the answer stays short and a frame never waits for both.
+    const answer = (results: readonly Table[], busy: boolean) => {
+      if (generation !== this.generation) return;
+      if (!busy) this.working(members, false);
+      setTimeout(() => give(results, busy), 0);
+    };
+    const done = this.client.recalc(raws, this.env, (late) => answer(late, false));
     // The tables went to the worker inside recalc, so from here the page's thread is free until the answer.
-    members.forEach((member) => member.working?.(true));
+    this.working(members, true);
     void done.then((results) =>
-      give(
+      answer(
         results,
         results.some((table) => table.rows.some(isBusyRow)),
       ),

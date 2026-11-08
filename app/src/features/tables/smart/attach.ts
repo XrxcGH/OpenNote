@@ -13,6 +13,7 @@ import type { BlockJson } from '../../../services/pages/types';
 import type { TableExtraHandle, TableExtraHost } from '../../page';
 import { columnLetter, formatValue, totalsRow, hasTotals } from '../engine';
 import type { Table } from '../engine';
+import { WORKER_CELLS } from '../engine/worker/client';
 import { readSheet } from '../sheet/model';
 import type { Sheet } from '../sheet/model';
 import { applyPatch } from '../sheet/model/json';
@@ -217,6 +218,8 @@ class SmartTable implements SmartInstance, TableExtraHandle, BookMember {
     const stored = this.host.data();
     const sheet = sheetAfter(stored, extra);
     if (!sheet) return null;
+    // A table too large for the page's thread: the worker's results come after the edit, so skip the work here.
+    if (data.rows.length * data.columns.length > WORKER_CELLS) return null;
     const key = JSON.stringify([data.header, data.columns, data.rows, extra ?? null]);
     if (this.edited && this.edited.key === key && this.edited.stored === stored) return this.edited.patch;
     const smart = extra?.smart === undefined ? stored.smart : applyPatch(stored.smart as Json, extra.smart as Json);

@@ -3,34 +3,37 @@
  * a theme switch recolors everything. Chart series use the brand's pens through --chart-s0 to --chart-s6.
  */
 @layer components {
-  .shown {
-    position: relative;
-  }
-
-  /* Transparent, not hidden: a hidden paragraph cannot be clicked, so the caret would land in the next cell. */
+  /*
+   * Transparent, not hidden: a hidden paragraph cannot be clicked, so the caret would land in the next cell. It keeps
+   * to one line, the line the result covers.
+   */
   .shown > p {
+    overflow: hidden;
     color: transparent;
+    white-space: nowrap;
   }
 
-  .shown::after {
+  /*
+   * The result sits in the flow, one line high, and a negative margin of one line lays the paragraph over it. No
+   * positioned box or float: on a page of 30,000 cells, thousands of them made each frame take seconds to layer.
+   */
+  .shown::before {
     content: attr(data-shown);
-    position: absolute;
-    inset-block: 0;
-    inset-inline: var(--space-3);
-    display: flex;
-    align-items: center;
+    display: block;
+    block-size: 1lh;
+    margin-block-end: -1lh;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
     pointer-events: none;
   }
 
-  .number::after {
-    justify-content: flex-end;
+  .number::before {
+    text-align: end;
     font-variant-numeric: tabular-nums;
   }
 
-  .error::after {
+  .error::before {
     color: var(--color-status-danger);
   }
 
@@ -45,7 +48,7 @@
   }
 
   /* Still calculating in the worker: the token stays quiet, not red. */
-  .busy::after {
+  .busy::before {
     color: var(--color-text-secondary);
   }
 

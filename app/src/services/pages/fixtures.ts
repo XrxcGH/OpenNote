@@ -182,10 +182,14 @@ function tableOf(order: number, texts: readonly (readonly string[])[], extra: Re
   return block('table', order, { header: true, columns, rows, ...extra });
 }
 
-/** 3,000 rows of 10 cells, the last a formula: 30,000 cells, past the worker's threshold of 20,000. */
+/**
+ * 3,000 rows of 10 cells, the last a formula: 30,000 cells, past the worker's threshold of 20,000. Each formula also
+ * sums the rest of columns B to I, which adds nothing but keeps the worker busy for most of a second.
+ */
 function bigTable(order: number): BlockJson {
   const head = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
-  const body = Array.from({ length: 3000 }, (_, r) => [...head.slice(0, 9).map((_, c) => `${r + c}`), `=A${r + 1}+1`]);
+  const sum = (r: number) => `=A${r}+1+0*SUM(B${r}:I3000)`;
+  const body = Array.from({ length: 3000 }, (_, r) => [...head.slice(0, 9).map((_, c) => `${r + c}`), sum(r + 1)]);
   return tableOf(order, [head, ...body]);
 }
 
