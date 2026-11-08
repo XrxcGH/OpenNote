@@ -345,19 +345,20 @@ describe('saved views', () => {
   });
 });
 
-describe('the sheet integration', () => {
-  const ROWS = [
-    ['Item', 'Qty', 'Price', 'Total'],
-    ['Pen', '2', '1.5', '=B1*C1'],
-    ['Ink', '3', '4', '=D1*2'],
-  ];
-  const withSheet = (texts: readonly (readonly string[])[], sheet: Record<string, unknown> = {}) => ({
-    ...dataOf(texts),
-    sheet,
-  });
-  const resultsOf = (data: TableData, stored: Record<string, unknown>) =>
-    buildModel(gridOfData(data), readSmart(stored), EN_US, readSheet(stored)).table;
+// The sheet integration (ADR 0061, ADR 0062, ADR 0065): the value cache, the error display, the worker, and menus.
+const ROWS = [
+  ['Item', 'Qty', 'Price', 'Total'],
+  ['Pen', '2', '1.5', '=B1*C1'],
+  ['Ink', '3', '4', '=D1*2'],
+];
+const withSheet = (texts: readonly (readonly string[])[], sheet: Record<string, unknown> = {}) => ({
+  ...dataOf(texts),
+  sheet,
+});
+const resultsOf = (data: TableData, stored: Record<string, unknown>) =>
+  buildModel(gridOfData(data), readSmart(stored), EN_US, readSheet(stored)).table;
 
+describe('the value cache', () => {
   it('writes the results of every dependent formula with the edit that changed an input (ADR 0061)', () => {
     const stored = withSheet(ROWS);
     const first = valuesPatch(stored, stored, undefined, resultsOf(stored, stored));
@@ -412,7 +413,9 @@ describe('the sheet integration', () => {
       },
     ]);
   });
+});
 
+describe('the error display', () => {
   it('shows the Excel error token with the words in a tooltip and a description for screen readers', () => {
     const data = dataOf([...ROWS.slice(0, 1), ['x', '0', '1', '=C1/B1']]);
     const model = buildModel(gridOfData(data), EMPTY_SMART, EN_US);
@@ -465,7 +468,9 @@ describe('the sheet integration', () => {
       ['1,1', 'rb'],
     ]);
   });
+});
 
+describe('the worker and the menus', () => {
   it('calculates a page of 30,000 cells in the worker and hands every table its results', async () => {
     const head = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
     const body = Array.from({ length: 3000 }, (_, r) => ['1', '2', '3', '4', '5', '6', '7', '8', '9', `=A${r + 1}+1`]);

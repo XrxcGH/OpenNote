@@ -132,7 +132,7 @@ export function prepareModel(grid: Grid, smart: SmartData, locale: Locale, sheet
   return { raw: { columns, rows, ...rules }, offset, columnIds: grid.columnIds, names };
 }
 
-/** The model of a table whose formulas have run: `table` is `prepared.raw` calculated, alone or with its page. */
+/** The model of a table whose formulas have run: `table` is `prepared.raw` calculated on its own or with its page. */
 export function finishModel(prepared: Prepared, table: Table, smart: SmartData): SmartModel {
   const { offset, columnIds, names } = prepared;
   const conditions = smart.filters.flatMap((filter): FilterCondition[] => {
