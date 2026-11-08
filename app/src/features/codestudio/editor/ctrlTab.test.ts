@@ -69,9 +69,13 @@ const later =
     );
 
 beforeAll(configureTestCommands);
-// The page feature loads its style store with a dynamic import nothing awaits; a load that outlives the file fails the
-// teardown.
-afterAll(() => vi.dynamicImportSettled());
+// The page feature loads its style store with a dynamic import nothing awaits, and a tab change schedules React work on
+// a later turn. Either one that outlives the file fails the teardown, so the file waits for both.
+afterAll(async () => {
+  await vi.dynamicImportSettled();
+  await new Promise((resolve) => setImmediate(resolve));
+  await new Promise((resolve) => setImmediate(resolve));
+});
 
 beforeEach(() => {
   resetSettings();
