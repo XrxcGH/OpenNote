@@ -1,7 +1,8 @@
 // The Layout commands that change the page or the text block with the caret: columns, vertical text, line numbers, and
 // the header and footer dialog. They load on first use; registrations/layout.ts holds only the definitions.
 import { createElement } from 'react';
-import { applyLayoutPatch, layoutPatch, readLineNumbers, readTextLayout, type TextLayout } from '../../pages';
+import { applyLayoutPatch, layoutPatch, readTextLayout, type TextLayout } from '../../../services/pages/textLayout';
+import { readLineNumbers } from '../../../services/pages/headerFooter';
 import type { BlockJson } from '../../../services/pages/types';
 import { t } from '../../../strings/t';
 import { announce } from '../../../ui';

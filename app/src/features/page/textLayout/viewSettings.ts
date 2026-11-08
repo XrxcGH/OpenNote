@@ -1,6 +1,6 @@
 // What the Header, footer, and page numbers dialog edits, and the merge patch of the page's view that saving sends.
 // The patch is RFC 7396: a part left empty is sent as null, so it is removed from a band that had it.
-import type { PageNumberFormat } from '../../pages';
+import type { PageNumberFormat } from '../../../services/pages/headerFooter';
 
 type Parts = { left: string; center: string; right: string };
 

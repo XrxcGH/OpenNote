@@ -11,7 +11,7 @@ import {
   type BandParts,
   type BandTemplate,
   type PageNumberFormat,
-} from '../../pages';
+} from '../../../services/pages/headerFooter';
 import { t } from '../../../strings/t';
 import { Dialog, Switch, TextField } from '../../../ui';
 import { viewPatch, type FooterForm, type HeaderFooterForm } from './viewSettings';

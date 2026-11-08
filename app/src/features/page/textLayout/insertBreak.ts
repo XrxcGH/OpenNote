@@ -3,7 +3,7 @@
 // the text after moves to a new text block below it. The edits go to the core as one step, which one undo removes.
 import { newId } from '../../../editor/ids';
 import { META_REMOTE } from '../../../editor/meta';
-import { BREAK_FALLBACK, type BreakKind } from '../../pages';
+import { BREAK_FALLBACK, type BreakKind } from '../../../services/pages/textLayout';
 import type { BlockId, BlockJson, Edit } from '../../../services/pages/types';
 import { syncOf } from '../blocks/textBlock';
 import { announce } from '../../../ui';

@@ -11,10 +11,10 @@ import { announce } from '../../../ui';
 import { targetEditor } from '../formattingBar/target';
 import { pageCommandDef, type PageCommandId } from '../keys';
 import { blockRenderers, slashItems } from '../registries';
-import { shownPagesView } from '../../pages';
-import { shownLayer } from '../mount';
+import { shownPaginated } from '../seams/paginated';
+import { shownMounted } from '../pagesApi';
 import { shownPool } from '../pool/shown';
-import { shownQueue } from '../sync';
+import { shownQueue } from '../sync/shown';
 import { breakBlockRenderer } from '../textLayout/breakBlock';
 
 const FLAG = 'text.layout' as const;
@@ -36,7 +36,7 @@ const haveText = () => targetEditor() !== null;
 /** A break splits the block with the caret, so a locked block turns the commands off. */
 const unlocked = () => {
   const active = shownPool.get()?.active();
-  return !(active && shownLayer.get()?.block(active.block)?.lock);
+  return !(active && shownMounted.get()?.layer.block(active.block)?.lock);
 };
 const havePage = () => shownQueue.get() !== null;
 /** Ctrl+Enter is Check or uncheck inside a task item, so the chord is not a page break there. */
@@ -45,7 +45,7 @@ const inTask = () => {
   return editor !== null && inTaskItem(editor.state);
 };
 /** The chord is a page break only on a paginated page; the Insert menu works on any page. */
-const paginated = () => shownPagesView.get()?.state().mode === 'paginated';
+const paginated = () => shownPaginated.get();
 
 interface Def {
   readonly id: PageCommandId;

@@ -319,7 +319,9 @@ export function readExportPage(raw: unknown, strokes: readonly ExportStroke[] = 
 /** True when a block is positioned on the page: its frame has both `x` and `y` (format spec 6.2). */
 export function isFloating(block: ExportBlock): boolean {
   // A break has no frame (R-BRK-1): a reader ignores one.
-  return !(block.type === 'other' && block.kind === 'break') && block.frame?.x !== undefined && block.frame?.y !== undefined;
+  return (
+    !(block.type === 'other' && block.kind === 'break') && block.frame?.x !== undefined && block.frame?.y !== undefined
+  );
 }
 
 /** Gives the labeled display equations their numbers and resolves references, across the page's text in reading order. */

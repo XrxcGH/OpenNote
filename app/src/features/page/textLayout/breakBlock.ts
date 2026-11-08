@@ -1,9 +1,8 @@
 // The break block's view: a dashed rule with the break's name, so a break reads as a break and not as a divider. In a
 // version 1 app the same block shows as a divider through its fallback. The paginator turns it into a new sheet.
-import { readBreakKind } from '../../pages';
+import { readBreakKind } from '../../../services/pages/textLayout';
 import type { BlockJson } from '../../../services/pages/types';
 import { t } from '../../../strings/t';
-import { placeBlock } from '../blocks/textBlock';
 import type { BlockRendererDef } from '../blocks/types';
 import styles from './breakBlock.module.css';
 
@@ -31,7 +30,6 @@ export const breakBlockRenderer: BlockRendererDef = {
       caption.textContent = text;
       element.setAttribute('aria-label', text);
       element.dataset.breakKind = readBreakKind(next.data);
-      placeBlock(element, next);
     };
     draw(block);
     return {

@@ -50,7 +50,8 @@ interface BlockSpacers {
   readonly lines: { at: LineStart; push: number }[];
 }
 
-const isFloating = (block: BlockJson): boolean => block.type !== 'break' && block.frame?.x !== undefined && block.frame?.y !== undefined;
+const isFloating = (block: BlockJson): boolean =>
+  block.type !== 'break' && block.frame?.x !== undefined && block.frame?.y !== undefined;
 const HEADING = /^H[1-6]$/;
 const MAX_SHEETS = 2_000;
 /** The most times one run lays the page out again because a ruled pad moved: a page whose pads never settle stops here. */

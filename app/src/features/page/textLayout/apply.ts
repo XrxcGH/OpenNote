@@ -2,7 +2,7 @@
 // wrapper is the element the page view places, so CSS columns balance the block's paragraphs and the editor inside
 // stays one editor. The page's text:layout flag gates it, so a page with columns still shows one column when it is off.
 import { isEnabled } from '../../../app/flags';
-import { layoutCss, readTextLayout } from '../../pages';
+import { layoutCss, readTextLayout } from '../../../services/pages/textLayout';
 import type { BlockJson } from '../../../services/pages/types';
 
 const PROPS = ['column-count', 'column-gap', 'column-rule', 'writing-mode'] as const;

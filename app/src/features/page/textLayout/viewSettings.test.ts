@@ -1,7 +1,7 @@
 // The header, footer, and page numbers form and the merge patch it sends. The patch is applied with RFC 7396 and the
 // result is read back the way print reads it, so the dialog and the print plan agree.
 import { describe, expect, it } from 'vitest';
-import { readLineNumbers, readPageNumbers, readSavedBands } from '../../pages';
+import { readLineNumbers, readPageNumbers, readSavedBands } from '../../../services/pages/headerFooter';
 import { formFrom, validForm } from './HeaderFooterDialog';
 import { viewPatch } from './viewSettings';
 
