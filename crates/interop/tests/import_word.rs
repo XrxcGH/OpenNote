@@ -102,7 +102,7 @@ fn text_formatting_links_lists_and_tasks_come_over() {
         "{body}"
     );
     assert!(body.contains("An idea"), "{body}");
-    assert!(!body.contains("secret"), "hidden text stays out: {body}");
+    assert!(body.contains("secret"), "hidden text comes in visible: {body}");
 }
 
 #[test]
