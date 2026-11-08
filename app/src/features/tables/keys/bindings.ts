@@ -68,7 +68,7 @@ export const SHEET_KEYS: readonly SheetKeyDef[] = [
   def('edit', ['F2'], GRID),
   def('clear', ['Delete'], GRID),
   def('clearAndEdit', ['Backspace'], GRID),
-  def('selectColumn', ['Ctrl+Space'], GRID),
+  def('selectColumn', ['Ctrl+Space'], GRID, false, 'format.clearCharacter'),
   def('selectRegion', ['Ctrl+A'], GRID),
   def('fillDown', ['Ctrl+D'], GRID, true, 'table.fillDown'),
   def('fillRight', ['Ctrl+R'], GRID, true, 'table.fillRight'),
