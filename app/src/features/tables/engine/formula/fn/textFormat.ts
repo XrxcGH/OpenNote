@@ -15,7 +15,7 @@ import {
 import { makeArray } from '../../arrays';
 import { compile, renderCompiled } from '../../numfmt';
 import { EN_US } from '../../locale';
-import { array, bool, define, int, num, roundAt, text, tooLong, value } from './textKit';
+import { MAX_DECIMALS, array, bool, define, int, num, roundAt, text, tooLong, value } from './textKit';
 import type { FnSpec2 } from './types';
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -182,6 +182,7 @@ export const formatFunctions: readonly FnSpec2[] = [
       const digits = int(d, 2);
       if (typeof n !== 'number') return n;
       if (typeof digits !== 'number') return digits;
+      if (digits > MAX_DECIMALS) return err('VALUE');
       const places = Math.max(digits, 0);
       const code = `$#,##0${zeros(places)};($#,##0${zeros(places)})`;
       return formatted(roundAt(n, digits), code);
@@ -197,6 +198,7 @@ export const formatFunctions: readonly FnSpec2[] = [
       const plain = c === undefined ? false : toScalar(c) === true || (typeof toScalar(c) === 'number' && c !== 0);
       if (typeof n !== 'number') return n;
       if (typeof digits !== 'number') return digits;
+      if (digits > MAX_DECIMALS) return err('VALUE');
       const code = `${plain ? '0' : '#,##0'}${zeros(Math.max(digits, 0))}`;
       return formatted(roundAt(n, digits), code);
     },

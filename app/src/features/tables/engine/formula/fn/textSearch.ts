@@ -1,3 +1,5 @@
+import { mapCase } from './textKit';
+
 // SEARCH with wildcards (? and *, with ~ to escape them). Owner: tables:fn-text.
 //
 // The pattern behaves as if a star followed it, so a match need only start at a position. It is cut at its stars into
@@ -10,7 +12,8 @@ const ONE = 1;
 type Token = string | typeof STAR | typeof ONE;
 
 function tokenize(find: string): Token[] {
-  const chars = Array.from(find.toLowerCase());
+  // UTF-16 units, as LEN, FIND, and MID count, so "?" is one unit and positions stay in the original text.
+  const chars = mapCase(find, false).split('');
   const tokens: Token[] = [];
   for (let i = 0; i < chars.length; i++) {
     const c = chars[i];
@@ -41,14 +44,7 @@ function foundInOrder(pieces: readonly (readonly Token[])[], text: readonly stri
 
 /** The index (in UTF-16 units) of the first match of a wildcard pattern at or after `from`, or -1. */
 export function wildcardSearch(find: string, within: string, from: number): number {
-  const text = Array.from(within.toLowerCase());
-  const offset: number[] = [];
-  let units = 0;
-  for (const ch of text) {
-    offset.push(units);
-    units += ch.length;
-  }
-  offset.push(units);
+  const text = mapCase(within, false).split('');
   const pieces: Token[][] = [[]];
   for (const t of tokenize(find)) {
     if (t === STAR) pieces.push([]);
@@ -56,11 +52,10 @@ export function wildcardSearch(find: string, within: string, from: number): numb
   }
   const head = pieces[0];
   const rest = pieces.slice(1).filter((p) => p.length > 0);
-  let start = 0;
-  while (start < text.length && offset[start] < from) start++;
+  const start = Math.max(from, 0);
   for (let i = start; i <= text.length; i++) {
     if (!pieceAt(head, text, i)) continue;
-    return foundInOrder(rest, text, i + head.length) ? offset[i] : -1;
+    return foundInOrder(rest, text, i + head.length) ? i : -1;
   }
   return -1;
 }

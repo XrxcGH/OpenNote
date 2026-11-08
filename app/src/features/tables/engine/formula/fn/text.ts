@@ -4,7 +4,7 @@
 
 import { err, toScalar, toText, type Value } from '../../values';
 import { hasWildcard } from './criteria';
-import { MAX_TEXT, define, int, num, text, tooLong, value } from './textKit';
+import { MAX_TEXT, define, mapCase, int, num, text, tooLong, value } from './textKit';
 import { wildcardSearch } from './textSearch';
 import type { FnSpec2, Param } from './types';
 import { formatFunctions } from './textFormat';
@@ -36,7 +36,7 @@ function codeOf(ch: string): number {
 
 /** The index of the first match of a wildcard pattern (? and *, ~ escapes) at or after `from`, or -1. */
 function searchFrom(find: string, within: string, from: number): number {
-  if (!hasWildcard(find)) return within.toLowerCase().indexOf(find.replace(/~([*?~])/g, '$1').toLowerCase(), from);
+  if (!hasWildcard(find)) return mapCase(within, false).indexOf(mapCase(find.replace(/~([*?~])/g, '$1'), false), from);
   return wildcardSearch(find, within, from);
 }
 
@@ -164,8 +164,8 @@ export const functions: readonly FnSpec2[] = [
   concat('CONCATENATE', 'text'),
   LEN,
   bytes('LENB', LEN),
-  text1('LOWER', (s) => s.toLowerCase(), '=LOWER("Ink") gives ink'),
-  text1('UPPER', (s) => s.toUpperCase(), '=UPPER("Ink") gives INK'),
+  text1('LOWER', (s) => mapCase(s, false), '=LOWER("Ink") gives ink'),
+  text1('UPPER', (s) => mapCase(s, true), '=UPPER("Ink") gives INK'),
   text1('TRIM', (s) => s.replace(/^ +| +$/g, '').replace(/ {2,}/g, ' '), '=TRIM("  a   b ") gives a b'),
   LEFT,
   bytes('LEFTB', LEFT),
@@ -186,7 +186,7 @@ export const functions: readonly FnSpec2[] = [
       let inWord = false;
       for (const ch of s) {
         const letter = /\p{L}/u.test(ch);
-        out += letter ? (inWord ? ch.toLowerCase() : ch.toUpperCase()) : ch;
+        out += letter ? mapCase(ch, !inWord) : ch;
         inWord = letter;
       }
       return out;

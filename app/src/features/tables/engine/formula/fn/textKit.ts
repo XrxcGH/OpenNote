@@ -4,6 +4,19 @@
 import { err, isArray, toNumber, toScalar, toText, type FormulaError, type Value } from '../../values';
 import type { FnSpec2, Param } from './types';
 
+/** Lower or upper case one character at a time, keeping any character whose case form has another length. */
+export function mapCase(s: string, upper: boolean): string {
+  let out = '';
+  for (const ch of s) {
+    const m = upper ? ch.toUpperCase() : ch.toLowerCase();
+    out += m.length === ch.length ? m : ch;
+  }
+  return out;
+}
+
+/** The most decimal places DOLLAR and FIXED accept. More give #VALUE!. */
+export const MAX_DECIMALS = 127;
+
 /** The most characters a cell holds. A function that would build more gives #VALUE!. */
 export const MAX_TEXT = 32767;
 
@@ -77,9 +90,12 @@ export const tooLong = (s: string): FormulaError | string => (s.length > MAX_TEX
 
 /** Rounds half away from zero at a number of decimal digits, by shifting the exponent so 1.005 rounds as written. */
 export function roundAt(n: number, digits: number): number {
+  // Past 15 significant digits there is nothing left to round, and shifting the exponent could overflow.
+  if (!Number.isFinite(n) || n === 0 || Math.floor(Math.log10(Math.abs(n))) + digits >= 15) return n;
   const shift = (x: number, d: number): number => {
     const [mantissa, exponent] = x.toExponential().split('e');
     return Number(`${mantissa}e${Number(exponent) + d}`);
   };
-  return Math.sign(n) * shift(Math.round(shift(Math.abs(n), digits)), -digits);
+  const out = Math.sign(n) * shift(Math.round(shift(Math.abs(n), digits)), -digits);
+  return Number.isFinite(out) ? out : n;
 }

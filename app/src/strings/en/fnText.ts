@@ -377,4 +377,11 @@ export const fnText = {
   },
   regexPatternTooLong: 'A regular expression can have at most 1,000 characters.',
   regexInputTooLong: 'Text matched by a regular expression can have at most 32,768 characters.',
+  regexBackreference: 'A regular expression cannot use a back-reference, because matching it can take too long.',
+  regexNestedRepeat:
+    'A regular expression cannot repeat a part that has its own repeat or overlapping choices, such as (a+)+. ' +
+    'Matching it can take too long.',
+  regexTooComplex:
+    'This text is too long for a pattern with this many repeating parts. ' +
+    'Use a shorter text or fewer repeats such as * and +.',
 } as const;

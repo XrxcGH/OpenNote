@@ -1,11 +1,13 @@
 // Regular expression functions. Owner: tables:fn-text. They run on the JavaScript engine's RegExp (plan decision 6),
 // inside two limits: a pattern of at most 1,000 characters and an input of at most 32,768 characters. A call over
-// either limit gives #VALUE!. The "v" flag is tried first, then "u", then none, so a pattern written for PCRE or RE2
-// that the strict modes refuse still runs. Excel's functions take (text, pattern, ...); Sheets' REGEXMATCH and the
-// two- and three-argument forms of REGEXEXTRACT and REGEXREPLACE are accepted too.
+// either limit gives #VALUE!, and so does a pattern that could take exponential time (regexGuard.ts). The "v" flag
+// is tried first, then "u", then none, so a pattern written for PCRE or RE2 that the strict modes refuse still
+// runs. Excel's functions take (text, pattern, ...); Sheets' REGEXMATCH and the two- and three-argument forms of
+// REGEXEXTRACT and REGEXREPLACE are accepted too.
 
 import { makeArray } from '../../arrays';
-import { err, toNumber, toText, type FormulaError, type Scalar, type Value } from '../../values';
+import { err, errBecause, toNumber, toText, type FormulaError, type Scalar, type Value } from '../../values';
+import { guardInputLimit, guardPattern } from './regexGuard';
 import type { FnSpec2, Param } from './types';
 
 /** The longest pattern, in characters. */
@@ -62,7 +64,13 @@ function prepare(t: Value, p: Value, caseMode: Value | undefined): Prepared | Fo
     if (n !== 0 && n !== 1) return err('VALUE');
     ignoreCase = n === 1;
   }
-  if (regexLimitProblem(text, pattern) !== null) return err('VALUE');
+  const limit = regexLimitProblem(text, pattern);
+  if (limit !== null) return errBecause('VALUE', limit);
+  // A formula runs on the page's thread and RegExp cannot be interrupted, so a pattern that can take exponential or
+  // high-power time is refused before it runs (see regexGuard.ts).
+  const guard = guardPattern(pattern);
+  if (typeof guard === 'string') return errBecause('VALUE', guard);
+  if (text.length > guardInputLimit(guard)) return errBecause('VALUE', 'regexTooComplex');
   const re = build(pattern, ignoreCase);
   return re === null ? err('VALUE') : { text, re };
 }

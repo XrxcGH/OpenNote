@@ -2,7 +2,7 @@
 // Owner: tables:fn-text.
 import { err, isArray, isError, toScalar, toText, type Scalar, type Value } from '../../values';
 import { makeArray } from '../../arrays';
-import { MAX_TEXT, array, bool, define, int, listOf, num, text, tooLong, value } from './textKit';
+import { MAX_TEXT, array, mapCase, bool, define, int, listOf, num, text, tooLong, value } from './textKit';
 import type { FnSpec2 } from './types';
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -15,6 +15,11 @@ interface Hit {
 
 /** The most distinct delimiters one call accepts. More give #VALUE!, so a huge range cannot make a scan crawl. */
 export const MAX_DELIMITERS = 1000;
+/**
+ * The most delimiter characters one call accepts, all delimiters together. A scan compares the delimiters that start
+ * with the same character at every position, so this bounds the work to about the text length times this number.
+ */
+export const MAX_DELIMITER_CHARS = 4096;
 /** The most cells TEXTSPLIT builds. More give #VALUE!. */
 export const MAX_SPLIT_CELLS = 1_000_000;
 
@@ -29,8 +34,11 @@ interface Delimiters {
 
 function prepareDelimiters(list: readonly string[], ci: boolean): Delimiters | null {
   const set = new Set<string>();
-  for (const d of list) if (d !== '') set.add(ci ? d.toLowerCase() : d);
+  for (const d of list) if (d !== '') set.add(ci ? mapCase(d, false) : d);
   if (set.size > MAX_DELIMITERS) return null;
+  let chars = 0;
+  for (const d of set) chars += d.length;
+  if (chars > MAX_DELIMITER_CHARS) return null;
   const first = new Map<string, string[]>();
   const last = new Map<string, string[]>();
   for (const d of [...set].sort((x, y) => y.length - x.length)) {
@@ -61,7 +69,7 @@ function matchEndingAt(hay: string, end: number, ds: Delimiters): number {
 
 /** Splits at every delimiter, scanning left to right without overlap. */
 function splitAt(source: string, ds: Delimiters): string[] {
-  const hay = ds.ci ? source.toLowerCase() : source;
+  const hay = ds.ci ? mapCase(source, false) : source;
   const out: string[] = [];
   let from = 0;
   let i = 0;
@@ -79,7 +87,7 @@ function splitAt(source: string, ds: Delimiters): string[] {
 
 /** Every delimiter hit, left to right, or right to left when `fromEnd` is set. Hits never overlap. */
 function hitsOf(source: string, ds: Delimiters, fromEnd: boolean): Hit[] {
-  const hay = ds.ci ? source.toLowerCase() : source;
+  const hay = ds.ci ? mapCase(source, false) : source;
   const hits: Hit[] = [];
   if (!fromEnd) {
     for (let i = 0; i < source.length;) {

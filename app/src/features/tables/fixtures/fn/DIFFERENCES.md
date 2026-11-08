@@ -25,3 +25,9 @@ own lines here. "Not yet checked" means no fixture pins that app's answer yet.
 | Regular expression flavor                            | PCRE2                                                                    | RE2                                          | The JavaScript engine (flag v, then u, then none). A pattern over 1,000 characters or an input over 32,768 is `#VALUE!` |
 | `REGEXEXTRACT` mode 2 on a pattern with no group     | Not yet checked                                                          | Not applicable                               | `#VALUE!`                                                                                                               |
 | `ARRAYTOTEXT` strict form of one value               | Not yet checked                                                          | Not applicable                               | The value without braces                                                                                                |
+
+## REGEX guard (B10 gap fixes)
+
+- A pattern runs on the JavaScript engine, which backtracks and cannot be interrupted, and formulas run on the page thread. So a static guard (regexGuard.ts) refuses, with #VALUE!, a back-reference, a repeated group that holds a repeat or overlapping choices, and a long text with several repeating parts. Excel's engine has no such refusals, so a few safe patterns give #VALUE! here.
+- TEXTSPLIT, TEXTBEFORE, TEXTAFTER, and SPLIT accept at most 4,096 delimiter characters in all.
+- FIXED and DOLLAR give #VALUE! for more than 127 decimals.
