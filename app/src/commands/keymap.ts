@@ -164,9 +164,11 @@ export function setChangeFor(id: CommandId): SetChange | null {
   const takenBy = base
     .filter((chord) => !here.includes(chord))
     .flatMap((chord) => {
-      const other = commands
+      // A command that works only inside the code editor comes second: the window-wide one is why the key moved.
+      const users = commands
         .list()
-        .find((o) => o.id !== id && setKeys(o, preset).includes(chord) && scopesOverlap(def.scope, o.scope));
+        .filter((o) => o.id !== id && setKeys(o, preset).includes(chord) && scopesOverlap(def.scope, o.scope));
+      const other = users.find((o) => o.scope !== 'codeEditor') ?? users[0];
       return other ? [{ chord, id: other.id }] : [];
     });
   return { defaultKeys: base, takenBy };
