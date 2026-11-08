@@ -147,51 +147,98 @@ function markOf(ch: string, use: number): Mark {
   return use === 2 ? 'strong' : 'emphasis';
 }
 
-/** The nearest delimiter before `at` that can open a mark closed by `closer`, or -1. */
-function findOpener(nodes: readonly Node[], at: number, closer: Delim): number {
-  const doubled = closer.ch === '~' || closer.ch === '=';
-  for (let j = at - 1; j >= 0; j -= 1) {
-    const o = nodes[j];
-    if (o.t !== 'delim' || o.ch !== closer.ch || !o.canOpen || o.count <= 0) continue;
-    if (doubled ? o.count >= 2 && closer.count >= 2 : !multipleOfThree(o, closer)) return j;
-  }
-  return -1;
+/** An item of the doubly linked list that `resolveDelims` works on, so a match costs only the nodes it takes in. */
+interface Link {
+  node: Node;
+  prev: Link | null;
+  next: Link | null;
+  dead: boolean;
 }
 
-/** Matches openers with closers, innermost first, as CommonMark's emphasis rules say. */
-function resolveDelims(input: Node[]): Node[] {
-  const nodes = [...input];
-  let i = 0;
-  while (i < nodes.length) {
-    const closer = nodes[i];
-    if (closer.t !== 'delim' || !closer.canClose) {
-      i += 1;
-      continue;
-    }
-    const found = findOpener(nodes, i, closer);
-    if (found < 0) {
-      i += 1;
-      continue;
-    }
-    const opener = nodes[found] as Delim;
-    const use = closer.ch === '*' || closer.ch === '_' ? (opener.count >= 2 && closer.count >= 2 ? 2 : 1) : 2;
-    const children = nodes.slice(found + 1, i).map(nodeToText);
-    const wrapper: Wrapper = { t: 'mark', mark: markOf(closer.ch, use), children };
-    opener.count -= use;
-    closer.count -= use;
-    const keepOpener = opener.count > 0;
-    const keepCloser = closer.count > 0;
-    nodes.splice(found + 1, i - found - 1, wrapper);
-    i = found + 2;
-    if (!keepCloser) {
-      nodes.splice(i, 1);
-    }
-    if (!keepOpener) {
-      nodes.splice(found, 1);
-      i -= 1;
-    }
+/**
+ * The kind of a closer for the openers_bottom table of CommonMark: closers of one kind accept the same openers, so
+ * when one finds none, no later closer of that kind needs to look below it.
+ */
+function bottomKey(closer: Delim): string {
+  if (closer.ch === '~' || closer.ch === '=') return `${closer.ch}${closer.count >= 2 ? 2 : 1}`;
+  return `${closer.ch}${closer.canOpen ? 1 : 0}${closer.count % 3}`;
+}
+
+/** The nearest item before `closer` that can open a mark closed by it, stopping at `bottom`, or null. */
+function findOpener(closer: Link, bottom: Link | null): Link | null {
+  const c = closer.node as Delim;
+  const doubled = c.ch === '~' || c.ch === '=';
+  for (let o = closer.prev; o !== null && o !== bottom; o = o.prev) {
+    const n = o.node;
+    if (n.t !== 'delim' || n.ch !== c.ch || !n.canOpen || n.count <= 0) continue;
+    if (doubled ? n.count >= 2 && c.count >= 2 : !multipleOfThree(n, c)) return o;
   }
-  return nodes.map(nodeToText);
+  return null;
+}
+
+function unlink(item: Link): void {
+  if (item.prev) item.prev.next = item.next;
+  if (item.next) item.next.prev = item.prev;
+  item.dead = true;
+}
+
+/**
+ * Matches openers with closers, innermost first, as CommonMark's emphasis rules say. The list and the
+ * openers_bottom table keep the work linear: a closer that finds no opener tells every later closer of its kind where
+ * not to look, and a match changes only the links it touches.
+ */
+function resolveDelims(input: Node[]): Node[] {
+  if (!input.some((n) => n.t === 'delim')) return input.map(nodeToText);
+  const head: Link = { node: { t: 'text', s: '' }, prev: null, next: null, dead: false };
+  let tail = head;
+  for (const node of input) {
+    const item: Link = { node, prev: tail, next: null, dead: false };
+    tail.next = item;
+    tail = item;
+  }
+  const bottoms = new Map<string, Link>();
+  let closer: Link | null = head.next;
+  while (closer !== null) {
+    const cn: Node = closer.node;
+    if (cn.t !== 'delim' || !cn.canClose || cn.count <= 0) {
+      closer = closer.next;
+      continue;
+    }
+    const key = bottomKey(cn);
+    const opener = findOpener(closer, bottoms.get(key) ?? null);
+    if (opener === null) {
+      bottoms.set(key, closer.prev as Link);
+      closer = closer.next;
+      continue;
+    }
+    const on = opener.node as Delim;
+    const use = cn.ch === '*' || cn.ch === '_' ? (on.count >= 2 && cn.count >= 2 ? 2 : 1) : 2;
+    const children: Node[] = [];
+    for (let o = opener.next as Link; o !== closer; o = o.next as Link) {
+      children.push(nodeToText(o.node));
+      o.dead = true;
+    }
+    const wrapper: Link = {
+      node: { t: 'mark', mark: markOf(cn.ch, use), children } satisfies Wrapper,
+      prev: opener,
+      next: closer,
+      dead: false,
+    };
+    opener.next = wrapper;
+    closer.prev = wrapper;
+    on.count -= use;
+    cn.count -= use;
+    const resume = cn.count > 0 ? closer : closer.next;
+    if (cn.count <= 0) unlink(closer);
+    // A bottom inside the nodes just taken in moves down to the opener, which is no better a place to start from.
+    const below = on.count > 0 ? opener : (opener.prev as Link);
+    if (on.count <= 0) unlink(opener);
+    for (const [k, b] of bottoms) if (b.dead) bottoms.set(k, below);
+    closer = resume;
+  }
+  const out: Node[] = [];
+  for (let o = head.next; o !== null; o = o.next) out.push(nodeToText(o.node));
+  return out;
 }
 
 /** The neutral key of a mark, which is also its kind: a text can hold one mark of each kind (R-MRK-28). */

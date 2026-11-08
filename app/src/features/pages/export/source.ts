@@ -42,7 +42,7 @@ export interface TextBlock extends BlockBase {
 
 /** What a text block keeps beside its Markdown for each element (format spec 6.6 and 6.8). */
 export interface TextElements {
-  readonly ids: readonly string[];
+  readonly ids: readonly (string | null)[];
   readonly paras: Readonly<Record<string, unknown>>;
   readonly styles: Readonly<Record<string, string>>;
 }
@@ -193,8 +193,9 @@ function readFrame(raw: Json | undefined): Frame | undefined {
 
 /** The element data of a text block, or undefined when it names no element. */
 function readElements(data: JsonObject): TextElements | undefined {
-  const ids = Array.isArray(data.ids) ? data.ids.filter((id): id is string => typeof id === 'string') : [];
-  if (ids.length === 0) return undefined;
+  // A damaged entry keeps its place as null, because the editor indexes data.ids by position.
+  const ids = Array.isArray(data.ids) ? data.ids.map((id): string | null => (typeof id === 'string' ? id : null)) : [];
+  if (!ids.some((id) => id !== null)) return undefined;
   const paras: Record<string, unknown> = Object.create(null) as Record<string, unknown>;
   if (isObject(data.paras)) for (const [id, entry] of Object.entries(data.paras)) paras[id] = entry;
   const styles: Record<string, string> = Object.create(null) as Record<string, string>;

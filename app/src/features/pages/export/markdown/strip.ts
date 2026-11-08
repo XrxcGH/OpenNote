@@ -58,6 +58,35 @@ function codeSpanEnd(text: string, at: number): number {
 /** The reader keeps a tag that would nest deeper than this as text. */
 const MAX_DEPTH = 32;
 
+/** The length of the run of `ch` that ends `text` (or starts it, when `atEnd` is false). */
+function runLength(text: string, ch: string, atEnd: boolean): number {
+  let n = 0;
+  while (n < text.length && text[atEnd ? text.length - 1 - n : n] === ch) n += 1;
+  return n;
+}
+
+/**
+ * `left` and `right` were apart by a tag that is now gone. Text that would join into a new construct is kept apart.
+ * Two equal runs of a delimiter (backtick, *, _, ~) that close one span and open the next become one span, which reads
+ * the same, because `a` and `b` side by side are one code span with the text ab. A `<` that would join a name into a
+ * tag is escaped.
+ */
+function joinAcrossGap(left: string, right: string): string {
+  const last = left.at(-1) ?? '';
+  if (last === '<' && left.at(-2) !== '\\' && /^[A-Za-z/]/.test(right)) return `${left.slice(0, -1)}\\<${right}`;
+  if ('`*_~'.includes(last) && right[0] === last) {
+    const n = runLength(left, last, true);
+    const m = runLength(right, last, false);
+    const before = left[left.length - n - 1];
+    const after = right[m];
+    const spaced = (c: string | undefined) => c === undefined || /\s/.test(c);
+    if (n === m && !spaced(before) && before !== '\\' && !spaced(after)) {
+      return left.slice(0, left.length - n) + right.slice(m);
+    }
+  }
+  return left + right;
+}
+
 /** The text of one inline unit without the tags of version 2 that Markdown cannot hold. */
 function stripUnit(markdown: string): string {
   if (!markdown.includes('<')) return markdown;
@@ -118,20 +147,37 @@ function stripUnit(markdown: string): string {
   const stack: Extract<Piece, { open: string }>[] = [];
   let dropping = 0;
   let out = '';
+  // Set when a tag was taken out, so the text on both sides of it can no longer join into something new.
+  let gap = false;
+  const emit = (text: string) => {
+    if (text === '') return;
+    out = gap ? joinAcrossGap(out, text) : out + text;
+    gap = false;
+  };
   for (const piece of pieces) {
     if ('text' in piece) {
-      if (dropping === 0) out += piece.text;
+      if (dropping === 0) emit(piece.text);
     } else if ('open' in piece) {
-      if (piece.closed && piece.drop) dropping += 1;
-      else if (dropping === 0) out += piece.closed && !piece.keep ? '' : piece.open;
+      if (piece.closed && piece.drop) {
+        dropping += 1;
+        gap = true;
+      } else if (dropping === 0) {
+        if (piece.closed && !piece.keep) gap = true;
+        else emit(piece.open);
+      }
       stack.push(piece);
     } else {
       const top = stack.at(-1);
       if (top && top.closed && top.name === piece.name) {
         stack.pop();
-        if (top.drop) dropping -= 1;
-        else if (dropping === 0) out += top.keep ? piece.close : '';
-      } else if (dropping === 0) out += piece.close;
+        if (top.drop) {
+          dropping -= 1;
+          gap = true;
+        } else if (dropping === 0) {
+          if (top.keep) emit(piece.close);
+          else gap = true;
+        }
+      } else if (dropping === 0) emit(piece.close);
     }
   }
   return out;

@@ -128,13 +128,74 @@ describe('Remove for the Markdown export', () => {
   });
 });
 
+describe('Remove keeps what it separates apart', () => {
+  const font = (t: string) => `<span data-font="Georgia">${t}</span>`;
+
+  it('keeps two code spans as one code span of the same text when the tag between them goes', () => {
+    // The editor stores code span a followed by a font-tagged code span b. Removing the tag must not leave a pair
+    // of backticks that reads as a literal backtick in one span.
+    const out = removeFormatting(`\`a\`${font('`b`')}`);
+    expect(out).toBe('`ab`');
+    expect(parseInline(out)).toEqual(parseInline('`ab`'));
+  });
+
+  it('does not let a removed tag join text into a tag of version 1', () => {
+    // < and mark> were apart by the removed tag. Joined they would read as a highlight.
+    const out = removeFormatting(`<${font('mark>x')}</mark>`);
+    expect(out).toBe('\\<mark>x</mark>');
+    expect(renderInlineHtml(parseInline(out))).not.toContain('<mark');
+  });
+
+  it('joins equal emphasis runs across a removed tag into one run', () => {
+    expect(removeFormatting(`*a*${font('*b*')}`)).toBe('*ab*');
+    expect(removeFormatting(`~~a~~${font('~~b~~')}`)).toBe('~~ab~~');
+  });
+
+  it('leaves text without a removed tag between runs as it is', () => {
+    expect(removeFormatting(`\`a\` ${font('`b`')}`)).toBe('`a` `b`');
+  });
+});
+
+describe('damaged element IDs', () => {
+  it('keeps the place of every later ID when an entry is not a string', () => {
+    // The editor indexes data.ids by position, so paragraph 3 keeps the formatting of the third ID.
+    const page = textPage({ markdown: 'a\n\nb\n\nc', ids: ['A', 7, 'C'] });
+    const block = page.blocks[0];
+    expect(block.type === 'text' && block.elements?.ids).toEqual(['A', null, 'C']);
+  });
+});
+
 describe('hostile input', () => {
-  it('finds the partner of a closing tag in constant time', () => {
-    // The scan back over every node made 160 KB of this take seconds. Linear time is a few milliseconds.
-    const source = `<u>${'x</span>'.repeat(40000)}`;
+  it('finds the partner of a closing tag without a scan back over the nodes', () => {
+    // Under one open tag, 20000 unmatched closing tags each follow a bracket node. A scan back to the nearest tag
+    // node takes 1.6 s on this 180 KB input, and the open-tag stack takes about 70 ms, so 500 ms tells them apart.
+    const source = `<u>${'[x</span>'.repeat(20000)}`;
     const start = performance.now();
     parseInline(source);
     expect(performance.now() - start).toBeLessThan(500);
+  });
+
+  it.each([
+    ['*a', 20000],
+    ['a*', 20000],
+    ['*_', 20000],
+    ['**a', 15000],
+    ['~~a', 15000],
+    ['_a', 20000],
+  ])('matches unmatched emphasis runs of %s in linear time', (unit, times) => {
+    // Without the openers_bottom table of CommonMark every closer searches back over all openers: 1.5 to 2.7 s here.
+    const start = performance.now();
+    parseInline(unit.repeat(times));
+    expect(performance.now() - start).toBeLessThan(500);
+  });
+
+  it('still matches emphasis as CommonMark 0.31 matches it after the bottoms move', () => {
+    // CommonMark spec examples: emphasis closes at the nearest valid closer, and a rule-of-three run stays text.
+    // Spec 7.10 nests bold outside italic, so the pair CommonMark writes em(strong) comes out as strong(em).
+    expect(inline('foo***bar***baz')).toBe('foo<strong><em>bar</em></strong>baz');
+    expect(inline('*foo**bar*')).toBe('<em>foo**bar</em>');
+    // Two italics of one kind are one (R-MRK-28).
+    expect(inline('*a *b* c*')).toBe('<em>a b c</em>');
   });
 
   it('still pairs tags that a link swallowed', () => {

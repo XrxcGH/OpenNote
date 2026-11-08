@@ -38,7 +38,7 @@ export interface HtmlOptions {
    * looks as it does on screen.
    */
   readonly elements?: {
-    readonly ids: readonly string[];
+    readonly ids: readonly (string | null)[];
     readonly paras: Readonly<Record<string, unknown>>;
     /** The named style of each element by ID (`data.styles`), which becomes the class `style-NAME`. */
     readonly styles?: Readonly<Record<string, string>>;
@@ -131,7 +131,7 @@ class Renderer {
     const at = this.index++;
     const elements = this.o.elements;
     if (!elements || type === 'other') return '';
-    const id = elements.ids[at];
+    const id = elements.ids[at] ?? undefined;
     const entry = id !== undefined && Object.hasOwn(elements.paras, id) ? elements.paras[id] : undefined;
     const style = id !== undefined && elements.styles && Object.hasOwn(elements.styles, id) ? elements.styles[id] : '';
     const attrs = Object.entries(paraDom(attrsFromEntry(entry, type)))
