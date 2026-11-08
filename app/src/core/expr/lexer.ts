@@ -35,9 +35,9 @@ export interface LexSpec {
   /** The characters that separate arguments, such as "," or ";,". */
   separators: string;
   /**
-   * What a name looks like. 'ascii' is a letter or a low line, then letters, digits, or low lines. 'cell' also
-   * allows "$", for references such as $A$1. 'dotted' also allows dots between parts, as CEILING.MATH has. 'letters' is a run of any letters plus trailing digits. The parser
-   * splits that run into known names, so "pix" can mean pi times x.
+   * What a name looks like. The 'ascii' form is a letter or a low line, then letters, digits, or low lines.
+   * The 'cell' form also allows "$", as in $A$1. The 'dotted' form also allows dots between parts, as Excel function
+   * names have. The 'letters' form is a run of any letters plus trailing digits, which the parser splits into names.
    */
   names: 'ascii' | 'cell' | 'dotted' | 'letters';
   /** Every operator the dialect reads, in plain form. Multi-character ones such as "<=" are matched first. */

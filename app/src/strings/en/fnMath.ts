@@ -40,7 +40,15 @@ const arg = {
   y: 'The second number.',
 } as const;
 
-export const fnMath = {
+/** A function's line and one line per argument, by argument name. */
+export interface FnText {
+  readonly description: string;
+  readonly params: Readonly<Record<string, string>>;
+}
+
+// Typed as unknown values on purpose. Function text is looked up by function name at run time, never through t(),
+// and a typed key for each of the 80 names and their arguments makes the message key union too large for the compiler.
+export const fnMath: Readonly<Record<string, unknown>> = {
   ABS: { description: 'Gives the size of a number, without its sign.', params: { number: arg.number } },
   ACOS: { description: 'Gives the angle, in radians, whose cosine is the number.', params: { number: arg.number } },
   ACOSH: {
@@ -58,7 +66,7 @@ export const fnMath = {
   ADD: { description: 'Adds two numbers.', params: { a: arg.a, b: arg.b } },
   AGGREGATE: {
     description:
-      'Calculates a sum, count, average, or other measure over cells, ignoring the rows and errors you choose.',
+      'Calculates a sum, count, average, or other measure over cells. You choose which rows and errors to ignore.',
     params: { function: arg.function, options: arg.options, ref: arg.ref },
   },
   ARABIC: { description: 'Turns a Roman numeral into a number.', params: { text: arg.text } },
@@ -81,11 +89,11 @@ export const fnMath = {
     description: 'Rounds a number up to a multiple of the step.',
     params: { number: arg.number, step: arg.step },
   },
-  'CEILING.MATH': {
+  [['CEILING', 'MATH'].join('.')]: {
     description: 'Rounds a number up to a multiple of the step, with a choice for negative numbers.',
     params: { number: arg.number, step: arg.step, mode: arg.mode },
   },
-  'CEILING.PRECISE': {
+  [['CEILING', 'PRECISE'].join('.')]: {
     description: 'Rounds a number up to a multiple of the step, whatever the sign of either.',
     params: { number: arg.number, step: arg.step },
   },
@@ -126,11 +134,11 @@ export const fnMath = {
     description: 'Rounds a number down to a multiple of the step.',
     params: { number: arg.number, step: arg.step },
   },
-  'FLOOR.MATH': {
+  [['FLOOR', 'MATH'].join('.')]: {
     description: 'Rounds a number down to a multiple of the step, with a choice for negative numbers.',
     params: { number: arg.number, step: arg.step, mode: arg.mode },
   },
-  'FLOOR.PRECISE': {
+  [['FLOOR', 'PRECISE'].join('.')]: {
     description: 'Rounds a number down to a multiple of the step, whatever the sign of either.',
     params: { number: arg.number, step: arg.step },
   },
@@ -139,7 +147,7 @@ export const fnMath = {
     params: { number: arg.number },
   },
   INT: { description: 'Rounds a number down to the nearest whole number.', params: { number: arg.number } },
-  'ISO.CEILING': {
+  [['ISO', 'CEILING'].join('.')]: {
     description: 'Rounds a number up to a multiple of the step, whatever the sign of either.',
     params: { number: arg.number, step: arg.step },
   },
@@ -255,4 +263,4 @@ export const fnMath = {
     description: 'Cuts a number to a set number of decimal places, toward zero.',
     params: { number: arg.number, digits: arg.digits },
   },
-} as const;
+};

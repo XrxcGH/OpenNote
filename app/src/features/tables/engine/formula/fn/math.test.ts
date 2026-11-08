@@ -8,7 +8,7 @@ import type { Table } from '../../model';
 import { DEFAULT_ENV, type EngineEnv } from '../../recalc';
 import { ERROR_TOKENS, isError, type RowState, type Value } from '../../values';
 import fixture from '../../../fixtures/fn/math.json';
-import { fnMath } from '../../../../../strings/en/fnMath';
+import { fnMath, type FnText } from '../../../../../strings/en/fnMath';
 import { REGISTRY, arity, paramsOf } from '.';
 
 const COLUMNS = 'ABCDEFGH'.split('').map((name) => ({ name, type: 'number' as const }));
@@ -369,11 +369,11 @@ describe('every function of the family', () => {
   });
 
   it('has a description for the function and for each argument', () => {
-    const text = fnMath as Record<string, { description: string; params: Record<string, string> }>;
+    const text = fnMath as Readonly<Record<string, FnText | undefined>>;
     for (const name of names) {
       expect(text[name]?.description, name).toMatch(/^[A-Z].*\.$/);
       for (const param of paramsOf(REGISTRY.get(name)!))
-        expect(text[name].params[param.name], `${name} ${param.name}`).toBeTruthy();
+        expect(text[name]?.params[param.name], `${name} ${param.name}`).toBeTruthy();
     }
     expect(Object.keys(text).filter((name) => !names.includes(name))).toEqual([]);
   });

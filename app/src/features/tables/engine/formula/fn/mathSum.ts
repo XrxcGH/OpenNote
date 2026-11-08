@@ -1,5 +1,5 @@
-// Sums and products of the math family: SUM, PRODUCT, SUMSQ, the conditional sums, SUMPRODUCT and the sums of
-// squares, SERIESSUM, PERCENTOF, and the Sheets operator names ADD, MINUS, MULTIPLY, DIVIDE.
+// Sums and products of the math family: SUM, PRODUCT, SUMSQ, SUMIF, SUMIFS, SUMPRODUCT, the sums of squares,
+// SERIESSUM, PERCENTOF, and the Sheets operator names ADD, MINUS, MULTIPLY, and DIVIDE.
 // Written from the documented behavior.
 
 import { err, finish, isError, isNumber, toNumber, type ArrayValue, type Scalar, type Value } from '../../values';

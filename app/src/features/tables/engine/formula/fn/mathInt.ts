@@ -1,4 +1,4 @@
-// Whole-number functions of the math family: factorials and counting, GCD and LCM, Roman numerals, number bases.
+// Whole-number functions of the math family: factorials, counting, divisors, Roman numerals, and number bases.
 // Written from the documented behavior.
 
 import { err, finish, isError, isNumber, toNumber, toNumbers, type Value } from '../../values';
