@@ -3,6 +3,11 @@
 // comes from classes, which the stylesheet in the print and export modules defines. Nothing is drawn with borders
 // (ADR 0006, rule 1).
 
+import { colorValue, runStyle } from '../../../../editor/render/runStyle';
+import type { StyleDeclarations } from '../../../../editor/render/runStyle';
+import { paraDom } from '../../../../editor/render/paraStyle';
+import { attrsFromEntry } from '../../../../editor/paragraph/attributes';
+import { HIGHLIGHTER_COLORS, PEN_COLORS } from '../../../../editor/schema/constants';
 import { inlineText, type Block, type Document, type Inline, type ListItem, type Mark } from './tree';
 
 export interface HtmlOptions {
@@ -27,6 +32,53 @@ export interface HtmlOptions {
   readonly math?: (latex: string, display: boolean) => string | null;
   /** An SVG drawing for the text of a `graph` code block, or null to show it as code. */
   readonly graph?: (source: string) => string | null;
+  /**
+   * The text block's element IDs and paragraph formatting (`data.ids` and `data.paras`, spec 6.6 and 6.8). Each
+   * paragraph, heading, list item, code block, math block, and rule takes the formatting of its ID, so the page
+   * looks as it does on screen.
+   */
+  readonly elements?: {
+    readonly ids: readonly string[];
+    readonly paras: Readonly<Record<string, unknown>>;
+    /** The named style of each element by ID (`data.styles`), which becomes the class `style-NAME`. */
+    readonly styles?: Readonly<Record<string, string>>;
+  };
+}
+
+/**
+ * Text drawn wider or narrower (the scale mark): each word is a box that is stretched from its start, with a margin
+ * of the width it gains. The width of a word is taken as one `ch` for each character, since a static page can't
+ * measure it. The screen measures instead (render/blocks.ts), so the two can differ by a few percent.
+ */
+function scaledWords(text: string): string {
+  return text
+    .split(/( +)/)
+    .map((part) =>
+      part === '' || part.startsWith(' ')
+        ? escapeHtml(part)
+        : `<span class="scaled" style="margin-inline-end:calc((var(--scale) - 1) * ${[...part].length}ch)">${escapeHtml(part)}</span>`,
+    )
+    .join('');
+}
+
+const SIZES = ['small', 'large', 'xlarge'];
+
+/** A ` style="..."` attribute for some declarations, or nothing when there are none. */
+function styleAttr(declarations: StyleDeclarations): string {
+  const text = Object.entries(declarations)
+    .map(([property, value]) => `${property}:${value}`)
+    .join(';');
+  return text === '' ? '' : ` style="${escapeAttr(text)}"`;
+}
+
+/** The end of a version 2 mark. A foreign mark is not drawn, so it has no end either. */
+function closeV2(mark: Exclude<Mark, string>): string {
+  const kind = Object.keys(mark)[0];
+  if (kind === 'foreign') return '';
+  if (kind === 'strike' || kind === 'del') return '</del>';
+  if (kind === 'underline') return '</u>';
+  if (kind === 'ins') return '</ins>';
+  return kind === 'highlight' ? '</mark>' : '</span>';
 }
 
 const DEFAULT_LABELS = { done: 'Done', open: 'Not done' };
@@ -63,7 +115,72 @@ export function safeHref(destination: string): string | null {
 const DEFAULT_TITLE = (type: string): string => type.charAt(0).toUpperCase() + type.slice(1);
 
 class Renderer {
+  /** The place of the next text element among the block's elements, which is its place in `data.ids`. */
+  private index = 0;
+  /** The next element is a list item's first paragraph, which belongs to the item and takes no entry of its own. */
+  private lead = false;
+
   constructor(private readonly o: HtmlOptions) {}
+
+  /** The attributes of the next element: its paragraph formatting from `paras`, by its ID. */
+  private element(type: 'paragraph' | 'heading' | 'listItem' | 'other'): string {
+    if (this.lead) {
+      this.lead = false;
+      return '';
+    }
+    const at = this.index++;
+    const elements = this.o.elements;
+    if (!elements || type === 'other') return '';
+    const id = elements.ids[at];
+    const entry = id !== undefined && Object.hasOwn(elements.paras, id) ? elements.paras[id] : undefined;
+    const style = id !== undefined && elements.styles && Object.hasOwn(elements.styles, id) ? elements.styles[id] : '';
+    const attrs = Object.entries(paraDom(attrsFromEntry(entry, type)))
+      .map(([name, value]) => ` ${name}="${escapeAttr(value)}"`)
+      .join('');
+    return style === '' ? attrs : ` class="style-${cssName(style)}"${attrs}`;
+  }
+
+  /** The markup of a version 2 mark: the style `runStyle` makes for it, and the attributes that name it. */
+  private openV2(mark: Exclude<Mark, string>): string {
+    const kind = Object.keys(mark)[0];
+    const value = (mark as unknown as Record<string, unknown>)[kind];
+    const text = String(typeof value === 'object' ? '' : value);
+    switch (kind) {
+      case 'foreign':
+        return '';
+      case 'underline':
+        return `<u${styleAttr(runStyle({ mark: 'underline', ...(value as object) }))}>`;
+      case 'strike':
+        return `<del${styleAttr(runStyle({ mark: 'strike', line: value }))}>`;
+      case 'box':
+        return `<span data-box=""${styleAttr(runStyle({ mark: 'box', ...(value as object) }))}>`;
+      case 'font':
+        return `<span data-font="${escapeAttr(text)}"${styleAttr(runStyle({ mark: 'font', font: text }))}>`;
+      case 'size':
+        return `<span${styleAttr(runStyle({ mark: 'textSize', size: text }))}>`;
+      case 'highlight':
+        return `<mark class="hl hl-custom"${styleAttr(runStyle({ mark: 'highlight', color: text }))}>`;
+      case 'color':
+        return `<span${styleAttr({ color: colorValue(text) })}>`;
+      case 'lang':
+        return `<span lang="${escapeAttr(text)}">`;
+      case 'dir':
+        return `<span dir="${text === 'rtl' ? 'rtl' : 'ltr'}"${styleAttr(runStyle({ mark: 'dir', dir: text }))}>`;
+      case 'float':
+        return `<span class="float-${text === 'end' ? 'end' : 'start'}">`;
+      case 'ins':
+        return `<ins data-ins="${escapeAttr(text)}">`;
+      case 'del':
+        return `<del data-del="${escapeAttr(text)}">`;
+      case 'style':
+        return `<span data-style="${escapeAttr(text)}" class="cs-${cssName(text)}">`;
+      case 'comment':
+      case 'fmt':
+        return `<span data-${kind}="${escapeAttr(text)}">`;
+      default:
+        return `<span${styleAttr(runStyle({ mark: kind, [kind]: text }))}>`;
+    }
+  }
 
   private open(mark: Mark): string {
     if (typeof mark === 'string') return OPEN[mark];
@@ -71,17 +188,22 @@ class Renderer {
       const href = (this.o.link ?? safeHref)(mark.link);
       return href === null ? '<span class="link">' : `<a href="${escapeAttr(href)}">`;
     }
-    if ('highlight' in mark) return `<mark class="hl hl-${cssName(mark.highlight)}">`;
-    if ('size' in mark) return `<span class="size-${cssName(mark.size)}">`;
-    const color = this.o.penColor?.(mark.color) ?? (/^#[0-9a-fA-F]{6}$/.test(mark.color) ? mark.color : null);
-    const safe = color !== null && /^#[0-9a-fA-F]{6}$/.test(color) ? ` style="color:${color}"` : '';
-    return `<span class="pen pen-${cssName(mark.color)}"${safe}>`;
+    if ('highlight' in mark && (HIGHLIGHTER_COLORS as readonly string[]).includes(mark.highlight)) {
+      return `<mark class="hl hl-${cssName(mark.highlight)}">`;
+    }
+    if ('size' in mark && SIZES.includes(mark.size)) return `<span class="size-${cssName(mark.size)}">`;
+    if ('color' in mark && (PEN_COLORS as readonly string[]).includes(mark.color)) {
+      const color = this.o.penColor?.(mark.color) ?? null;
+      const safe = color !== null && /^#[0-9a-fA-F]{6}$/.test(color) ? ` style="color:${color}"` : '';
+      return `<span class="pen pen-${cssName(mark.color)}"${safe}>`;
+    }
+    return this.openV2(mark);
   }
 
   private close(mark: Mark): string {
     if (typeof mark === 'string') return CLOSE[mark];
     if ('link' in mark) return (this.o.link ?? safeHref)(mark.link) === null ? '</span>' : '</a>';
-    return 'highlight' in mark ? '</mark>' : '</span>';
+    return closeV2(mark);
   }
 
   inline(content: readonly Inline[]): string {
@@ -96,12 +218,16 @@ class Renderer {
       if (src === null) return '';
       return `<img src="${escapeAttr(src)}" alt="${escapeAttr(run.alt)}"${voidEnd(this.o.xml)}`;
     }
-    const open = run.marks.map((m) => this.open(m)).join('');
-    const close = [...run.marks]
+    const marks = run.marks;
+    const open = marks.map((m) => this.open(m)).join('');
+    const close = [...marks]
       .reverse()
       .map((m) => this.close(m))
       .join('');
-    return open + escapeHtml(run.text) + close;
+    if ('footnote' in run)
+      return `${open}<span class="footnote-ref" data-footnote="${escapeAttr(run.footnote)}"></span>${close}`;
+    const scale = marks.find((m): m is { readonly scale: string } => typeof m !== 'string' && 'scale' in m);
+    return open + (scale ? scaledWords(run.text) : escapeHtml(run.text)) + close;
   }
 
   blocks(blocks: Document): string {
@@ -111,14 +237,17 @@ class Renderer {
   private block(b: Block): string {
     switch (b.type) {
       case 'paragraph':
-        return `<p>${this.inline(b.content)}</p>`;
+        return `<p${this.element('paragraph')}>${this.inline(b.content)}</p>`;
       case 'heading':
-        return `<h${b.level}>${this.inline(b.content)}</h${b.level}>`;
+        return `<h${b.level}${this.element('heading')}>${this.inline(b.content)}</h${b.level}>`;
       case 'break':
+        this.element('other');
         return `<hr${voidEnd(this.o.xml)}`;
       case 'math':
+        this.element('other');
         return `<div class="math">${this.o.math?.(b.source, true) ?? escapeHtml(b.source)}</div>`;
       case 'code': {
+        this.element('other');
         if (b.language === 'graph') {
           const drawing = this.o.graph?.(b.text);
           if (drawing) return `<figure class="graph">${drawing}</figure>`;
@@ -145,14 +274,19 @@ class Renderer {
   private item(item: ListItem): string {
     const labels = this.o.labels ?? DEFAULT_LABELS;
     const tight = item.blocks.every((b, i) => (i === 0 ? b.type === 'paragraph' : b.type === 'list'));
+    const attrs = this.element('listItem');
     const body = item.blocks
-      .map((b) => (tight && b.type === 'paragraph' ? this.inline(b.content) : this.block(b)))
+      .map((b, i) => {
+        if (tight && b.type === 'paragraph') return this.inline(b.content);
+        this.lead = i === 0 && b.type !== 'list' && b.type !== 'quote' && b.type !== 'callout';
+        return this.block(b);
+      })
       .join('\n');
-    if (item.task === null) return `<li>${body}</li>`;
+    if (item.task === null) return `<li${attrs}>${body}</li>`;
     const done = item.task === 'done';
     const label = escapeAttr(done ? labels.done : labels.open);
     const box = `<span class="box${done ? ' box-done' : ''}" role="img" aria-label="${label}"></span>`;
-    return `<li class="task${done ? ' task-done' : ''}">${box} ${body}</li>`;
+    return `<li class="task${done ? ' task-done' : ''}"${attrs}>${box} ${body}</li>`;
   }
 
   private callout(b: Block & { type: 'callout' }): string {
