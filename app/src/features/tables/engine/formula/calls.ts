@@ -17,6 +17,7 @@ import {
   isRef,
   parseCanonicalNumber,
   toScalar,
+  type FormulaError,
   type RefValue,
   type Scalar,
   type Value,
@@ -234,12 +235,22 @@ function boxOf(h: Host, ref: RefValue): Box | Value {
 
 const isBox = (v: Box | Value): v is Box => typeof v === 'object' && v !== null && 's' in v;
 
+/**
+ * A cycle error when a block found while running holds the calling cell, as INDIRECT("F1") in F1 does. The graph
+ * catches a loop between two cells, but a cell that reads itself would otherwise read its own unfinished value.
+ */
+function selfRead(h: Host, ctx: Ctx, box: Box): FormulaError | null {
+  if (box.s !== h.ownSheet || ctx.row < box.r1 || ctx.row > box.r2 || ctx.col < box.c1 || ctx.col > box.c2) return null;
+  ctx.origin ??= { code: 'CYCLE', kind: 'cycle' };
+  return err('CYCLE');
+}
+
 /** Reads a returned reference, and records it as a read only known while running. */
 function readReturned(h: Host, ctx: Ctx, ref: RefValue): Value {
   const box = boxOf(h, ref);
   if (!isBox(box)) return box;
   ctx.dyn?.push(box);
-  return readBox(ctx, box);
+  return selfRead(h, ctx, box) ?? readBox(ctx, box);
 }
 
 /**
@@ -269,7 +280,7 @@ export function compileCallRef(h: Host, spec: FnSpec2 | undefined, node: Call): 
       const box = boxOf(h, v);
       if (!isBox(box)) return isError(box) ? box : err('VALUE');
       ctx.dyn?.push(box);
-      return box;
+      return selfRead(h, ctx, box) ?? box;
     },
   };
 }

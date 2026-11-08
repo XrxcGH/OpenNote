@@ -153,9 +153,40 @@
     },
     {
       "formula": "=XLOOKUP(\"(a+)+$\",{\"aaa\"},{1},\"none\",3)",
+      "expected": 1,
+      "source": "hand",
+      "note": "A nested quantifier is accepted: aaa is one or more runs of a, then the end."
+    },
+    {
+      "formula": "=XMATCH(\"(a|aa)+$\",A1:A1,3)",
+      "cells": { "A1": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" },
+      "expected": { "error": "NA" },
+      "source": "hand",
+      "note": "The text ends in b, so no run of a reaches the end. The matcher never backtracks, so this is fast."
+    },
+    {
+      "formula": "=HYPERLINK(\"https://example.com\",A1)",
+      "expected": 0,
+      "source": "hand",
+      "note": "An empty cell as the friendly name reads as 0, as in =A1."
+    },
+    {
+      "formula": "=XMATCH(\"^(a|b)+$\",{\"abc\",\"abba\"},3)",
+      "expected": 2,
+      "source": "hand",
+      "note": "abc has a c, abba is all a and b."
+    },
+    {
+      "formula": "=XMATCH(\"(a)\\1\",{\"aa\"},3)",
       "expected": { "error": "VALUE" },
       "source": "hand",
-      "note": "A nested quantifier is refused, so a pattern cannot take exponential time."
+      "note": "A back reference is refused."
+    },
+    {
+      "formula": "=XMATCH(\"\\bcat\\b\",{\"concat\",\"a cat sat\"},3)",
+      "expected": 2,
+      "source": "hand",
+      "note": "Word boundaries: cat inside concat has a letter before it."
     },
     {
       "formula": "=XLOOKUP(6,{1,3,5,7},{\"a\",\"b\",\"c\",\"d\"},\"none\",-1,2)",

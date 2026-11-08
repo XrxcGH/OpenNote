@@ -200,7 +200,9 @@ function formulaText(args: Value[], env: Env): Value {
 
 function hyperlink(args: Value[]): Value {
   const [link, label] = args;
-  return label !== undefined ? toScalar(label) : toText(link);
+  if (label === undefined) return toText(link);
+  // An empty cell as the friendly name shows 0, as any formula that reads an empty cell does.
+  return toScalar(label) ?? 0;
 }
 
 function address(args: Value[]): Value {

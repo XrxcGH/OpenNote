@@ -163,3 +163,20 @@ describe('reference details', () => {
     expect(hyperlinkOf('SUM(1)')).toBeNull();
   });
 });
+
+describe('safety', () => {
+  it('reads a cell through INDIRECT or OFFSET in that same cell as a cycle', () => {
+    for (const formula of ['=INDIRECT("F1")', '=OFFSET(F1,0,0)', '=SUM(INDIRECT("F1:F2"))', '=INDIRECT("A1:F1")']) {
+      expect(at(type(blank(), 'F1', formula), 'F1'), formula).toEqual(err('CYCLE'));
+    }
+    expect(at(type(type(blank(), 'F2', '4'), 'F1', '=INDIRECT("F2")'), 'F1')).toBe(4);
+  });
+
+  it('runs match mode 3 in linear time on a pattern that backtracks exponentially', () => {
+    const t = type(blank(), 'A1', `${'a'.repeat(35)}b`);
+    const start = performance.now();
+    const done = type(t, 'F1', '=XMATCH("(a|aa)+$",A1:A1,3)');
+    expect(performance.now() - start).toBeLessThan(500);
+    expect(at(done, 'F1')).toEqual(err('NA'));
+  });
+});

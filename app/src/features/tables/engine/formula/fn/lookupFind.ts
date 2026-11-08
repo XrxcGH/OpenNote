@@ -18,23 +18,13 @@ import {
   vectorOf,
   wholeArg,
 } from './lookupKit';
-
-/** Longest pattern match mode 3 accepts. */
-const REGEX_MAX = 1000;
-/** A quantified group that holds a quantifier, as in (a+)+: the shape that can take exponential time. */
-const NESTED = /\((?:[^()\\]|\\.)*[+*}](?:[^()\\]|\\.)*\)\s*[+*{]/;
+import { regexMatcher } from './lookupRegex';
 
 /** A regular expression test for XLOOKUP and XMATCH match mode 3, or null when the pattern is refused. */
 function regexTest(pattern: Scalar): ((item: Scalar) => boolean) | null {
-  if (typeof pattern !== 'string' || pattern.length > REGEX_MAX || NESTED.test(pattern) || /\\\d/.test(pattern)) {
-    return null;
-  }
-  try {
-    const re = new RegExp(pattern, 'u');
-    return (item) => typeof item === 'string' && re.test(item);
-  } catch {
-    return null;
-  }
+  if (typeof pattern !== 'string') return null;
+  const matches = regexMatcher(pattern);
+  return matches === null ? null : (item) => typeof item === 'string' && matches(item);
 }
 
 /** VLOOKUP's core, on a table whose first column is searched. */
