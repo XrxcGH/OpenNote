@@ -10,7 +10,7 @@ import { RowsIcon } from '@phosphor-icons/react/dist/csr/Rows';
 import { RowsPlusBottomIcon } from '@phosphor-icons/react/dist/csr/RowsPlusBottom';
 import { RowsPlusTopIcon } from '@phosphor-icons/react/dist/csr/RowsPlusTop';
 import { TextHOneIcon } from '@phosphor-icons/react/dist/csr/TextHOne';
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import type { ComponentType, KeyboardEvent } from 'react';
 import type { CommandId } from '../../../commands/types';
 import type { TableOp } from '../../../editor/commands/tables';
@@ -21,7 +21,12 @@ import { IconButton, TextField } from '../../../ui';
 import type { IconProps } from '../../../ui';
 import styles from './tables.module.css';
 
+/** The cell format bar loads with the first table toolbar (the tables feature's own chunk). */
+const CellFormatBar = lazy(async () => ({ default: (await import('../../tables')).CellFormatBar }));
+
 export interface TableToolbarProps {
+  /** The table block's ID, which the cell format bar uses to find the block's data. */
+  block?: string;
   can(op: TableOp): boolean;
   header: boolean;
   run(op: TableOp): void;
@@ -116,7 +121,7 @@ function WidthField({ width, close }: { width: number; close(width: number | nul
 }
 
 export function TableToolbar(props: TableToolbarProps) {
-  const { can, header, run, more, width, widthOpen, openWidth, closeWidth } = props;
+  const { block, can, header, run, more, width, widthOpen, openWidth, closeWidth } = props;
   const moreButton = useRef<HTMLSpanElement>(null);
   const button = (tool: Tool, first: boolean) => (
     <span key={tool.command} data-tool-slot="">
@@ -177,6 +182,11 @@ export function TableToolbar(props: TableToolbarProps) {
           </span>
         </span>
       </div>
+      {block ? (
+        <Suspense fallback={null}>
+          <CellFormatBar block={block} />
+        </Suspense>
+      ) : null}
       {widthOpen ? <WidthField width={width} close={closeWidth} /> : null}
     </div>
   );

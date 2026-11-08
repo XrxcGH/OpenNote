@@ -268,6 +268,7 @@ class TableView implements InnerView {
     const columns = this.data.columns;
     this.toolbar.render(
       createElement(TableToolbar, {
+        block: this.current.id,
         can: this.handle.can,
         header: this.data.header,
         run: (op: TableOp) => void this.run(op),

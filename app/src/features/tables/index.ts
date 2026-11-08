@@ -5,3 +5,5 @@ export { attachSmart } from './smart/attach';
 export { runSmartCommand } from './smart/commands';
 export type { SmartCommand } from './smart/commands';
 export { exportTableCharts } from './smart/exportCharts';
+export { CellFormatBar } from './ui/toolbar';
+export type { CellFormatBarProps } from './ui/toolbar';

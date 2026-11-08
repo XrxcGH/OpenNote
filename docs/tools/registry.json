@@ -5612,6 +5612,146 @@
       "flag": "sync.e2ee"
     },
     {
+      "id": "table.cell.fill",
+      "title": "Cell: Fill color",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.textColor",
+      "title": "Cell: Text color",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.borders",
+      "title": "Cell: Borders",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.borderAll",
+      "title": "Cell: All borders",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.borderOutside",
+      "title": "Cell: Outside borders",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.borderNone",
+      "title": "Cell: No border",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.wrap",
+      "title": "Cell: Wrap text",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.alignLeft",
+      "title": "Cell: Align left",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.alignCenter",
+      "title": "Cell: Align center",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.alignRight",
+      "title": "Cell: Align right",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.alignTop",
+      "title": "Cell: Align top",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.alignMiddle",
+      "title": "Cell: Align middle",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.alignBottom",
+      "title": "Cell: Align bottom",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.currency",
+      "title": "Cell: Currency format",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.percent",
+      "title": "Cell: Percent format",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.general",
+      "title": "Cell: General format",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.thousands",
+      "title": "Cell: Thousands separator",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.moreDecimals",
+      "title": "Cell: More decimals",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.fewerDecimals",
+      "title": "Cell: Fewer decimals",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.clearFormats",
+      "title": "Cell: Clear formats",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
       "id": "theme.toggle",
       "title": "Toggle dark mode",
       "category": "appearance",

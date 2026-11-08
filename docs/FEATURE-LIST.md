@@ -2,7 +2,7 @@
 
 Every tool, action, and feature in OpenNote, grouped by category, with one sentence each. `npm run docs:features` makes this page. The commands, tool windows, title bar items, settings sections, and setup steps come from what the app registers, so a new one shows up here or fails the tests. The feature sentences come from [FEATURES.md](FEATURES.md), which also says what has been tested by hand and which flag turns each one on. The [help pages](help/README.md) explain how to use them. [docs/screens](screens/README.md) has every picture in light and dark.
 
-The app registers 900 commands and 48 tool windows. 24 of the windows are subject and engineering kits. The count includes the ink commands, which register when a page first shows its ink, and the commands that register once start-up is done or with the first page: on-device intelligence, the second pass of page commands, and the code block and table commands. The command palette (Ctrl+K) runs every command not marked as left out of it. Some commands need a feature flag, which FEATURES.md names. The keys shown are the defaults of the standard shortcut set.
+The app registers 920 commands and 48 tool windows. 24 of the windows are subject and engineering kits. The count includes the ink commands, which register when a page first shows its ink, and the commands that register once start-up is done or with the first page: on-device intelligence, the second pass of page commands, and the code block and table commands. The command palette (Ctrl+K) runs every command not marked as left out of it. Some commands need a feature flag, which FEATURES.md names. The keys shown are the defaults of the standard shortcut set.
 
 ## Contents
 
@@ -314,6 +314,26 @@ Open it with the command "Open the code studio".
 | Table: Eigenvalues of the selection as an equation | Inserts the eigenvalues of the selected matrix as an equation. |  |
 | Table: Solution of Ax = b as an equation | Inserts the solution of Ax = b from the selected cells as an equation. |  |
 | Insert table | Inserts a table. |  |
+| Cell: Fill color | Opens the fill colors for the selected cells. |  |
+| Cell: Text color | Opens the text colors for the selected cells. |  |
+| Cell: Borders | Opens the borders menu for the selected cells. |  |
+| Cell: All borders | Draws a border around every selected cell. |  |
+| Cell: Outside borders | Draws a border around the outside of the selected cells. |  |
+| Cell: No border | Takes every border off the selected cells. |  |
+| Cell: Wrap text | Wraps long text inside the selected cells. |  |
+| Cell: Align left | Aligns the selected cells to the left. |  |
+| Cell: Align center | Centers the selected cells. |  |
+| Cell: Align right | Aligns the selected cells to the right. |  |
+| Cell: Align top | Aligns the text of the selected cells to the top. |  |
+| Cell: Align middle | Centers the text of the selected cells between top and bottom. |  |
+| Cell: Align bottom | Aligns the text of the selected cells to the bottom. |  |
+| Cell: Currency format | Shows the selected cells as currency. |  |
+| Cell: Percent format | Shows the selected cells as a percent. |  |
+| Cell: General format | Takes the number format off the selected cells. |  |
+| Cell: Thousands separator | Turns the thousands separator on or off in the selected cells. |  |
+| Cell: More decimals | Shows one more decimal place in the selected cells. |  |
+| Cell: Fewer decimals | Shows one fewer decimal place in the selected cells. |  |
+| Cell: Clear formats | Takes every format off the selected cells and leaves their text. |  |
 | Add row above | Adds a row above the current one. |  |
 | Add row below | Adds a row below the current one. | Ctrl+Enter |
 | Move row up | Moves the current row up one place. | Alt+Shift+Up |
