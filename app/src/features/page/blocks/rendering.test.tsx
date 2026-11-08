@@ -277,6 +277,8 @@ function normalized(root: HTMLElement): string {
   for (const tab of copy.querySelectorAll('[data-tab]')) tab.replaceWith(tab.textContent ?? '');
   for (const element of [copy, ...copy.querySelectorAll<HTMLElement>('*')]) {
     if (element === copy) continue;
+    // The editor's style decoration marks each paragraph with its named style; the static render has no use for it.
+    element.removeAttribute('data-pstyle');
     if (element.hasAttribute('data-scaled')) element.style.removeProperty('margin-inline-end');
     const classes = [...element.classList].filter((name) => !name.startsWith('ProseMirror'));
     if (classes.length > 0) element.className = classes.join(' ');
