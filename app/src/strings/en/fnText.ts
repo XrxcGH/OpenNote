@@ -123,8 +123,7 @@ export const fnText = {
     },
   },
   SEARCH: {
-    summary:
-      'Finds text inside other text and returns where it starts. Case does not matter. A question mark matches one character, an asterisk matches any run, and a tilde makes the next one literal.',
+    summary: 'Finds text inside other text. Case does not matter. Use ? for one character and * for a run.',
     args: {
       find_text: 'The text to look for.',
       within_text: 'The text to look in.',
@@ -152,7 +151,7 @@ export const fnText = {
     },
   },
   EXACT: {
-    summary: 'Tells whether two pieces of text are the same, with case.',
+    summary: 'Tells whether 2 pieces of text are the same, with case.',
     args: {
       text1: 'The first text.',
       text2: 'The second text.',
@@ -357,7 +356,7 @@ export const fnText = {
     },
   },
   REGEXEXTRACT: {
-    summary: 'Pulls matching text out of text. With two arguments and a capturing group, it returns the groups.',
+    summary: 'Pulls matching text out of text. With 2 arguments and a capturing group, it returns the groups.',
     args: {
       text: 'The text to search.',
       pattern: 'The regular expression, at most 1,000 characters.',
