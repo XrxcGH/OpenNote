@@ -26,6 +26,17 @@ describe('a formatted page printed to PDF', () => {
     expect(names.some((name) => /Atkinson/i.test(name))).toBe(true);
   }, 120_000);
 
+  // A machine that has Calibri or Cambria installed draws those, so the test names the stand-ins themselves: the app
+  // loads their files for a page whose text names Calibri or Cambria and a machine without them (host/fonts.ts).
+  it('lists the bundled stand-in fonts for Calibri and Cambria when text uses them', async () => {
+    const md =
+      'Plain words and <span data-font="Carlito">calibri words</span> and <span data-font="Caladea">cambria words</span>';
+    const { result } = await printPage(browser, page(md));
+    const names = result.info.fonts.filter((f) => f.embedded).map((f) => f.name.replace(/^[A-Z]{6}\+/, ''));
+    expect(names.some((name) => /Carlito/i.test(name))).toBe(true);
+    expect(names.some((name) => /Caladea/i.test(name))).toBe(true);
+  }, 120_000);
+
   it('does not list that font when no text names it', async () => {
     const { result } = await printPage(browser, page('Plain words only, and nothing in monospace.'));
     const names = result.info.fonts.map((f) => f.name);

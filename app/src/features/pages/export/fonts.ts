@@ -5,6 +5,7 @@
 import { standInFor } from '../../../theme/fontLoader';
 import { dataUri } from './dataUri';
 import type { NotebookStyles } from './style';
+import { classOf } from './styleSheet';
 
 /** One face of a bundled font family, as the caller loads it. */
 export interface FontFile {
@@ -19,16 +20,32 @@ export type FontSource = (family: string) => readonly FontFile[];
 
 const entity = (text: string): string => text.replace(/&#(\d+);/g, (_m, n: string) => String.fromCharCode(Number(n)));
 
-/** The font names that marks in `html` and the named styles use, each once, in order of first use. */
+/** Whether the markup uses a style: the body text and headings by their tags, the others by their class. */
+function referenced(html: string, name: string): boolean {
+  if (name === 'normal') return true;
+  if (/^h[1-6]$/.test(name)) return html.includes(`<${name}`);
+  // `classOf` leaves only letters, digits, and hyphens, so the name is safe inside a pattern.
+  return new RegExp(`(?:style|cs)-${classOf(name)}(?![\\w-])`).test(html);
+}
+
+/** The font names that marks in `html` and the styles it uses name, each once, in order of first use. */
 export function usedFonts(html: string, styles: NotebookStyles): string[] {
   const names = new Set<string>();
   for (const found of html.matchAll(/ data-font="([^"]*)"/g)) names.add(entity(found[1]));
-  for (const spec of Object.values(styles)) {
+  for (const [name, spec] of Object.entries(styles)) {
+    if (!referenced(html, name)) continue;
     const first = spec.font?.split(',')[0]?.trim();
     if (first !== undefined && first !== '' && !first.startsWith('+')) names.add(first);
   }
   return [...names];
 }
+
+const FORMATS: Readonly<Record<string, string>> = {
+  'font/woff2': 'woff2',
+  'font/woff': 'woff',
+  'font/ttf': 'truetype',
+  'font/otf': 'opentype',
+};
 
 const FAMILY = /^[\p{L}\p{N} ._-]{1,100}$/u;
 
@@ -46,10 +63,11 @@ export function fontFaceRules(names: readonly string[], source: FontSource): str
     for (const file of source(family)) {
       const weight = /^[0-9 ]{1,7}$/.test(file.weight ?? '') ? file.weight : '400';
       const style = file.style === 'italic' ? 'italic' : 'normal';
-      const url = dataUri(file.mime ?? 'font/woff2', file.bytes);
+      const mime = file.mime ?? 'font/woff2';
+      const url = dataUri(mime, file.bytes);
       rules.push(
         `@font-face{font-family:"${family}";font-style:${style};font-weight:${weight};font-display:block;` +
-          `src:url("${url}") format("woff2")}`,
+          `src:url("${url}") format("${FORMATS[mime] ?? 'woff2'}")}`,
       );
     }
   }

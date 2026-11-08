@@ -323,6 +323,8 @@ class InlineParser {
   private brackets: number[] = [];
   /** How many tags are open now. */
   private depth = 0;
+  /** The tag nodes still open, innermost last, so a closing tag finds its partner at once. */
+  private tags: { node: Node; index: number }[] = [];
 
   constructor(private readonly src: string) {}
 
@@ -442,13 +444,15 @@ class InlineParser {
       // R-INL-6: past the cap a tag is text, and so is the closing tag that would have paired with it.
       const capped = this.depth >= MAX_DEPTH;
       if (!capped) this.depth += 1;
-      this.out.push({
+      const node: Node = {
         t: 'tag',
         name: open.name,
         mark: open.mark,
         raw: rest.slice(0, open.length),
         ...(capped ? { capped: true as const } : {}),
-      });
+      };
+      this.tags.push({ node, index: this.out.length });
+      this.out.push(node);
       this.pos += open.length;
       return;
     }
@@ -470,14 +474,22 @@ class InlineParser {
   }
 
   private closeTag(name: string): boolean {
-    let k = this.out.length - 1;
-    while (k >= 0 && this.out[k].t !== 'tag') k -= 1;
+    // A link's text can swallow tags that were still open, so a tag whose node is gone no longer counts.
+    while (this.tags.length > 0) {
+      const last = this.tags[this.tags.length - 1];
+      if (this.out[last.index] === last.node) break;
+      this.tags.pop();
+    }
+    const top = this.tags[this.tags.length - 1];
+    const k = top ? top.index : -1;
     const node = this.out[k];
     if (node?.t !== 'tag' || node.name !== name) return false;
     if (node.capped) {
       this.out[k] = { t: 'text', s: node.raw };
+      this.tags.pop();
       return false;
     }
+    this.tags.pop();
     const inside = this.out.splice(k + 1);
     this.depth -= 1;
     const children = resolveDelims(inside);

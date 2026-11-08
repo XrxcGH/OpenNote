@@ -37,7 +37,7 @@ function isVersion1(mark: TagMark): boolean {
 
 type Piece =
   | { readonly text: string }
-  | { readonly open: string; readonly name: string; readonly keep: boolean; closed: boolean }
+  | { readonly open: string; readonly name: string; readonly keep: boolean; readonly drop: boolean; closed: boolean }
   | { readonly close: string; readonly name: string };
 
 /** Skips a code span starting at `at` (a backtick), and returns its end, or `at + run` when it has no closing run. */
@@ -55,8 +55,11 @@ function codeSpanEnd(text: string, at: number): number {
   }
 }
 
-/** The Markdown without the formatting that only version 2 tags hold. Escapes and code spans are left alone. */
-export function removeFormatting(markdown: string): string {
+/** The reader keeps a tag that would nest deeper than this as text. */
+const MAX_DEPTH = 32;
+
+/** The text of one inline unit without the tags of version 2 that Markdown cannot hold. */
+function stripUnit(markdown: string): string {
   if (!markdown.includes('<')) return markdown;
   const pieces: Piece[] = [];
   const open: number[] = [];
@@ -81,10 +84,14 @@ export function removeFormatting(markdown: string): string {
       const raw = end < 0 ? '' : rest.slice(0, end + 1);
       const tag = raw === '' ? null : readOpenTag(raw);
       const closing = tag || raw === '' ? null : closingName(raw);
-      if (tag) {
+      if (tag && open.length >= MAX_DEPTH) {
+        plain += raw;
+        i += raw.length;
+      } else if (tag) {
         flush();
         open.push(pieces.length);
-        pieces.push({ open: raw, name: tag.name, keep: isVersion1(tag.mark), closed: false });
+        const drop = tag.mark.type === 'deletion';
+        pieces.push({ open: raw, name: tag.name, keep: isVersion1(tag.mark), drop, closed: false });
         i += raw.length;
       } else if (closing !== null) {
         flush();
@@ -107,20 +114,90 @@ export function removeFormatting(markdown: string): string {
   }
   flush();
   // A closing tag was paired when the open tag before it, in a stack, was closed by it: mark it by walking again.
+  // Text inside a deleted run is gone, so it does not read as if it were still there.
   const stack: Extract<Piece, { open: string }>[] = [];
+  let dropping = 0;
   let out = '';
   for (const piece of pieces) {
-    if ('text' in piece) out += piece.text;
-    else if ('open' in piece) {
-      out += piece.closed && !piece.keep ? '' : piece.open;
+    if ('text' in piece) {
+      if (dropping === 0) out += piece.text;
+    } else if ('open' in piece) {
+      if (piece.closed && piece.drop) dropping += 1;
+      else if (dropping === 0) out += piece.closed && !piece.keep ? '' : piece.open;
       stack.push(piece);
     } else {
       const top = stack.at(-1);
       if (top && top.closed && top.name === piece.name) {
         stack.pop();
-        out += top.keep ? piece.close : '';
-      } else out += piece.close;
+        if (top.drop) dropping -= 1;
+        else if (dropping === 0) out += top.keep ? piece.close : '';
+      } else if (dropping === 0) out += piece.close;
     }
   }
   return out;
+}
+
+const UNIT_START = /^\s*(?:#{1,6}\s|[-*+]\s|\d{1,9}[.)]\s|>|\|)/;
+const FENCE = /^ {0,3}(`{3,}|~{3,})/;
+const INDENTED = /^(?: {4}|\t)/;
+const ITEM = /^(?:[-*+]|\d{1,9}[.)])\s/;
+
+/**
+ * The Markdown without the formatting that only version 2 tags hold. Each paragraph, heading, list item, quote line,
+ * and table row is read alone, as the reader reads it, so a tag never pairs across them. Code (fenced or indented)
+ * and math blocks keep their text exactly. Escapes and code spans are left alone.
+ */
+export function removeFormatting(markdown: string): string {
+  if (!markdown.includes('<')) return markdown;
+  const out: string[] = [];
+  let unit: string[] = [];
+  const flush = () => {
+    if (unit.length > 0) out.push(...stripUnit(unit.join('\n')).split('\n'));
+    unit = [];
+  };
+  let fence: { readonly char: string; readonly size: number } | null = null;
+  let math = false;
+  let previousBlank = true;
+  let inList = false;
+  for (const line of markdown.split('\n')) {
+    const blank = line.trim() === '';
+    const fenced = FENCE.exec(line);
+    if (fence) {
+      out.push(line);
+      if (fenced && fenced[1][0] === fence.char && fenced[1].length >= fence.size && line.trim() === fenced[1]) {
+        fence = null;
+      }
+      previousBlank = false;
+    } else if (math) {
+      out.push(line);
+      if (line.trim().endsWith('$$')) math = false;
+      previousBlank = false;
+    } else if (fenced) {
+      flush();
+      out.push(line);
+      fence = { char: fenced[1][0], size: fenced[1].length };
+      previousBlank = false;
+    } else if (line.trim().startsWith('$$')) {
+      flush();
+      out.push(line);
+      math = !line.trim().slice(2).includes('$$');
+      previousBlank = false;
+    } else if (blank) {
+      flush();
+      out.push(line);
+      previousBlank = true;
+    } else if (INDENTED.test(line) && previousBlank && !inList) {
+      // An indented code block: it starts after a blank line, outside a list.
+      flush();
+      out.push(line);
+      previousBlank = false;
+    } else {
+      if (UNIT_START.test(line)) flush();
+      if (!/^\s/.test(line)) inList = ITEM.test(line);
+      unit.push(line);
+      previousBlank = false;
+    }
+  }
+  flush();
+  return out.join('\n');
 }

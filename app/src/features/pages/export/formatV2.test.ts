@@ -56,9 +56,10 @@ describe('HTML of the marks of version 2', () => {
     expect(inline('<span data-font="Calibri">w</span>')).toContain('&#34;Calibri&#34;, &#34;Carlito&#34;');
   });
 
-  it('draws a foreign mark as plain text, a footnote reference with no text, and a box as an outline', () => {
+  it('draws a foreign mark as plain text, a footnote reference with a marker, and a box as an outline', () => {
     expect(inline('a <span data-glow="soft">b</span> c')).toBe('a b c');
-    expect(inline(`a[^${ID}]`)).toBe(`a<span class="footnote-ref" data-footnote="${ID}"></span>`);
+    // A footnote reference keeps a visible marker until the footnotes lane numbers it.
+    expect(inline(`a[^${ID}]`)).toBe(`a<span class="footnote-ref" data-footnote="${ID}">[${ID}]</span>`);
     expect(inline('<span data-box="single">w</span>')).toBe(
       '<span data-box="" style="outline:1px solid currentcolor;outline-offset:1px">w</span>',
     );

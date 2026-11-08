@@ -225,7 +225,7 @@ class Renderer {
       .map((m) => this.close(m))
       .join('');
     if ('footnote' in run)
-      return `${open}<span class="footnote-ref" data-footnote="${escapeAttr(run.footnote)}"></span>${close}`;
+      return `${open}<span class="footnote-ref" data-footnote="${escapeAttr(run.footnote)}">[${escapeHtml(run.footnote)}]</span>${close}`;
     const scale = marks.find((m): m is { readonly scale: string } => typeof m !== 'string' && 'scale' in m);
     return open + (scale ? scaledWords(run.text) : escapeHtml(run.text)) + close;
   }
@@ -283,10 +283,15 @@ class Renderer {
       })
       .join('\n');
     if (item.task === null) return `<li${attrs}>${body}</li>`;
+    // One class attribute: the task classes first, then the named style's, which `element` writes first.
+    const taskClass = `task${item.task === 'done' ? ' task-done' : ''}`;
+    const named = /^ class="([^"]*)"/.exec(attrs);
+    const rest = named ? attrs.slice(named[0].length) : attrs;
+    const classes = named ? `${taskClass} ${named[1]}` : taskClass;
     const done = item.task === 'done';
     const label = escapeAttr(done ? labels.done : labels.open);
     const box = `<span class="box${done ? ' box-done' : ''}" role="img" aria-label="${label}"></span>`;
-    return `<li class="task${done ? ' task-done' : ''}"${attrs}>${box} ${body}</li>`;
+    return `<li class="${classes}"${rest}>${box} ${body}</li>`;
   }
 
   private callout(b: Block & { type: 'callout' }): string {
@@ -331,6 +336,15 @@ function cssName(value: string): string {
 
 export function renderHtml(blocks: Document, options: HtmlOptions = {}): string {
   return new Renderer(options).blocks(blocks);
+}
+
+/**
+ * The markup of each top-level block alone, from one pass: the blocks' places among the element IDs run on from one
+ * block to the next, so each takes the formatting of its own ID. Print puts each block in its own unit.
+ */
+export function renderHtmlEach(blocks: Document, options: HtmlOptions = {}): string[] {
+  const renderer = new Renderer(options);
+  return blocks.map((block) => renderer.blocks([block]));
 }
 
 export function renderInlineHtml(content: readonly Inline[], options: HtmlOptions = {}): string {
