@@ -16,6 +16,28 @@ import { distributeRows, hideLines, setFreeze, setRowHeight, unhideLines } from 
 /** The body text size the default measure uses, in page units. */
 const BODY_SIZE = 16;
 
+/** The page's body font, as the cells are drawn in it; a sans-serif of the body size when there is no document. */
+function bodyFont(): string {
+  try {
+    if (typeof document !== 'undefined' && document.body) {
+      const style = getComputedStyle(document.body);
+      if (style.font) return style.font;
+    }
+  } catch {
+    // Without a style, the default below holds.
+  }
+  return `${BODY_SIZE}px sans-serif`;
+}
+
+/**
+ * The text a cell shows when only its markdown is known: a formula has no value here, so it counts as empty, and the
+ * marks of bold, italic, strike, and code do not take room.
+ */
+export function shownText(markdown: string): string {
+  if (markdown.startsWith('=') && markdown.length > 1) return '';
+  return markdown.replace(/\*\*|__|~~|[*`]/g, '');
+}
+
 /** What an operation gives back: the data, the caret, and the merge patch of `data.sheet` (when it changed). */
 export type StructureChange = TableChange;
 
@@ -65,14 +87,10 @@ export function applyStructureOp(data: TableData, at: At, op: StructureOp, store
       const lo = Math.min(...cols);
       const hi = Math.max(...cols);
       const list: FitColumn[] = [];
-      const own = (c: number) => data.rows.map((row) => row.cells[data.columns[c].id]?.markdown ?? '');
+      const own = (c: number) => data.rows.map((row) => shownText(row.cells[data.columns[c].id]?.markdown ?? ''));
       for (let c = lo; c <= Math.min(hi, data.columns.length - 1); c++)
         list.push({ index: c, texts: (op.texts ?? own)(c) });
-      const fitted = fitColumnWidths(
-        list,
-        op.measure ?? canvasMeasure(`${BODY_SIZE}px sans-serif`),
-        columnPadding(sheet),
-      );
+      const fitted = fitColumnWidths(list, op.measure ?? canvasMeasure(bodyFont()), columnPadding(sheet));
       return widthChange(
         data,
         at,
@@ -119,6 +137,7 @@ export function applyStructureOp(data: TableData, at: At, op: StructureOp, store
       const cell: CellBox = box;
       const changed =
         op.op === 'insertCells' ? insertCells(data, sheet, cell, op.shift) : deleteCells(data, sheet, cell, op.shift);
+      if (!changed) return null;
       return { data: changed.data, caret: at, ...(changed.patch ? { extra: changed.patch } : {}) };
     }
   }

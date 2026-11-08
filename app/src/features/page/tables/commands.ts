@@ -116,6 +116,8 @@ STRUCTURE.forEach(({ id, op, group, keys }, order) => {
     title: `sheetStructure.commands.${id}` as MessageKey,
     keywords: 'sheetStructure.commands.keywords',
     category: 'table',
+    // The structure commands write `data.sheet`, so they ship with the other sheet writes (NEXT-PLAN 3.1).
+    flag: 'tables.sheetWrites',
     when: () => table() !== null,
     enabled: () => table()?.can(op) ?? false,
     run: async () => void (await table()?.run(op)),

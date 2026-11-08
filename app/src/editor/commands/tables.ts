@@ -22,6 +22,15 @@ export interface TableChange {
    * and rules that follow inserted, deleted, and moved lines, or the settings a structure command sets.
    */
   extra?: Record<string, unknown>;
+  /** The data patches of other tables on the page whose formulas read this one (Sales!B2) and follow the change. */
+  also?: { block: string; data: Record<string, unknown> }[];
+}
+
+/** The tables of the page, for references between tables: this table's name, and the others' data. */
+export interface TableBook {
+  /** The name formulas use for this table (its own name, or Table1, Table2, ... in page order). */
+  name: string;
+  others: readonly { block: string; data: unknown }[];
 }
 
 export type TableOp =
@@ -82,7 +91,7 @@ export type LineChange =
 export interface TableHooks {
   structure(data: TableData, at: CellAt, op: StructureOp, sheet: unknown): TableChange | null;
   /** The change with formulas, names, rules, merges, and ranges brought up to date for `change`. */
-  follow(before: TableData, applied: TableChange, change: LineChange, sheet: unknown): TableChange;
+  follow(before: TableData, applied: TableChange, change: LineChange, sheet: unknown, book?: TableBook): TableChange;
 }
 
 let hooks: TableHooks | null = null;
@@ -206,8 +215,8 @@ function withRows(data: TableData, rows: TableData['rows']): TableData {
 }
 
 /** Whether the op can run on this table with the caret in `at`. */
-export function canApply(data: TableData, at: CellAt, op: TableOp, sheet?: unknown): boolean {
-  return applyTableOp(data, at, op, sheet) !== null;
+export function canApply(data: TableData, at: CellAt, op: TableOp, sheet?: unknown, book?: TableBook): boolean {
+  return applyTableOp(data, at, op, sheet, book) !== null;
 }
 
 /** The data after `op`, or null when it doesn't apply (moving the top row up, deleting the last column). */
@@ -235,14 +244,20 @@ export function fitAddedColumn(before: TableData, change: TableChange, room: num
  * commands read and change it, and inserting, deleting, and moving lines adjust the references, names, merges, and
  * rules in it (ADR 0056). The change carries the patch in `extra`.
  */
-export function applyTableOp(input: TableData, at: CellAt, op: TableOp, sheet?: unknown): TableChange | null {
+export function applyTableOp(
+  input: TableData,
+  at: CellAt,
+  op: TableOp,
+  sheet?: unknown,
+  book?: TableBook,
+): TableChange | null {
   const data = normalizeTableData(input);
   const cell = clampCell(data, at);
   if (isStructureOp(op)) return hooks?.structure(data, cell, op, sheet) ?? null;
   const applied = applyGridOp(data, cell, op);
   if (!applied) return null;
   const change = referenceChange(data, cell, op);
-  return change && hooks ? hooks.follow(data, applied, change, sheet) : applied;
+  return change && hooks ? hooks.follow(data, applied, change, sheet, book) : applied;
 }
 
 /** The change of rows or columns that `op` makes, in the formulas' coordinates (A1 is the first body row), or null. */

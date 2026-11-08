@@ -6231,25 +6231,29 @@
       "id": "table.structure.fitRows",
       "title": "Fit row height to content",
       "category": "table",
-      "keys": []
+      "keys": [],
+      "flag": "tables.sheetWrites"
     },
     {
       "id": "table.structure.fitColumns",
       "title": "Fit column width to content",
       "category": "table",
-      "keys": []
+      "keys": [],
+      "flag": "tables.sheetWrites"
     },
     {
       "id": "table.structure.distributeRows",
       "title": "Distribute rows evenly",
       "category": "table",
-      "keys": []
+      "keys": [],
+      "flag": "tables.sheetWrites"
     },
     {
       "id": "table.structure.distributeColumns",
       "title": "Distribute columns evenly",
       "category": "table",
-      "keys": []
+      "keys": [],
+      "flag": "tables.sheetWrites"
     },
     {
       "id": "table.structure.hideRows",
@@ -6257,7 +6261,8 @@
       "category": "table",
       "keys": [
         "Ctrl+9"
-      ]
+      ],
+      "flag": "tables.sheetWrites"
     },
     {
       "id": "table.structure.unhideRows",
@@ -6265,7 +6270,8 @@
       "category": "table",
       "keys": [
         "Ctrl+Shift+9"
-      ]
+      ],
+      "flag": "tables.sheetWrites"
     },
     {
       "id": "table.structure.hideColumns",
@@ -6273,7 +6279,8 @@
       "category": "table",
       "keys": [
         "Ctrl+0"
-      ]
+      ],
+      "flag": "tables.sheetWrites"
     },
     {
       "id": "table.structure.unhideColumns",
@@ -6281,31 +6288,36 @@
       "category": "table",
       "keys": [
         "Ctrl+Shift+0"
-      ]
+      ],
+      "flag": "tables.sheetWrites"
     },
     {
       "id": "table.structure.freezeTopRow",
       "title": "Freeze top row",
       "category": "table",
-      "keys": []
+      "keys": [],
+      "flag": "tables.sheetWrites"
     },
     {
       "id": "table.structure.freezeFirstColumn",
       "title": "Freeze first column",
       "category": "table",
-      "keys": []
+      "keys": [],
+      "flag": "tables.sheetWrites"
     },
     {
       "id": "table.structure.freezeAtCaret",
       "title": "Freeze panes at this cell",
       "category": "table",
-      "keys": []
+      "keys": [],
+      "flag": "tables.sheetWrites"
     },
     {
       "id": "table.structure.unfreeze",
       "title": "Unfreeze panes",
       "category": "table",
-      "keys": []
+      "keys": [],
+      "flag": "tables.sheetWrites"
     },
     {
       "id": "table.structure.groupRows",
@@ -6313,7 +6325,8 @@
       "category": "table",
       "keys": [
         "Alt+Shift+Right"
-      ]
+      ],
+      "flag": "tables.sheetWrites"
     },
     {
       "id": "table.structure.ungroupRows",
@@ -6321,31 +6334,36 @@
       "category": "table",
       "keys": [
         "Alt+Shift+Left"
-      ]
+      ],
+      "flag": "tables.sheetWrites"
     },
     {
       "id": "table.structure.groupColumns",
       "title": "Group columns",
       "category": "table",
-      "keys": []
+      "keys": [],
+      "flag": "tables.sheetWrites"
     },
     {
       "id": "table.structure.ungroupColumns",
       "title": "Ungroup columns",
       "category": "table",
-      "keys": []
+      "keys": [],
+      "flag": "tables.sheetWrites"
     },
     {
       "id": "table.structure.clearOutlineRows",
       "title": "Clear row groups",
       "category": "table",
-      "keys": []
+      "keys": [],
+      "flag": "tables.sheetWrites"
     },
     {
       "id": "table.structure.clearOutlineColumns",
       "title": "Clear column groups",
       "category": "table",
-      "keys": []
+      "keys": [],
+      "flag": "tables.sheetWrites"
     },
     {
       "id": "table.structure.insertCellsDown",
@@ -6353,13 +6371,15 @@
       "category": "table",
       "keys": [
         "Ctrl+Shift+="
-      ]
+      ],
+      "flag": "tables.sheetWrites"
     },
     {
       "id": "table.structure.insertCellsRight",
       "title": "Insert cells, shift right",
       "category": "table",
-      "keys": []
+      "keys": [],
+      "flag": "tables.sheetWrites"
     },
     {
       "id": "table.structure.deleteCellsUp",
@@ -6367,13 +6387,15 @@
       "category": "table",
       "keys": [
         "Ctrl+-"
-      ]
+      ],
+      "flag": "tables.sheetWrites"
     },
     {
       "id": "table.structure.deleteCellsLeft",
       "title": "Delete cells, shift left",
       "category": "table",
-      "keys": []
+      "keys": [],
+      "flag": "tables.sheetWrites"
     },
     {
       "id": "ink.myHandwriting.write",

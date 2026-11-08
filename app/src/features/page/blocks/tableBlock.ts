@@ -21,7 +21,7 @@ import {
   isStructureOp,
   withSelectionBox,
 } from '../../../editor/commands/tables';
-import type { CellAt, TableChange, TableOp } from '../../../editor/commands/tables';
+import type { CellAt, TableBook, TableChange, TableOp } from '../../../editor/commands/tables';
 import { createBlockEditor } from '../../../editor/extensions/kit';
 import { META_REMOTE } from '../../../editor/meta';
 import { renderStatic } from '../../../editor/schema/dom';
@@ -37,6 +37,8 @@ import type { StaticPool } from '../pool/pool';
 import { blockLaidOut } from '../seams/geometry';
 import { acceptRemoteText, attachTableSync } from '../sync';
 import type { TableSyncHandle } from '../sync';
+import { domFitInputs } from '../tables/fitInputs';
+import { readSheet, tableName as sheetTableName } from '../../tables';
 import { tableExtras } from '../tables/extras';
 import type { TableExtraHandle, TableExtraHost } from '../tables/extras';
 import { currentTable } from '../tables/current';
@@ -141,7 +143,7 @@ class TableView implements InnerView {
     this.editRoot.dataset.scope = 'editor editor.table';
     this.handle = {
       block: current.id,
-      can: (op) => applyTableOp(this.data, this.caretCell(), this.boxed(op), this.sheetData()) !== null,
+      can: (op) => applyTableOp(this.data, this.caretCell(), this.boxed(op), this.sheetData(), this.book()) !== null,
       header: () => this.data.header,
       run: (op) => this.run(op),
       deleteTable: () => this.deleteTable(),
@@ -208,11 +210,20 @@ class TableView implements InnerView {
     this.renderToolbar();
   }
 
-  private send(next: TableData, coalesce?: 'resize', extra: Record<string, unknown> = {}): Promise<unknown> {
+  private send(
+    next: TableData,
+    coalesce?: 'resize',
+    extra: Record<string, unknown> = {},
+    also: NonNullable<TableChange['also']> = [],
+  ): Promise<unknown> {
     const { header, columns, rows } = next;
     const block = this.current.id;
     return this.ctx.sync.send({
-      edits: [{ edit: 'patchBlock', block, data: { header, columns, rows, ...extra } }],
+      edits: [
+        { edit: 'patchBlock', block, data: { header, columns, rows, ...extra } },
+        // The other tables whose formulas read this one follow in the same batch, so one undo brings both back.
+        ...also.map((one) => ({ edit: 'patchBlock' as const, block: one.block, data: one.data })),
+      ],
       ...(coalesce ? { coalesce: { kind: coalesce, target: block } } : {}),
     });
   }
@@ -228,18 +239,51 @@ class TableView implements InnerView {
     return withSelectionBox(op, this.editor?.state ?? null);
   }
 
+  /** The page's tables: this one's name, and the other tables, whose references to this one follow a line change. */
+  private book(): TableBook | undefined {
+    const blocks = this.ctx.blocks?.();
+    if (!blocks) return undefined;
+    const tables = blocks.filter((block) => block.type === 'table');
+    const index = tables.findIndex((block) => block.id === this.current.id);
+    if (index < 0) return undefined;
+    const own = sheetTableName(readSheet(this.current.data));
+    return {
+      name: own ?? `Table${index + 1}`,
+      others: tables
+        .filter((block) => block.id !== this.current.id)
+        .map((block) => ({ block: block.id, data: block.data })),
+    };
+  }
+
+  /** Fit column width measures what the cells show, in the font they are drawn in, unless the command says more. */
+  private measured(op: TableOp): TableOp {
+    if (op.op !== 'fitColumns' || (op.measure && op.texts)) return op;
+    const inputs = domFitInputs(this.editRoot);
+    return inputs ? { ...op, texts: op.texts ?? inputs.texts, measure: op.measure ?? inputs.measure } : op;
+  }
+
   private async run(op: TableOp): Promise<boolean> {
     if (this.sync) await this.sync.flush('command');
     const before = this.latest();
-    const applied = applyTableOp(before, this.caretCell(), this.boxed(op), this.sheetData());
-    if (!applied) return false;
+    const applied = applyTableOp(
+      before,
+      this.caretCell(),
+      this.measured(this.boxed(op)),
+      this.sheetData(),
+      this.book(),
+    );
+    if (!applied) {
+      if (op.op === 'insertCells' || op.op === 'deleteCells')
+        this.ctx.host.announce(t('sheetStructure.announce.mergeBlocked'));
+      return false;
+    }
     const adds = op.op === 'columnLeft' || op.op === 'columnRight';
     // The scroller is the page's width; its border takes a pixel on each side.
     const change = adds ? fitAddedColumn(before, applied, this.scroller.clientWidth - 2) : applied;
     this.show(change.data, change.caret);
     this.editor?.commands.focus();
     this.ctx.host.announce(announcement(op, change));
-    await this.send(change.data, undefined, change.extra);
+    await this.send(change.data, undefined, change.extra, change.also);
     return true;
   }
 

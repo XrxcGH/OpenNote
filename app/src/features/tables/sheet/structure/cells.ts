@@ -5,7 +5,8 @@
 
 import type { TableData } from '../../../../editor/schema/specs';
 import { newColumn, newRow } from '../../../../editor/table/mapping';
-import { clone, type JsonObject } from '../model/json';
+import { clone, ownObject, type JsonObject } from '../model/json';
+import { activeMerges } from '../model/merges';
 import { sheetPatch, tidy } from '../model/sheet';
 import type { Sheet } from '../model/types';
 import { dropEmpty } from './edit';
@@ -50,7 +51,7 @@ function lastUsed(data: TableData, sheet: Sheet, box: CellBox, down: boolean): n
       const inBand = down ? c >= box.col1 && c <= box.col2 : r >= box.row1 && r <= box.row2;
       if (!inBand) return;
       const hasStyle = (styles[row.id] as JsonObject | undefined)?.[column.id] !== undefined;
-      if (row.cells[column.id]?.markdown !== '' || hasStyle) last = Math.max(last, down ? r : c);
+      if ((row.cells[column.id]?.markdown ?? '') !== '' || hasStyle) last = Math.max(last, down ? r : c);
     });
   });
   return last;
@@ -69,6 +70,67 @@ export function clampBox(data: TableData, box: CellBox): CellBox {
   };
 }
 
+/** A merge by the index of its corners, and whether the shift moves it with its cells or removes it. */
+interface MergeMove {
+  id: string;
+  from: [number, number];
+  to: [number, number];
+  drop: boolean;
+}
+
+type Region = CellBox | null;
+const touches = (b: { top: number; left: number; bottom: number; right: number }, r: CellBox): boolean =>
+  b.top <= r.row2 && b.bottom >= r.row1 && b.left <= r.col2 && b.right >= r.col1;
+const within = (b: { top: number; left: number; bottom: number; right: number }, r: CellBox): boolean =>
+  b.top >= r.row1 && b.bottom <= r.row2 && b.left >= r.col1 && b.right <= r.col2;
+
+/**
+ * What the shift does to each merge. A merge wholly inside the moving cells moves with them, and one wholly inside
+ * the deleted cells goes. A merge that crosses an edge of either would be cut, so the result is null: Excel refuses
+ * such a change as well.
+ */
+function planMerges(data: TableData, sheet: Sheet, moving: CellBox, removedBox: Region): MergeMove[] | null {
+  const out: MergeMove[] = [];
+  for (const { id, box } of activeMerges(sheet, data)) {
+    if (removedBox && touches(box, removedBox)) {
+      if (!within(box, removedBox)) return null;
+      out.push({ id, from: [box.top, box.left], to: [box.bottom, box.right], drop: true });
+    } else if (touches(box, moving)) {
+      if (!within(box, moving)) return null;
+      out.push({ id, from: [box.top, box.left], to: [box.bottom, box.right], drop: false });
+    }
+  }
+  return out;
+}
+
+/** Writes the moved merges' corners and removes the dropped ones. */
+function moveMerges(
+  sheet: Sheet,
+  merges: readonly MergeMove[],
+  move: (r: number, c: number) => [number, number] | null,
+  rowIds: readonly string[],
+  colIds: readonly string[],
+): void {
+  const stored = ownObject(sheet, 'merges');
+  if (!stored) return;
+  for (const m of merges) {
+    const a = m.drop ? null : move(m.from[0], m.from[1]);
+    const b = m.drop ? null : move(m.to[0], m.to[1]);
+    if (
+      !a ||
+      !b ||
+      rowIds[a[0]] === undefined ||
+      colIds[a[1]] === undefined ||
+      rowIds[b[0]] === undefined ||
+      colIds[b[1]] === undefined
+    ) {
+      delete stored[m.id];
+    } else {
+      stored[m.id] = { from: [rowIds[a[0]], colIds[a[1]]], to: [rowIds[b[0]], colIds[b[1]]] };
+    }
+  }
+}
+
 function build(
   data: TableData,
   sheet: Sheet,
@@ -76,6 +138,7 @@ function build(
   shift: Shift,
   rowsNeeded: number,
   colsNeeded: number,
+  merges: readonly MergeMove[],
 ): CellsChange {
   const columns = [...data.columns];
   while (columns.length < colsNeeded) columns.push(newColumn(columns[columns.length - 1]?.width));
@@ -95,7 +158,8 @@ function build(
   );
   for (const { r, c } of sources) next[r].cells[columns[c].id] = { ...BLANK };
   for (const { r, c, to } of sources) {
-    if (!to) continue;
+    // A blank cell that moves past the table's end has nothing to keep: the table does not grow for it.
+    if (!to || to[0] >= next.length || to[1] >= columns.length) continue;
     const text = rows[r].cells[columns[c].id];
     next[to[0]].cells[columns[to[1]].id] = text;
   }
@@ -115,6 +179,7 @@ function build(
   const rowIds = rows.map((r) => r.id);
   const colIds = columns.map((c) => c.id);
   for (const key of ['cells', 'notes']) moveEntries(edited, key, move, rowIds, colIds);
+  moveMerges(edited, merges, move, rowIds, colIds);
   for (const entry of Object.values((edited.names ?? {}) as JsonObject)) {
     const one = entry as JsonObject;
     if (typeof one.ref === 'string') one.ref = shiftFormula(one.ref, fshift);
@@ -125,7 +190,7 @@ function build(
 }
 
 /** Insert cells: the block's cells and everything below (down) or right of them (right) move over. */
-export function insertCells(data: TableData, sheet: Sheet, input: CellBox, shift: InsertShift): CellsChange {
+export function insertCells(data: TableData, sheet: Sheet, input: CellBox, shift: InsertShift): CellsChange | null {
   const box = clampBox(data, input);
   if (shift === 'down') {
     const n = box.row2 - box.row1 + 1;
@@ -134,7 +199,8 @@ export function insertCells(data: TableData, sheet: Sheet, input: CellBox, shift
       c >= box.col1 && c <= box.col2 && r >= box.row1 ? [r + n, c] : [r, c];
     const need = Math.max(data.rows.length, last + n + 1);
     const s: Shift = { row1: box.row1, col1: box.col1, row2: Infinity, col2: box.col2, dRow: n, dCol: 0 };
-    return build(data, sheet, move, s, need, data.columns.length);
+    const merges = planMerges(data, sheet, { ...box, row2: Infinity }, null);
+    return merges && build(data, sheet, move, s, need, data.columns.length, merges);
   }
   const n = box.col2 - box.col1 + 1;
   const last = lastUsed(data, sheet, box, false);
@@ -142,11 +208,12 @@ export function insertCells(data: TableData, sheet: Sheet, input: CellBox, shift
     r >= box.row1 && r <= box.row2 && c >= box.col1 ? [r, c + n] : [r, c];
   const need = Math.max(data.columns.length, last + n + 1);
   const s: Shift = { row1: box.row1, col1: box.col1, row2: box.row2, col2: Infinity, dRow: 0, dCol: n };
-  return build(data, sheet, move, s, data.rows.length, need);
+  const merges = planMerges(data, sheet, { ...box, col2: Infinity }, null);
+  return merges && build(data, sheet, move, s, data.rows.length, need, merges);
 }
 
 /** Delete cells: the block's cells go, and the cells below (up) or right of them (left) move in. */
-export function deleteCells(data: TableData, sheet: Sheet, input: CellBox, shift: DeleteShift): CellsChange {
+export function deleteCells(data: TableData, sheet: Sheet, input: CellBox, shift: DeleteShift): CellsChange | null {
   const box = clampBox(data, input);
   const gone = { row1: box.row1, col1: box.col1, row2: box.row2, col2: box.col2 };
   if (shift === 'up') {
@@ -156,7 +223,8 @@ export function deleteCells(data: TableData, sheet: Sheet, input: CellBox, shift
       return r <= box.row2 ? null : [r - n, c];
     };
     const s: Shift = { row1: box.row2 + 1, col1: box.col1, row2: Infinity, col2: box.col2, dRow: -n, dCol: 0, gone };
-    return build(data, sheet, move, s, data.rows.length, data.columns.length);
+    const merges = planMerges(data, sheet, { ...box, row1: box.row2 + 1, row2: Infinity }, gone);
+    return merges && build(data, sheet, move, s, data.rows.length, data.columns.length, merges);
   }
   const n = box.col2 - box.col1 + 1;
   const move = (r: number, c: number): [number, number] | null => {
@@ -164,5 +232,6 @@ export function deleteCells(data: TableData, sheet: Sheet, input: CellBox, shift
     return c <= box.col2 ? null : [r, c - n];
   };
   const s: Shift = { row1: box.row1, col1: box.col2 + 1, row2: box.row2, col2: Infinity, dRow: 0, dCol: -n, gone };
-  return build(data, sheet, move, s, data.rows.length, data.columns.length);
+  const merges = planMerges(data, sheet, { ...box, col1: box.col2 + 1, col2: Infinity }, gone);
+  return merges && build(data, sheet, move, s, data.rows.length, data.columns.length, merges);
 }

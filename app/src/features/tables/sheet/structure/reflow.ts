@@ -39,7 +39,7 @@ export function rewriteCells<T extends { cells: Record<string, { markdown: strin
 }
 
 /** The formulas of names and rules rewritten in place. */
-function rewriteSheetText(sheet: Sheet, rewrite: Rewrite): void {
+export function rewriteSheetText(sheet: Sheet, rewrite: Rewrite): void {
   const names = ownObject(sheet, 'names');
   if (names) {
     for (const key of Object.keys(names)) {
@@ -115,7 +115,44 @@ function cellText(col: number, row: number, abs?: CellAbs): string {
   return `${abs?.col ? '$' : ''}${lettersFromColumn(col)}${abs?.row ? '$' : ''}${row + 1}`;
 }
 
-/** Rewrites the references into a moved block: a cell inside follows it, a range follows only when it is all inside. */
+/** A range's first and last index after lines `at` onward are inserted (count > 0) or `-count` lines are deleted. */
+function mapSpan(first: number, last: number, at: number, count: number): [number, number] | null {
+  if (count > 0) return [first >= at ? first + count : first, last >= at ? last + count : last];
+  const n = -count;
+  const end = at + n;
+  if (first >= at && last < end) return null;
+  const a = first < at ? first : first < end ? at : first - n;
+  const b = last < at ? last : last < end ? at - 1 : last - n;
+  return [a, b];
+}
+
+/**
+ * A range inside the block band changes as inserted and deleted lines change it. Its first and last index follow,
+ * so it grows or shrinks, as in Excel. The band is the columns of a down or up shift, or the rows of a right or left
+ * shift. A range that only partly crosses the band stays as it is.
+ */
+function shiftRange(node: Extract<Node, { type: 'range' }>, s: Shift): string | null {
+  const vertical = s.dCol === 0;
+  const lo = vertical ? node.col1 : node.row1;
+  const hi = vertical ? node.col2 : node.row2;
+  const bandLo = vertical ? s.col1 : s.row1;
+  const bandHi = vertical ? s.col2 : s.row2;
+  const first = vertical ? node.row1 : node.col1;
+  const last = vertical ? node.row2 : node.col2;
+  if (![lo, hi, first, last].every(Number.isFinite) || lo < bandLo || hi > bandHi) return null;
+  const count = vertical ? s.dRow : s.dCol;
+  const start = vertical ? s.row1 : s.col1;
+  // An insert starts at the first moved cell. A delete starts where the removed cells start.
+  const span = mapSpan(first, last, count > 0 ? start : start + count, count);
+  if (span === null) return '#REF!';
+  if (span[0] === first && span[1] === last) return null;
+  const [a, b] = node.abs ?? [undefined, undefined];
+  return vertical
+    ? `${cellText(node.col1, span[0], a)}:${cellText(node.col2, span[1], b)}`
+    : `${cellText(span[0], node.row1, a)}:${cellText(span[1], node.row2, b)}`;
+}
+
+/** Rewrites the references into a moved block. A cell inside follows it. A range follows by the rules above. */
 export function shiftFormula(formula: string, s: Shift): string {
   const parsed = parseFormula(formula, undefined, { legacy: false });
   if (!parsed.ok) return formula;
@@ -132,16 +169,8 @@ export function shiftFormula(formula: string, s: Shift): string {
       return;
     }
     if (!qualified && node.type === 'range') {
-      const finite = Number.isFinite(node.row2) && Number.isFinite(node.col2);
-      if (finite && removed(s, node.row1, node.col1) && removed(s, node.row2, node.col2)) {
-        edits.push({ start: node.start, end: node.end, text: '#REF!' });
-        return;
-      }
-      if (finite && inside(s, node.row1, node.col1) && inside(s, node.row2, node.col2)) {
-        const [a, b] = node.abs ?? [undefined, undefined];
-        const text = `${cellText(node.col1 + s.dCol, node.row1 + s.dRow, a)}:${cellText(node.col2 + s.dCol, node.row2 + s.dRow, b)}`;
-        edits.push({ start: node.start, end: node.end, text });
-      }
+      const text = shiftRange(node, s);
+      if (text !== null) edits.push({ start: node.start, end: node.end, text });
       return;
     }
     for (const child of children(node)) visit(child, qualified);

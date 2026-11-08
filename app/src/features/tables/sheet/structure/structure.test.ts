@@ -250,7 +250,7 @@ describe('insert and delete cells', () => {
       ['a2', 'b2'],
       ['a3', 'b3'],
     ]);
-    const out = insertCells(data, {}, { row1: 1, col1: 0, row2: 1, col2: 0 }, 'down').data;
+    const out = insertCells(data, {}, { row1: 1, col1: 0, row2: 1, col2: 0 }, 'down')!.data;
     expect([0, 1, 2, 3].map((r) => text(out, r, 0))).toEqual(['a1', '', 'a2', 'a3']);
     expect([0, 1, 2, 3].map((r) => text(out, r, 1))).toEqual(['b1', 'b2', 'b3', '']);
     expect(out.rows).toHaveLength(4);
@@ -258,14 +258,14 @@ describe('insert and delete cells', () => {
 
   it('insert cells shifting right adds a column when content would leave the table', () => {
     const data = table([['a', 'b']]);
-    const out = insertCells(data, {}, { row1: 0, col1: 0, row2: 0, col2: 0 }, 'right').data;
+    const out = insertCells(data, {}, { row1: 0, col1: 0, row2: 0, col2: 0 }, 'right')!.data;
     expect(out.columns).toHaveLength(3);
     expect([0, 1, 2].map((c) => text(out, 0, c))).toEqual(['', 'a', 'b']);
   });
 
   it('delete cells shifting up pulls the cells below in', () => {
     const data = table([['a1'], ['a2'], ['a3'], ['a4']]);
-    const out = deleteCells(data, {}, { row1: 1, col1: 0, row2: 2, col2: 0 }, 'up').data;
+    const out = deleteCells(data, {}, { row1: 1, col1: 0, row2: 2, col2: 0 }, 'up')!.data;
     expect([0, 1, 2, 3].map((r) => text(out, r, 0))).toEqual(['a1', 'a4', '', '']);
   });
 
@@ -275,9 +275,9 @@ describe('insert and delete cells', () => {
       ['2', ''],
       ['3', ''],
     ]);
-    const down = insertCells(data, {}, { row1: 1, col1: 0, row2: 1, col2: 0 }, 'down').data;
+    const down = insertCells(data, {}, { row1: 1, col1: 0, row2: 1, col2: 0 }, 'down')!.data;
     expect(text(down, 0, 1)).toBe('=A3+A4');
-    const up = deleteCells(data, {}, { row1: 1, col1: 0, row2: 1, col2: 0 }, 'up').data;
+    const up = deleteCells(data, {}, { row1: 1, col1: 0, row2: 1, col2: 0 }, 'up')!.data;
     expect(text(up, 0, 1)).toBe('=#REF!+A2');
   });
 
@@ -285,7 +285,7 @@ describe('insert and delete cells', () => {
     const data = table([['a'], ['b'], ['c']]);
     const sheet = { styles: { s1: { font: { bold: true } } }, cells: { r2: { k1: 's1' } } } as unknown as Sheet;
     const out = insertCells(data, sheet, { row1: 0, col1: 0, row2: 0, col2: 0 }, 'down');
-    const next = after(sheet, out.patch);
+    const next = after(sheet, out!.patch);
     expect(next.cells).toEqual({ r3: { k1: 's1' } });
   });
 
@@ -298,10 +298,157 @@ describe('insert and delete cells', () => {
 
 describe('shiftFormula', () => {
   const block = { row1: 1, col1: 0, row2: Infinity, col2: 0, dRow: 2, dCol: 0 };
-  it('moves cells and whole ranges inside the block, leaves the rest', () => {
+  it('moves cells, and grows a range that lies in the block band', () => {
     expect(shiftFormula('A1+A2+B2', block)).toBe('A1+A4+B2');
     expect(shiftFormula('SUM(A2:A3)', block)).toBe('SUM(A4:A5)');
-    expect(shiftFormula('SUM(A1:A3)', block)).toBe('SUM(A1:A3)');
+    expect(shiftFormula('SUM(A1:A3)', block)).toBe('SUM(A1:A5)');
     expect(shiftFormula('$A$2+Other!A2', block)).toBe('$A$4+Other!A2');
+  });
+
+  it('leaves a range that only partly crosses the band', () => {
+    expect(shiftFormula('SUM(B1:B3)', block)).toBe('SUM(B1:B3)');
+    expect(shiftFormula('SUM(A1:B3)', block)).toBe('SUM(A1:B3)');
+  });
+
+  it('shrinks a range for delete cells and makes a fully deleted one #REF!', () => {
+    const up = {
+      row1: 2,
+      col1: 0,
+      row2: Infinity,
+      col2: 0,
+      dRow: -1,
+      dCol: 0,
+      gone: { row1: 1, col1: 0, row2: 1, col2: 0 },
+    };
+    expect(shiftFormula('SUM(A1:A3)', up)).toBe('SUM(A1:A2)');
+    expect(shiftFormula('SUM(A2:A2)', up)).toBe('SUM(#REF!)');
+  });
+
+  it('grows and shrinks a range in the row band for right and left shifts', () => {
+    const right = { row1: 0, col1: 1, row2: 0, col2: Infinity, dRow: 0, dCol: 1 };
+    expect(shiftFormula('SUM(A1:C1)', right)).toBe('SUM(A1:D1)');
+    expect(shiftFormula('SUM(A2:C2)', right)).toBe('SUM(A2:C2)');
+    const left = {
+      row1: 0,
+      col1: 2,
+      row2: 0,
+      col2: Infinity,
+      dRow: 0,
+      dCol: -1,
+      gone: { row1: 0, col1: 1, row2: 0, col2: 1 },
+    };
+    expect(shiftFormula('SUM(A1:C1)', left)).toBe('SUM(A1:B1)');
+  });
+});
+
+describe('insert and delete cells under a range', () => {
+  it('the sum over a column keeps every value after an insert and a delete', () => {
+    const data = table([
+      ['1', '=SUM(A1:A3)'],
+      ['2', ''],
+      ['3', ''],
+    ]);
+    const down = insertCells(data, {}, { row1: 1, col1: 0, row2: 1, col2: 0 }, 'down')!.data;
+    expect(down.rows[0].cells.k2.markdown).toBe('=SUM(A1:A4)');
+    const up = deleteCells(data, {}, { row1: 1, col1: 0, row2: 1, col2: 0 }, 'up')!.data;
+    expect(up.rows[0].cells.k2.markdown).toBe('=SUM(A1:A2)');
+  });
+});
+
+describe('insert cells at the edge of a table', () => {
+  const blank = (n: number) => table(Array.from({ length: n }, () => Array.from({ length: n }, () => '')));
+  it('does not throw in a blank table, shifting down or right', () => {
+    const data = blank(3);
+    expect(insertCells(data, {}, { row1: 0, col1: 0, row2: 0, col2: 0 }, 'down')!.data.rows).toHaveLength(3);
+    expect(insertCells(data, {}, { row1: 0, col1: 0, row2: 0, col2: 0 }, 'right')!.data.columns).toHaveLength(3);
+  });
+  it('does not throw with blank rows below the used rows', () => {
+    const data = table([
+      ['a', 'b'],
+      ['', ''],
+      ['', ''],
+    ]);
+    const out = insertCells(data, {}, { row1: 0, col1: 0, row2: 1, col2: 0 }, 'down')!.data;
+    expect(out.rows).toHaveLength(3);
+    expect([0, 1, 2].map((r) => out.rows[r].cells.k1.markdown)).toEqual(['', '', 'a']);
+    const wide = table([
+      ['a', '', ''],
+      ['b', '', ''],
+    ]);
+    expect(insertCells(wide, {}, { row1: 0, col1: 0, row2: 1, col2: 0 }, 'right')!.data.columns).toHaveLength(3);
+  });
+  it('the table commands can run on a blank table', () => {
+    const data = blank(3);
+    expect(applyTableOp(data, { row: 1, column: 1 }, { op: 'insertCells', shift: 'down' }, undefined)).not.toBeNull();
+    expect(applyTableOp(data, { row: 1, column: 1 }, { op: 'insertCells', shift: 'right' }, undefined)).not.toBeNull();
+  });
+});
+
+describe('insert and delete cells with merges', () => {
+  const merged = (from: [string, string], to: [string, string]): Sheet =>
+    ({ merges: { m1: { from, to } } }) as unknown as Sheet;
+  it('refuses a shift that would cut a merge', () => {
+    const data = table([
+      ['a', 'b'],
+      ['c', 'd'],
+      ['e', 'f'],
+    ]);
+    const sheet = merged(['r2', 'k1'], ['r3', 'k1']);
+    expect(insertCells(data, sheet, { row1: 2, col1: 0, row2: 2, col2: 0 }, 'down')).toBeNull();
+    expect(deleteCells(data, sheet, { row1: 2, col1: 0, row2: 2, col2: 0 }, 'up')).toBeNull();
+    expect(applyTableOp(data, { row: 2, column: 0 }, { op: 'insertCells', shift: 'down' }, sheet)).toBeNull();
+  });
+  it('moves a merge that lies wholly in the shifted cells', () => {
+    const data = table([
+      ['a', 'b'],
+      ['c', 'd'],
+      ['e', 'f'],
+      ['', ''],
+    ]);
+    const sheet = merged(['r2', 'k1'], ['r3', 'k1']);
+    const out = insertCells(data, sheet, { row1: 0, col1: 0, row2: 0, col2: 0 }, 'down')!;
+    expect(after(sheet, out.patch).merges).toEqual({ m1: { from: ['r3', 'k1'], to: ['r4', 'k1'] } });
+  });
+});
+
+describe('references between tables', () => {
+  const sales = table([['10'], ['20'], ['30']]);
+  const report = table([['=Sales!A2+Sales!A3', '=A1']]);
+  const book = { name: 'Sales', others: [{ block: 'b2', data: report }] };
+
+  it('inserting a row above row 2 of one table moves a qualified reference in another', () => {
+    const change = applyTableOp(sales, { row: 1, column: 0 }, { op: 'rowAbove' }, undefined, book)!;
+    expect(change.also).toHaveLength(1);
+    expect(change.also![0].block).toBe('b2');
+    const rows = change.also![0].data.rows as TableData['rows'];
+    // Hand worked: Sales rows 2 and 3 move down by one, so the references read rows 3 and 4. Own references (=A1) stay.
+    expect(rows[0].cells.k1.markdown).toBe('=Sales!A3+Sales!A4');
+    expect(rows[0].cells.k2.markdown).toBe('=A1');
+  });
+
+  it('a qualified reference to its own table follows inside the table', () => {
+    const two = table([['1'], ['2'], ['3']]);
+    const mixed = {
+      ...two,
+      rows: [{ ...two.rows[0], cells: { k1: { markdown: '=Sales!A2' } } }, ...two.rows.slice(1)],
+    };
+    const change = applyTableOp(mixed, { row: 0, column: 0 }, { op: 'rowAbove' }, undefined, {
+      name: 'Sales',
+      others: [],
+    })!;
+    expect(change.data.rows.map((r) => r.cells.k1.markdown)).toContain('=Sales!A3');
+  });
+
+  it('leaves other tables alone when none reads this one', () => {
+    const plain = { name: 'Sales', others: [{ block: 'b3', data: table([['=A1+B1', '2']]) }] };
+    expect(applyTableOp(sales, { row: 1, column: 0 }, { op: 'rowAbove' }, undefined, plain)!.also).toBeUndefined();
+  });
+});
+
+describe('the default fit text', () => {
+  it('counts the shown text, not the formula or the markdown marks', async () => {
+    const { shownText } = await import('./ops');
+    expect(shownText('=REPT("x",50)')).toBe('');
+    expect(shownText('**bold** and `code`')).toBe('bold and code');
   });
 });

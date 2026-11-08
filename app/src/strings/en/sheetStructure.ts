@@ -28,6 +28,7 @@ export const sheetStructure = {
     deleteCellsLeft: 'Delete cells, shift left',
   },
   announce: {
+    mergeBlocked: 'Cannot shift these cells: a merged cell would be split.',
     rowHeight: 'Row height set.',
     fitRows: 'Row height now fits the content.',
     distributeRows: 'Rows are now the same height.',

@@ -7,3 +7,5 @@ export type { SmartCommand } from './smart/commands';
 export { exportTableCharts } from './smart/exportCharts';
 // The structure commands and the reference adjustment register themselves with the table commands of the editor.
 import './sheet/structure/hooks';
+export { readSheet, tableName } from './sheet/model';
+export { canvasMeasure } from './sheet/structure/fit';
