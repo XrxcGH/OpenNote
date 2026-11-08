@@ -1,0 +1,424 @@
+{
+  "about": "Lookup and reference functions. Each case types `formula` into F1 (or the cell in `at`) of a table with columns A to F and six rows, after typing `cells`. `expected` is a value, {\"error\": code}, or {\"array\": rows}. Sources: excel-doc (an example in Microsoft's function reference), hand (worked by hand from the documented rule in the note).",
+  "cases": [
+    {
+      "formula": "=VLOOKUP(2.5,{1,\"a\";2,\"b\";3,\"c\"},2,TRUE)",
+      "expected": "b",
+      "source": "hand",
+      "note": "The nearest smaller key is 2."
+    },
+    {
+      "formula": "=VLOOKUP(2.5,{1,\"a\";2,\"b\";3,\"c\"},2,FALSE)",
+      "expected": { "error": "NA" },
+      "source": "hand",
+      "note": "No exact 2.5."
+    },
+    {
+      "formula": "=VLOOKUP(3,{1,\"a\";5,\"b\";2,\"c\";6,\"d\";3,\"e\"},2,TRUE)",
+      "expected": "c",
+      "source": "hand",
+      "note": "Unsorted keys 1,5,2,6,3. Binary search: middle of 1..5 is item 3 (2 <= 3, go right); middle of 4..5 is item 4 (6 > 3, go left); stop. The last fit is item 3, so c, although 3 is in the last row."
+    },
+    {
+      "formula": "=VLOOKUP(0,{1,\"a\";2,\"b\"},2)",
+      "expected": { "error": "NA" },
+      "source": "hand",
+      "note": "Smaller than every key."
+    },
+    {
+      "formula": "=VLOOKUP(1,{1,\"a\"},3,FALSE)",
+      "expected": { "error": "REF" },
+      "source": "hand",
+      "note": "A column past the table is #REF!."
+    },
+    {
+      "formula": "=VLOOKUP(1,{1,\"a\"},0,FALSE)",
+      "expected": { "error": "VALUE" },
+      "source": "hand",
+      "note": "A column below 1 is #VALUE!."
+    },
+    {
+      "formula": "=VLOOKUP(\"B*\",{\"apple\",1;\"banana\",2},2,FALSE)",
+      "expected": 2,
+      "source": "hand",
+      "note": "Exact match takes wildcards, without regard to case."
+    },
+    {
+      "formula": "=VLOOKUP(\"a~*\",{\"ab\",1;\"a*\",2},2,FALSE)",
+      "expected": 2,
+      "source": "hand",
+      "note": "~ makes * literal."
+    },
+    {
+      "formula": "=HLOOKUP(\"b\",{\"a\",\"b\",\"c\";1,2,3},2,FALSE)",
+      "expected": 2,
+      "source": "hand",
+      "note": "The first row is searched."
+    },
+    {
+      "formula": "=HLOOKUP(2.9,{1,2,3;\"x\",\"y\",\"z\"},2)",
+      "expected": "y",
+      "source": "hand",
+      "note": "Nearest smaller, 2."
+    },
+    {
+      "formula": "=MATCH(25,{10,20,30},1)",
+      "expected": 2,
+      "source": "hand",
+      "note": "Largest value at most 25 is 20, the second."
+    },
+    {
+      "formula": "=MATCH(25,{30,20,10},-1)",
+      "expected": 1,
+      "source": "hand",
+      "note": "Smallest value at least 25 is 30, the first."
+    },
+    {
+      "formula": "=MATCH(2,{1,2,2,2,3})",
+      "expected": 4,
+      "source": "hand",
+      "note": "Binary search keeps going right on a fit, so the last of equal keys wins."
+    },
+    {
+      "formula": "=MATCH(\"b?n*\",{\"apple\",\"banana\"},0)",
+      "expected": 2,
+      "source": "hand",
+      "note": "? is one character and * any run."
+    },
+    {
+      "formula": "=MATCH(5,{1,2;3,4},0)",
+      "expected": { "error": "NA" },
+      "source": "hand",
+      "note": "A block with two rows and two columns is not one row or column."
+    },
+    {
+      "formula": "=MATCH(\"1\",{1,2},0)",
+      "expected": { "error": "NA" },
+      "source": "hand",
+      "note": "Text does not match a number."
+    },
+    {
+      "formula": "=XLOOKUP(5,{1,3,7},{\"a\",\"b\",\"c\"},\"none\",-1)",
+      "expected": "b",
+      "source": "hand",
+      "note": "Exact or next smaller: 3."
+    },
+    {
+      "formula": "=XLOOKUP(5,{1,3,7},{\"a\",\"b\",\"c\"},\"none\",1)",
+      "expected": "c",
+      "source": "hand",
+      "note": "Exact or next larger: 7."
+    },
+    {
+      "formula": "=XLOOKUP(9,{1,3,7},{\"a\",\"b\",\"c\"},\"none\")",
+      "expected": "none",
+      "source": "hand",
+      "note": "Not found gives if_not_found."
+    },
+    {
+      "formula": "=XLOOKUP(9,{1,3,7},{\"a\",\"b\",\"c\"})",
+      "expected": { "error": "NA" },
+      "source": "hand",
+      "note": "Not found without if_not_found."
+    },
+    {
+      "formula": "=XLOOKUP(2,{2,1,2},{\"x\",\"y\",\"z\"},\"none\",0,-1)",
+      "expected": "z",
+      "source": "hand",
+      "note": "Search mode -1 starts from the end, so the last match."
+    },
+    {
+      "formula": "=XLOOKUP(2,{2,1,2},{\"x\",\"y\",\"z\"},\"none\",0,1)",
+      "expected": "x",
+      "source": "hand",
+      "note": "Search mode 1 gives the first match."
+    },
+    {
+      "formula": "=XLOOKUP(\"b*\",{\"apple\",\"banana\"},{1,2},\"none\",2)",
+      "expected": 2,
+      "source": "hand",
+      "note": "Match mode 2 takes wildcards."
+    },
+    {
+      "formula": "=XLOOKUP(\"b*\",{\"apple\",\"banana\"},{1,2},\"none\",0)",
+      "expected": "none",
+      "source": "hand",
+      "note": "Match mode 0 reads * as itself."
+    },
+    {
+      "formula": "=XLOOKUP(\"^ba\",{\"apple\",\"banana\"},{1,2},\"none\",3)",
+      "expected": 2,
+      "source": "hand",
+      "note": "Match mode 3 takes a regular expression."
+    },
+    {
+      "formula": "=XLOOKUP(\"(a+)+$\",{\"aaa\"},{1},\"none\",3)",
+      "expected": { "error": "VALUE" },
+      "source": "hand",
+      "note": "A nested quantifier is refused, so a pattern cannot take exponential time."
+    },
+    {
+      "formula": "=XLOOKUP(6,{1,3,5,7},{\"a\",\"b\",\"c\",\"d\"},\"none\",-1,2)",
+      "expected": "c",
+      "source": "hand",
+      "note": "Binary search of ascending data, next smaller: 5."
+    },
+    {
+      "formula": "=XLOOKUP(6,{7,5,3,1},{\"a\",\"b\",\"c\",\"d\"},\"none\",1,-2)",
+      "expected": "a",
+      "source": "hand",
+      "note": "Binary search of descending data, next larger: 7."
+    },
+    {
+      "formula": "=XLOOKUP(4,{7,5,3,1},{\"a\",\"b\",\"c\",\"d\"},\"none\",-1,-2)",
+      "expected": "c",
+      "source": "hand",
+      "note": "Descending, next smaller: 3."
+    },
+    {
+      "at": "D4",
+      "formula": "=XLOOKUP(2,{1;2;3},{\"a\",\"b\";\"c\",\"d\";\"e\",\"f\"})",
+      "expected": { "array": [["c", "d"]] },
+      "source": "hand",
+      "note": "A column lookup gives the whole row of the return array."
+    },
+    {
+      "formula": "=XLOOKUP(2,{1,2,3},{1,2})",
+      "expected": { "error": "VALUE" },
+      "source": "hand",
+      "note": "Return array of another length."
+    },
+    {
+      "formula": "=XLOOKUP(2,{1,2,3},{1,2,3},\"none\",5)",
+      "expected": { "error": "VALUE" },
+      "source": "hand",
+      "note": "No match mode 5."
+    },
+    { "formula": "=XMATCH(5,{1,3,5})", "expected": 3, "source": "hand", "note": "Exact by default." },
+    { "formula": "=XMATCH(4,{1,3,5},1)", "expected": 3, "source": "hand", "note": "Next larger, 5." },
+    { "formula": "=XMATCH(4,{1,3,5},-1)", "expected": 2, "source": "hand", "note": "Next smaller, 3." },
+    { "formula": "=XMATCH(3,{3,1,3},0,-1)", "expected": 3, "source": "hand", "note": "Last to first." },
+    { "formula": "=XMATCH(\"*n\",{\"ant\",\"hen\"},2)", "expected": 2, "source": "hand", "note": "Wildcards." },
+    {
+      "formula": "=LOOKUP(4.19,{4.14,4.19,5.17},{\"red\",\"orange\",\"yellow\"})",
+      "expected": "orange",
+      "source": "excel-doc",
+      "note": "Vector form, exact key."
+    },
+    {
+      "formula": "=LOOKUP(5,{4.14,4.19,5.17},{\"red\",\"orange\",\"yellow\"})",
+      "expected": "orange",
+      "source": "excel-doc",
+      "note": "Nearest smaller."
+    },
+    {
+      "formula": "=LOOKUP(0,{4.14,4.19,5.17},{\"red\",\"orange\",\"yellow\"})",
+      "expected": { "error": "NA" },
+      "source": "excel-doc",
+      "note": "Smaller than every key."
+    },
+    {
+      "formula": "=LOOKUP(\"c\",{\"a\",\"b\",\"c\",\"d\";1,2,3,4})",
+      "expected": 3,
+      "source": "hand",
+      "note": "Array form: wider than tall, so the first row is searched and the last row gives the value."
+    },
+    {
+      "formula": "=LOOKUP(\"bump\",{\"a\",1;\"b\",2;\"c\",3})",
+      "expected": 2,
+      "source": "hand",
+      "note": "Array form: taller than wide, so the first column."
+    },
+    { "formula": "=INDEX({1,2;3,4},2,1)", "expected": 3, "source": "hand", "note": "Row 2, column 1." },
+    {
+      "formula": "=INDEX({1,2,3},2)",
+      "expected": 2,
+      "source": "hand",
+      "note": "One row: the number picks the column."
+    },
+    { "formula": "=INDEX({1;2;3},2)", "expected": 2, "source": "hand", "note": "One column." },
+    {
+      "formula": "=INDEX({1,2;3,4},0,2)",
+      "expected": { "array": [[2], [4]] },
+      "source": "hand",
+      "note": "Row 0 gives the whole column."
+    },
+    {
+      "at": "D4",
+      "formula": "=INDEX({1,2;3,4},2)",
+      "expected": { "array": [[3, 4]] },
+      "source": "hand",
+      "note": "Only a row number on a block gives the whole row."
+    },
+    { "formula": "=INDEX({1,2;3,4},3,1)", "expected": { "error": "REF" }, "source": "hand", "note": "Past the block." },
+    { "formula": "=INDEX({1,2;3,4},-1,1)", "expected": { "error": "VALUE" }, "source": "hand", "note": "Negative." },
+    {
+      "formula": "=SUM(INDEX({1,2;3,4},0,1))",
+      "expected": 4,
+      "source": "hand",
+      "note": "INDEX of an array gives values to SUM, not a reference."
+    },
+    {
+      "formula": "=INDEX(A1:B2,2,2)",
+      "cells": { "B2": "7" },
+      "expected": 7,
+      "source": "hand",
+      "note": "INDEX of a reference reads the cell."
+    },
+    {
+      "formula": "=SUM(INDEX(A1:B3,0,2))",
+      "cells": { "B1": "1", "B2": "2", "B3": "3", "A1": "100" },
+      "expected": 6,
+      "source": "hand",
+      "note": "Column 2 of A1:B3 is B1:B3."
+    },
+    {
+      "formula": "=ROWS(INDEX(A1:C3,0,2))",
+      "expected": 3,
+      "source": "hand",
+      "note": "INDEX of a reference gives a reference, so ROWS counts its rows."
+    },
+    {
+      "formula": "=INDEX((A1:A2,C1:C2),1,1,2)",
+      "cells": { "A1": "1", "C1": "9" },
+      "expected": 9,
+      "source": "hand",
+      "note": "Area 2 of the union."
+    },
+    {
+      "formula": "=OFFSET(A1,1,1)",
+      "cells": { "B2": "5" },
+      "expected": 5,
+      "source": "hand",
+      "note": "One down and one right of A1 is B2."
+    },
+    {
+      "formula": "=SUM(OFFSET(A1,1,0,2,1))",
+      "cells": { "A2": "2", "A3": "3", "A4": "4" },
+      "expected": 5,
+      "source": "hand",
+      "note": "A2:A3."
+    },
+    { "formula": "=OFFSET(A1,-1,0)", "expected": { "error": "REF" }, "source": "hand", "note": "Above the first row." },
+    { "formula": "=OFFSET(A1,0,0,0,1)", "expected": { "error": "REF" }, "source": "hand", "note": "Height 0." },
+    {
+      "formula": "=INDIRECT(\"B\"&2)",
+      "cells": { "B2": "8" },
+      "expected": 8,
+      "source": "hand",
+      "note": "The text B2."
+    },
+    {
+      "formula": "=SUM(INDIRECT(\"A1:A3\"))",
+      "cells": { "A1": "1", "A2": "2", "A3": "3" },
+      "expected": 6,
+      "source": "hand",
+      "note": "A range as text."
+    },
+    {
+      "formula": "=INDIRECT(\"R2C2\",FALSE)",
+      "cells": { "B2": "4" },
+      "expected": 4,
+      "source": "hand",
+      "note": "R1C1, absolute."
+    },
+    {
+      "formula": "=INDIRECT(\"R[1]C[-4]\",FALSE)",
+      "cells": { "B2": "6" },
+      "expected": 6,
+      "source": "hand",
+      "note": "R1C1 relative to F1: one down, four left is B2."
+    },
+    {
+      "formula": "=INDIRECT(\"nonsense\")",
+      "expected": { "error": "REF" },
+      "source": "hand",
+      "note": "Not a reference."
+    },
+    { "formula": "=CHOOSE(2,\"a\",\"b\",\"c\")", "expected": "b", "source": "hand", "note": "The second value." },
+    {
+      "formula": "=CHOOSE(4,\"a\",\"b\",\"c\")",
+      "expected": { "error": "VALUE" },
+      "source": "hand",
+      "note": "Past the list."
+    },
+    {
+      "formula": "=SUM(CHOOSE(2,A1:A2,B1:B2))",
+      "cells": { "B1": "3", "B2": "4", "A1": "50" },
+      "expected": 7,
+      "source": "hand",
+      "note": "A chosen range adds up."
+    },
+    { "formula": "=ROW()", "expected": 1, "source": "hand", "note": "F1 is in row 1." },
+    { "formula": "=COLUMN()", "expected": 6, "source": "hand", "note": "F1 is in column 6." },
+    { "formula": "=ROW(C5)", "expected": 5, "source": "hand", "note": "Row of C5." },
+    { "formula": "=COLUMN(C5)", "expected": 3, "source": "hand", "note": "Column of C5." },
+    {
+      "formula": "=ROW(B2:B4)",
+      "expected": { "array": [[2], [3], [4]] },
+      "source": "hand",
+      "note": "One number per row."
+    },
+    {
+      "at": "D4",
+      "formula": "=COLUMN(A1:C1)",
+      "expected": { "array": [[1, 2, 3]] },
+      "source": "hand",
+      "note": "One number per column."
+    },
+    { "formula": "=ROWS({1,2;3,4;5,6})", "expected": 3, "source": "hand", "note": "Three rows." },
+    { "formula": "=COLUMNS(A1:C2)", "expected": 3, "source": "hand", "note": "A to C." },
+    { "formula": "=ROWS(A2:B4)", "expected": 3, "source": "hand", "note": "Rows 2 to 4." },
+    { "formula": "=COLUMNS(7)", "expected": 1, "source": "hand", "note": "One value." },
+    { "formula": "=ADDRESS(2,3)", "expected": "$C$2", "source": "hand", "note": "Absolute by default." },
+    { "formula": "=ADDRESS(2,3,2)", "expected": "C$2", "source": "hand", "note": "Absolute row." },
+    { "formula": "=ADDRESS(2,3,3)", "expected": "$C2", "source": "hand", "note": "Absolute column." },
+    { "formula": "=ADDRESS(2,3,4)", "expected": "C2", "source": "hand", "note": "Relative." },
+    { "formula": "=ADDRESS(2,3,1,FALSE)", "expected": "R2C3", "source": "hand", "note": "R1C1, absolute." },
+    { "formula": "=ADDRESS(2,3,4,FALSE)", "expected": "R[2]C[3]", "source": "hand", "note": "R1C1, relative." },
+    {
+      "formula": "=ADDRESS(2,3,1,TRUE,\"Sales\")",
+      "expected": "Sales!$C$2",
+      "source": "hand",
+      "note": "A plain table name."
+    },
+    {
+      "formula": "=ADDRESS(1,1,1,TRUE,\"My Sales\")",
+      "expected": "'My Sales'!$A$1",
+      "source": "hand",
+      "note": "A name with a space is quoted."
+    },
+    { "formula": "=ADDRESS(1,28)", "expected": "$AB$1", "source": "hand", "note": "Column 28 is AB." },
+    { "formula": "=ADDRESS(1,16384)", "expected": "$XFD$1", "source": "hand", "note": "The last column." },
+    { "formula": "=ADDRESS(0,1)", "expected": { "error": "VALUE" }, "source": "hand", "note": "Row 0." },
+    { "formula": "=ADDRESS(1,1,5)", "expected": { "error": "VALUE" }, "source": "hand", "note": "No abs type 5." },
+    { "formula": "=AREAS((A1:B2,C3))", "expected": 2, "source": "hand", "note": "Two areas." },
+    { "formula": "=AREAS(A1:B2)", "expected": 1, "source": "hand", "note": "One area." },
+    {
+      "formula": "=FORMULATEXT(A1)",
+      "cells": { "A1": "=1+2" },
+      "expected": "=1+2",
+      "source": "hand",
+      "note": "The formula as text."
+    },
+    {
+      "formula": "=FORMULATEXT(A1)",
+      "cells": { "A1": "3" },
+      "expected": { "error": "NA" },
+      "source": "hand",
+      "note": "No formula."
+    },
+    {
+      "formula": "=HYPERLINK(\"https://example.com\",\"Site\")",
+      "expected": "Site",
+      "source": "hand",
+      "note": "The friendly name shows."
+    },
+    {
+      "formula": "=HYPERLINK(\"https://example.com\")",
+      "expected": "https://example.com",
+      "source": "hand",
+      "note": "Without a name, the address shows."
+    }
+  ]
+}
