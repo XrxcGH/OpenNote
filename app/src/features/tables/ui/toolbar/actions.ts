@@ -14,7 +14,7 @@ import { readSheet } from '../../sheet/model';
 import type { CellStyle, StyleChange } from '../../sheet/model';
 import { BORDER_LABELS, bordersFor } from './borders';
 import type { BorderId, Line } from './borders';
-import { FORMAT_CHOICES, stepDecimals, toggleThousands, currencyCode } from './numberFormats';
+import { FORMAT_CHOICES, choiceOf, stepDecimals, toggleThousands, currencyCode } from './numberFormats';
 
 /** The line style and color the borders menu draws with. It stays for the session, as Excel's does. */
 export const borderLine: Line = { style: 'thin' };
@@ -25,6 +25,9 @@ export function setBorderLine(change: { style?: string; color?: string | null })
   if (change.color === null) delete borderLine.color;
   else if (change.color !== undefined) borderLine.color = change.color;
 }
+
+/** The last border preset used, which the Borders button and the Borders command apply again. */
+export const borderUse: { last: BorderId } = { last: 'all' };
 
 export interface Cells {
   box: CellBox;
@@ -71,6 +74,7 @@ export function setTextColor(host: TableExtraHost, color: string | null): boolea
 export async function setBorders(host: TableExtraHost, id: BorderId): Promise<boolean> {
   const cells = cellsOf(host);
   if (!cells) return false;
+  borderUse.last = id;
   const done = await writeFormat(host, bordersFor(id, cells.box, borderLine), [], cells.box);
   if (done) host.announce(t('sheetToolbar.announce.borders', { name: t(BORDER_LABELS[id]) }));
   return done;
@@ -84,14 +88,34 @@ export const setAlignV = (host: TableExtraHost, v: 'top' | 'middle' | 'bottom') 
 export const setWrap = (host: TableExtraHost, wrap: 'wrap' | 'overflow' | 'clip') =>
   setCells(host, { align: { wrap } });
 
+export type UnderlineKind = 'none' | 'single' | 'double' | 'singleAccounting' | 'doubleAccounting';
+
+/** An underline kind: the cell's for whole cells, the text's for selected text (which has no accounting kinds). */
+export async function setUnderline(host: TableExtraHost, kind: UnderlineKind): Promise<boolean> {
+  const cells = cellsOf(host);
+  if (!cells) return false;
+  if (!cells.whole && !host.editor.state.selection.empty) {
+    if (kind.endsWith('Accounting')) return false;
+    return runEditorCommand(host.editor, 'format.underlineStyle', { value: kind === 'none' ? null : kind });
+  }
+  return setCells(host, { font: { underline: kind } }, ['underline']);
+}
+
 /** Text rotation: degrees from -90 to 90, or stacked letters. 0 takes the rotation off. */
 export const setRotate = (host: TableExtraHost, rotate: number | 'stacked') =>
   setCells(host, { align: { rotate: rotate === 0 ? null : rotate } });
 
+/** What a screen reader hears for a code: the menu choice's name, or Custom. Never the raw code. */
+function formatName(code: string | null): string {
+  const id = choiceOf(code ?? undefined, appLocale());
+  const choice = FORMAT_CHOICES.find((one) => one.id === id);
+  return t(choice ? choice.label : 'sheetToolbar.fmtCustom');
+}
+
 /** A number format code, or null for General. */
 export async function setFormat(host: TableExtraHost, code: string | null): Promise<boolean> {
   const done = await setCells(host, { fmt: code });
-  if (done) host.announce(t('sheetToolbar.announce.format', { format: code ?? 'General' }));
+  if (done) host.announce(t('sheetToolbar.announce.format', { format: formatName(code) }));
   return done;
 }
 

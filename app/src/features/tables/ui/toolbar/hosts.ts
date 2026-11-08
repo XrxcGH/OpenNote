@@ -87,3 +87,23 @@ export function currentHost(): TableExtraHost | undefined {
   const handle = currentTable.get();
   return handle ? hosts.get(handle.block) : undefined;
 }
+
+/** What a block's bar opens by name (its palettes). The bar adds these while it shows, so a command opens its own table's. */
+const openers = new Map<string, Map<string, () => void>>();
+
+/** Adds a way to open a palette of a block's bar. Returns the call that takes it away. */
+export function addOpener(block: string, tool: string, open: () => void): () => void {
+  const own = openers.get(block) ?? new Map<string, () => void>();
+  openers.set(block, own);
+  own.set(tool, open);
+  return () => {
+    if (own.get(tool) === open) own.delete(tool);
+  };
+}
+
+/** Opens a palette of a block's bar. Returns false when the block's bar does not show. */
+export function openTool(block: string, tool: string): boolean {
+  const open = openers.get(block)?.get(tool);
+  open?.();
+  return open !== undefined;
+}

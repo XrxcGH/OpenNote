@@ -37,7 +37,7 @@ export interface TableExtraHost {
 }
 
 export interface TableExtraHandle {
-  /** The block changed from outside this extra: undo, redo, or another window. */
+  /** The block changed from outside this extra (undo, redo, another window), or an extra wrote to it. */
   update(block: BlockJson): void;
   destroy(): void;
 }

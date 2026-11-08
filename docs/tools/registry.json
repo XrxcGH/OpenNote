@@ -5647,6 +5647,55 @@
       "flag": "tables.sheetWrites"
     },
     {
+      "id": "table.cell.borderThickOutside",
+      "title": "Cell: Thick outside borders",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.borderTop",
+      "title": "Cell: Top border",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.borderBottom",
+      "title": "Cell: Bottom border",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.borderLeft",
+      "title": "Cell: Left border",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.borderRight",
+      "title": "Cell: Right border",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.borderInsideH",
+      "title": "Cell: Inside horizontal borders",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.borderInsideV",
+      "title": "Cell: Inside vertical borders",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
       "id": "table.cell.borderNone",
       "title": "Cell: No border",
       "category": "table",
@@ -5654,8 +5703,155 @@
       "flag": "tables.sheetWrites"
     },
     {
+      "id": "table.cell.borderBottomDouble",
+      "title": "Cell: Bottom double border",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.borderBottomThick",
+      "title": "Cell: Thick bottom border",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.borderTopBottom",
+      "title": "Cell: Top and bottom border",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.borderTopThickBottom",
+      "title": "Cell: Top and thick bottom border",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.borderDiagonalUp",
+      "title": "Cell: Diagonal up border",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.borderDiagonalDown",
+      "title": "Cell: Diagonal down border",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.lineStyleThin",
+      "title": "Cell: Border line thin",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.lineStyleMedium",
+      "title": "Cell: Border line medium",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.lineStyleThick",
+      "title": "Cell: Border line thick",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.lineStyleHair",
+      "title": "Cell: Border line hairline",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.lineStyleDotted",
+      "title": "Cell: Border line dotted",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.lineStyleDashed",
+      "title": "Cell: Border line dashed",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.lineStyleDouble",
+      "title": "Cell: Border line double",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.borderColor",
+      "title": "Cell: Border line color",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
       "id": "table.cell.wrap",
       "title": "Cell: Wrap text",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.wrapOverflow",
+      "title": "Cell: Overflow into empty cells",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.wrapClip",
+      "title": "Cell: Clip text",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.rotateNone",
+      "title": "Cell: Horizontal text",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.rotateUp",
+      "title": "Cell: Rotate text up",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.rotateDown",
+      "title": "Cell: Rotate text down",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.rotateVertical",
+      "title": "Cell: Vertical text",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.rotateStacked",
+      "title": "Cell: Stacked text",
       "category": "table",
       "keys": [],
       "flag": "tables.sheetWrites"
@@ -5682,6 +5878,13 @@
       "flag": "tables.sheetWrites"
     },
     {
+      "id": "table.cell.alignJustify",
+      "title": "Cell: Justify",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
       "id": "table.cell.alignTop",
       "title": "Cell: Align top",
       "category": "table",
@@ -5703,6 +5906,41 @@
       "flag": "tables.sheetWrites"
     },
     {
+      "id": "table.cell.underlineNone",
+      "title": "Cell: No underline",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.underlineSingle",
+      "title": "Cell: Single underline",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.underlineDouble",
+      "title": "Cell: Double underline",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.underlineSingleAccounting",
+      "title": "Cell: Single accounting underline",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.underlineDoubleAccounting",
+      "title": "Cell: Double accounting underline",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
       "id": "table.cell.currency",
       "title": "Cell: Currency format",
       "category": "table",
@@ -5719,6 +5957,62 @@
     {
       "id": "table.cell.general",
       "title": "Cell: General format",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.formatNumber",
+      "title": "Cell: Number format",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.formatAccounting",
+      "title": "Cell: Accounting format",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.formatShortDate",
+      "title": "Cell: Short date format",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.formatLongDate",
+      "title": "Cell: Long date format",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.formatTime",
+      "title": "Cell: Time format",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.formatFraction",
+      "title": "Cell: Fraction format",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.formatScientific",
+      "title": "Cell: Scientific format",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.formatText",
+      "title": "Cell: Text format",
       "category": "table",
       "keys": [],
       "flag": "tables.sheetWrites"

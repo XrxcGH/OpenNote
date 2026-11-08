@@ -30,6 +30,7 @@ import type { StaticPool } from '../pool/pool';
 import { blockLaidOut } from '../seams/geometry';
 import { acceptRemoteText, attachTableSync } from '../sync';
 import type { TableSyncHandle } from '../sync';
+import { applyMergePatch } from '../../../platform/mergePatch';
 import { tableExtras } from '../tables/extras';
 import type { TableExtraHandle, TableExtraHost } from '../tables/extras';
 import { currentTable } from '../tables/current';
@@ -338,6 +339,15 @@ class TableView implements InnerView {
     view.dispatch(state.tr.setSelection(caret).setMeta('addToHistory', false));
   }
 
+  /**
+   * An extra's own write reaches every extra at once: the block's data holds it, and each extra's update runs. So a
+   * second extra plans from the data the first one wrote, not from the data before it.
+   */
+  private echo(patch: Record<string, unknown>): void {
+    this.current = { ...this.current, data: applyMergePatch(this.current.data ?? {}, patch) } as BlockJson;
+    for (const extra of this.extras) extra.update(this.current);
+  }
+
   /** What features that add to the table may do (see tables/extras.ts). */
   private attachExtras(editor: Editor): void {
     const block = this.current.id;
@@ -353,10 +363,14 @@ class TableView implements InnerView {
         const next = change(this.latest());
         if (!next) return false;
         this.show(next, this.caretCell());
+        if (extra) this.echo(extra);
         await this.send(next, undefined, extra);
         return true;
       },
-      patch: (data) => this.ctx.sync.send({ edits: [{ edit: 'patchBlock', block, data }] }),
+      patch: (data) => {
+        this.echo(data);
+        return this.ctx.sync.send({ edits: [{ edit: 'patchBlock', block, data }] });
+      },
       announce: (text) => this.ctx.host.announce(text),
       flag: (id) => this.ctx.host.flag(id),
       insertTable: async (data) => (await import('../tables/insert')).insertTable(data as unknown as TableData),

@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { BORDER_IDS, bordersFor } from './borders';
 import type { BorderId } from './borders';
 import { EN_US } from '../../engine/locale';
-import { accountingCode, currencyCode, hasThousands, stepDecimals, toggleThousands } from './numberFormats';
+import { accountingCode, choiceOf, currencyCode, hasThousands, stepDecimals, toggleThousands } from './numberFormats';
 
 describe('decimal places', () => {
   const more: [string | undefined, string | null][] = [
@@ -18,7 +18,12 @@ describe('decimal places', () => {
     ['0.00%', '0.000%'],
     ['0.00E+00', '0.000E+00'],
     ['0E+00', '0.0E+00'],
-    ['"$"#,##0.00_);("$"#,##0.00)', '"$"#,##0.000_);("$"#,##0.00)'],
+    ['"$"#,##0.00_);("$"#,##0.00)', '"$"#,##0.000_);("$"#,##0.000)'],
+    // Accounting: the dash section has only ? placeholders and the text section none, so both stay.
+    [
+      '_("$"* #,##0.00_);_("$"* \\(#,##0.00\\);_("$"* "-"??_);_(@_)',
+      '_("$"* #,##0.000_);_("$"* \\(#,##0.000\\);_("$"* "-"??_);_(@_)',
+    ],
     ['"0.00 m"0', '"0.00 m"0.0'],
   ];
   for (const [code, expected] of more) {
@@ -34,7 +39,7 @@ describe('decimal places', () => {
     ['#,##0.0', '#,##0'],
     ['0.00%', '0.0%'],
     ['0.0E+00', '0E+00'],
-    ['"$"#,##0.00_);("$"#,##0.00)', '"$"#,##0.0_);("$"#,##0.00)'],
+    ['"$"#,##0.00_);("$"#,##0.00)', '"$"#,##0.0_);("$"#,##0.0)'],
   ];
   for (const [code, expected] of fewer) {
     it(`removes a decimal from ${code ?? 'nothing'}`, () => expect(stepDecimals(code, -1)).toBe(expected));
@@ -50,6 +55,13 @@ describe('thousands separator', () => {
     ['0000', '0,000'],
     ['#,##0', '###0'],
     ['#,##0.00', '###0.00'],
+    // Every section follows the first: off removes the comma of the negative section too, on adds it to both.
+    ['"$"#,##0.00_);("$"#,##0.00)', '"$"###0.00_);("$"###0.00)'],
+    ['"$"0.00_);("$"0.00)', '"$"#,##0.00_);("$"#,##0.00)'],
+    [
+      '_("$"* #,##0.00_);_("$"* \\(#,##0.00\\);_("$"* "-"??_);_(@_)',
+      '_("$"* ###0.00_);_("$"* \\(###0.00\\);_("$"* "-"??_);_(@_)',
+    ],
   ];
   for (const [code, expected] of cases) {
     it(`turns ${code ?? 'nothing'} into ${expected}`, () => expect(toggleThousands(code)).toBe(expected));
@@ -110,5 +122,16 @@ describe('border presets', () => {
   it('draws with the line color when there is one', () => {
     const step = bordersFor('top', box, { style: 'medium', color: 'theme:accent1' })[0];
     expect(step.change.border).toEqual({ t: { style: 'medium', color: 'theme:accent1' } });
+  });
+});
+
+describe('which number format choice a code is', () => {
+  it('names the choice whose code the cell has', () => {
+    expect(choiceOf(undefined, EN_US)).toBe('general');
+    expect(choiceOf(currencyCode(EN_US), EN_US)).toBe('currency');
+    expect(choiceOf(accountingCode(EN_US), EN_US)).toBe('accounting');
+    expect(choiceOf('0%', EN_US)).toBe('percent');
+    expect(choiceOf('@', EN_US)).toBe('text');
+    expect(choiceOf('0.000', EN_US)).toBeNull();
   });
 });

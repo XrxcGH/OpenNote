@@ -21,7 +21,7 @@ import { TextAlignCenterIcon } from '@phosphor-icons/react/dist/csr/TextAlignCen
 import { TextAlignJustifyIcon } from '@phosphor-icons/react/dist/csr/TextAlignJustify';
 import { TextAlignLeftIcon } from '@phosphor-icons/react/dist/csr/TextAlignLeft';
 import { TextAlignRightIcon } from '@phosphor-icons/react/dist/csr/TextAlignRight';
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
 import type { ComponentType, RefObject } from 'react';
 import { commandOn, runEditorCommand } from '../../../../editor/commands/catalog';
 import { BODY_POINTS } from '../../../../editor/commands/sizes';
@@ -31,14 +31,16 @@ import type { MessageKey } from '../../../../strings/t';
 import { IconButton, Popover, openMenu } from '../../../../ui';
 import type { IconProps, MenuItemSpec } from '../../../../ui';
 import { ColorPalette } from '../../../../ui/color';
-import type { ColorPick } from '../../../../ui/color';
+import type { ColorPick, Scheme } from '../../../../ui/color';
 import { iconFor } from '../../../../ui/commandIcons';
 import { FontPicker, SizeBox, useFontCatalog } from '../../../fonts';
 import type { TableExtraHost } from '../../../page';
 import styles from './toolbar.module.css';
 import { currentScheme } from '../../sheet/render/plugin';
+import { appLocale } from '../../smart/locale';
 import {
   borderLine,
+  borderUse,
   cellsOf,
   changeDecimals,
   changeThousands,
@@ -54,14 +56,15 @@ import {
   setPercent,
   setRotate,
   setTextColor,
+  setUnderline,
   setWrap,
 } from './actions';
-import type { Cells } from './actions';
+import type { Cells, UnderlineKind } from './actions';
 import { BORDER_IDS, BORDER_LABELS } from './borders';
-import type { BorderId } from './borders';
-import { hostOfBlock, hostsVersion, subscribeHosts } from './hosts';
-import { FORMAT_CHOICES } from './numberFormats';
-import { moveFocus } from './roving';
+import { addOpener, hostOfBlock, hostsVersion, subscribeHosts } from './hosts';
+import { FORMAT_CHOICES, choiceOf } from './numberFormats';
+import { againstFor, paperOf } from './palette';
+import { moveFocus, rove } from './roving';
 
 /** The bar is this narrow (in pixels) or less when the least used buttons move into the More menu. */
 const NARROW = 620;
@@ -92,8 +95,13 @@ const WRAPS: readonly (readonly ['wrap' | 'overflow' | 'clip', MessageKey])[] = 
   ['clip', 'sheetToolbar.wrapClip'],
 ];
 
-/** The last border preset used, which the Borders button applies again. */
-let lastBorder: BorderId = 'all';
+const UNDERLINES: readonly (readonly [UnderlineKind, MessageKey])[] = [
+  ['none', 'sheetToolbar.underlineNone'],
+  ['single', 'sheetToolbar.underlineSingle'],
+  ['double', 'sheetToolbar.underlineDouble'],
+  ['singleAccounting', 'sheetToolbar.underlineSingleAccounting'],
+  ['doubleAccounting', 'sheetToolbar.underlineDoubleAccounting'],
+];
 
 /** The notebook the page is in, whose recent colors the palette keeps. */
 function notebookOf(): string {
@@ -148,9 +156,13 @@ interface PaletteProps {
   anchor: RefObject<HTMLElement | null>;
   open: boolean;
   onClose(): void;
+  /** The color the contrast badge compares with. */
+  against?: string;
+  /** The page's paper, so the Paper column follows the page and not the app's surface. */
+  paper?: string;
 }
 
-function PalettePopover({ name, current, fill, onPick, anchor, open, onClose }: PaletteProps) {
+function PalettePopover({ name, current, fill, onPick, anchor, open, onClose, against, paper }: PaletteProps) {
   return (
     <Popover anchor={anchor} label={t(name)} open={open} onClose={onClose}>
       <ColorPalette
@@ -160,12 +172,17 @@ function PalettePopover({ name, current, fill, onPick, anchor, open, onClose }: 
         noColor={fill}
         current={current}
         onPick={onPick}
+        against={against}
+        theme={paper ? { background: paper } : undefined}
       />
     </Popover>
   );
 }
 
 interface ColorToolProps {
+  block: string;
+  against: string;
+  paper?: string;
   tool: 'fill' | 'textColor';
   name: MessageKey;
   paletteName: MessageKey;
@@ -175,9 +192,11 @@ interface ColorToolProps {
 }
 
 /** A button that opens a color palette in a popover. */
-function ColorTool({ tool, name, paletteName, icon, current, onPick }: ColorToolProps) {
+function ColorTool({ block, against, paper, tool, name, paletteName, icon, current, onPick }: ColorToolProps) {
   const wrap = useRef<HTMLSpanElement>(null);
   const [open, setOpen] = useState(false);
+  // The palette command opens this table's own palette (hosts.ts).
+  useEffect(() => addOpener(block, tool, () => setOpen(true)), [block, tool]);
   return (
     <span ref={wrap}>
       <Tool tool={tool} name={name} icon={icon} popup="dialog" expanded={open} onPress={() => setOpen(!open)} />
@@ -185,6 +204,8 @@ function ColorTool({ tool, name, paletteName, icon, current, onPick }: ColorTool
         name={paletteName}
         current={current}
         fill={tool === 'fill'}
+        against={against}
+        paper={paper}
         anchor={wrap}
         open={open}
         onClose={() => setOpen(false)}
@@ -198,17 +219,15 @@ function ColorTool({ tool, name, paletteName, icon, current, onPick }: ColorTool
 }
 
 /** The split Borders button: the last preset, and the menu of all of them with line style and color. */
-function BordersTool({ host, run }: { host: TableExtraHost; run: Run }) {
+function BordersTool({ host, run, paper }: { host: TableExtraHost; run: Run; paper?: string }) {
   const wrap = useRef<HTMLSpanElement>(null);
   const [color, setColor] = useState(false);
+  useEffect(() => addOpener(host.block, 'borderColor', () => setColor(true)), [host.block]);
   const menu = (anchor: HTMLElement) => {
     const items: MenuItemSpec[] = BORDER_IDS.map((id) => ({
       id,
       label: t(BORDER_LABELS[id]),
-      onSelect: () => {
-        lastBorder = id;
-        run(setBorders(host, id));
-      },
+      onSelect: () => run(setBorders(host, id)),
     }));
     items.push(
       {
@@ -233,18 +252,20 @@ function BordersTool({ host, run }: { host: TableExtraHost; run: Run }) {
         tool="borders"
         name="sheetToolbar.borders"
         icon={GridFourIcon}
-        onPress={() => run(setBorders(host, lastBorder))}
+        onPress={() => run(setBorders(host, borderUse.last))}
       />
       <Tool tool="bordersMenu" name="sheetToolbar.borders" icon={CaretDownIcon} popup="menu" onPress={menu} />
       <PalettePopover
         name="sheetToolbar.borderColor"
+        paper={paper}
+        against={paper}
         anchor={wrap}
         open={color}
         onClose={() => setColor(false)}
         onPick={(choice) => {
           setColor(false);
           setBorderLine({ color: choice.kind === 'color' ? choice.value : null });
-          run(setBorders(host, lastBorder));
+          run(setBorders(host, borderUse.last));
         }}
       />
     </span>
@@ -257,6 +278,8 @@ interface GroupProps {
   cells: Cells;
   run: Run;
   narrow: boolean;
+  /** The page's paper, for the palettes. */
+  paper?: string;
 }
 
 function menuAt(host: TableExtraHost, label: MessageKey, items: MenuItemSpec[], anchor: HTMLElement): void {
@@ -306,14 +329,27 @@ function FontGroup({ host, cells, run }: GroupProps) {
           )
         }
       />
+      <Tool
+        tool="sizeUp"
+        name="sheetToolbar.fontSizeUp"
+        icon={iconFor('format.fontSizeUp')}
+        onPress={() => run(runEditorCommand(host.editor, 'format.fontSizeUp', {}, { focus: false }))}
+      />
+      <Tool
+        tool="sizeDown"
+        name="sheetToolbar.fontSizeDown"
+        icon={iconFor('format.fontSizeDown')}
+        onPress={() => run(runEditorCommand(host.editor, 'format.fontSizeDown', {}, { focus: false }))}
+      />
     </span>
   );
 }
 
 const pickValue = (choice: ColorPick): string | null => (choice.kind === 'color' ? choice.value : null);
 
-function StyleGroup({ host, cells, run }: GroupProps) {
+function StyleGroup({ host, cells, run, paper }: GroupProps) {
   const { style, whole } = cells;
+  const scheme: Scheme = currentScheme();
   const { font } = style;
   const state = host.editor.state;
   const shared = (tool: string, command: string, name: MessageKey, cell: boolean | undefined) => (
@@ -335,8 +371,34 @@ function StyleGroup({ host, cells, run }: GroupProps) {
         'sheetToolbar.underline',
         !!font?.underline && font.underline !== 'none',
       )}
+      <Tool
+        tool="underlineMenu"
+        name="sheetToolbar.underlineMenu"
+        icon={CaretDownIcon}
+        popup="menu"
+        onPress={(anchor) =>
+          menuAt(
+            host,
+            'sheetToolbar.underlineMenu',
+            // Selected text has no accounting kinds.
+            UNDERLINES.filter(
+              ([kind]) => whole || host.editor.state.selection.empty || !kind.endsWith('Accounting'),
+            ).map(([kind, label]) => ({
+              id: kind,
+              label: t(label),
+              kind: 'radio' as const,
+              checked: (font?.underline ?? 'none') === kind,
+              onSelect: () => run(setUnderline(host, kind)),
+            })),
+            anchor,
+          )
+        }
+      />
       {shared('strike', 'format.strike', 'sheetToolbar.strike', !!font?.strike && font.strike !== 'none')}
       <ColorTool
+        block={host.block}
+        against={againstFor('textColor', style, scheme, paper)}
+        paper={paper}
         tool="textColor"
         name="sheetToolbar.textColor"
         paletteName="sheetToolbar.textPalette"
@@ -345,6 +407,9 @@ function StyleGroup({ host, cells, run }: GroupProps) {
         onPick={(choice) => run(setTextColor(host, pickValue(choice)))}
       />
       <ColorTool
+        block={host.block}
+        against={againstFor('fill', style, scheme, paper)}
+        paper={paper}
         tool="fill"
         name="sheetToolbar.fill"
         paletteName="sheetToolbar.fillPalette"
@@ -428,7 +493,7 @@ function NumberGroup({ host, cells, run, narrow }: GroupProps) {
         id: choice.id,
         label: t(choice.label),
         kind: 'radio' as const,
-        checked: choice.id === 'general' && !cells.style.fmt,
+        checked: choice.id === choiceOf(cells.style.fmt, appLocale()),
         onSelect: () => run(setChoice(host, choice.id)),
       })),
       anchor,
@@ -531,16 +596,15 @@ function ClearGroup(props: GroupProps) {
   );
 }
 
-/** Whether the bar is narrow: it watches its own width. */
-function useNarrow(bar: RefObject<HTMLDivElement | null>): boolean {
+/** Whether the bar is narrow: it watches its own width. It follows the element, so a bar that shows later or again is watched. */
+function useNarrow(element: HTMLElement | null): boolean {
   const [narrow, setNarrow] = useState(false);
   useEffect(() => {
-    const element = bar.current;
     if (!element || typeof ResizeObserver === 'undefined') return;
     const watch = new ResizeObserver(() => setNarrow(element.clientWidth <= NARROW));
     watch.observe(element);
     return () => watch.disconnect();
-  }, [bar]);
+  }, [element]);
   return narrow;
 }
 
@@ -550,22 +614,31 @@ export interface CellFormatBarProps {
 
 export function CellFormatBar({ block }: CellFormatBarProps) {
   const host = useHost(block);
-  const bar = useRef<HTMLDivElement>(null);
+  // The element is state, not a ref, so the width watch starts when the bar first shows and again after it remounts.
+  const [bar, setBar] = useState<HTMLDivElement | null>(null);
   const narrow = useNarrow(bar);
   const cells = host ? cellsOf(host) : null;
+  const attach = useCallback((element: HTMLDivElement | null) => setBar(element), []);
+  // Every button is a toolbar item, and the bar has one tab stop (roving.ts).
+  useLayoutEffect(() => {
+    bar?.querySelectorAll('[data-cell-tool] button').forEach((one) => one.setAttribute('data-tool', ''));
+    if (bar) rove(bar);
+  });
   if (!host || !cells) return null;
   const run: Run = (action) => void Promise.resolve(action).then(() => host.editor.commands.focus());
-  const group = { host, cells, run, narrow };
+  const group = { host, cells, run, narrow, paper: paperOf(host.element) };
   return (
     <div
-      ref={(element) => {
-        bar.current = element;
-        element?.querySelectorAll('button').forEach((one) => one.setAttribute('data-tool', ''));
-      }}
+      ref={attach}
       role="toolbar"
       aria-label={t('sheetToolbar.label')}
       className={styles.formatBar}
       onKeyDown={moveFocus}
+      onFocus={(event) => {
+        // Whichever button has focus is the tab stop, so Shift+Tab and Tab return to it.
+        if (event.target instanceof HTMLElement && event.target.hasAttribute('data-tool'))
+          rove(event.currentTarget, event.target);
+      }}
       onMouseDown={(event) => {
         // A press on a button keeps the caret in its cell.
         if ((event.target as HTMLElement).closest('button')) event.preventDefault();
@@ -574,7 +647,7 @@ export function CellFormatBar({ block }: CellFormatBarProps) {
       <FontGroup {...group} />
       <StyleGroup {...group} />
       <span className={styles.group}>
-        <BordersTool host={host} run={run} />
+        <BordersTool host={host} run={run} paper={group.paper} />
       </span>
       <AlignGroup {...group} />
       <NumberGroup {...group} />
