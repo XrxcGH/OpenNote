@@ -101,6 +101,14 @@ const STRUCTURE: readonly { id: string; op: StructureOp; group?: string; keys?: 
   { id: 'ungroupRows', op: { op: 'ungroupRows' }, keys: ['Alt+Shift+Left'] },
   { id: 'groupColumns', op: { op: 'groupColumns' } },
   { id: 'ungroupColumns', op: { op: 'ungroupColumns' } },
+  { id: 'collapseRows', op: { op: 'collapse', axis: 'rows' } },
+  { id: 'expandRows', op: { op: 'expand', axis: 'rows' } },
+  { id: 'collapseColumns', op: { op: 'collapse', axis: 'columns' } },
+  { id: 'expandColumns', op: { op: 'expand', axis: 'columns' } },
+  ...Array.from({ length: 8 }, (_, i) => i + 1).flatMap((level) => [
+    { id: `showLevelRows${level}`, op: { op: 'showLevel', axis: 'rows', level } as StructureOp },
+    { id: `showLevelColumns${level}`, op: { op: 'showLevel', axis: 'columns', level } as StructureOp },
+  ]),
   { id: 'clearOutlineRows', op: { op: 'clearOutline', axis: 'rows' } },
   { id: 'clearOutlineColumns', op: { op: 'clearOutline', axis: 'columns' } },
   { id: 'insertCellsDown', op: { op: 'insertCells', shift: 'down' }, group: 'cells', keys: ['Ctrl+Shift+='] },
@@ -116,12 +124,30 @@ STRUCTURE.forEach(({ id, op, group, keys }, order) => {
     title: `sheetStructure.commands.${id}` as MessageKey,
     keywords: 'sheetStructure.commands.keywords',
     category: 'table',
-    // The structure commands write `data.sheet`, so they ship with the other sheet writes (NEXT-PLAN 3.1).
-    flag: 'tables.sheetWrites',
+    // They write `data.sheet`, which the live table does not draw yet, so they stay off for users until it does.
+    flag: 'tables.structureUi',
     when: () => table() !== null,
     enabled: () => table()?.can(op) ?? false,
     run: async () => void (await table()?.run(op)),
     ...(keys ? { keys: keys as never, scope: 'tableGrid' as const } : {}),
   });
   if (group) contextMenus.register({ id: command, menu: 'page.table', command, group, order: 20 + order });
+});
+
+// Row height opens a small field beside the toolbar: a height and whether it is exact, like the column width field.
+commands.register({
+  id: 'table.structure.rowHeight',
+  title: 'sheetStructure.commands.rowHeight',
+  keywords: 'sheetStructure.commands.keywords',
+  category: 'table',
+  flag: 'tables.structureUi',
+  when: () => table() !== null,
+  run: async () => void table()?.openRowHeight(),
+});
+contextMenus.register({
+  id: 'table.structure.rowHeight',
+  menu: 'page.table',
+  command: 'table.structure.rowHeight',
+  group: 'size',
+  order: 19,
 });

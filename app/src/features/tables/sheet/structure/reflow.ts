@@ -116,7 +116,7 @@ function cellText(col: number, row: number, abs?: CellAbs): string {
 }
 
 /** A range's first and last index after lines `at` onward are inserted (count > 0) or `-count` lines are deleted. */
-function mapSpan(first: number, last: number, at: number, count: number): [number, number] | null {
+export function mapSpan(first: number, last: number, at: number, count: number): [number, number] | null {
   if (count > 0) return [first >= at ? first + count : first, last >= at ? last + count : last];
   const n = -count;
   const end = at + n;
@@ -152,13 +152,20 @@ function shiftRange(node: Extract<Node, { type: 'range' }>, s: Shift): string | 
     : `${cellText(span[0], node.row1, a)}:${cellText(span[1], node.row2, b)}`;
 }
 
-/** Rewrites the references into a moved block. A cell inside follows it. A range follows by the rules above. */
-export function shiftFormula(formula: string, s: Shift): string {
+/**
+ * Rewrites the references into a moved block. A cell inside follows it. A range follows by the rules above. In the
+ * table itself (`own`, its name) the plain references follow, and so do those qualified with its name. In another table
+ * (`other`, the moved table's name) only the references qualified with that name follow.
+ */
+export function shiftFormula(formula: string, s: Shift, names: { own?: string; other?: string } = {}): string {
   const parsed = parseFormula(formula, undefined, { legacy: false });
   if (!parsed.ok) return formula;
   const edits: { start: number; end: number; text: string }[] = [];
+  const own = names.own?.toLowerCase();
+  const other = names.other?.toLowerCase();
+  const matches = (scope: string): boolean => scope.toLowerCase() === (other ?? own);
   const visit = (node: Node, qualified: boolean): void => {
-    if (node.type === 'qualified') return visit(node.ref, true);
+    if (node.type === 'qualified') return visit(node.ref, !matches(node.scope));
     if (node.type === 'spill') return visit(node.ref, qualified);
     if (!qualified && node.type === 'cell' && removed(s, node.row, node.col)) {
       edits.push({ start: node.start, end: node.end, text: '#REF!' });
@@ -175,7 +182,7 @@ export function shiftFormula(formula: string, s: Shift): string {
     }
     for (const child of children(node)) visit(child, qualified);
   };
-  visit(parsed.node, false);
+  visit(parsed.node, other !== undefined);
   edits.sort((a, b) => b.start - a.start);
   let out = formula;
   for (const e of edits) out = out.slice(0, e.start) + e.text + out.slice(e.end);

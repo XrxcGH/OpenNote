@@ -15,6 +15,7 @@ import { commandContext } from '../../../commands/registry';
 import { menuItemsFor } from '../../../commands/menus';
 import {
   applyTableOp,
+  canApply,
   cellAt,
   cellTextPos,
   fitAddedColumn,
@@ -38,7 +39,7 @@ import { blockLaidOut } from '../seams/geometry';
 import { acceptRemoteText, attachTableSync } from '../sync';
 import type { TableSyncHandle } from '../sync';
 import { domFitInputs } from '../tables/fitInputs';
-import { readSheet, tableName as sheetTableName } from '../../tables';
+import { readSheet, rowHeight, tableName as sheetTableName } from '../../tables';
 import { tableExtras } from '../tables/extras';
 import type { TableExtraHandle, TableExtraHost } from '../tables/extras';
 import { currentTable } from '../tables/current';
@@ -120,6 +121,7 @@ class TableView implements InnerView {
   private sync: TableSyncHandle | null = null;
   private toolbar: Root | null = null;
   private widthOpen = false;
+  private heightOpen = false;
   private extras: TableExtraHandle[] = [];
   private gone = false;
   private stopOverflow = () => {};
@@ -143,12 +145,13 @@ class TableView implements InnerView {
     this.editRoot.dataset.scope = 'editor editor.table';
     this.handle = {
       block: current.id,
-      can: (op) => applyTableOp(this.data, this.caretCell(), this.boxed(op), this.sheetData(), this.book()) !== null,
+      can: (op) => canApply(this.data, this.caretCell(), this.boxed(op), this.sheetData(), this.book()),
       header: () => this.data.header,
       run: (op) => this.run(op),
       deleteTable: () => this.deleteTable(),
       selectAll: () => this.selectAll(),
       openColumnWidth: () => this.openColumnWidth(),
+      openRowHeight: () => this.openRowHeight(),
     };
     this.watchOverflow();
     // Static first: the same DOM the editor will show, so nothing moves when it mounts.
@@ -263,7 +266,9 @@ class TableView implements InnerView {
   }
 
   private async run(op: TableOp): Promise<boolean> {
-    if (this.sync) await this.sync.flush('command');
+    // Other tables get the adjusted formulas as whole rows, so their own typing must be saved first, or it is lost.
+    if (this.book()?.others.length) await this.ctx.sync.flushAll('command');
+    else if (this.sync) await this.sync.flush('command');
     const before = this.latest();
     const applied = applyTableOp(
       before,
@@ -324,8 +329,29 @@ class TableView implements InnerView {
     if (width !== null) void this.run({ op: 'columnWidth', width });
   }
 
+  private openRowHeight(): void {
+    this.heightOpen = true;
+    currentTable.set(this.handle);
+    this.setCurrent(true);
+  }
+
+  /** Applies the row height field's result to the rows the selection covers, or cancels with null. */
+  private closeRowHeight(result: { height: number; exact: boolean } | null): void {
+    this.heightOpen = false;
+    this.renderToolbar();
+    this.editor?.commands.focus();
+    if (result) void this.run({ op: 'rowHeight', ...result });
+  }
+
+  /** The height set on the caret's row: what the row height field starts with. */
+  private caretRowHeight(): { height: number | null; exact: boolean } {
+    const row = this.data.rows[Math.min(this.caretCell().row, this.data.rows.length - 1)];
+    const set = row ? rowHeight(readSheet(this.current.data), row.id) : null;
+    return { height: set?.height ?? null, exact: set?.exact ?? false };
+  }
+
   private renderToolbar(): void {
-    if (currentTable.get() !== this.handle && !this.widthOpen) return;
+    if (currentTable.get() !== this.handle && !this.widthOpen && !this.heightOpen) return;
     this.toolbar ??= createRoot(this.toolbarHost);
     const caret = this.caretCell();
     const columns = this.data.columns;
@@ -339,6 +365,9 @@ class TableView implements InnerView {
         widthOpen: this.widthOpen,
         openWidth: this.handle.openColumnWidth,
         closeWidth: (width: number | null) => this.closeColumnWidth(width),
+        heightOpen: this.heightOpen,
+        rowHeight: this.heightOpen ? this.caretRowHeight() : { height: null, exact: false },
+        closeHeight: (result: { height: number; exact: boolean } | null) => this.closeRowHeight(result),
       }),
     );
   }

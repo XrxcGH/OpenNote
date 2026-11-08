@@ -90,9 +90,18 @@ describe('line changes handed to the spreadsheet', () => {
     expect(grown.extra).toEqual({ sheet: null });
     expect(grown.data.rows).toHaveLength(4);
     seen.length = 0;
-    expect(applyTableOp(t, at(0, 0), { op: 'headerRow' }, undefined)?.extra).toBeUndefined();
     expect(applyTableOp(t, at(0, 0), { op: 'columnWidth', width: 90 }, undefined)?.extra).toBeUndefined();
     expect(seen).toEqual([]);
+  });
+
+  it('turning the header on deletes the first body row from the formulas, and turning it off inserts one', () => {
+    install();
+    applyTableOp(table(3, 2), at(0, 0), { op: 'headerRow' }, undefined);
+    applyTableOp(table(3, 2, true), at(1, 0), { op: 'headerRow' }, undefined);
+    expect(seen.map((s) => s.change)).toEqual([
+      { kind: 'deleteRows', at: 0, count: 1 },
+      { kind: 'insertRows', at: 0, count: 1 },
+    ]);
   });
 
   it('does not ask about an op that did not apply', () => {

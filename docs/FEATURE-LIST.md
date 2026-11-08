@@ -2,7 +2,7 @@
 
 Every tool, action, and feature in OpenNote, grouped by category, with one sentence each. `npm run docs:features` makes this page. The commands, tool windows, title bar items, settings sections, and setup steps come from what the app registers, so a new one shows up here or fails the tests. The feature sentences come from [FEATURES.md](FEATURES.md), which also says what has been tested by hand and which flag turns each one on. The [help pages](help/README.md) explain how to use them. [docs/screens](screens/README.md) has every picture in light and dark.
 
-The app registers 922 commands and 48 tool windows. 24 of the windows are subject and engineering kits. The count includes the ink commands, which register when a page first shows its ink, and the commands that register once start-up is done or with the first page: on-device intelligence, the second pass of page commands, and the code block and table commands. The command palette (Ctrl+K) runs every command not marked as left out of it. Some commands need a feature flag, which FEATURES.md names. The keys shown are the defaults of the standard shortcut set.
+The app registers 943 commands and 48 tool windows. 24 of the windows are subject and engineering kits. The count includes the ink commands, which register when a page first shows its ink, and the commands that register once start-up is done or with the first page: on-device intelligence, the second pass of page commands, and the code block and table commands. The command palette (Ctrl+K) runs every command not marked as left out of it. Some commands need a feature flag, which FEATURES.md names. The keys shown are the defaults of the standard shortcut set.
 
 ## Contents
 
@@ -342,12 +342,33 @@ Open it with the command "Open the code studio".
 | Ungroup rows | Takes the rows you picked out of one level of grouping. | Alt+Shift+Left |
 | Group columns | Groups the columns you picked so they can collapse. |  |
 | Ungroup columns | Takes the columns you picked out of one level of grouping. |  |
+| Collapse row group | Collapses the row group that has the cursor, so its rows are hidden. |  |
+| Expand row group | Expands the row group that has the cursor, so its rows show again. |  |
+| Collapse column group | Collapses the column group that has the cursor, so its columns are hidden. |  |
+| Expand column group | Expands the column group that has the cursor, so its columns show again. |  |
+| Show row outline level 1 | Shows the rows down to outline level 1 and hides deeper groups. |  |
+| Show column outline level 1 | Shows the columns down to outline level 1 and hides deeper groups. |  |
+| Show row outline level 2 | Shows the rows down to outline level 2 and hides deeper groups. |  |
+| Show column outline level 2 | Shows the columns down to outline level 2 and hides deeper groups. |  |
+| Show row outline level 3 | Shows the rows down to outline level 3 and hides deeper groups. |  |
+| Show column outline level 3 | Shows the columns down to outline level 3 and hides deeper groups. |  |
+| Show row outline level 4 | Shows the rows down to outline level 4 and hides deeper groups. |  |
+| Show column outline level 4 | Shows the columns down to outline level 4 and hides deeper groups. |  |
+| Show row outline level 5 | Shows the rows down to outline level 5 and hides deeper groups. |  |
+| Show column outline level 5 | Shows the columns down to outline level 5 and hides deeper groups. |  |
+| Show row outline level 6 | Shows the rows down to outline level 6 and hides deeper groups. |  |
+| Show column outline level 6 | Shows the columns down to outline level 6 and hides deeper groups. |  |
+| Show row outline level 7 | Shows the rows down to outline level 7 and hides deeper groups. |  |
+| Show column outline level 7 | Shows the columns down to outline level 7 and hides deeper groups. |  |
+| Show row outline level 8 | Shows the rows down to outline level 8 and hides deeper groups. |  |
+| Show column outline level 8 | Shows the columns down to outline level 8 and hides deeper groups. |  |
 | Clear row groups | Removes every row group and shows the hidden rows. |  |
 | Clear column groups | Removes every column group and shows the hidden columns. |  |
 | Insert cells, shift down | Inserts blank cells and moves the cells below them down. | Ctrl+Shift+= |
 | Insert cells, shift right | Inserts blank cells and moves the cells beside them right. |  |
 | Delete cells, shift up | Deletes the cells you picked and moves the cells below them up. | Ctrl+- |
 | Delete cells, shift left | Deletes the cells you picked and moves the cells beside them left. |  |
+| Row height… | Sets how tall the rows you picked are, exactly, or at least. |  |
 
 ### Pictures
 

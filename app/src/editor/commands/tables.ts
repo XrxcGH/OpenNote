@@ -5,7 +5,7 @@ import type { ResolvedPos } from '@tiptap/pm/model';
 import type { EditorState } from '@tiptap/pm/state';
 import { CellSelection } from '@tiptap/pm/tables';
 import { clampColumnWidth, newColumn, newRow, normalizeTableData } from '../table/mapping';
-import type { TableData } from '../schema/specs';
+import { DEFAULT_COLUMN_WIDTH, type TableData } from '../schema/specs';
 
 /** A cell by row and column index. */
 export interface CellAt {
@@ -74,7 +74,8 @@ export type StructureOp =
   | { op: 'freezeAtCaret' | 'freezeTopRow' | 'freezeFirstColumn' | 'unfreeze' }
   | { op: 'groupRows' | 'ungroupRows' | 'groupColumns' | 'ungroupColumns'; box?: Block }
   | { op: 'clearOutline'; axis: 'rows' | 'columns' }
-  | { op: 'collapse' | 'expand'; axis: 'rows' | 'columns'; index: number }
+  /** `index` is the summary line below the group; without it, the group the caret is in (or below). */
+  | { op: 'collapse' | 'expand'; axis: 'rows' | 'columns'; index?: number }
   | { op: 'showLevel'; axis: 'rows' | 'columns'; level: number }
   | { op: 'insertCells'; shift: 'down' | 'right'; box?: Block }
   | { op: 'deleteCells'; shift: 'up' | 'left'; box?: Block };
@@ -89,7 +90,7 @@ export type LineChange =
 
 /** The code the spreadsheet registers: the structure commands, and the references that follow a line change. */
 export interface TableHooks {
-  structure(data: TableData, at: CellAt, op: StructureOp, sheet: unknown): TableChange | null;
+  structure(data: TableData, at: CellAt, op: StructureOp, sheet: unknown, book?: TableBook): TableChange | null;
   /** The change with formulas, names, rules, merges, and ranges brought up to date for `change`. */
   follow(before: TableData, applied: TableChange, change: LineChange, sheet: unknown, book?: TableBook): TableChange;
 }
@@ -214,12 +215,42 @@ function withRows(data: TableData, rows: TableData['rows']): TableData {
   return { ...data, rows };
 }
 
-/** Whether the op can run on this table with the caret in `at`. */
+/**
+ * Whether the op can run on this table with the caret in `at`. The toolbar asks on every caret move, so a line command
+ * only checks the grid: the references that would follow it (every formula of this table and of the page's others) are
+ * brought along when the command runs, and they cannot make it fail.
+ */
 export function canApply(data: TableData, at: CellAt, op: TableOp, sheet?: unknown, book?: TableBook): boolean {
-  return applyTableOp(data, at, op, sheet, book) !== null;
+  if (isStructureOp(op)) return applyTableOp(data, at, op, sheet, book) !== null;
+  // The same rules as applyGridOp, read off the table's size without building rows (this runs on every caret move).
+  const rows = Math.max(1, data.rows?.length ?? 0);
+  const columns = Math.max(1, data.columns?.length ?? 0);
+  const row = Math.min(Math.max(0, at.row), rows - 1);
+  const column = Math.min(Math.max(0, at.column), columns - 1);
+  const header = data.header === true;
+  switch (op.op) {
+    case 'rowAbove':
+    case 'rowBelow':
+    case 'columnLeft':
+    case 'columnRight':
+      return true;
+    case 'deleteRow':
+      return rows > 1;
+    case 'deleteColumn':
+      return columns > 1;
+    case 'headerRow':
+      return (op.on ?? !header) !== header;
+    case 'moveRowUp':
+    case 'moveRowDown': {
+      const to = op.op === 'moveRowUp' ? row - 1 : row + 1;
+      const first = header ? 1 : 0;
+      return !(row < first || to < first || to >= rows);
+    }
+    case 'columnWidth':
+      return clampColumnWidth(op.width) !== clampColumnWidth(data.columns?.[column]?.width ?? DEFAULT_COLUMN_WIDTH);
+  }
 }
 
-/** The data after `op`, or null when it doesn't apply (moving the top row up, deleting the last column). */
 /** The narrowest a new column is made to keep a table inside its page. */
 const MIN_FITTED_COLUMN = 80;
 
@@ -253,7 +284,7 @@ export function applyTableOp(
 ): TableChange | null {
   const data = normalizeTableData(input);
   const cell = clampCell(data, at);
-  if (isStructureOp(op)) return hooks?.structure(data, cell, op, sheet) ?? null;
+  if (isStructureOp(op)) return hooks?.structure(data, cell, op, sheet, book) ?? null;
   const applied = applyGridOp(data, cell, op);
   if (!applied) return null;
   const change = referenceChange(data, cell, op);
@@ -282,6 +313,13 @@ function referenceChange(data: TableData, at: CellAt, op: TableOp): LineChange |
       const to = op.op === 'moveRowUp' ? row - 1 : row + 1;
       return { kind: 'moveRows', from: row - base, count: 1, to: to - base };
     }
+    // A header row is not a body row: the first row is A1 until it becomes the header, and then the second row is.
+    case 'headerRow':
+      return (op.on ?? !data.header) === data.header
+        ? null
+        : data.header
+          ? { kind: 'insertRows', at: 0, count: 1 }
+          : { kind: 'deleteRows', at: 0, count: 1 };
     default:
       return null;
   }

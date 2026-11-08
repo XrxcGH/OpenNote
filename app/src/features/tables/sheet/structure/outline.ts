@@ -25,6 +25,20 @@ export function groupBefore(all: readonly number[], index: number): number[] {
   return out;
 }
 
+/**
+ * The summary line of the group that line `index` belongs to or sits below: `index` itself when a group ends just above
+ * it, else the first line after the group around it. Null when there is no group, or it ends the table (no summary).
+ */
+export function summaryAt(sheet: Sheet, table: TableLike, axis: Axis, index: number): number | null {
+  const all = levels(sheet, table, axis);
+  if (groupBefore(all, index).length > 0) return index;
+  const here = all[index];
+  if (!here) return null;
+  let end = index;
+  while (end + 1 < all.length && all[end + 1] >= here) end++;
+  return end + 1 < all.length && groupBefore(all, end + 1).length > 0 ? end + 1 : null;
+}
+
 /** Collapsed marks that no longer have a group above them go, so a stale mark never hides the outline buttons. */
 function tidyCollapsed(sheet: Sheet, table: TableLike, axis: Axis): void {
   const all = levels(sheet, table, axis);

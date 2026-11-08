@@ -452,3 +452,209 @@ describe('the default fit text', () => {
     expect(shownText('**bold** and `code`')).toBe('bold and code');
   });
 });
+
+describe('insert and delete cells under rules', () => {
+  const rule = (a: [string, string], b: [string, string], extra: object = {}): Sheet =>
+    ({
+      validation: { v1: { type: 'number', ranges: [{ from: a, to: b }], ...extra } },
+    }) as unknown as Sheet;
+  const grid = () =>
+    table([
+      ['1', '2'],
+      ['3', '4'],
+      ['5', '6'],
+      ['', ''],
+    ]);
+
+  it('a rule on A1 moves to A2 when cells are inserted at A1 shifting down', () => {
+    const sheet = rule(['r1', 'k1'], ['r1', 'k1']);
+    const out = insertCells(grid(), sheet, { row1: 0, col1: 0, row2: 0, col2: 0 }, 'down')!;
+    // Hand worked: A1's value moves to A2, so the rule follows it to row 2.
+    expect(after(sheet, out.patch).validation).toEqual({
+      v1: { type: 'number', ranges: [{ from: ['r2', 'k1'], to: ['r2', 'k1'] }] },
+    });
+  });
+
+  it('a rule over A1:A3 grows to A1:A4 when a cell is inserted inside it, and shrinks when one is deleted', () => {
+    const sheet = rule(['r1', 'k1'], ['r3', 'k1']);
+    const grown = insertCells(grid(), sheet, { row1: 1, col1: 0, row2: 1, col2: 0 }, 'down')!;
+    expect(after(sheet, grown.patch).validation).toEqual({
+      v1: { type: 'number', ranges: [{ from: ['r1', 'k1'], to: ['r4', 'k1'] }] },
+    });
+    const shrunk = deleteCells(grid(), sheet, { row1: 1, col1: 0, row2: 1, col2: 0 }, 'up')!;
+    expect(after(sheet, shrunk.patch).validation).toEqual({
+      v1: { type: 'number', ranges: [{ from: ['r1', 'k1'], to: ['r2', 'k1'] }] },
+    });
+  });
+
+  it('a rule whose cells are all deleted goes', () => {
+    const sheet = rule(['r2', 'k1'], ['r2', 'k1']);
+    const out = deleteCells(grid(), sheet, { row1: 1, col1: 0, row2: 1, col2: 0 }, 'up')!;
+    expect(after(sheet, out.patch).validation).toBeUndefined();
+  });
+
+  it('a rule beside the shifted column stays where it is', () => {
+    const sheet = rule(['r1', 'k2'], ['r1', 'k2']);
+    const out = insertCells(grid(), sheet, { row1: 0, col1: 0, row2: 0, col2: 0 }, 'down')!;
+    expect(after(sheet, out.patch).validation).toEqual(sheet.validation);
+  });
+
+  it('refuses a shift that would cut a rule range across the edge of the moved cells', () => {
+    const sheet = rule(['r1', 'k1'], ['r3', 'k2']);
+    expect(insertCells(grid(), sheet, { row1: 1, col1: 0, row2: 1, col2: 0 }, 'down')).toBeNull();
+    expect(deleteCells(grid(), sheet, { row1: 1, col1: 0, row2: 1, col2: 0 }, 'up')).toBeNull();
+  });
+
+  it('rule and name formulas follow the moved cells', () => {
+    const sheet = {
+      validation: { v1: { type: 'number', a: '=A3', ranges: [{ from: ['r1', 'k2'], to: ['r1', 'k2'] }] } },
+      names: { total: { ref: 'A3' } },
+    } as unknown as Sheet;
+    const out = insertCells(grid(), sheet, { row1: 0, col1: 0, row2: 0, col2: 0 }, 'down')!;
+    // Hand worked: A3 moves to A4.
+    const next = after(sheet, out.patch);
+    expect((next.validation as { v1: JsonObject }).v1.a).toBe('=A4');
+    expect((next.names as { total: { ref: string } }).total.ref).toBe('A4');
+  });
+
+  it('other tables that read the cells by name follow them', () => {
+    const sales = table([['10'], ['20'], ['30']]);
+    const report = table([['=Sales!A2+Sales!A3', '=A1']]);
+    const book = { name: 'Sales', others: [{ block: 'b2', data: report }] };
+    const change = applyTableOp(sales, { row: 0, column: 0 }, { op: 'insertCells', shift: 'down' }, undefined, book)!;
+    const rows = change.also![0].data.rows as TableData['rows'];
+    // Hand worked: A2 and A3 of Sales move to A3 and A4; the report's own =A1 stays.
+    expect(rows[0].cells.k1.markdown).toBe('=Sales!A3+Sales!A4');
+    expect(rows[0].cells.k2.markdown).toBe('=A1');
+  });
+});
+
+describe('the header row and references', () => {
+  const rows = () => table([['10'], ['20'], ['=A1+A2']]);
+
+  it('turning the header on renumbers: the old A1 is gone and A2 becomes A1', () => {
+    const change = applyTableOp(rows(), { row: 0, column: 0 }, { op: 'headerRow' })!;
+    expect(change.data.header).toBe(true);
+    // Hand worked: the first row stops being a body row, so A1 reads #REF! and the old A2 is the new A1.
+    expect(change.data.rows[2].cells.k1.markdown).toBe('=#REF!+A1');
+  });
+
+  it('turning the header off renumbers: every reference moves down one row', () => {
+    const data = { ...rows(), header: true };
+    const change = applyTableOp(data, { row: 1, column: 0 }, { op: 'headerRow' })!;
+    expect(change.data.header).toBe(false);
+    // Hand worked: the header becomes A1, so what was A1 (row 2) is now A2 and A2 is A3.
+    expect(change.data.rows[2].cells.k1.markdown).toBe('=A2+A3');
+  });
+});
+
+describe('availability checks', () => {
+  it('canApply runs no reference work and no other table is read', async () => {
+    const { canApply, setTableHooks } = await import('../../../../editor/commands/tables');
+    const { structureHooks } = await import('./hooks');
+    const calls = { follow: 0 };
+    setTableHooks({
+      ...structureHooks,
+      follow: (...args) => {
+        calls.follow++;
+        return structureHooks.follow(...args);
+      },
+    });
+    try {
+      const big = table(Array.from({ length: 50 }, (_, r) => Array.from({ length: 10 }, () => `=A${r + 1}+1`)));
+      const book = { name: 'T1', others: [1, 2, 3].map((n) => ({ block: `b${n}`, data: big })) };
+      const ops = ['rowAbove', 'rowBelow', 'columnLeft', 'columnRight', 'deleteRow', 'deleteColumn'] as const;
+      const start = performance.now();
+      let all = true;
+      for (let i = 0; i < 20; i++)
+        for (const op of ops) all = canApply(big, { row: 5, column: 3 }, { op }, undefined, book) && all;
+      expect(all).toBe(true);
+      // The toolbar asks on every caret move: under 1 ms for the six tools.
+      expect((performance.now() - start) / 20).toBeLessThan(1);
+      expect(calls.follow).toBe(0);
+      applyTableOp(big, { row: 5, column: 3 }, { op: 'rowAbove' }, undefined, book);
+      expect(calls.follow).toBe(1);
+    } finally {
+      setTableHooks(structureHooks);
+    }
+  });
+});
+
+describe('canApply matches applyTableOp', () => {
+  it('says the same for every command, caret, and header setting', async () => {
+    const { canApply } = await import('../../../../editor/commands/tables');
+    const ops = [
+      { op: 'rowAbove' },
+      { op: 'rowBelow' },
+      { op: 'columnLeft' },
+      { op: 'columnRight' },
+      { op: 'deleteRow' },
+      { op: 'deleteColumn' },
+      { op: 'headerRow' },
+      { op: 'headerRow', on: true },
+      { op: 'headerRow', on: false },
+      { op: 'moveRowUp' },
+      { op: 'moveRowDown' },
+      { op: 'columnWidth', width: 160 },
+      { op: 'columnWidth', width: 200 },
+    ] as const;
+    for (const sizes of [
+      [1, 1],
+      [1, 3],
+      [3, 1],
+      [3, 3],
+    ]) {
+      for (const header of [false, true]) {
+        const data = {
+          ...table(Array.from({ length: sizes[0] }, () => Array.from({ length: sizes[1] }, () => 'x'))),
+          header,
+        };
+        for (let row = 0; row < sizes[0]; row++)
+          for (let column = 0; column < sizes[1]; column++)
+            for (const op of ops)
+              expect(canApply(data, { row, column }, op), `${JSON.stringify([sizes, header, row, column, op])}`).toBe(
+                applyTableOp(data, { row, column }, op) !== null,
+              );
+      }
+    }
+  });
+});
+
+describe('outline commands at the caret', () => {
+  it('collapse and expand act on the group the caret is in or below', () => {
+    const data = grid5();
+    const grouped = group({}, data, 'rows', 1, 2).sheet;
+    const at = (row: number) => ({ row, column: 0 });
+    const patch = (c: ReturnType<typeof applyTableOp>) => c!.extra as JsonObject;
+    // Hand worked: rows 2 and 3 are grouped, row 4 is the summary. The caret in the group or on the summary finds it.
+    for (const row of [1, 2, 3]) {
+      const closed = applyTableOp(data, at(row), { op: 'collapse', axis: 'rows' }, grouped);
+      expect(after(grouped, patch(closed)).rows).toEqual({
+        r2: { level: 1, hidden: true },
+        r3: { level: 1, hidden: true },
+        r4: { collapsed: true },
+      });
+    }
+    expect(applyTableOp(data, at(0), { op: 'collapse', axis: 'rows' }, grouped)).toBeNull();
+    const closed = after(grouped, patch(applyTableOp(data, at(3), { op: 'collapse', axis: 'rows' }, grouped)));
+    const open = applyTableOp(data, at(3), { op: 'expand', axis: 'rows' }, closed);
+    expect(after(closed, patch(open)).rows).toEqual({ r2: { level: 1 }, r3: { level: 1 } });
+  });
+
+  it('a group that ends the table has no summary and does not collapse', () => {
+    const data = grid5();
+    const grouped = group({}, data, 'rows', 3, 4).sheet;
+    expect(applyTableOp(data, { row: 3, column: 0 }, { op: 'collapse', axis: 'rows' }, grouped)).toBeNull();
+  });
+
+  it('show level 1 hides every grouped row and level 8 shows all', () => {
+    const data = grid5();
+    const grouped = group({}, data, 'rows', 1, 2).sheet;
+    const at = { row: 0, column: 0 };
+    const one = applyTableOp(data, at, { op: 'showLevel', axis: 'rows', level: 1 }, grouped)!;
+    const hidden = after(grouped, one.extra as JsonObject);
+    expect((hidden.rows as JsonObject).r2).toEqual({ level: 1, hidden: true });
+    const all = applyTableOp(data, at, { op: 'showLevel', axis: 'rows', level: 8 }, hidden)!;
+    expect(after(hidden, all.extra as JsonObject).rows).toEqual({ r2: { level: 1 }, r3: { level: 1 } });
+  });
+});

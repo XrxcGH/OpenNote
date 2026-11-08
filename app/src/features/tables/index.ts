@@ -9,3 +9,4 @@ export { exportTableCharts } from './smart/exportCharts';
 import './sheet/structure/hooks';
 export { readSheet, tableName } from './sheet/model';
 export { canvasMeasure } from './sheet/structure/fit';
+export { MAX_HEIGHT, MIN_HEIGHT, rowHeight } from './sheet/structure/lines';

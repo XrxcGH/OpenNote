@@ -5,12 +5,14 @@
 
 import type { TableData } from '../../../../editor/schema/specs';
 import { newColumn, newRow } from '../../../../editor/table/mapping';
-import { clone, ownObject, type JsonObject } from '../model/json';
+import { clone, isObject, ownObject, type Json, type JsonObject } from '../model/json';
 import { activeMerges } from '../model/merges';
 import { sheetPatch, tidy } from '../model/sheet';
 import type { Sheet } from '../model/types';
 import { dropEmpty } from './edit';
-import { moveEntries, shiftFormula, type Shift } from './reflow';
+import type { TableBook, TableChange } from '../../../../editor/commands/tables';
+import { followInOthers } from './others';
+import { mapSpan, moveEntries, rewriteSheetText, shiftFormula, type Shift } from './reflow';
 
 /** A block of cells by index into `data.rows` and `data.columns`, both ends included. */
 export interface CellBox {
@@ -26,6 +28,8 @@ export type DeleteShift = 'up' | 'left';
 export interface CellsChange {
   data: TableData;
   patch: JsonObject | null;
+  /** The patches of the page's other tables whose references into this one follow the moved cells. */
+  also?: NonNullable<TableChange['also']>;
 }
 
 const BLANK = { markdown: '' };
@@ -131,6 +135,68 @@ function moveMerges(
   }
 }
 
+/**
+ * Moves the corner ranges of validation and conditional-format rules with the cells they cover, the way formula ranges
+ * follow: a range inside the band of the shift grows, shrinks, or goes; a range outside it stays. A range that only
+ * partly crosses the band and reaches the moved cells would be cut, so the result is false and the shift is refused,
+ * as for merges. Whole-column and whole-row ranges are kept as they are.
+ */
+function moveRuleRanges(sheet: Sheet, s: Shift, rowIds: readonly string[], colIds: readonly string[]): boolean {
+  const vertical = s.dCol === 0;
+  const count = vertical ? s.dRow : s.dCol;
+  const start = vertical ? s.row1 : s.col1;
+  const from = count > 0 ? start : start + count;
+  const rowAt = new Map(rowIds.map((id, i) => [id, i]));
+  const colAt = new Map(colIds.map((id, i) => [id, i]));
+  for (const kind of ['validation', 'conditional']) {
+    const rules = ownObject(sheet, kind);
+    if (!rules) continue;
+    for (const id of Object.keys(rules)) {
+      const rule = ownObject(rules, id);
+      if (!rule || !Array.isArray(rule.ranges)) continue;
+      const kept: Json[] = [];
+      for (const range of rule.ranges) {
+        const f = isObject(range) && Array.isArray(range.from) ? range.from : null;
+        const t = isObject(range) && Array.isArray(range.to) ? range.to : null;
+        const a = f && [rowAt.get(f[0] as string), colAt.get(f[1] as string)];
+        const b = t && [rowAt.get(t[0] as string), colAt.get(t[1] as string)];
+        if (!a || !b || a.includes(undefined) || b.includes(undefined)) {
+          kept.push(range as Json);
+          continue;
+        }
+        const [r1, r2] = [Math.min(a[0]!, b[0]!), Math.max(a[0]!, b[0]!)];
+        const [c1, c2] = [Math.min(a[1]!, b[1]!), Math.max(a[1]!, b[1]!)];
+        const lo = vertical ? c1 : r1;
+        const hi = vertical ? c2 : r2;
+        const first = vertical ? r1 : c1;
+        const last = vertical ? r2 : c2;
+        const bandLo = vertical ? s.col1 : s.row1;
+        const bandHi = vertical ? s.col2 : s.row2;
+        if (lo < bandLo || hi > bandHi) {
+          // Outside the band, or across its edge: across the edge and reaching the moved cells would cut it.
+          const crosses = lo <= bandHi && hi >= bandLo && last >= from;
+          if (crosses) return false;
+          kept.push(range as Json);
+          continue;
+        }
+        const span = mapSpan(first, last, from, count);
+        if (span === null) continue;
+        const rows = vertical ? span : [r1, r2];
+        const cols = vertical ? [c1, c2] : span;
+        const id = (ids: readonly string[], n: number) => ids[Math.min(n, ids.length - 1)];
+        kept.push({
+          ...(range as JsonObject),
+          from: [id(rowIds, rows[0]), id(colIds, cols[0])],
+          to: [id(rowIds, rows[1]), id(colIds, cols[1])],
+        });
+      }
+      if (kept.length === 0) delete rules[id];
+      else rule.ranges = kept;
+    }
+  }
+  return true;
+}
+
 function build(
   data: TableData,
   sheet: Sheet,
@@ -139,7 +205,8 @@ function build(
   rowsNeeded: number,
   colsNeeded: number,
   merges: readonly MergeMove[],
-): CellsChange {
+  book?: TableBook,
+): CellsChange | null {
   const columns = [...data.columns];
   while (columns.length < colsNeeded) columns.push(newColumn(columns[columns.length - 1]?.width));
   const rows = data.rows.map((row) => ({
@@ -164,7 +231,7 @@ function build(
     next[to[0]].cells[columns[to[1]].id] = text;
   }
   const fshift = formulaShift(data, shift);
-  const rewrite = (formula: string) => shiftFormula(formula, fshift);
+  const rewrite = (formula: string) => shiftFormula(formula, fshift, { own: book?.name });
   const out = next.map((row) => {
     let cells = row.cells;
     for (const [id, cell] of Object.entries(row.cells)) {
@@ -180,17 +247,25 @@ function build(
   const colIds = columns.map((c) => c.id);
   for (const key of ['cells', 'notes']) moveEntries(edited, key, move, rowIds, colIds);
   moveMerges(edited, merges, move, rowIds, colIds);
-  for (const entry of Object.values((edited.names ?? {}) as JsonObject)) {
-    const one = entry as JsonObject;
-    if (typeof one.ref === 'string') one.ref = shiftFormula(one.ref, fshift);
-  }
+  // Names and the formulas of validation and conditional rules read cells too, and their ranges move with the cells.
+  rewriteSheetText(edited, rewrite);
+  if (!moveRuleRanges(edited, shift, rowIds, colIds)) return null;
   tidy(edited, after, data);
   dropEmpty(edited);
-  return { data: after, patch: sheetPatch(sheet, edited) };
+  // Other tables read this one by its name: those references follow the moved cells in the same change.
+  const other = (formula: string) => shiftFormula(formula, fshift, { other: book?.name });
+  const also = book ? followInOthers(book, other) : [];
+  return { data: after, patch: sheetPatch(sheet, edited), ...(also.length > 0 ? { also } : {}) };
 }
 
 /** Insert cells: the block's cells and everything below (down) or right of them (right) move over. */
-export function insertCells(data: TableData, sheet: Sheet, input: CellBox, shift: InsertShift): CellsChange | null {
+export function insertCells(
+  data: TableData,
+  sheet: Sheet,
+  input: CellBox,
+  shift: InsertShift,
+  book?: TableBook,
+): CellsChange | null {
   const box = clampBox(data, input);
   if (shift === 'down') {
     const n = box.row2 - box.row1 + 1;
@@ -200,7 +275,7 @@ export function insertCells(data: TableData, sheet: Sheet, input: CellBox, shift
     const need = Math.max(data.rows.length, last + n + 1);
     const s: Shift = { row1: box.row1, col1: box.col1, row2: Infinity, col2: box.col2, dRow: n, dCol: 0 };
     const merges = planMerges(data, sheet, { ...box, row2: Infinity }, null);
-    return merges && build(data, sheet, move, s, need, data.columns.length, merges);
+    return merges && build(data, sheet, move, s, need, data.columns.length, merges, book);
   }
   const n = box.col2 - box.col1 + 1;
   const last = lastUsed(data, sheet, box, false);
@@ -209,11 +284,17 @@ export function insertCells(data: TableData, sheet: Sheet, input: CellBox, shift
   const need = Math.max(data.columns.length, last + n + 1);
   const s: Shift = { row1: box.row1, col1: box.col1, row2: box.row2, col2: Infinity, dRow: 0, dCol: n };
   const merges = planMerges(data, sheet, { ...box, col2: Infinity }, null);
-  return merges && build(data, sheet, move, s, data.rows.length, need, merges);
+  return merges && build(data, sheet, move, s, data.rows.length, need, merges, book);
 }
 
 /** Delete cells: the block's cells go, and the cells below (up) or right of them (left) move in. */
-export function deleteCells(data: TableData, sheet: Sheet, input: CellBox, shift: DeleteShift): CellsChange | null {
+export function deleteCells(
+  data: TableData,
+  sheet: Sheet,
+  input: CellBox,
+  shift: DeleteShift,
+  book?: TableBook,
+): CellsChange | null {
   const box = clampBox(data, input);
   const gone = { row1: box.row1, col1: box.col1, row2: box.row2, col2: box.col2 };
   if (shift === 'up') {
@@ -224,7 +305,7 @@ export function deleteCells(data: TableData, sheet: Sheet, input: CellBox, shift
     };
     const s: Shift = { row1: box.row2 + 1, col1: box.col1, row2: Infinity, col2: box.col2, dRow: -n, dCol: 0, gone };
     const merges = planMerges(data, sheet, { ...box, row1: box.row2 + 1, row2: Infinity }, gone);
-    return merges && build(data, sheet, move, s, data.rows.length, data.columns.length, merges);
+    return merges && build(data, sheet, move, s, data.rows.length, data.columns.length, merges, book);
   }
   const n = box.col2 - box.col1 + 1;
   const move = (r: number, c: number): [number, number] | null => {
@@ -233,5 +314,5 @@ export function deleteCells(data: TableData, sheet: Sheet, input: CellBox, shift
   };
   const s: Shift = { row1: box.row1, col1: box.col2 + 1, row2: box.row2, col2: Infinity, dRow: 0, dCol: -n, gone };
   const merges = planMerges(data, sheet, { ...box, col1: box.col2 + 1, col2: Infinity }, gone);
-  return merges && build(data, sheet, move, s, data.rows.length, data.columns.length, merges);
+  return merges && build(data, sheet, move, s, data.rows.length, data.columns.length, merges, book);
 }
