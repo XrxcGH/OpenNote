@@ -182,6 +182,43 @@ export function getConditionalLayer(): ConditionalLayer | null {
   return conditionalLayer;
 }
 
+/**
+ * What the conditional lane draws besides styles (bars and icons): CSS custom properties and data attributes for a
+ * cell, in the shape of the render lane's `Drawn`.
+ */
+export interface DrawnDecoration {
+  vars: Record<string, string>;
+  data: Record<string, string>;
+}
+
+export type DrawnLayer = (
+  cell: { row: number; col: number },
+  sheet: Sheet,
+  table: TableLike,
+  scheme: 'light' | 'dark',
+) => DrawnDecoration | undefined;
+
+let drawnLayer: DrawnLayer | null = null;
+let layerScheme: 'light' | 'dark' = 'light';
+
+/** Lets the conditional lane draw data bars and icons in the render lane's cells. */
+export function setDrawnLayer(layer: DrawnLayer | null): void {
+  drawnLayer = layer;
+}
+
+export function getDrawnLayer(): DrawnLayer | null {
+  return drawnLayer;
+}
+
+/** The color scheme the render lane is drawing, which the conditional layer needs for color scales. */
+export function setLayerScheme(scheme: 'light' | 'dark'): void {
+  layerScheme = scheme;
+}
+
+export function getLayerScheme(): 'light' | 'dark' {
+  return layerScheme;
+}
+
 /** A free rule ID: the prefix and the lowest number not in use. */
 export function freeRuleId(sheet: Sheet, kind: RuleKind, prefix = kind === 'validation' ? 'v' : 'c'): string {
   const rules = ownObject(sheet, kind) ?? {};
