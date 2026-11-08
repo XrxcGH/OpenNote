@@ -69,6 +69,9 @@ const later =
     );
 
 beforeAll(configureTestCommands);
+// The page feature loads its style store with a dynamic import nothing awaits; a load that outlives the file fails the
+// teardown.
+afterAll(() => vi.dynamicImportSettled());
 
 beforeEach(() => {
   resetSettings();
