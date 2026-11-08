@@ -1,7 +1,7 @@
 {
   "startup": {
-    "jsKb": 549,
-    "cssKb": 28
+    "jsKb": 553,
+    "cssKb": 28.5
   },
   "after": [
     {
@@ -92,7 +92,7 @@
     "features/tables/index.ts": 96,
     "features/tools/index.ts": 386,
     "features/engineering/control/ui/ControlKit.tsx": 327,
-    "features/engineering/index.ts": 220,
+    "features/engineering/index.ts": 221,
     "mermaid/node_modules/katex": 80,
     "node_modules/mermaid": 600,
     "@mermaid-js/parser": 130,
