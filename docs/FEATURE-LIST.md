@@ -2,7 +2,7 @@
 
 Every tool, action, and feature in OpenNote, grouped by category, with one sentence each. `npm run docs:features` makes this page. The commands, tool windows, title bar items, settings sections, and setup steps come from what the app registers, so a new one shows up here or fails the tests. The feature sentences come from [FEATURES.md](FEATURES.md), which also says what has been tested by hand and which flag turns each one on. The [help pages](help/README.md) explain how to use them. [docs/screens](screens/README.md) has every picture in light and dark.
 
-The app registers 940 commands and 48 tool windows. 24 of the windows are subject and engineering kits. The count includes the ink commands, which register when a page first shows its ink, and the commands that register once start-up is done or with the first page: on-device intelligence, the second pass of page commands, and the code block and table commands. The command palette (Ctrl+K) runs every command not marked as left out of it. Some commands need a feature flag, which FEATURES.md names. The keys shown are the defaults of the standard shortcut set.
+The app registers 965 commands and 48 tool windows. 24 of the windows are subject and engineering kits. The count includes the ink commands, which register when a page first shows its ink, and the commands that register once start-up is done or with the first page: on-device intelligence, the second pass of page commands, and the code block and table commands. The command palette (Ctrl+K) runs every command not marked as left out of it. Some commands need a feature flag, which FEATURES.md names. The keys shown are the defaults of the standard shortcut set.
 
 ## Contents
 
@@ -103,11 +103,11 @@ Open it with the command "Open the code studio".
 | Bold | Makes the selected text bold. | Ctrl+B |
 | Italic | Makes the selected text italic. | Ctrl+I |
 | Underline | Underlines the selected text. | Ctrl+U |
-| Strikethrough | Strikes a line through the selected text. | Ctrl+Shift+S |
+| Strikethrough | Strikes a line through the selected text. | Ctrl+Shift+X |
 | Highlight | Highlights the selected text. | Ctrl+Shift+H |
-| Inline code | Formats the selected text as inline code. | Ctrl+E |
-| Subscript | Makes the selected text a subscript. |  |
-| Superscript | Makes the selected text a superscript. |  |
+| Inline code | Formats the selected text as inline code. | Ctrl+` |
+| Subscript | Makes the selected text a subscript. | Ctrl+= |
+| Superscript | Makes the selected text a superscript. | Ctrl++ |
 | Larger text | Makes the selected text larger. | Ctrl+> |
 | Smaller text | Makes the selected text smaller. | Ctrl+< |
 | Text color | Sets the color of the selected text. |  |
@@ -122,7 +122,7 @@ Open it with the command "Open the code studio".
 | Heading 4 | Turns the block into a level 4 heading. | Ctrl+Alt+4 |
 | Heading 5 | Turns the block into a level 5 heading. | Ctrl+Alt+5 |
 | Heading 6 | Turns the block into a level 6 heading. | Ctrl+Alt+6 |
-| Bulleted list | Turns the block into a bulleted list. | Ctrl+Shift+8 |
+| Bulleted list | Turns the block into a bulleted list. | Ctrl+Shift+8, Ctrl+Shift+L |
 | Numbered list | Turns the block into a numbered list. | Ctrl+Shift+7 |
 | Checklist | Turns the block into a checklist. | Ctrl+Shift+9 |
 | Quote | Turns the block into a quote. | Ctrl+Shift+B |
@@ -219,6 +219,31 @@ Open it with the command "Open the code studio".
 | Show or hide the Styles pane | Shows the Styles pane: every gallery style with a preview, its source, and its look. Choosing one applies it. |  |
 | Undo | Undoes the last change to the page. | Ctrl+Z |
 | Redo | Redoes the last change you undid on the page. | Ctrl+Y, Ctrl+Shift+Z |
+| All caps | Turns the selected text into capital letters, or back. | Ctrl+Shift+A |
+| Small caps | Shows the selected text in small capital letters, or back. | Ctrl+Shift+K |
+| Cycle case | Cycles the selected text through sentence case, lowercase, UPPERCASE, and Capitalize Each Word. | Shift+F3 |
+| Clear character formatting | Removes the character formatting from the selected text and keeps links and code. | Ctrl+Space |
+| Increase font size by 1 point | Makes the selected text 1 point larger. | Ctrl+] |
+| Decrease font size by 1 point | Makes the selected text 1 point smaller. | Ctrl+[ |
+| Copy formatting | Copies the formatting of the selected text. | Ctrl+Shift+C |
+| Paste formatting | Applies the copied formatting to the selected text. | Ctrl+Alt+Shift+V |
+| Repeat formatting | Repeats the last formatting command. | F4 |
+| Align left | Aligns the paragraph to the left, or to the right in right-to-left text. | Ctrl+L |
+| Center | Centers the paragraph. | Ctrl+E |
+| Align right | Aligns the paragraph to the right, or to the left in right-to-left text. | Ctrl+R |
+| Justify | Justifies the paragraph. | Ctrl+J |
+| Distribute | Distributes the paragraph evenly between the margins. | Ctrl+Shift+J |
+| Single line spacing | Sets single line spacing. | Ctrl+1 |
+| Double line spacing | Sets double line spacing. | Ctrl+2 |
+| One and a half line spacing | Sets line spacing of one and a half. | Ctrl+5 |
+| Space before | Adds 12 points of space before the paragraph, or takes it away. |  |
+| Increase indent | Indents the paragraph to the next tab stop. | Ctrl+M |
+| Decrease indent | Moves the paragraph back to the previous tab stop. | Ctrl+Shift+M |
+| Hanging indent | Indents all lines of the paragraph but the first. | Ctrl+T |
+| Remove hanging indent | Removes the hanging indent. |  |
+| Reset paragraph formatting | Removes the paragraph formatting and keeps the text and its style. | Ctrl+Q |
+| Insert page break | Starts a new page after the paragraph at the caret. | Ctrl+Enter |
+| Apply style | Moves to the style box so you can apply a style by name. | Ctrl+Shift+S |
 | Symbol | Opens the Symbol dialog to search by name or code and insert a symbol or a special character. |  |
 | Switch between a character and its code | Turns a Unicode code before the caret into its character, or a character into its code. | Alt+X |
 | Insert nonbreaking space | Inserts a nonbreaking space that keeps two words on the same line. | Ctrl+Shift+Space |

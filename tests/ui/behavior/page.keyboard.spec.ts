@@ -74,8 +74,8 @@ test('writes a page with Markdown shortcuts, each one undoable back to the typed
 test('formats with keys: marks, a link, headings, an outline move, a date, and AutoCorrect', async ({ page }) => {
   await openEmptyPage(page);
   await keys(page, 'Normal {Control+b}bold{Control+b} {Control+i}italic{Control+i} ');
-  await keys(page, '{Control+u}under{Control+u} {Control+Shift+S}gone{Control+Shift+S} ');
-  await keys(page, '{Control+Shift+H}marked{Control+Shift+H} {Control+e}code{Control+e}{Enter}');
+  await keys(page, '{Control+u}under{Control+u} {Control+Shift+X}gone{Control+Shift+X} ');
+  await keys(page, '{Control+Shift+H}marked{Control+Shift+H} {Control+`}code{Control+`}{Enter}');
   await keys(page, 'Heading{Control+Alt+2}{Enter}Plain{Control+Alt+1}{Control+Shift+N}{Enter}');
   await keys(page, 'Visit site{Control+Shift+ArrowLeft}{Control+k}');
   // The popover takes the focus when it has loaded; the address goes into its field, and Enter saves and closes it.
