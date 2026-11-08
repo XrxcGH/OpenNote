@@ -564,9 +564,10 @@
     },
     {
       "formula": "=TIMEVALUE(\"23:59:59.9\")",
-      "expected": 0,
+      "expected": 0.9999988425925926,
+      "tolerance": 1e-12,
       "source": "hand",
-      "note": "Rounds to 24:00:00, which wraps to the start of the day."
+      "note": "86399.9 seconds of 86400, worked by hand. The time stays just before midnight."
     },
     {
       "formula": "=TIMEVALUE(\"50%\")",

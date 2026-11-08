@@ -423,10 +423,10 @@ export const functions: readonly FnSpec2[] = [
       const text = toText(v);
       if (typeof text !== 'string') return text;
       // Only a time ("6:00 PM") or a date with or without a time counts. A bare number, a percent, or a grouped number
-      // like "1,000" is not a time. The result is rounded to a whole second and wraps at midnight.
+      // like "1,000" is not a time. The result keeps the fraction of the day, so 23:59:59.9 stays just before midnight.
       const t = text.trim();
       const n = parseCanonicalNumber(t) !== null ? null : t.includes(':') ? textToNumber(t) : parseDate(t, 'mdy');
-      return n === null || !Number.isFinite(n) ? err('VALUE') : secondsOfDay(n) / DAY_SECONDS;
+      return n === null || !Number.isFinite(n) ? err('VALUE') : n - Math.floor(n);
     },
     meta: { signature: 'TIMEVALUE(text)', example: '=TIMEVALUE("6:00 PM") gives 0.75' },
   },

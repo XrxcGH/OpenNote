@@ -22,3 +22,5 @@ own lines here. "Not yet checked" means no fixture pins that app's answer yet.
 | `NETWORKDAYS` and `WORKDAY` before 1900-03-01 or after 9999-12-31 | Not dates | Work on negative serials | `WORKDAY` gives `#NUM!` outside serial 0 to 2958465. Counting refuses a start, end, or holiday serial beyond 100,000,000 with `#NUM!`. More than 3,000,000 working days is `#NUM!` |
 | `NOW()` | Date and time to the second | Same | Today's date from the engine plus the device clock to the second |
 | Weekend mask `"1111111"` or code 0 | `#VALUE!` and `#NUM!` | Not yet checked | `#VALUE!` and `#NUM!` |
+| `DATEVALUE` and `TIMEVALUE` date order | The region's date order | The region's date order | Always month, day, year, because functions get no locale. `DATEVALUE("24.07.2008")` is `#VALUE!` in de-DE. Later, pass the table's date order in `Env` |
+| `NOW()` after midnight with a cached date | Always the current moment | Always the current moment | Date from `env.today()` plus the device clock, so a stale `today` mixes dates. Later, add `env.now()` to `Env` |

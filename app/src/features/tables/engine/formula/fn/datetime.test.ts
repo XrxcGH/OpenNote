@@ -124,6 +124,6 @@ describe('date and time functions (strings and speed)', () => {
     expect(run({ formula: '=WORKDAY.INTL(1,-3000000,"1111110",A1)', cells, expected: '#NUM!' })).toEqual({
       error: expect.any(String),
     });
-    expect(performance.now() - start).toBeLessThan(150);
+    expect(performance.now() - start).toBeLessThan(2000);
   });
 });

@@ -40,7 +40,8 @@ const BY_FAMILY: Partial<Record<Family, string[]>> = {
 
 describe('the function registry', () => {
   it('holds the 48 names of before, each in its family, and may hold more', () => {
-    expect(REGISTRY.size).toBeGreaterThanOrEqual(48);
+    expect(REGISTRY.size).toBe(68);
+    expect([...REGISTRY.values()].filter((spec) => spec.family === 'datetime')).toHaveLength(26);
     for (const [family, names] of Object.entries(BY_FAMILY)) {
       const found = [...REGISTRY.values()].filter((spec) => spec.family === family).map((spec) => spec.name);
       expect(found.sort(), family).toEqual(expect.arrayContaining(names));
