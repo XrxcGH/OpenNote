@@ -9,10 +9,9 @@ interface FnText {
 const date = 'A date, as a serial number or date text.';
 const dates = { start: 'The first date.', end: 'The last date.' };
 const holidays = 'Dates to treat as days off, in a range or typed directly.';
-const intl = (name: string, text: FnText): Record<string, FnText> => ({ [`${name}.INTL`]: text });
-const weekend = 'Which days are days off: a code 1 to 7 or 11 to 17, or seven digits of 0 and 1 starting Monday.';
+const weekend = 'Which days are days off: a code 1 to 7 or 11 to 17, or 7 digits of 0 and 1 starting Monday.';
 
-export const fnDateTime: Readonly<Record<string, FnText>> = {
+export const fnDateTime = {
   TODAY: { summary: 'Today as a date. It updates whenever the sheet recalculates.', args: {} },
   NOW: { summary: 'The date and the time right now. It updates whenever the sheet recalculates.', args: {} },
   DATE: {
@@ -43,7 +42,7 @@ export const fnDateTime: Readonly<Record<string, FnText>> = {
     args: { end: 'The later date.', start: 'The earlier date.' },
   },
   DAYS360: {
-    summary: 'Days between two dates on a year of twelve 30-day months.',
+    summary: 'Days between two dates on a year of 12 months of 30 days.',
     args: { ...dates, european: 'TRUE for the European rule. FALSE or left out for the US rule.' },
   },
   EDATE: {
@@ -70,15 +69,17 @@ export const fnDateTime: Readonly<Record<string, FnText>> = {
     summary: 'Working days between two dates, counting both ends, with Saturday and Sunday off.',
     args: { ...dates, holidays },
   },
-  ...intl('NETWORKDAYS', {
+  // checks-disable-next-line ui-voice: the key is the function name
+  'NETWORKDAYS.INTL': {
     summary: 'Working days between two dates, counting both ends, with weekend days you choose.',
     args: { ...dates, weekend, holidays },
-  }),
+  },
   WORKDAY: {
     summary: 'The date a number of working days from a start date, with Saturday and Sunday off.',
     args: { start: 'The starting date.', days: 'Working days to move. A negative number goes back.', holidays },
   },
-  ...intl('WORKDAY', {
+  // checks-disable-next-line ui-voice: the key is the function name
+  'WORKDAY.INTL': {
     summary: 'The date a number of working days from a start date, with weekend days you choose.',
     args: {
       start: 'The starting date.',
@@ -86,7 +87,7 @@ export const fnDateTime: Readonly<Record<string, FnText>> = {
       weekend,
       holidays,
     },
-  }),
+  },
   DATEDIF: {
     summary: 'The difference between two dates in whole years, months, or days.',
     args: {
@@ -105,4 +106,4 @@ export const fnDateTime: Readonly<Record<string, FnText>> = {
     summary: 'Turns a Unix timestamp into a date and time in UTC.',
     args: { timestamp: 'Time since 1970-01-01 UTC.', unit: '1 for seconds, 2 for milliseconds, 3 for microseconds.' },
   },
-};
+} as const satisfies Record<string, FnText>;

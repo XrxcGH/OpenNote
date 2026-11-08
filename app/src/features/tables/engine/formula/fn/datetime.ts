@@ -72,7 +72,8 @@ function timePart(name: string, pick: (seconds: number) => number, example: stri
     params: [num('time')],
     run: ([v]) => {
       const n = toNumber(v);
-      return typeof n === 'number' ? pick(secondsOfDay(n)) : n;
+      if (typeof n !== 'number') return n;
+      return n < 0 || !inDayRange(n) ? err('NUM') : pick(secondsOfDay(n));
     },
     meta: { signature: `${name}(time)`, example },
   };
@@ -143,14 +144,17 @@ function isoWeek(serial: number): number {
 function weekendFlags(value: Value | undefined): { flags: boolean[] } | FormulaError {
   const v = value === undefined ? 1 : toScalar(value);
   if (isError(v)) return v;
-  // Seven characters of 0 and 1 are a mask, Monday first. Other text is read as a number, so "7" is code 7.
-  if (typeof v === 'string' && /^[01]{7}$/.test(v)) {
+  // Seven characters of 0 and 1 are a mask, Monday first. Other text and logical values are not valid.
+  if (typeof v === 'string') {
+    if (!/^[01]{7}$/.test(v)) return err('VALUE');
     const flags = [...v].map((c) => c === '1');
     return flags.every(Boolean) ? err('VALUE') : { flags };
   }
+  if (typeof v === 'boolean') return err('VALUE');
   const n = toNumber(v);
   if (typeof n !== 'number') return n;
-  const code = Math.trunc(n);
+  if (!Number.isInteger(n)) return err('NUM');
+  const code = n;
   const flags = Array<boolean>(7).fill(false);
   if (code >= 1 && code <= 7) {
     // Codes 1 to 7 name two days in a row: 1 Saturday and Sunday, 2 Sunday and Monday, and on to 7 Friday and Saturday.
@@ -175,10 +179,15 @@ function holidaySet(value: Value | undefined): Set<number> | FormulaError {
     if (item === null) continue;
     const n = toNumber(item);
     if (typeof n !== 'number') return n;
+    if (!inDayRange(n)) return err('NUM');
     out.add(whole(n));
   }
   return out;
 }
+
+/** Day serials beyond this are refused, so counting loops stay far below the size where adding 1 stops working. */
+const MAX_DAY_SERIAL = 1e8;
+const inDayRange = (n: number): boolean => Number.isFinite(n) && Math.abs(n) <= MAX_DAY_SERIAL;
 
 const isOff = (serial: number, flags: boolean[], holidays: Set<number>): boolean =>
   flags[(weekdayOf(serial) + 6) % 7] || holidays.has(serial);
@@ -195,6 +204,18 @@ function workingDaysBetween(from: number, to: number, flags: boolean[], holidays
   return count;
 }
 
+/** The DAYS360 method argument as a logical. A number other than 0 is TRUE. Text must be TRUE or FALSE. */
+function europeanFlag(v: Value | undefined): boolean | FormulaError {
+  if (v === undefined) return false;
+  const s = toScalar(v);
+  if (isError(s)) return s;
+  if (s === null) return false;
+  if (typeof s === 'boolean') return s;
+  if (typeof s === 'number') return s !== 0;
+  const t = s.trim().toUpperCase();
+  return t === 'TRUE' ? true : t === 'FALSE' ? false : err('VALUE');
+}
+
 function networkdays(args: Value[], withWeekend: boolean): Value {
   const dates = toNumbers([args[0], args[1]]);
   if (!Array.isArray(dates)) return dates;
@@ -202,6 +223,7 @@ function networkdays(args: Value[], withWeekend: boolean): Value {
   if ('error' in weekend) return weekend;
   const holidays = holidaySet(withWeekend ? args[3] : args[2]);
   if (!(holidays instanceof Set)) return holidays;
+  if (!inDayRange(dates[0]) || !inDayRange(dates[1])) return err('NUM');
   const [a, b] = [whole(dates[0]), whole(dates[1])];
   const count = workingDaysBetween(Math.min(a, b), Math.max(a, b), weekend.flags, holidays);
   return a <= b ? count : -count;
@@ -215,20 +237,29 @@ function workday(args: Value[], withWeekend: boolean): Value {
   const holidays = holidaySet(withWeekend ? args[3] : args[2]);
   if (!(holidays instanceof Set)) return holidays;
   const off = holidays;
+  if (!inDayRange(nums[0])) return err('NUM');
   let day = whole(nums[0]);
   const steps = Math.trunc(nums[1]);
   if (Math.abs(steps) > MAX_WORKDAYS) return err('NUM');
   const dir = steps < 0 ? -1 : 1;
   let left = Math.abs(steps);
   const perWeek = weekend.flags.filter((f) => !f).length;
-  // Without holidays, whole weeks hold a fixed number of working days, so skip them in one move.
-  if (off.size === 0 && left > perWeek) {
+  const working = [...off].filter((h) => !weekend.flags[(weekdayOf(h) + 6) % 7]);
+  // Whole weeks hold a fixed number of working days, less the holidays inside them, so skip them in one move.
+  // Each move leaves at least one working day to find, and the loop ends once the count is small.
+  while (left > perWeek) {
     const weeks = Math.floor((left - 1) / perWeek);
-    day += dir * weeks * 7;
-    left -= weeks * perWeek;
+    const end = day + dir * weeks * 7;
+    const [lo, hi] = dir > 0 ? [day + 1, end] : [end, day - 1];
+    const inside = working.filter((h) => h >= lo && h <= hi).length;
+    day = end;
+    left -= weeks * perWeek - inside;
+    // The walk only moves one way, so a day outside the serial range means the result is outside it too.
+    if (day < 0 || day > MAX_SERIAL) return err('NUM');
   }
   while (left > 0) {
     day += dir;
+    if (day < 0 || day > MAX_SERIAL) return err('NUM');
     if (!isOff(day, weekend.flags, off)) left -= 1;
   }
   return inRange(day);
@@ -359,7 +390,9 @@ export const functions: readonly FnSpec2[] = [
       // Years 0 to 99 mean 1900 to 1999. Other years count as written, so 1899-12-30 is serial 0 and earlier
       // dates are negative serials, as in Sheets (DIFFERENCES.md lists Excel's rule).
       const y = year >= 0 && year < 100 ? year + 1900 : year;
-      return y < 0 || y > 9999 ? err('NUM') : finish(ymdToSerial(y, m, d));
+      if (y < 0 || y > 9999) return err('NUM');
+      const serial = ymdToSerial(y, m, d);
+      return Number.isFinite(serial) && serial <= MAX_SERIAL ? finish(serial) : err('NUM');
     },
     meta: { signature: 'DATE(year, month, day)', example: '=DATE(2024, 1, 1) gives 45292' },
   },
@@ -389,9 +422,11 @@ export const functions: readonly FnSpec2[] = [
     run: ([v]) => {
       const text = toText(v);
       if (typeof text !== 'string') return text;
-      // A bare number is not a time, but "2024-01-01 6:00" is: the time part is what counts.
-      const n = parseCanonicalNumber(text.trim()) === null ? textToNumber(text) : null;
-      return n === null ? err('VALUE') : n - Math.floor(n);
+      // Only a time ("6:00 PM") or a date with or without a time counts. A bare number, a percent, or a grouped number
+      // like "1,000" is not a time. The result is rounded to a whole second and wraps at midnight.
+      const t = text.trim();
+      const n = parseCanonicalNumber(t) !== null ? null : t.includes(':') ? textToNumber(t) : parseDate(t, 'mdy');
+      return n === null || !Number.isFinite(n) ? err('VALUE') : secondsOfDay(n) / DAY_SECONDS;
     },
     meta: { signature: 'TIMEVALUE(text)', example: '=TIMEVALUE("6:00 PM") gives 0.75' },
   },
@@ -424,7 +459,9 @@ export const functions: readonly FnSpec2[] = [
     run: (args) => {
       const nums = toNumbers([args[0], args[1]]);
       if (!Array.isArray(nums)) return nums;
-      return days360(whole(nums[0]), whole(nums[1]), args[2] === true);
+      const european = europeanFlag(args[2]);
+      if (typeof european !== 'boolean') return european;
+      return days360(whole(nums[0]), whole(nums[1]), european);
     },
     meta: {
       signature: 'DAYS360(start, end, [european])',
@@ -459,7 +496,7 @@ export const functions: readonly FnSpec2[] = [
       const nums = toNumbers(args);
       if (!Array.isArray(nums)) return nums;
       const type = WEEKDAY_TYPES[Math.trunc(nums[1] ?? 1)];
-      if (type === undefined) return err('NUM');
+      if (type === undefined || !inDayRange(nums[0])) return err('NUM');
       return ((weekdayOf(nums[0]) - type.first + 7) % 7) + type.base;
     },
     meta: { signature: 'WEEKDAY(date, [type])', example: '=WEEKDAY(DATE(2024,1,1)) gives 2, a Monday' },

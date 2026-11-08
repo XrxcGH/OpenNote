@@ -464,6 +464,160 @@
       "expected": 29,
       "source": "hand",
       "note": "Day part."
+    },
+    {
+      "formula": "=NETWORKDAYS(0,1E17)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Serials past 100 million are refused so counting always ends."
+    },
+    {
+      "formula": "=NETWORKDAYS(-1E300,1E300)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Huge serials are refused."
+    },
+    {
+      "formula": "=WORKDAY.INTL(1E20,1,\"0111111\")",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "A start past 100 million is refused."
+    },
+    {
+      "formula": "=NETWORKDAYS(0,10,1E17)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "A holiday past 100 million is refused."
+    },
+    {
+      "formula": "=DAYS360(DATE(2011,1,15),DATE(2011,3,31),1)",
+      "expected": 75,
+      "source": "hand",
+      "note": "A number other than 0 is TRUE, so the European method applies: day 31 becomes 30, giving 2 months and 15 days."
+    },
+    {
+      "formula": "=DAYS360(DATE(2011,1,15),DATE(2011,3,31),0)",
+      "expected": 76,
+      "source": "hand",
+      "note": "0 is FALSE, so the US method applies: day 31 stays 31 when the start day is under 30."
+    },
+    {
+      "formula": "=DAYS360(DATE(2011,1,15),DATE(2011,3,31),\"TRUE\")",
+      "expected": 75,
+      "source": "hand",
+      "note": "The text TRUE reads as a logical."
+    },
+    {
+      "formula": "=DAYS360(DATE(2011,1,15),DATE(2011,3,31),\"x\")",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Other text is not a logical."
+    },
+    {
+      "formula": "=NETWORKDAYS.INTL(0,10,TRUE)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "A logical is not a weekend code."
+    },
+    {
+      "formula": "=NETWORKDAYS.INTL(0,10,\"7\")",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Text must be a 7 character mask."
+    },
+    {
+      "formula": "=TIMEVALUE(\"25:00\")",
+      "expected": 0.041666666666666664,
+      "source": "hand",
+      "note": "25 hours is 1 day and 1 hour, so the time of day is 1/24.",
+      "tolerance": 1e-12
+    },
+    {
+      "formula": "=DATE(9999,12,31)",
+      "expected": 2958465,
+      "source": "hand",
+      "note": "The last date, 9999-12-31."
+    },
+    {
+      "formula": "=DATE(9999,12,32)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Rolling past 9999-12-31 is out of range."
+    },
+    {
+      "formula": "=WEEKDAY(1E300)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "A serial this large is not a date."
+    },
+    {
+      "formula": "=HOUR(-0.25)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "A negative time is out of range."
+    },
+    {
+      "formula": "=NETWORKDAYS.INTL(0,10,1.5)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "A weekend code must be a whole number."
+    },
+    {
+      "formula": "=TIMEVALUE(\"23:59:59.9\")",
+      "expected": 0,
+      "source": "hand",
+      "note": "Rounds to 24:00:00, which wraps to the start of the day."
+    },
+    {
+      "formula": "=TIMEVALUE(\"50%\")",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "A percent is not a time."
+    },
+    {
+      "formula": "=TIMEVALUE(\"1,000\")",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "A grouped number is not a time."
+    },
+    {
+      "formula": "=WORKDAY(45292,20,A1)",
+      "cells": {
+        "A1": 45301
+      },
+      "expected": 45321,
+      "source": "hand",
+      "note": "Monday 2024-01-01 plus 20 working days is 2024-01-29. The holiday on Wednesday 2024-01-10 moves it to 2024-01-30."
+    },
+    {
+      "formula": "=WORKDAY(45321,-21,A1)",
+      "cells": {
+        "A1": 45301
+      },
+      "expected": 45289,
+      "source": "hand",
+      "note": "Back from 2024-01-30: 21 working days takes 22 weekdays when 2024-01-10 is a holiday, which is Friday 2023-12-29."
+    },
+    {
+      "formula": "=WORKDAY(1,3000000,A1:A4)",
+      "cells": {
+        "A1": 45301,
+        "A2": 45302,
+        "A3": 45303,
+        "A4": 45304
+      },
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Past 9999-12-31, so #NUM!, and without a long day by day walk."
+    },
+    {
+      "formula": "=WORKDAY.INTL(1,-3000000,\"1111110\",A1)",
+      "cells": {
+        "A1": 45301
+      },
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Before serial 0, so #NUM!."
     }
   ]
 }

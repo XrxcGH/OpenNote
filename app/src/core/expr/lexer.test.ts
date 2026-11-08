@@ -179,3 +179,20 @@ describe('any text', () => {
     );
   });
 });
+
+describe('dotted names', () => {
+  it('lexes NETWORKDAYS.INTL as one name', () => {
+    expect(kinds('NETWORKDAYS.INTL(1)', SHEET.lex)[0]).toMatch(/^[a-z]+:NETWORKDAYS\.INTL$/);
+  });
+  it('still lexes A1.5 as a name and a number', () => {
+    const got = kinds('A1.5', SHEET.lex);
+    expect(got).toHaveLength(2);
+    expect(got[0]).toMatch(/:A1$/);
+    expect(got[1]).toMatch(/:\.5$/);
+  });
+  it('does not take a trailing dot into the name', () => {
+    const error = failure('A1.', SHEET.lex);
+    expect(error.code).toBe('bad-character');
+    expect(error.message).not.toContain('A1.');
+  });
+});

@@ -98,10 +98,10 @@ const KNOWN: Record<string, string> = {
 };
 
 /** Functions that cannot be compared with a fixed answer: their result depends on the day it runs. */
-const NOT_COMPARABLE = new Set([
-  'TODAY',
-  'NOW',
-  // The other date and time functions have hand-worked cases in fixtures/fn/datetime.json (lane fn-datetime).
+const NOT_COMPARABLE = new Set(['TODAY', 'NOW']);
+
+/** Date and time functions with hand-worked cases in fixtures/fn/datetime.json (lane fn-datetime) instead of a diff. */
+const HAND_WORKED = new Set([
   ...'HOUR MINUTE SECOND TIME TIMEVALUE DATEVALUE DAYS360 EDATE EOMONTH WEEKDAY WEEKNUM ISOWEEKNUM'.split(' '),
   ...'NETWORKDAYS NETWORKDAYS.INTL WORKDAY WORKDAY.INTL DATEDIF YEARFRAC EPOCHTODATE'.split(' '),
 ]);
@@ -145,7 +145,9 @@ const tool = findTool('gridcraft-cli');
 describe('the formula function set', () => {
   it('has a differential case for every function', () => {
     const covered = new Set(Object.keys(CASES));
-    const missing = Object.keys(FUNCTIONS).filter((name) => !covered.has(name) && !NOT_COMPARABLE.has(name));
+    const missing = Object.keys(FUNCTIONS).filter(
+      (name) => !covered.has(name) && !NOT_COMPARABLE.has(name) && !HAND_WORKED.has(name),
+    );
     expect(missing, 'add cases for these functions to CASES').toEqual([]);
   });
 });

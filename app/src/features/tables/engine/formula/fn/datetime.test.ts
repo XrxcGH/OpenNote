@@ -6,7 +6,9 @@ import fixture from '../../../fixtures/fn/datetime.json';
 import { createTable, setCellInput } from '../../edit';
 import { EN_US } from '../../locale';
 import { ERROR_TOKENS, type Value } from '../../values';
+import { fnDateTime } from '../../../../../strings/en/fnDateTime';
 import { REGISTRY } from '.';
+import { functions } from './datetime';
 
 interface Case {
   formula: string;
@@ -98,5 +100,30 @@ describe('the date and time family', () => {
 
   it('refuses a day count too large to be sensible', () => {
     expect(run({ formula: '=WORKDAY(DATE(2024,1,1),100000000)', expected: '#NUM!' })).toEqual({ error: 'NUM' });
+  });
+});
+
+describe('date and time functions (strings and speed)', () => {
+  const text = fnDateTime as Record<string, { args: Record<string, string> }>;
+  it.each(functions.map((f) => [f.name, f] as const))(
+    '%s has a description with matching argument names',
+    (name, f) => {
+      expect(text[name], `strings entry for ${name}`).toBeDefined();
+      expect(Object.keys(text[name].args).sort()).toEqual(
+        f.params.flatMap((p) => ('repeat' in p ? p.repeat : [p]).map((q) => q.name)).sort(),
+      );
+    },
+  );
+
+  it('refuses a far result at once instead of walking day by day', () => {
+    const start = performance.now();
+    const cells = { A1: 45301, A2: 45302, A3: 45303, A4: 45304 };
+    expect(run({ formula: '=WORKDAY(1,3000000,A1:A4)', cells, expected: '#NUM!' })).toEqual({
+      error: expect.any(String),
+    });
+    expect(run({ formula: '=WORKDAY.INTL(1,-3000000,"1111110",A1)', cells, expected: '#NUM!' })).toEqual({
+      error: expect.any(String),
+    });
+    expect(performance.now() - start).toBeLessThan(150);
   });
 });
