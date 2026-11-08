@@ -592,3 +592,27 @@ describe('SUMIF with a sum range of another size', () => {
     expect(table.rows[0].cells[7].value).toBe(130);
   });
 });
+
+describe('verification gaps', () => {
+  it('reaches dotted names in a table without sheetVersion (legacy rules)', () => {
+    const rows = Array.from({ length: 2 }, () => Array.from({ length: 8 }, () => ''));
+    let table: Table = createTable(COLUMNS, rows, EN_US, DEFAULT_ENV);
+    table = setCellInput(table, { ...RESULT, raw: '=CEILING.MATH(-4.5)' }, EN_US, DEFAULT_ENV);
+    expect(table.rows[0].cells[7].value).toBe(-4); // default mode rounds toward positive infinity
+    table = setCellInput(table, { ...RESULT, raw: '=FLOOR.MATH(-4.5)' }, EN_US, DEFAULT_ENV);
+    expect(table.rows[0].cells[7].value).toBe(-5);
+  });
+
+  it('a string literal that looks like a subtotal call is not a nested subtotal', () => {
+    // B1 holds text; COUNTA over B1:B2 counts it once.
+    expect(calc('SUBTOTAL(3,B1:B2)', [], DEFAULT_ENV, [['B1', '="SUBTOTAL(x)"']])).toBe(1);
+  });
+
+  it('flags a nested subtotal from the compiled call, not the formula text', () => {
+    expect(calc('SUBTOTAL(9,A1:A3)', [['1'], ['2']], DEFAULT_ENV, [['A3', '=SUM(1)+SUBTOTAL(9,A1:A2)']])).toBe(3);
+  });
+
+  it('a calculated-column cell with its own plain formula is not flagged by the column', () => {
+    expect(calc('SUBTOTAL(9,A1:A3)', [['1'], ['2'], ['3']], DEFAULT_ENV, [['A3', '=A1+A2']])).toBe(6);
+  });
+});

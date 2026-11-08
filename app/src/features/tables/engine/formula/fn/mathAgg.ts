@@ -7,20 +7,15 @@ import { err, finish, isError, isNumber, toNumber, type ArrayValue, type Scalar,
 import type { FnSpec2 } from './types';
 import { number } from './mathKit';
 
-interface Item {
-  value: Scalar;
-  state: number;
-  /** The cell is a nested subtotal (its formula calls SUBTOTAL or AGGREGATE). */
-  nested: boolean;
-}
-
-/** Every cell of the reference arguments with its row's state. */
-function itemsOf(blocks: readonly ArrayValue[]): Item[] {
-  const out: Item[] = [];
+/** The values of the reference arguments that `keep` accepts, given a cell's row state and whether it is a nested subtotal. */
+function itemsOf(blocks: readonly ArrayValue[], keep: (state: number, nested: boolean) => boolean): Scalar[] {
+  const out: Scalar[] = [];
   for (const block of blocks) {
-    block.data.forEach((value, i) =>
-      out.push({ value, state: block.rowState?.[Math.floor(i / block.cols)] ?? 0, nested: block.nested?.[i] === true }),
-    );
+    const { data, cols, rowState, nested } = block;
+    for (let i = 0; i < data.length; i++) {
+      const state = rowState === undefined ? 0 : (rowState[Math.floor(i / cols)] ?? 0);
+      if (keep(state, nested !== undefined && nested[i] === true)) out.push(data[i]);
+    }
   }
   return out;
 }
@@ -81,19 +76,19 @@ function nth(n: readonly number[], k: number, largest: boolean): Value {
 }
 
 /** Functions 1 to 13 of both lists, which take only references. */
-function combine(code: number, items: readonly Item[]): Value {
-  const nums = items.map((i) => i.value).filter(isNumber);
+function combine(code: number, items: readonly Scalar[]): Value {
+  const nums = items.filter(isNumber);
   switch (code) {
     case 1:
       return nums.length ? finish(sum(nums) / nums.length) : err('DIV0');
     case 2:
       return nums.length;
     case 3:
-      return items.filter((i) => i.value !== null).length;
+      return items.filter((v) => v !== null).length;
     case 4:
-      return nums.length ? Math.max(...nums) : 0;
+      return nums.length ? nums.reduce((a, b) => (b > a ? b : a)) : 0;
     case 5:
-      return nums.length ? Math.min(...nums) : 0;
+      return nums.length ? nums.reduce((a, b) => (b < a ? b : a)) : 0;
     case 6:
       return nums.length ? finish(nums.reduce((a, b) => a * b, 1)) : 0;
     case 7:
@@ -114,10 +109,10 @@ function combine(code: number, items: readonly Item[]): Value {
 }
 
 /** The first error among the items, or null. COUNT never sees one and COUNTA counts it, so neither is stopped. */
-function stopper(code: number, items: readonly Item[]): Value | null {
+function stopper(code: number, items: readonly Scalar[]): Value | null {
   if (code === 2 || code === 3) return null;
-  const bad = items.find((i) => isError(i.value));
-  return bad === undefined ? null : (bad.value as Value);
+  const bad = items.find(isError);
+  return bad === undefined ? null : (bad as Value);
 }
 
 function codeOf(value: Value, low: number, high: number): number | Value {
@@ -133,8 +128,9 @@ function subtotal(args: Value[]): Value {
   const base = num % 100;
   if (base < 1 || base > 11 || (num > 11 && num < 101)) return err('VALUE');
   const hideManual = num > 100;
-  const kept = itemsOf(args.slice(1) as ArrayValue[]).filter(
-    (i) => !i.nested && (i.state === 0 || (i.state === 1 && !hideManual)),
+  const kept = itemsOf(
+    args.slice(1) as ArrayValue[],
+    (state, nested) => !nested && (state === 0 || (state === 1 && !hideManual)),
   );
   return stopper(base, kept) ?? combine(base, kept);
 }
@@ -158,13 +154,13 @@ function aggregate(args: Value[]): Value {
   }
   // Options 0 to 3 also skip the results of nested SUBTOTAL and AGGREGATE cells.
   const hideNested = option <= 3;
-  const kept = itemsOf(refs).filter(
-    (i) => !(hideRows && i.state !== 0) && !(hideErrors && isError(i.value)) && !(hideNested && i.nested),
+  const kept = itemsOf(refs, (state, nested) => !(hideRows && state !== 0) && !(hideNested && nested)).filter(
+    (v) => !(hideErrors && isError(v)),
   );
   if (num <= 13) return stopper(num, kept) ?? combine(num, kept);
   const bad = stopper(num, kept);
   if (bad !== null) return bad;
-  const nums = kept.map((i) => i.value).filter(isNumber);
+  const nums = kept.filter(isNumber);
   switch (num) {
     case 14:
       return nth(nums, k, true);

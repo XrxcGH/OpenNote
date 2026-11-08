@@ -11,8 +11,11 @@ export interface Env {
   today: () => number;
   /** Whether a row of a table (by its index on the page) shows. Unset: every row shows. */
   rowState?: (sheet: number, row: number) => RowState;
-  /** Whether a cell (table index, row, column) is a nested subtotal: its formula calls SUBTOTAL or AGGREGATE. Unset: none does. */
-  isSubtotal?: (sheet: number, row: number, col: number) => boolean;
+  /**
+   * Which cells of a block (table index, first row, first column, last row, last column) are nested subtotals: their
+   * formula calls SUBTOTAL or AGGREGATE. Row-major flags, or undefined when none is. Unset: none is.
+   */
+  subtotalsIn?: (sheet: number, r1: number, c1: number, r2: number, c2: number) => readonly boolean[] | undefined;
 }
 
 /**

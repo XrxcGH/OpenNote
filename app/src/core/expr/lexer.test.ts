@@ -194,7 +194,7 @@ describe('dotted function names (Excel dialect)', () => {
     expect(kinds('A.5', excel).slice(0, 2)).toEqual(['name:A', 'num:.5']);
   });
 
-  it('reads the dot apart from the name in the cell dialect, as before', () => {
-    expect(() => tokenize('CEILING.MATH', cell)).toThrow();
+  it('reads dotted names in the textbook rules too, as no old formula had a dot after a name', () => {
+    expect(kinds('CEILING.MATH(2)', cell)[0]).toBe('name:CEILING.MATH');
   });
 });

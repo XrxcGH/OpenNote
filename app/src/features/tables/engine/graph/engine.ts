@@ -37,8 +37,6 @@ const LATE_ROUNDS = 8;
 const DONE = 2;
 let EPOCH = 0;
 
-const NESTED = /\b(?:SUBTOTAL|AGGREGATE)\s*\(/i;
-
 /** The state of each data row of a table: hidden by hand is 1, filtered out is 2 (and wins when both hold). */
 function rowStatesOf(table: Table): Uint8Array {
   const states = new Uint8Array(table.rows.length);
@@ -73,6 +71,8 @@ export class Engine {
   origins = new Cow<number, ErrorOrigin>();
   cycles = new Cow<number, true>();
   volatile = new Cow<number, true>();
+  /** The units whose formula calls SUBTOTAL or AGGREGATE. */
+  subtotals = new Cow<number, true>();
   pending = new Cow<number, true>();
   nextId = 0;
   changed = new Set<number>();
@@ -98,7 +98,7 @@ export class Engine {
     this.scopeEnv = from?.scopeEnv ?? {
       ...env,
       rowState: env.rowState ?? ((s, r) => (live.engine.rowStates[s]?.[r] ?? 0) as RowState),
-      isSubtotal: env.isSubtotal ?? ((s, r, c) => live.engine.holdsSubtotal(s, r, c)),
+      subtotalsIn: env.subtotalsIn ?? ((s, r1, c1, r2, c2) => live.engine.subtotalsIn(s, r1, c1, r2, c2)),
     };
     this.ctx = this.makeCtx();
   }
@@ -165,6 +165,7 @@ export class Engine {
     next.origins = this.origins.fork();
     next.cycles = this.cycles.fork();
     next.volatile = this.volatile.fork();
+    next.subtotals = this.subtotals.fork();
     next.pending = this.pending.fork();
     next.nextId = this.nextId;
     return next;
@@ -191,11 +192,23 @@ export class Engine {
     );
   }
 
-  /** True when the cell is a nested subtotal: its formula calls SUBTOTAL or AGGREGATE, so a total over it skips it. */
-  holdsSubtotal(s: number, row: number, col: number): boolean {
-    const id = this.cellUnit.get(cellKey(s, col, row)) ?? this.colUnit.get(colKey(s, col));
-    const formula = id === undefined ? undefined : this.units.get(id)?.formula;
-    return formula !== undefined && NESTED.test(formula);
+  /** Row-major flags for the cells of a block that are nested subtotals, or undefined when none is. */
+  subtotalsIn(s: number, r1: number, c1: number, r2: number, c2: number): boolean[] | undefined {
+    let flags: boolean[] | undefined;
+    const cols = c2 - c1 + 1;
+    for (const id of this.subtotals.keys()) {
+      const unit = this.units.get(id);
+      if (unit === undefined || unit.s !== s || unit.col < c1 || unit.col > c2) continue;
+      const from = unit.row === null ? r1 : Math.max(r1, unit.row);
+      const to = unit.row === null ? r2 : Math.min(r2, unit.row);
+      for (let r = from; r <= to; r++) {
+        // A cell with a formula of its own replaces the column's.
+        if (unit.row === null && this.cellUnit.has(cellKey(s, unit.col, r))) continue;
+        flags ??= new Array<boolean>((r2 - r1 + 1) * cols).fill(false);
+        flags[(r - r1) * cols + (unit.col - c1)] = true;
+      }
+    }
+    return flags;
   }
 
   // Units.
@@ -225,6 +238,7 @@ export class Engine {
     if (row === null) this.colUnit.set(colKey(s, col), id);
     else this.cellUnit.set(cellKey(s, col, row), id);
     if (compiled.volatile) this.volatile.set(id, true);
+    if (compiled.subtotal) this.subtotals.set(id, true);
     this.graph.setReads(id, compiled.reads);
     return id;
   }
@@ -238,7 +252,7 @@ export class Engine {
     this.units.delete(id);
     if (unit.row === null) this.colUnit.delete(colKey(unit.s, unit.col));
     else this.cellUnit.delete(cellKey(unit.s, unit.col, unit.row));
-    for (const map of [this.volatile, this.cycles, this.pending] as Cow<number, true>[]) map.delete(id);
+    for (const map of [this.volatile, this.subtotals, this.cycles, this.pending] as Cow<number, true>[]) map.delete(id);
     this.attempted.delete(id);
     this.dynamicReads.delete(id);
     this.graph.removeUnit(id);

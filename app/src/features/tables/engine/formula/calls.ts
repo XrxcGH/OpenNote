@@ -80,20 +80,15 @@ function withRowState(env: Host['scope']['env'], ref: RefPart, read: Fn): Fn {
     if (isError(value)) return value;
     const array = asArray(value);
     const box = ref.fn(ctx);
-    const { rowState, isSubtotal } = env;
+    const { rowState, subtotalsIn } = env;
     if (Array.isArray(box) || 'error' in box) return array;
     const state =
       rowState === undefined ? [] : Array.from({ length: array.rows }, (_, i) => rowState(box.s, box.r1 + i));
-    const nested =
-      isSubtotal === undefined
-        ? []
-        : Array.from({ length: array.data.length }, (_, i) =>
-            isSubtotal(box.s, box.r1 + Math.floor(i / array.cols), box.c1 + (i % array.cols)),
-          );
+    const nested = subtotalsIn?.(box.s, box.r1, box.c1, box.r2, box.c2);
     return {
       ...array,
       ...(state.some((s) => s !== 0) ? { rowState: state } : {}),
-      ...(nested.some(Boolean) ? { nested } : {}),
+      ...(nested !== undefined ? { nested } : {}),
     };
   };
 }
@@ -104,6 +99,7 @@ export function compileLibrary(h: Host, spec: FnSpec2, node: Call): Fn {
   if (node.args.length < min || node.args.length > max) return constant(err('VALUE'));
   if (spec.volatile === true) h.volatile = true;
   const all = paramsOf(spec);
+  if (all.some((p) => p.rowState === true)) h.subtotal = true;
   if (all.length > 0 && all.every((p) => p.kind === 'range')) return aggregate(h, spec, node);
   return plain(h, spec, node);
 }
