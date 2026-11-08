@@ -1,15 +1,17 @@
 // The compatibility names of the statistical functions: the older spellings spreadsheets still accept, such as STDEV
 // for STDEV.S and NORMDIST for NORM.DIST. Owner: tables:fn-stats. Each gives what its modern form gives for the same
-// arguments. The ones about distributions run from the lazy chunk (distributions.ts); the rest run here.
+// arguments. The ones about distributions, COVAR, and PERCENTRANK run from the lazy chunk; the rest run here.
 
 import type { FnSpec2 } from './types';
-import { err, finish, toNumber, type Value } from '../../values';
-import { modeSngl, percentile, percentRankRun, quartileRun, rankRun, stdevOf, variance } from './stats';
-import { fixed, lazy, numbersOf, overNumbers, pairsOf } from './statsKit';
+import { toNumber, type Value } from '../../values';
+import { modeSngl, percentile, quartileRun, rankRun, stdevOf, variance } from './stats';
+import { fixed, lazy, numbersOf, overNumbers } from './statsKit';
 
 const C = 'statsCompat' as const;
 
 const LAZY: readonly [string, string, string][] = [
+  ['COVAR', 'array1:a array2:a', '=COVAR({1, 2, 3}, {1, 2, 3}) gives 0.666666666666667'],
+  ['PERCENTRANK', 'array:a x [significance]', '=PERCENTRANK({1, 2, 3, 4, 5}, 2) gives 0.25'],
   ['BETADIST', 'x alpha beta [lower] [upper]', '=BETADIST(0.5, 2, 2) gives 0.5'],
   ['BETAINV', 'probability alpha beta [lower] [upper]', '=BETAINV(0.5, 2, 2) gives 0.5'],
   ['BINOMDIST', 'successes trials probability cumulative:b', '=BINOMDIST(1, 2, 0.5, FALSE) gives 0.5'],
@@ -47,28 +49,9 @@ function percentileInc([array, k]: Value[]): Value {
   return typeof p === 'number' ? percentile(nums, p, false) : p;
 }
 
-function covar([a, b]: Value[]): Value {
-  const p = pairsOf(a, b);
-  if (!('xs' in p)) return p;
-  const n = p.xs.length;
-  if (n === 0) return err('DIV0');
-  const mx = p.xs.reduce((s, x) => s + x, 0) / n;
-  const my = p.ys.reduce((s, y) => s + y, 0) / n;
-  const sxy = p.xs.reduce((s, x, i) => s + (x - mx) * (p.ys[i] - my), 0);
-  return finish(sxy / n);
-}
-
 const here: FnSpec2[] = [
-  fixed(C, 'COVAR', 'array1:a array2:a', covar, '=COVAR({1, 2, 3}, {1, 2, 3}) gives 0.666666666666667'),
   overNumbers(C, 'MODE', modeSngl, '=MODE(1, 2, 2, 3) gives 2'),
   fixed(C, 'PERCENTILE', 'array:a k', percentileInc, '=PERCENTILE({1, 2, 3, 4}, 0.3) gives 1.9'),
-  fixed(
-    C,
-    'PERCENTRANK',
-    'array:a x [significance]',
-    percentRankRun(false),
-    '=PERCENTRANK({1, 2, 3, 4, 5}, 2) gives 0.25',
-  ),
   fixed(C, 'QUARTILE', 'array:a quart', quartileRun(false), '=QUARTILE({1, 2, 3, 4}, 1) gives 1.75'),
   fixed(C, 'RANK', 'number ref:a [order]', rankRun(false), '=RANK(3, {1, 3, 3, 5}) gives 2'),
   overNumbers(C, 'STDEV', (n) => stdevOf(n, true), '=STDEV(2, 4, 4, 4, 5, 5, 7, 9) gives 2.138'),

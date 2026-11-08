@@ -206,3 +206,8 @@ export function lazyRun(name: string): Run {
 export function lazy(family: Family, name: string, list: string, example: string): FnSpec2 {
   return fixed(family, name, list, lazyRun(name), example);
 }
+
+/** A spec that takes any number of values, whose code lives in the lazy chunk. */
+export function lazyList(family: Family, name: string, example: string): FnSpec2 {
+  return listOf(family, name, lazyRun(name), example);
+}

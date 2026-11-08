@@ -1,14 +1,49 @@
-// The statistical functions whose code is in the lazy chunk: the distributions, the tests, and the regression and
-// forecasting functions. Owner: tables:fn-stats. Each is declared here with its parameters, so formulas compile and
-// autocomplete lists it before the chunk loads; statsKit.ts runs it once the chunk is in.
+// The statistical functions whose code is in the lazy chunk: shape, percent ranks, pairs, the distributions, the
+// tests, and the regression and forecasting functions. Owner: tables:fn-stats. Each is declared here with its
+// parameters, so formulas compile and autocomplete lists it before the chunk loads; statsKit.ts runs it once the
+// chunk is in.
 
 import type { FnSpec2 } from './types';
-import { lazy } from './statsKit';
+import { lazy, lazyList } from './statsKit';
 
 const S = 'stats' as const;
 
+/** Functions of any number of values: name and an example of our own. */
+const LISTS: readonly [string, string][] = [
+  ['AVEDEV', '=AVEDEV(2, 4, 6) gives 1.33333333333333'],
+  ['DEVSQ', '=DEVSQ(1, 2, 3) gives 2'],
+  ['GEOMEAN', '=GEOMEAN(2, 8) gives 4'],
+  ['HARMEAN', '=HARMEAN(1, 4, 4) gives 2'],
+  ['KURT', '=KURT(1, 2, 3, 4, 10) gives 3.74096'],
+  ['SKEW', '=SKEW(1, 2, 10) gives 1.6523'],
+  ['SKEW.P', '=SKEW.P(1, 2, 10) gives 0.6745'],
+];
+
 /** Name, parameter list (statsKit.ts paramsFrom), and an example of our own. */
 const TABLE: readonly [string, string, string][] = [
+  ['PERCENTRANK.INC', 'array:a x [significance]', '=PERCENTRANK.INC({1, 2, 3, 4, 5}, 2) gives 0.25'],
+  ['PERCENTRANK.EXC', 'array:a x [significance]', '=PERCENTRANK.EXC({1, 2, 3, 4, 5}, 2) gives 0.333'],
+  ['TRIMMEAN', 'array:a percent', '=TRIMMEAN({1, 2, 3, 4, 100}, 0.4) gives 3'],
+  ['CORREL', 'array1:a array2:a', '=CORREL({1, 2, 3}, {2, 4, 6}) gives 1'],
+  ['PEARSON', 'array1:a array2:a', '=PEARSON({1, 2, 3}, {2, 4, 6}) gives 1'],
+  ['RSQ', 'knownY:a knownX:a', '=RSQ({2, 4, 6}, {1, 2, 3}) gives 1'],
+  ['COVARIANCE.P', 'array1:a array2:a', '=COVARIANCE.P({1, 2, 3}, {1, 2, 3}) gives 0.666666666666667'],
+  ['COVARIANCE.S', 'array1:a array2:a', '=COVARIANCE.S({1, 2, 3}, {1, 2, 3}) gives 1'],
+  ['SLOPE', 'knownY:a knownX:a', '=SLOPE({2, 4, 6}, {1, 2, 3}) gives 2'],
+  ['INTERCEPT', 'knownY:a knownX:a', '=INTERCEPT({3, 5, 7}, {1, 2, 3}) gives 1'],
+  ['STEYX', 'knownY:a knownX:a', '=STEYX({1, 3, 2}, {1, 2, 3}) gives 0.707106781186548'],
+  ['FORECAST', 'x knownY:a knownX:a', '=FORECAST(4, {2, 4, 6}, {1, 2, 3}) gives 8'],
+  ['FORECAST.LINEAR', 'x knownY:a knownX:a', '=FORECAST.LINEAR(4, {2, 4, 6}, {1, 2, 3}) gives 8'],
+  ['FREQUENCY', 'data:a bins:a', '=FREQUENCY({1, 2, 5}, {2}) gives 2 and 1 in a column'],
+  ['PROB', 'xRange:a probRange:a lower [upper]', '=PROB({1, 2, 3}, {0.2, 0.3, 0.5}, 2, 3) gives 0.8'],
+  ['STANDARDIZE', 'x mean sd', '=STANDARDIZE(7, 5, 2) gives 1'],
+  ['FISHER', 'x', '=FISHER(0) gives 0'],
+  ['FISHERINV', 'y', '=FISHERINV(0) gives 0'],
+  ['PERMUT', 'number chosen', '=PERMUT(5, 2) gives 20'],
+  ['PERMUTATIONA', 'number chosen', '=PERMUTATIONA(3, 2) gives 9'],
+  ['GAMMA', 'x', '=GAMMA(5) gives 24'],
+  ['GAMMALN', 'x', '=GAMMALN(4) gives 1.79175946922805'],
+  ['GAMMALN.PRECISE', 'x', '=GAMMALN.PRECISE(4) gives 1.79175946922805'],
   ['BETA.DIST', 'x alpha beta cumulative:b [lower] [upper]', '=BETA.DIST(0.5, 2, 2, TRUE) gives 0.5'],
   ['BETA.INV', 'probability alpha beta [lower] [upper]', '=BETA.INV(0.5, 2, 2) gives 0.5'],
   ['BINOM.DIST', 'successes trials probability cumulative:b', '=BINOM.DIST(1, 2, 0.5, FALSE) gives 0.5'],
@@ -74,4 +109,7 @@ const TABLE: readonly [string, string, string][] = [
   ],
 ];
 
-export const declared: readonly FnSpec2[] = TABLE.map(([name, list, example]) => lazy(S, name, list, example));
+export const declared: readonly FnSpec2[] = [
+  ...LISTS.map(([name, example]) => lazyList(S, name, example)),
+  ...TABLE.map(([name, list, example]) => lazy(S, name, list, example)),
+];
