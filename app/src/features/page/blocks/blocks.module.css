@@ -184,6 +184,65 @@
     color: var(--color-accent-clay);
   }
 
+  /*
+   * Version 2 formatting (text DESIGN.md 7). Run styles are inline (render/runStyle.ts). These rules draw what an
+   * inline style can't. A custom highlight is opaque, and at 45 percent in dark mode so the text stays readable.
+   * The rest are border groups, drop caps, list labels, and the per-word boxes of scaled text.
+   */
+  .text :global(.ProseMirror) mark[style*='--run-fill'] {
+    --chip-fill: var(--run-fill);
+  }
+
+  :global(:is([data-theme='dark'], [data-theme-scope='dark'])) .text :global(.ProseMirror) mark[style*='--run-fill'] {
+    --chip-fill: color-mix(in srgb, var(--run-fill) 45%, transparent);
+  }
+
+  /* A shade sits behind a highlight: inside one, it draws nothing (the inline style needs the override). */
+  .text :global(.ProseMirror) mark [data-shade] {
+    background-color: transparent !important;
+  }
+
+  .text :global(.ProseMirror) [data-border] {
+    border-block-start: var(--bd-top, 0 none);
+    border-block-end: var(--bd-bottom, 0 none);
+    border-inline-start: var(--bd-start, 0 none);
+    border-inline-end: var(--bd-end, 0 none);
+    padding-block: var(--bd-top-space, 0) var(--bd-bottom-space, 0);
+    padding-inline: var(--bd-start-space, 0) var(--bd-end-space, 0);
+  }
+
+  /* A group is one box: the top border on its first member, the bottom on its last, `between` between members. */
+  .text :global(.ProseMirror) :is([data-border-place='first'], [data-border-place='middle']) {
+    border-block-end: var(--bd-between, 0 none);
+    margin-block-end: 0;
+  }
+
+  .text :global(.ProseMirror) :is([data-border-place='middle'], [data-border-place='last']) {
+    border-block-start: 0 none;
+    padding-block-start: 0;
+    margin-block-start: 0;
+  }
+
+  .text :global(.ProseMirror) [data-drop-cap]::first-letter {
+    -webkit-initial-letter: var(--drop-lines, 3);
+    initial-letter: var(--drop-lines, 3);
+    margin-inline-end: var(--drop-distance, 0);
+  }
+
+  .text :global(.ProseMirror) [data-drop-cap='margin']::first-letter {
+    margin-inline-start: -1.1em;
+  }
+
+  .text :global(.ProseMirror) li[data-list]::marker {
+    content: var(--list-label);
+  }
+
+  .text :global(.ProseMirror) [data-scaled] {
+    display: inline-block;
+    transform: scaleX(var(--scale, 1));
+    transform-origin: 0 50%;
+  }
+
   /* A task item draws its own checkbox (the node view in editor/extensions/listItem.ts, styled in content.module.css),
      so it gets no list marker of its own: a generated ballot box here showed beside the real one. */
   .text :global(.ProseMirror) li[data-checked] {
@@ -290,6 +349,25 @@
   }
 
   @media (forced-colors: active) {
+    /* Highlights, comments, and suggestions take the system's colors; a dashed underline keeps them visible
+       without color. Underline styles, strikethrough, borders, and outlines are not colors, so they still draw. */
+    .text :global(.ProseMirror) mark {
+      background: Mark;
+      color: MarkText;
+    }
+
+    .text :global(.ProseMirror) :is([data-comment], [data-ins], [data-del], [data-fmt]) {
+      background: Highlight;
+      color: HighlightText;
+      text-decoration-line: underline;
+      text-decoration-style: dashed;
+    }
+
+    /* A deletion keeps its line through, dashed, so it still differs from an insertion without color. */
+    .text :global(.ProseMirror) [data-del] {
+      text-decoration-line: line-through;
+    }
+
     .text :global(.ProseMirror) [data-callout] {
       border-inline-start-color: CanvasText;
       background: Canvas;
