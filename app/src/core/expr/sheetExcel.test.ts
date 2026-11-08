@@ -259,3 +259,22 @@ describe('R1C1 references', () => {
     expect(excel('RC')).toMatchObject({ type: 'name' });
   });
 });
+
+describe('error values and calls in place', () => {
+  it('reads error values as names that start with "#", and prints them back', () => {
+    expect(excel('#REF!*#ref!')).toMatchObject({ left: { type: 'name', name: '#REF!' }, right: { name: '#REF!' } });
+    expect(excel('IF(A1=#N/A,#DIV/0!,#NAME?)')).toMatchObject({ args: [{}, { name: '#DIV/0!' }, { name: '#NAME?' }] });
+    expect(formatExpression(excel('#REF!+1'), { excel: true })).toBe('#REF!+1');
+    // A spill reference keeps its "#", and the textbook rules still refuse one.
+    expect(excel('A1#')).toMatchObject({ type: 'spill' });
+    expect(() => parse('#REF!', SHEET)).toThrow(ExprError);
+  });
+
+  it('calls the value of a call in place, as LAMBDA(x, x+1)(2)', () => {
+    const node = excel('LAMBDA(x,x+1)(2)');
+    expect(node).toMatchObject({ type: 'call', name: 'LAMBDA', args: [{ type: 'num', value: 2 }] });
+    expect(node).toMatchObject({ callee: { type: 'call', name: 'LAMBDA' } });
+    expect(formatExpression(node, { excel: true })).toBe('LAMBDA(x,x+1)(2)');
+    expect(() => excel('LAMBDA(x,x) (2)')).toThrow(ExprError);
+  });
+});

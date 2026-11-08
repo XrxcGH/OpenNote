@@ -4529,6 +4529,83 @@
       "flag": "page.markdownSource"
     },
     {
+      "id": "styles.apply",
+      "title": "Apply style",
+      "category": "format",
+      "keys": [],
+      "flag": "text.styles2"
+    },
+    {
+      "id": "styles.update",
+      "title": "Update style to match selection",
+      "category": "format",
+      "keys": [],
+      "flag": "text.styles2"
+    },
+    {
+      "id": "styles.create",
+      "title": "New style from selection",
+      "category": "format",
+      "keys": [],
+      "flag": "text.styles2"
+    },
+    {
+      "id": "styles.modify",
+      "title": "Modify style",
+      "category": "format",
+      "keys": [],
+      "flag": "text.styles2"
+    },
+    {
+      "id": "styles.remove",
+      "title": "Delete style",
+      "category": "format",
+      "keys": [],
+      "flag": "text.styles2"
+    },
+    {
+      "id": "styles.hide",
+      "title": "Hide from the style gallery",
+      "category": "format",
+      "keys": [],
+      "flag": "text.styles2"
+    },
+    {
+      "id": "styles.show",
+      "title": "Show in the style gallery",
+      "category": "format",
+      "keys": [],
+      "flag": "text.styles2"
+    },
+    {
+      "id": "styles.moveUp",
+      "title": "Move earlier in the style gallery",
+      "category": "format",
+      "keys": [],
+      "flag": "text.styles2"
+    },
+    {
+      "id": "styles.moveDown",
+      "title": "Move later in the style gallery",
+      "category": "format",
+      "keys": [],
+      "flag": "text.styles2"
+    },
+    {
+      "id": "styles.chooseSet",
+      "title": "Choose a style set",
+      "category": "format",
+      "keys": [],
+      "flag": "text.styles2"
+    },
+    {
+      "id": "styles.pane",
+      "title": "Show or hide the Styles pane",
+      "category": "format",
+      "keys": [],
+      "flag": "text.styles2"
+    },
+    {
       "id": "page.undo",
       "title": "Undo",
       "category": "editing",

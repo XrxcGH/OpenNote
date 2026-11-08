@@ -106,8 +106,10 @@ class Printer {
         return `${this.child(node.arg, POSTFIX)}${node.op}`;
       case 'binary':
         return this.binary(node);
-      case 'call':
-        return `${node.name}(${node.args.map((arg) => this.node(arg)).join(this.separator())})`;
+      case 'call': {
+        const args = node.args.map((arg) => this.node(arg)).join(this.separator());
+        return `${node.callee === undefined ? node.name : this.child(node.callee, ATOM)}(${args})`;
+      }
       case 'quantity':
         return `${this.number(node.value)} ${formatUnit(node.unit)}`;
       case 'convert':

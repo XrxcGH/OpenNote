@@ -302,6 +302,12 @@ class Parser implements Cursor {
    * two references. Returns undefined when the token is neither, and null when the space binds too loosely here.
    */
   private referenceInfix(left: Node, token: Token, minPower: number): Node | null | undefined {
+    // A call's result called in place, as in LAMBDA(x, x+1)(2).
+    if (token.kind === 'lparen' && token.start === left.end && left.type === 'call') {
+      const args = this.arguments(this.next());
+      const end = this.tokens[this.at - 1].end;
+      return this.made({ type: 'call', name: left.name, args, callee: left, start: left.start, end, pos: token.start });
+    }
     if (token.kind === 'op' && token.text === '#') {
       const target = left.type === 'qualified' ? left.ref : left;
       if (token.start !== left.end || (target.type !== 'cell' && target.type !== 'name')) throw this.unexpected(token);
@@ -335,6 +341,9 @@ class Parser implements Cursor {
 
   private name(token: Token): Node {
     const { dialect } = this;
+    // An error value such as #REF!, which the lexer reads as one name.
+    if (token.text.startsWith('#'))
+      return { type: 'name', name: token.text, start: token.start, end: token.end, pos: token.start };
     const info = dialect.functions?.(token.text);
     if (this.peek().kind === 'lparen' && (info !== undefined || dialect.unknownCalls === 'call')) {
       return this.call(token, info);

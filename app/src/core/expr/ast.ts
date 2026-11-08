@@ -125,11 +125,15 @@ export interface BinaryNode extends Span {
   readonly right: Node;
   readonly implicit?: boolean;
 }
-/** A function call. `name` is the canonical name the dialect gave the function. */
+/**
+ * A function call. `name` is the canonical name the dialect gave the function. `callee` is set when the function is
+ * the value of another expression called in place, as in LAMBDA(x, x+1)(2); `name` is then the callee's name or "".
+ */
 export interface CallNode extends Span {
   readonly type: 'call';
   readonly name: string;
   readonly args: readonly Node[];
+  readonly callee?: Node;
 }
 /** One unit with a power, such as "m" or "s^-2". `name` is the unit as typed. */
 export interface UnitFactor {
@@ -216,7 +220,7 @@ export function children(node: Node): readonly Node[] {
     case 'refop':
       return [node.left, node.right];
     case 'call':
-      return node.args;
+      return node.callee === undefined ? node.args : [node.callee, ...node.args];
     case 'quantity':
     case 'convert':
       return [node.value];
