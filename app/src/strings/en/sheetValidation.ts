@@ -37,6 +37,8 @@ export const sheetValidation = {
   maximum: 'Maximum',
   value: 'Value',
   formula: 'Formula',
+  placeholderFormula: '=ISEVEN(B2)',
+  placeholderRange: 'E2:E4',
   listItems: 'Items, one per line',
   listSource: 'Cells that hold the items',
   listFrom: 'Take the items from',

@@ -4,6 +4,8 @@ export type { Found, Invalid } from './check';
 export { applyEdit, applyPaste, decide } from './edit';
 export type { Applied, Decision, Pasted } from './edit';
 export { openList } from './list';
+export { setValidationHost, validationHost } from './host';
+export type { ValidationHost } from './host';
 export type { ListOffer } from './list';
 export { messageOf, sentenceOf } from './messages';
 export { listItems, parseTime } from './operands';
