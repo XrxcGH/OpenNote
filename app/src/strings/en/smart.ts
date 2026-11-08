@@ -163,6 +163,21 @@ export const smart = {
     data: 'Data',
     cell: 'Cell {address}',
     typed: 'Typed: {typed}',
+    // The short words a cell's tooltip gives for its error token (decision 3). A cell in a circle shows "Circular".
+    errorWords: {
+      DIV0: 'Divide by 0',
+      VALUE: 'Not a number',
+      REF: 'Missing column',
+      NAME: 'Unknown name',
+      NUM: 'Invalid result',
+      NA: 'Not available',
+      NULL: 'No overlap',
+      SPILL: 'No room to spill',
+      CALC: 'Cannot calculate',
+      FIELD: 'Missing field',
+      BUSY: 'Still calculating',
+      CYCLE: 'Circular',
+    },
     // What a screen reader says for a cell that shows an error token (decision 3). The tooltip gives the short words.
     errorDescriptions: {
       DIV0: 'Divide by zero error',

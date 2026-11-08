@@ -190,7 +190,17 @@ function bigTable(order: number): BlockJson {
   const head = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
   const sum = (r: number) => `=A${r}+1+0*SUM(B${r}:I3000)`;
   const body = Array.from({ length: 3000 }, (_, r) => [...head.slice(0, 9).map((_, c) => `${r + c}`), sum(r + 1)]);
-  return tableOf(order, [head, ...body]);
+  return tableOf(order, [head, ...body], { sheet: { table: { grid: true } } });
+}
+
+/**
+ * 1,500 rows of 10 cells with data.sheet, the last a formula: 15,000 cells, under the worker's threshold, so each
+ * edit calculates the page on its own thread and writes the value cache with the edit (ADR 0061).
+ */
+function largeSheetTable(order: number): BlockJson {
+  const head = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+  const body = Array.from({ length: 1500 }, (_, r) => [...head.slice(0, 9).map((_, c) => `${r + c}`), `=A${r + 1}+1`]);
+  return tableOf(order, [head, ...body], { sheet: { table: { grid: true } } });
 }
 
 function build(): Record<string, () => PageFixture> {
@@ -218,6 +228,7 @@ function build(): Record<string, () => PageFixture> {
         ),
       ]),
     bigTable: () => page('Big table', [text(0, 'Start here.'), bigTable(1)]),
+    largeSheetTable: () => page('Large sheet', [text(0, 'Start here.'), largeSheetTable(1)]),
     short: () => page('Short note', [text(0, '# Short note\n\nA few words to type after.')]),
     twentyPage: () => page('A twenty-page note', [text(0, longNoteMarkdown())]),
     twentyPageOutline: () => page('An outline', [text(0, outlineMarkdown())]),
@@ -278,6 +289,7 @@ export type PageFixtureName =
   | 'smart'
   | 'sheetTable'
   | 'bigTable'
+  | 'largeSheetTable'
   | 'short'
   | 'twentyPage'
   | 'twentyPageOutline'

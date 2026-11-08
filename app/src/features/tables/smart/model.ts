@@ -4,7 +4,6 @@
 import {
   columnLetter,
   ERROR_TOKENS,
-  ERROR_WORDS,
   filterIndices,
   formatValue,
   isError,
@@ -25,7 +24,9 @@ import type {
   Table,
   TableName,
 } from '../engine';
+import { ITERATE_MAX_PASSES } from '../engine/model';
 import { namesOf, tableName } from '../sheet/model';
+import { t } from '../../../strings/t';
 import type { Sheet } from '../sheet/model';
 import type { SmartData } from './data';
 
@@ -49,6 +50,9 @@ export interface SmartModel {
 
 const NUMBER_SHARE = 0.9;
 
+/** The newest data.sheet.v this engine knows (ADR 0058). */
+export const SHEET_VERSION = 1;
+
 /** The type of a column nobody picked: numbers, percents, or dates when nine in ten cells read as one. */
 export function inferType(cells: readonly string[], locale: Locale): ColumnType {
   const filled = cells.map((cell) => cell.trim()).filter((cell) => cell !== '');
@@ -68,7 +72,10 @@ export function inferType(cells: readonly string[], locale: Locale): ColumnType 
 function sheetRules(sheet: Sheet | undefined): Partial<Table> {
   if (!sheet) return {};
   const rules: Partial<Table> = {};
-  if (typeof sheet.v === 'number' && Number.isInteger(sheet.v) && sheet.v >= 1) rules.sheetVersion = sheet.v;
+  // A later version keeps Excel's rules, read as the newest version this engine knows.
+  if (typeof sheet.v === 'number' && Number.isInteger(sheet.v) && sheet.v >= 1) {
+    rules.sheetVersion = Math.min(sheet.v, SHEET_VERSION);
+  }
   const name = tableName(sheet);
   if (name) rules.name = name;
   const names = namesOf(sheet).map((n): TableName => ({ name: n.name, ref: n.ref, scope: n.scope }));
@@ -79,7 +86,10 @@ function sheetRules(sheet: Sheet | undefined): Partial<Table> {
     const iterate = table.iterate;
     if (iterate && typeof iterate === 'object' && !Array.isArray(iterate)) {
       const { max, change } = iterate as Partial<Record<keyof IterateSettings, unknown>>;
-      if (typeof max === 'number' && typeof change === 'number') rules.iterate = { max, change };
+      // The file decides how much work a recalculation does, so only a bounded pass count and a finite change pass.
+      const passes = typeof max === 'number' && Number.isInteger(max) && max >= 1 && max <= ITERATE_MAX_PASSES;
+      const step = typeof change === 'number' && Number.isFinite(change) && change >= 0;
+      if (passes && step) rules.iterate = { max, change };
     }
   }
   return rules;
@@ -92,22 +102,36 @@ export interface Prepared {
   offset: 0 | 1;
   columnIds: readonly string[];
   names: readonly string[];
+  /** The text the table was read from. */
+  grid: Grid;
+  /** The type each column was given from its cells, or undefined for a column whose type was picked. */
+  inferred: readonly (ColumnType | undefined)[];
 }
 
-/** Reads the cells by the columns' types, without running the formulas. `sheet` is the block's data.sheet. */
-export function prepareModel(grid: Grid, smart: SmartData, locale: Locale, sheet?: Sheet): Prepared {
+/**
+ * Reads the cells by the columns' types, without running the formulas. `sheet` is the block's data.sheet. `before`
+ * is the table as read for an earlier edit: a row whose text and columns did not change keeps its typed cells.
+ */
+export function prepareModel(grid: Grid, smart: SmartData, locale: Locale, sheet?: Sheet, before?: Prepared): Prepared {
   const offset = grid.header ? 1 : 0;
   const body = grid.texts.slice(offset);
   const names = grid.columnIds.map((_, c) => (grid.header ? grid.texts[0]?.[c]?.trim() : '') || columnLetter(c));
+  // A column none of whose cells changed since `before` keeps the type its cells gave it then.
+  const unchanged = unchangedColumns(before, grid, body);
+  const inferred: (ColumnType | undefined)[] = [];
   const inits: ColumnInit[] = grid.columnIds.map((id, c) => {
     const own = smart.columns[id] ?? {};
-    const type =
-      own.type ??
-      (own.unit ? 'number' : undefined) ??
-      inferType(
-        body.map((row) => row[c] ?? ''),
-        locale,
-      );
+    const picked = own.type ?? (own.unit ? 'number' : undefined);
+    if (picked === undefined) {
+      const kept = unchanged?.[c] ? before?.inferred[c] : undefined;
+      inferred[c] =
+        kept ??
+        inferType(
+          body.map((row) => row[c] ?? ''),
+          locale,
+        );
+    }
+    const type = picked ?? inferred[c] ?? 'text';
     return {
       id,
       name: names[c],
@@ -125,11 +149,42 @@ export function prepareModel(grid: Grid, smart: SmartData, locale: Locale, sheet
   const rules = sheetRules(sheet);
   const version = rules.sheetVersion === undefined ? {} : { sheetVersion: rules.sheetVersion };
   const columns: Column[] = inits.map((init, i) => ({ id: `c${i}`, type: 'text', ...init }));
-  const rows: Row[] = body.map((line, r) => ({
-    id: `r${r}`,
-    cells: columns.map((column, c) => makeCell(column, line[c] ?? '', locale, true, version)),
-  }));
-  return { raw: { columns, rows, ...rules }, offset, columnIds: grid.columnIds, names };
+  const kept = before && reusable(before, grid, columns, rules) ? before : null;
+  const keptBody = kept?.grid.texts.slice(offset);
+  const rows: Row[] = body.map((line, r) => {
+    const old = kept?.raw.rows[r];
+    if (old && keptBody && sameLine(keptBody[r], line)) return old;
+    return { id: `r${r}`, cells: columns.map((column, c) => makeCell(column, line[c] ?? '', locale, true, version)) };
+  });
+  return { raw: { columns, rows, ...rules }, offset, columnIds: grid.columnIds, names, grid, inferred };
+}
+
+/** For each column, true when no body cell changed since `before`; null when the tables cannot be compared. */
+function unchangedColumns(before: Prepared | undefined, grid: Grid, body: Grid['texts']): boolean[] | null {
+  if (!before || before.grid.header !== grid.header) return null;
+  if (before.columnIds.join() !== grid.columnIds.join()) return null;
+  const old = before.grid.texts.slice(before.offset);
+  if (old.length !== body.length) return null;
+  const same = grid.columnIds.map(() => true);
+  body.forEach((line, r) => {
+    const was = old[r];
+    if (line === was) return;
+    for (let c = 0; c < same.length; c += 1) if (line[c] !== was[c]) same[c] = false;
+  });
+  return same;
+}
+
+const sameLine = (a: readonly string[] | undefined, b: readonly string[]) =>
+  a !== undefined && a.length === b.length && a.every((text, i) => text === b[i]);
+
+/** True when `before` read its cells with the same columns, header, and rules, so its unchanged rows still hold. */
+function reusable(before: Prepared, grid: Grid, columns: readonly Column[], rules: Partial<Table>): boolean {
+  const old = before.raw;
+  return (
+    before.grid.header === grid.header &&
+    old.sheetVersion === rules.sheetVersion &&
+    JSON.stringify(old.columns) === JSON.stringify(columns)
+  );
 }
 
 /** The model of a table whose formulas have run: `table` is `prepared.raw` calculated on its own or with its page. */
@@ -167,7 +222,8 @@ export interface Shown {
 }
 
 /** What an error shows in its cell: Excel's token, or Circular for a cell in a circle of formulas. */
-export const errorText = (code: ErrorCode): string => (code === 'CYCLE' ? ERROR_WORDS.CYCLE : ERROR_TOKENS[code]);
+export const errorText = (code: ErrorCode): string =>
+  code === 'CYCLE' ? t('smart.table.errorWords.CYCLE') : ERROR_TOKENS[code];
 
 /** What a cell shows in place of its typed text, or null when the typed text is what to show. */
 export function shownFor(

@@ -6,7 +6,7 @@ import type { TableData } from '../../../editor/schema/specs';
 import { ERROR_TOKENS, isError, recalculateBook, todayDays } from '../engine';
 import { toScalar } from '../engine/values';
 import type { EngineEnv, Table } from '../engine';
-import { createRecalcClient, needsWorker, WORKER_CELLS } from '../engine/worker/client';
+import { cellCount, createRecalcClient, needsWorker, WORKER_CELLS } from '../engine/worker/client';
 import type { RecalcClient, RecalcClientOptions } from '../engine/worker/client';
 import { readableText, readSheet, sheetPatch, writeValues } from '../sheet/model';
 import type { CachedValue, Sheet } from '../sheet/model';
@@ -20,8 +20,11 @@ export interface BookMember {
   readonly element: Element;
   /** The table with its formulas still to run. Returns the same object while the cells do not change. */
   raw(): Table;
-  /** The page's results for this table. `busy` is true while the worker still works (formulas show #BUSY!). */
-  calculated(table: Table, busy: boolean): void;
+  /**
+   * The page's results for this table. `busy` is true while the worker still works (formulas show #BUSY!). `raw` is
+   * the table they were calculated from, which an edit since may have changed.
+   */
+  calculated(table: Table, busy: boolean, raw: Table): void;
   /** The worker starts (true) or stops (false) calculating the page. */
   working?(on: boolean): void;
 }
@@ -32,7 +35,11 @@ export class PageBook {
   private client: RecalcClient | null = null;
   private generation = 0;
   private busy = false;
-  private last: { raws: readonly Table[]; results: readonly Table[] } | null = null;
+  /** The cells of the job the worker runs now, and whether an edit came after it. */
+  private flight: readonly Table[] | null = null;
+  private queued = false;
+  /** The last two calculations, newest first: the edit's own and the page's, say. */
+  private last: { raws: readonly Table[]; results: readonly Table[] }[] = [];
   // One environment per page: the engine compares it by identity and starts over for a new one (ADR 0065).
   private readonly env: EngineEnv = { today: () => todayDays() };
 
@@ -50,6 +57,8 @@ export class PageBook {
     if (this.members.size > 0) return;
     this.client?.dispose();
     this.client = null;
+    this.flight = null;
+    this.queued = false;
     this.gone();
   }
 
@@ -70,11 +79,13 @@ export class PageBook {
     return needsWorker(this.raws().raws, this.options.threshold ?? WORKER_CELLS);
   }
 
-  /** The results of the last calculation, when it was made from exactly these tables. */
+  private remember(raws: readonly Table[], results: readonly Table[]): void {
+    this.last = [{ raws, results }, ...this.last.filter((one) => !same(one.raws, raws))].slice(0, 2);
+  }
+
+  /** The results of a recent calculation, when it was made from exactly these tables. */
   private known(raws: readonly Table[]): readonly Table[] | null {
-    const last = this.last;
-    if (!last || last.raws.length !== raws.length) return null;
-    return last.raws.every((one, i) => one === raws[i]) ? last.results : null;
+    return this.last.find((one) => same(one.raws, raws))?.results ?? null;
   }
 
   /**
@@ -89,7 +100,7 @@ export class PageBook {
     if (known) return known[at];
     if (needsWorker(raws, this.options.threshold ?? WORKER_CELLS)) return null;
     const results = recalculateBook(raws, this.env);
-    if (!raw) this.last = { raws, results };
+    this.remember(raws, results);
     return results[at];
   }
 
@@ -103,25 +114,45 @@ export class PageBook {
   /** Calculates the page and gives every member its results: at once on a small page, from the worker on a large one. */
   refresh(): void {
     const { members, raws } = this.raws();
-    const generation = ++this.generation;
-    const give = (results: readonly Table[], busy: boolean) => {
+    // The job in flight is for exactly these cells: its answer is the one to wait for.
+    if (this.flight && same(this.flight, raws)) {
+      this.queued = false;
+      return;
+    }
+    const give = (generation: number, results: readonly Table[], busy: boolean) => {
       if (generation !== this.generation) return;
       if (!busy) {
-        this.last = { raws, results };
+        this.remember(raws, results);
         this.working(members, false);
       }
-      members.forEach((member, i) => this.members.has(member) && member.calculated(results[i], busy));
+      members.forEach((member, i) => this.members.has(member) && member.calculated(results[i], busy, raws[i]));
     };
     const known = this.known(raws);
-    if (known) return give(known, false);
-    if (!needsWorker(raws, this.options.threshold ?? WORKER_CELLS)) return give(recalculateBook(raws, this.env), false);
+    if (known) return give(++this.generation, known, false);
+    if (!needsWorker(raws, this.options.threshold ?? WORKER_CELLS)) {
+      return give(++this.generation, recalculateBook(raws, this.env), false);
+    }
+    // The worker runs one job at a time. While one runs, an edit only marks the page to go again: when the answer
+    // comes, the newest cells go in one job, so slow typing never queues a job for each keystroke.
+    if (this.flight) {
+      this.queued = true;
+      return;
+    }
+    const generation = ++this.generation;
     this.client ??= createRecalcClient(this.options);
-    // The worker's answer: the tables stop being busy at once, and draw their results in a task of their own, so
-    // the task that brings the answer stays short and a frame never waits for both.
+    this.flight = raws;
+    // The worker's answer. An answer for cells edited since is dropped, and the newest cells go to the worker. The
+    // tables stop being busy at once, and draw their results in a task of their own, so the task that brings the
+    // answer stays short and a frame never waits for both.
     const answer = (results: readonly Table[], busy: boolean) => {
-      if (generation !== this.generation) return;
-      if (!busy) this.working(members, false);
-      setTimeout(() => give(results, busy), 0);
+      const current = generation === this.generation && !this.queued;
+      if (current && !busy) this.working(members, false);
+      if (current) setTimeout(() => give(generation, results, busy), 0);
+      if (busy || this.flight !== raws) return;
+      this.flight = null;
+      if (!this.queued) return;
+      this.queued = false;
+      this.refresh();
     };
     const done = this.client.recalc(raws, this.env, (late) => answer(late, false));
     // The tables went to the worker inside recalc, so from here the page's thread is free until the answer.
@@ -133,7 +164,19 @@ export class PageBook {
       ),
     );
   }
+
+  /**
+   * True when the page goes to the worker with `cells` cells in the member's table. It reads the other tables' cells
+   * from what they hold now, so an edit on a large page skips preparing a table nobody would calculate here.
+   */
+  overThreshold(member: BookMember, cells: number): boolean {
+    let total = cells;
+    for (const one of this.members) if (one !== member) total += cellCount([one.raw()]);
+    return total > (this.options.threshold ?? WORKER_CELLS);
+  }
 }
+
+const same = (a: readonly Table[], b: readonly Table[]) => a.length === b.length && a.every((one, i) => one === b[i]);
 
 const isBusyRow = (row: Table['rows'][number]) =>
   row.cells.some((cell) => cell.formula !== undefined && isError(cell.value) && cell.value.error === 'BUSY');
@@ -150,16 +193,42 @@ export function bookFor(page: string, options?: RecalcClientOptions): PageBook {
   return book;
 }
 
+// Reading a cell's Markdown parses it, which adds up on a large table with each edit. Most cells do not change
+// between edits, and many hold the same text, so the text of each Markdown is kept. The cap bounds the memory.
+const READ_CAP = 100_000;
+const read = new Map<string, string>();
+
+function textOf(markdown: string): string {
+  if (markdown === '') return '';
+  let text = read.get(markdown);
+  if (text === undefined) {
+    if (read.size >= READ_CAP) read.clear();
+    text = readableText(markdown);
+    read.set(markdown, text);
+  }
+  return text;
+}
+
 /** The typed text of a table's cells, read from its Markdown as the editor shows it. */
 export function gridOfData(data: TableData): Grid {
   const columnIds = data.columns.map((column) => column.id);
   const texts = data.rows.map((row) =>
-    columnIds.map((id) => {
-      const markdown = Object.hasOwn(row.cells, id) ? row.cells[id].markdown : '';
-      return markdown === '' ? '' : readableText(markdown);
-    }),
+    columnIds.map((id) => textOf(Object.hasOwn(row.cells, id) ? row.cells[id].markdown : '')),
   );
   return { header: data.header, columnIds, texts };
+}
+
+/** True when two grids hold the same text in every cell. */
+export function sameTexts(a: Grid['texts'], b: Grid['texts']): boolean {
+  if (a === b) return true;
+  if (a.length !== b.length) return false;
+  for (let r = 0; r < a.length; r += 1) {
+    const x = a[r];
+    const y = b[r];
+    if (x.length !== y.length) return false;
+    for (let c = 0; c < x.length; c += 1) if (x[c] !== y[c]) return false;
+  }
+  return true;
 }
 
 /** A result as the cache holds it (R-SHT-17): a number, text, a truth value, empty, or an error token. */

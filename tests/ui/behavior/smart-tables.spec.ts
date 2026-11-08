@@ -132,6 +132,81 @@ test('recalculates 30,000 cells in the worker while frames keep coming under 16 
   await expect(shown(page, 1, 9)).toHaveAttribute('data-shown', '8');
 });
 
+/** How much slower this machine runs a fixed benchmark than the reference laptop (tree.perf.spec.ts), at least 1. */
+async function slowness(page: import('@playwright/test').Page): Promise<number> {
+  const ms = await page.evaluate(() => {
+    const start = performance.now();
+    let total = 0;
+    for (let round = 0; round < 40; round += 1) {
+      const items = Array.from({ length: 20_000 }, (_, i) => (i * 7919) % 10_007);
+      items.sort((a, b) => a - b);
+      total += items[round];
+    }
+    return total >= 0 ? performance.now() - start : 0;
+  });
+  return Math.max(1, ms / 60);
+}
+
+test('keeps a 15,000-cell table with sheet writes on within the typing budget at the 95th percentile', async ({
+  page,
+}) => {
+  test.slow();
+  // Input to the next paint for each key press, from the Event Timing API.
+  await page.addInitScript(() => {
+    const durations: number[] = [];
+    (window as unknown as { __durations: number[] }).__durations = durations;
+    new PerformanceObserver((list) => {
+      for (const entry of list.getEntries()) if (entry.name === 'keydown') durations.push(entry.duration);
+    }).observe({ type: 'event', durationThreshold: 16, buffered: true } as PerformanceObserverInit);
+  });
+  await openSmart(page, 'largeSheetTable');
+  await expect(shown(page, 1, 9)).toHaveAttribute('data-shown', '1', { timeout: 60_000 });
+  await expect
+    .poll(async () => {
+      await shown(page, 1, 0).click();
+      return shown(page, 1, 0).evaluate((cell) => cell.contains(getSelection()?.anchorNode ?? null));
+    })
+    .toBe(true);
+  await page.keyboard.press('End');
+  const times = () =>
+    page.evaluate(() =>
+      (
+        window as unknown as { __OPENNOTE_TEST__: { smartTableTimes(): Record<string, number[]> } }
+      ).__OPENNOTE_TEST__.smartTableTimes(),
+    );
+  await times();
+  await page.evaluate(() => (window as unknown as { __durations: number[] }).__durations.splice(0));
+  const samples = 30;
+  // 120 ms apart, as the typing harness types: each key settles, so each one writes the value cache with the edit
+  // and calculates the page.
+  for (let i = 0; i < samples; i += 1) {
+    await page.keyboard.press(String(i % 10));
+    await page.waitForTimeout(120);
+  }
+  await page.waitForTimeout(500);
+  const p95 = (values: readonly number[]) => [...values].sort((a, b) => a - b)[Math.ceil(values.length * 0.95) - 1];
+  const taken = await times();
+  const values = taken['smart-table:values'] ?? [];
+  const calculate = taken['smart-table:calculate'] ?? [];
+  const durations = await page.evaluate(() => (window as unknown as { __durations: number[] }).__durations);
+  // Key presses under the 16 ms threshold are not reported: they count as fast.
+  const paints = [...durations, ...Array.from({ length: Math.max(0, samples - durations.length) }, () => 0)];
+  test.info().annotations.push({
+    type: 'p95',
+    description:
+      `value cache ${p95(values).toFixed(1)} ms of ${values.length}, page calculation ` +
+      `${p95(calculate).toFixed(1)} ms of ${calculate.length}, key to paint ${p95(paints).toFixed(1)} ms`,
+  });
+  // The tables' own share of each key press: the cache written with the edit (ARCHITECTURE.md 20.1: 50 ms at the
+  // p95), and the page calculated and drawn on settling. Drawing 15,000 cells is the editor's share, which only a
+  // virtualized table would shrink (lane notes). Both budgets scale on a slower machine than the reference laptop.
+  const scale = await slowness(page);
+  expect(values.length).toBeGreaterThanOrEqual(5);
+  expect(calculate.length).toBeGreaterThanOrEqual(5);
+  expect(p95(values)).toBeLessThanOrEqual(50 * scale);
+  expect(p95(calculate)).toBeLessThanOrEqual(120 * scale);
+});
+
 test('sorts a column and puts the rows back with undo', async ({ page }) => {
   await openSmart(page);
   await fillSales(page);

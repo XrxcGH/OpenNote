@@ -18,6 +18,7 @@ import { applyPatch } from '../sheet/model/json';
 import type { Json } from '../sheet/model/json';
 import { gridOfData, PageBook, valuesPatch } from './book';
 import { buildDecorations, errorLabel, spillEdges } from './display';
+import { smart as smartStrings } from '../../../strings/en/smart';
 import { dataMenu } from './menu';
 import { EMPTY_SMART, pruneSmart, readSmart, smartPatch, withColumn } from './data';
 import type { SmartData } from './data';
@@ -536,5 +537,137 @@ describe('the worker and the menus', () => {
     } finally {
       take();
     }
+  });
+});
+
+describe('a page the worker calculates', () => {
+  const rawOf = (a: string) =>
+    prepareModel(
+      {
+        header: true,
+        columnIds: ['a', 'b'],
+        texts: [
+          ['A', 'B'],
+          [a, '=A1+1'],
+          ['2', '=A2+1'],
+        ],
+      },
+      EMPTY_SMART,
+      EN_US,
+    ).raw;
+
+  /** A worker that answers only when told, and a member whose cells change between refreshes. */
+  function heldPage() {
+    const requests: Parameters<WorkerLike['postMessage']>[0][] = [];
+    let worker: WorkerLike | null = null;
+    const book = new PageBook({
+      threshold: 3,
+      spawn: () => {
+        worker = { onmessage: null, postMessage: (request) => requests.push(request), terminate: () => {} };
+        return worker;
+      },
+    });
+    const state = { raw: rawOf('1') };
+    const got: { busy: boolean; value: unknown; raw: Table }[] = [];
+    const busy: boolean[] = [];
+    const member = {
+      element: { compareDocumentPosition: () => 0 } as unknown as Element,
+      raw: () => state.raw,
+      calculated: (table: Table, isBusy: boolean, raw: Table) =>
+        got.push({ busy: isBusy, value: table.rows[0].cells[1].value, raw }),
+      working: (on: boolean) => busy.push(on),
+    };
+    book.join(member);
+    const reply = (at: number) => worker!.onmessage?.({ data: respond(requests[at]) });
+    return { book, member, state, requests, got, busy, reply };
+  }
+
+  it('sends the newest cells once the job in flight answers, not one job per keystroke', async () => {
+    const page = heldPage();
+    page.book.refresh();
+    // Four keystrokes while the worker runs: none of them posts a job.
+    for (const typed of ['10', '20', '30', '40']) {
+      page.state.raw = rawOf(typed);
+      page.book.refresh();
+    }
+    expect(page.requests).toHaveLength(1);
+    page.reply(0);
+    // The answer for 1 is dropped, and the cells as they are now go in one job.
+    await vi.waitFor(() => expect(page.requests).toHaveLength(2));
+    expect(page.requests[1].tables[0].rows[0].cells[0].value).toBe(40);
+    expect(page.busy).toEqual([true]);
+    page.reply(1);
+    // 40 + 1 = 41, from the newest cells, given with the table it was calculated from.
+    await vi.waitFor(() => expect(page.got).toHaveLength(1));
+    expect(page.got).toEqual([{ busy: false, value: 41, raw: page.state.raw }]);
+    expect(page.busy).toEqual([true, false]);
+    page.book.leave(page.member);
+  });
+
+  it('keeps the answer of the job in flight when the cells go back to what it calculates', async () => {
+    const page = heldPage();
+    const first = page.state.raw;
+    page.book.refresh();
+    page.state.raw = rawOf('9');
+    page.book.refresh();
+    page.state.raw = first;
+    page.book.refresh();
+    page.reply(0);
+    await vi.waitFor(() => expect(page.got).toHaveLength(1));
+    expect(page.got[0]).toEqual({ busy: false, value: 2, raw: first });
+    expect(page.requests).toHaveLength(1);
+    page.book.leave(page.member);
+  });
+
+  it('says whether an edit sends the page to the worker without preparing the edited table', () => {
+    const page = heldPage();
+    const other = { ...page.member, raw: () => rawOf('5') };
+    const edited = {
+      ...page.member,
+      raw: (): Table => {
+        throw new Error('the edited table is not prepared');
+      },
+    };
+    const book = new PageBook({ threshold: 10 });
+    book.join(other);
+    book.join(edited);
+    // The other table holds 2 rows of 2 cells: 4 + 6 is not over 10, 4 + 7 is.
+    expect(book.overThreshold(edited, 6)).toBe(false);
+    expect(book.overThreshold(edited, 7)).toBe(true);
+    page.book.leave(page.member);
+  });
+});
+
+describe('the settings a file gives', () => {
+  const grid: Grid = { header: true, columnIds: ['a'], texts: [['A'], ['1']] };
+
+  it('keeps a bounded pass count and a finite change, and drops the rest', () => {
+    const iterate = (value: unknown) =>
+      prepareModel(grid, EMPTY_SMART, EN_US, { table: { iterate: value } } as unknown as Sheet).raw.iterate;
+    expect(iterate({ max: 50, change: 0.01 })).toEqual({ max: 50, change: 0.01 });
+    // Excel documents 32,767 as the most passes.
+    expect(iterate({ max: 32_767, change: 0 })).toEqual({ max: 32_767, change: 0 });
+    expect(iterate({ max: 32_768, change: 0.01 })).toBeUndefined();
+    expect(iterate({ max: 1e12, change: 0.01 })).toBeUndefined();
+    expect(iterate({ max: 2.5, change: 0.01 })).toBeUndefined();
+    expect(iterate({ max: 0, change: 0.01 })).toBeUndefined();
+    expect(iterate({ max: 50, change: Number.NaN })).toBeUndefined();
+    expect(iterate({ max: 50, change: -1 })).toBeUndefined();
+    expect(iterate({ max: 50, change: Number.POSITIVE_INFINITY })).toBeUndefined();
+  });
+
+  it('reads a version newer than the engine knows as the newest it knows', () => {
+    const version = (v: unknown) => prepareModel(grid, EMPTY_SMART, EN_US, { v } as unknown as Sheet).raw.sheetVersion;
+    expect(version(1)).toBe(1);
+    expect(version(99)).toBe(1);
+    expect(version(0)).toBeUndefined();
+  });
+
+  it('takes the tooltip words of every error from the strings files', () => {
+    const strings = smartStrings.table.errorWords;
+    for (const code of Object.keys(strings) as (keyof typeof strings)[]) {
+      expect(errorLabel(code).words).toBe(strings[code]);
+    }
+    expect(strings.DIV0).toBe('Divide by 0');
   });
 });

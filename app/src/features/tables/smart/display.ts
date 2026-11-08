@@ -11,7 +11,6 @@ import { Plugin, PluginKey } from '@tiptap/pm/state';
 import type { EditorState } from '@tiptap/pm/state';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import { t } from '../../../strings/t';
-import { ERROR_WORDS } from '../engine';
 import type { ErrorCode, Locale } from '../engine';
 import type { SmartData } from './data';
 import { choiceOf, readCell } from './choice';
@@ -79,7 +78,7 @@ export type ErrorLabel = (code: ErrorCode) => { words: string; description: stri
 
 /** Excel's plain words in the tooltip, and a longer description for screen readers (decision 3). */
 export const errorLabel: ErrorLabel = (code) => ({
-  words: ERROR_WORDS[code],
+  words: t(`smart.table.errorWords.${code}`),
   description: t(`smart.table.errorDescriptions.${code}`),
 });
 
