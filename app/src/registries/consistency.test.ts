@@ -73,7 +73,8 @@ describe('default shortcuts', () => {
     // The line tag commands (search.tag.*) are the ones Phase 8 reserved these chords for, in the OneNote set.
     const others = commands
       .list()
-      .filter((def) => !def.id.startsWith('search.tag.'))
+      // The default set gives Ctrl+1, Ctrl+2, and Ctrl+5 to line spacing, as Word does (ADR 0085).
+      .filter((def) => !def.id.startsWith('search.tag.') && !def.id.startsWith('para.line'))
       .flatMap((def) => [...(def.keys ?? []), ...Object.values(def.presetKeys ?? {}).flat()]);
     expect(others.filter((chord) => RESERVED_FOR_LATER.includes(chord))).toEqual([]);
   });

@@ -9,7 +9,7 @@ import { isChordText } from '../../commands/registry';
 import { chordProblem } from '../../commands/reserved';
 import type { Chord } from '../../commands/types';
 import { commands } from '../../registries';
-import { PAGE_KEYS, pageCommandDef } from './keys';
+import { BUILT_IN_PAGE_KEYS, PAGE_KEYS, pageCommandDef } from './keys';
 import type { PageCommandId } from './keys';
 
 const ids = Object.keys(PAGE_KEYS) as PageCommandId[];
@@ -24,28 +24,32 @@ beforeAll(() => {
 });
 afterAll(() => stops.forEach((stop) => stop()));
 
+type Sets = { oneNoteKeys?: readonly string[]; docsKeys?: readonly string[] };
 const chords = (): string[] =>
   ids.flatMap((id) => [
     ...PAGE_KEYS[id].keys,
-    ...((PAGE_KEYS[id] as { oneNoteKeys?: readonly string[] }).oneNoteKeys ?? []),
+    ...((PAGE_KEYS[id] as Sets).oneNoteKeys ?? []),
+    ...((PAGE_KEYS[id] as Sets).docsKeys ?? []),
   ]);
 
 describe('the Phase 4 keys table', () => {
   it('lists every command of PLAN.md section 3.10', () => {
-    expect(ids).toHaveLength(114);
+    expect(Object.keys(BUILT_IN_PAGE_KEYS)).toHaveLength(105);
   });
 
-  it('uses canonical, allowed chords and keeps Ctrl+1 to Ctrl+9 free', () => {
+  it('uses canonical, allowed chords and keeps Ctrl+1 to Ctrl+9 free in the OneNote set', () => {
     expect(chords().filter((chord) => !isChordText(chord))).toEqual([]);
     expect(chords().filter((chord) => chordProblem(chord as Chord))).toEqual([]);
-    expect(chords().filter((chord) => /^Ctrl\+[1-9]$/.test(chord))).toEqual([]);
+    // The default set gives Ctrl+1, Ctrl+2, and Ctrl+5 to line spacing as Word does (ADR 0085); the tags keep the rest.
+    const oneNote = ids.flatMap((id) => (PAGE_KEYS[id] as Sets).oneNoteKeys ?? PAGE_KEYS[id].keys);
+    expect(oneNote.filter((chord) => /^Ctrl\+[1-9]$/.test(chord))).toEqual([]);
   });
 
-  it('refines only commands that exist and are no more specific (insert.pageBreak shares the editor scope)', () => {
+  it('refines only commands that exist and are less specific', () => {
     const wrong = ids.filter((id) => {
       const refines = (PAGE_KEYS[id] as { refines?: string }).refines;
       const refined = refines && commands.get(refines);
-      return refines && (!refined || scopeDepth(refined.scope) > scopeDepth(PAGE_KEYS[id].scope));
+      return refines && (!refined || scopeDepth(refined.scope) >= scopeDepth(PAGE_KEYS[id].scope));
     });
     expect(wrong).toEqual([]);
   });
@@ -53,5 +57,6 @@ describe('the Phase 4 keys table', () => {
   it('collides with no other default in either shortcut set', () => {
     expect(defaultConflicts('default')).toEqual([]);
     expect(defaultConflicts('onenote')).toEqual([]);
+    expect(defaultConflicts('docs')).toEqual([]);
   });
 });
