@@ -86,7 +86,7 @@ export function draftOf(rule?: JsonObject): Draft {
 
 export type Problem = 'ranges' | 'items' | 'operand' | 'order' | 'formula';
 
-/** The items a draft types: one per line, trimmed, blanks and repeats dropped, at most 1,000 of 255 characters. */
+/** The items a draft types: one per line, trimmed, without blanks or repeats, at most 1,000 of 255 characters. */
 export function itemsOf(text: string): string[] {
   const seen = new Set<string>();
   const out: string[] = [];

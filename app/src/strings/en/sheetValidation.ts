@@ -37,7 +37,6 @@ export const sheetValidation = {
   maximum: 'Maximum',
   value: 'Value',
   formula: 'Formula',
-  placeholderFormula: '=ISEVEN(B2)',
   placeholderRange: 'E2:E4',
   listItems: 'Items, one per line',
   listSource: 'Cells that hold the items',
@@ -85,9 +84,10 @@ export const sheetValidation = {
   warned: '{title}: {text} Keep the value anyway?',
   noted: '{title}: {text}',
   pasteReport:
-    '{count, plural, =0 {All pasted values are valid.} one {# pasted value is not valid. It was kept and circled.} other {# pasted values are not valid. They were kept and circled.}}',
+    '{count, plural, =0 {All pasted values are valid.}' +
+    ' one {# pasted value is not valid. It was kept and circled.} other {# pasted values are not valid. They were kept and circled.}}',
   circled:
-    '{count, plural, =0 {Every value is valid.} one {1 invalid value circled.} other {# invalid values circled.}}',
+    '{count, plural, =0 {Every value is valid.}' + ' one {1 invalid value circled.} other {# invalid values circled.}}',
   circleLabel: 'Not valid: {text}',
 
   // The list.

@@ -1,4 +1,4 @@
-// Data validation (ADR 0068): rules, checks, drop-down lists, commit and paste handling, circled invalid data.
+// Data validation (ADR 0056, DESIGN 13.4): rules, checks, drop-down lists, edits, pastes, and circled invalid data.
 export { CHOICE_RULE, check, compare, invalidCells, ruleAt } from './check';
 export type { Found, Invalid } from './check';
 export { applyEdit, applyPaste, decide } from './edit';

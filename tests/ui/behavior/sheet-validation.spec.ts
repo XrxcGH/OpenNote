@@ -10,8 +10,15 @@ import { expect, test } from '../fixtures';
 const CSS = readFileSync(join(process.cwd(), 'app/src/features/tables/ui/validation/circle.css'), 'utf8');
 
 async function show(page: Page): Promise<void> {
-  const head = `<style>:root{--color-status-danger:rgb(200,30,30)}table{border-collapse:collapse}td{width:90px;height:34px;border:1px solid #888}${CSS}</style>`;
-  const body = `<table data-sheet><tr><td id="ok">7</td><td id="bad" data-cell data-invalid="range" aria-invalid="true" title="Not valid">150</td></tr></table>`;
+  const head = [
+    '<style>:root{--color-status-danger:rgb(200,30,30)}table{border-collapse:collapse}',
+    'td{width:90px;height:34px;border:1px solid #888}',
+    CSS,
+    '</style>',
+  ].join('');
+  const body =
+    '<table data-sheet><tr><td id="ok">7</td>' +
+    '<td id="bad" data-cell data-invalid="range" aria-invalid="true" title="Not valid">150</td></tr></table>';
   await page.setContent(`<!doctype html><html><head>${head}</head><body>${body}</body></html>`);
 }
 
