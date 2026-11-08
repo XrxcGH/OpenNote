@@ -9,9 +9,12 @@ import { fillSales, openSmart, setCell } from './smart';
 const cell = (page: Page, row: number, column: number): Locator =>
   page.locator('table tr').nth(row).locator('td, th').nth(column);
 
+/** A cell's paragraph. A click on it is a click into the text; a click on the cell's padding selects the cell. */
+const inText = (page: Page, row: number, column: number): Locator => cell(page, row, column).locator('p').first();
+
 /** Grid mode on a cell: a click into its text, then Esc. */
 async function gridAt(page: Page, row: number, column: number): Promise<void> {
-  await cell(page, row, column).click();
+  await inText(page, row, column).click();
   await page.keyboard.press('Escape');
   await expect(cell(page, row, column)).toHaveAttribute('aria-selected', 'true');
 }
@@ -54,7 +57,7 @@ test('types over a cell, puts it back with Esc, and finishes an F2 entry with En
 
 test('starts a new line with Alt+Enter, and with Enter once the table uses document keys', async ({ page }) => {
   const breaks = (at: Locator) => at.locator('br:not(.ProseMirror-trailingBreak)');
-  await cell(page, 1, 0).click();
+  await inText(page, 1, 0).click();
   await page.keyboard.press('End');
   await page.keyboard.press('Alt+Enter');
   await expect(breaks(cell(page, 1, 0))).toHaveCount(1);
@@ -63,7 +66,7 @@ test('starts a new line with Alt+Enter, and with Enter once the table uses docum
   await expect(page.getByRole('combobox').first()).toBeFocused();
   await page.keyboard.type('Use document keys');
   await page.getByRole('option', { name: 'Use document keys in this table' }).first().click();
-  await cell(page, 3, 0).click();
+  await inText(page, 3, 0).click();
   await page.keyboard.press('End');
   await page.keyboard.press('Enter');
   await expect(breaks(cell(page, 3, 0))).toHaveCount(1);
