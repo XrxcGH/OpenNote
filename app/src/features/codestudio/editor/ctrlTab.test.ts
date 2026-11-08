@@ -73,8 +73,10 @@ beforeAll(configureTestCommands);
 // a later turn. Either one that outlives the file fails the teardown, so the file waits for both.
 afterAll(async () => {
   await vi.dynamicImportSettled();
-  await new Promise((resolve) => setImmediate(resolve));
-  await new Promise((resolve) => setImmediate(resolve));
+  // React chains its work: a render can schedule the next one, so drain several turns and then a timer.
+  for (let turn = 0; turn < 10; turn += 1) await new Promise((resolve) => setImmediate(resolve));
+  await wait(100);
+  for (let turn = 0; turn < 10; turn += 1) await new Promise((resolve) => setImmediate(resolve));
 });
 
 beforeEach(() => {
