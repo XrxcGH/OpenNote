@@ -5,6 +5,19 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import '../../../features';
 
+// React roots the features mount while the tests run; the file unmounts them so no render outlives it.
+const roots = vi.hoisted(() => [] as { unmount: () => void }[]);
+vi.mock('react-dom/client', async (original) => {
+  const real = await original<typeof import('react-dom/client')>();
+  return {
+    ...real,
+    createRoot: (...args: Parameters<typeof real.createRoot>) => {
+      const root = real.createRoot(...args);
+      roots.push(root);
+      return root;
+    },
+  };
+});
 // The palette loads on the first Ctrl press; a load that outlives the test file fails the teardown.
 vi.mock('../../palette/open', async (original) => ({ ...(await original<object>()), preloadWhenIdle: () => () => {} }));
 import { installDispatcher } from '../../../commands/dispatcher';
@@ -72,6 +85,7 @@ beforeAll(configureTestCommands);
 // The page feature loads its style store with a dynamic import nothing awaits, and a tab change schedules React work on
 // a later turn. Either one that outlives the file fails the teardown, so the file waits for both.
 afterAll(async () => {
+  for (const root of roots) root.unmount();
   await vi.dynamicImportSettled();
   // React chains its work: a render can schedule the next one, so drain several turns and then a timer.
   for (let turn = 0; turn < 10; turn += 1) await new Promise((resolve) => setImmediate(resolve));
