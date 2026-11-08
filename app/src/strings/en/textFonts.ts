@@ -1,4 +1,40 @@
 // The font picker, the size box, and Settings, Fonts.
 // Owner: text:fonts-ui (B10). shared:x-shared registered it in the string index, and the owner fills it in.
 
-export const textFonts = {} as const;
+export const textFonts = {
+  pickerLabel: 'Font',
+  listLabel: 'Fonts',
+  sectionTheme: 'Theme fonts',
+  sectionRecent: 'Recent fonts',
+  sectionAll: 'All fonts',
+  themeBody: 'Body',
+  themeHeading: 'Headings',
+  themeMono: 'Code',
+  mixed: 'Mixed fonts',
+  invalidName: 'Enter a font name with letters, numbers, spaces, and . _ + - only.',
+  notInstalled: '(not installed: showing {standIn})',
+  resultCount: '{count, plural, =0 {No fonts match} one {# font} other {# fonts}}',
+  sizeLabel: 'Font size',
+  sizeListLabel: 'Font sizes',
+  sizeRange: 'The number must be between 1 and 1638.',
+  sizeInvalid: 'Enter a size such as 12, 10.5, or 1in.',
+  weightLabel: 'Font weight',
+  weight100: 'Thin',
+  weight200: 'Extra Light',
+  weight300: 'Light',
+  weight400: 'Regular',
+  weight500: 'Medium',
+  weight600: 'Semibold',
+  weight700: 'Bold',
+  weight800: 'Extra Bold',
+  weight900: 'Black',
+  subTitle: 'Font substitution',
+  subIntro:
+    'Choose the font that stands in for a font this device does not have. The document keeps its own font name.',
+  subNone: 'No missing fonts to replace.',
+  subTable: 'Missing fonts and their stand-ins',
+  subMissing: 'Missing font',
+  subStandIn: 'Shown as',
+  subStandInFor: 'Shown as, for {name}',
+  subAutomatic: 'Automatic ({standIn})',
+} as const;
