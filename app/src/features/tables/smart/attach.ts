@@ -11,7 +11,7 @@ import { openMenu } from '../../../ui';
 import type { TableData } from '../../../editor/schema/specs';
 import type { BlockJson } from '../../../services/pages/types';
 import type { TableExtraHandle, TableExtraHost } from '../../page';
-import { columnLetter, formatValue, totalsRow, hasTotals } from '../engine';
+import { columnLetter, formatValue, onStatisticsLoaded, totalsRow, hasTotals } from '../engine';
 import { chartSpec } from './chartSpec';
 import { Chrome } from './Chrome';
 import type { ChartItem, ChromeProps } from './Chrome';
@@ -109,6 +109,8 @@ class SmartTable implements SmartInstance, TableExtraHandle {
   private menuOpen = false;
   private timer: ReturnType<typeof setTimeout> | undefined;
   private gone = false;
+  // Formulas that call a lazily loaded function show #BUSY! until it lands; then the table calculates again.
+  private readonly stopLoaded = onStatisticsLoaded(() => this.refresh());
   private readonly mount = document.createElement('div');
   private readonly root: Root = createRoot(this.mount);
   private readonly editor: TableExtraHost['editor'];
@@ -251,6 +253,7 @@ class SmartTable implements SmartInstance, TableExtraHandle {
 
   destroy(): void {
     this.gone = true;
+    this.stopLoaded();
     clearTimeout(this.timer);
     live.delete(this);
     if (lastFocused === this) lastFocused = null;
