@@ -6,12 +6,18 @@ import { numbersIn, type FnSpec2 } from './types';
 import { number, optional, scalar } from './mathKit';
 
 const MAX_SAFE = Number.MAX_SAFE_INTEGER;
+const MAX_DOUBLE_FACTORIAL = 300;
 
 /** n choose k, built from a running product so it stays exact while the result is below 2^53. */
 function choose(n: number, k: number): number {
   const m = Math.min(k, n - k);
   let r = 1;
-  for (let i = 1; i <= m; i++) r = (r * (n - m + i)) / i;
+  // C(n, i) grows with i up to n/2, so the product passes the largest double after a few hundred steps at most.
+  // Stopping there keeps a huge call from running for seconds; the caller turns Infinity into #NUM!.
+  for (let i = 1; i <= m; i++) {
+    r = (r * (n - m + i)) / i;
+    if (!Number.isFinite(r)) return Infinity;
+  }
   return Math.round(r);
 }
 
@@ -54,7 +60,9 @@ const EXTRA: readonly (readonly Pair[])[] = [
   [],
   [
     [450, 'LD'],
+    [950, 'LM'],
     [45, 'VL'],
+    [95, 'VC'],
   ],
   [
     [490, 'XD'],
@@ -65,7 +73,6 @@ const EXTRA: readonly (readonly Pair[])[] = [
   [
     [495, 'VD'],
     [995, 'VM'],
-    [95, 'VC'],
   ],
   [
     [499, 'ID'],
@@ -112,8 +119,9 @@ export const functions: readonly FnSpec2[] = [
     'FACT',
     [number()],
     ([n]) => {
+      // A negative number is refused before it is truncated, so -0.5 is not read as zero.
       const k = Math.trunc(n);
-      return k < 0 || k > 170 ? err('NUM') : finish(factorial(k));
+      return n < 0 || k > 170 ? err('NUM') : finish(factorial(k));
     },
     '=FACT(5) gives 120',
   ),
@@ -122,7 +130,8 @@ export const functions: readonly FnSpec2[] = [
     [number()],
     ([n]) => {
       const k = Math.trunc(n);
-      if (k < -1) return err('NUM');
+      // The result passes the largest double a little above 300, so a larger number is refused before any looping.
+      if (k < -1 || k > MAX_DOUBLE_FACTORIAL) return err('NUM');
       let r = 1;
       for (let i = k; i > 1; i -= 2) r *= i;
       return finish(r);
@@ -163,6 +172,7 @@ export const functions: readonly FnSpec2[] = [
       for (const n of ns) {
         sum += n;
         r *= choose(sum, n);
+        if (!Number.isFinite(r)) return err('NUM');
       }
       return finish(r);
     },

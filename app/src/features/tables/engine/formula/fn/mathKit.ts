@@ -49,6 +49,18 @@ export function shift(n: number, digits: number): number {
   return Number(`${mantissa}e${Number(exponent) + digits}`);
 }
 
+/**
+ * Rounds the magnitude of x at a decimal place with `round`, keeping the sign. Digits far past the range of a double
+ * leave x as it is, and far below it give zero, so the shift never overflows into Infinity or NaN.
+ */
+export function roundAt(x: number, digits: number, round: (n: number) => number): number {
+  if (x === 0 || digits > 308) return x;
+  if (digits < -308) return 0;
+  const scaled = shift(Math.abs(x), digits);
+  if (!Number.isFinite(scaled)) return x; // x has no fractional part at that scale
+  return Math.sign(x) * shift(round(scaled), -digits);
+}
+
 /** A quotient with the noise of division removed, so 2.1 over 0.1 is 21 and not 21.000000000000004. */
 export function quotient(n: number, step: number): number {
   const q = n / step;

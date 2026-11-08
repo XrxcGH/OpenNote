@@ -25,6 +25,8 @@ export interface ArrayValue {
   readonly data: readonly Scalar[];
   /** One state per row, set only on a reference given to a parameter marked `rowState` (SUBTOTAL, AGGREGATE). */
   readonly rowState?: readonly RowState[];
+  /** Row-major, like `data`: true for a cell that is a nested subtotal (its formula calls SUBTOTAL or AGGREGATE). Set with `rowState`. */
+  readonly nested?: readonly boolean[];
 }
 
 /** A block of cells in a table, zero-based and inclusive. `table` is unset for the formula's own table. */

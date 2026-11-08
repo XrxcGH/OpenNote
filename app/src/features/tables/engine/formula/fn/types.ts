@@ -11,6 +11,8 @@ export interface Env {
   today: () => number;
   /** Whether a row of a table (by its index on the page) shows. Unset: every row shows. */
   rowState?: (sheet: number, row: number) => RowState;
+  /** Whether a cell (table index, row, column) is a nested subtotal: its formula calls SUBTOTAL or AGGREGATE. Unset: none does. */
+  isSubtotal?: (sheet: number, row: number, col: number) => boolean;
 }
 
 /**
@@ -39,6 +41,11 @@ export interface Param {
   readonly direct?: 'number' | 'raw';
   /** For a range: a reference arrives with the state of each row (`ArrayValue.rowState`), as SUBTOTAL reads it. */
   readonly rowState?: boolean;
+  /**
+   * For a range or array: a reference is resized to the shape of the reference given to the parameter at this index,
+   * from its top-left corner, as SUMIF reads a sum range smaller or larger than the tested range.
+   */
+  readonly resizeTo?: number;
 }
 
 /** Parameters that repeat together: value1, value2, and on, or criteria range and criteria pairs. */

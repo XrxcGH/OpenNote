@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { createTable, setCellInput } from '../../edit';
 import { EN_US } from '../../locale';
 import type { Table } from '../../model';
-import { DEFAULT_ENV, type EngineEnv } from '../../recalc';
+import { DEFAULT_ENV, recalculate, type EngineEnv } from '../../recalc';
 import { ERROR_TOKENS, isError, type RowState, type Value } from '../../values';
 import fixture from '../../../fixtures/fn/math.json';
 import { fnMath, type FnText } from '../../../../../strings/en/fnMath';
@@ -353,11 +353,18 @@ describe('every function of the family', () => {
     }
   });
 
-  it('refuses too few arguments', () => {
+  it('refuses every count of arguments below the minimum', () => {
     for (const name of names) {
       const spec = REGISTRY.get(name)!;
-      if (arity(spec).min > 0) expect(isError(calc(`${name}()`)), name).toBe(true);
+      const { min } = arity(spec);
+      for (let given = 0; given < min; given++) {
+        const formula = `${name}(${Array.from({ length: given }, () => '1').join(',')})`;
+        expect(code(calc(formula)), formula).toBe('#VALUE!');
+      }
     }
+    expect(code(calc('POWER(2)'))).toBe('#VALUE!');
+    expect(code(calc('SUMIFS(A1:A4,A1:A4)', NUMS))).toBe('#VALUE!');
+    expect(code(calc('AGGREGATE(9,0)', NUMS))).toBe('#VALUE!');
   });
 
   it('has a signature and an example of its own', () => {
@@ -378,8 +385,15 @@ describe('every function of the family', () => {
     expect(Object.keys(text).filter((name) => !names.includes(name))).toEqual([]);
   });
 
-  it('holds the 77 names of the design and the Sheets operators', () => {
-    expect(names.length).toBeGreaterThanOrEqual(77);
+  it('holds exactly the names of the design and the Sheets operators', () => {
+    const design = (
+      'ABS ACOS ACOSH ACOT ACOTH ADD AGGREGATE ARABIC ASIN ASINH ATAN ATAN2 ATANH BASE CEILING CEILING.MATH ' +
+      'CEILING.PRECISE COMBIN COMBINA COS COSH COT COTH CSC CSCH DECIMAL DEGREES DIVIDE EVEN EXP FACT FACTDOUBLE ' +
+      'FLOOR FLOOR.MATH FLOOR.PRECISE GCD INT ISO.CEILING LCM LN LOG LOG10 MINUS MOD MROUND MULTINOMIAL MULTIPLY ' +
+      'ODD PERCENTOF PI POWER PRODUCT QUOTIENT RADIANS RAND RANDBETWEEN ROMAN ROUND ROUNDDOWN ROUNDUP SEC SECH ' +
+      'SERIESSUM SIGN SIN SINH SQRT SQRTPI SUBTOTAL SUM SUMIF SUMIFS SUMPRODUCT SUMSQ SUMX2MY2 SUMX2PY2 SUMXMY2 TAN TANH TRUNC'
+    ).split(' ');
+    expect([...names].sort()).toEqual([...design].sort());
   });
 });
 
@@ -401,5 +415,180 @@ describe('the fixture of hand-worked cases', () => {
     if (typeof c.expected === 'number')
       expect(got as number).toBeCloseTo(c.expected, c.tolerance === undefined ? 9 : 11);
     else expect(String(got)).toBe(c.expected);
+  });
+});
+
+describe('work is bounded on hostile input', () => {
+  it('returns #NUM! at once for counts and factorials too large to hold', () => {
+    const started = performance.now();
+    for (const formula of [
+      'FACTDOUBLE(1E300)',
+      'FACTDOUBLE(301)',
+      'FACTDOUBLE(1E9)',
+      'COMBIN(1E15,5E14)',
+      'COMBIN(2E9,1E9)',
+      'COMBINA(1E15,5E14)',
+      'MULTINOMIAL(1E8,1E8)',
+    ])
+      expect(code(calc(formula)), formula).toBe('#NUM!');
+    expect(performance.now() - started).toBeLessThan(1000);
+  });
+
+  it('still counts exactly below the limit', () => {
+    expect(code(calc('FACTDOUBLE(300)'))).not.toBe('#NUM!');
+    expect(code(calc('COMBIN(1000,2)'))).toBe(499500);
+    expect(code(calc('COMBIN(1E15,1)'))).toBe(1e15);
+  });
+});
+
+describe('digits far past the range of a double', () => {
+  it.each([
+    ['ROUND(1.5,400)', 1.5],
+    ['ROUNDUP(1.25,330)', 1.25],
+    ['ROUNDDOWN(1.25,400)', 1.25],
+    ['TRUNC(1.5,400)', 1.5],
+    ['ROUND(1.5,308)', 1.5],
+    ['ROUND(1E300,5)', 1e300],
+    ['ROUND(1234.5,-400)', 0],
+    ['ROUNDUP(1234.5,-400)', 0],
+    ['TRUNC(1234.5,-400)', 0],
+    ['ROUND(-1.5,400)', -1.5],
+  ])('%s is %s', (formula, expected) => {
+    expect(code(calc(formula))).toBe(expected);
+  });
+});
+
+describe('Roman numerals in the concise forms', () => {
+  it.each([
+    ['ROMAN(999,1)', 'LMVLIV'],
+    ['ROMAN(950,1)', 'LM'],
+    ['ROMAN(95,1)', 'VC'],
+    ['ROMAN(999,2)', 'XMIX'],
+    ['ROMAN(999,3)', 'VMIV'],
+    ['ROMAN(999,4)', 'IM'],
+    ['ROMAN(999)', 'CMXCIX'],
+  ])('%s is %s', (formula, expected) => {
+    expect(code(calc(formula))).toBe(expected);
+  });
+});
+
+describe('one-argument CEILING and FLOOR use a step of 1, as Sheets does', () => {
+  it.each([
+    ['CEILING(-2.5)', -2],
+    ['FLOOR(-2.5)', -3],
+    ['CEILING(2.5)', 3],
+    ['FLOOR(2.5)', 2],
+  ])('%s is %s', (formula, expected) => {
+    expect(code(calc(formula))).toBe(expected);
+  });
+});
+
+describe('domain edges', () => {
+  it('FACT refuses any negative number, even one that truncates to zero', () => {
+    expect(code(calc('FACT(-0.5)'))).toBe('#NUM!');
+    expect(code(calc('FACT(-1)'))).toBe('#NUM!');
+    expect(code(calc('FACT(0.5)'))).toBe(1);
+  });
+
+  it('SIN, COS and TAN refuse an angle of 2^27 or more', () => {
+    for (const f of ['SIN', 'COS', 'TAN']) {
+      expect(code(calc(`${f}(1E300)`)), f).toBe('#NUM!');
+      expect(code(calc(`${f}(134217728)`)), f).toBe('#NUM!');
+      expect(code(calc(`${f}(-134217728)`)), f).toBe('#NUM!');
+      expect(typeof code(calc(`${f}(134217727)`)), f).toBe('number');
+    }
+  });
+});
+
+/** A table with the numbers 1 to 5 in A1:A5 and one more empty row, given extra fields, then a formula in H1. */
+function withExtra(extra: (t: Table) => Partial<Table>, formula: string): Value {
+  const rows = Array.from({ length: 6 }, (_, r) =>
+    Array.from({ length: 8 }, (_, c) => (c === 0 && r < 5 ? String(r + 1) : '')),
+  );
+  let table = createTable(COLUMNS, rows, EN_US, DEFAULT_ENV, 1);
+  table = { ...table, ...extra(table) };
+  table = setCellInput(table, { ...RESULT, raw: `=${formula}` }, EN_US, DEFAULT_ENV);
+  return table.rows[RESULT.row].cells[RESULT.col].value;
+}
+
+describe('SUBTOTAL and AGGREGATE read hidden and filtered rows from the table itself', () => {
+  it('a row hidden by hand: 109 skips it and 9 keeps it', () => {
+    const hide = (t: Table) => ({ hidden: [t.rows[2].id] });
+    expect(withExtra(hide, 'SUBTOTAL(109,A1:A5)')).toBe(12);
+    expect(withExtra(hide, 'SUBTOTAL(9,A1:A5)')).toBe(15);
+    expect(withExtra(hide, 'AGGREGATE(9,5,A1:A5)')).toBe(12);
+    expect(withExtra(hide, 'AGGREGATE(9,4,A1:A5)')).toBe(15);
+  });
+
+  it('a filtered-out row: both lists skip it', () => {
+    // Keep the rows whose A is not 2.
+    const filter = () => ({ filter: [{ column: 0, op: 'ne' as const, value: '2' }] });
+    expect(withExtra(filter, 'SUBTOTAL(9,A1:A5)')).toBe(13);
+    expect(withExtra(filter, 'SUBTOTAL(109,A1:A5)')).toBe(13);
+    expect(withExtra(filter, 'AGGREGATE(9,1,A1:A5)')).toBe(13);
+  });
+
+  it('with no hidden rows and no filter, nothing is skipped', () => {
+    expect(withExtra(() => ({}), 'SUBTOTAL(109,A1:A5)')).toBe(15);
+  });
+
+  it('a recalculation after a table gets a hidden row sees it', () => {
+    const rows = Array.from({ length: 6 }, (_, r) =>
+      Array.from({ length: 8 }, (_, c) => (c === 0 ? String(r + 1) : '')),
+    );
+    let table = createTable(COLUMNS, rows, EN_US, DEFAULT_ENV, 1);
+    table = setCellInput(table, { ...RESULT, raw: '=SUBTOTAL(109,A1:A6)' }, EN_US, DEFAULT_ENV);
+    expect(table.rows[0].cells[7].value).toBe(21);
+    table = recalculate({ ...table, hidden: [table.rows[5].id] });
+    expect(table.rows[0].cells[7].value).toBe(15);
+  });
+});
+
+describe('nested subtotals are skipped', () => {
+  const data = [['1'], ['2']];
+  const typed: [string, string][] = [['A3', '=SUBTOTAL(9,A1:A2)']];
+
+  it('SUBTOTAL over a cell that holds a subtotal counts it once', () => {
+    expect(calc('SUBTOTAL(9,A1:A3)', data, DEFAULT_ENV, typed)).toBe(3);
+    expect(calc('SUBTOTAL(109,A1:A3)', data, DEFAULT_ENV, typed)).toBe(3);
+    expect(calc('SUM(A1:A3)', data, DEFAULT_ENV, typed)).toBe(6);
+  });
+
+  it('AGGREGATE options 0 to 3 skip nested results and 4 to 7 keep them', () => {
+    expect(calc('AGGREGATE(9,0,A1:A3)', data, DEFAULT_ENV, typed)).toBe(3);
+    expect(calc('AGGREGATE(9,3,A1:A3)', data, DEFAULT_ENV, typed)).toBe(3);
+    expect(calc('AGGREGATE(9,4,A1:A3)', data, DEFAULT_ENV, typed)).toBe(6);
+    expect(calc('AGGREGATE(9,6,A1:A3)', data, DEFAULT_ENV, typed)).toBe(6);
+  });
+
+  it('a nested AGGREGATE cell is skipped too', () => {
+    expect(calc('SUBTOTAL(9,A1:A3)', data, DEFAULT_ENV, [['A3', '=AGGREGATE(9,6,A1:A2)']])).toBe(3);
+  });
+});
+
+describe('SUMIF with a sum range of another size', () => {
+  const data = [
+    ['1', '10'],
+    ['2', '20'],
+    ['3', '30'],
+    ['4', '40'],
+  ];
+
+  it('resizes a smaller sum range to the tested range from its top-left corner', () => {
+    expect(calc('SUMIF(A1:A4,">2",B1)', data)).toBe(70);
+    expect(calc('SUMIF(A1:A4,">2",B1:B2)', data)).toBe(70);
+  });
+
+  it('uses only the top of a larger sum range', () => {
+    expect(calc('SUMIF(A1:A2,">1",B1:B4)', data)).toBe(20);
+  });
+
+  it('recalculates when a cell that only the resized range reaches changes', () => {
+    const rows = Array.from({ length: 6 }, (_, r) => Array.from({ length: 8 }, (_, c) => data[r]?.[c] ?? ''));
+    let table = createTable(COLUMNS, rows, EN_US, DEFAULT_ENV, 1);
+    table = setCellInput(table, { ...RESULT, raw: '=SUMIF(A1:A4,">2",B1)' }, EN_US, DEFAULT_ENV);
+    expect(table.rows[0].cells[7].value).toBe(70);
+    table = setCellInput(table, { row: 3, col: 1, raw: '100' }, EN_US, DEFAULT_ENV);
+    expect(table.rows[0].cells[7].value).toBe(130);
   });
 });

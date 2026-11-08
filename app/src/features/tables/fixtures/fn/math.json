@@ -91,6 +91,18 @@
       "expected": 9,
       "source": "hand",
       "note": "The largest of the four."
+    },
+    {
+      "formula": "=ROMAN(999,1)",
+      "expected": "LMVLIV",
+      "source": "hand",
+      "note": "LM is 950, VL is 45, IV is 4."
+    },
+    {
+      "formula": "=ROMAN(950,1)",
+      "expected": "LM",
+      "source": "hand",
+      "note": "Fifty before a thousand, the form 1 pair."
     }
   ]
 }

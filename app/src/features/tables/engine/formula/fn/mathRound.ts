@@ -3,7 +3,7 @@
 
 import { err, finish } from '../../values';
 import type { FnSpec2 } from './types';
-import { number, optional, quotient, scalar, shift } from './mathKit';
+import { number, optional, quotient, roundAt, scalar } from './mathKit';
 
 function roundWith(name: string, mode: 'half' | 'up' | 'down', example: string): FnSpec2 {
   return scalar(
@@ -11,16 +11,15 @@ function roundWith(name: string, mode: 'half' | 'up' | 'down', example: string):
     [number(), optional('digits', 0)],
     ([x, d = 0]) => {
       const digits = Math.trunc(d);
-      const abs = shift(Math.abs(x), digits);
-      const whole = mode === 'half' ? Math.round(abs) : mode === 'up' ? Math.ceil(abs) : Math.floor(abs);
-      return finish(Math.sign(x) * shift(whole, -digits));
+      const round = mode === 'half' ? Math.round : mode === 'up' ? Math.ceil : Math.floor;
+      return finish(roundAt(x, digits, round));
     },
     example,
   );
 }
 
-/** The step a CEILING or FLOOR call uses when none is given: 1 for a number that is not negative, else -1. */
-const stepFor = (n: number, step: number | undefined) => step ?? (n < 0 ? -1 : 1);
+/** The step a CEILING or FLOOR call uses when none is given: 1, as Google Sheets does (Excel requires the step). */
+const stepFor = (_n: number, step: number | undefined) => step ?? 1;
 
 export const functions: readonly FnSpec2[] = [
   roundWith('ROUND', 'half', '=ROUND(2.675, 2) gives 2.68'),
@@ -29,7 +28,7 @@ export const functions: readonly FnSpec2[] = [
   scalar(
     'TRUNC',
     [number(), optional('digits', 0)],
-    ([x, d = 0]) => finish(Math.sign(x) * shift(Math.floor(shift(Math.abs(x), Math.trunc(d))), -Math.trunc(d))),
+    ([x, d = 0]) => finish(roundAt(x, Math.trunc(d), Math.floor)),
     '=TRUNC(-8.9) gives -8',
   ),
   scalar(

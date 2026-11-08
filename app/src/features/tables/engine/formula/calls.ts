@@ -80,10 +80,21 @@ function withRowState(env: Host['scope']['env'], ref: RefPart, read: Fn): Fn {
     if (isError(value)) return value;
     const array = asArray(value);
     const box = ref.fn(ctx);
-    const rowState = env.rowState;
-    if (rowState === undefined || Array.isArray(box) || 'error' in box) return array;
-    const state = Array.from({ length: array.rows }, (_, i) => rowState(box.s, box.r1 + i));
-    return state.some((s) => s !== 0) ? { ...array, rowState: state } : array;
+    const { rowState, isSubtotal } = env;
+    if (Array.isArray(box) || 'error' in box) return array;
+    const state =
+      rowState === undefined ? [] : Array.from({ length: array.rows }, (_, i) => rowState(box.s, box.r1 + i));
+    const nested =
+      isSubtotal === undefined
+        ? []
+        : Array.from({ length: array.data.length }, (_, i) =>
+            isSubtotal(box.s, box.r1 + Math.floor(i / array.cols), box.c1 + (i % array.cols)),
+          );
+    return {
+      ...array,
+      ...(state.some((s) => s !== 0) ? { rowState: state } : {}),
+      ...(nested.some(Boolean) ? { nested } : {}),
+    };
   };
 }
 
@@ -174,6 +185,31 @@ function runLifted(spec: FnSpec2, values: Value[], scalar: boolean[], env: Host[
   );
 }
 
+/** A reference read as the shape of another one, from its top-left corner, as SUMIF's sum range is. */
+function resized(h: Host, ref: RefPart, shaped: RefPart): Fn {
+  const plainRead = h.deref(ref);
+  h.dynamic = true;
+  return (ctx) => {
+    const box = ref.fn(ctx);
+    const shape = shaped.fn(ctx);
+    if (Array.isArray(box) || Array.isArray(shape) || 'error' in box || 'error' in shape) {
+      const v = plainRead(ctx);
+      return isError(v) ? v : asArray(v);
+    }
+    const columns = ctx.sheets[box.s];
+    const last = columns[box.c1]?.length ?? 0;
+    const to: Box = {
+      s: box.s,
+      r1: box.r1,
+      c1: box.c1,
+      r2: Math.min(box.r1 + (shape.r2 - shape.r1), last - 1),
+      c2: Math.min(box.c1 + (shape.c2 - shape.c1), columns.length - 1),
+    };
+    ctx.dyn?.push(to);
+    return asArray(readBox(ctx, to));
+  };
+}
+
 function plain(h: Host, spec: FnSpec2, node: Call): Fn {
   const env = h.scope.env;
   const params = paramsFor(spec, node.args.length);
@@ -184,6 +220,11 @@ function plain(h: Host, spec: FnSpec2, node: Call): Fn {
     if (kind !== 'range' && kind !== 'array') return h.value(arg);
     const ref = h.refOrNull(arg);
     if (ref !== null && returnsRef && kind === 'range') return (ctx) => toRefValue(h, ref.fn(ctx));
+    const shape = params[i]?.resizeTo;
+    if (ref !== null && shape !== undefined) {
+      const shaped = h.refOrNull(node.args[shape]);
+      if (shaped !== null) return resized(h, ref, shaped);
+    }
     const v = ref !== null ? h.deref(ref) : h.value(arg);
     if (ref !== null && params[i]?.rowState === true) return withRowState(env, ref, v);
     return (ctx) => {

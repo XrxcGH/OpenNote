@@ -18,6 +18,8 @@ function power(x: number, y: number): Value {
   return finish(x ** y);
 }
 
+/** SIN, COS, and TAN refuse an angle of 2^27 radians or more, where the result would have no meaning. */
+const inAngleRange = (x: number) => Math.abs(x) < 2 ** 27;
 const isZero = (x: number) => x === 0;
 const acoth = (x: number) => 0.5 * Math.log((x + 1) / (x - 1));
 
@@ -73,9 +75,9 @@ const basics: readonly FnSpec2[] = [
 ];
 
 const trig: readonly FnSpec2[] = [
-  math1('SIN', Math.sin, '=SIN(0) gives 0'),
-  math1('COS', Math.cos, '=COS(0) gives 1'),
-  math1('TAN', Math.tan, '=TAN(0) gives 0'),
+  math1('SIN', Math.sin, '=SIN(0) gives 0', inAngleRange),
+  math1('COS', Math.cos, '=COS(0) gives 1', inAngleRange),
+  math1('TAN', Math.tan, '=TAN(0) gives 0', inAngleRange),
   math1('ASIN', Math.asin, '=ASIN(0) gives 0', (x) => Math.abs(x) <= 1),
   math1('ACOS', Math.acos, '=ACOS(1) gives 0', (x) => Math.abs(x) <= 1),
   math1('ATAN', Math.atan, '=ATAN(0) gives 0'),

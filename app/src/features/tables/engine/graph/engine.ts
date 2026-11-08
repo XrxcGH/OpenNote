@@ -30,11 +30,30 @@ import {
 } from './units';
 import { colKey } from '../formula/compile';
 import type { Table } from '../model';
-import { isError, type Scalar } from '../values';
+import { filterIndices } from '../filter';
+import { isError, type RowState, type Scalar } from '../values';
 
 const LATE_ROUNDS = 8;
 const DONE = 2;
 let EPOCH = 0;
+
+const NESTED = /\b(?:SUBTOTAL|AGGREGATE)\s*\(/i;
+
+/** The state of each data row of a table: hidden by hand is 1, filtered out is 2 (and wins when both hold). */
+function rowStatesOf(table: Table): Uint8Array {
+  const states = new Uint8Array(table.rows.length);
+  if (table.hidden !== undefined && table.hidden.length > 0) {
+    const ids = new Set(table.hidden);
+    table.rows.forEach((row, i) => {
+      if (ids.has(row.id)) states[i] = 1;
+    });
+  }
+  if (table.filter !== undefined && table.filter.length > 0) {
+    const shown = new Set(filterIndices(table, table.filter));
+    for (let i = 0; i < states.length; i++) if (!shown.has(i)) states[i] = 2;
+  }
+  return states;
+}
 
 /** The recalculation state of one page: every table's values, formulas, graph, spills, and error origins. */
 export class Engine {
@@ -64,9 +83,23 @@ export class Engine {
   anyManual = false;
   force = false;
   ctx: Ctx;
+  /** Per table, per data row: 0 shown, 1 hidden by hand, 2 filtered out. Built from `hidden` and `filter`. */
+  rowStates: Uint8Array[] = [];
+  /** What formulas see as their environment: the host's, plus the row states and nested subtotals the engine knows. */
+  readonly scopeEnv: EngineEnv;
 
-  private constructor(env: EngineEnv) {
+  /** The engine whose state the shared scope environment answers from: the one running. A fork shares the scope. */
+  private live: { engine: Engine };
+
+  private constructor(env: EngineEnv, from?: Engine) {
     this.env = env;
+    this.live = from?.live ?? { engine: this };
+    const live = this.live;
+    this.scopeEnv = from?.scopeEnv ?? {
+      ...env,
+      rowState: env.rowState ?? ((s, r) => (live.engine.rowStates[s]?.[r] ?? 0) as RowState),
+      isSubtotal: env.isSubtotal ?? ((s, r, c) => live.engine.holdsSubtotal(s, r, c)),
+    };
     this.ctx = this.makeCtx();
   }
 
@@ -80,6 +113,7 @@ export class Engine {
   static build(tables: readonly Table[], env: EngineEnv): Engine {
     const engine = new Engine(env);
     engine.tables = [...tables];
+    engine.rowStates = tables.map(rowStatesOf);
     engine.infos = tables.map(sheetInfo);
     engine.sheets = tables.map((table, s) =>
       table.columns.map((_, c) =>
@@ -113,8 +147,9 @@ export class Engine {
 
   /** A copy to change for the next edit. This state stays as it was. */
   fork(): Engine {
-    const next = new Engine(this.env);
+    const next = new Engine(this.env, this);
     next.tables = [...this.tables];
+    next.rowStates = this.rowStates;
     next.infos = this.infos;
     next.sheets = this.sheets.map((cols) => cols.slice());
     next.ctx.sheets = next.sheets;
@@ -148,10 +183,19 @@ export class Engine {
           t.name === old.name &&
           t.sheetVersion === old.sheetVersion &&
           t.calc === old.calc &&
-          t.iterate === old.iterate
+          t.iterate === old.iterate &&
+          t.hidden === old.hidden &&
+          t.filter === old.filter
         );
       })
     );
+  }
+
+  /** True when the cell is a nested subtotal: its formula calls SUBTOTAL or AGGREGATE, so a total over it skips it. */
+  holdsSubtotal(s: number, row: number, col: number): boolean {
+    const id = this.cellUnit.get(cellKey(s, col, row)) ?? this.colUnit.get(colKey(s, col));
+    const formula = id === undefined ? undefined : this.units.get(id)?.formula;
+    return formula !== undefined && NESTED.test(formula);
   }
 
   // Units.
@@ -162,7 +206,7 @@ export class Engine {
     const scope: Scope = {
       columns: table.columns,
       rowCount: table.rows.length,
-      env: this.env,
+      env: this.scopeEnv,
       sheet: s,
       book: this.infos,
       ...(this.env.functions ? { functions: this.env.functions } : {}),
@@ -263,6 +307,7 @@ export class Engine {
 
   /** Recalculates `roots` and every unit that reads them, directly or through others. */
   run(roots: Iterable<number>): void {
+    this.live.engine = this;
     const ctx = this.ctx;
     ctx.epoch = ++EPOCH;
     ctx.memo = new Map();
@@ -359,6 +404,7 @@ export class Engine {
 
   /** Marks where this edit's new units start, so a manual table still calculates a formula typed now. */
   beginEdit(): void {
+    this.live.engine = this;
     this.firstNew = this.nextId;
   }
 

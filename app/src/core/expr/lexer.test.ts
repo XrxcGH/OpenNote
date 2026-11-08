@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { ExprError } from './errors';
 import { GENERAL } from './general';
 import { tokenize, type LexSpec, type Token } from './lexer';
+import { sheetDialect } from './sheet';
 import { LETTERS, SHEET, SHEET_COMMA } from './testing';
 
 /** Kind and text of each token except the end, to keep expectations short. */
@@ -177,5 +178,23 @@ describe('any text', () => {
       }),
       { numRuns: 300 },
     );
+  });
+});
+
+describe('dotted function names (Excel dialect)', () => {
+  const excel = sheetDialect({ decimal: '.', separator: ',', rules: 'excel' }).lex;
+  const cell = sheetDialect({ decimal: '.', separator: ',' }).lex;
+
+  it('reads CEILING.MATH and NORM.S.DIST as one name in the Excel dialect', () => {
+    expect(kinds('CEILING.MATH(2)', excel)[0]).toBe('name:CEILING.MATH');
+    expect(kinds('NORM.S.DIST(1)', excel)[0]).toBe('name:NORM.S.DIST');
+  });
+
+  it('does not take a dot followed by a digit or nothing as part of the name', () => {
+    expect(kinds('A.5', excel).slice(0, 2)).toEqual(['name:A', 'num:.5']);
+  });
+
+  it('reads the dot apart from the name in the cell dialect, as before', () => {
+    expect(() => tokenize('CEILING.MATH', cell)).toThrow();
   });
 });

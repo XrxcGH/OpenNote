@@ -163,7 +163,7 @@ export const functions: readonly FnSpec2[] = [
     params: [
       { name: 'range', kind: 'array' },
       { name: 'criterion', kind: 'value' },
-      { name: 'sumRange', kind: 'array', optional: true },
+      { name: 'sumRange', kind: 'array', optional: true, resizeTo: 0 },
     ],
     run: sumif,
     meta: { signature: 'SUMIF(range, criterion, [sumRange])', example: '=SUMIF(A1:A4, ">2") gives 7 over 1, 2, 3, 4' },

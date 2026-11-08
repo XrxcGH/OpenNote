@@ -1,7 +1,7 @@
 // SUBTOTAL and AGGREGATE. A reference reaches them with the state of each row (ArrayValue.rowState): shown, hidden
 // by hand, or filtered out. SUBTOTAL 1 to 11 skips filtered rows and keeps rows hidden by hand; 101 to 111 skip both.
 // AGGREGATE option 0 to 7 picks what to ignore: hidden rows (which covers filtered ones), error values, both, or
-// neither. Nested SUBTOTAL and AGGREGATE results are not skipped. Written from the documented behavior.
+// neither. SUBTOTAL skips nested SUBTOTAL and AGGREGATE cells, and so do AGGREGATE options 0 to 3. Written from the documented behavior.
 
 import { err, finish, isError, isNumber, toNumber, type ArrayValue, type Scalar, type Value } from '../../values';
 import type { FnSpec2 } from './types';
@@ -10,13 +10,17 @@ import { number } from './mathKit';
 interface Item {
   value: Scalar;
   state: number;
+  /** The cell is a nested subtotal (its formula calls SUBTOTAL or AGGREGATE). */
+  nested: boolean;
 }
 
 /** Every cell of the reference arguments with its row's state. */
 function itemsOf(blocks: readonly ArrayValue[]): Item[] {
   const out: Item[] = [];
   for (const block of blocks) {
-    block.data.forEach((value, i) => out.push({ value, state: block.rowState?.[Math.floor(i / block.cols)] ?? 0 }));
+    block.data.forEach((value, i) =>
+      out.push({ value, state: block.rowState?.[Math.floor(i / block.cols)] ?? 0, nested: block.nested?.[i] === true }),
+    );
   }
   return out;
 }
@@ -129,7 +133,9 @@ function subtotal(args: Value[]): Value {
   const base = num % 100;
   if (base < 1 || base > 11 || (num > 11 && num < 101)) return err('VALUE');
   const hideManual = num > 100;
-  const kept = itemsOf(args.slice(1) as ArrayValue[]).filter((i) => i.state === 0 || (i.state === 1 && !hideManual));
+  const kept = itemsOf(args.slice(1) as ArrayValue[]).filter(
+    (i) => !i.nested && (i.state === 0 || (i.state === 1 && !hideManual)),
+  );
   return stopper(base, kept) ?? combine(base, kept);
 }
 
@@ -150,7 +156,11 @@ function aggregate(args: Value[]): Value {
     k = kk;
     refs.pop();
   }
-  const kept = itemsOf(refs).filter((i) => !(hideRows && i.state !== 0) && !(hideErrors && isError(i.value)));
+  // Options 0 to 3 also skip the results of nested SUBTOTAL and AGGREGATE cells.
+  const hideNested = option <= 3;
+  const kept = itemsOf(refs).filter(
+    (i) => !(hideRows && i.state !== 0) && !(hideErrors && isError(i.value)) && !(hideNested && i.nested),
+  );
   if (num <= 13) return stopper(num, kept) ?? combine(num, kept);
   const bad = stopper(num, kept);
   if (bad !== null) return bad;
