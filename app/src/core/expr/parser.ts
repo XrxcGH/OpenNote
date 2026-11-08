@@ -584,14 +584,21 @@ class Parser implements Cursor {
   private arguments(open: Token): Node[] {
     const args: Node[] = [];
     if (this.peek().kind !== 'rparen') {
-      args.push(this.expr(0));
+      args.push(this.argument());
       while (this.peek().kind === 'sep') {
         this.next();
-        args.push(this.expr(0));
+        args.push(this.argument());
       }
     }
     this.close(open);
     return args;
+  }
+
+  /** One argument. Where the dialect allows it, an empty one, as in UNIQUE(A1:A9,,TRUE), is a name with no text. */
+  private argument(): Node {
+    const next = this.peek();
+    if (this.dialect.emptyArguments !== true || (next.kind !== 'sep' && next.kind !== 'rparen')) return this.expr(0);
+    return this.made({ type: 'name', name: '', start: next.start, end: next.start, pos: next.start });
   }
 
   private finishCall(
