@@ -11,6 +11,7 @@ import { findTool } from '../../../../../tests/crosscheck/tools';
 import { createTable, setColumnFormula } from './edit';
 import { FUNCTIONS } from './formula/functions';
 import { EN_US } from './locale';
+import { REGISTRY } from './formula/fn';
 import { ERROR_TOKENS, type Value } from './values';
 
 /** Days from 1900-based Excel serials to the day numbers since 1970 that OpenNote's dates use. */
@@ -98,7 +99,14 @@ const KNOWN: Record<string, string> = {
 };
 
 /** Functions that cannot be compared with a fixed answer: their result depends on the day it runs. */
-const NOT_COMPARABLE = new Set(['TODAY']);
+// The text and regular expression families have their own hand-worked fixtures (fixtures/fn/text.json), so only
+// the functions that were here before need a case against the reader.
+const NOT_COMPARABLE = new Set([
+  'TODAY',
+  ...[...REGISTRY.values()]
+    .filter((spec) => (spec.family === 'text' || spec.family === 'regex') && !(spec.name in CASES))
+    .map((spec) => spec.name),
+]);
 
 const DATE_RESULTS = new Set(['DATE']);
 
