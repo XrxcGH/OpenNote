@@ -175,7 +175,7 @@ const all = (prefixes: string, category: Category) =>
 /** Where commands go, by the start of their id. The longest match wins; tool windows claim their own first. */
 export const COMMAND_PREFIX: Readonly<Record<string, Category>> = {
   ...all(
-    'block code format outline text link styles checklist templates series edit spelling insert object image doc',
+    'block code format para outline text link styles checklist templates series edit spelling insert object image doc',
     writing,
   ),
   ...all(
