@@ -3,6 +3,7 @@
 // that read those, in an order where every unit runs after the units it reads. Tarjan's algorithm gives that order
 // and finds cycles in one walk. Every edit forks the state, and a fork shares what it does not change.
 
+import { legacyFunctions } from '../formula/fn/legacyText';
 import { newCtx, type Ctx, type Scope, type SheetInfo } from '../formula/compile';
 import type { ErrorOrigin } from '../formula/explain';
 import { releaseSpill, spillBox } from '../arrays/spill';
@@ -158,14 +159,17 @@ export class Engine {
 
   addUnit(s: number, col: number, row: number | null, formula: string, array?: Unit['array']): number {
     const table = this.tables[s];
-    const result = parseCached(formula, table.sheetVersion === undefined);
+    const legacy = table.sheetVersion === undefined;
+    const result = parseCached(formula, legacy);
+    // A table written before data.sheet.v keeps the old TRIM and CONCAT (formula/fn/legacyText.ts).
+    const functions = legacy ? legacyFunctions(this.env.functions) : this.env.functions;
     const scope: Scope = {
       columns: table.columns,
       rowCount: table.rows.length,
       env: this.env,
       sheet: s,
       book: this.infos,
-      ...(this.env.functions ? { functions: this.env.functions } : {}),
+      ...(functions ? { functions } : {}),
       parse: parseName,
     };
     // A legacy array block must be whole rows and columns that fit in the table from its corner; else #REF!.

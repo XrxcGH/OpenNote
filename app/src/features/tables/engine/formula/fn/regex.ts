@@ -13,10 +13,14 @@ export const REGEX_MAX_PATTERN = 1000;
 /** The longest input text, in characters. */
 export const REGEX_MAX_INPUT = 32768;
 
-/** The limit a call breaks, named in words, or null when it is within both. */
-export function regexLimitProblem(text: string, pattern: string): string | null {
-  if (pattern.length > REGEX_MAX_PATTERN) return `a pattern over ${REGEX_MAX_PATTERN} characters`;
-  if (text.length > REGEX_MAX_INPUT) return `an input over ${REGEX_MAX_INPUT} characters`;
+/**
+ * The limit a call breaks, as the key of its sentence in strings/en/fnText.ts, or null when it is within both. The
+ * formula bar's error explanation reads the key to name the limit (the contract with the formula-bar lane); the
+ * sentences are also part of each REGEX function's description.
+ */
+export function regexLimitProblem(text: string, pattern: string): 'regexPatternTooLong' | 'regexInputTooLong' | null {
+  if (pattern.length > REGEX_MAX_PATTERN) return 'regexPatternTooLong';
+  if (text.length > REGEX_MAX_INPUT) return 'regexInputTooLong';
   return null;
 }
 
@@ -80,17 +84,33 @@ function column(items: readonly Scalar[]): Value {
   return items.length === 1 ? items[0] : makeArray(items.length, 1, items);
 }
 
-/** Fills $1 to $99, $0 (the whole match), and $$ in a replacement. */
-function expand(template: string, m: RegExpMatchArray): string {
-  return template.replace(/\$(\$|\d{1,2})/g, (whole, token: string) => {
-    if (token === '$') return '$';
-    const n = Number(token);
-    if (n < m.length) return m[n] ?? '';
-    // $10 with fewer than ten groups reads as $1 and then a 0, as most engines do.
-    if (token.length === 2 && Number(token[0]) < m.length) return (m[Number(token[0])] ?? '') + token[1];
-    return whole;
-  });
+/**
+ * Fills $1 to $99, $0 (the whole match), and $$ in a replacement. Gives null as soon as the text would be longer than
+ * `budget`, so a replacement full of $0 cannot build a huge string.
+ */
+function expand(template: string, m: RegExpMatchArray, budget: number): string | null {
+  let out = '';
+  let at = 0;
+  for (const found of template.matchAll(/\$(\$|\d{1,2})/g)) {
+    const token = found[1];
+    let piece: string = found[0];
+    if (token === '$') piece = '$';
+    else {
+      const n = Number(token);
+      // $10 with fewer than ten groups reads as $1 and then a 0, as most engines do.
+      if (n < m.length) piece = m[n] ?? '';
+      else if (token.length === 2 && Number(token[0]) < m.length) piece = (m[Number(token[0])] ?? '') + token[1];
+    }
+    out += template.slice(at, found.index) + piece;
+    at = found.index + found[0].length;
+    if (out.length > budget) return null;
+  }
+  out += template.slice(at);
+  return out.length > budget ? null : out;
 }
+
+/** The most characters a cell holds. */
+const MAX_OUT = 32767;
 
 const text = (name: string): Param => ({ name, kind: 'text' });
 const opt = (name: string): Param => ({ name, kind: 'number', optional: true });
@@ -133,8 +153,6 @@ export const functions: readonly FnSpec2[] = [
       if (mode !== null && ![0, 1, 2].includes(mode)) return err('VALUE');
       const all = matches(prep);
       if (all.length === 0) return err('NA');
-      // Sheets' two-argument form gives the capturing groups when the pattern has any, and the match when not.
-      if (args.length === 2) return all[0].length > 1 ? row(groupsOf(all[0])) : all[0][0];
       if (mode === 1) return column(all.map((m) => m[0]));
       if (mode === 2) return all[0].length > 1 ? row(groupsOf(all[0])) : err('VALUE');
       return all[0][0];
@@ -153,6 +171,7 @@ export const functions: readonly FnSpec2[] = [
       if (!isPrepared(prep)) return prep;
       const replacement = toText(rep);
       if (typeof replacement !== 'string') return replacement;
+      if (replacement.length > REGEX_MAX_INPUT) return err('VALUE');
       const occurrence = o === undefined ? 0 : toNumber(o);
       if (typeof occurrence !== 'number') return occurrence;
       const all = matches(prep);
@@ -162,11 +181,14 @@ export const functions: readonly FnSpec2[] = [
       let at = 0;
       for (const m of chosen) {
         const start = m.index ?? 0;
-        out += prep.text.slice(at, start) + expand(replacement, m);
+        const piece = expand(replacement, m, MAX_OUT - out.length);
+        if (piece === null) return err('VALUE');
+        out += prep.text.slice(at, start) + piece;
         at = start + m[0].length;
+        if (out.length > MAX_OUT) return err('VALUE');
       }
       out += prep.text.slice(at);
-      return out.length > 32767 ? err('VALUE') : out;
+      return out.length > MAX_OUT ? err('VALUE') : out;
     },
     meta: {
       signature: 'REGEXREPLACE(text, pattern, replacement, [occurrence], [case_sensitivity])',

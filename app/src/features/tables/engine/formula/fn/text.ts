@@ -3,9 +3,10 @@
 // OpenNote has no double-byte region yet (see fixtures/fn/DIFFERENCES.md).
 
 import { err, toScalar, toText, type Value } from '../../values';
-import { hasWildcard, wildcardMatcher } from './criteria';
+import { hasWildcard } from './criteria';
 import { MAX_TEXT, define, int, num, text, tooLong, value } from './textKit';
-import type { FnSpec2 } from './types';
+import { wildcardSearch } from './textSearch';
+import type { FnSpec2, Param } from './types';
 import { formatFunctions } from './textFormat';
 import { splitFunctions } from './textSplit';
 
@@ -36,11 +37,7 @@ function codeOf(ch: string): number {
 /** The index of the first match of a wildcard pattern (? and *, ~ escapes) at or after `from`, or -1. */
 function searchFrom(find: string, within: string, from: number): number {
   if (!hasWildcard(find)) return within.toLowerCase().indexOf(find.replace(/~([*?~])/g, '$1').toLowerCase(), from);
-  // The pattern may match any amount of text after its end, so a trailing star makes it a prefix test.
-  const tildes = /~*$/.exec(find)?.[0].length ?? 0;
-  const matcher = wildcardMatcher(`${find}${tildes % 2 === 1 ? '~' : ''}*`);
-  for (let i = from; i <= within.length; i++) if (matcher(within.slice(i))) return i;
-  return -1;
+  return wildcardSearch(find, within, from);
 }
 
 function finder(name: string, caseSensitive: boolean, example: string): FnSpec2 {

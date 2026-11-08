@@ -10,6 +10,7 @@ import { DEFAULT_ENV, spillRange } from '../../recalc';
 import { arrayOf, isArray, type Scalar, type Value } from '../../values';
 import { en } from '../../../../../strings/en';
 import { REGISTRY, paramsOf } from '.';
+import { needsWorker } from '../../worker/client';
 import { REGEX_MAX_INPUT, REGEX_MAX_PATTERN, regexLimitProblem } from './regex';
 
 type Expected = Scalar | { array: Scalar[][] } | { error: string };
@@ -107,15 +108,64 @@ describe('lane tests', () => {
   it('names the regular expression limits', () => {
     expect(REGEX_MAX_PATTERN).toBe(1000);
     expect(REGEX_MAX_INPUT).toBe(32768);
-    expect(regexLimitProblem('abc', 'a'.repeat(1001))).toMatch(/1000 characters/);
-    expect(regexLimitProblem('a'.repeat(32769), 'a')).toMatch(/32768 characters/);
+    expect(regexLimitProblem('abc', 'a'.repeat(1001))).toBe('regexPatternTooLong');
+    expect(regexLimitProblem('a'.repeat(32769), 'a')).toBe('regexInputTooLong');
+    // The sentence behind each key names its limit, with the thousands separator.
+    expect(en.fnText.regexPatternTooLong).toMatch(/1,000 characters/);
+    expect(en.fnText.regexInputTooLong).toMatch(/32,768 characters/);
+    expect(en.fnText.REGEXTEST.summary).toMatch(/1,000 characters/);
     expect(regexLimitProblem('abc', 'a')).toBeNull();
     expect(evaluate(`REGEXTEST("abc",REPT("a",1001))`)).toEqual({ error: 'VALUE' });
   });
 
-  it('keeps a pattern that backtracks on a short input fast', () => {
+  it('sends a page that calls a REGEX function to the worker, where the busy time ends a long match', () => {
+    // 27 characters took 9.5 s on the page's thread and each more doubles it, so the page thread must never run it.
+    const table = createTable([{ name: 'A', type: 'number' }], [['']], EN_US, ENV, 1);
+    // Set by hand: typing the formula would run it here, on this thread.
+    const withRegex = {
+      ...table,
+      rows: [{ ...table.rows[0], cells: [{ raw: '', value: null, formula: 'REGEXTEST(REPT("a",30)&"!","^(a+)+$")' }] }],
+    };
+    expect(needsWorker([withRegex], 20000)).toBe(true);
+    expect(needsWorker([table], 20000)).toBe(false);
+  });
+
+  it('ends a wildcard SEARCH over a long text quickly', () => {
     const started = Date.now();
-    expect(evaluate('REGEXTEST("aaaaaaaaaaaaaaaaaaaa!","^(a+)+$")')).toBe(false);
+    expect(evaluate('SEARCH("*b",REPT("a",32767))')).toEqual({ error: 'VALUE' });
+    expect(evaluate('SEARCH("a*a*a*b",REPT("a",32767))')).toEqual({ error: 'VALUE' });
     expect(Date.now() - started).toBeLessThan(2000);
+  });
+
+  it('bounds TEXTSPLIT, and many delimiters', () => {
+    expect(evaluate('TEXTSPLIT(REPT(";",3000)&REPT(",",3000),",",";")')).toEqual({ error: 'VALUE' });
+    const started = Date.now();
+    const delims = arrayOf([Array.from({ length: 1001 }, (_, i) => `d${i}`)]);
+    const source = 'ab'.repeat(16000);
+    expect(REGISTRY.get('TEXTSPLIT')!.run([source, delims], ENV)).toEqual({ error: 'VALUE' });
+    expect(REGISTRY.get('TEXTBEFORE')!.run([source, delims], ENV)).toEqual({ error: 'VALUE' });
+    const ok = arrayOf([Array.from({ length: 1000 }, (_, i) => `d${i}`)]);
+    expect(REGISTRY.get('TEXTSPLIT')!.run([source, ok], ENV)).toBe(source);
+    expect(Date.now() - started).toBeLessThan(2000);
+  });
+
+  it('gives #VALUE! at once when REGEXREPLACE would build too much', () => {
+    expect(evaluate('REGEXREPLACE(REPT("a",32767),"",REPT("x",32767))')).toEqual({ error: 'VALUE' });
+    expect(String(evaluate('REGEXREPLACE("abc","b",REPT("$0",10000))')).length).toBe(10002);
+  });
+
+  it('gives the whole match for the two-argument REGEXEXTRACT, as Excel does', () => {
+    expect(evaluate('REGEXEXTRACT("2024-05-06","(\\d+)-(\\d+)")')).toBe('2024-05');
+  });
+
+  it('keeps the old TRIM and CONCAT in a table without data.sheet.v', () => {
+    const run = (version: number | undefined, formula: string): Value => {
+      const t = createTable([{ name: 'A', type: 'number' }], [['']], EN_US, ENV, version);
+      return setCellInput(t, { row: 0, col: 0, raw: `=${formula}` }, EN_US, ENV).rows[0].cells[0].value;
+    };
+    const tab = 'TRIM("a"&CHAR(9)&"b")';
+    expect(run(undefined, tab)).toBe('a b');
+    expect(run(1, tab)).toBe(`a${String.fromCharCode(9)}b`);
+    expect(run(undefined, 'TRIM("  a   b ")')).toBe('a b');
   });
 });

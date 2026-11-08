@@ -627,15 +627,7 @@
   ],
   [
    "REGEXEXTRACT(\"2024-05-06\",\"(\\d+)-(\\d+)-(\\d+)\")",
-   {
-    "array": [
-     [
-      "2024",
-      "05",
-      "06"
-     ]
-    ]
-   }
+   "2024-05-06"
   ],
   [
    "REGEXEXTRACT(\"2024-05-06\",\"(\\d+)-(\\d+)-(\\d+)\",0)",
@@ -746,6 +738,13 @@
   [
    "REGEXTEST(\"a.b\",\"a\\.b\")",
    true
-  ]
+  ],
+  ["TEXTSPLIT(REPT(\";\",3000)&REPT(\",\",3000),\",\",\";\")", {"error": "VALUE"}],
+  ["REGEXREPLACE(REPT(\"a\",32767),\"\",REPT(\"x\",32767))", {"error": "VALUE"}],
+  ["SEARCH(\"*b\",\"aab\")", 1],
+  ["SEARCH(\"a*c?e\",\"xxabcde\")", 3],
+  ["SEARCH(\"b*d\",\"abcbd\")", 2],
+  ["SEARCH(\"x*\",\"abc\")", {"error": "VALUE"}],
+  ["SEARCH(\"~*b\",\"a*b\")", 2]
  ]
 }

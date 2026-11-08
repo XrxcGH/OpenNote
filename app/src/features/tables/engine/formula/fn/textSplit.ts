@@ -13,25 +13,60 @@ interface Hit {
   end: number;
 }
 
-/** The longest delimiter that matches at `at`, or null. */
-function matchAt(source: string, lowered: string, at: number, delims: readonly string[], ci: boolean): number {
-  let best = -1;
-  for (const d of delims) {
-    if (d === '') continue;
-    const piece = ci ? lowered.slice(at, at + d.length) : source.slice(at, at + d.length);
-    if (piece === (ci ? d.toLowerCase() : d) && d.length > best) best = d.length;
+/** The most distinct delimiters one call accepts. More give #VALUE!, so a huge range cannot make a scan crawl. */
+export const MAX_DELIMITERS = 1000;
+/** The most cells TEXTSPLIT builds. More give #VALUE!. */
+export const MAX_SPLIT_CELLS = 1_000_000;
+
+/** Delimiters made ready once per call: lowercased when case is ignored, without repeats, grouped by edge character. */
+interface Delimiters {
+  ci: boolean;
+  /** By first character, longest first. */
+  first: Map<string, string[]>;
+  /** By last character, longest first. */
+  last: Map<string, string[]>;
+}
+
+function prepareDelimiters(list: readonly string[], ci: boolean): Delimiters | null {
+  const set = new Set<string>();
+  for (const d of list) if (d !== '') set.add(ci ? d.toLowerCase() : d);
+  if (set.size > MAX_DELIMITERS) return null;
+  const first = new Map<string, string[]>();
+  const last = new Map<string, string[]>();
+  for (const d of [...set].sort((x, y) => y.length - x.length)) {
+    for (const [map, ch] of [
+      [first, d[0]],
+      [last, d[d.length - 1]],
+    ] as const) {
+      const bucket = map.get(ch);
+      if (bucket) bucket.push(d);
+      else map.set(ch, [d]);
+    }
   }
-  return best;
+  return { ci, first, last };
+}
+
+/** The length of the longest delimiter that starts at `at` in the (already lowered, if ci) text, or -1. */
+function matchAt(hay: string, at: number, ds: Delimiters): number {
+  for (const d of ds.first.get(hay[at]) ?? []) if (hay.startsWith(d, at)) return d.length;
+  return -1;
+}
+
+/** The length of the longest delimiter that ends at `end`, or -1. */
+function matchEndingAt(hay: string, end: number, ds: Delimiters): number {
+  for (const d of ds.last.get(hay[end - 1]) ?? [])
+    if (d.length <= end && hay.startsWith(d, end - d.length)) return d.length;
+  return -1;
 }
 
 /** Splits at every delimiter, scanning left to right without overlap. */
-function splitAt(source: string, delims: readonly string[], ci: boolean): string[] {
-  const lowered = ci ? source.toLowerCase() : source;
+function splitAt(source: string, ds: Delimiters): string[] {
+  const hay = ds.ci ? source.toLowerCase() : source;
   const out: string[] = [];
   let from = 0;
   let i = 0;
   while (i < source.length) {
-    const len = matchAt(source, lowered, i, delims, ci);
+    const len = matchAt(hay, i, ds);
     if (len > 0) {
       out.push(source.slice(from, i));
       i += len;
@@ -43,12 +78,12 @@ function splitAt(source: string, delims: readonly string[], ci: boolean): string
 }
 
 /** Every delimiter hit, left to right, or right to left when `fromEnd` is set. Hits never overlap. */
-function hitsOf(source: string, delims: readonly string[], ci: boolean, fromEnd: boolean): Hit[] {
-  const lowered = ci ? source.toLowerCase() : source;
+function hitsOf(source: string, ds: Delimiters, fromEnd: boolean): Hit[] {
+  const hay = ds.ci ? source.toLowerCase() : source;
   const hits: Hit[] = [];
   if (!fromEnd) {
     for (let i = 0; i < source.length;) {
-      const len = matchAt(source, lowered, i, delims, ci);
+      const len = matchAt(hay, i, ds);
       if (len > 0) {
         hits.push({ start: i, end: i + len });
         i += len;
@@ -57,12 +92,7 @@ function hitsOf(source: string, delims: readonly string[], ci: boolean, fromEnd:
     return hits;
   }
   for (let e = source.length; e > 0;) {
-    let len = -1;
-    for (const d of delims) {
-      if (d === '' || d.length > e) continue;
-      const piece = ci ? lowered.slice(e - d.length, e) : source.slice(e - d.length, e);
-      if (piece === (ci ? d.toLowerCase() : d) && d.length > len) len = d.length;
-    }
+    const len = matchEndingAt(hay, e, ds);
     if (len > 0) {
       hits.push({ start: e - len, end: e });
       e -= len;
@@ -102,7 +132,9 @@ function edgeText(name: string, before: boolean, example: string): FnSpec2 {
         if (n !== 1) return missing();
         hit = fromEnd ? { start: source.length, end: source.length } : { start: 0, end: 0 };
       } else {
-        const hits = hitsOf(source, delims, mode === 1, fromEnd);
+        const ds = prepareDelimiters(delims, mode === 1);
+        if (ds === null) return err('VALUE');
+        const hits = hitsOf(source, ds, fromEnd);
         // With match_end, the edge of the text counts as one more delimiter.
         if (matchEnd === 1) hits.push(fromEnd ? { start: 0, end: 0 } : { start: source.length, end: source.length });
         hit = hits[n - 1];
@@ -146,12 +178,16 @@ export const splitFunctions: readonly FnSpec2[] = [
       if (typeof mode !== 'number') return mode;
       if (mode !== 0 && mode !== 1) return err('VALUE');
       const ci = mode === 1;
-      let grid = (rowDelims.length > 0 ? splitAt(source, rowDelims, ci) : [source]).map((row) =>
-        colDelims.length > 0 ? splitAt(row, colDelims, ci) : [row],
+      const rowSet = prepareDelimiters(rowDelims, ci);
+      const colSet = prepareDelimiters(colDelims, ci);
+      if (rowSet === null || colSet === null) return err('VALUE');
+      let grid = (rowDelims.length > 0 ? splitAt(source, rowSet) : [source]).map((row) =>
+        colDelims.length > 0 ? splitAt(row, colSet) : [row],
       );
       if (skip) grid = grid.map((row) => row.filter((x) => x !== '')).filter((row) => row.length > 0);
       if (grid.length === 0) return err('CALC');
-      const width = Math.max(...grid.map((row) => row.length));
+      const width = grid.reduce((most, row) => Math.max(most, row.length), 0);
+      if (grid.length * width > MAX_SPLIT_CELLS) return err('VALUE');
       const fill: Scalar = pad === undefined ? err('NA') : toScalar(pad);
       const data: Scalar[] = [];
       for (const row of grid) for (let i = 0; i < width; i++) data.push(i < row.length ? row[i] : fill);
@@ -219,7 +255,9 @@ export const splitFunctions: readonly FnSpec2[] = [
       const drop = remove === undefined ? true : toScalar(remove) !== false && toScalar(remove) !== 0;
       if (delim === '') return source;
       const delims = byEach ? Array.from(delim) : [delim];
-      let pieces = splitAt(source, delims, false);
+      const ds = prepareDelimiters(delims, false);
+      if (ds === null) return err('VALUE');
+      let pieces = splitAt(source, ds);
       if (drop) pieces = pieces.filter((x) => x !== '');
       if (pieces.length === 0) return '';
       return pieces.length === 1 ? pieces[0] : makeArray(1, pieces.length, pieces);

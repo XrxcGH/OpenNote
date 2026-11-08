@@ -341,7 +341,7 @@ export const fnText = {
     },
   },
   REGEXTEST: {
-    summary: 'Tells whether text matches a regular expression.',
+    summary: 'Tells whether text matches a regular expression. A pattern can have at most 1,000 characters.',
     args: {
       text: 'The text to test.',
       pattern: 'The regular expression, at most 1,000 characters.',
@@ -349,14 +349,14 @@ export const fnText = {
     },
   },
   REGEXMATCH: {
-    summary: 'Tells whether text matches a regular expression.',
+    summary: 'Tells whether text matches a regular expression. A pattern can have at most 1,000 characters.',
     args: {
       text: 'The text to test.',
       pattern: 'The regular expression, at most 1,000 characters.',
     },
   },
   REGEXEXTRACT: {
-    summary: 'Pulls matching text out of text. With 2 arguments and a capturing group, it returns the groups.',
+    summary: 'Pulls matching text out of text. Mode 2 returns the capturing groups.',
     args: {
       text: 'The text to search.',
       pattern: 'The regular expression, at most 1,000 characters.',
@@ -365,7 +365,8 @@ export const fnText = {
     },
   },
   REGEXREPLACE: {
-    summary: 'Replaces text that matches a regular expression. Use $1 for a group and $$ for a dollar sign.',
+    summary:
+      'Replaces text that matches a pattern of at most 1,000 characters. Use $1 for a group and $$ for a dollar sign.',
     args: {
       text: 'The text to change.',
       pattern: 'The regular expression, at most 1,000 characters.',
