@@ -195,6 +195,8 @@ function plain(h: Host, spec: FnSpec2, node: Call): Fn {
     return (ctx) => {
       const value = v(ctx);
       if (isError(value)) return value;
+      // A typed lone text stays a scalar, so a function can tell it from text inside an array.
+      if (ref === null && params[i]?.loneText === true && typeof value === 'string') return value;
       const array = asArray(value);
       return skipText ? { ...array, data: array.data.map((x) => (typeof x === 'string' ? null : x)) } : array;
     };

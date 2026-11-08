@@ -33,7 +33,7 @@ function is(name: string, test: Test, example: string): FnSpec2 {
   };
 }
 
-/** The codes ERROR.TYPE gives. Errors with no code of their own read as #N/A's 7, the documented fallback. */
+/** The codes ERROR.TYPE gives. #CYCLE! has no code of its own, so it reads as #N/A's 7, the documented fallback. */
 const ERROR_TYPES: Record<ErrorCode, number> = {
   NULL: 1,
   DIV0: 2,
@@ -45,8 +45,8 @@ const ERROR_TYPES: Record<ErrorCode, number> = {
   BUSY: 8,
   SPILL: 9,
   CALC: 14,
-  FIELD: 7,
-  CYCLE: 4,
+  FIELD: 13,
+  CYCLE: 7,
 };
 
 function parity(name: string, odd: boolean, example: string): FnSpec2 {

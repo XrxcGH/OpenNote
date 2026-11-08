@@ -205,6 +205,18 @@ describe('verification gaps (G4, G5, G6, G7)', () => {
     expect(runIn(data, '=AND(C1,A1)')).toBe(true);
   });
 
+  it('M1: newer errors carry their documented codes, and the rest fall back to the #N/A code', () => {
+    const code = (e: ErrorCode) => run(`=ERROR.TYPE(${ERROR_TOKENS[e]})`);
+    expect(code('SPILL')).toBe(9);
+    expect(code('CALC')).toBe(14);
+    expect(code('FIELD')).toBe(13);
+  });
+
+  it('L2: text inside an array constant is ignored by AND', () => {
+    expect(run('=AND({"TRUE"})')).toEqual(err('VALUE'));
+    expect(run('=AND("TRUE")')).toBe(true);
+  });
+
   it('G6: a dotted function name maps to a low-line key', () => {
     expect(fnKey('ERROR.TYPE')).toBe('ERROR_TYPE');
     expect(fnKey('SUM')).toBe('SUM');

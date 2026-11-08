@@ -16,12 +16,12 @@ function logicals(args: readonly Value[]): boolean[] | FormulaError {
   for (const arg of args) {
     if (isError(arg)) return arg;
     const items: readonly Scalar[] = isArray(arg) ? arg.data : [arg as Scalar];
-    const single = items.length === 1;
+    const lone = !isArray(arg);
     for (const v of items) {
       if (isError(v)) return v;
       if (v === null) continue;
       if (typeof v === 'string') {
-        if (!single) continue;
+        if (!lone) continue;
         const b = toBool(v);
         if (typeof b !== 'boolean') return b;
         out.push(b);
@@ -37,7 +37,7 @@ function logic(name: string, combine: (bools: boolean[]) => boolean, example: st
   return {
     name,
     family: 'logical',
-    params: [{ repeat: [{ name: 'logical', kind: 'array', skipRefText: true }], min: 1 }],
+    params: [{ repeat: [{ name: 'logical', kind: 'array', skipRefText: true, loneText: true }], min: 1 }],
     run: (args) => {
       const bools = logicals(args);
       return Array.isArray(bools) ? combine(bools) : bools;

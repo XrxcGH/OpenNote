@@ -3,7 +3,7 @@
 // that read those, in an order where every unit runs after the units it reads. Tarjan's algorithm gives that order
 // and finds cycles in one walk. Every edit forks the state, and a fork shares what it does not change.
 
-import { newCtx, type Ctx, type Scope, type SheetInfo } from '../formula/compile';
+import { colKey, newCtx, type Ctx, type Scope, type SheetInfo } from '../formula/compile';
 import type { ErrorOrigin } from '../formula/explain';
 import { releaseSpill, spillBox } from '../arrays/spill';
 import { Graph, stronglyConnected, type Box, type Read } from '.';
@@ -28,8 +28,8 @@ import {
   type EngineEnv,
   type Unit,
 } from './units';
-import { colKey } from '../formula/compile';
 import type { Table } from '../model';
+import { tableFacts } from './facts';
 import { isError, type Scalar } from '../values';
 
 const LATE_ROUNDS = 8;
@@ -71,19 +71,8 @@ export class Engine {
   }
 
   makeCtx(): Ctx {
-    const ctx = newCtx([], {
-      spillBox: (s, c, r) => spillBox(this, s, c, r),
-      cellFacts: (s, c, r) => {
-        const column = this.tables[s]?.columns[c];
-        const cell = this.tables[s]?.rows[r]?.cells[c];
-        if (column === undefined || cell === undefined) return undefined;
-        const decimals = column.decimals === undefined ? {} : { decimals: column.decimals };
-        return { formula: column.formula !== undefined || cell.formula !== undefined, type: column.type, ...decimals };
-      },
-      calcMode: (s) => this.tables[s]?.calc ?? 'auto',
-    });
-    ctx.sheets = this.sheets;
-    return ctx;
+    const ctx = newCtx([], { spillBox: (s, c, r) => spillBox(this, s, c, r), ...tableFacts(() => this.tables) });
+    return Object.assign(ctx, { sheets: this.sheets });
   }
 
   /** Builds the state of a page and calculates every formula. */
