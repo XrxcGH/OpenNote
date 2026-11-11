@@ -149,4 +149,3 @@ describe('decimal places limits and quoted text', () => {
     expect(toggleThousands('"x_"0')).toBe('"x_"#,##0');
   });
 });
-

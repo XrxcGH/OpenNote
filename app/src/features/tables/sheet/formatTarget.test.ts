@@ -286,4 +286,3 @@ describe('requests on whole cells that the cell style does not cover', () => {
     expect(r.patches).toHaveLength(0);
   });
 });
-

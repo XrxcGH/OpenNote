@@ -1,6 +1,6 @@
 {
   "startup": {
-    "jsKb": 576,
+    "jsKb": 580,
     "cssKb": 28
   },
   "after": [
@@ -80,10 +80,10 @@
     "features/accounts/penSync/commands.ts": 66,
     "features/accounts/sendto/commands.ts": 89,
     "features/accounts/share/commands.ts": 84,
-    "features/accounts/tasks/auto.ts": 206,
-    "features/accounts/tasks/commands.ts": 206,
+    "features/accounts/tasks/auto.ts": 207,
+    "features/accounts/tasks/commands.ts": 207,
     "features/ink/index.ts": 67,
-    "features/math/index.ts": 281,
+    "features/math/index.ts": 285,
     "features/math/solvers/ui/SolversTool.tsx": 61,
     "features/page/audio/exportVideo.ts": 93,
     "features/pages/host/shareRender.ts": 69,
@@ -94,9 +94,9 @@
     "features/pages/ui/imageCommands.tsx": 74,
     "features/pages/ui/presentCommands.tsx": 74,
     "features/pdf/importPdf.ts": 69,
-    "features/tables/index.ts": 129,
-    "features/tables/ui/toolbar/CellFormatBar.tsx": 101,
-    "features/tables/ui/toolbar/actions.ts": 83,
+    "features/tables/index.ts": 133,
+    "features/tables/ui/toolbar/CellFormatBar.tsx": 122,
+    "features/tables/ui/toolbar/actions.ts": 96,
     "features/tools/index.ts": 392,
     "features/engineering/control/ui/ControlKit.tsx": 326,
     "features/engineering/index.ts": 220,

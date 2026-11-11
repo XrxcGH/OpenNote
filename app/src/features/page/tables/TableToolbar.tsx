@@ -22,7 +22,9 @@ import type { IconProps } from '../../../ui';
 import styles from './tables.module.css';
 
 /** The cell format bar loads with the first table toolbar (the tables feature's own chunk). */
-const CellFormatBar = lazy(async () => ({ default: (await (await import('../../tables')).loadCellFormatBar()).CellFormatBar }));
+const CellFormatBar = lazy(async () => ({
+  default: (await (await import('../../tables')).loadCellFormatBar()).CellFormatBar,
+}));
 
 export interface TableToolbarProps {
   /** The table block's ID, which the cell format bar uses to find the block's data. */
