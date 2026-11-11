@@ -6920,27 +6920,21 @@
       "id": "table.structure.hideRows",
       "title": "Hide rows",
       "category": "table",
-      "keys": [
-        "Ctrl+9"
-      ],
+      "keys": [],
       "flag": "tables.structureUi"
     },
     {
       "id": "table.structure.unhideRows",
       "title": "Unhide rows",
       "category": "table",
-      "keys": [
-        "Ctrl+Shift+9"
-      ],
+      "keys": [],
       "flag": "tables.structureUi"
     },
     {
       "id": "table.structure.hideColumns",
       "title": "Hide columns",
       "category": "table",
-      "keys": [
-        "Ctrl+0"
-      ],
+      "keys": [],
       "flag": "tables.structureUi"
     },
     {
@@ -6984,18 +6978,14 @@
       "id": "table.structure.groupRows",
       "title": "Group rows",
       "category": "table",
-      "keys": [
-        "Alt+Shift+Right"
-      ],
+      "keys": [],
       "flag": "tables.structureUi"
     },
     {
       "id": "table.structure.ungroupRows",
       "title": "Ungroup rows",
       "category": "table",
-      "keys": [
-        "Alt+Shift+Left"
-      ],
+      "keys": [],
       "flag": "tables.structureUi"
     },
     {
@@ -7186,9 +7176,7 @@
       "id": "table.structure.deleteCellsUp",
       "title": "Delete cells, shift up",
       "category": "table",
-      "keys": [
-        "Ctrl+-"
-      ],
+      "keys": [],
       "flag": "tables.structureUi"
     },
     {

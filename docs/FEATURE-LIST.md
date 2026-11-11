@@ -416,16 +416,16 @@ Open it with the command "Open the code studio".
 | Fit column width to content | Makes the columns you picked as wide as their longest text. |  |
 | Distribute rows evenly | Gives the rows you picked the same height. |  |
 | Distribute columns evenly | Gives the columns you picked the same width. |  |
-| Hide rows | Hides the rows you picked and keeps their data. | Ctrl+9 |
-| Unhide rows | Shows the hidden rows inside the rows you picked. | Ctrl+Shift+9 |
-| Hide columns | Hides the columns you picked and keeps their data. | Ctrl+0 |
+| Hide rows | Hides the rows you picked and keeps their data. |  |
+| Unhide rows | Shows the hidden rows inside the rows you picked. |  |
+| Hide columns | Hides the columns you picked and keeps their data. |  |
 | Unhide columns | Shows the hidden columns inside the columns you picked. | Ctrl+Shift+0 |
 | Freeze top row | Keeps the top row in view while the table scrolls. |  |
 | Freeze first column | Keeps the first column in view while the table scrolls. |  |
 | Freeze panes at this cell | Keeps the rows above and the columns left of this cell in view. |  |
 | Unfreeze panes | Lets every row and column scroll again. |  |
-| Group rows | Groups the rows you picked so they can collapse. | Alt+Shift+Right |
-| Ungroup rows | Takes the rows you picked out of one level of grouping. | Alt+Shift+Left |
+| Group rows | Groups the rows you picked so they can collapse. |  |
+| Ungroup rows | Takes the rows you picked out of one level of grouping. |  |
 | Group columns | Groups the columns you picked so they can collapse. |  |
 | Ungroup columns | Takes the columns you picked out of one level of grouping. |  |
 | Collapse row group | Collapses the row group that has the cursor, so its rows are hidden. |  |
@@ -452,7 +452,7 @@ Open it with the command "Open the code studio".
 | Clear column groups | Removes every column group and shows the hidden columns. |  |
 | Insert cells, shift down | Inserts blank cells and moves the cells below them down. | Ctrl+Shift+= |
 | Insert cells, shift right | Inserts blank cells and moves the cells beside them right. |  |
-| Delete cells, shift up | Deletes the cells you picked and moves the cells below them up. | Ctrl+- |
+| Delete cells, shift up | Deletes the cells you picked and moves the cells below them up. |  |
 | Delete cells, shift left | Deletes the cells you picked and moves the cells beside them left. |  |
 | Row height… | Sets how tall the rows you picked are, exactly, or at least. |  |
 
