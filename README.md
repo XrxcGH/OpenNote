@@ -59,6 +59,7 @@ The Word-level text, Excel-level table, and code studio foundations are on the b
 - [Moving between blocks](docs/help/moving-between-blocks.md): keys that move between text, pictures, tables, and code without the mouse.
 - [Document structure](docs/help/document-structure.md): equation numbers and references, formula sheets, practice mode, problem-set templates, and figures.
 - [Code cells](docs/help/code-cells.md): short Python or JavaScript programs that run on the page; a cell from a newer version opens read-only instead of being changed.
+- Code projects (Beta and Nightly builds): several files and tests in one page block, shown as a small card with Run and Open in Code studio, with .zip export and import; search finds their code.
 - [Ink and palm rejection](docs/help/ink-and-palm-rejection.md): pens, a highlighter, erasers, the lasso, shapes, and gestures, with your palm resting on the screen.
 - [My handwriting](docs/help/my-handwriting.md): typed text and math written in your own hand, learned from a calibration page.
 - [Paper and page views](docs/help/paper-and-page-views.md): flow, paginated, and canvas pages, with lined, grid, and dot paper; slides, print, and PDF.
