@@ -19,7 +19,7 @@ function lines(source: string, code: string, typescript = false): number[] {
 
 const join = (...rows: string[]) => rows.join('\n') + '\n';
 
-describe('JavaScript checker: ESLint documentation examples', () => {
+describe('JavaScript checker: ESLint examples for names', () => {
   it('no-undef', () => {
     const source = join('/*eslint no-undef: "error"*/', '', 'const foo = someFunction();', 'const bar = a + 1;');
     expect(lines(source, 'no-undef')).toEqual([3, 4]);
@@ -101,7 +101,9 @@ describe('JavaScript checker: ESLint documentation examples', () => {
     );
     expect(lines(correct, 'no-unused-vars')).toEqual([]);
   });
+});
 
+describe('JavaScript checker: ESLint examples for constants and reachability', () => {
   it('no-const-assign', () => {
     expect(lines(join('/*eslint no-const-assign: "error"*/', '', 'const a = 0;', 'a = 1;'), 'no-const-assign')).toEqual(
       [4],
@@ -187,7 +189,9 @@ describe('JavaScript checker: ESLint documentation examples', () => {
       ),
     ).toEqual([]);
   });
+});
 
+describe('JavaScript checker: ESLint examples for comparisons and conditions', () => {
   it('eqeqeq', () => {
     const source = join(
       '/*eslint eqeqeq: "error"*/',
@@ -233,7 +237,9 @@ describe('JavaScript checker: ESLint documentation examples', () => {
     );
     expect(lines(correct, 'no-cond-assign')).toEqual([]);
   });
+});
 
+describe('JavaScript checker: ESLint examples for switch cases', () => {
   it('no-fallthrough', () => {
     const source = join(
       '/*eslint no-fallthrough: "error"*/',

@@ -11,7 +11,7 @@ function doc(version: number, text = 'x'): DiagnosticRequest {
   return { file: 'main.py', version, language: 'python', text };
 }
 
-describe('diagnostics scheduler', () => {
+describe('diagnostics scheduler versions', () => {
   beforeEach(() => vi.useFakeTimers());
   afterEach(() => vi.useRealTimers());
 
@@ -48,6 +48,11 @@ describe('diagnostics scheduler', () => {
     await vi.advanceTimersByTimeAsync(0);
     expect(publish).not.toHaveBeenCalled();
   });
+});
+
+describe('diagnostics scheduler layers', () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
 
   it('waits each layer its own pause and restarts it on every change', async () => {
     const runs: string[] = [];
@@ -94,6 +99,11 @@ describe('diagnostics scheduler', () => {
     await vi.advanceTimersByTimeAsync(0);
     expect(scheduler.current('main.py').map((d) => d.source)).toEqual(['lezer', 'opennote']);
   });
+});
+
+describe('diagnostics scheduler upkeep', () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
 
   it('keeps shown problems on their text through a mapped change until the layers answer', () => {
     const scheduler = createDiagnosticsScheduler({ publish: () => {} });

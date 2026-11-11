@@ -10,7 +10,7 @@ export type MapPos = (pos: number, assoc: -1 | 1) => number;
 
 export interface SchedulerOptions {
   providers?: readonly DiagnosticProvider[];
-  /** Gets a file's problems, all layers merged and sorted, each time they change. */
+  /** Gets a file's problems each time they change: every layer's marks in one sorted list. */
   publish(file: string, items: Diagnostic[]): void;
   /** Overrides the pause of some layers, in milliseconds. */
   debounce?: Partial<Record<Layer, number>>;

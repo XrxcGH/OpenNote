@@ -1,8 +1,10 @@
-// OpenNote's JavaScript and TypeScript name checker over the Lezer tree (layer L-b, DESIGN 6.1), with ESLint's rule
-// names and default options as ESLint documents them: no-undef (typeof is allowed), no-unused-vars (vars "all",
-// args "after-used", caughtErrors "all"; a write or a read for the variable's own update is not a use; a function
-// that only calls itself is unused), and no-const-assign. `/*global a, b*/` comments declare names, as in ESLint.
-// The shape rules live in jsFlow.ts.
+// OpenNote's JavaScript and TypeScript name checker over the Lezer tree (layer L-b, DESIGN 6.1). It uses ESLint's
+// rule names and default options as ESLint documents them:
+// - no-undef, where `typeof` is allowed;
+// - no-unused-vars with vars "all", args "after-used", and caughtErrors "all". A write is not a use, and neither is a
+//   read that only feeds the variable's own update. A function that only calls itself is unused;
+// - no-const-assign.
+// `/*global a, b*/` comments declare names, as in ESLint. The shape rules live in jsFlow.ts.
 
 import type { SyntaxNode, Tree } from '@lezer/common';
 import { checkFlow } from './jsFlow';
