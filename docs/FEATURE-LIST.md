@@ -2,7 +2,7 @@
 
 Every tool, action, and feature in OpenNote, grouped by category, with one sentence each. `npm run docs:features` makes this page. The commands, tool windows, title bar items, settings sections, and setup steps come from what the app registers, so a new one shows up here or fails the tests. The feature sentences come from [FEATURES.md](FEATURES.md), which also says what has been tested by hand and which flag turns each one on. The [help pages](help/README.md) explain how to use them. [docs/screens](screens/README.md) has every picture in light and dark.
 
-The app registers 974 commands and 48 tool windows. 24 of the windows are subject and engineering kits. The count includes the ink commands, which register when a page first shows its ink, and the commands that register once start-up is done or with the first page: on-device intelligence, the second pass of page commands, and the code block and table commands. The command palette (Ctrl+K) runs every command not marked as left out of it. Some commands need a feature flag, which FEATURES.md names. The keys shown are the defaults of the standard shortcut set.
+The app registers 975 commands and 48 tool windows. 24 of the windows are subject and engineering kits. The count includes the ink commands, which register when a page first shows its ink, and the commands that register once start-up is done or with the first page: on-device intelligence, the second pass of page commands, and the code block and table commands. The command palette (Ctrl+K) runs every command not marked as left out of it. Some commands need a feature flag, which FEATURES.md names. The keys shown are the defaults of the standard shortcut set.
 
 ## Contents
 
@@ -114,6 +114,7 @@ Open it with the command "Open the code studio".
 | Insert mind map | Inserts a mind map to brainstorm ideas as branches. |  |
 | Insert diagram from text | Inserts a diagram drawn from text, such as a Mermaid flowchart or timeline. |  |
 | Insert code cell | Inserts a code cell that runs Python or JavaScript in a sandbox. | Ctrl+Alt+Shift+K |
+| Insert code project | Inserts a code project: a folder of files that you can run, export, and import as a .zip. |  |
 | Number this equation | Gives the equation at the caret a number. |  |
 | Number all equations | Numbers every display equation on the page. |  |
 | Remove equation number | Removes the number from the equation at the caret. |  |
