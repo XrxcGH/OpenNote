@@ -232,6 +232,7 @@ export const COMMAND_TEXT: Readonly<Record<string, string>> = {
   'insert.mindmap': 'Inserts a mind map to brainstorm ideas as branches.',
   'insert.diagram': 'Inserts a diagram drawn from text, such as a Mermaid flowchart or timeline.',
   'insert.codeCell': 'Inserts a code cell that runs Python or JavaScript in a sandbox.',
+  'insert.codeProject': 'Inserts a code project: a folder of files that you can run, export, and import as a .zip.',
   'insert.collection': 'Inserts a live list, table, board, or gallery of pages that match your rules.',
   'doc.equation.number': 'Gives the equation at the caret a number.',
   'doc.equation.numberAll': 'Numbers every display equation on the page.',

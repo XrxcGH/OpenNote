@@ -17,3 +17,5 @@ export const openCodeDownloads = () => import('./packs/store').then((module) => 
 
 /** Loads the code editor's chunk (features/codestudio/editor, code:L01): createCodeEditor and the diff view. */
 export const loadCodeEditor = () => import('./editor');
+/** Loads code projects' chunk (features/codestudio/project, code:L02): the page card, the store, and the exchange. */
+export const loadCodeProjects = () => import('./project');
