@@ -6,11 +6,12 @@ import type { Cell, Value } from '../../engine';
 import { gridOf, validationAt } from '../model';
 import type { Box, JsonObject, TableLike } from '../model';
 import { evalMany } from './batch';
-import { evalFormula, listItems, operand, readText, scalarText } from './operands';
+import type { Job } from './batch';
+import { evalFormula, listItems, operand, readText, scalarText, shiftedOf, recall } from './operands';
 import type { Kind } from './operands';
 import type { Alert, At, Context, Reason, Verdict } from './types';
 
-/** The rule that covers a cell, its ID, and the top-left cell of the range the cell is in. */
+/** The rule that covers a cell, its ID, and the top-left cell of the rule's first range. */
 export interface Found {
   id: string;
   rule: JsonObject;
@@ -24,9 +25,6 @@ const KINDS = ['any', 'whole', 'decimal', 'list', 'date', 'time', 'textLength', 
 /** The ID of the column-wide list a choice column stands for when no rule covers its cells. */
 export const CHOICE_RULE = '(choices)';
 
-const inBox = (box: Box, at: At) =>
-  at.row >= box.top && at.row <= box.bottom && at.col >= box.left && at.col <= box.right;
-
 const like = (ctx: Context) => ctx.table as unknown as TableLike;
 
 /**
@@ -36,8 +34,9 @@ const like = (ctx: Context) => ctx.table as unknown as TableLike;
 export function ruleAt(ctx: Context, at: At): Found | undefined {
   const hit = validationAt(ctx.sheet, like(ctx), at.row, at.col);
   if (hit) {
-    const box = hit.boxes.find((b) => inBox(b, at)) ?? hit.boxes[0];
-    return { id: hit.id, rule: hit.rule, anchor: { row: box.top, col: box.left } };
+    // Relative references count from the first range's top-left cell, as in Excel and the format spec.
+    const first = hit.boxes[0];
+    return { id: hit.id, rule: hit.rule, anchor: { row: first.top, col: first.left } };
   }
   const column = ctx.table.columns[at.col];
   if (column?.type === 'choice' && column.options && column.options.length > 0) {
@@ -137,10 +136,10 @@ function judge(
   const x = readText(k, text, ctx);
   if (x === null) return k === 'textLength' ? 'length' : 'type';
   if (kind === 'whole' && !Number.isInteger(x)) return 'type';
-  const a = operand(ctx, k, rule.a, at, anchor, candidate);
+  const a = operand(ctx, k, rule.a, at, anchor);
   if (a === null) return null;
   const op = opOf(rule);
-  const b = op === 'between' || op === 'notBetween' ? operand(ctx, k, rule.b, at, anchor, candidate) : null;
+  const b = op === 'between' || op === 'notBetween' ? operand(ctx, k, rule.b, at, anchor) : null;
   if (compare(op, x, a, b)) return null;
   return k === 'textLength' ? 'length' : 'range';
 }
@@ -158,6 +157,33 @@ export function check(ctx: Context, at: At, candidate?: string): Verdict {
   return verdict(found, judge(ctx, found, at, text, candidate));
 }
 
+const COMPARING = ['whole', 'decimal', 'date', 'time', 'textLength'];
+
+/**
+ * Runs the formula operands (a, b) of many cells in one recalculation per operand, so the pass over a long column
+ * does not rebuild the engine for every cell. Cells that share a formula (no relative references) share one run.
+ */
+function prime(ctx: Context, cells: readonly { at: At; found: Found }[]): void {
+  for (const field of ['a', 'b']) {
+    const jobs: Job[] = [];
+    const seen = new Set<string>();
+    for (const { at, found } of cells) {
+      const { rule, anchor } = found;
+      const text = rule[field];
+      if (!COMPARING.includes(kindOf(rule)) || typeof text !== 'string' || !text.trim().startsWith('=')) continue;
+      if (field === 'b' && !['between', 'notBetween'].includes(opOf(rule))) continue;
+      const shifted = shiftedOf(ctx, text, at, anchor);
+      if (typeof shifted !== 'string') continue;
+      const key = `${at.row}:${at.col}`;
+      if (recall(ctx, 'n', shifted, at) !== undefined || seen.has(shifted)) continue;
+      seen.add(shifted);
+      jobs.push({ at, anchor, formula: text });
+      void key;
+    }
+    if (jobs.length > 0) evalMany(ctx, jobs);
+  }
+}
+
 /** One invalid cell and why. */
 export interface Invalid extends At {
   verdict: Extract<Verdict, { ok: false }>;
@@ -172,6 +198,7 @@ export function invalidCells(ctx: Context, within?: Box): Invalid[] {
   const grid = gridOf(like(ctx));
   const out: Invalid[] = [];
   const customs: { at: At; found: Found; text: string }[] = [];
+  const cells: { at: At; found: Found; text: string }[] = [];
   const lastRow = within?.bottom ?? grid.rows.length - 1;
   const lastCol = within?.right ?? grid.cols.length - 1;
   for (let row = within?.top ?? 0; row <= lastRow; row++)
@@ -181,11 +208,17 @@ export function invalidCells(ctx: Context, within?: Box): Invalid[] {
       if (!found || kindOf(found.rule) === 'any') continue;
       const text = cellText(table.rows[row]?.cells[col], ctx);
       if (kindOf(found.rule) === 'custom' && text.trim() !== '') customs.push({ at, found, text });
+      else if (text.trim() !== '') cells.push({ at, found, text });
       else {
         const v = verdict(found, judge(ctx, found, at, text, undefined));
         if (!v.ok) out.push({ ...at, verdict: v });
       }
     }
+  prime(ctx, cells);
+  for (const c of cells) {
+    const v = verdict(c.found, judge(ctx, c.found, c.at, c.text, undefined));
+    if (!v.ok) out.push({ ...c.at, verdict: v });
+  }
   if (customs.length > 0) {
     const values = evalMany(
       ctx,

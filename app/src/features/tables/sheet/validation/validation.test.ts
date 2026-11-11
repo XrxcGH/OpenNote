@@ -307,3 +307,58 @@ describe('circle invalid data', () => {
     ]);
   });
 });
+
+describe('hostile and large inputs', () => {
+  it('a list source far outside the table is read in bounded time and offers only what exists', () => {
+    const data = grid(4);
+    data[1][4] = 'Red';
+    const ctx = make(data, { v1: { ranges: [col(0)], kind: 'list', source: 'A1:ZZZ9999999' } });
+    const start = Date.now();
+    const offer = openList(ctx, { row: 0, col: 0 });
+    expect(offer?.items).toContain('Red');
+    expect(check(ctx, { row: 0, col: 0 }, 'Red').ok).toBe(true);
+    expect(invalidCells(ctx)).toBeDefined();
+    expect(Date.now() - start).toBeLessThan(2000);
+  });
+
+  it('repeated values in a range source are offered once', () => {
+    const data = grid(4);
+    data[0][4] = 'Red';
+    data[1][4] = 'Red';
+    data[2][4] = 'Blue';
+    const ctx = make(data, { v1: { ranges: [col(0)], kind: 'list', source: 'E1:E3' } });
+    expect(openList(ctx, { row: 0, col: 0 })?.items).toEqual(['Red', 'Blue']);
+  });
+
+  it('circling 3,000 rows with formula operands stays fast and right', () => {
+    const data = grid(3000);
+    for (let r = 0; r < 3000; r++) {
+      data[r][0] = String(r);
+      data[r][1] = String(r % 10 === 0 ? r + 50 : r + 5);
+    }
+    const ctx = make(data, {
+      v1: { ranges: [col(1)], kind: 'decimal', op: 'between', a: '=A1', b: '=A1+10' },
+    });
+    const start = Date.now();
+    const bad = invalidCells(ctx);
+    expect(bad).toHaveLength(300);
+    expect(Date.now() - start).toBeLessThan(5000);
+  });
+});
+
+describe('rule with several ranges', () => {
+  it('relative references count from the first range, as in Excel', () => {
+    const data = grid(4);
+    data[1][0] = '5';
+    data[2][0] = '-1';
+    data[1][2] = '5';
+    data[2][2] = '5';
+    const ctx = make(data, {
+      v1: { ranges: [box(1, 1, 2, 1), box(1, 3, 2, 3)], kind: 'custom', a: '=A2>0' },
+    });
+    // D3 reads C3 (5, valid), not A3 (-1).
+    expect(applyEdit(ctx, { row: 2, col: 3 }, '1').kept).toBe(true);
+    // B3 reads A3 (-1).
+    expect(applyEdit(ctx, { row: 2, col: 1 }, '1').kept).toBe(false);
+  });
+});
