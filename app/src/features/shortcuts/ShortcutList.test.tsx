@@ -45,8 +45,9 @@ describe('the shortcut list', () => {
     await renderApp();
     const dialog = await openList();
     const filter = within(dialog).getByRole('textbox', { name: 'Filter shortcuts' });
+    const all = within(dialog).getAllByRole('row').length;
     await typeInto(filter, 'ctrl+k');
-    await waitFor(() => expect(within(dialog).getAllByRole('row').length).toBeLessThan(10));
+    await waitFor(() => expect(within(dialog).getAllByRole('row').length).toBeLessThan(all / 2));
     expect(rowOf(dialog, 'Open command palette')).toBeTruthy();
     await userEvent.clear(filter);
     await typeInto(filter, 'zzqx');
