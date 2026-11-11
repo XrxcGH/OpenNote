@@ -5,7 +5,7 @@
 
 import { htmlOptions, renderBlock, type BlockContext } from '../export/blocks';
 import { isFloating, type ExportBlock, type ExportPage, type TableBlock } from '../export/source';
-import { parseMarkdown, renderHtml } from '../export/markdown';
+import { parseMarkdown, renderHtml, renderHtmlEach } from '../export/markdown';
 import type { FlowBlock } from '../pagination/types';
 import { escapeAttr, escapeHtml } from '../export/markdown';
 import { layoutStyle, type TextLayout } from './textLayout';
@@ -37,8 +37,10 @@ export interface PageUnits {
 }
 
 function textUnits(block: ExportBlock & { type: 'text' }, cx: BlockContext): FlowUnit[] {
-  const options = htmlOptions(cx);
+  // Each unit takes the formatting and named style of its element IDs, the same as the page does elsewhere.
+  const options = { ...htmlOptions(cx), ...(block.elements ? { elements: block.elements } : {}) };
   const elements = parseMarkdown(block.markdown);
+  const markup = renderHtmlEach(elements, options);
   return elements.map((element, i) => ({
     id: elements.length === 1 ? block.id : `${block.id}#${i}`,
     block: block.id,
@@ -47,7 +49,7 @@ function textUnits(block: ExportBlock & { type: 'text' }, cx: BlockContext): Flo
       kind: element.type === 'break' ? 'atom' : 'text',
       heading: element.type === 'heading',
     },
-    html: renderHtml([element], options),
+    html: markup[i] ?? '',
   }));
 }
 
