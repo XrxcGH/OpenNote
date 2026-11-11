@@ -1,0 +1,404 @@
+/*
+ * The code studio window (features/codestudio/window), on tokens: the toolbar, the files, the editor, the bottom
+ * panel, and the status bar, top to bottom. The window body fills the tool window; the editor takes the room left.
+ */
+@layer components {
+  .studio {
+    display: flex;
+    flex-direction: column;
+    block-size: 100%;
+    min-block-size: 24rem;
+    color: var(--color-text-primary);
+    font-family: var(--font-ui);
+    font-size: var(--type-small-size);
+    background: var(--color-surface-page);
+  }
+
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+    padding: var(--space-2) var(--space-3);
+    border-block-end: 1px solid var(--color-border-subtle);
+  }
+
+  .projectName {
+    max-inline-size: 14rem;
+    overflow: hidden;
+    font-weight: var(--font-weight-semibold);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .picker {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .pickerLabel {
+    color: var(--color-text-secondary);
+  }
+
+  .picker select,
+  .nameForm input {
+    min-block-size: 2rem;
+    padding-inline: var(--space-2);
+    color: var(--color-text-primary);
+    font: inherit;
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+  }
+
+  .toolGroup {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+  }
+
+  .body {
+    display: flex;
+    flex: 1 1 auto;
+    min-block-size: 8rem;
+  }
+
+  .tree {
+    display: flex;
+    flex: 0 0 13rem;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-2);
+    overflow: auto;
+    border-inline-end: 1px solid var(--color-border-subtle);
+  }
+
+  .treeHead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: var(--color-text-secondary);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .treeList {
+    display: grid;
+    gap: var(--space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .treeRow {
+    display: flex;
+    align-items: center;
+    border-radius: var(--radius-sm);
+  }
+
+  .treeRow[data-active] {
+    background: var(--color-surface-selected);
+  }
+
+  .treeFile,
+  .tabButton {
+    display: inline-flex;
+    flex: 1 1 auto;
+    align-items: center;
+    gap: var(--space-2);
+    min-inline-size: 0;
+    min-block-size: 2rem;
+    padding-inline: var(--space-2);
+    color: inherit;
+    font: inherit;
+    text-align: start;
+    background: none;
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+  }
+
+  .treeFile:hover,
+  .tabButton:hover {
+    background: var(--color-surface-hover);
+  }
+
+  .fileName {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .badge {
+    flex: none;
+    min-inline-size: 2.2em;
+    padding-inline: var(--space-1);
+    color: var(--color-code-keyword);
+    font-family: var(--font-mono);
+    font-size: 0.75em;
+    font-weight: var(--font-weight-bold);
+    text-align: center;
+    border: 1px solid currentcolor;
+    border-radius: var(--radius-sm);
+  }
+
+  .badge[data-language='python'],
+  .badge[data-language='lua'] {
+    color: var(--color-code-function);
+  }
+
+  .badge[data-language='javascript'],
+  .badge[data-language='typescript'] {
+    color: var(--color-code-number);
+  }
+
+  .badge[data-language='c'],
+  .badge[data-language='cpp'],
+  .badge[data-language='sql'] {
+    color: var(--color-code-type);
+  }
+
+  .mainMark {
+    color: var(--color-text-secondary);
+    font-size: 0.85em;
+  }
+
+  .dirty {
+    flex: none;
+    inline-size: 0.5rem;
+    block-size: 0.5rem;
+    background: var(--color-accent-primary);
+    border-radius: var(--radius-pill);
+  }
+
+  .notice {
+    margin: 0;
+    color: var(--color-text-secondary);
+  }
+
+  .notice:empty {
+    display: none;
+  }
+
+  .nameForm {
+    display: flex;
+  }
+
+  .nameForm input {
+    flex: 1 1 auto;
+    min-inline-size: 8rem;
+  }
+
+  .main {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-inline-size: 0;
+  }
+
+  .tabsRow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    padding-inline: var(--space-2);
+    border-block-end: 1px solid var(--color-border-subtle);
+  }
+
+  .tabs {
+    display: flex;
+    flex: 1 1 auto;
+    gap: var(--space-1);
+    min-inline-size: 0;
+    overflow-x: auto;
+  }
+
+  .tab {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    max-inline-size: 14rem;
+    border-block-end: 2px solid transparent;
+  }
+
+  .tab[data-active] {
+    border-block-end-color: var(--color-accent-primary);
+  }
+
+  .editor {
+    position: relative;
+    flex: 1 1 auto;
+    min-block-size: 6rem;
+    overflow: hidden;
+  }
+
+  .editorSlot {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+  }
+
+  .editorSlot > :global(.cm-editor) {
+    block-size: 100%;
+  }
+
+  .editorSlot[hidden] {
+    display: none;
+  }
+
+  .empty {
+    margin: 0;
+    padding: var(--space-3);
+    color: var(--color-text-secondary);
+  }
+
+  .panel {
+    display: flex;
+    flex-direction: column;
+    border-block-start: 1px solid var(--color-border-subtle);
+  }
+
+  .grip {
+    block-size: 6px;
+    margin-block-start: -3px;
+    cursor: ns-resize;
+    touch-action: none;
+  }
+
+  .grip:hover,
+  .grip:focus-visible {
+    background: var(--color-focus-ring);
+  }
+
+  .panelTabs {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding-inline: var(--space-2);
+  }
+
+  .panelTabs > [role='tablist'] {
+    display: flex;
+    flex: 1 1 auto;
+    gap: var(--space-1);
+    overflow-x: auto;
+  }
+
+  .panelTab {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    min-block-size: 2rem;
+    padding-inline: var(--space-2);
+    color: var(--color-text-secondary);
+    font: inherit;
+    background: none;
+    border: none;
+    border-block-end: 2px solid transparent;
+    cursor: pointer;
+  }
+
+  .panelTab[aria-selected='true'] {
+    color: var(--color-text-primary);
+    border-block-end-color: var(--color-accent-primary);
+  }
+
+  .count {
+    min-inline-size: 1.4em;
+    padding-inline: var(--space-1);
+    color: var(--color-text-on-accent);
+    font-size: 0.8em;
+    text-align: center;
+    background: var(--color-status-danger);
+    border-radius: var(--radius-pill);
+  }
+
+  .panelBody {
+    overflow: auto;
+  }
+
+  .testsPanel,
+  .written {
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .testList {
+    display: grid;
+    gap: var(--space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .testList li {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .testStatus {
+    min-inline-size: 6rem;
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .testList li[data-status='pass'] .testStatus {
+    color: var(--color-status-success);
+  }
+
+  .testList li[data-status='fail'] .testStatus,
+  .testList li[data-status='error'] .testStatus,
+  .testList li[data-status='time'] .testStatus {
+    color: var(--color-status-danger);
+  }
+
+  .testMessage,
+  .help {
+    color: var(--color-text-secondary);
+  }
+
+  .writtenText {
+    max-block-size: 12rem;
+    margin: var(--space-1) 0 0;
+    overflow: auto;
+    font-family: var(--font-mono);
+    white-space: pre-wrap;
+  }
+
+  .status {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1) var(--space-4);
+    padding: var(--space-1) var(--space-3);
+    color: var(--color-text-secondary);
+    background: var(--color-surface-sunken);
+    border-block-start: 1px solid var(--color-border-subtle);
+  }
+
+  .statusButton {
+    padding: 0;
+    color: inherit;
+    font: inherit;
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+
+  .statusButton:hover {
+    color: var(--color-text-primary);
+    text-decoration: underline;
+  }
+
+  .runState {
+    margin-inline-start: auto;
+  }
+
+  .visuallyHidden {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}

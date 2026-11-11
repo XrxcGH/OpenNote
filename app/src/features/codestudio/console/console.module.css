@@ -1,0 +1,152 @@
+/*
+ * The studio's console (features/codestudio/console), on tokens. The 16 ANSI colors map to the code and status
+ * tokens, so they follow the theme and stay readable in dark mode; bright colors are the same hue in bold.
+ */
+@layer components {
+  .console {
+    display: flex;
+    flex-direction: column;
+    block-size: 100%;
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-2);
+  }
+
+  .stdin {
+    display: grid;
+    gap: var(--space-1);
+    padding: 0 var(--space-3) var(--space-2);
+  }
+
+  .stdin textarea,
+  .inputLine input {
+    color: var(--color-text-primary);
+    font-family: var(--font-mono);
+    font-size: var(--type-small-size);
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+  }
+
+  .help {
+    margin: 0;
+    color: var(--color-text-secondary);
+  }
+
+  .output {
+    flex: 1 1 auto;
+    min-block-size: 3rem;
+    padding: var(--space-1) var(--space-3);
+    overflow: auto;
+    font-family: var(--font-mono);
+    font-size: var(--type-small-size);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  .line {
+    min-block-size: 1.2em;
+  }
+
+  .line[data-kind='note'] {
+    color: var(--color-text-secondary);
+    font-style: italic;
+  }
+
+  .line[data-kind='input'] {
+    color: var(--color-text-link);
+  }
+
+  .err {
+    color: var(--color-status-danger);
+  }
+
+  .bold {
+    font-weight: var(--font-weight-bold);
+  }
+
+  .fg0,
+  .fg8 {
+    color: var(--color-text-muted);
+  }
+
+  .fg1,
+  .fg9 {
+    color: var(--color-status-danger);
+  }
+
+  .fg2,
+  .fg10 {
+    color: var(--color-status-success);
+  }
+
+  .fg3,
+  .fg11 {
+    color: var(--color-status-warning);
+  }
+
+  .fg4,
+  .fg12 {
+    color: var(--color-code-keyword);
+  }
+
+  .fg5,
+  .fg13 {
+    color: var(--color-code-type);
+  }
+
+  .fg6,
+  .fg14 {
+    color: var(--color-code-function);
+  }
+
+  .fg7,
+  .fg15 {
+    color: var(--color-text-secondary);
+  }
+
+  .fg8,
+  .fg9,
+  .fg10,
+  .fg11,
+  .fg12,
+  .fg13,
+  .fg14,
+  .fg15 {
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .link {
+    display: inline;
+    padding: 0;
+    color: var(--color-text-link);
+    font: inherit;
+    text-align: start;
+    text-decoration: underline;
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+
+  .inputLine {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-1) var(--space-3) var(--space-2);
+  }
+
+  .inputLine input {
+    flex: 1 1 auto;
+    min-block-size: 2rem;
+    padding-inline: var(--space-2);
+  }
+
+  .prompt {
+    color: var(--color-text-secondary);
+    font-family: var(--font-mono);
+  }
+}
