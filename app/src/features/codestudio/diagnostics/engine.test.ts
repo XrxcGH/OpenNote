@@ -51,7 +51,7 @@ describe('engine checks', () => {
     const lua: RuntimeAdapter = {
       id: 'lua',
       load: async () => {},
-      run: async () => {},
+      run: () => Promise.reject(new Error('not run here')),
       check: async (file) => [{ file: file.path, line: 1, message: "'=' expected near 'x'", kind: 'error' }],
     };
     const offLua = registerEngineCheck(fromRuntimeAdapter(lua, ['lua'], 'wasmoon')!);
@@ -67,7 +67,11 @@ describe('engine checks', () => {
   });
 
   it('has no check for an adapter without one', () => {
-    expect(fromRuntimeAdapter({ id: 'r', load: async () => {}, run: async () => {} }, ['r'])).toBeNull();
+    expect(
+      fromRuntimeAdapter({ id: 'r', load: async () => {}, run: () => Promise.reject(new Error('not run here')) }, [
+        'r',
+      ]),
+    ).toBeNull();
   });
 });
 
