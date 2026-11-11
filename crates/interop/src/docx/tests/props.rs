@@ -264,6 +264,123 @@ proptest! {
         let para = data.ids.first().and_then(|id| data.paras.get(id)).cloned().unwrap_or_default();
         prop_assert_eq!(para, expected_para);
     }
+
+    /// The Word import reads back the version 2 formats it learned to read from the export: plain theme colors,
+    /// left-to-right runs, ligatures that are off, outline levels, paragraph shading, "do not check spelling"
+    /// (`zxx`), drop caps, and page numbers. Each generated value is one the export writes and Word holds.
+    #[test]
+    fn export_then_import_keeps_the_version_2_formats_it_reads(
+        color in prop::option::of(prop::sample::select(vec!["theme:accent1", "theme:accent2", "theme:text"])),
+        ltr in any::<bool>(),
+        otf in prop::option::of(prop::sample::select(vec!["liga-none", "clig-none", "clig-none liga-none"])),
+        outline in prop::option::of(1u8..=9),
+        shade in any::<bool>(),
+        zxx in any::<bool>(),
+        cap in prop::option::of((prop::sample::select(vec!["drop", "margin"]), 1u8..=10, 0..40i32)),
+        numbers in prop::option::of((
+            prop::sample::select(vec!["decimal", "lowerRoman", "upperRoman", "lowerLetter", "upperLetter"]),
+            prop::option::of(0u32..=32_767),
+        )),
+    ) {
+        let marks = Marks {
+            color: color.map(str::to_owned),
+            dir: ltr.then(|| "ltr".to_owned()),
+            otf: otf.map(str::to_owned),
+            ..Marks::none()
+        };
+        let blocks = vec![Block::Paragraph(vec![
+            crate::doc::Inline::marked("word0".to_owned(), marks),
+            crate::doc::Inline::text(" word1"),
+        ])];
+        let mut para = Map::new();
+        if let Some(level) = outline {
+            para.insert("outline".into(), json!(level));
+        }
+        if shade {
+            para.insert("shade".into(), json!({"fill": "#fff2cc", "pattern": "clear"}));
+        }
+        if zxx {
+            para.insert("lang".into(), json!("zxx"));
+        }
+        if let Some((mode, lines, distance)) = cap {
+            // Whole points read back as JSON integers.
+            let distance = if distance % 2 == 0 { json!(distance / 2) } else { json!(f64::from(distance) / 2.0) };
+            para.insert("dropCap".into(), json!({"mode": mode, "lines": lines, "distance": distance}));
+        }
+        let mut extra = Map::new();
+        extra.insert("paras".into(), json!({ ID1: para.clone() }));
+        let data = TextData::read(&[ID1.to_owned()], &BTreeMap::new(), &extra);
+        let parts = vec![
+            Part::Title { text: "Generated".to_owned(), bookmark: None },
+            Part::Text { blocks: blocks.clone(), data: Box::new(data) },
+            Part::Section {
+                setup: Box::new(PageSetup {
+                    page_numbers: numbers.map(|(format, start)| (format.to_owned(), start)),
+                    ..PageSetup::default()
+                }),
+                fields: BandFields::default(),
+            },
+        ];
+        let sink = readback::import_sink(&build(&input(parts, Setup::default())).expect("builds"));
+        let page = &sink.pages.first().expect("a page").1.page;
+        let texts: Vec<_> = page
+            .blocks
+            .iter()
+            .filter_map(|b| match &b.data {
+                opennote_core::model::BlockData::Text(t) => Some(t),
+                _ => None,
+            })
+            .collect();
+        prop_assert_eq!(texts.len(), 1);
+        let text = texts[0];
+        let read = crate::doc::parse::parse_page(&text.markdown).blocks;
+        prop_assert_eq!(otf_sorted(&joined(&read)), otf_sorted(&joined(&blocks)), "{}", text.markdown);
+        let read_para = text
+            .ids
+            .first()
+            .and_then(|id| text.extra.get("paras")?.get(id.to_string()))
+            .cloned()
+            .unwrap_or_else(|| json!({}));
+        prop_assert_eq!(read_para, Value::Object(para));
+        let mut expected_numbers = Map::new();
+        if let Some((format, start)) = numbers {
+            if format != "decimal" {
+                expected_numbers.insert("format".into(), json!(format));
+            }
+            if let Some(start) = start {
+                expected_numbers.insert("start".into(), json!(start));
+            }
+        }
+        let read_numbers = page.view.extra.get("text").and_then(|t| t.get("pageNumbers")).cloned();
+        prop_assert_eq!(read_numbers, (!expected_numbers.is_empty()).then_some(Value::Object(expected_numbers)));
+    }
+}
+
+/// Blocks with the words of every `otf` mark in one order, since the import writes them in its own order.
+fn otf_sorted(blocks: &[Block]) -> Vec<Block> {
+    blocks
+        .iter()
+        .map(|block| match block {
+            Block::Paragraph(inlines) => Block::Paragraph(
+                inlines
+                    .iter()
+                    .map(|inline| match inline {
+                        crate::doc::Inline::Text { text, marks } => {
+                            let mut marks = marks.clone();
+                            marks.otf = marks.otf.map(|otf| {
+                                let mut words: Vec<&str> = otf.split_whitespace().collect();
+                                words.sort_unstable();
+                                words.join(" ")
+                            });
+                            crate::doc::Inline::marked(text.clone(), marks)
+                        }
+                        other => other.clone(),
+                    })
+                    .collect(),
+            ),
+            other => other.clone(),
+        })
+        .collect()
 }
 
 /// The marks of [`arb_marks`] that the crate's Word import reads back exactly. Four are left out until the

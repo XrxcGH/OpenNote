@@ -5,7 +5,7 @@
 //   Shift with a printable key. Function keys and named keys such as Delete are fine.
 
 import { parseChord, typesText } from './chords';
-import type { Chord } from './types';
+import type { Chord, KeyScope } from './types';
 
 export type ChordProblem = 'navigation' | 'windows' | 'typesText';
 
@@ -44,8 +44,16 @@ export const WINDOWS_CHORDS: readonly string[] = [
   'F10',
 ];
 
-/** Why a chord can't be a shortcut, or null when it can. */
-export function chordProblem(chord: Chord): ChordProblem | null {
+/**
+ * Owner decision D7 (decided with N4 on 2026-11-02): F10 steps over while a debug session is paused, as in VS Code
+ * and Visual Studio. The exception is narrow: only in the codeDebug scope, which exists only while paused. Alt still
+ * opens the menus.
+ */
+export const F10_STEPS_OVER_WHILE_PAUSED = true;
+
+/** Why a chord can't be a shortcut in a scope, or null when it can. */
+export function chordProblem(chord: Chord, scope?: KeyScope, d7 = F10_STEPS_OVER_WHILE_PAUSED): ChordProblem | null {
+  if (d7 && scope === 'codeDebug' && chord === 'F10') return null;
   if (NAVIGATION_CHORDS.includes(chord)) return 'navigation';
   if (WINDOWS_CHORDS.includes(chord)) return 'windows';
   const parts = parseChord(chord);

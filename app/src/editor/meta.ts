@@ -9,6 +9,9 @@ export const META_COMMAND = 'opennote.command';
 export const META_AUTO_CHANGE = 'opennote.autoChange';
 /** A decoration-only transaction, such as spelling or code highlighting. The sync ignores it. */
 export const META_HIGHLIGHT = 'opennote.highlight';
+/** A change to element data (paragraph formatting, list definitions) that the block must write back, even when it
+ * had no element data before. The value is true, or `{ lists }`: list definitions to add to the block's `data.lists`. */
+export const META_ELEMENT_DATA = 'opennote.elementData';
 
 /**
  * The value of META_AUTO_CHANGE: the range of the typed text that the change replaced, and the text it put there

@@ -74,6 +74,19 @@ const isEmpty = (content: Content) => content.kind === 'text' && content.markdow
 
 const accepted = new WeakMap<TextSyncHandle, (markdown: string) => void>();
 
+/**
+ * Edits that ride in the same batch as a block's new Markdown, so one undo step holds both. For example, a deleted
+ * footnote reference takes its note along (R-NOTE-2). `before` is the Markdown the core has, empty for a new block.
+ */
+export type TextRider = (block: BlockId, before: string, after: string) => readonly Edit[];
+const riders = new Set<TextRider>();
+
+/** Adds a rider to every text block's batches. Returns a function that removes it. */
+export function addTextRider(rider: TextRider): () => void {
+  riders.add(rider);
+  return () => void riders.delete(rider);
+}
+
 /** Tells a text sync the core now has `markdown` for its block, after a frame replaced the editor's text. */
 export function acceptRemoteText(handle: TextSyncHandle, markdown: string): void {
   accepted.get(handle)?.(markdown);
@@ -235,6 +248,9 @@ class Sync implements TextSyncHandle {
     const key = keyOf(content);
     if (this.insert ? isEmpty(content) : key === this.sent || key === this.echo) return null;
     const edits = this.editsFor(content);
+    if (content.kind === 'text') {
+      for (const rider of riders) edits.push(...rider(this.block, this.insert ? '' : this.sent, content.markdown));
+    }
     // A typed #word becomes a tag in a step of its own, sent after the text, so Ctrl+Z leaves the plain #word.
     this.tagNext = null;
     if (content.kind === 'text' && isEnabled('page.hashtags') && pageExtrasPrefs.get().hashtags) {
@@ -412,13 +428,15 @@ const shapeOf = (data: TableData) =>
 
 /**
  * A table block's sync: a patchBlock of `data.rows` for typing, coalesced by cell as `<block>/<row>/<column>`
- * (P3-4). A change to the table's shape sends the whole data.
+ * (P3-4). A change to the table's shape sends the whole data. `extra` adds keys to the same patch, such as the
+ * formula results a smart table caches (ADR 0061), so one undo step takes back both.
  */
 export function attachTableSync(
   editor: Editor,
   block: BlockId,
   queue: SyncQueue,
   toData: (doc: PMNode) => TableData,
+  extra: (data: TableData) => Record<string, unknown> | null = () => null,
 ): TableSyncHandle {
   let shape = shapeOf(toData(editor.state.doc));
   const source: Source = {
@@ -428,7 +446,7 @@ export function attachTableSync(
       const next = shapeOf(data);
       const same = next === shape;
       shape = next;
-      return { kind: 'data', data: same ? { rows: data.rows } : { ...data } };
+      return { kind: 'data', data: { ...(same ? { rows: data.rows } : data), ...extra(data) } };
     },
     target(doc, selection) {
       const cell = cellAt(doc, selection.head);

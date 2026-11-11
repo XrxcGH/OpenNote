@@ -14,3 +14,6 @@ export { packFileUrl } from './packs/client';
 
 /** Settings, then Code, then Downloads: opens the Models panel at its Code group. */
 export const openCodeDownloads = () => import('./packs/store').then((module) => module.openCodeDownloads());
+
+/** Loads the code editor's chunk (features/codestudio/editor, code:L01): createCodeEditor and the diff view. */
+export const loadCodeEditor = () => import('./editor');

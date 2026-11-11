@@ -3,11 +3,18 @@
 
 import { toCanonical } from './canonical';
 import { convertFormula, STORED, syntaxOf, type FormulaProblem } from './formula/lexer';
-import type { Env } from './formula/functions';
 import { parseFormula } from './formula/parser';
 import type { Locale } from './locale';
 import { EMPTY_CELL, parseInput, type Cell, type Column, type ColumnType, type Row, type Table } from './model';
-import { DEFAULT_ENV, recalculate, recalculateWithCycles } from './recalc';
+import {
+  calculateNow,
+  DEFAULT_ENV,
+  recalculate,
+  recalculateCells,
+  recalculateWithCycles,
+  type EngineEnv as Env,
+} from './recalc';
+import { adjustTable, wholeChange } from './refactor';
 
 export interface ColumnInit extends Partial<Column> {
   name: string;
@@ -90,7 +97,8 @@ export function setCellInput(table: Table, edit: CellEdit, locale: Locale, env?:
   const { row, col, raw } = edit;
   const column = table.columns[col];
   if (!column || !table.rows[row] || column.formula !== undefined) return table;
-  return recalculate(replaceCell(table, row, col, makeCell(column, raw, locale, true, table)), env);
+  const next = replaceCell(table, row, col, makeCell(column, raw, locale, true, table));
+  return recalculateCells(table, next, [{ row, col }], env);
 }
 
 export function addRow(table: Table, line: readonly string[], locale: Locale, env?: Env): Table {
@@ -98,8 +106,67 @@ export function addRow(table: Table, line: readonly string[], locale: Locale, en
   return recalculate({ ...table, rows: [...table.rows, { id: nextRowId(table.rows), cells }] }, env);
 }
 
+/** Deletes a row. References to it become #REF!, and references below it move up (refactor.ts). */
 export function deleteRow(table: Table, row: number, env?: Env): Table {
-  return recalculate({ ...table, rows: table.rows.filter((_, i) => i !== row) }, env);
+  return deleteRows(table, row, 1, env);
+}
+
+/** Deletes `count` rows from `at`, rewriting references as Excel does. */
+export function deleteRows(table: Table, at: number, count: number, env?: Env): Table {
+  const change: RowChange = { kind: 'deleteRows', at, count };
+  return rowChangeFits(table, change) ? recalculate(applyRowChange(adjustTable(table, change), change), env) : table;
+}
+
+/** Inserts `count` empty rows before row `at`, rewriting references as Excel does. */
+export function insertRows(table: Table, at: number, count = 1, env?: Env): Table {
+  const change: RowChange = { kind: 'insertRows', at, count };
+  return rowChangeFits(table, change) ? recalculate(applyRowChange(adjustTable(table, change), change), env) : table;
+}
+
+/** Moves `count` rows from `from` so they start at `to` in the result, and their references follow them. */
+export function moveRows(table: Table, from: number, count: number, to: number, env?: Env): Table {
+  const change: RowChange = { kind: 'moveRows', from, count, to };
+  return rowChangeFits(table, change) ? recalculate(applyRowChange(adjustTable(table, change), change), env) : table;
+}
+
+/** A change of a table's rows. */
+export type RowChange =
+  | { readonly kind: 'insertRows'; readonly at: number; readonly count: number }
+  | { readonly kind: 'deleteRows'; readonly at: number; readonly count: number }
+  | { readonly kind: 'moveRows'; readonly from: number; readonly count: number; readonly to: number };
+
+/** True when the change does something and its rows are in the table. Indexes must be whole numbers. */
+export function rowChangeFits(table: Table, change: RowChange): boolean {
+  const n = table.rows.length;
+  if (!wholeChange(change)) return false;
+  if (change.kind === 'insertRows') return change.at >= 0 && change.at <= n;
+  if (change.kind === 'deleteRows') return change.at >= 0 && change.at < n;
+  const { from, count, to } = change;
+  return from >= 0 && from + count <= n && to >= 0 && to + count <= n && to !== from;
+}
+
+/** The table's rows after the change, without touching formulas. adjustTable rewrites them. */
+export function applyRowChange(table: Table, change: RowChange): Table {
+  const rows = table.rows;
+  if (change.kind === 'deleteRows') {
+    const { at, count } = change;
+    return { ...table, rows: rows.filter((_, i) => i < at || i >= at + count) };
+  }
+  if (change.kind === 'insertRows') {
+    let id = Number(/^r(\d+)$/.exec(nextRowId(rows))?.[1] ?? rows.length);
+    const blank = (): Row => ({ id: `r${id++}`, cells: table.columns.map(() => EMPTY_CELL) });
+    const fresh = Array.from({ length: change.count }, blank);
+    return { ...table, rows: [...rows.slice(0, change.at), ...fresh, ...rows.slice(change.at)] };
+  }
+  const { from, count, to } = change;
+  const block = rows.slice(from, from + count);
+  const rest = [...rows.slice(0, from), ...rows.slice(from + count)];
+  return { ...table, rows: [...rest.slice(0, to), ...block, ...rest.slice(to)] };
+}
+
+/** Recalculates everything now, as F9 does for a table in manual calculation. */
+export function calculateTable(table: Table, env?: Env): Table {
+  return calculateNow(table, env);
 }
 
 function withColumn(table: Table, col: number, change: Partial<Column>): Table {
@@ -156,5 +223,5 @@ function clearFormula(table: Table, col: number): Table {
     cells[col] = { raw: toCanonical(column.type, cells[col].value), value: cells[col].value };
     return { ...row, cells };
   });
-  return { columns, rows };
+  return { ...table, columns, rows };
 }

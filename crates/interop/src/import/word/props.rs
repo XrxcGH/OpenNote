@@ -436,7 +436,13 @@ impl ParaProps {
             Some((mode, lines, distance))
         });
         props.suppress_hyphens = flag(ppr, "w:suppressautohyphens");
-        props.lang = child(ppr, "w:rpr").and_then(|r| val(r, "w:lang")).map(str::to_owned);
+        // The paragraph mark's `w:noProof` is "do not check spelling", which OpenNote says as language `zxx`.
+        let mark = child(ppr, "w:rpr");
+        props.lang = if mark.and_then(|r| flag(r, "w:noproof")) == Some(true) {
+            Some("zxx".to_owned())
+        } else {
+            mark.and_then(|r| val(r, "w:lang")).map(str::to_owned)
+        };
         props
     }
 

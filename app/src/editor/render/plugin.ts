@@ -1,0 +1,105 @@
+// The editor's side of the block marks (blocks.ts): decorations for border places, contextual spacing, list labels,
+// and scaled words, equal to what the static render writes. It registers itself, so every text editor draws them.
+import { Extension } from '@tiptap/core';
+import { Plugin, PluginKey } from '@tiptap/pm/state';
+import type { EditorState } from '@tiptap/pm/state';
+import { Decoration, DecorationSet } from '@tiptap/pm/view';
+import type { EditorView } from '@tiptap/pm/view';
+import { editorExtensions } from '../extensions/kit';
+import { LISTS_META } from '../extensions/listItem';
+import { readLists } from '../paragraph/numbering';
+import type { ListDefinitions } from '../paragraph/numbering';
+import { blockMarks, measureScaledWords } from './blocks';
+
+interface State {
+  lists: ListDefinitions;
+  decorations: DecorationSet;
+  scaled: boolean;
+}
+
+const key = new PluginKey<State>('opennoteBlockMarks');
+
+function build(state: EditorState, lists: ListDefinitions): State {
+  const { nodes, words } = blockMarks(state.doc, lists);
+  if (nodes.size === 0 && words.length === 0) return { lists, decorations: DecorationSet.empty, scaled: false };
+  const all: Decoration[] = [];
+  for (const [pos, attrs] of nodes) {
+    const node = state.doc.nodeAt(pos);
+    if (node) all.push(Decoration.node(pos, pos + node.nodeSize, attrs));
+  }
+  for (const { from, to } of words) all.push(Decoration.inline(from, to, { 'data-scaled': '' }));
+  return { lists, decorations: DecorationSet.create(state.doc, all), scaled: words.length > 0 };
+}
+
+/**
+ * Measures scaled words so their layout width follows their paint width. It measures only the paragraphs a change
+ * touched, in one frame however many updates come, and nothing for an update that changed neither the document nor
+ * the list definitions (a selection move).
+ */
+class ScaleView {
+  private frame = 0;
+  /** The text blocks waiting to be measured, or `null` for the whole editor. */
+  private pending: Set<HTMLElement> | null = new Set();
+  constructor(private readonly view: EditorView) {
+    this.queue(null);
+  }
+  update(view: EditorView, prev: EditorState): void {
+    const now = key.getState(view.state);
+    if (!now?.scaled || now === key.getState(prev)) return;
+    if (prev.doc.eq(view.state.doc)) return this.queue(null);
+    const start = prev.doc.content.findDiffStart(view.state.doc.content);
+    const end = prev.doc.content.findDiffEnd(view.state.doc.content);
+    if (start === null || !end) return;
+    const touched = new Set<HTMLElement>();
+    view.state.doc.nodesBetween(start, Math.max(start, end.b), (node, pos) => {
+      const dom = node.isTextblock ? view.nodeDOM(pos) : null;
+      if (dom instanceof HTMLElement) touched.add(dom);
+      return !node.isTextblock;
+    });
+    this.queue(touched);
+  }
+  private queue(blocks: Set<HTMLElement> | null): void {
+    if (blocks === null || this.pending === null) this.pending = null;
+    else for (const block of blocks) this.pending.add(block);
+    if (this.frame !== 0) return;
+    this.frame = requestAnimationFrame(() => {
+      this.frame = 0;
+      const roots = this.pending ?? [this.view.dom];
+      this.pending = new Set();
+      if (key.getState(this.view.state)?.scaled) for (const root of roots) measureScaledWords(root);
+    });
+  }
+  destroy(): void {
+    cancelAnimationFrame(this.frame);
+  }
+}
+
+export function blockMarksExtension(): Extension {
+  return Extension.create({
+    name: 'opennoteBlockMarks',
+    addProseMirrorPlugins: () => [
+      new Plugin<State>({
+        key,
+        state: {
+          init: (_config, state) => build(state, new Map()),
+          apply(tr, old, _prev, next) {
+            const meta: unknown = tr.getMeta(LISTS_META);
+            if (meta !== undefined) return build(next, readLists(meta));
+            return tr.docChanged ? build(next, old.lists) : old;
+          },
+        },
+        props: { decorations: (state) => key.getState(state)?.decorations },
+        view: (view) => new ScaleView(view),
+      }),
+    ],
+  });
+}
+
+if (!editorExtensions.get('text.blockMarks')) {
+  editorExtensions.register({
+    id: 'text.blockMarks',
+    order: 410,
+    kinds: ['text'],
+    create: () => blockMarksExtension(),
+  });
+}

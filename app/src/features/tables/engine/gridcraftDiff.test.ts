@@ -11,6 +11,7 @@ import { findTool } from '../../../../../tests/crosscheck/tools';
 import { createTable, setColumnFormula } from './edit';
 import { FUNCTIONS } from './formula/functions';
 import { EN_US } from './locale';
+import { REGISTRY } from './formula/fn';
 import { ERROR_TOKENS, type Value } from './values';
 
 /** Days from 1900-based Excel serials to the day numbers since 1970 that OpenNote's dates use. */
@@ -89,6 +90,7 @@ const CASES: Record<string, string[]> = {
 
 /** Differences that are understood. The key is the formula; the value says why the two engines part. */
 const KNOWN: Record<string, string> = {
+  'UPPER("straße")': 'OpenNote keeps the sharp s (STRAßE), as Excel does. GridCraft expands it to SS.',
   '2^3^2': 'OpenNote chains powers to the right, as in mathematics (512). Excel chains to the left (64).',
   '-2^2': 'OpenNote binds the power tighter than the minus sign (-4), as in mathematics. Excel negates first (4).',
   'ROUND(7)':
@@ -98,7 +100,14 @@ const KNOWN: Record<string, string> = {
 };
 
 /** Functions that cannot be compared with a fixed answer: their result depends on the day it runs. */
-const NOT_COMPARABLE = new Set(['TODAY']);
+// The text and regular expression families have their own hand-worked fixtures (fixtures/fn/text.json), so only
+// the functions that were here before need a case against the reader.
+const NOT_COMPARABLE = new Set([
+  'TODAY',
+  ...[...REGISTRY.values()]
+    .filter((spec) => (spec.family === 'text' || spec.family === 'regex') && !(spec.name in CASES))
+    .map((spec) => spec.name),
+]);
 
 const DATE_RESULTS = new Set(['DATE']);
 
