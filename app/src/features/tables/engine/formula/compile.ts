@@ -40,6 +40,7 @@ class Compiler implements Host {
   readonly reads: Box[] = [];
   volatile = false;
   dynamic = false;
+  subtotal = false;
   sheet: number;
   readonly ownSheet: number;
   readonly book: readonly SheetInfo[];
@@ -369,5 +370,11 @@ export function compile(node: Node, scope: Scope, owner: Owner): Compiled {
   // The formula's last operation adds or subtracts, where Excel sets a result within rounding error to 0.
   const final = node.type === 'binary' && (node.op === '+' || node.op === '-');
   const fn = final ? compiler.binary(node, true) : compiler.value(node);
-  return { fn, reads: compiler.reads, volatile: compiler.volatile, dynamic: compiler.dynamic };
+  return {
+    fn,
+    reads: compiler.reads,
+    volatile: compiler.volatile,
+    dynamic: compiler.dynamic,
+    subtotal: compiler.subtotal,
+  };
 }

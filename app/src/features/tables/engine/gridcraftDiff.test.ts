@@ -9,9 +9,9 @@ import { spawnSync } from 'node:child_process';
 import { describe, expect, it } from 'vitest';
 import { findTool } from '../../../../../tests/crosscheck/tools';
 import { createTable, setColumnFormula } from './edit';
+import { REGISTRY } from './formula/fn';
 import { FUNCTIONS } from './formula/functions';
 import { EN_US } from './locale';
-import { REGISTRY } from './formula/fn';
 import { ERROR_TOKENS, type Value } from './values';
 
 /** Days from 1900-based Excel serials to the day numbers since 1970 that OpenNote's dates use. */
@@ -100,12 +100,12 @@ const KNOWN: Record<string, string> = {
 };
 
 /** Functions that cannot be compared with a fixed answer: their result depends on the day it runs. */
-// The text and regular expression families have their own hand-worked fixtures (fixtures/fn/text.json), so only
-// the functions that were here before need a case against the reader.
+// The text and regular expression families have their own hand-worked fixtures (fixtures/fn/text.json), and the math
+// family has fn/math.test.ts and fixtures/fn/math.json, so only the functions that were here before need a case.
 const NOT_COMPARABLE = new Set([
   'TODAY',
   ...[...REGISTRY.values()]
-    .filter((spec) => (spec.family === 'text' || spec.family === 'regex') && !(spec.name in CASES))
+    .filter((spec) => ['text', 'regex', 'math'].includes(spec.family) && !(spec.name in CASES))
     .map((spec) => spec.name),
 ]);
 
