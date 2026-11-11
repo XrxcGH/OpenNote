@@ -9,7 +9,14 @@ import { escapeAttr, escapeHtml } from '../export/markdown';
 import { readingOrder } from '../export/order';
 import type { ExportBlock, ExportPage, TableBlock } from '../export/source';
 import { snapY, type RuleGrid } from '../../../core/ruled';
-import { documentCss, type DocTheme, type NotebookStyles, type Ruled } from '../export/style';
+import {
+  documentCss,
+  paragraphBorderCss,
+  readStyles,
+  type DocTheme,
+  type NotebookStyles,
+  type Ruled,
+} from '../export/style';
 import { paperRules } from '../paper/rules';
 import type { FlowSlice } from '../layout/flow';
 import type { PageLayout } from '../layout/page';
@@ -53,9 +60,12 @@ function ruledOf(setup: DocumentSetup): Ruled | null {
   return grid ? { grid } : null;
 }
 
-function documentHead(setup: DocumentSetup, css: string): string {
+function documentHead(setup: DocumentSetup, css: string, body: string): string {
   const title = setup.page.title.trim() === '' ? setup.cx.labels.untitled : setup.page.title;
   const lang = LANGUAGE.test(setup.page.language) ? setup.page.language : 'en';
+  // The page's own style sheet joins the notebook's. One rule draws paragraph borders, added only when one has a border.
+  const border = body.includes(' data-border=') ? paragraphBorderCss() : '';
+  const sheet = documentCss(setup.theme, setup.styles, ruledOf(setup), readStyles(setup.page.rawStyles));
   return [
     '<!doctype html>',
     `<html lang="${escapeAttr(lang)}">`,
@@ -64,7 +74,7 @@ function documentHead(setup: DocumentSetup, css: string): string {
     `<meta http-equiv="Content-Security-Policy" content="${PRINT_CSP}">`,
     '<meta name="generator" content="OpenNote">',
     `<title>${escapeHtml(title)}</title>`,
-    `<style>\n${documentCss(setup.theme, setup.styles, ruledOf(setup))}${css}\n</style>`,
+    `<style>\n${sheet}${border}${css}\n</style>`,
     '</head>',
     '',
   ].join('\n');
@@ -103,7 +113,7 @@ export function measureDocument(setup: DocumentSetup): string {
     )
     .join('\n');
   const column = `left:${px(layout.column.x)}px;width:${px(layout.column.width)}px;padding-top:${px(layout.flowSheet.margins[0])}px`;
-  return `${documentHead(setup, measureCss())}<body>
+  return `${documentHead(setup, measureCss(), `${flow}\n${floating}`)}<body>
 <div id="measure"><div class="flow" style="${column}">
 ${flow}
 </div>
@@ -301,7 +311,7 @@ class SheetWriter {
 export function printDocument(setup: DocumentSetup, print: PrintPlan, content: SheetContent): string {
   const writer = new SheetWriter(setup, print, content);
   const sheets = print.sheets.map((s) => writer.sheet(s)).join('\n');
-  return `${documentHead(setup, printCss(print, setup.theme))}<body>
+  return `${documentHead(setup, printCss(print, setup.theme), sheets)}<body>
 <main class="sheets">
 ${sheets}
 </main>

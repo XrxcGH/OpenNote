@@ -37,8 +37,17 @@ interface BlockBase {
 export interface TextBlock extends BlockBase {
   readonly type: 'text';
   readonly markdown: string;
+  /** The block's element IDs, paragraph formatting, and named styles (`data.ids`, `paras`, and `styles`). */
+  readonly elements?: TextElements;
   /** Columns or vertical writing, when the block has them (R-LAY-1). Missing for an ordinary block. */
   readonly layout?: TextLayout;
+}
+
+/** What a text block keeps beside its Markdown for each element (format spec 6.6 and 6.8). */
+export interface TextElements {
+  readonly ids: readonly (string | null)[];
+  readonly paras: Readonly<Record<string, unknown>>;
+  readonly styles: Readonly<Record<string, string>>;
 }
 
 /** Where anchored ink is tied to text (format spec 8.1). */
@@ -163,6 +172,8 @@ export interface ExportPage {
   readonly language: string;
   /** The page's `view` as stored, for the fields other features keep there, such as page properties. */
   readonly rawView?: Readonly<Record<string, unknown>> | null;
+  /** The page's own style sheet as stored (`page.json` `styles`, spec R-STY-7), or null. Read it with `readStyles`. */
+  readonly rawStyles?: unknown;
 }
 
 /** The type of a block that holds a recording. */
@@ -181,6 +192,19 @@ function readFrame(raw: Json | undefined): Frame | undefined {
     if (value !== null) out[key] = value;
   }
   return Object.keys(out).length > 0 ? out : undefined;
+}
+
+/** The element data of a text block, or undefined when it names no element. */
+function readElements(data: JsonObject): TextElements | undefined {
+  // A damaged entry keeps its place as null, because the editor indexes data.ids by position.
+  const ids = Array.isArray(data.ids) ? data.ids.map((id): string | null => (typeof id === 'string' ? id : null)) : [];
+  if (!ids.some((id) => id !== null)) return undefined;
+  const paras: Record<string, unknown> = Object.create(null) as Record<string, unknown>;
+  if (isObject(data.paras)) for (const [id, entry] of Object.entries(data.paras)) paras[id] = entry;
+  const styles: Record<string, string> = Object.create(null) as Record<string, string>;
+  if (isObject(data.styles))
+    for (const [id, name] of Object.entries(data.styles)) if (typeof name === 'string') styles[id] = name;
+  return { ids, paras, styles };
 }
 
 function readTable(data: JsonObject): Body<TableBlock> {
@@ -211,8 +235,14 @@ function readAnchor(raw: Json | undefined): InkAnchor | undefined {
 function readData(type: string, data: JsonObject, fallback: Json | undefined): Body<ExportBlock> {
   const alt = { alt: str(data.alt), decorative: flag(data.decorative) };
   if (type === 'text' && typeof data.markdown === 'string') {
+    const elements = readElements(data);
     const layout = readTextLayout(data);
-    return { type, markdown: data.markdown, ...(layout.columns > 1 || layout.vertical ? { layout } : {}) };
+    return {
+      type,
+      markdown: data.markdown,
+      ...(elements ? { elements } : {}),
+      ...(layout.columns > 1 || layout.vertical ? { layout } : {}),
+    };
   }
   if (type === 'ink') {
     const anchor = readAnchor(data.anchor);
@@ -313,6 +343,7 @@ export function readExportPage(raw: unknown, strokes: readonly ExportStroke[] = 
     strokes,
     language,
     rawView: isObject(page.view) ? page.view : null,
+    rawStyles: page.styles ?? null,
   };
 }
 
