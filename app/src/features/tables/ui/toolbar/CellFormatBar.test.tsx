@@ -177,6 +177,22 @@ describe('the cell format bar, keyboard', () => {
   });
 });
 
+describe('the cell format bar, palette focus', () => {
+  it('returns focus to Fill color when Escape closes the palette opened by keyboard', async () => {
+    mount();
+    renderUi(<CellFormatBar block="b1" />);
+    await new Promise((done) => setTimeout(done, 100));
+    const button = screen.getByRole('button', { name: 'Fill color' });
+    button.focus();
+    await userEvent.keyboard('{Enter}');
+    await screen.findByRole('dialog', { name: 'Fill colors' });
+    await userEvent.keyboard('{Tab}');
+    expect(document.activeElement).not.toBe(document.body);
+    await userEvent.keyboard('{Escape}');
+    await vi.waitFor(() => expect(document.activeElement).toBe(button));
+  });
+});
+
 describe('the cell format bar, palettes and commands', () => {
   it('opens the palette and writes to the current table, not the first one on the page', async () => {
     const first = mount('b1');

@@ -147,6 +147,16 @@ function Tool({ tool, name, icon, onPress, pressed, popup, expanded }: ToolProps
   );
 }
 
+/** A ref to a button inside `wrap`, so a popover anchors to (and returns focus to) a control that can take focus. */
+function buttonIn(wrap: RefObject<HTMLElement | null>, last = false): RefObject<HTMLElement | null> {
+  return {
+    get current() {
+      const all = wrap.current?.querySelectorAll<HTMLElement>('button');
+      return (last ? all?.[all.length - 1] : all?.[0]) ?? wrap.current;
+    },
+  } as RefObject<HTMLElement | null>;
+}
+
 interface PaletteProps {
   name: MessageKey;
   current?: string;
@@ -206,7 +216,7 @@ function ColorTool({ block, against, paper, tool, name, paletteName, icon, curre
         fill={tool === 'fill'}
         against={against}
         paper={paper}
-        anchor={wrap}
+        anchor={buttonIn(wrap)}
         open={open}
         onClose={() => setOpen(false)}
         onPick={(choice) => {
@@ -259,7 +269,7 @@ function BordersTool({ host, run, paper }: { host: TableExtraHost; run: Run; pap
         name="sheetToolbar.borderColor"
         paper={paper}
         against={paper}
-        anchor={wrap}
+        anchor={buttonIn(wrap, true)}
         open={color}
         onClose={() => setColor(false)}
         onPick={(choice) => {
