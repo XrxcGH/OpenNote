@@ -4,6 +4,7 @@
 // priorities. The page's context menu gets Font and Paragraph, and the compact class gets the Aa sheet.
 // Every control sits behind text.v2Controls. With it off, the Home tab keeps its version 1 tools.
 // This file loads at start-up, so it holds only definitions. The controls load when the bar draws them.
+import { isEnabled } from '../../../app/flags';
 import { defineCommand } from '../../../commands/registry';
 import type { CommandId } from '../../../commands/types';
 import { runMarkPressed } from '../../../editor/commands/runFormat';
@@ -14,6 +15,7 @@ import type { MessageKey } from '../../../strings/t';
 import { t } from '../../../strings/t';
 import { targetEditor } from '../formattingBar/target';
 import { lazyTool } from '../homeTab/lazyTool';
+import { formatKey } from '../homeTab/state';
 
 const FLAG = 'text.v2Controls';
 
@@ -152,10 +154,27 @@ contextMenus.register({
 });
 
 // What the bar shows can change without a store changing: the selection moves, or a key formats text.
+// Typing moves the selection on every key, so the bar re-reads only when the formatting at the selection changed,
+// and the check runs 100 ms after the last event, never in the keystroke's frame.
+let lastKey: string | null = null;
+let timer: ReturnType<typeof setTimeout> | undefined;
+export const SELECTION_SETTLE_MS = 100;
+
+function onSelectionActivity(): void {
+  if (!isEnabled(FLAG)) return;
+  clearTimeout(timer);
+  timer = setTimeout(() => {
+    const key = formatKey(targetEditor()?.state);
+    if (key === lastKey) return;
+    lastKey = key;
+    bumpBar();
+  }, SELECTION_SETTLE_MS);
+}
+
 if (typeof document !== 'undefined') {
-  document.addEventListener('selectionchange', bumpBar);
-  document.addEventListener('keyup', bumpBar, true);
-  document.addEventListener('pointerup', bumpBar, true);
+  document.addEventListener('selectionchange', onSelectionActivity);
+  document.addEventListener('keyup', onSelectionActivity, true);
+  document.addEventListener('pointerup', onSelectionActivity, true);
 }
 
 /** Whether only part of the selection has the mark, for the toggle's aria-pressed="mixed". */
@@ -235,6 +254,8 @@ const HOME: readonly CommandBarItem[] = [
   old('outline.promote', 'paragraph', 37, { flag: 'page.outline' }),
   old('outline.demote', 'paragraph', 37, { flag: 'page.outline' }),
   old('block.toggleCheck', 'paragraph', 38),
+  home({ id: 'home.outdent', group: 'paragraph', command: 'para.outdent', priority: 38, flag: FLAG }),
+  home({ id: 'home.indent', group: 'paragraph', command: 'para.indent', priority: 38, flag: FLAG }),
   home({ id: 'home.alignStart', group: 'paragraph', command: 'para.alignStart', priority: 44, flag: FLAG }),
   home({ id: 'home.alignCenter', group: 'paragraph', command: 'para.alignCenter', priority: 44, flag: FLAG }),
   home({ id: 'home.alignEnd', group: 'paragraph', command: 'para.alignEnd', priority: 43, flag: FLAG }),
@@ -242,10 +263,10 @@ const HOME: readonly CommandBarItem[] = [
   component('home.spacing', 'paragraph', 'para.lineSpacing', 34, menuTool('para.lineSpacing', name('lineSpacing')), {
     overflow: ['para.lineSingle', 'para.line15', 'para.lineDouble'],
   }),
-  component('home.shade', 'paragraph', 'para.shade', 28, menuTool('para.shade', 'textHome.shading.none'), {
+  component('home.shade', 'paragraph', 'para.shade', 28, menuTool('para.shade', 'textHome.shadingLabel'), {
     overflow: [],
   }),
-  component('home.border', 'paragraph', 'para.border', 27, menuTool('para.border', 'textHome.borders.none'), {
+  component('home.border', 'paragraph', 'para.border', 27, menuTool('para.border', 'textHome.bordersLabel'), {
     overflow: [],
   }),
   component('home.styles', 'styles', 'block.normal', 55, gallery, {

@@ -1,6 +1,7 @@
 // The Aa sheet of the compact class (text DESIGN.md 5.1): font, size, B, I, U, S, colors, alignment, lists, and
 // styles, with 44 px targets. It renders in a root of its own, like the Styles pane, and stays open while text is
 // edited, because every control keeps the selection in the text.
+import { useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import type { Root } from 'react-dom/client';
 import type { CommandId } from '../../../commands/types';
@@ -47,6 +48,9 @@ function Choice({ command, name }: { command: CommandId; name: MessageKey }) {
 
 function Sheet({ onClose }: { onClose(): void }) {
   const editor = useTarget();
+  const sheet = useRef<HTMLDivElement>(null);
+  // Focus moves into the sheet when it opens.
+  useEffect(() => sheet.current?.querySelector<HTMLElement>('button, input')?.focus(), []);
   const ctx = shownContext(shownNotebook());
   const entries = STYLES.flatMap((name) => galleryEntries(ctx).filter((entry) => entry.name === name));
   const apply = (name: string) => {
@@ -54,7 +58,18 @@ function Sheet({ onClose }: { onClose(): void }) {
     if (target) applyStyle(target, name, { ...ctx.app, ...ctx.notebook, ...ctx.page });
   };
   return (
-    <div className={styles.sheet} role="dialog" aria-label={t('textHome.sheet.label')} data-compact-sheet="">
+    <div
+      ref={sheet}
+      className={styles.sheet}
+      role="dialog"
+      aria-label={t('textHome.sheet.label')}
+      data-compact-sheet=""
+      onKeyDown={(event) => {
+        if (event.key !== 'Escape') return;
+        event.stopPropagation();
+        onClose();
+      }}
+    >
       <div className={styles.row}>
         <FontBox />
         <SizeControl />
@@ -116,11 +131,17 @@ function Sheet({ onClose }: { onClose(): void }) {
 let host: HTMLElement | null = null;
 let root: Root | null = null;
 
+let opener: HTMLElement | null = null;
+
 export function closeCompactSheet(): void {
+  const wasOpen = host !== null;
   root?.unmount();
   host?.remove();
   root = null;
   host = null;
+  // Focus goes back to what opened the sheet.
+  if (wasOpen && opener?.isConnected) opener.focus();
+  opener = null;
 }
 
 export function toggleCompactSheet(): void {
@@ -128,6 +149,7 @@ export function toggleCompactSheet(): void {
     closeCompactSheet();
     return;
   }
+  opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   host = document.createElement('div');
   host.dataset.compactSheetHost = '';
   document.body.append(host);

@@ -121,10 +121,25 @@ const SPACING: readonly [string, MessageKey, number][] = [
 export function spacingItems(): MenuItemSpec[] {
   return [
     ...SPACING.map(([id, label, value]) => item(`spacing.${id}`, t(label), go('para.lineSpacing', { value }))),
-    item('spacing.addBefore', t('textHome.spacing.addBefore'), go('para.spaceBefore', { value: 12 }), {
-      separatorBefore: true,
-    }),
-    item('spacing.removeBefore', t('textHome.spacing.removeBefore'), go('para.spaceBefore', { value: 0 })),
+    item(
+      'spacing.addBefore',
+      t('textHome.spacing.addBefore'),
+      go('para.set', { key: 'before', attrs: { value: 12 } }),
+      {
+        separatorBefore: true,
+      },
+    ),
+    item(
+      'spacing.removeBefore',
+      t('textHome.spacing.removeBefore'),
+      go('para.set', { key: 'before', attrs: { value: null } }),
+    ),
+    item('spacing.addAfter', t('textHome.spacing.addAfter'), go('para.set', { key: 'after', attrs: { value: 8 } })),
+    item(
+      'spacing.removeAfter',
+      t('textHome.spacing.removeAfter'),
+      go('para.set', { key: 'after', attrs: { value: null } }),
+    ),
   ];
 }
 
@@ -133,10 +148,11 @@ export function shadeItems(scheme: Scheme): MenuItemSpec[] {
   return [
     ...fills.map((name) => {
       const hex = resolveColor(name, scheme) ?? 'transparent';
+      // The palette name is stored, so the fill follows the theme and exports with the right color. The hex is the swatch.
       return item(
         `shade.${name}`,
         t(`textHome.shading.${name}` as MessageKey),
-        go('para.set', { key: 'shade', attrs: { value: { fill: hex } } }),
+        go('para.set', { key: 'shade', attrs: { value: { fill: name } } }),
         {
           icon: swatchIcon(hex),
         },

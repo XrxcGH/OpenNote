@@ -79,9 +79,9 @@ describe('the command icon table', () => {
     for (const [group, names] of byGroup) expect(new Set(names).size, group).toBe(names.length);
   });
 
-  it('has an icon for each of the 13 formatting glyphs', async () => {
+  it('has an icon for each of the 15 formatting glyphs', async () => {
     await prepare();
-    expect(GLYPH_COMMANDS.size).toBe(13);
+    expect(GLYPH_COMMANDS.size).toBe(15);
     for (const id of GLYPH_COMMANDS) expect(iconFor(id), id).toBeDefined();
   });
 

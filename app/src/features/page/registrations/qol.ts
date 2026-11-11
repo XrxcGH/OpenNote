@@ -390,6 +390,7 @@ const bar = (item: Omit<CommandBarItem, 'id'>): CommandBarItem => ({ id: `qol.${
     flag: 'page.readingLock',
   }),
   bar({ tab: 'home', group: 'find', command: 'page.find', priority: 20, flag: 'page.findReplace' }),
+  bar({ tab: 'home', group: 'find', command: 'page.replace', priority: 19, flag: 'page.findReplace' }),
   bar({ tab: 'insert', group: 'blocks', command: 'templates.insert', priority: 40, flag: 'page.templates' }),
   bar({ tab: 'insert', group: 'blocks', command: 'insert.attachFile', priority: 45, flag: 'page.attachments' }),
   bar({ tab: 'home', group: 'paragraph', command: 'checklist.checkAll', priority: 36, flag: 'page.checklistExtras' }),

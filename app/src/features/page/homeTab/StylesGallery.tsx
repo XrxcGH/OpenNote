@@ -14,6 +14,7 @@ import { applyStyle, styleOfNode } from '../styles/commands';
 import { notebookStyles, loadStyles, shownContext, shownNotebook } from '../styles/store';
 import { textSeams } from '../textSeams';
 import { useTarget } from './tools';
+import type { ToolProps } from './tools';
 
 /** The styles the gallery shows first, in this order, when the notebook has them. */
 const FIRST = ['normal', 'title', 'subtitle', 'h1', 'h2', 'h3', 'quote'];
@@ -27,7 +28,7 @@ function tileStyle(look: GalleryEntry['look']): React.CSSProperties {
   };
 }
 
-export function StylesGallery() {
+export function StylesGallery({ toolProps }: Partial<ToolProps> = {}) {
   const editor = useTarget();
   useStore(notebookStyles, (now) => now);
   const notebook = shownNotebook();
@@ -59,6 +60,7 @@ export function StylesGallery() {
           key={entry.name}
           ref={index === 0 ? first : undefined}
           type="button"
+          {...toolProps}
           className={styles.tile}
           style={tileStyle(entry.look)}
           aria-pressed={current === entry.name}
@@ -75,6 +77,7 @@ export function StylesGallery() {
       ))}
       <button
         type="button"
+        {...toolProps}
         className={styles.tile}
         onClick={() => void executeCommand('styles.pane', undefined, 'commandBar')}
       >

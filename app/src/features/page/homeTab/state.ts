@@ -52,8 +52,32 @@ export function pressedAt(state: EditorState, mark: string): boolean | 'mixed' {
   return runMarkPressed(state, mark);
 }
 
+/** The last colors picked from the Home tab. A main button applies its color again, as Word does. */
+const lastPicked: { textColor: string; highlight: string } = { textColor: 'theme:accent1', highlight: 'honey' };
+export const lastColor = (mark: 'textColor' | 'highlight'): string => lastPicked[mark];
+export function rememberColor(mark: 'textColor' | 'highlight', color: string | null): void {
+  if (color === 'none') return;
+  lastPicked[mark] = color ?? 'honey';
+}
+
 /** The color a color mark has over the selection, or null (none, or mixed). */
 export function colorAt(state: EditorState, mark: 'textColor' | 'highlight'): string | null {
   const value = runValue(state, mark, 'color');
   return value === 'mixed' ? null : value;
+}
+
+/** What the bar shows for the selection: the stored marks, the marks at both ends, and the paragraph's attributes. */
+export function formatKey(state: EditorState | undefined): string {
+  if (!state) return '';
+  const { $from, $to } = state.selection;
+  const marks = (list: readonly Mark[] | null) => (list ?? []).map((mark) => [mark.type.name, mark.attrs]);
+  return JSON.stringify([
+    marks(state.storedMarks),
+    marks($from.marks()),
+    marks($to.marks()),
+    state.selection.empty,
+    $from.parent.type.name,
+    $from.parent.attrs,
+    $to.parent.attrs,
+  ]);
 }

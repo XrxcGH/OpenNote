@@ -12,6 +12,9 @@ import { ArrowFatDownIcon } from '@phosphor-icons/react/dist/csr/ArrowFatDown';
 import { ArrowFatUpIcon } from '@phosphor-icons/react/dist/csr/ArrowFatUp';
 import { ArrowUUpLeftIcon } from '@phosphor-icons/react/dist/csr/ArrowUUpLeft';
 import { ArrowsVerticalIcon } from '@phosphor-icons/react/dist/csr/ArrowsVertical';
+import { ArrowLineLeftIcon } from '@phosphor-icons/react/dist/csr/ArrowLineLeft';
+import { ArrowLineRightIcon } from '@phosphor-icons/react/dist/csr/ArrowLineRight';
+import { ArrowsClockwiseIcon } from '@phosphor-icons/react/dist/csr/ArrowsClockwise';
 import { BinocularsIcon } from '@phosphor-icons/react/dist/csr/Binoculars';
 import { BoundingBoxIcon } from '@phosphor-icons/react/dist/csr/BoundingBox';
 import { CheckSquareIcon } from '@phosphor-icons/react/dist/csr/CheckSquare';
@@ -91,6 +94,9 @@ export const HOME_ICONS: Readonly<Record<string, IconComponent>> = {
   'block.toggleCheck': CheckSquareIcon,
   'checklist.checkAll': ChecksIcon,
   'page.find': BinocularsIcon,
+  'page.replace': ArrowsClockwiseIcon,
+  'para.indent': ArrowLineRightIcon,
+  'para.outdent': ArrowLineLeftIcon,
   'audio.record': RecordIcon,
   'intel.dictate': MicrophoneIcon,
   'app.home': HouseIcon,
@@ -117,6 +123,8 @@ export const GLYPH_COMMANDS: ReadonlySet<string> = new Set([
   'block.checklist',
   'outline.promote',
   'outline.demote',
+  'para.indent',
+  'para.outdent',
 ]);
 
 /** The groups whose tools carry icons, by tab. Every other group shows names only. */

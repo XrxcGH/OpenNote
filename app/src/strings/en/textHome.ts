@@ -65,6 +65,8 @@ export const textHome = {
     triple: '3.0',
     addBefore: 'Add 12 points before',
     removeBefore: 'Remove space before',
+    addAfter: 'Add 8 points after',
+    removeAfter: 'Remove space after',
   },
   borders: {
     none: 'No border',

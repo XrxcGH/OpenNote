@@ -195,6 +195,8 @@ export function showFormattingBar(rect: DOMRect): { close(): void } {
     row.append(...buttons, more);
     bar.append(row);
   }
+  // One button is in the tab order: the arrow keys move between the rest.
+  buttons[0]?.setAttribute('tabindex', '0');
   bar.addEventListener('keydown', (event) => onKey(bar, event, close));
   const escape = (event: KeyboardEvent) => {
     if (event.key === 'Escape' && !bar.contains(event.target as Node)) close();

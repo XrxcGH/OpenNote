@@ -2,8 +2,9 @@
 // The bar's tools run their commands. Narrow bars move tools into More in priority order.
 // A half-bold selection shows aria-pressed mixed. A pen selection opens the two-row mini toolbar.
 // The Aa sheet has 44 px targets. Axe finds nothing on the tab or its open menus.
-import { act, screen, waitFor, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import type { Editor } from '@tiptap/core';
+import type { ComponentType } from 'react';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import { FLAGS } from '../../../app/flags';
@@ -11,9 +12,12 @@ import { navigate } from '../../../app/location';
 import { mountEditor } from '../../../editor/commands/testing';
 import type { TestEditor } from '../../../editor/commands/testing';
 import { commandBar } from '../../../registries';
+import type { CommandBarComponentProps } from '../../../registries/types';
 import { expectNoAxeViolations, renderApp, setViewport } from '../../../test';
 import { closeFormattingBar } from '../formattingBar/bar';
 import { shownPool } from '../pool/shown';
+import { MenuTool } from './components';
+import { StylesGallery } from './StylesGallery';
 import '../registrations/editor';
 
 let current: Editor | null = null;
@@ -140,6 +144,52 @@ describe('the Home tab', () => {
   });
 });
 
+describe('the Home tab controls', () => {
+  it('every menu tool opens a menu with items, and Shading and Borders are named for what they open', async () => {
+    edit('abcd');
+    const cases = [
+      ['list.multilevel', 'Multilevel list'],
+      ['para.lineSpacing', 'Line spacing'],
+      ['para.shade', 'Shading'],
+      ['para.border', 'Borders'],
+      ['format.changeCase', 'Change case'],
+      ['format.effect', 'Text effects'],
+    ] as const;
+    for (const [command, label] of cases) {
+      const view = render(<MenuTool toolProps={{ tabIndex: -1, 'data-tool': '' }} command={command} label={label} />);
+      await userEvent.click(view.getByRole('button', { name: label }));
+      const menu = await screen.findByRole('menu', {}, { timeout: 5000 });
+      expect(within(menu).getAllByRole('menuitem').length, command).toBeGreaterThan(1);
+      await userEvent.click(within(menu).getAllByRole('menuitem')[0]);
+      await waitFor(() => expect(screen.queryByRole('menu')).toBeNull());
+      view.unmount();
+    }
+    for (const [id, name] of [
+      ['home.shade', 'Shading'],
+      ['home.border', 'Borders'],
+    ] as const) {
+      const Registered = commandBar.list().find((item) => item.id === id)
+        ?.Component as ComponentType<CommandBarComponentProps>;
+      const view = render(<Registered toolProps={{ tabIndex: -1, 'data-tool': '' }} />);
+      expect(await view.findByRole('button', { name })).toBeTruthy();
+      view.unmount();
+    }
+  });
+
+  it('the gallery tiles are in the arrow-key set of the toolbar, not extra Tab stops', async () => {
+    edit('abcd');
+    const view = render(<StylesGallery toolProps={{ tabIndex: -1, 'data-tool': '' }} />);
+    const tiles = [...view.container.querySelectorAll<HTMLElement>('button')];
+    expect(tiles.length).toBeGreaterThan(0);
+    for (const tile of tiles) expect(tile.hasAttribute('data-tool')).toBe(true);
+    view.unmount();
+    const toolbar = await openHome(1920);
+    await waitFor(() => expect(toolIds(toolbar)).toContain('home.font'), { timeout: 10_000 });
+    const stops = [...toolbar.querySelectorAll<HTMLElement>('button')].filter((button) => button.tabIndex === 0);
+    expect(stops).toHaveLength(1);
+  });
+});
+
 describe('the mini toolbar and the Aa sheet', () => {
   it('has two rows after a pen selection', async () => {
     const editor = edit('abcd');
@@ -155,6 +205,33 @@ describe('the mini toolbar and the Aa sheet', () => {
     expect(within(rows[1]).getByRole('button', { name: 'Bold' })).toBeTruthy();
     expect(within(rows[0]).getByRole('button', { name: 'Grow font' })).toBeTruthy();
     await expectNoAxeViolations(bar);
+  });
+
+  it('the mini toolbar has one Tab stop', async () => {
+    const editor = edit('abcd');
+    await openHome();
+    editor.commands.focus();
+    document.dispatchEvent(new PointerEvent('pointerdown', { pointerType: 'pen', bubbles: true }));
+    editor.commands.setTextSelection({ from: 1, to: 4 });
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    document.dispatchEvent(new Event('selectionchange'));
+    const bar = await screen.findByRole('toolbar', { name: 'Formatting' }, { timeout: 5000 });
+    expect([...bar.querySelectorAll('button')].filter((button) => button.tabIndex === 0)).toHaveLength(1);
+  });
+
+  it('the Aa sheet takes focus, closes on Escape, and gives focus back', async () => {
+    edit('abcd');
+    const opener = document.createElement('button');
+    document.body.append(opener);
+    opener.focus();
+    const { toggleCompactSheet } = await import('./CompactSheet');
+    toggleCompactSheet();
+    const sheet = await screen.findByRole('dialog', { name: 'Text formatting' });
+    await waitFor(() => expect(sheet.contains(document.activeElement)).toBe(true));
+    await userEvent.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Text formatting' })).toBeNull());
+    expect(document.activeElement).toBe(opener);
+    opener.remove();
   });
 
   it('the Aa sheet has targets of at least 44 px', async () => {

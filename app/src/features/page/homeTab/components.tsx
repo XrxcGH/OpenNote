@@ -16,13 +16,14 @@ import {
   caseItems,
   effectItems,
   numberingItems,
+  multilevelItems,
   shadeItems,
   spacingItems,
   strikeItems,
   swatchIcon,
   underlineItems,
 } from './menus';
-import { colorAt, pressedAt } from './state';
+import { colorAt, lastColor, pressedAt, rememberColor } from './state';
 import { SplitButton, run, useTarget } from './tools';
 import type { ToolProps } from './tools';
 
@@ -66,7 +67,10 @@ function highlightItems(scheme: Scheme): MenuItemSpec[] {
       id: `highlight.${name}`,
       label: t(`textHome.shading.${name}`),
       icon: swatchIcon(resolveColor(name, scheme) ?? 'transparent'),
-      onSelect: () => run('format.highlight', { color: name === 'honey' ? null : name }),
+      onSelect: () => {
+        rememberColor('highlight', name);
+        run('format.highlight', { color: name === 'honey' ? null : name });
+      },
     })),
     {
       id: 'highlight.none',
@@ -81,13 +85,17 @@ export function HighlightTool({ toolProps }: ToolProps) {
   const editor = useTarget();
   const scheme = useScheme();
   const color = editor ? colorAt(editor.state, 'highlight') : null;
+  const on = editor ? pressedAt(editor.state, 'highlight') !== false : false;
+  const last = lastColor('highlight');
   return (
     <SplitButton
       toolProps={toolProps}
       command="format.highlight"
+      // Applies the last highlight picked, and takes it off when the selection has one.
+      args={{ color: on ? 'none' : last === 'honey' ? null : last }}
       label={t('editor.commands.highlight')}
       pressed={editor ? pressedAt(editor.state, 'highlight') : false}
-      swatch={swatchOf(color ?? 'honey', scheme)}
+      swatch={swatchOf(color ?? last, scheme)}
       items={() => highlightItems(scheme)}
     />
   );
@@ -99,16 +107,18 @@ export function TextColorTool({ toolProps }: ToolProps) {
   const current = editor ? colorAt(editor.state, 'textColor') : null;
   const pick = (choice: ColorPick, close: () => void) => {
     close();
-    if (choice.kind === 'color') run('format.textColor', { color: choice.value });
-    else if (choice.kind === 'auto') run('format.textColor', { color: null });
+    if (choice.kind === 'color') {
+      rememberColor('textColor', choice.value);
+      run('format.textColor', { color: choice.value });
+    } else if (choice.kind === 'auto') run('format.textColor', { color: null });
   };
   return (
     <SplitButton
       toolProps={toolProps}
       command="format.textColor"
-      args={current ? { color: current } : undefined}
+      args={{ color: lastColor('textColor') }}
       label={t('textHome.textColor')}
-      swatch={swatchOf(current, scheme)}
+      swatch={swatchOf(current ?? lastColor('textColor'), scheme)}
       panel={(close) => (
         <ColorPalette
           scheme={scheme}
@@ -151,6 +161,7 @@ export function NumberingTool({ toolProps }: ToolProps) {
 const MENUS: Readonly<Record<string, (scheme: Scheme) => MenuItemSpec[]>> = {
   'format.changeCase': () => caseItems(),
   'format.effect': () => effectItems(),
+  'list.multilevel': () => multilevelItems(),
   'para.lineSpacing': () => spacingItems(),
   'para.shade': (scheme) => shadeItems(scheme),
   'para.border': () => borderItems(),

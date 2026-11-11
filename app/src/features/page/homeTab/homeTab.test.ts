@@ -7,6 +7,7 @@ import type { Command } from '../../../editor/commands/command';
 import { setRunValue, toggleRunMark } from '../../../editor/commands/runFormat';
 import { setTextSize } from '../../../editor/commands/marks';
 import { marked } from '../../../editor/commands/testing';
+import { paraAt, setPara } from '../../../editor/commands/paragraph';
 import { BULLET_LIBRARY } from '../../../editor/commands/lists';
 import { t } from '../../../strings/t';
 import {
@@ -22,7 +23,7 @@ import {
   underlineItems,
 } from './menus';
 import { run } from './run';
-import { colorAt, fontAt, pressedAt, sizeAt } from './state';
+import { colorAt, fontAt, formatKey, lastColor, pressedAt, rememberColor, sizeAt } from './state';
 
 vi.mock('./run', () => ({ run: vi.fn() }));
 
@@ -108,8 +109,9 @@ describe('each menu item runs its command with the choice as the argument', () =
     ['multilevel legal', multilevelItems, 'multilevel.legal', 'list.multilevel', { value: 'legal' }],
     ['spacing 1.5', spacingItems, 'spacing.r15', 'para.lineSpacing', { value: 1.5 }],
     ['spacing 2.0', spacingItems, 'spacing.double', 'para.lineSpacing', { value: 2 }],
-    ['space before 12', spacingItems, 'spacing.addBefore', 'para.spaceBefore', { value: 12 }],
-    ['space before 0', spacingItems, 'spacing.removeBefore', 'para.spaceBefore', { value: 0 }],
+    ['space before 12', spacingItems, 'spacing.addBefore', 'para.set', { key: 'before', attrs: { value: 12 } }],
+    ['space before 0', spacingItems, 'spacing.removeBefore', 'para.set', { key: 'before', attrs: { value: null } }],
+    ['space after 8', spacingItems, 'spacing.addAfter', 'para.set', { key: 'after', attrs: { value: 8 } }],
     ['shade none', () => shadeItems('light'), 'shade.none', 'para.set', { key: 'shade', attrs: { value: null } }],
     [
       'border bottom',
@@ -138,5 +140,61 @@ describe('each menu item runs its command with the choice as the argument', () =
     const all = [...underlineItems(), ...effectItems(), ...caseItems(), ...spacingItems(), ...borderItems()];
     for (const item of all) expect(item.label).not.toMatch(/^textHome\./);
     expect(t('textHome.sheet.open')).toBe('Aa');
+  });
+});
+
+const pick = (items: readonly { id: string; onSelect?: () => void }[], id: string) =>
+  items.find((item) => item.id === id)?.onSelect?.();
+
+describe('the space menu on a real paragraph', () => {
+  const apply = (state: EditorState, id: string) => {
+    vi.mocked(run).mockClear();
+    pick(spacingItems(), id);
+    const [, args] = vi.mocked(run).mock.calls[0];
+    const { key, attrs } = args as { key: 'before'; attrs: { value: unknown } };
+    let next = state;
+    setPara(key, attrs.value)(state, (tr) => (next = state.apply(tr)));
+    return next;
+  };
+
+  it('Remove space before leaves none, and Add gives 12 points, whatever the paragraph had', () => {
+    const plain = marked('abcd').state;
+    expect(paraAt(apply(plain, 'spacing.removeBefore')).before ?? null).toBeNull();
+    const open = apply(plain, 'spacing.addBefore');
+    expect(paraAt(open).before).toBe(12);
+    expect(paraAt(apply(open, 'spacing.addBefore')).before).toBe(12);
+    expect(paraAt(apply(open, 'spacing.removeBefore')).before ?? null).toBeNull();
+  });
+});
+
+describe('the bar re-read key', () => {
+  it('does not change when text is typed in the same format, and changes with a mark or a paragraph key', () => {
+    const plain = marked('abcd').state;
+    const typed = plain.apply(plain.tr.insertText('e', 5));
+    expect(formatKey(typed)).toBe(formatKey(plain));
+    const bold = stateWith('abcd', onFirst(4, toggleRunMark('bold')));
+    expect(formatKey(bold)).not.toBe(formatKey(stateWith('abcd', (s) => s)));
+    let centered = plain;
+    setPara('align', 'center')(plain, (tr) => (centered = plain.apply(tr)));
+    expect(formatKey(centered)).not.toBe(formatKey(plain));
+  });
+
+  it('shading stores the palette name, not a theme-dependent hex', () => {
+    const honey = shadeItems('dark').find((item) => item.id === 'shade.honey');
+    vi.mocked(run).mockClear();
+    honey?.onSelect?.();
+    expect(run).toHaveBeenCalledWith('para.set', { key: 'shade', attrs: { value: { fill: 'honey' } } });
+  });
+});
+
+describe('the last color picked', () => {
+  it('a main button applies the last color chosen, and None does not replace it', () => {
+    expect(lastColor('highlight')).toBe('honey');
+    rememberColor('highlight', 'mint');
+    expect(lastColor('highlight')).toBe('mint');
+    rememberColor('highlight', 'none');
+    expect(lastColor('highlight')).toBe('mint');
+    rememberColor('textColor', 'theme:accent2');
+    expect(lastColor('textColor')).toBe('theme:accent2');
   });
 });
