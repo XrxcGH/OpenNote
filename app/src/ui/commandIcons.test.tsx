@@ -66,10 +66,14 @@ describe('the command icon table', () => {
   it('never repeats an icon within a group', async () => {
     const items = await prepare();
     const byGroup = new Map<string, string[]>();
+    const seen = new Set<string>();
     for (const item of items) {
       const icon = groupHasIcons(item.tab, item.group) ? iconFor(item.command) : undefined;
       if (!icon) continue;
       const key = `${item.tab}/${item.group}`;
+      // A Home control of version 2 replaces the version 1 tool of the same command (offWith), so the command counts once.
+      if (seen.has(`${key} ${item.command}`)) continue;
+      seen.add(`${key} ${item.command}`);
       byGroup.set(key, [...(byGroup.get(key) ?? []), icon.displayName ?? '']);
     }
     for (const [group, names] of byGroup) expect(new Set(names).size, group).toBe(names.length);

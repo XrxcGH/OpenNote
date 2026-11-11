@@ -163,14 +163,14 @@ const mixedMark = (mark: string) => () => {
   return editor !== null && runMarkPressed(editor.state, mark) === 'mixed';
 };
 
-const font = lazyTool(() => import('../homeTab/components').then((m) => m.FontBox), 176);
-const size = lazyTool(() => import('../homeTab/components').then((m) => m.SizeControl), 64);
-const underline = lazyTool(() => import('../homeTab/components').then((m) => m.UnderlineTool), 56);
-const strike = lazyTool(() => import('../homeTab/components').then((m) => m.StrikeTool), 56);
-const highlight = lazyTool(() => import('../homeTab/components').then((m) => m.HighlightTool), 56);
-const textColor = lazyTool(() => import('../homeTab/components').then((m) => m.TextColorTool), 56);
-const bullets = lazyTool(() => import('../homeTab/components').then((m) => m.BulletsTool), 56);
-const numbering = lazyTool(() => import('../homeTab/components').then((m) => m.NumberingTool), 56);
+const font = lazyTool(() => import('../homeTab/components').then((m) => m.FontBox), 136);
+const size = lazyTool(() => import('../homeTab/components').then((m) => m.SizeControl), 60);
+const underline = lazyTool(() => import('../homeTab/components').then((m) => m.UnderlineTool), 70);
+const strike = lazyTool(() => import('../homeTab/components').then((m) => m.StrikeTool), 70);
+const highlight = lazyTool(() => import('../homeTab/components').then((m) => m.HighlightTool), 70);
+const textColor = lazyTool(() => import('../homeTab/components').then((m) => m.TextColorTool), 70);
+const bullets = lazyTool(() => import('../homeTab/components').then((m) => m.BulletsTool), 70);
+const numbering = lazyTool(() => import('../homeTab/components').then((m) => m.NumberingTool), 70);
 const gallery = lazyTool(() => import('../homeTab/StylesGallery').then((m) => m.StylesGallery), 420);
 
 /** A named menu tool (change case, effects, spacing, shading, borders), with the label its command gives. */
@@ -198,8 +198,8 @@ const toggle = (command: CommandId, group: string, priority: number, mark?: stri
   old(command, group, priority, { presentation: 'toggle', ...(mark ? { mixed: mixedMark(mark) } : {}), ...extra });
 
 const HOME: readonly CommandBarItem[] = [
-  component('home.font', 'font', 'format.font', 80, font),
-  component('home.size', 'font', 'format.fontSize', 79, size),
+  component('home.font', 'font', 'format.font', 63, font),
+  component('home.size', 'font', 'format.fontSize', 62, size),
   toggle('format.bold', 'text', 70, 'bold'),
   toggle('format.italic', 'text', 69, 'italic'),
   toggle('format.underline', 'text', 68, 'underline', { offWith: FLAG }),
@@ -214,7 +214,7 @@ const HOME: readonly CommandBarItem[] = [
   toggle('format.highlight', 'text', 67, 'highlight', { offWith: FLAG }),
   component('home.highlight', 'text', 'format.highlight', 67, highlight, { overflow: ['format.highlight'] }),
   old('format.textColor', 'text', 45, { offWith: FLAG }),
-  component('home.textColor', 'text', 'format.textColor', 63, textColor, { overflow: ['format.textColor'] }),
+  component('home.textColor', 'text', 'format.textColor', 61, textColor, { overflow: ['format.textColor'] }),
   home({ id: 'home.grow', group: 'text', command: 'format.growFont', priority: 36, flag: FLAG }),
   home({ id: 'home.shrink', group: 'text', command: 'format.shrinkFont', priority: 36, flag: FLAG }),
   component('home.case', 'text', 'format.changeCase', 31, menuTool('format.changeCase', name('changeCase')), {

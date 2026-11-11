@@ -212,7 +212,7 @@
   }
 
   .split > .caret {
-    min-inline-size: 24px;
+    min-inline-size: 22px;
     padding-inline: var(--space-1);
     border-start-start-radius: 0;
     border-end-start-radius: 0;
@@ -243,11 +243,11 @@
   }
 
   .fontBox {
-    inline-size: 176px;
+    inline-size: 136px;
   }
 
   .sizeBox {
-    inline-size: 64px;
+    inline-size: 60px;
   }
 
   .gallery {
