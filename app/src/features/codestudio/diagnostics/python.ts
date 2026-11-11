@@ -1,9 +1,8 @@
-// OpenNote's Python checker over the Lezer tree (layer L-b, DESIGN 6.1). The rule codes are the pyflakes and
-// pycodestyle codes as Ruff documents them, so the marks read as people know them: F401 unused import, F811
-// redefinition of an unused name, F821 undefined name, F841 unused local, E711 and E712 comparison to None, True, or
-// False, F632 `is` with a literal, W191 tab indentation, and E101 mixed indentation. The scope rules follow Python's
-// documented name resolution: module code runs in order, function bodies run later, and class bodies are not visible
-// to the functions inside them.
+// OpenNote's Python checker over the Lezer tree (layer L-b, DESIGN 6.1). Its rule codes are the pyflakes and
+// pycodestyle codes as Ruff documents them, so the marks read as people know them. F401, F811, F821, and F841 cover
+// imports and names. E711, E712, and F632 cover comparisons. W191 and E101 cover tabs in indentation.
+// The scopes follow Python's name resolution. Module code runs in order and function bodies run later. Class bodies
+// are not visible to the functions inside them.
 
 import type { SyntaxNode, Tree } from '@lezer/common';
 import { PYTHON_BUILTINS } from './pythonNames';
@@ -412,7 +411,11 @@ class PythonChecker {
       if (op.name === 'is') {
         const right = op.nextSibling?.name === 'not' ? op.nextSibling.nextSibling : op.nextSibling;
         if ([op.prevSibling, right].some((side) => side && this.isLiteral(side))) {
-          this.add(node, 'warning', 'F632', 'isLiteral', { op: op.nextSibling?.name === 'not' ? 'is not' : 'is' });
+          const negated = op.nextSibling?.name === 'not';
+          this.add(node, 'warning', 'F632', 'isLiteral', {
+            op: negated ? 'is not' : 'is',
+            better: negated ? '!=' : '==',
+          });
         }
       }
     }

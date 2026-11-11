@@ -9,3 +9,6 @@ export const loadCodeStudioWindow = () => import('./window');
 
 /** Loads the code editor's chunk (features/codestudio/editor, code:L01): createCodeEditor and the diff view. */
 export const loadCodeEditor = () => import('./editor');
+
+/** Loads error detection (features/codestudio/diagnostics, code:L10): the scheduler, checkers, and engine checks. */
+export const loadDiagnostics = () => import('./diagnostics');
