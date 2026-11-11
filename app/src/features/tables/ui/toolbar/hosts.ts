@@ -8,7 +8,7 @@
 import type { EditorState } from '@tiptap/pm/state';
 import { applyMergePatch } from '../../../../platform/mergePatch';
 import type { BlockJson } from '../../../../services/pages/types';
-import { currentTable } from '../../../page/tables/current';
+import { currentTable } from '../../../page';
 import type { TableExtraHost } from '../../../page';
 
 const hosts = new Map<string, TableExtraHost>();

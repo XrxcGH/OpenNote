@@ -248,4 +248,35 @@ describe('table extras', () => {
       stop.forEach((undo) => undo());
     }
   });
+
+  it('tells each extra once per write, with the smart extra attached, so no extra writes in a loop', async () => {
+    let writer: TableExtraHost | undefined;
+    let updates = 0;
+    const stop = [
+      tableExtras.register({
+        id: 'test.writer',
+        attach: (host) => {
+          writer = host;
+          return { update: () => {}, destroy: () => {} };
+        },
+      }),
+      tableExtras.register({
+        id: 'test.counter',
+        attach: () => ({ update: () => void updates++, destroy: () => {} }),
+      }),
+    ];
+    try {
+      const { editor } = await tablePage();
+      await vi.waitFor(() => expect(writer).toBeDefined());
+      const before = updates;
+      await writer!.patch({ smart: { filters: [] } });
+      await writer!.patch({ sheet: { styles: { s1: { fmt: 'first' } } } });
+      // The page's own smart extra receives these writes too. A write of its own would show as a third update.
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(updates - before).toBe(2);
+      expect(editor.isDestroyed).toBe(false);
+    } finally {
+      stop.forEach((undo) => undo());
+    }
+  });
 });

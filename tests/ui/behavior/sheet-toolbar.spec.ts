@@ -48,6 +48,11 @@ test('Bold on cells formats the cells, and on selected text formats the text onl
   await cell(page, 3, 0).dblclick();
   await bar(page).getByRole('button', { name: 'Bold' }).click();
   await expect(cell(page, 3, 0).locator('strong')).toHaveCount(1);
+  // The text mark wrote no cell style: the whole cell shows Bold off, and the other cells keep their Bold.
+  await selectCells(page, [3, 0], [3, 0]);
+  await expect(bar(page).getByRole('button', { name: 'Bold' })).toHaveAttribute('aria-pressed', 'false');
+  await selectCells(page, [1, 1], [1, 2]);
+  await expect(bar(page).getByRole('button', { name: 'Bold' })).toHaveAttribute('aria-pressed', 'true');
 });
 
 test('the borders menu lists sixteen presets and applies one', async ({ page }) => {

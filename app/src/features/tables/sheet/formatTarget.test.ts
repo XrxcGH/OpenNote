@@ -282,7 +282,7 @@ describe('requests on whole cells that the cell style does not cover', () => {
   it('lets the text take Highlight on whole cells, which the cell style has no field for', () => {
     const r = rig({ B2: 'text' });
     r.select('B2');
-    expect(runEditorCommand(r.editor, 'format.highlight', { color: 'yellow' })).toBe(true);
+    expect(runEditorCommand(r.editor, 'format.highlight')).toBe(true);
     expect(r.patches).toHaveLength(0);
   });
 });

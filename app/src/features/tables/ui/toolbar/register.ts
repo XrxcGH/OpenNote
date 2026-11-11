@@ -7,7 +7,7 @@
 import { registerFormatTarget } from '../../../../editor/commands/formatTarget';
 import type { FormatTarget } from '../../../../editor/commands/formatTarget';
 import type { EditorState } from '@tiptap/pm/state';
-import { tableExtras } from '../../../page/tables/extras';
+import { tableExtras } from '../../../page';
 import { registerCellCommands } from './commands';
 import { addHost, blockChanged, hostOfState } from './hosts';
 
