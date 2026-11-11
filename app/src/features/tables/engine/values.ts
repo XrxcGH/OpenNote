@@ -14,12 +14,19 @@ export interface FormulaError {
 /** What a cell holds. */
 export type Scalar = number | string | boolean | null | FormulaError;
 
+/** Whether a row shows: 0 shown, 1 hidden by hand, 2 filtered out. */
+export type RowState = 0 | 1 | 2;
+
 /** A block of values in row-major order. Arrays never nest, so every item is a scalar. */
 export interface ArrayValue {
   readonly kind: 'array';
   readonly rows: number;
   readonly cols: number;
   readonly data: readonly Scalar[];
+  /** One state per row, set only on a reference given to a parameter marked `rowState` (SUBTOTAL, AGGREGATE). */
+  readonly rowState?: readonly RowState[];
+  /** Row-major, like `data`: true for a cell that is a nested subtotal (its formula calls SUBTOTAL or AGGREGATE). Set with `rowState`. */
+  readonly nested?: readonly boolean[];
 }
 
 /** A block of cells in a table, zero-based and inclusive. `table` is unset for the formula's own table. */
