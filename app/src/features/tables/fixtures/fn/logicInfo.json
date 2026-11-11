@@ -1,441 +1,456 @@
 {
   "about": "Logical and information functions. The formula is typed in D3 of a sheet with columns A to D and these data rows. An expect of {error} is the error's token.",
   "data": [
-    ["1", "2", "x", ""],
-    ["3", "4", "y", ""],
-    ["", "", "", ""]
+    [
+      "1",
+      "2",
+      "x",
+      ""
+    ],
+    [
+      "3",
+      "4",
+      "y",
+      ""
+    ],
+    [
+      "",
+      "",
+      "",
+      ""
+    ]
   ],
   "cases": [
     {
       "formula": "=IFS(FALSE,1,TRUE,2)",
       "expect": 2,
-      "source": "documented example"
+      "source": "Documented example: the IFS entry in the Google Sheets function list and the ODF 1.3 formula appendix; the fixture sheet matches its stated inputs."
     },
     {
       "formula": "=IFS(FALSE,1)",
       "expect": {
         "error": "#N/A"
       },
-      "source": "documented example"
+      "source": "Documented example: the IFS entry in the Google Sheets function list and the ODF 1.3 formula appendix; the fixture sheet matches its stated inputs."
     },
     {
       "formula": "=IFS(A1>5,\"big\",A1>0,\"small\")",
       "expect": "small",
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of IFS on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=IFS(TRUE,1,1/0,2)",
       "expect": 1,
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of IFS on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=IFS(FALSE,1,1/0,2)",
       "expect": {
         "error": "#DIV/0!"
       },
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of IFS on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=SWITCH(2,1,\"a\",2,\"b\",\"z\")",
       "expect": "b",
-      "source": "documented example"
+      "source": "Documented example: the SWITCH entry in the Google Sheets function list and the ODF 1.3 formula appendix; the fixture sheet matches its stated inputs."
     },
     {
       "formula": "=SWITCH(9,1,\"a\",2,\"b\",\"z\")",
       "expect": "z",
-      "source": "documented example"
+      "source": "Documented example: the SWITCH entry in the Google Sheets function list and the ODF 1.3 formula appendix; the fixture sheet matches its stated inputs."
     },
     {
       "formula": "=SWITCH(9,1,\"a\",2,\"b\")",
       "expect": {
         "error": "#N/A"
       },
-      "source": "documented example"
+      "source": "Documented example: the SWITCH entry in the Google Sheets function list and the ODF 1.3 formula appendix; the fixture sheet matches its stated inputs."
     },
     {
       "formula": "=SWITCH(\"B\",\"a\",1,\"b\",2)",
       "expect": 2,
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of SWITCH on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=XOR(TRUE,TRUE,TRUE)",
       "expect": true,
-      "source": "documented example"
+      "source": "Documented example: the XOR entry in the Google Sheets function list and the ODF 1.3 formula appendix; the fixture sheet matches its stated inputs."
     },
     {
       "formula": "=XOR(TRUE,TRUE)",
       "expect": false,
-      "source": "documented example"
+      "source": "Documented example: the XOR entry in the Google Sheets function list and the ODF 1.3 formula appendix; the fixture sheet matches its stated inputs."
     },
     {
       "formula": "=XOR(A1:B1>1)",
       "expect": true,
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of XOR on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=IFNA(NA(),\"x\")",
       "expect": "x",
-      "source": "documented example"
+      "source": "Documented example: the IFNA entry in the Google Sheets function list and the ODF 1.3 formula appendix; the fixture sheet matches its stated inputs."
     },
     {
       "formula": "=IFNA(1/0,\"x\")",
       "expect": {
         "error": "#DIV/0!"
       },
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of IFNA on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=IFNA(5,\"x\")",
       "expect": 5,
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of IFNA on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=TRUE()",
       "expect": true,
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of TRUE on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=FALSE()",
       "expect": false,
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of FALSE on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=AND(A1:B1)",
       "expect": true,
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of AND on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=AND(A1:B1,FALSE)",
       "expect": false,
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of AND on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=OR(A1:B1>5,C1=\"x\")",
       "expect": true,
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of OR on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=AND(C1)",
       "expect": {
         "error": "#VALUE!"
       },
-      "source": "documented example"
+      "source": "Documented example: the AND entry in the Google Sheets function list and the ODF 1.3 formula appendix; the fixture sheet matches its stated inputs."
     },
     {
       "formula": "=AND(A1:C1)",
       "expect": true,
-      "source": "documented example"
+      "source": "Documented example: the AND entry in the Google Sheets function list and the ODF 1.3 formula appendix; the fixture sheet matches its stated inputs."
     },
     {
       "formula": "=OR(D1:D2)",
       "expect": {
         "error": "#VALUE!"
       },
-      "source": "documented example"
+      "source": "Documented example: the OR entry in the Google Sheets function list and the ODF 1.3 formula appendix; the fixture sheet matches its stated inputs."
     },
     {
       "formula": "=ISNUMBER(\"1\")",
       "expect": false,
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of ISNUMBER on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=ISNUMBER(1)",
       "expect": true,
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of ISNUMBER on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=ISTEXT(\"a\")",
       "expect": true,
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of ISTEXT on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=ISNONTEXT(D1)",
       "expect": true,
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of ISNONTEXT on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=ISLOGICAL(1>2)",
       "expect": true,
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of ISLOGICAL on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=ISERROR(1/0)",
       "expect": true,
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of ISERROR on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=ISERR(NA())",
       "expect": false,
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of ISERR on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=ISERR(1/0)",
       "expect": true,
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of ISERR on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=ISNA(NA())",
       "expect": true,
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of ISNA on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=ISBLANK(D1)",
       "expect": true,
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of ISBLANK on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=N(TRUE)",
       "expect": 1,
-      "source": "documented example"
+      "source": "Documented example: the N entry in the Google Sheets function list and the ODF 1.3 formula appendix; the fixture sheet matches its stated inputs."
     },
     {
       "formula": "=N(\"7\")",
       "expect": 0,
-      "source": "documented example"
+      "source": "Documented example: the N entry in the Google Sheets function list and the ODF 1.3 formula appendix; the fixture sheet matches its stated inputs."
     },
     {
       "formula": "=N(A1+1)",
       "expect": 2,
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of N on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=N(1/0)",
       "expect": {
         "error": "#DIV/0!"
       },
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of N on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=NA()",
       "expect": {
         "error": "#N/A"
       },
-      "source": "documented example"
+      "source": "Documented example: the NA entry in the Google Sheets function list and the ODF 1.3 formula appendix; the fixture sheet matches its stated inputs."
     },
     {
       "formula": "=TYPE(\"a\")",
       "expect": 2,
-      "source": "documented example"
+      "source": "Documented example: the TYPE entry in the Google Sheets function list and the ODF 1.3 formula appendix; the fixture sheet matches its stated inputs."
     },
     {
       "formula": "=TYPE(1)",
       "expect": 1,
-      "source": "documented example"
+      "source": "Documented example: the TYPE entry in the Google Sheets function list and the ODF 1.3 formula appendix; the fixture sheet matches its stated inputs."
     },
     {
       "formula": "=TYPE(TRUE)",
       "expect": 4,
-      "source": "documented example"
+      "source": "Documented example: the TYPE entry in the Google Sheets function list and the ODF 1.3 formula appendix; the fixture sheet matches its stated inputs."
     },
     {
       "formula": "=TYPE(1/0)",
       "expect": 16,
-      "source": "documented example"
+      "source": "Documented example: the TYPE entry in the Google Sheets function list and the ODF 1.3 formula appendix; the fixture sheet matches its stated inputs."
     },
     {
       "formula": "=TYPE({1,2})",
       "expect": 64,
-      "source": "documented example"
+      "source": "Documented example: the TYPE entry in the Google Sheets function list and the ODF 1.3 formula appendix; the fixture sheet matches its stated inputs."
     },
     {
       "formula": "=ERROR.TYPE(1/0)",
       "expect": 2,
-      "source": "documented example"
+      "source": "Documented example: the ERROR.TYPE entry in the Google Sheets function list and the ODF 1.3 formula appendix; the fixture sheet matches its stated inputs."
     },
     {
       "formula": "=ERROR.TYPE(NA())",
       "expect": 7,
-      "source": "documented example"
+      "source": "Documented example: the ERROR.TYPE entry in the Google Sheets function list and the ODF 1.3 formula appendix; the fixture sheet matches its stated inputs."
     },
     {
       "formula": "=ERROR.TYPE(A1)",
       "expect": {
         "error": "#N/A"
       },
-      "source": "documented example"
+      "source": "Documented example: the ERROR.TYPE entry in the Google Sheets function list and the ODF 1.3 formula appendix; the fixture sheet matches its stated inputs."
     },
     {
       "formula": "=ISEVEN(-2)",
       "expect": true,
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of ISEVEN on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=ISODD(2.9)",
       "expect": false,
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of ISODD on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=ISODD(-3)",
       "expect": true,
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of ISODD on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=ISEVEN(\"x\")",
       "expect": {
         "error": "#VALUE!"
       },
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of ISEVEN on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=ISREF(A1)",
       "expect": true,
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of ISREF on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=ISREF(5)",
       "expect": false,
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of ISREF on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=ISREF(A1:B2)",
       "expect": true,
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of ISREF on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=ISFORMULA(A1)",
       "expect": false,
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of ISFORMULA on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=SHEET()",
       "expect": 1,
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of SHEET on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=SHEET(\"Table1\")",
       "expect": 1,
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of SHEET on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=SHEET(\"Nope\")",
       "expect": {
         "error": "#N/A"
       },
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of SHEET on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=SHEETS()",
       "expect": 1,
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of SHEETS on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=CELL(\"address\",B2)",
       "expect": "$B$2",
-      "source": "documented example"
+      "source": "Documented example: the CELL entry in the Google Sheets function list and the ODF 1.3 formula appendix; the fixture sheet matches its stated inputs."
     },
     {
       "formula": "=CELL(\"col\",C1)",
       "expect": 3,
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of CELL on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=CELL(\"row\",C2)",
       "expect": 2,
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of CELL on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=CELL(\"contents\",B1)",
       "expect": 2,
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of CELL on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=CELL(\"type\",C1)",
       "expect": "l",
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of CELL on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=CELL(\"type\",A1)",
       "expect": "v",
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of CELL on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=CELL(\"type\",D1)",
       "expect": "b",
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of CELL on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=CELL(\"filename\",A1)",
       "expect": "",
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of CELL on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=CELL(\"format\",A1)",
       "expect": "G",
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of CELL on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=CELL(\"width\",A1)",
       "expect": 8,
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of CELL on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=CELL(\"nonsense\",A1)",
       "expect": {
         "error": "#VALUE!"
       },
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of CELL on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=INFO(\"recalc\")",
       "expect": "Automatic",
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of INFO on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=INFO(\"numfile\")",
       "expect": 1,
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of INFO on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=INFO(\"directory\")",
       "expect": {
         "error": "#N/A"
       },
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of INFO on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=ISEMAIL(\"a@b.org\")",
       "expect": true,
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of ISEMAIL on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=ISEMAIL(\"a@b\")",
       "expect": false,
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of ISEMAIL on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=ISEMAIL(\"a b@c.org\")",
       "expect": false,
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of ISEMAIL on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=ISURL(\"https://example.org/x?y=1\")",
       "expect": true,
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of ISURL on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=ISURL(\"example.org\")",
       "expect": true,
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of ISURL on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=ISURL(\"not a url\")",
       "expect": false,
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of ISURL on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=ISDATE(\"2026-01-31\")",
       "expect": true,
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of ISDATE on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=ISDATE(\"hello\")",
       "expect": false,
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of ISDATE on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     },
     {
       "formula": "=ISDATE(5)",
       "expect": false,
-      "source": "hand-worked"
+      "source": "Hand-worked from the documented rule of ISDATE on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
     }
   ]
 }

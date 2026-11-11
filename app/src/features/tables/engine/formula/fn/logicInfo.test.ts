@@ -103,7 +103,7 @@ describe('functions that ask about cells', () => {
     };
     expect(ask('=CELL("format",A1)')).toBe('C2');
     expect(ask('=CELL("format",B1)')).toBe('P0');
-    expect(ask('=CELL("format",C1)')).toBe('D1');
+    expect(ask('=CELL("format",C1)')).toBe('D4');
     expect(ask('=CELL("format",D1)')).toBe('F3');
     expect(ask('=CELL("filename")')).toBe('Budget');
   });
@@ -227,5 +227,36 @@ describe('verification gaps (G4, G5, G6, G7)', () => {
     expect(runIn(data, '=SUM(SWITCH(1,1,A1:B2))')).toBe(10);
     expect(runIn(data, '=SUM(--ISFORMULA(C1:D1))')).toBe(1);
     expect(runIn(data, '=SUM(--ISFORMULA(A1:B2))')).toBe(0);
+  });
+});
+
+describe('ISDATE reads the column type (H1)', () => {
+  // Reference: the Google Sheets function list gives ISDATE(value) as TRUE for a date value. 46053 is 1/31/2026
+  // (serial 1 = 12/31/1899, hand-counted: 46023 is 1/1/2026, plus 30).
+  const columns = [
+    { name: 'A', type: 'date' as const },
+    { name: 'B', type: 'text' as const },
+    { name: 'C', type: 'number' as const },
+    { name: 'D', type: 'text' as const },
+  ];
+  const rows = [
+    ['1/31/2026', '1/31/2026', '46053', ''],
+    ['', 'hello', '5', ''],
+    ['', '', '', ''],
+  ];
+  function ask(formula: string): Value {
+    let t = createTable(columns, rows, EN_US, DEFAULT_ENV, 1);
+    t = setCellInput(t, { row: 2, col: 3, raw: formula }, EN_US, DEFAULT_ENV);
+    return t.rows[2].cells[3].value;
+  }
+  it('is TRUE for a date-column cell and for date text, FALSE otherwise', () => {
+    expect(ask('=ISDATE(A1)')).toBe(true);
+    expect(ask('=ISDATE(B1)')).toBe(true);
+    expect(ask('=ISDATE(C1)')).toBe(false);
+    expect(ask('=ISDATE(A2)')).toBe(false);
+    expect(ask('=ISDATE(B2)')).toBe(false);
+    expect(ask('=ISDATE("1/31/2026")')).toBe(true);
+    expect(ask('=ISDATE(5)')).toBe(false);
+    expect(ask('=SUM(--ISDATE(A1:B2))')).toBe(2);
   });
 });

@@ -58,7 +58,8 @@ export const fnLogicInfo = {
   CELL: {
     about: 'Gives facts about a cell, such as its address, row, column, type, or format.',
     args: {
-      info_type: 'What to report: address, col, row, contents, type, format, width, filename, and a few more.',
+      info_type:
+        'What to report: address, col, row, contents, type, format, width, filename. The filename is empty without a page title.',
       reference: 'The cell to ask about. This cell if left out.',
     },
   },
@@ -94,7 +95,10 @@ export const fnLogicInfo = {
   ISREF: { about: 'Gives TRUE when the value is a reference to cells.', args: { value } },
   ISEMAIL: { about: 'Gives TRUE for text shaped like an email address.', args: { value } },
   ISURL: { about: 'Gives TRUE for text shaped like a web address.', args: { value } },
-  ISDATE: { about: 'Gives TRUE for text that reads as a date.', args: { value } },
+  ISDATE: {
+    about: 'Gives TRUE for a date, such as a cell in a date column, or for text that reads as a date.',
+    args: { value },
+  },
   N: { about: 'Turns a value into a number. TRUE is 1, text is 0.', args: { value: 'The value to convert.' } },
   NA: { about: 'Gives the error #N/A, which means a value is not available.', args: {} },
   SHEET: {

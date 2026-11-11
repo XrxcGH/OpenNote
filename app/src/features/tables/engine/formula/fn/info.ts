@@ -83,7 +83,8 @@ function formatCode(type: string, decimals: number | undefined): string {
   const digits = Math.min(decimals ?? 2, 9);
   if (type === 'currency') return `C${digits}`;
   if (type === 'percent') return `P${digits}`;
-  if (type === 'date') return 'D1';
+  // The column shows the region's short date, which CELL reports as D4.
+  if (type === 'date') return 'D4';
   return type === 'number' && decimals !== undefined ? `F${digits}` : 'G';
 }
 
@@ -337,9 +338,30 @@ export const functions: readonly FnSpec2[] = [
   {
     name: 'ISDATE',
     family: 'info',
-    params: [{ name: 'value', kind: 'value' }],
+    params: [{ name: 'value', kind: 'array' }],
+    refArgs: true,
     handlesErrors: true,
-    run: ([v]) => typeof v === 'string' && parseDate(v, 'mdy') !== null,
+    run: ([v], env) => {
+      const isDate = (x: unknown): boolean => typeof x === 'string' && parseDate(x, 'mdy') !== null;
+      if (isRef(v)) {
+        // A cell in a date column holds a date value, so it counts. Other cells count when their text reads as a date.
+        const one = (r: number, c: number): boolean => {
+          const cell = env.probe?.cell({ ...v, r1: r, r2: r, c1: c, c2: c });
+          if (cell === undefined || cell.value === null) return false;
+          return (cell.type === 'date' && typeof cell.value === 'number') || isDate(cell.value);
+        };
+        if (v.r1 === v.r2 && v.c1 === v.c2) return one(v.r1, v.c1);
+        const rows: Scalar[][] = [];
+        for (let r = v.r1; r <= v.r2; r++) {
+          const row: Scalar[] = [];
+          for (let c = v.c1; c <= v.c2; c++) row.push(one(r, c));
+          rows.push(row);
+        }
+        return arrayOf(rows);
+      }
+      if (isArray(v)) return v.data.length === 1 ? isDate(v.data[0]) : { ...v, data: v.data.map((x) => isDate(x)) };
+      return isDate(v as Scalar);
+    },
     meta: { signature: 'ISDATE(value)', example: '=ISDATE("2026-01-31") gives TRUE' },
   },
 ];
