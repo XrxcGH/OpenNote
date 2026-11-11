@@ -120,20 +120,37 @@ function forecastLinear([x, ys, xs]: Value[]): Value {
   return m.sxx === 0 ? err('DIV0') : finish(m.my + (m.sxy / m.sxx) * (at0 - m.mx));
 }
 
-/** FREQUENCY: how many values fall in each bin, plus one more for those above the last bin. A column. */
+/**
+ * FREQUENCY: how many values fall in each bin, plus one more for those above the last bin. A column. A bin holds
+ * the values above the next lower edge and at most its own. A repeated edge counts at its first place and
+ * gives 0 after. The edges are sorted once and each value is placed by binary search: O((n + m) log m).
+ */
 function frequency([data, bins]: Value[]): Value {
   const nums = numbersOf(data);
   const edges = numbersOf(bins);
   if (!Array.isArray(nums)) return nums;
   if (!Array.isArray(edges)) return edges;
-  const counts = edges.map((edge, i) => {
-    const below = Math.max(-Infinity, ...edges.filter((e, j) => e < edge || (e === edge && j < i)));
-    const first = edges.indexOf(edge) === i;
-    return first ? nums.filter((x) => x <= edge && x > below).length : 0;
+  const distinct = [...new Set(edges)].sort((a, b) => a - b);
+  // counts[j] is the bin of distinct[j]; the last slot holds the values above every edge.
+  const counts = new Array<number>(distinct.length + 1).fill(0);
+  for (const x of nums) {
+    let [lo, hi] = [0, distinct.length];
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (distinct[mid] < x) lo = mid + 1;
+      else hi = mid;
+    }
+    counts[lo] += 1;
+  }
+  const slot = new Map(distinct.map((e, j) => [e, j]));
+  const seen = new Set<number>();
+  const column = edges.map((e) => {
+    if (seen.has(e)) return [0];
+    seen.add(e);
+    return [counts[slot.get(e) ?? 0]];
   });
-  const top = Math.max(-Infinity, ...edges);
-  counts.push(nums.filter((x) => x > top).length);
-  return arrayOf(counts.map((c) => [c]));
+  column.push([counts[distinct.length]]);
+  return arrayOf(column);
 }
 
 function prob([xr, pr, lower, upper]: Value[]): Value {

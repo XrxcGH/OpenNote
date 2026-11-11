@@ -5,7 +5,7 @@ import { asArray } from '../../arrays';
 import { err, finish, isError, isNumber, toScalar, type ArrayValue, type Scalar, type Value } from '../../values';
 import { parseCriterion } from './criteria';
 import type { FnSpec2, Param } from './types';
-import { listOf, mean } from './statsKit';
+import { largest, listOf, mean, smallest } from './statsKit';
 
 const S = 'stats' as const;
 const range = (name: string): Param => ({ name, kind: 'range' });
@@ -115,8 +115,8 @@ export const functions: readonly FnSpec2[] = [
     },
   },
   ifs('AVERAGEIFS', average, '=AVERAGEIFS({10, 20, 30}, {1, 2, 3}, ">1") gives 25'),
-  ifs('MAXIFS', (n) => (n.length ? Math.max(...n) : 0), '=MAXIFS({10, 20, 30}, {1, 2, 3}, "<3") gives 20'),
-  ifs('MINIFS', (n) => (n.length ? Math.min(...n) : 0), '=MINIFS({10, 20, 30}, {1, 2, 3}, ">1") gives 20'),
+  ifs('MAXIFS', (n) => (n.length ? largest(n) : 0), '=MAXIFS({10, 20, 30}, {1, 2, 3}, "<3") gives 20'),
+  ifs('MINIFS', (n) => (n.length ? smallest(n) : 0), '=MINIFS({10, 20, 30}, {1, 2, 3}, ">1") gives 20'),
   listOf(
     S,
     'COUNTBLANK',

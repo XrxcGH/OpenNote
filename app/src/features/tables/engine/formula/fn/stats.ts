@@ -6,7 +6,19 @@ import { arrayOf, err, finish, isError, isNumber, toNumber, type Scalar, type Va
 import { numbersIn, type FnSpec2 } from './types';
 import { functions as conditional } from './statsIfs';
 import { declared } from './statsDeclared';
-import { devsq, fixed, listOf, mean, numbersOf, overNumbers, readNumbers, sorted, type Run } from './statsKit';
+import {
+  devsq,
+  fixed,
+  largest,
+  listOf,
+  mean,
+  numbersOf,
+  overNumbers,
+  readNumbers,
+  smallest,
+  sorted,
+  type Run,
+} from './statsKit';
 
 const S = 'stats' as const;
 
@@ -32,7 +44,7 @@ const stdev = (nums: number[], sample: boolean): Value => {
 function modes(nums: number[]): number[] {
   const counts = new Map<number, number>();
   for (const x of nums) counts.set(x, (counts.get(x) ?? 0) + 1);
-  const top = Math.max(0, ...counts.values());
+  const top = Math.max(0, largest(counts.values()));
   if (top < 2) return [];
   return [...counts.entries()].filter(([, c]) => c === top).map(([x]) => x);
 }
@@ -131,8 +143,8 @@ export function rankRun(average: boolean): Run {
 
 const core: FnSpec2[] = [
   overNumbers(S, 'AVERAGE', (n) => (n.length ? finish(mean(n)) : err('DIV0')), '=AVERAGE(2, 4, 9) gives 5'),
-  overNumbers(S, 'MIN', (n) => (n.length ? Math.min(...n) : 0), '=MIN(4, -1, 7) gives -1'),
-  overNumbers(S, 'MAX', (n) => (n.length ? Math.max(...n) : 0), '=MAX(4, -1, 7) gives 7'),
+  overNumbers(S, 'MIN', (n) => (n.length ? smallest(n) : 0), '=MIN(4, -1, 7) gives -1'),
+  overNumbers(S, 'MAX', (n) => (n.length ? largest(n) : 0), '=MAX(4, -1, 7) gives 7'),
   listOf(S, 'COUNT', (args) => args.filter(isNumber).length, '=COUNT(1, 2, 3) gives 3'),
   listOf(
     S,
@@ -157,8 +169,8 @@ const core: FnSpec2[] = [
     '=MODE.MULT(1, 1, 2, 2, 3) gives 1 and 2 in a column',
   ),
   overA('AVERAGEA', (n) => (n.length ? finish(mean(n)) : err('DIV0')), '=AVERAGEA(2, TRUE) gives 1.5'),
-  overA('MAXA', (n) => (n.length ? Math.max(...n) : 0), '=MAXA(-1, FALSE) gives 0'),
-  overA('MINA', (n) => (n.length ? Math.min(...n) : 0), '=MINA(3, TRUE) gives 1'),
+  overA('MAXA', (n) => (n.length ? largest(n) : 0), '=MAXA(-1, FALSE) gives 0'),
+  overA('MINA', (n) => (n.length ? smallest(n) : 0), '=MINA(3, TRUE) gives 1'),
   overA('STDEVA', (n) => stdev(n, true), '=STDEVA(1, TRUE, 4) gives 1.73205080756888'),
   overA('STDEVPA', (n) => stdev(n, false), '=STDEVPA(0, 2) gives 1'),
   overA('VARA', (n) => variance(n, true), '=VARA(1, TRUE, 4) gives 3'),

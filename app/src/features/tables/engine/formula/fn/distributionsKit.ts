@@ -65,14 +65,80 @@ export function normInv(p: number): number {
 
 // Gamma and chi-squared.
 
+/**
+ * At or above this shape the incomplete gamma takes the wide path below. Near the mean, the series needs about ten
+ * times the square root of the shape in terms. So does the fraction. The core routine stops at 1,000.
+ */
+const GAMMA_WIDE = 1000;
+
+/**
+ * x^a e^-x / Gamma(a), kept exact for a large shape. With x = a (1 + u), the logs of x^a e^-x and of Gamma(a) each
+ * reach about a ln a. Their difference has no such size: ln(a / (2 pi)) / 2 - stirlingRest(a) + a (ln(1 + u) - u).
+ */
+function gammaPower(a: number, x: number): number {
+  return Math.exp(0.5 * Math.log(a) - LN_SQRT_2PI - stirlingRest(a) + a * log1pmx((x - a) / a));
+}
+
+/** No more terms than this: ten times the square root of the largest shape the functions take, with room. */
+const GAMMA_TERMS = 10_000_000;
+
+/**
+ * The regularized incomplete gamma for a large shape: [P, Q]. Below x = a + 1 the series of P (DLMF 8.7.1), above
+ * it the continued fraction of Q (DLMF 8.9.2), each run until its terms no longer count, with the exact power term
+ * above. The other value is one less the first; the first is the smaller tail or near one half. NaN, which shows as
+ * #NUM!, if the terms run out.
+ */
+function gammaWide(a: number, x: number): [number, number] {
+  if (x < a + 1) {
+    let term = 1 / a;
+    let sum = term;
+    for (let n = 1; n < GAMMA_TERMS; n++) {
+      term *= x / (a + n);
+      sum += term;
+      if (term < sum * 2 ** -53) {
+        const p = Math.min(1, sum * gammaPower(a, x));
+        return [p, 1 - p];
+      }
+    }
+    return [NaN, NaN];
+  }
+  // The modified Lentz method on Q = power / (x + 1 - a - 1 (1 - a) / (x + 3 - a - 2 (2 - a) / (x + 5 - a - ...))).
+  const tiny = 1e-300;
+  let b = x + 1 - a;
+  let c = 1 / tiny;
+  let d = 1 / b;
+  let h = d;
+  for (let i = 1; i < GAMMA_TERMS; i++) {
+    const an = -i * (i - a);
+    b += 2;
+    d = an * d + b;
+    if (Math.abs(d) < tiny) d = tiny;
+    c = b + an / c;
+    if (Math.abs(c) < tiny) c = tiny;
+    d = 1 / d;
+    const delta = d * c;
+    h *= delta;
+    if (Math.abs(delta - 1) < 2 ** -52) {
+      const q = Math.min(1, h * gammaPower(a, x));
+      return [1 - q, q];
+    }
+  }
+  return [NaN, NaN];
+}
+
 export function gammaPdf(x: number, a: number, b: number): number {
   if (x < 0) return 0;
   if (x === 0) return a === 1 ? 1 / b : a < 1 ? Infinity : 0;
+  if (a >= GAMMA_WIDE) return gammaPower(a, x / b) / x;
   return Math.exp((a - 1) * Math.log(x) - x / b - a * Math.log(b) - lgamma(a));
 }
 
-export const gammaCdf = (x: number, a: number, b: number): number => (x <= 0 ? 0 : gammaP(a, x / b));
-export const gammaSf = (x: number, a: number, b: number): number => (x <= 0 ? 1 : gammaQ(a, x / b));
+/** P(a, x) and Q(a, x): the core routine for a small shape, the wide path above. */
+const lowerGamma = (a: number, x: number): number => (a >= GAMMA_WIDE ? gammaWide(a, x)[0] : gammaP(a, x));
+const upperGamma = (a: number, x: number): number => (a >= GAMMA_WIDE ? gammaWide(a, x)[1] : gammaQ(a, x));
+
+export const gammaCdf = (x: number, a: number, b: number): number => (x <= 0 ? 0 : lowerGamma(a, x / b));
+export const gammaSf = (x: number, a: number, b: number): number => (x <= 0 ? 1 : upperGamma(a, x / b));
 
 // Beta.
 
@@ -161,6 +227,8 @@ export function betaPdf(x: number, a: number, b: number): number {
   if (x < 0 || x > 1) return 0;
   if (x === 0) return a === 1 ? b : a < 1 ? Infinity : 0;
   if (x === 1) return b === 1 ? a : b < 1 ? Infinity : 0;
+  // x^(a - 1) (1 - x)^(b - 1) / B(a, b) is the power term over x (1 - x).
+  if (Math.max(a, b) >= WIDE) return betaPower(x, a, b) / (x * (1 - x));
   return Math.exp((a - 1) * Math.log(x) + (b - 1) * Math.log1p(-x) - (lgamma(a) + lgamma(b) - lgamma(a + b)));
 }
 
@@ -242,6 +310,29 @@ export function choose(n: number, k: number): number {
   return Math.round(c) === c || c > 2 ** 53 ? c : Math.round(c);
 }
 
+/**
+ * ln of the binomial term C(n, k) p^k q^(n - k), with q = 1 - p passed exactly, in the saddle-point form of
+ * C. Loader ("Fast and accurate computation of binomial probabilities", 2000). Let j = n - k. The log is
+ * ln(n / (2 pi k j)) / 2 + stirlingRest(n) - stirlingRest(k) - stirlingRest(j) - D(k, n p) - D(j, n q). Here the
+ * deviance D(x, m) = x ln(x / m) + m - x = -x (ln(1 + w) - w) with w = (m - x) / x. No term is larger than the
+ * result, so a billion trials keep their digits, where ln C(n, k) from ln Gamma would lose six.
+ */
+function lnBinomTerm(k: number, n: number, p: number, q: number): number {
+  if (n === 0) return 0;
+  if (k === 0) return n * Math.log(q);
+  if (k === n) return n * Math.log(p);
+  const j = n - k;
+  const deviance = (x: number, m: number) => -x * log1pmx((m - x) / x);
+  return (
+    0.5 * Math.log(n / (2 * Math.PI * k * j)) +
+    stirlingRest(n) -
+    stirlingRest(k) -
+    stirlingRest(j) -
+    deviance(k, n * p) -
+    deviance(j, n * q)
+  );
+}
+
 export function binomPmf(k: number, n: number, p: number): number {
   if (k < 0 || k > n) return 0;
   if (p === 0) return k === 0 ? 1 : 0;
@@ -251,7 +342,40 @@ export function binomPmf(k: number, n: number, p: number): number {
     const v = c * p ** k * (1 - p) ** (n - k);
     if (v > 1e-280) return v;
   }
-  return Math.exp(lnChoose(n, k) + k * Math.log(p) + (n - k) * Math.log1p(-p));
+  return Math.exp(lnBinomTerm(k, n, p, 1 - p));
+}
+
+/**
+ * The negative binomial term: x failures before the r-th success. C(x + r - 1, r - 1) = r / (x + r) C(x + r, r),
+ * so past the exact product it is r / (x + r) times the binomial term of r successes in x + r trials.
+ */
+export function negbinomPmf(x: number, r: number, p: number): number {
+  const c = choose(x + r - 1, r - 1);
+  if (Number.isFinite(c) && c < 2 ** 53) {
+    const v = c * p ** r * (1 - p) ** x;
+    if (v > 1e-280 || p === 0 || p === 1) return v;
+  }
+  if (p === 1) return x === 0 ? 1 : 0;
+  if (p === 0) return 0;
+  return (r / (x + r)) * Math.exp(lnBinomTerm(r, x + r, p, 1 - p));
+}
+
+/**
+ * The hypergeometric term: i successes in `draws` from `pop` items of which `succ` are successes. Exact as a ratio
+ * of whole numbers while every C(n, k) is. Past that, with t = draws / pop, it is the ratio of binomial terms
+ * b(i; succ, t) b(draws - i; pop - succ, t) / b(draws; pop, t), since the powers of t and 1 - t cancel.
+ */
+export function hypgeomPmf(i: number, draws: number, succ: number, pop: number): number {
+  if (i < Math.max(0, draws - pop + succ) || i > Math.min(draws, succ)) return 0;
+  const parts = [choose(succ, i), choose(pop - succ, draws - i), choose(pop, draws)];
+  if (parts.every((c) => Number.isFinite(c) && c < 2 ** 53)) {
+    const v = (parts[0] * parts[1]) / parts[2];
+    if (v > 1e-280) return v;
+  }
+  const [t, s] = [draws / pop, (pop - draws) / pop];
+  return Math.exp(
+    lnBinomTerm(i, succ, t, s) + lnBinomTerm(draws - i, pop - succ, t, s) - lnBinomTerm(draws, pop, t, s),
+  );
 }
 
 /** P(X <= k) for a binomial law. Small n adds the terms; large n uses the incomplete beta. */
@@ -273,19 +397,20 @@ export function poissonPmf(k: number, m: number): number {
     for (let i = 1; i <= k; i++) v *= m / i;
     if (v > 1e-280) return v;
   }
+  // m^k e^-m / k! is the gamma power term over k.
+  if (k >= GAMMA_WIDE) return gammaPower(k, m) / k;
   return Math.exp(k * Math.log(m) - m - lgamma(k + 1));
 }
 
-export const poissonCdf = (k: number, m: number): number => (m === 0 ? 1 : gammaQ(k + 1, m));
+export const poissonCdf = (k: number, m: number): number => (m === 0 ? 1 : upperGamma(k + 1, m));
 
 /**
- * P(X <= k) for a hypergeometric law with many terms. The terms fall away from the mode on each side. So the sum
+ * P(X <= k) for a hypergeometric law. The terms fall away from the mode on each side. So the sum
  * starts at k and runs away from the mode, by the ratio of neighboring terms, until the terms no longer count. Below
  * the mode that is the lower tail; at or past it, the result is one less the upper tail past k. The work grows with
  * the spread, not the population.
  */
 export function hypgeomTail(k: number, draws: number, succ: number, pop: number): number {
-  const lnPmf = (i: number) => lnChoose(succ, i) + lnChoose(pop - succ, draws - i) - lnChoose(pop, draws);
   const low = Math.max(0, draws - pop + succ);
   const high = Math.min(draws, succ);
   const mode = Math.floor(((draws + 1) * (succ + 1)) / (pop + 2));
@@ -293,7 +418,7 @@ export function hypgeomTail(k: number, draws: number, succ: number, pop: number)
   const up = (i: number) => ((succ - i) * (draws - i)) / ((i + 1) * (pop - succ - draws + i + 1));
   let total = 0;
   if (k < mode) {
-    let term = Math.exp(lnPmf(k));
+    let term = hypgeomPmf(k, draws, succ, pop);
     for (let i = k; i >= low && term > 1e-17 * total; i--) {
       total += term;
       term /= up(i - 1);
@@ -301,7 +426,7 @@ export function hypgeomTail(k: number, draws: number, succ: number, pop: number)
     return Math.min(1, total);
   }
   if (k >= high) return 1;
-  let term = Math.exp(lnPmf(k + 1));
+  let term = hypgeomPmf(k + 1, draws, succ, pop);
   for (let i = k + 1; i <= high && term > 1e-17 * total; i++) {
     total += term;
     term *= up(i);

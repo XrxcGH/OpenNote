@@ -158,6 +158,22 @@ export function devsq(nums: readonly number[]): number {
 
 export const sorted = (nums: readonly number[]): number[] => [...nums].sort((a, b) => a - b);
 
+/**
+ * The largest and smallest of any number of values, by a loop. Math.max(...nums) passes every value on the call
+ * stack, so it throws once a range holds about a million cells.
+ */
+export function largest(nums: Iterable<number>): number {
+  let top = -Infinity;
+  for (const x of nums) if (x > top) top = x;
+  return top;
+}
+
+export function smallest(nums: Iterable<number>): number {
+  let low = Infinity;
+  for (const x of nums) if (x < low) low = x;
+  return low;
+}
+
 // The lazy chunk. Its functions are declared in the core chunk with their parameters, so formulas compile and
 // autocomplete knows them; only the code that computes them waits. A formula that runs before the chunk arrives shows
 // #BUSY! ("Still calculating"), the load starts, and listeners recalculate when it lands.

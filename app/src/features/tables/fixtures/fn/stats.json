@@ -1211,6 +1211,209 @@
       "expected": "#NUM!",
       "source": "hand",
       "note": "Degrees of freedom run from 1 to 1E10, as for chi-squared and F."
+    },
+    {
+      "formula": "=POISSON.DIST(200000,200000,TRUE)",
+      "expected": 0.5005947076587653,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "Poisson at k = mean n: 1/2 + (1 - theta(n)) n^n e^-n / n!. Ramanujan: e^-n times the sum of n^k/k! for k < n is 1/2 - theta(n) n^n e^-n / n!, theta = 1/3 + 4/(135n) - 8/(2835n^2) - 16/(8505n^3); n^n e^-n / n! = exp(-1/(12n) + 1/(360n^3)) / sqrt(2 pi n)."
+    },
+    {
+      "formula": "=POISSON.DIST(1000000,1000000,TRUE)",
+      "expected": 0.5002659614862837,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "Poisson at k = mean 1E6: 1/2 + (1 - theta(n)) n^n e^-n / n!. Ramanujan: e^-n times the sum of n^k/k! for k < n is 1/2 - theta(n) n^n e^-n / n!, theta = 1/3 + 4/(135n) - 8/(2835n^2) - 16/(8505n^3); n^n e^-n / n! = exp(-1/(12n) + 1/(360n^3)) / sqrt(2 pi n)."
+    },
+    {
+      "formula": "=POISSON(1E9,1E9,TRUE)",
+      "expected": 0.500008410441739,
+      "tolerance": 1e-11,
+      "source": "hand",
+      "note": "Poisson at k = mean 1E9: 1/2 + (1 - theta(n)) n^n e^-n / n!. Ramanujan: e^-n times the sum of n^k/k! for k < n is 1/2 - theta(n) n^n e^-n / n!, theta = 1/3 + 4/(135n) - 8/(2835n^2) - 16/(8505n^3); n^n e^-n / n! = exp(-1/(12n) + 1/(360n^3)) / sqrt(2 pi n)."
+    },
+    {
+      "formula": "=POISSON.DIST(999998,1000000,TRUE)",
+      "expected": 0.4994680769919712,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "k = n - 2: 1/2 - (theta(n) + 1) n^n e^-n / n!, since the terms at n - 1 and n are equal; this takes the continued fraction. Ramanujan: e^-n times the sum of n^k/k! for k < n is 1/2 - theta(n) n^n e^-n / n!, theta = 1/3 + 4/(135n) - 8/(2835n^2) - 16/(8505n^3); n^n e^-n / n! = exp(-1/(12n) + 1/(360n^3)) / sqrt(2 pi n)."
+    },
+    {
+      "formula": "=POISSON.DIST(1000000,1000000,FALSE)",
+      "expected": 0.000398942247156244,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "The central term n^n e^-n / n! at n = 1E6, by the Stirling series."
+    },
+    {
+      "formula": "=CHISQ.DIST(400000,400000,TRUE)",
+      "expected": 0.5002973540276185,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "P(a, a) with a = 2E5 is 1/2 + theta(a) a^a e^-a / a!. Ramanujan: e^-n times the sum of n^k/k! for k < n is 1/2 - theta(n) n^n e^-n / n!, theta = 1/3 + 4/(135n) - 8/(2835n^2) - 16/(8505n^3); n^n e^-n / n! = exp(-1/(12n) + 1/(360n^3)) / sqrt(2 pi n)."
+    },
+    {
+      "formula": "=CHISQ.DIST.RT(1E7,1E7)",
+      "expected": 0.4999405291960622,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "Q(a, a) with a = 5E6 is 1/2 - theta(a) a^a e^-a / a!. Ramanujan: e^-n times the sum of n^k/k! for k < n is 1/2 - theta(n) n^n e^-n / n!, theta = 1/3 + 4/(135n) - 8/(2835n^2) - 16/(8505n^3); n^n e^-n / n! = exp(-1/(12n) + 1/(360n^3)) / sqrt(2 pi n)."
+    },
+    {
+      "formula": "=CHIDIST(1E7,1E7)",
+      "expected": 0.4999405291960622,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "The compatibility name of CHISQ.DIST.RT; Q(a, a) with a = 5E6. Ramanujan: e^-n times the sum of n^k/k! for k < n is 1/2 - theta(n) n^n e^-n / n!, theta = 1/3 + 4/(135n) - 8/(2835n^2) - 16/(8505n^3); n^n e^-n / n! = exp(-1/(12n) + 1/(360n^3)) / sqrt(2 pi n)."
+    },
+    {
+      "formula": "=CHISQ.DIST(1E9,1E9,TRUE)",
+      "expected": 0.5000059470803871,
+      "tolerance": 1e-11,
+      "source": "hand",
+      "note": "P(a, a) with a = 5E8. Ramanujan: e^-n times the sum of n^k/k! for k < n is 1/2 - theta(n) n^n e^-n / n!, theta = 1/3 + 4/(135n) - 8/(2835n^2) - 16/(8505n^3); n^n e^-n / n! = exp(-1/(12n) + 1/(360n^3)) / sqrt(2 pi n)."
+    },
+    {
+      "formula": "=GAMMA.DIST(1E6,1E6,1,TRUE)",
+      "expected": 0.5001329807608726,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "P(a, a) with a = 1E6. Ramanujan: e^-n times the sum of n^k/k! for k < n is 1/2 - theta(n) n^n e^-n / n!, theta = 1/3 + 4/(135n) - 8/(2835n^2) - 16/(8505n^3); n^n e^-n / n! = exp(-1/(12n) + 1/(360n^3)) / sqrt(2 pi n)."
+    },
+    {
+      "formula": "=GAMMADIST(1E9,1E9,1,TRUE)",
+      "expected": 0.5000042052208701,
+      "tolerance": 1e-11,
+      "source": "hand",
+      "note": "P(a, a) with a = 1E9. Ramanujan: e^-n times the sum of n^k/k! for k < n is 1/2 - theta(n) n^n e^-n / n!, theta = 1/3 + 4/(135n) - 8/(2835n^2) - 16/(8505n^3); n^n e^-n / n! = exp(-1/(12n) + 1/(360n^3)) / sqrt(2 pi n)."
+    },
+    {
+      "formula": "=GAMMA.DIST(1E6,1E6,1,FALSE)",
+      "expected": 0.000398942247156244,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "The density at x = a = n is n^(n-1) e^-n / (n-1)! = n^n e^-n / n!, by the Stirling series."
+    },
+    {
+      "formula": "=CHISQ.INV(0.5,300000)",
+      "expected": 299999.3333335967,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "The median of the gamma law with shape a: a - 1/3 + 8/(405a) + 184/(25515a^2) (K. P. Choi, 1994); chi-squared is twice it at a = 150000."
+    },
+    {
+      "formula": "=CHIINV(0.5,300000)",
+      "expected": 299999.3333335967,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "The median, from the upper tail: twice a - 1/3 + 8/(405a) + 184/(25515a^2) at a = 150000 (Choi, 1994)."
+    },
+    {
+      "formula": "=GAMMA.INV(0.5,1E6,1)",
+      "expected": 999999.6666666864,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "The median of the gamma law: a - 1/3 + 8/(405a) + 184/(25515a^2) at a = 1E6 (Choi, 1994)."
+    },
+    {
+      "formula": "=HYPGEOM.DIST(1,100,1000,100000,FALSE)",
+      "expected": 0.3699146103726178,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "C(1000,1) C(99000,99) / C(100000,100), worked in whole numbers."
+    },
+    {
+      "formula": "=HYPGEOMDIST(30,250,300,2500)",
+      "expected": 0.08161070972014348,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "C(300,30) C(2200,220) / C(2500,250), worked in whole numbers."
+    },
+    {
+      "formula": "=HYPGEOM.DIST(20,200,300,3000,TRUE)",
+      "expected": 0.559533101436925,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "The sum for i = 0 to 20 of C(300,i) C(2700,200-i) / C(3000,200), worked in whole numbers."
+    },
+    {
+      "formula": "=HYPGEOM.DIST(10,1000,50,10000,TRUE)",
+      "expected": 0.9908169784002608,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "The sum for i = 0 to 10 of C(50,i) C(9950,1000-i) / C(10000,1000), worked in whole numbers."
+    },
+    {
+      "formula": "=HYPGEOM.DIST(100,1000,1E8,1E9,FALSE)",
+      "expected": 0.04201681186949659,
+      "tolerance": 1e-11,
+      "source": "hand",
+      "note": "C(1E8,100) C(9E8,900) / C(1E9,1000), worked in whole numbers."
+    },
+    {
+      "formula": "=HYPGEOM.DIST(100,1000,1E8,1E9,TRUE)",
+      "expected": 0.526599083396009,
+      "tolerance": 1e-11,
+      "source": "hand",
+      "note": "The sum for i = 0 to 100 of C(1E8,i) C(9E8,1000-i) / C(1E9,1000), worked in whole numbers."
+    },
+    {
+      "formula": "=NEGBINOM.DIST(520,520,0.5,FALSE)",
+      "expected": 0.01236770160440519,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "C(1039,519) / 2^1040, worked in whole numbers."
+    },
+    {
+      "formula": "=NEGBINOMDIST(20000,200,0.01)",
+      "expected": 0.0002777766702643502,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "C(20199,199) 0.01^200 0.99^20000, worked in exact fractions."
+    },
+    {
+      "formula": "=NEGBINOM.DIST(200000,200000,0.5,TRUE)",
+      "expected": 0.5006307827362657,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "At most n failures before the n-th success is at least n successes in 2n fair trials: 1/2 + C(2n,n)/2^(2n+1), with C(2n,n)/4^n = (1 - 1/(8n) + 1/(128n^2) + 5/(1024n^3)) / sqrt(pi n)."
+    },
+    {
+      "formula": "=BETA.DIST(0.5,200000,200000,TRUE)",
+      "expected": 0.5,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "Equal parameters: the law is symmetric about one half."
+    },
+    {
+      "formula": "=BETADIST(0.5,200000,200000)",
+      "expected": 0.5,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "Equal parameters: the law is symmetric about one half."
+    },
+    {
+      "formula": "=BETA.INV(0.5,200000,200000)",
+      "expected": 0.5,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "Equal parameters: the median is one half."
+    },
+    {
+      "formula": "=BETAINV(0.5,200000,200000)",
+      "expected": 0.5,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "Equal parameters: the median is one half."
+    },
+    {
+      "formula": "=BETA.DIST(1E-8,1,1E8,TRUE)",
+      "expected": 0.6321205606679549,
+      "tolerance": 1e-14,
+      "source": "hand",
+      "note": "With a = 1 the law is 1 - (1 - x)^b; at x = 1E-8 and b = 1E8 that is near 1 - 1/e."
     }
   ]
 }

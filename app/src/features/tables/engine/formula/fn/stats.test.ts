@@ -502,3 +502,43 @@ describe('FORECAST.ETS parts', () => {
     near(calc('FORECAST.ETS(4,{1,"b",3,"d","e",6},{1,2,2,3,3,3},1,1,2)'), 1, 9);
   });
 });
+
+describe('long ranges stay bounded (lane test)', () => {
+  beforeAll(() => loadStatistics());
+  const env = { today: () => 0 };
+  const run = (name: string, args: Value[]) => REGISTRY.get(name)!.run(args, env);
+
+  it('FREQUENCY sorts the bins once: 100,000 values in 100,000 bins', () => {
+    const n = 100_000;
+    // Values 0.5, 1.5, ... and bins 1, 2, ... in reverse order: each bin holds one value, the last none.
+    const data = arrayOf([Array.from({ length: n }, (_, i) => i + 0.5)]);
+    const bins = arrayOf([Array.from({ length: n }, (_, i) => n - i)]);
+    const start = performance.now();
+    const got = run('FREQUENCY', [data, bins]);
+    expect(performance.now() - start).toBeLessThan(3000);
+    const counts = items(got);
+    expect(counts).toHaveLength(n + 1);
+    expect(counts.slice(0, 3)).toEqual([1, 1, 1]);
+    expect(counts[n]).toBe(0);
+    // A repeated edge counts once, at its first place; values on an edge fall in its bin.
+    expect(items(calc('FREQUENCY({1,2,2,3,5,9},{2,5,2,0})'))).toEqual([3, 2, 0, 0, 1]);
+  }, 20000);
+
+  it('MIN, MAX, the modes, and MAXIFS take a million values without a stack overflow', () => {
+    const n = 1_000_000;
+    const values = Array.from({ length: n }, (_, i) => (i % 1000) - 500);
+    // A list function gets the values of its ranges one by one; MAXIFS and FREQUENCY get the range whole.
+    const range = arrayOf([values]);
+    expect(run('MIN', values)).toBe(-500);
+    expect(run('MAX', values)).toBe(499);
+    expect(run('MINA', values)).toBe(-500);
+    expect(run('MAXA', values)).toBe(499);
+    // Every value appears 1,000 times, so the first, -500, is the mode.
+    expect(run('MODE.SNGL', values)).toBe(-500);
+    expect(run('MODE', values)).toBe(-500);
+    expect(items(run('MODE.MULT', values))).toHaveLength(1000);
+    expect(run('MAXIFS', [range, range, '<0'])).toBe(-1);
+    expect(run('MINIFS', [range, range, '>0'])).toBe(1);
+    expect(items(run('FREQUENCY', [range, arrayOf([[0]])]))).toEqual([501_000, 499_000]);
+  }, 30000);
+});

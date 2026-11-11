@@ -4,19 +4,21 @@
 
 import { err, finish, isError, toNumber, type FormulaError, type Value } from '../../values';
 import {
+  betaIncWide,
   betaPdf,
   binomCdf,
   binomPmf,
-  choose,
   fCdf,
   fPdf,
   fSf,
   gammaCdf,
   gammaPdf,
   gammaSf,
-  invert,
+  hypgeomPmf,
   hypgeomTail,
+  invert,
   invertUpper,
+  negbinomPmf,
   normCdf,
   normInv,
   normPdf,
@@ -26,7 +28,6 @@ import {
   tPdf,
   tSf,
 } from './distributionsKit';
-import { betaInc } from '../../../../../core/num/special';
 import { devsq, mean, numbersOf, numeric, pairsOf, type Run } from './statsKit';
 import { asArray } from '../../arrays';
 
@@ -74,13 +75,13 @@ function gammaInv(p: number, a: number, b: number): number {
 function betaDist(x: number, a: number, b: number, cumulative: boolean, lo = 0, hi = 1): number {
   if (a <= 0 || b <= 0 || lo >= hi || x < lo || x > hi) return bad;
   const u = (x - lo) / (hi - lo);
-  return cumulative ? betaInc(u, a, b) : betaPdf(u, a, b) / (hi - lo);
+  return cumulative ? betaIncWide(u, a, b) : betaPdf(u, a, b) / (hi - lo);
 }
 
 function betaInv(p: number, a: number, b: number, lo = 0, hi = 1): number {
   if (p <= 0 || p > 1 || a <= 0 || b <= 0 || lo >= hi) return bad;
   if (p === 1) return hi;
-  const u = invert((x) => (x >= 1 ? 1 : betaInc(x, a, b)), p, 0, 1);
+  const u = invert((x) => (x >= 1 ? 1 : betaIncWide(x, a, b)), p, 0, 1);
   return lo + u * (hi - lo);
 }
 
@@ -182,8 +183,8 @@ function binomInv(n: number, p: number, alpha: number): number {
 function negbinom(f: number, s: number, p: number, cumulative: boolean): number {
   const [x, r] = [T(f), T(s)];
   if (x < 0 || r < 1 || p < 0 || p > 1) return bad;
-  if (cumulative) return betaInc(p, r, x + 1);
-  return choose(x + r - 1, r - 1) * p ** r * (1 - p) ** x;
+  if (cumulative) return betaIncWide(p, r, x + 1);
+  return negbinomPmf(x, r, p);
 }
 
 function hypgeom(s: number, n: number, ms: number, np: number, cumulative: boolean): number {
@@ -192,12 +193,7 @@ function hypgeom(s: number, n: number, ms: number, np: number, cumulative: boole
   if (k < low || k > Math.min(draws, succ) || draws <= 0 || succ <= 0 || pop <= 0 || draws > pop || succ > pop) {
     return bad;
   }
-  const pmf = (i: number) => (choose(succ, i) * choose(pop - succ, draws - i)) / choose(pop, draws);
-  if (!cumulative) return pmf(k);
-  if (k - low > 1000) return hypgeomTail(k, draws, succ, pop);
-  let total = 0;
-  for (let i = low; i <= k; i++) total += pmf(i);
-  return Math.min(1, total);
+  return cumulative ? hypgeomTail(k, draws, succ, pop) : hypgeomPmf(k, draws, succ, pop);
 }
 
 function poisson(x: number, m: number, cumulative: boolean): number {
@@ -281,7 +277,7 @@ function tTestTwo(one: Value, two: Value, equal: boolean): number[] | Value {
 }
 
 /** The p-value of the t statistic for a Welch fraction of degrees of freedom: the t law by the incomplete beta. */
-const tTail = (t: number, df: number) => 0.5 * betaInc(df / (df + t * t), df / 2, 0.5);
+const tTail = (t: number, df: number) => 0.5 * betaIncWide(df / (df + t * t), df / 2, 0.5, (t * t) / (df + t * t));
 
 function tTest([one, two, tailsV, typeV]: Value[]): Value {
   const tails = toNumber(tailsV);
