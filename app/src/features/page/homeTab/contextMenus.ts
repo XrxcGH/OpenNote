@@ -2,6 +2,7 @@
 // Home tab, so a long press or a right-click reaches every formatting command without the command bar.
 import type { CommandTarget } from '../../../commands/types';
 import { t } from '../../../strings/t';
+import { currentTheme } from '../../../theme/theme';
 import { openMenu } from '../../../ui';
 import type { MenuItemSpec } from '../../../ui';
 import { targetEditor } from '../formattingBar/target';
@@ -34,7 +35,7 @@ export function fontMenuItems(): MenuItemSpec[] {
   return [
     action('bold', t('editor.commands.bold'), 'format.bold'),
     action('italic', t('editor.commands.italic'), 'format.italic'),
-    sub('underline', t('editor.commands.underline'), underlineItems()),
+    sub('underline', t('editor.commands.underline'), underlineItems(currentTheme() === 'dark' ? 'dark' : 'light')),
     sub('strike', t('editor.commands.strike'), strikeItems()),
     action('subscript', t('editor.commands.subscript'), 'format.subscript'),
     action('superscript', t('editor.commands.superscript'), 'format.superscript'),
@@ -53,7 +54,7 @@ export function paragraphMenuItems(): MenuItemSpec[] {
     { ...sub('spacing', t('textCommands.names.lineSpacing'), spacingItems()), separatorBefore: true },
     sub('bullets', t('editor.commands.bulletList'), bulletItems()),
     sub('numbering', t('editor.commands.orderedList'), numberingItems()),
-    sub('shading', t('textHome.shadingLabel'), shadeItems('light')),
+    sub('shading', t('textHome.shadingLabel'), shadeItems(currentTheme() === 'dark' ? 'dark' : 'light')),
     sub('borders', t('textHome.bordersLabel'), borderItems()),
     { ...action('indent', t('textCommands.names.indent'), 'para.indent'), separatorBefore: true },
     action('outdent', t('textCommands.names.outdent'), 'para.outdent'),

@@ -17,12 +17,14 @@ import {
   effectItems,
   numberingItems,
   multilevelItems,
+  selectItems,
   shadeItems,
   spacingItems,
   strikeItems,
   swatchIcon,
   underlineItems,
 } from './menus';
+import { shownNotebook } from '../styles/store';
 import { colorAt, lastColor, pressedAt, rememberColor } from './state';
 import { SplitButton, run, useTarget } from './tools';
 import type { ToolProps } from './tools';
@@ -35,13 +37,14 @@ const swatchOf = (value: string | null, scheme: Scheme): string | null => (value
 
 export function UnderlineTool({ toolProps }: ToolProps) {
   const editor = useTarget();
+  const scheme = useScheme();
   return (
     <SplitButton
       toolProps={toolProps}
       command="format.underline"
       label={t('editor.commands.underline')}
       pressed={editor ? pressedAt(editor.state, 'underline') : false}
-      items={underlineItems}
+      items={() => underlineItems(scheme)}
     />
   );
 }
@@ -123,7 +126,7 @@ export function TextColorTool({ toolProps }: ToolProps) {
         <ColorPalette
           scheme={scheme}
           noColor
-          themeTokens={false}
+          notebookId={shownNotebook() ?? undefined}
           current={current}
           onPick={(choice) => pick(choice, close)}
         />
@@ -165,6 +168,7 @@ const MENUS: Readonly<Record<string, (scheme: Scheme) => MenuItemSpec[]>> = {
   'para.lineSpacing': () => spacingItems(),
   'para.shade': (scheme) => shadeItems(scheme),
   'para.border': () => borderItems(),
+  'text.select': () => selectItems(),
 };
 
 /** A named tool with an icon that opens a menu of choices (change case, effects, spacing, shading, borders). */

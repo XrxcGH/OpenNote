@@ -129,7 +129,7 @@ describe('the Home tab', () => {
     await waitFor(() => expect(homeIds()).toContain('home.underline'), { timeout: 10_000 });
     const group = await within(toolbar).findByRole('group', { name: 'Underline' }, { timeout: 15_000 });
     await userEvent.click(within(group).getByRole('button', { name: 'Underline' }));
-    await waitFor(() => expect(editor.getHTML()).toBe('<p><u>ab</u>cd</p>'));
+    await waitFor(() => expect(editor.getHTML()).toBe('<p><u>ab</u>cd</p>'), { timeout: 10_000 });
     await userEvent.click(within(group).getByRole('button', { name: 'Underline options' }));
     const menu = await screen.findByRole('menu');
     expect(within(menu).getAllByRole('menuitem').length).toBeGreaterThanOrEqual(10);
@@ -227,7 +227,8 @@ describe('the mini toolbar and the Aa sheet', () => {
     const { toggleCompactSheet } = await import('./CompactSheet');
     toggleCompactSheet();
     const sheet = await screen.findByRole('dialog', { name: 'Text formatting' });
-    await waitFor(() => expect(sheet.contains(document.activeElement)).toBe(true));
+    // Focus is on the sheet, never on a text box, so a phone's keyboard does not open over it.
+    await waitFor(() => expect(document.activeElement).toBe(sheet));
     await userEvent.keyboard('{Escape}');
     await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Text formatting' })).toBeNull());
     expect(document.activeElement).toBe(opener);

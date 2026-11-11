@@ -12,6 +12,8 @@ import { t } from '../../../strings/t';
 import type { IconComponent, MenuItemSpec } from '../../../ui';
 import { resolveColor } from '../../../ui/color';
 import type { Scheme } from '../../../ui/color';
+import { bumpBar } from '../../../shell/commandbar/barTick';
+import { targetEditor } from '../formattingBar/target';
 import { run } from './run';
 
 const item = (id: string, label: string, onSelect: () => void, extra: Partial<MenuItemSpec> = {}): MenuItemSpec => ({
@@ -26,26 +28,12 @@ const go =
   () =>
     run(command, args);
 
-/** The underline styles the menu offers by name; the rest of the 17 are in the Format pane. */
-const UNDERLINE_MENU = [
-  'single',
-  'double',
-  'words',
-  'thick',
-  'dotted',
-  'dash',
-  'dashLong',
-  'dotDash',
-  'dotDotDash',
-  'wave',
-  'wavyDouble',
-] as const;
-const _check: readonly (typeof UNDERLINE_STYLES)[number][] = UNDERLINE_MENU;
-void _check;
+/** The underline colors the menu offers: Automatic (the text color) and the six theme accents. */
+const UNDERLINE_COLORS = ['accent1', 'accent2', 'accent3', 'accent4', 'accent5', 'accent6'] as const;
 
-export function underlineItems(): MenuItemSpec[] {
+export function underlineItems(scheme: Scheme = 'light'): MenuItemSpec[] {
   return [
-    ...UNDERLINE_MENU.map((style) =>
+    ...UNDERLINE_STYLES.map((style) =>
       item(
         `underline.${style}`,
         t(`textHome.underline.${style}` as MessageKey),
@@ -55,6 +43,22 @@ export function underlineItems(): MenuItemSpec[] {
     item('underline.none', t('textHome.underline.none'), go('format.underlineStyle', { value: null }), {
       separatorBefore: true,
     }),
+    {
+      id: 'underline.color',
+      label: t('textHome.underline.color'),
+      separatorBefore: true,
+      submenu: [
+        item('underlineColor.auto', t('textHome.underline.colorAuto'), go('format.underlineColor', { value: null })),
+        ...UNDERLINE_COLORS.map((name, at) =>
+          item(
+            `underlineColor.${name}`,
+            t('textHome.accent', { n: at + 1 }),
+            go('format.underlineColor', { value: `theme:${name}` }),
+            { icon: swatchIcon(resolveColor(`theme:${name}`, scheme) ?? 'transparent') },
+          ),
+        ),
+      ],
+    },
   ];
 }
 
@@ -165,15 +169,36 @@ export function shadeItems(scheme: Scheme): MenuItemSpec[] {
 }
 
 const SIDE = { style: 'single', width: 0.5, space: 1, color: null };
+const BOX = { top: SIDE, bottom: SIDE, start: SIDE, end: SIDE };
 
+/**
+ * The border presets that mean something for a paragraph: each side, the box, all borders, and the line between
+ * paragraphs that share a border. Word's inside horizontal, inside vertical, and diagonal presets are table borders.
+ */
 export function borderItems(): MenuItemSpec[] {
   const set = (id: string, label: MessageKey, border: object | null) =>
     item(`border.${id}`, t(label), go('para.set', { key: 'border', attrs: { value: border } }));
   return [
     set('bottom', 'textHome.borders.bottom', { bottom: SIDE }),
     set('top', 'textHome.borders.top', { top: SIDE }),
-    set('box', 'textHome.borders.box', { top: SIDE, bottom: SIDE, start: SIDE, end: SIDE }),
+    set('start', 'textHome.borders.start', { start: SIDE }),
+    set('end', 'textHome.borders.end', { end: SIDE }),
     { ...set('none', 'textHome.borders.none', null), separatorBefore: true },
+    set('all', 'textHome.borders.all', { ...BOX, between: SIDE }),
+    set('box', 'textHome.borders.box', BOX),
+    set('inside', 'textHome.borders.inside', { between: SIDE }),
+  ];
+}
+
+/** Select all and Select text with similar formatting. */
+export function selectItems(): MenuItemSpec[] {
+  return [
+    item('select.all', t('textHome.select.all'), () => {
+      const editor = targetEditor();
+      editor?.chain().focus().selectAll().run();
+      bumpBar();
+    }),
+    item('select.similar', t('textHome.select.similar'), go('format.selectSimilar', {})),
   ];
 }
 

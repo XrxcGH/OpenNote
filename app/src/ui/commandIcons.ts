@@ -34,6 +34,7 @@ import { ListNumbersIcon } from '@phosphor-icons/react/dist/csr/ListNumbers';
 import { MicrophoneIcon } from '@phosphor-icons/react/dist/csr/Microphone';
 import { NotePencilIcon } from '@phosphor-icons/react/dist/csr/NotePencil';
 import { NotebookIcon } from '@phosphor-icons/react/dist/csr/Notebook';
+import { CursorTextIcon } from '@phosphor-icons/react/dist/csr/CursorText';
 import { PaintBrushIcon } from '@phosphor-icons/react/dist/csr/PaintBrush';
 import { PaintBucketIcon } from '@phosphor-icons/react/dist/csr/PaintBucket';
 import { ParagraphIcon } from '@phosphor-icons/react/dist/csr/Paragraph';
@@ -82,6 +83,7 @@ export const HOME_ICONS: Readonly<Record<string, IconComponent>> = {
   'format.shrinkFont': ArrowFatDownIcon,
   'format.changeCase': TextHIcon,
   'format.painter': PaintBrushIcon,
+  'text.select': CursorTextIcon,
   'format.effect': SparkleIcon,
   'para.alignStart': TextAlignLeftIcon,
   'para.alignCenter': TextAlignCenterIcon,

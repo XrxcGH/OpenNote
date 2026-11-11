@@ -49,8 +49,9 @@ function Choice({ command, name }: { command: CommandId; name: MessageKey }) {
 function Sheet({ onClose }: { onClose(): void }) {
   const editor = useTarget();
   const sheet = useRef<HTMLDivElement>(null);
-  // Focus moves into the sheet when it opens.
-  useEffect(() => sheet.current?.querySelector<HTMLElement>('button, input')?.focus(), []);
+  // Focus moves into the sheet when it opens. It goes to the sheet itself, never to a text box: on a phone or tablet
+  // a focused box opens the on-screen keyboard over the sheet.
+  useEffect(() => sheet.current?.focus(), []);
   const ctx = shownContext(shownNotebook());
   const entries = STYLES.flatMap((name) => galleryEntries(ctx).filter((entry) => entry.name === name));
   const apply = (name: string) => {
@@ -60,6 +61,7 @@ function Sheet({ onClose }: { onClose(): void }) {
   return (
     <div
       ref={sheet}
+      tabIndex={-1}
       className={styles.sheet}
       role="dialog"
       aria-label={t('textHome.sheet.label')}

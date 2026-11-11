@@ -17,6 +17,7 @@ import {
   effectItems,
   multilevelItems,
   numberingItems,
+  selectItems,
   shadeItems,
   spacingItems,
   strikeItems,
@@ -81,47 +82,100 @@ describe('what the controls read from the selection', () => {
   });
 });
 
+type Menu = readonly { id: string; onSelect?: () => void }[];
+const rows: readonly (readonly [string, () => Menu, string, string, unknown])[] = [
+  ['underline double', underlineItems, 'underline.double', 'format.underlineStyle', { value: 'double' }],
+  ['underline wave', underlineItems, 'underline.wave', 'format.underlineStyle', { value: 'wave' }],
+  ['underline none', underlineItems, 'underline.none', 'format.underlineStyle', { value: null }],
+  ['strike single', strikeItems, 'strike.single', 'format.strike', {}],
+  ['strike double', strikeItems, 'strike.double', 'format.strikeDouble', {}],
+  ['effect shadow', effectItems, 'effect.shadow', 'format.effect', { value: 'shadow' }],
+  ['effect small caps', effectItems, 'effect.smallCaps', 'format.smallCaps', {}],
+  ['effect none', effectItems, 'effect.none', 'format.effect', { value: null }],
+  ['case upper', caseItems, 'case.upper', 'format.changeCase', { value: 'upper' }],
+  ['case title', caseItems, 'case.title', 'format.changeCase', { value: 'title' }],
+  ['bullet diamond', bulletItems, `bullet.${BULLET_LIBRARY[3]}`, 'list.bullet', { value: BULLET_LIBRARY[3] }],
+  ['number upper roman', numberingItems, 'number.upperRoman', 'list.numberLook', { value: 'upperRoman' }],
+  ['multilevel legal', multilevelItems, 'multilevel.legal', 'list.multilevel', { value: 'legal' }],
+  ['spacing 1.5', spacingItems, 'spacing.r15', 'para.lineSpacing', { value: 1.5 }],
+  ['spacing 2.0', spacingItems, 'spacing.double', 'para.lineSpacing', { value: 2 }],
+  ['space before 12', spacingItems, 'spacing.addBefore', 'para.set', { key: 'before', attrs: { value: 12 } }],
+  ['space before 0', spacingItems, 'spacing.removeBefore', 'para.set', { key: 'before', attrs: { value: null } }],
+  ['space after 8', spacingItems, 'spacing.addAfter', 'para.set', { key: 'after', attrs: { value: 8 } }],
+  ['shade none', () => shadeItems('light'), 'shade.none', 'para.set', { key: 'shade', attrs: { value: null } }],
+  [
+    'border bottom',
+    borderItems,
+    'border.bottom',
+    'para.set',
+    { key: 'border', attrs: { value: { bottom: { style: 'single', width: 0.5, space: 1, color: null } } } },
+  ],
+  ['border none', borderItems, 'border.none', 'para.set', { key: 'border', attrs: { value: null } }],
+  [
+    'border left',
+    borderItems,
+    'border.start',
+    'para.set',
+    { key: 'border', attrs: { value: { start: { style: 'single', width: 0.5, space: 1, color: null } } } },
+  ],
+  [
+    'border right',
+    borderItems,
+    'border.end',
+    'para.set',
+    { key: 'border', attrs: { value: { end: { style: 'single', width: 0.5, space: 1, color: null } } } },
+  ],
+  [
+    'border inside',
+    borderItems,
+    'border.inside',
+    'para.set',
+    { key: 'border', attrs: { value: { between: { style: 'single', width: 0.5, space: 1, color: null } } } },
+  ],
+  [
+    'border outside',
+    borderItems,
+    'border.box',
+    'para.set',
+    {
+      key: 'border',
+      attrs: {
+        value: {
+          top: { style: 'single', width: 0.5, space: 1, color: null },
+          bottom: { style: 'single', width: 0.5, space: 1, color: null },
+          start: { style: 'single', width: 0.5, space: 1, color: null },
+          end: { style: 'single', width: 0.5, space: 1, color: null },
+        },
+      },
+    },
+  ],
+  [
+    'border all',
+    borderItems,
+    'border.all',
+    'para.set',
+    {
+      key: 'border',
+      attrs: {
+        value: {
+          top: { style: 'single', width: 0.5, space: 1, color: null },
+          bottom: { style: 'single', width: 0.5, space: 1, color: null },
+          start: { style: 'single', width: 0.5, space: 1, color: null },
+          end: { style: 'single', width: 0.5, space: 1, color: null },
+          between: { style: 'single', width: 0.5, space: 1, color: null },
+        },
+      },
+    },
+  ],
+  ['underline thick wave', underlineItems, 'underline.wavyHeavy', 'format.underlineStyle', { value: 'wavyHeavy' }],
+  ['select similar', selectItems, 'select.similar', 'format.selectSimilar', {}],
+];
+
 describe('each menu item runs its command with the choice as the argument', () => {
   beforeEach(() => vi.mocked(run).mockClear());
 
   const pick = (items: readonly { id: string; onSelect?: () => void }[], id: string) =>
     items.find((item) => item.id === id)?.onSelect?.();
-
-  const rows: readonly (readonly [
-    string,
-    () => readonly { id: string; onSelect?: () => void }[],
-    string,
-    string,
-    unknown,
-  ])[] = [
-    ['underline double', underlineItems, 'underline.double', 'format.underlineStyle', { value: 'double' }],
-    ['underline wave', underlineItems, 'underline.wave', 'format.underlineStyle', { value: 'wave' }],
-    ['underline none', underlineItems, 'underline.none', 'format.underlineStyle', { value: null }],
-    ['strike single', strikeItems, 'strike.single', 'format.strike', {}],
-    ['strike double', strikeItems, 'strike.double', 'format.strikeDouble', {}],
-    ['effect shadow', effectItems, 'effect.shadow', 'format.effect', { value: 'shadow' }],
-    ['effect small caps', effectItems, 'effect.smallCaps', 'format.smallCaps', {}],
-    ['effect none', effectItems, 'effect.none', 'format.effect', { value: null }],
-    ['case upper', caseItems, 'case.upper', 'format.changeCase', { value: 'upper' }],
-    ['case title', caseItems, 'case.title', 'format.changeCase', { value: 'title' }],
-    ['bullet diamond', bulletItems, `bullet.${BULLET_LIBRARY[3]}`, 'list.bullet', { value: BULLET_LIBRARY[3] }],
-    ['number upper roman', numberingItems, 'number.upperRoman', 'list.numberLook', { value: 'upperRoman' }],
-    ['multilevel legal', multilevelItems, 'multilevel.legal', 'list.multilevel', { value: 'legal' }],
-    ['spacing 1.5', spacingItems, 'spacing.r15', 'para.lineSpacing', { value: 1.5 }],
-    ['spacing 2.0', spacingItems, 'spacing.double', 'para.lineSpacing', { value: 2 }],
-    ['space before 12', spacingItems, 'spacing.addBefore', 'para.set', { key: 'before', attrs: { value: 12 } }],
-    ['space before 0', spacingItems, 'spacing.removeBefore', 'para.set', { key: 'before', attrs: { value: null } }],
-    ['space after 8', spacingItems, 'spacing.addAfter', 'para.set', { key: 'after', attrs: { value: 8 } }],
-    ['shade none', () => shadeItems('light'), 'shade.none', 'para.set', { key: 'shade', attrs: { value: null } }],
-    [
-      'border bottom',
-      borderItems,
-      'border.bottom',
-      'para.set',
-      { key: 'border', attrs: { value: { bottom: { style: 'single', width: 0.5, space: 1, color: null } } } },
-    ],
-    ['border none', borderItems, 'border.none', 'para.set', { key: 'border', attrs: { value: null } }],
-  ];
 
   for (const [name, items, id, command, args] of rows) {
     it(`${name}`, () => {
@@ -137,7 +191,14 @@ describe('each menu item runs its command with the choice as the argument', () =
   });
 
   it('every label is a sentence of the strings file', () => {
-    const all = [...underlineItems(), ...effectItems(), ...caseItems(), ...spacingItems(), ...borderItems()];
+    const all = [
+      ...underlineItems(),
+      ...effectItems(),
+      ...caseItems(),
+      ...spacingItems(),
+      ...borderItems(),
+      ...selectItems(),
+    ];
     for (const item of all) expect(item.label).not.toMatch(/^textHome\./);
     expect(t('textHome.sheet.open')).toBe('Aa');
   });
@@ -145,6 +206,31 @@ describe('each menu item runs its command with the choice as the argument', () =
 
 const pick = (items: readonly { id: string; onSelect?: () => void }[], id: string) =>
   items.find((item) => item.id === id)?.onSelect?.();
+
+describe('the menus offer the choices of the design', () => {
+  beforeEach(() => vi.mocked(run).mockClear());
+
+  it('the underline menu offers all 17 styles of the design and an Underline color submenu', () => {
+    const items = underlineItems();
+    expect(
+      items.filter(
+        (item) => item.id.startsWith('underline.') && !['underline.none', 'underline.color'].includes(item.id),
+      ),
+    ).toHaveLength(17);
+    const color = items.find((item) => item.id === 'underline.color');
+    expect(color?.submenu?.length).toBe(7);
+    vi.mocked(run).mockClear();
+    color?.submenu?.find((item) => item.id === 'underlineColor.accent2')?.onSelect?.();
+    expect(run).toHaveBeenCalledWith('format.underlineColor', { value: 'theme:accent2' });
+    vi.mocked(run).mockClear();
+    color?.submenu?.find((item) => item.id === 'underlineColor.auto')?.onSelect?.();
+    expect(run).toHaveBeenCalledWith('format.underlineColor', { value: null });
+  });
+
+  it('the borders menu offers eight presets', () => {
+    expect(borderItems()).toHaveLength(8);
+  });
+});
 
 describe('the space menu on a real paragraph', () => {
   const apply = (state: EditorState, id: string) => {

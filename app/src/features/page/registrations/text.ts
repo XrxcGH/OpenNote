@@ -56,6 +56,7 @@ const PLAIN: readonly (readonly [CommandId, MessageKey])[] = [
   ['format.growFont', name('growFont')],
   ['format.shrinkFont', name('shrinkFont')],
   ['format.strikeDouble', name('strikeDouble')],
+  ['format.selectSimilar', name('selectSimilar')],
 ];
 for (const [id, title] of PLAIN) {
   if (commands.get(id)) continue; // The shortcut lane registered it.
@@ -72,7 +73,7 @@ for (const [id, title] of PLAIN) {
 }
 
 // The menu tools' own commands: shading and borders write a paragraph key, and need a choice from their menu.
-for (const id of ['para.shade', 'para.border'] as const) {
+for (const id of ['para.shade', 'para.border', 'text.select'] as const) {
   commands.register(
     defineCommand({
       id,
@@ -240,6 +241,10 @@ const HOME: readonly CommandBarItem[] = [
   component('home.case', 'text', 'format.changeCase', 31, menuTool('format.changeCase', name('changeCase')), {
     overflow: ['format.cycleCase'],
   }),
+  component('home.select', 'find', 'text.select', 18, menuTool('text.select', 'textHome.select.label'), {
+    overflow: ['format.selectSimilar'],
+  }),
+  home({ id: 'home.replace', group: 'find', command: 'page.replace', priority: 19, flag: 'page.findReplace' }),
   home({ id: 'home.painter', group: 'text', command: 'format.painter', priority: 41, flag: FLAG }),
   old('format.textSize', 'text', 30, { offWith: FLAG }),
   old('format.clear', 'text', 35),
