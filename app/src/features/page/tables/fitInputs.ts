@@ -1,8 +1,6 @@
 // What Fit column width measures in the live table (DESIGN 13.2): the text each cell shows (rendered, not the markdown
 // or the formula text), in the font the cell is drawn in. A canvas measures the lines with that font.
 
-import { canvasMeasure } from '../../tables';
-
 export interface FitInputs {
   texts: (column: number) => readonly string[];
   measure: (line: string) => number;
@@ -22,7 +20,7 @@ function fontOf(element: Element): string {
 /** The shown text of the cells of each column and a measure in the first body cell's font. Null without cells. */
 export function domFitInputs(
   root: ParentNode,
-  measureFor: (font: string) => (line: string) => number = canvasMeasure,
+  measureFor: (font: string) => (line: string) => number,
 ): FitInputs | null {
   const rows = [...root.querySelectorAll('tr')];
   if (rows.length === 0) return null;

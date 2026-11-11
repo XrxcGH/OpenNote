@@ -22,6 +22,6 @@ describe('domFitInputs', () => {
 
   it('is null without a table', () => {
     document.body.innerHTML = '<p>none</p>';
-    expect(domFitInputs(document.body)).toBeNull();
+    expect(domFitInputs(document.body, () => () => 0)).toBeNull();
   });
 });

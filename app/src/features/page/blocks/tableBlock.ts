@@ -39,7 +39,7 @@ import { blockLaidOut } from '../seams/geometry';
 import { acceptRemoteText, attachTableSync } from '../sync';
 import type { TableSyncHandle } from '../sync';
 import { domFitInputs } from '../tables/fitInputs';
-import { readSheet, rowHeight, tableName as sheetTableName } from '../../tables';
+import { loadSheetApi, sheetApi } from '../tables/lazySheet';
 import { tableExtras } from '../tables/extras';
 import type { TableExtraHandle, TableExtraHost } from '../tables/extras';
 import { currentTable } from '../tables/current';
@@ -259,7 +259,8 @@ class TableView implements InnerView {
     const tables = blocks.filter((block) => block.type === 'table');
     const index = tables.findIndex((block) => block.id === this.current.id);
     if (index < 0) return undefined;
-    const own = sheetTableName(readSheet(this.current.data));
+    const api = sheetApi();
+    const own = api?.tableName(api.readSheet(this.current.data));
     return {
       name: own ?? `Table${index + 1}`,
       others: tables
@@ -269,13 +270,14 @@ class TableView implements InnerView {
   }
 
   /** Fit column width measures what the cells show, in the font they are drawn in, unless the command says more. */
-  private measured(op: TableOp): TableOp {
+  private async measured(op: TableOp): Promise<TableOp> {
     if (op.op !== 'fitColumns' || (op.measure && op.texts)) return op;
-    const inputs = domFitInputs(this.editRoot);
+    const inputs = domFitInputs(this.editRoot, (await loadSheetApi()).canvasMeasure);
     return inputs ? { ...op, texts: op.texts ?? inputs.texts, measure: op.measure ?? inputs.measure } : op;
   }
 
   private async run(op: TableOp): Promise<boolean> {
+    await loadSheetApi();
     // Other tables get the adjusted formulas as whole rows, so their own typing must be saved first, or it is lost.
     if (this.book()?.others.length) await this.ctx.sync.flushAll('command');
     else if (this.sync) await this.sync.flush('command');
@@ -283,7 +285,7 @@ class TableView implements InnerView {
     const applied = applyTableOp(
       before,
       this.caretCell(),
-      this.measured(this.boxed(op)),
+      await this.measured(this.boxed(op)),
       this.sheetData(),
       this.book(),
     );
@@ -340,6 +342,7 @@ class TableView implements InnerView {
   }
 
   private openRowHeight(): void {
+    void loadSheetApi().then(() => this.renderToolbar());
     this.heightOpen = true;
     currentTable.set(this.handle);
     this.setCurrent(true);
@@ -356,7 +359,8 @@ class TableView implements InnerView {
   /** The height set on the caret's row: what the row height field starts with. */
   private caretRowHeight(): { height: number | null; exact: boolean } {
     const row = this.data.rows[Math.min(this.caretCell().row, this.data.rows.length - 1)];
-    const set = row ? rowHeight(readSheet(this.current.data), row.id) : null;
+    const api = sheetApi();
+    const set = row && api ? api.rowHeight(api.readSheet(this.current.data), row.id) : null;
     return { height: set?.height ?? null, exact: set?.exact ?? false };
   }
 
