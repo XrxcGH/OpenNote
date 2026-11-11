@@ -5,7 +5,7 @@
 import { AlignBottomIcon } from '@phosphor-icons/react/dist/csr/AlignBottom';
 import { AlignCenterVerticalIcon } from '@phosphor-icons/react/dist/csr/AlignCenterVertical';
 import { AlignTopIcon } from '@phosphor-icons/react/dist/csr/AlignTop';
-import { ArrowsClockwiseIcon } from '@phosphor-icons/react/dist/csr/ArrowsClockwise';
+import { ArrowClockwiseIcon } from '@phosphor-icons/react/dist/csr/ArrowClockwise';
 import { CaretDownIcon } from '@phosphor-icons/react/dist/csr/CaretDown';
 import { CurrencyDollarIcon } from '@phosphor-icons/react/dist/csr/CurrencyDollar';
 import { DotsThreeIcon } from '@phosphor-icons/react/dist/csr/DotsThree';
@@ -477,7 +477,7 @@ function AlignGroup({ host, cells, run, narrow }: GroupProps) {
           {v('middle', 'sheetToolbar.alignMiddle', AlignCenterVerticalIcon)}
           {v('bottom', 'sheetToolbar.alignBottom', AlignBottomIcon)}
           <Tool tool="wrap" name="sheetToolbar.wrapMenu" icon={TextAaIcon} popup="menu" onPress={wrapMenu} />
-          <Tool tool="rotate" name="sheetToolbar.rotate" icon={ArrowsClockwiseIcon} popup="menu" onPress={rotateMenu} />
+          <Tool tool="rotate" name="sheetToolbar.rotate" icon={ArrowClockwiseIcon} popup="menu" onPress={rotateMenu} />
         </>
       )}
     </span>

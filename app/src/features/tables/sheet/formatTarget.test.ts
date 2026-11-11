@@ -257,3 +257,33 @@ describe('borders and number formats', () => {
     expect(r.style('A1').align?.h).toBe('center');
   });
 });
+
+describe('requests on whole cells that the cell style does not cover', () => {
+  it('keeps the other marks when Superscript goes on a whole cell', async () => {
+    const r = rig({ B2: '**bold** and *it*' });
+    r.select('B2');
+    expect(runEditorCommand(r.editor, 'format.superscript')).toBe(true);
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(r.style('B2').font?.script).toBe('super');
+    expect((r.block() as unknown as TableData).rows[1].cells.col1.markdown).toBe('**bold** and *it*');
+  });
+
+  it('sets the font family of whole cells from the Home tab command', async () => {
+    const r = rig();
+    r.select('B2', 'C2');
+    expect(runEditorCommand(r.editor, 'format.font', { value: 'Georgia' })).toBe(true);
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(r.style('B2').font?.family).toBe('Georgia');
+    expect(r.style('C2').font?.family).toBe('Georgia');
+  });
+
+  it('lets the text take Highlight on whole cells, which the cell style has no field for', () => {
+    const r = rig({ B2: 'text' });
+    r.select('B2');
+    expect(runEditorCommand(r.editor, 'format.highlight', { color: 'yellow' })).toBe(true);
+    expect(r.patches).toHaveLength(0);
+  });
+});
+

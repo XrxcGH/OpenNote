@@ -6,8 +6,8 @@
 // cell can be selected, so the thin target hands over to it from then on.
 import { registerFormatTarget } from '../../../../editor/commands/formatTarget';
 import type { FormatTarget } from '../../../../editor/commands/formatTarget';
-import { CellSelection } from '@tiptap/pm/tables';
-import { tableExtras } from '../../../page';
+import type { EditorState } from '@tiptap/pm/state';
+import { tableExtras } from '../../../page/tables/extras';
 import { registerCellCommands } from './commands';
 import { addHost, blockChanged, hostOfState } from './hosts';
 
@@ -21,10 +21,13 @@ function loadTarget(): Promise<unknown> {
   });
 }
 
+/** A cell selection has these anchor cells. The check avoids importing the table plugin at start-up. */
+const isCellSelection = (state: EditorState): boolean => '$anchorCell' in state.selection;
+
 /** The thin target: it claims what the full one claims, once the full one has loaded. */
 const thinTarget: FormatTarget = {
   id: 'tables.cellRange',
-  claims: (state) => loaded !== null && state.selection instanceof CellSelection && loaded.claims(state),
+  claims: (state) => loaded !== null && isCellSelection(state) && loaded.claims(state),
   apply: (request, state, dispatch) => loaded?.apply(request, state, dispatch) ?? false,
 };
 

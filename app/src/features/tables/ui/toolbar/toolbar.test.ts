@@ -135,3 +135,18 @@ describe('which number format choice a code is', () => {
     expect(choiceOf('0.000', EN_US)).toBeNull();
   });
 });
+
+describe('decimal places limits and quoted text', () => {
+  it('stops at 30 decimal places, the limit of Excel and Sheets', () => {
+    let code: string | null = '0';
+    for (let i = 0; i < 100; i++) code = stepDecimals(code ?? undefined, 1);
+    expect(code).toBe(`0.${'0'.repeat(30)}`);
+  });
+
+  it('reads a quoted literal that ends in an underscore as text', () => {
+    expect(stepDecimals('"x_"0.00', 1)).toBe('"x_"0.000');
+    expect(stepDecimals('"x_"0.00', -1)).toBe('"x_"0.0');
+    expect(toggleThousands('"x_"0')).toBe('"x_"#,##0');
+  });
+});
+

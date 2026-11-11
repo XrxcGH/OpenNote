@@ -5,5 +5,6 @@ export { attachSmart } from './smart/attach';
 export { runSmartCommand } from './smart/commands';
 export type { SmartCommand } from './smart/commands';
 export { exportTableCharts } from './smart/exportCharts';
-export { CellFormatBar } from './ui/toolbar';
+/** The cell format bar loads on demand, so the tables chunk stays small. */
+export const loadCellFormatBar = () => import('./ui/toolbar/CellFormatBar');
 export type { CellFormatBarProps } from './ui/toolbar';

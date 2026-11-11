@@ -70,7 +70,7 @@ function scan(code: string): { open: boolean[]; end: number } {
   let end = code.length;
   for (let i = 0; i < code.length; i++) {
     const c = code[i];
-    if (c === '\\' || c === '_' || c === '*') i++;
+    if (!quote && (c === '\\' || c === '_' || c === '*')) i++;
     else if (c === '"') quote = !quote;
     else if (!quote && c === '[') bracket = true;
     else if (!quote && c === ']') bracket = false;
@@ -87,6 +87,9 @@ function scan(code: string): { open: boolean[]; end: number } {
 
 const isDigit = (c: string | undefined) => c !== undefined && /[0#?]/.test(c);
 const isGeneral = (code: string | undefined) => code === undefined || code === '' || /^general$/i.test(code);
+
+/** Excel and Sheets allow at most 30 decimal places. */
+const MAX_DECIMALS = 30;
 
 /**
  * More or fewer digits after the decimal point in the first section. General gains one decimal as `0.0`. A format with
@@ -117,8 +120,8 @@ function stepSection(text: string, direction: 1 | -1): string {
   }
   let stop = dot + 1;
   while (stop < limit && open[stop] && isDigit(text[stop])) stop++;
-  if (direction === 1) return `${text.slice(0, stop)}0${text.slice(stop)}`;
   const digits = stop - dot - 1;
+  if (direction === 1) return digits >= MAX_DECIMALS ? text : `${text.slice(0, stop)}0${text.slice(stop)}`;
   return digits <= 1 ? `${text.slice(0, dot)}${text.slice(stop)}` : `${text.slice(0, stop - 1)}${text.slice(stop)}`;
 }
 
@@ -130,7 +133,7 @@ function sections(code: string): string[] {
   let bracket = false;
   for (let i = 0; i < code.length; i++) {
     const c = code[i];
-    if (c === '\\' || c === '_' || c === '*') i++;
+    if (!quote && (c === '\\' || c === '_' || c === '*')) i++;
     else if (c === '"') quote = !quote;
     else if (!quote && c === '[') bracket = true;
     else if (!quote && c === ']') bracket = false;

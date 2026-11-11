@@ -55,6 +55,7 @@ const STRIPPED: Readonly<Record<string, readonly string[]>> = {
   strike: ['strike'],
   textColor: ['textColor'],
   textSize: ['textSize'],
+  script: ['subscript', 'superscript'],
   clear: [
     'bold',
     'weight',
@@ -126,9 +127,9 @@ export function planFormat(request: FormatRequest, box: CellBox, style: CellStyl
     case 'strike':
       return whole({ font: { strike: style.font?.strike === 'single' ? 'none' : 'single' } }, STRIPPED.strike);
     case 'subscript':
-      return whole({ font: { script: style.font?.script === 'sub' ? 'none' : 'sub' } }, STRIPPED.clear);
+      return whole({ font: { script: style.font?.script === 'sub' ? 'none' : 'sub' } }, STRIPPED.script);
     case 'superscript':
-      return whole({ font: { script: style.font?.script === 'super' ? 'none' : 'super' } }, STRIPPED.clear);
+      return whole({ font: { script: style.font?.script === 'super' ? 'none' : 'super' } }, STRIPPED.script);
     case 'textColor':
       return whole({ font: { color: request.color } }, STRIPPED.textColor);
     case 'textSize': {
@@ -140,6 +141,11 @@ export function planFormat(request: FormatRequest, box: CellBox, style: CellStyl
       const now = sizeOf(style);
       const next = request.by === 'point' ? nudgeSize(now, request.direction) : stepSize(now, request.direction);
       return whole({ font: { size: next } }, STRIPPED.textSize);
+    }
+    case 'run': {
+      if (request.mark !== 'font') return null;
+      const name = request.attrs?.font;
+      return whole({ font: { family: typeof name === 'string' ? name : null } }, ['font']);
     }
     case 'clear':
       return whole({ fmt: null, font: null, fill: null, border: null, align: null, pad: null }, STRIPPED.clear);
