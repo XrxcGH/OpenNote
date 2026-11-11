@@ -12,7 +12,6 @@ import { createTable, setColumnFormula } from './edit';
 import { REGISTRY } from './formula/fn';
 import { FUNCTIONS } from './formula/functions';
 import { EN_US } from './locale';
-import { REGISTRY } from './formula/fn';
 import { ERROR_TOKENS, type Value } from './values';
 
 /** Days from 1900-based Excel serials to the day numbers since 1970 that OpenNote's dates use. */
