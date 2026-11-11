@@ -7,8 +7,9 @@
 //
 // toBe compares two values by sameness. So NaN equals NaN, and zero differs from negative zero.
 //
-// toEqual ignores properties whose value is undefined. It also ignores undefined array items, array sparseness,
-// and object types. toStrictEqual counts all of those.
+// toEqual ignores properties whose value is undefined. It also ignores array sparseness and object types. Arrays of
+// different lengths differ, as in Jest's own equality check, so an undefined item is only equal to a hole.
+// toStrictEqual counts all of those.
 //
 // toBeCloseTo(n, digits = 2) passes when |received - n| < 10^-digits / 2.
 //
@@ -21,8 +22,9 @@
 // fails, every test of its describe fails with that error. A test cannot start inside another test.
 //
 // `.only` and `.each` are not supported: they throw a clear error, so a file that uses them does not pass silently.
-// The third argument is the text of those errors, from the strings file. The harness keeps its own JSON.stringify and
-// Object.keys, so a program that replaces them cannot break the reports.
+// The third argument is the text of those errors, from the strings file. The harness keeps its own JSON.stringify,
+// Object.keys, Date.now, and Array.prototype.join, so a program that replaces them cannot break the reports. Each
+// test's full name is joined when the test is added, and the results for unfinished tests use no program code.
 
 export const TEST_API = String.raw`(function (report, load, textJson) {
   'use strict';
@@ -31,6 +33,8 @@ export const TEST_API = String.raw`(function (report, load, textJson) {
   const objectKeys = Object.keys;
   const ownSymbols = Object.getOwnPropertySymbols;
   const consoleError = console.error;
+  const now = Date.now;
+  const join = Function.prototype.call.bind(Array.prototype.join);
   function suiteIn(parent, titles) {
     return { titles, beforeEach: [], afterEach: [], beforeAll: [], afterAll: [], parent, started: false, failure: null };
   }
@@ -47,9 +51,8 @@ export const TEST_API = String.raw`(function (report, load, textJson) {
   }
   function addTest(name, fn, skip) {
     outsideTests();
-    tests.push({
-      titles: current.titles.concat(String(name)), fn, suite: current, file, skip: skip || skipping > 0, index: tests.length,
-    });
+    const titles = current.titles.concat(String(name));
+    tests.push({ name: join(titles, ' > '), fn, suite: current, file, skip: skip || skipping > 0, index: tests.length });
   }
   function describe(name, fn) {
     outsideTests();
@@ -173,7 +176,7 @@ export const TEST_API = String.raw`(function (report, load, textJson) {
       return true;
     }
     if (Array.isArray(a)) {
-      if (strict && a.length !== b.length) return false;
+      if (a.length !== b.length) return false;
       const length = Math.max(a.length, b.length);
       for (let i = 0; i < length; i++) {
         if (strict && (i in a) !== (i in b)) return false;
@@ -294,7 +297,7 @@ export const TEST_API = String.raw`(function (report, load, textJson) {
 
   function send(entry, status, started, failure) {
     const result = {
-      name: entry.titles.join(' > '), file: entry.file, status, timeMs: Date.now() - started, index: entry.index,
+      name: entry.name, file: entry.file, status, timeMs: now() - started, index: entry.index,
     };
     if (failure !== undefined) {
       result.message = failure instanceof Error ? failure.name + ': ' + failure.message : 'Thrown: ' + format(failure);
@@ -346,7 +349,7 @@ export const TEST_API = String.raw`(function (report, load, textJson) {
   }
 
   function runOne(entry) {
-    const started = Date.now();
+    const started = now();
     if (!runs(entry)) {
       send(entry, 'skipped', started);
       return Promise.resolve();
@@ -412,7 +415,11 @@ export const TEST_API = String.raw`(function (report, load, textJson) {
     unfinished: function (from, firstStatus, firstMessage, restStatus, restMessage) {
       for (let i = from; i < planned; i++) {
         const first = i === from;
-        send(tests[i], first ? firstStatus : restStatus, Date.now(), new Error(first ? firstMessage : restMessage));
+        const entry = tests[i];
+        report(stringify({
+          name: entry.name, file: entry.file, status: first ? firstStatus : restStatus, timeMs: 0, index: entry.index,
+          message: 'Error: ' + (first ? firstMessage : restMessage),
+        }));
       }
     },
     count: function () { return tests.length; },

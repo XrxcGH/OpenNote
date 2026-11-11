@@ -25,25 +25,52 @@ const END_PREFIX = 'void 0;';
 const MODULE_SYNTAX = /(?:^|[^.\w$])(?:import|export)\b/;
 /**
  * A TypeScript namespace or module block that is not `declare`d. Sucrase 3.35.1 removes such a block without a word,
- * so its code would never run.
+ * so its code would never run. A match starts only at one of `;{}` or a line break. The spaces after that start are
+ * not line breaks, so each character is tried once, and long runs of blank lines stay linear.
  */
-const NAMESPACE = /(^|[;{}]\s*|\n\s*)(?:export\s+)?(?:namespace|module)\s+[A-Za-z_$][\w$.]*\s*\{/g;
-/** Sucrase 3.35.1 turns `export const a = 1, b = 2;` into `const a = 1; exports.a = a, b = 2;`, which is wrong. */
-const SEVERAL_DECLARATORS = /\bexports\.([A-Za-z_$][\w$]*) = \1, /;
+const NAMESPACE = /(^|[;{}\n])[^\S\n]*(?:export\s+)?(?:namespace|module)\s+[A-Za-z_$][\w$.]*\s*\{/g;
+/**
+ * Sucrase 3.35.1 turns `export const a = 1, b = 2;` into `const a = 1; exports.a = a, b = 2;`, and `export let a, b;`
+ * into `exports.a, b;`, which are wrong. The comma may stand after any spaces or line breaks. A match starts only at
+ * one of `;{}` or a line start. The spaces after that start are not line breaks, so each start is tried once.
+ */
+const SEVERAL_DECLARATORS = /(?:^|[;{}])[^\S\n]*exports\.([A-Za-z_$][\w$]*)(?:\s*=\s*\1)?\s*,/gm;
+const EXPORT = /\bexport\b/;
 
 /** Whether a JavaScript file might need the imports transform: a quick test before the exact one in `compile`. */
 export function usesModules(text: string): boolean {
   return MODULE_SYNTAX.test(text);
 }
 
-const lineAt = (text: string, index: number) => text.slice(0, index).split('\n').length;
+/** Gives the line of each index in `text`, for indexes that only grow: each line break is counted once. */
+function lineCounter(text: string): (index: number) => number {
+  let line = 1;
+  let counted = 0;
+  return (index) => {
+    for (let at = text.indexOf('\n', counted); at >= 0 && at < index; at = text.indexOf('\n', at + 1)) line++;
+    counted = Math.max(counted, index);
+    return line;
+  };
+}
+
+/** The line of the first export statement with several declarators, which Sucrase compiles wrong. */
+function severalDeclarators(text: string, out: string): number | null {
+  const lineOf = lineCounter(out);
+  const textLines = text.split('\n');
+  for (const found of out.matchAll(SEVERAL_DECLARATORS)) {
+    const line = lineOf(found.index ?? 0);
+    // Sucrase keeps lines, so the statement's own line still says `export`; a plain `x, y;` there does not.
+    if (EXPORT.test(textLines[line - 1] ?? '')) return line;
+  }
+  return null;
+}
 
 /** The first `namespace` block Sucrase dropped: in the file, but no longer on its line in the output. */
 function droppedNamespace(text: string, out: string): number | null {
   const outLines = out.split('\n');
+  const lineOf = lineCounter(text);
   for (const found of text.matchAll(NAMESPACE)) {
-    const start = (found.index ?? 0) + (found[1]?.length ?? 0);
-    const line = lineAt(text, start);
+    const line = lineOf((found.index ?? 0) + (found[1]?.length ?? 0));
     if (!/\b(?:namespace|module)\b/.test(outLines[line - 1] ?? '')) return line;
   }
   return null;
@@ -79,7 +106,7 @@ export function compile(path: string, source: string, transform: Transform): Com
     const line = droppedNamespace(text, body);
     if (line !== null) return { line, column: 1, message: '', unsupported: 'namespace' };
   }
-  const several = SEVERAL_DECLARATORS.exec(body);
-  if (several) return { line: lineAt(body, several.index), column: 1, message: '', unsupported: 'declarators' };
+  const several = severalDeclarators(text, body);
+  if (several !== null) return { line: several, column: 1, message: '', unsupported: 'declarators' };
   return { code: `${prefix}${END_PREFIX}${body}`, shift: prefix.length + END_PREFIX.length };
 }

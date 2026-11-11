@@ -20,7 +20,7 @@ import { seeded } from '../../run/random';
 import { Stdin } from '../../run/stdin';
 import { VERSIONS } from './adapter';
 import { quickjsMapper } from './diagnostics';
-import { BASE_HEAP_BYTES, cappedHeap, runProgram } from './engine';
+import { BASE_HEAP_BYTES, cappedHeap, headroomBytes, runProgram } from './engine';
 import type { Engine } from './engine';
 import { resolveModule } from './modules';
 import { compile, usesModules } from './transpile';
@@ -360,7 +360,9 @@ describe('the run', () => {
     );
     expect(ran.status).toBe('memory');
     expect(performance.now() - started).toBeLessThan(2000);
-    expect(small.quickjs.getWasmMemory().buffer.byteLength).toBeLessThanOrEqual(BASE_HEAP_BYTES + limit);
+    expect(small.quickjs.getWasmMemory().buffer.byteLength).toBeLessThanOrEqual(
+      BASE_HEAP_BYTES + limit + headroomBytes(limit),
+    );
   });
 
   it("ends the run when the heap grows past the run's own, smaller limit", async () => {
@@ -376,6 +378,27 @@ describe('the run', () => {
     expect(ran.status).toBe('memory');
     // The heap grows in steps of about a fifth, so it stops a few megabytes past the limit, far below the cap.
     expect(fresh.quickjs.getWasmMemory().buffer.byteLength).toBeLessThan(BASE_HEAP_BYTES + 3 * limit);
+  });
+
+  // Many small blocks fill the heap between two checks of the interrupt handler. QuickJS then cannot make its own
+  // out-of-memory error and throws null, which ended these runs as "Uncaught null" before the heap had headroom.
+  it('ends many small allocations as "memory" under the default limits', async () => {
+    const programs: Record<string, string>[] = [
+      { 'main.js': "const a = []; for (;;) a.push({ i: a.length, s: 'x' + a.length });" },
+      { 'main.js': 'let n = null; for (;;) n = { next: n };' },
+      { 'main.js': 'const m = new Map(); for (let i = 0; ; i++) m.set(i, { i });' },
+      {
+        'main.ts': [
+          'class P { constructor(public x: number, public y: number) {} }',
+          'const all: P[] = [];',
+          'for (;;) all.push(new P(1, 2));',
+        ].join('\n'),
+      },
+    ];
+    for (const files of programs) {
+      const ran = run(files, { engine: await newEngine(), timeMs: 60_000 });
+      expect([files, ran.status, ran.err]).toEqual([files, 'memory', 'InternalError: out of memory\n']);
+    }
   });
 
   it('stops at the time limit, also inside a promise job', () => {
@@ -505,6 +528,22 @@ describe('Sucrase keeps line numbers', () => {
     expect(namespace.out).toBe('');
     expect(namespace.err).toContain('A namespace or module block with code in it cannot run here');
     expect(namespace.diagnostics).toEqual([expect.objectContaining({ file: 'main.ts', line: 2 })]);
+    // Every form Sucrase compiles wrong, also where a global of the second name exists and the wrong code would run.
+    const forms = [
+      'export const a = 1,\n  b = 2;',
+      'export let a = 1,b = 2;',
+      'export let a, b;',
+      'export var a\n, b = 2;',
+    ];
+    for (const form of forms) {
+      const module = run({ 'main.ts': 'var b = 0;\nimport * as u from "./u";\nconsole.log(u.a, b);', 'u.ts': form });
+      expect([form, module.status, module.out]).toEqual([form, 'error', '']);
+      expect(module.err).toContain('Export one name in each statement here');
+      expect(module.diagnostics).toEqual([expect.objectContaining({ file: 'u.ts', line: 1, kind: 'SyntaxError' })]);
+    }
+    // A comma expression on a line of its own is not an export, even when it starts with an exported name.
+    const comma = run({ 'main.ts': 'export let x = 1;\nx, console.log("comma");' });
+    expect([comma.status, comma.out]).toEqual(['ok', 'comma\n']);
     const imported = run({ 'main.ts': 'import { a } from "./u";\nconsole.log(a);', 'u.ts': 'export let a = 1, b;' });
     expect(imported.diagnostics).toEqual([expect.objectContaining({ file: 'u.ts', line: 1, kind: 'SyntaxError' })]);
     // A declared namespace has no code, so Sucrase may drop it; one export per statement is fine.
@@ -581,6 +620,18 @@ describe('modules', () => {
 
 const tests = (source: string, path = 'math.test.ts') => run({ [path]: source }, { tests: true });
 
+describe('TypeScript guards on hostile input', () => {
+  // The namespace guard once tried every blank line against all the blank lines after it: 80,000 took 7.9 s.
+  it('compiles a 190,000-line blank TypeScript file in well under a second', () => {
+    const source = `${'\n'.repeat(190_000)}console.log(1);`;
+    compile('main.ts', source, transform);
+    const started = performance.now();
+    const compiled = compile('main.ts', source, transform);
+    expect(performance.now() - started).toBeLessThan(200);
+    expect('code' in compiled).toBe(true);
+  });
+});
+
 describe('the Jest-compatible test API (known answers from Jest documentation)', () => {
   it('passes toBeCloseTo and fails toBe for 0.1 + 0.2 against 0.3', () => {
     const ran = tests(
@@ -603,12 +654,32 @@ describe('the Jest-compatible test API (known answers from Jest documentation)',
     expect(ran.out).toContain('Tests: 1 passed, 1 failed, 0 skipped, 2 total.');
   });
 
+  // toBeCloseTo(n, digits = 2) passes when |received - n| < 10^-digits / 2: these sit on each side of that bound.
+  it('puts the toBeCloseTo bound at half a unit of the last digit', () => {
+    const ran = tests(
+      [
+        "test('0.304', () => expect(0.304).toBeCloseTo(0.3));",
+        "test('0.306', () => expect(0.306).toBeCloseTo(0.3));",
+        "test('1.23', () => expect(1.23).toBeCloseTo(1.2, 1));",
+        "test('1.26', () => expect(1.26).toBeCloseTo(1.2, 1));",
+      ].join('\n'),
+    );
+    expect(ran.tests.map((result) => [result.name, result.status])).toEqual([
+      ['0.304', 'pass'],
+      ['0.306', 'fail'],
+      ['1.23', 'pass'],
+      ['1.26', 'fail'],
+    ]);
+  });
+
   it('lets toEqual ignore undefined properties and toStrictEqual not', () => {
     const ran = tests(
       [
         "test('equal', () => expect({ a: 1, b: undefined }).toEqual({ a: 1 }));",
         "test('strict', () => expect({ a: 1, b: undefined }).toStrictEqual({ a: 1 }));",
         "test('array items', () => expect([2]).toEqual([2, undefined]));",
+        "test('array length', () => expect([undefined]).toEqual([]));",
+        "test('sparse', () => expect([, 1]).toEqual([undefined, 1]));",
         "test('array items strict', () => expect([2]).toStrictEqual([2, undefined]));",
         "test('sparse strict', () => expect([, 1]).toStrictEqual([undefined, 1]));",
         'class LaCroix { constructor(flavor) { this.flavor = flavor; } }',
@@ -617,7 +688,18 @@ describe('the Jest-compatible test API (known answers from Jest documentation)',
       ].join('\n'),
       'equal.test.js',
     );
-    expect(ran.tests.map((result) => result.status)).toEqual(['pass', 'fail', 'pass', 'fail', 'fail', 'pass', 'fail']);
+    // Arrays of different lengths differ, as in Jest's equality check; only a hole equals undefined.
+    expect(ran.tests.map((result) => result.status)).toEqual([
+      'pass',
+      'fail',
+      'fail',
+      'fail',
+      'pass',
+      'fail',
+      'fail',
+      'pass',
+      'fail',
+    ]);
   });
 
   it('matches toThrow against a message substring, a pattern, and a class', () => {
@@ -742,6 +824,57 @@ describe('limits and caps in a test run', () => {
     expect(ran.tests.map((result) => [result.name, result.status])).toEqual([
       ['hog', 'error'],
       ['later', 'skipped'],
+    ]);
+  });
+
+  it('ends the run as "memory" when a test fills the heap with small objects', async () => {
+    const ran = run(
+      {
+        'small.test.js': [
+          'test("hog", () => { const a = []; for (;;) a.push({ i: a.length }); });',
+          'test("later", () => {});',
+        ].join('\n'),
+      },
+      { tests: true, engine: await newEngine(), timeMs: 60_000 },
+    );
+    expect(ran.status).toBe('memory');
+    expect(ran.tests.map((result) => [result.name, result.status])).toEqual([
+      ['hog', 'error'],
+      ['later', 'skipped'],
+    ]);
+    expect(ran.tests[0]!.message).toContain('memory');
+    expect(ran.out).not.toContain('PASS');
+  });
+
+  // While the run closes, the test API reports the unfinished tests. It must not call code the program replaced, and
+  // it has a hard deadline of its own, so the run still ends on time.
+  it('reports unfinished tests without the built-ins a program replaced', () => {
+    const spoil = [
+      'const spin = function () { for (;;) {} };',
+      'Array.prototype.join = spin; Date.now = spin; globalThis.Error = spin;',
+      'Object.defineProperty(Object.getPrototypeOf(RangeError.prototype), "name", { get: spin });',
+    ].join('\n');
+    let started = performance.now();
+    const timed = run(
+      { 'spin.test.js': `${spoil}\ntest("spin", () => { for (;;) {} });\ntest("later", () => {});` },
+      { tests: true, timeMs: 300 },
+    );
+    expect(performance.now() - started).toBeLessThan(3000);
+    expect(timed.status).toBe('time');
+    expect(timed.tests.map((result) => [result.name, result.status])).toEqual([
+      ['spin', 'time'],
+      ['later', 'skipped'],
+    ]);
+    started = performance.now();
+    const stuck = run(
+      { 'stuck.test.js': `${spoil}\ntest("stuck", () => new Promise(() => {}));\ntest("later", () => {});` },
+      { tests: true, timeMs: 2000 },
+    );
+    expect(performance.now() - started).toBeLessThan(3000);
+    expect(stuck.status).toBe('error');
+    expect(stuck.tests.map((result) => [result.name, result.status])).toEqual([
+      ['stuck', 'error'],
+      ['later', 'error'],
     ]);
   });
 

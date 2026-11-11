@@ -6,6 +6,11 @@
 //
 // Limits. QuickJS's own memory limit cannot see the size of a block in this WebAssembly build. So the heap itself
 // is capped (`cappedHeap`). The interrupt handler also ends the run when the heap has grown past the run's limit.
+// The cap leaves some room above that limit, so the handler trips first and QuickJS can still unwind.
+//
+// Many small blocks can still fill the heap between two checks. QuickJS then cannot make its out-of-memory error
+// and throws null. So any error while the heap is past the limit ends the run as "memory".
+//
 // The handler sets `limit` when it stops the run at the deadline or at the memory limit. An interrupt inside a
 // promise job only rejects a promise, so the run checks `limit` after every batch of jobs.
 
@@ -35,11 +40,20 @@ const PAGE_BYTES = 64 * 1024;
 /** The heap the QuickJS release build starts with: Emscripten's default INITIAL_MEMORY, 16 MiB. */
 export const BASE_HEAP_BYTES = 16 * 1024 * 1024;
 
-/** A WebAssembly heap for QuickJS that cannot grow more than `memoryBytes` past its start. */
+/**
+ * Room in the heap above the run's limit, for QuickJS to stop and unwind once the limit has tripped. Emscripten
+ * grows the heap by a fifth of its size, then by less, down to a twentieth, and stops growing when even that does
+ * not fit under the cap. Room of an eighth of the limit's heap lets the heap always grow past the limit first.
+ */
+export function headroomBytes(memoryBytes: number): number {
+  return Math.max(2 * 1024 * 1024, Math.ceil((BASE_HEAP_BYTES + memoryBytes) / 8));
+}
+
+/** A WebAssembly heap for QuickJS that cannot grow more than `memoryBytes` and the headroom past its start. */
 export function cappedHeap(memoryBytes: number): WebAssembly.Memory {
   return new WebAssembly.Memory({
     initial: BASE_HEAP_BYTES / PAGE_BYTES,
-    maximum: Math.ceil((BASE_HEAP_BYTES + memoryBytes) / PAGE_BYTES),
+    maximum: Math.ceil((BASE_HEAP_BYTES + memoryBytes + headroomBytes(memoryBytes)) / PAGE_BYTES),
   });
 }
 
@@ -75,6 +89,9 @@ const LOADER = String.raw`(function (compile, resolve, root) {
 
 /** The wrapper around a module's text. It starts on the file's first line, so every line keeps its number. */
 const WRAPPER = '(function (exports, require, module, __filename, __dirname) {';
+
+/** How long the test API may take to report the tests a stopped run did not finish. */
+const CLOSE_MS = 250;
 
 const STACK_OVERFLOW = 'InternalError: stack overflow (too much recursion)\n';
 const OUT_OF_MEMORY = /^InternalError: out of memory/;
@@ -115,7 +132,10 @@ function safeText(value: unknown): string {
 /** Runs one request. Never throws for the program's own errors; those end the run as "error". */
 export function runProgram(engine: Engine, request: RunRequest, emit: Emit, context: RunContext): RunEnd {
   const runtime = engine.quickjs.newRuntime();
-  runtime.setMemoryLimit(request.limits.memoryBytes);
+  // QuickJS's own count only backs up the heap cap. It is set above the cap, so the heap check always trips first.
+  // Set lower, it tripped before the heap passed the limit and threw null.
+  const { memoryBytes } = request.limits;
+  runtime.setMemoryLimit(BASE_HEAP_BYTES + memoryBytes + headroomBytes(memoryBytes));
   runtime.setMaxStackSize(request.limits.stackBytes);
   const run = new Run(engine.transform, runtime, request, emit, context, engine.quickjs.getWasmMemory());
   runtime.setInterruptHandler(() => run.interrupt());
@@ -144,8 +164,9 @@ class Run {
   exitCode: number | undefined;
   /** The limit that ended the run, set by the interrupt handler or by an out-of-memory error. */
   limit: 'time' | 'memory' | null = null;
-  /** While the host reports the end of a stopped test run, the interrupt handler lets QuickJS go on. */
+  /** While the host reports the end of a stopped test run, the interrupt handler lets QuickJS go on until `closeBy`. */
   private closing = false;
+  private closeBy = 0;
   private readonly heapStart: number;
   private inspect: QuickJSHandle | null = null;
   private requireFrom: QuickJSHandle | null = null;
@@ -175,15 +196,18 @@ class Run {
 
   /** The interrupt handler: true stops QuickJS. */
   interrupt(): boolean {
-    if (this.closing) return false;
+    if (this.closing) return performance.now() > this.closeBy;
     if (this.exitCode !== undefined || this.limit !== null) return true;
     if (performance.now() > this.context.deadline) this.limit = 'time';
     else if (this.overMemory()) this.limit = 'memory';
     return this.limit !== null;
   }
 
+  /** Whether the heap has grown past the run's limit, from where this run started or from the base heap. */
   private overMemory(): boolean {
-    return this.heap.buffer.byteLength - this.heapStart > this.request.limits.memoryBytes;
+    const bytes = this.heap.buffer.byteLength;
+    const limit = this.request.limits.memoryBytes;
+    return bytes - this.heapStart > limit || bytes > BASE_HEAP_BYTES + limit;
   }
 
   private write(stream: Stream, text: string): void {
@@ -226,7 +250,10 @@ class Run {
     // dump() gives a string for an object JSON cannot hold, such as a cyclic one.
     const object = type === 'object' && typeof dumped === 'object' && dumped !== null ? (dumped as Thrown) : null;
     const plain = !object || (object.name === undefined && object.stack === undefined);
-    const shown = plain && type !== 'string' && this.inspect !== null && this.limit === null ? this.show(handle) : '';
+    const shown =
+      plain && type !== 'string' && this.inspect !== null && this.limit === null && !this.overMemory()
+        ? this.show(handle)
+        : '';
     handle.dispose();
     const thrown: Thrown = object
       ? { name: object.name, message: object.message, stack: object.stack }
@@ -418,6 +445,8 @@ class Run {
 
   private failure(thrown: Thrown): RunEnd {
     if (this.exitCode !== undefined) return this.exited();
+    // A full heap throws whatever it can, often null; that is the memory limit, not the program's error.
+    if (this.limit === null && this.overMemory()) this.limit = 'memory';
     if (this.limit !== null) return this.limitEnd();
     try {
       return this.describe(thrown);
@@ -470,7 +499,7 @@ class Run {
     } catch {
       return;
     }
-    if (!this.closing && found.status === 'error' && OUT_OF_MEMORY.test(found.message ?? '')) {
+    if (!this.closing && found.status === 'error' && (OUT_OF_MEMORY.test(found.message ?? '') || this.overMemory())) {
       this.limit = 'memory';
       return;
     }
@@ -579,6 +608,7 @@ class Run {
   /** Sends a result for each test from the first one not reported: `first` for it, `rest` for the others. */
   private unfinished(api: QuickJSHandle, first: [TestStatus, string], rest: [TestStatus, string]): void {
     this.closing = true;
+    this.closeBy = performance.now() + CLOSE_MS;
     const done = this.callMethod(api, 'unfinished', [this.testsReported, ...first, ...rest]);
     if ('value' in done) done.value.dispose();
   }
@@ -657,7 +687,7 @@ class Run {
 
   /** Whether an error is a limit or an exit, which ends the whole run rather than one test. */
   private stoppedBy(thrown: Thrown): boolean {
-    if (this.exitCode !== undefined || this.limit !== null) return true;
+    if (this.exitCode !== undefined || this.limit !== null || this.overMemory()) return true;
     return thrown.name === 'InternalError' && OUT_OF_MEMORY.test(`InternalError: ${String(thrown.message)}`);
   }
 }

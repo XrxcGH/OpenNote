@@ -68,6 +68,19 @@ describe('the sandbox', () => {
     expect((await js(pushes, { ...RUN_LIMITS, memoryBytes: 8 * 1024 * 1024 })).status).toBe('memory');
   });
 
+  // Small blocks fill the heap between two checks; QuickJS then threw null and the run ended "Uncaught null".
+  it('stops many small allocations at the default memory limit', async () => {
+    const programs = [
+      "const a = []; for (;;) a.push({ i: a.length, s: 'x' + a.length });",
+      'let n = null; for (;;) n = { next: n };',
+      'const m = new Map(); for (let i = 0; ; i++) m.set(i, { i });',
+    ];
+    for (const program of programs) {
+      const ran = await js(program);
+      expect([program, ran.status, ran.err]).toEqual([program, 'memory', 'InternalError: out of memory\n']);
+    }
+  });
+
   it('ends at the time limit when the loop runs inside a promise job', async () => {
     const ran = await js(
       'async function main() { await null; while (true) {} }\nmain();\nconsole.log("started");',
