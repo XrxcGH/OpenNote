@@ -207,6 +207,7 @@
     "allow-notebook-styles-set",
     "allow-packs-list",
     "allow-packs-download",
+    "allow-packs-cancel",
     "allow-packs-remove",
     "allow-coderun-detect",
     "allow-coderun-start",
