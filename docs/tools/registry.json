@@ -4140,6 +4140,71 @@
       "flag": "kits.thermo"
     },
     {
+      "id": "insert.pageBreakMenu",
+      "title": "Page break",
+      "category": "insert",
+      "keys": [],
+      "flag": "text.layout"
+    },
+    {
+      "id": "insert.columnBreak",
+      "title": "Column break",
+      "category": "insert",
+      "keys": [
+        "Ctrl+Shift+Enter"
+      ],
+      "flag": "text.layout"
+    },
+    {
+      "id": "layout.columns1",
+      "title": "One column",
+      "category": "insert",
+      "keys": [],
+      "flag": "text.layout"
+    },
+    {
+      "id": "layout.columns2",
+      "title": "2 columns",
+      "category": "insert",
+      "keys": [],
+      "flag": "text.layout"
+    },
+    {
+      "id": "layout.columns3",
+      "title": "3 columns",
+      "category": "insert",
+      "keys": [],
+      "flag": "text.layout"
+    },
+    {
+      "id": "layout.columns4",
+      "title": "4 columns",
+      "category": "insert",
+      "keys": [],
+      "flag": "text.layout"
+    },
+    {
+      "id": "layout.verticalText",
+      "title": "Vertical text",
+      "category": "insert",
+      "keys": [],
+      "flag": "text.layout"
+    },
+    {
+      "id": "layout.lineNumbers",
+      "title": "Line numbers",
+      "category": "insert",
+      "keys": [],
+      "flag": "text.layout"
+    },
+    {
+      "id": "layout.headerFooter",
+      "title": "Header and footer",
+      "category": "insert",
+      "keys": [],
+      "flag": "text.layout"
+    },
+    {
       "id": "insert.plot3d",
       "title": "Insert 3D function plot",
       "category": "insert",
