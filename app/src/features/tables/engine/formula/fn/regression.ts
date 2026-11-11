@@ -79,14 +79,17 @@ export function leastSquares(cols: readonly number[][], y: readonly number[], in
   const k = cols.length;
   const means = cols.map((c) => (intercept ? c.reduce((a, b) => a + b, 0) / n : 0));
   const my = intercept ? y.reduce((a, b) => a + b, 0) / n : 0;
-  const centered = cols.map((c, j) => c.map((x) => x - means[j]));
+  // Each centered column is scaled to a largest size of 1, so its norms neither overflow nor underflow (1E200
+  // squared is Infinity). The fit on the scaled columns is then scaled back: coefficient j divides by scale j.
+  const scales = cols.map((c, j) => c.reduce((m, x) => Math.max(m, Math.abs(x - means[j])), 0) || 1);
+  const centered = cols.map((c, j) => c.map((x) => (x - means[j]) / scales[j]));
   const yc = y.map((v) => v - my);
   const { kept, q, r } = gramSchmidt(centered);
   const qty = q.map((qi) => dot(qi, yc));
   const rinv = invertUpper(r);
   const b = rinv.map((row) => dot(row, qty));
   const coef = new Array<number>(k).fill(0);
-  kept.forEach((j, i) => (coef[j] = b[i]));
+  kept.forEach((j, i) => (coef[j] = b[i] / scales[j]));
   const b0 = intercept ? my - dot(coef, means) : 0;
   const fitted = y.map((_, t) => b0 + cols.reduce((s, c, j) => s + coef[j] * c[t], 0));
   const ssresid = y.reduce((s, v, t) => s + (v - fitted[t]) ** 2, 0);
@@ -94,9 +97,10 @@ export function leastSquares(cols: readonly number[][], y: readonly number[], in
   const df = n - kept.length - (intercept ? 1 : 0);
   const s2 = df > 0 ? ssresid / df : NaN;
   const se = new Array<number>(k).fill(0);
-  kept.forEach((j, i) => (se[j] = Math.sqrt(s2 * dot(rinv[i], rinv[i]))));
+  kept.forEach((j, i) => (se[j] = Math.sqrt(s2 * dot(rinv[i], rinv[i])) / scales[j]));
   // Var(b0) = s2 (1/n + m' (Xc'Xc)^-1 m), where (Xc'Xc)^-1 is the inverse of R times its transpose.
-  const keptMeans = kept.map((j) => means[j]);
+  // In the scaled columns the means are scaled too.
+  const keptMeans = kept.map((j) => means[j] / scales[j]);
   const w = rinv.map((_, m) => rinv.reduce((s, row, i) => s + row[m] * keptMeans[i], 0));
   const seIntercept = intercept ? Math.sqrt(s2 * (1 / n + dot(w, w))) : NaN;
   const total = ssreg + ssresid;

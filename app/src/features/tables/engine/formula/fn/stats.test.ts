@@ -398,9 +398,12 @@ describe('discrete laws with huge arguments', () => {
     expect(calc('BINOM.INV(1E7,0.5,0.5)')).toBe(5e6);
     expect(calc('BINOM.INV(1E9,0.5,0.5)')).toBe(5e8);
     expect(calc('CRITBINOM(1E7,0.5,0.5)')).toBe(5e6);
-    const top = calc('BINOM.INV(1E7,0.5,1)') as number;
+    // P(X <= k) < 1 for every k < n, so alpha = 1 is reached only at n.
+    expect(calc('BINOM.INV(1E7,0.5,1)')).toBe(1e7);
+    // 1 - 1E-13 is Phi(7.35), so the answer is 7 to 8 standard deviations (sqrt(n) / 2 = 1581) above the median.
+    const top = calc('BINOM.INV(1E7,0.5,0.9999999999999)') as number;
     expect(top).toBeGreaterThan(5e6 + 7 * 1581);
-    expect(top).toBeLessThan(5e6 + 9 * 1581);
+    expect(top).toBeLessThan(5e6 + 8 * 1581);
     near(calc('BINOM.DIST.RANGE(1E6,0.5,0,1E6)'), 1, 12);
     // Half, plus half the central term C(n, n/2) / 2^n = sqrt(2 / (pi n)) (1 - 1 / (4 n)).
     near(calc('BINOM.DIST.RANGE(1E6,0.5,0,500000)'), 0.5 + Math.sqrt(2 / (Math.PI * 1e6)) * (1 - 2.5e-7) * 0.5, 10);
@@ -557,4 +560,84 @@ describe('long ranges stay bounded (lane test)', () => {
     expect(run('MINIFS', [range, range, '>0'])).toBe(1);
     expect(items(run('FREQUENCY', [range, arrayOf([[0]])]))).toEqual([501_000, 499_000]);
   }, 30000);
+});
+
+describe('distributions at the edges of a double', () => {
+  beforeAll(() => loadStatistics());
+
+  /** Runs a formula and fails if it takes longer than `ms`. */
+  function timed(formula: string, ms = 5000): Value {
+    const start = performance.now();
+    const v = calc(formula);
+    expect(performance.now() - start, formula).toBeLessThan(ms);
+    return v;
+  }
+
+  it('BINOM.INV, CRITBINOM, and HYPGEOM.DIST stop past 2^53 counts', () => {
+    // Past 2^53 a count is not a whole number in a double, so stepping or bisecting through it never ends.
+    expect(code(timed('BINOM.INV(1E17,0.5,0.5)'))).toBe('#NUM!');
+    expect(code(timed('CRITBINOM(1E300,0.5,0.5)'))).toBe('#NUM!');
+    expect(code(timed('HYPGEOM.DIST(5E17,1E18,1E18,2E18,TRUE)'))).toBe('#NUM!');
+    expect(code(timed('HYPGEOM.DIST(5E29,1E30,1E30,2E30,TRUE)'))).toBe('#NUM!');
+    // Under 2^53 a spread of about 2E7 needs far more terms than the cap, so the sum gives up rather than hang.
+    expect(code(timed('HYPGEOM.DIST(2E15,4E15,4E15,8E15,TRUE)'))).toBe('#NUM!');
+  }, 30000);
+
+  it('GAMMA.INV gives #NUM! or the median where the incomplete gamma runs out of terms', () => {
+    // The median of the gamma law is a - 1/3 + 8 / (405 a) + ... (Choi, 1994).
+    const v = timed('GAMMA.INV(0.5,1E13,1)', 10000);
+    if (code(v) !== '#NUM!') near(v, 1e13 - 1 / 3, 9);
+  }, 30000);
+
+  it('BETA.DIST, BETA.INV, F.DIST, and F.INV keep small x on the wide path', () => {
+    // For a small x, I_x(a, b) = x^a b^a (1 + a (a - 1) / (2 b)) / Gamma(a + 1), with Gamma(3/2) = sqrt(pi) / 2.
+    const g = Math.sqrt(Math.PI) / 2;
+    near(calc('BETA.DIST(1E-30,0.5,1000000,TRUE)'), (1e-15 * 1000 * (1 - 0.125e-6)) / g, 10);
+    // F with d1 = 1: y = x / (x + d2), a = 1/2, b = d2 / 2.
+    near(calc('F.DIST(1E-20,1,1000000,TRUE)'), (1e-13 * Math.sqrt(5e5) * (1 - 0.25 / 1e6)) / g, 10);
+    // The inverse of the first form: x = (p g / (b^a (1 + a (a - 1) / (2 b))))^(1 / a).
+    near(calc('BETA.INV(1E-9,0.5,1000000)'), ((1e-9 * g) / (1000 * (1 - 0.125e-6))) ** 2, 8);
+    // F.INV: x = d2 y for a tiny y, with y from the same form at b = 5E5.
+    near(calc('F.INV(1E-9,1,1000000)'), 1e6 * ((1e-9 * g) / (Math.sqrt(5e5) * (1 - 0.25 / 1e6))) ** 2, 8);
+  });
+
+  it('T.DIST and T.INV keep their digits near the center', () => {
+    // Near 0 the t density is f(0) = (1 - 1 / (4 df)) / sqrt(2 pi), so P(T < t) = 1/2 + f(0) t.
+    const slope = (df: number) => (1 - 1 / (4 * df)) / Math.sqrt(2 * Math.PI);
+    near(calc('T.INV(0.5000000001,100000)'), (0.5000000001 - 0.5) / slope(1e5), 8);
+    near(calc('T.INV.2T(0.999999999,100000)'), (0.5 - 0.999999999 / 2) / slope(1e5), 8);
+    near(calc('T.INV(0.5000000001,1000000)'), (0.5000000001 - 0.5) / slope(1e6), 8);
+    near(calc('T.INV(0.5000000001,100000000)'), (0.5000000001 - 0.5) / slope(1e8), 8);
+    near(calc('T.INV(0.4999999999,100000)'), (0.4999999999 - 0.5) / slope(1e5), 8);
+    const d = (calc('T.DIST(1E-10,100000,TRUE)') as number) - 0.5;
+    near(d, 1e-10 * slope(1e5), 6);
+  });
+
+  it('BINOM.DIST keeps (1 - p)^(n - k) exact for a tiny p', () => {
+    // n p (1 - p)^(n - 1), with ln(1 - p) = -p - p^2 / 2 - p^3 / 3 and p^3 n under 1E-18.
+    const [n, p] = [276719929, 1.53736e-9];
+    near(calc(`BINOM.DIST(1,${n},${p},FALSE)`), n * p * Math.exp((n - 1) * (-p - (p * p) / 2)), 12);
+  });
+
+  it('BETA.DIST keeps mid-size parameters on the exact power term', () => {
+    // The beta law with a = b is symmetric about 1/2.
+    near(calc('BETA.DIST(0.5,99999,99999,TRUE)'), 0.5, 12);
+    near(calc('BETA.DIST(0.5,5000,5000,TRUE)'), 0.5, 12);
+  });
+
+  it('takes the edge values', () => {
+    // P(X <= 1E308) for a mean of 1 is 1, and so is the F law at 1E308.
+    expect(timed('POISSON.DIST(1E308,1,TRUE)', 1000)).toBe(1);
+    expect(calc('F.DIST(1E308,5,5,TRUE)')).toBe(1);
+    expect(calc('F.DIST.RT(1E308,5,5)')).toBe(0);
+    // P(X <= k) < 1 for every k < n, so only n reaches alpha = 1.
+    expect(calc('BINOM.INV(2000,0.5,1)')).toBe(2000);
+    expect(calc('BINOM.INV(1000,0.5,1)')).toBe(1000);
+    expect(calc('BINOM.INV(10,0.5,1)')).toBe(10);
+    expect(code(calc('CHISQ.TEST({1,2},{-1,2})'))).toBe('#NUM!');
+    // y = 1, 2, 4 on x = 1, 2, 3 (times 1E200): slope 3 / 2 (over 1E200), intercept 7/3 - 2 (3/2) = -2/3.
+    const fit = items(calc('LINEST({1,2,4},{1E200,2E200,3E200},TRUE,TRUE)'));
+    near(fit[0] as number, 1.5e-200, 12);
+    near(fit[1] as number, -2 / 3, 12);
+  });
 });

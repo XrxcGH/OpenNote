@@ -25,6 +25,7 @@ import {
   poissonCdf,
   poissonPmf,
   tCdf,
+  tCentral,
   tPdf,
   tSf,
 } from './distributionsKit';
@@ -130,8 +131,15 @@ function tDist(x: number, df: number, cumulative: boolean): number {
 }
 const tDist2t = (x: number, df: number) => (x < 0 || !dfOk(T(df)) ? bad : Math.min(1, 2 * tSf(x, T(df))));
 const tDistRt = (x: number, df: number) => (!dfOk(T(df)) ? bad : tSf(x, T(df)));
-/** The t value with P(T > t) = q, for 0 < q <= 0.5. */
-const tUpperInv = (q: number, k: number) => (q === 0.5 ? 0 : invertUpper((x) => tSf(x, k), q, 0, 1));
+/**
+ * The t value with P(T > t) = q, for 0 < q <= 0.5. Near the center it solves the central mass for 0.5 - q, which is
+ * exact, since the tail there is 0.5 less a tiny number and has lost the digits that place t.
+ */
+function tUpperInv(q: number, k: number): number {
+  if (q === 0.5) return 0;
+  if (q > 0.25) return invert((x) => tCentral(x, k), 0.5 - q, 0, 1);
+  return invertUpper((x) => tSf(x, k), q, 0, 1);
+}
 function tInv(p: number, df: number): number {
   const k = T(df);
   if (p <= 0 || p >= 1 || !dfOk(k)) return bad;
@@ -158,16 +166,24 @@ function binomRange([n, p, s, s2]: number[]): number {
   return Math.min(1, total);
 }
 
+/** Counts above 2^53 are not whole numbers in a double, so the discrete laws that step through them stop there. */
+const COUNT_MAX = 2 ** 53;
+
 function binomInv(n: number, p: number, alpha: number): number {
   const m = T(n);
-  if (m < 0 || p < 0 || p > 1 || alpha < 0 || alpha > 1) return bad;
+  if (m < 0 || m > COUNT_MAX || p < 0 || p > 1 || alpha < 0 || alpha > 1) return bad;
+  // P(X <= k) < 1 for every k < n when p > 0, so only n reaches alpha = 1.
+  if (alpha === 1) return p === 0 ? 0 : m;
   const target = alpha * (1 - 1e-15);
   if (m > 1000) {
     // The smallest k with binomCdf(k) >= target, by bisection: about 30 incomplete betas for a billion trials.
     let [lo, hi] = [-1, m];
     while (hi - lo > 1) {
       const mid = Math.floor((lo + hi) / 2);
-      if (binomCdf(mid, m, p) >= target) hi = mid;
+      if (mid === lo || mid === hi) break;
+      const v = binomCdf(mid, m, p);
+      if (Number.isNaN(v)) return bad;
+      if (v >= target) hi = mid;
       else lo = mid;
     }
     return hi;
@@ -191,6 +207,9 @@ function hypgeom(s: number, n: number, ms: number, np: number, cumulative: boole
   const [k, draws, succ, pop] = [T(s), T(n), T(ms), T(np)];
   const low = Math.max(0, draws - pop + succ);
   if (k < low || k > Math.min(draws, succ) || draws <= 0 || succ <= 0 || pop <= 0 || draws > pop || succ > pop) {
+    return bad;
+  }
+  if (pop > COUNT_MAX) {
     return bad;
   }
   return cumulative ? hypgeomTail(k, draws, succ, pop) : hypgeomPmf(k, draws, succ, pop);
@@ -227,6 +246,7 @@ function chisqTest([actual, expected]: Value[]): Value {
     if (isError(x)) return x;
     if (typeof o !== 'number' || typeof x !== 'number') continue;
     if (x === 0) return err('DIV0');
+    if (x < 0) return err('NUM');
     chi += ((o - x) * (o - x)) / x;
   }
   const df = a.rows > 1 && a.cols > 1 ? (a.rows - 1) * (a.cols - 1) : a.data.length - 1;

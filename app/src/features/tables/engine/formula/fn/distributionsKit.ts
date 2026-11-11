@@ -3,7 +3,7 @@
 // core/num/special: the normal law from erfc, the gamma family from the regularized incomplete gamma, and the
 // beta, Student t, and F laws from the regularized incomplete beta. Inverses solve the distribution numerically.
 
-import { betaInc, erfc, gammaP, gammaQ, lgamma } from '../../../../../core/num/special';
+import { betaInc, erf, erfc, gammaP, gammaQ, lgamma } from '../../../../../core/num/special';
 
 const SQRT2 = Math.SQRT2;
 const LN_SQRT_2PI = 0.5 * Math.log(2 * Math.PI);
@@ -95,7 +95,8 @@ function gammaWide(a: number, x: number): [number, number] {
     for (let n = 1; n < GAMMA_TERMS; n++) {
       term *= x / (a + n);
       sum += term;
-      if (term < sum * 2 ** -53) {
+      // At or below, so a term that underflows to zero still stops the sum when the sum is subnormal.
+      if (term <= sum * 2 ** -53) {
         const p = Math.min(1, sum * gammaPower(a, x));
         return [p, 1 - p];
       }
@@ -142,8 +143,8 @@ export const gammaSf = (x: number, a: number, b: number): number => (x <= 0 ? 1 
 
 // Beta.
 
-/** At or above this parameter the incomplete beta takes the wide path below. */
-const WIDE = 1e5;
+/** At or above this parameter the incomplete beta takes the wide path below, whose power term keeps its digits. */
+const WIDE = 1e3;
 
 /** ln(1 + u) - u, accurate for small u. */
 function log1pmx(u: number): number {
@@ -174,17 +175,25 @@ function stirlingRest(x: number): number {
  */
 export function betaPower(x: number, a: number, b: number, y = 1 - x): number {
   const s = a + b;
-  const u = (x * s - a) / a;
-  const v = (y * s - b) / b;
   const ln =
     0.5 * Math.log((a / s) * b) -
     LN_SQRT_2PI -
     stirlingRest(a) -
     stirlingRest(b) +
     stirlingRest(s) +
-    a * log1pmx(u) +
-    b * log1pmx(v);
+    scaledLog1pmx(x, s, a) +
+    scaledLog1pmx(y, s, b);
   return Math.exp(ln);
+}
+
+/**
+ * a (ln r - (r - 1)) with r = x s / a. Near r = 1 it is a log1pmx(r - 1). Far below 1, r - 1 rounded would lose the
+ * digits of r (it is -1 once r is under 1E-16), so the log comes from ln x + ln(s / a) and a (r - 1) from x s - a.
+ */
+function scaledLog1pmx(x: number, s: number, a: number): number {
+  const xs = x * s;
+  if (xs < 0.5 * a) return a * (Math.log(x) + Math.log(s / a)) - (xs - a);
+  return a * log1pmx((xs - a) / a);
 }
 
 /** The continued fraction of I_x(a, b) (DLMF 8.17.22) by Lentz's method, with the exact power term above. */
@@ -240,20 +249,39 @@ export function betaPdf(x: number, a: number, b: number): number {
  */
 const T_NORMAL = 1e7;
 
+/** Below this t the tail is near one half, so it is one half less the central mass, which keeps its digits. */
+const T_CENTER = 0.5;
+
 /**
  * The upper tail P(T > t) for t >= 0: I_x(df / 2, 1 / 2) / 2 with x = df / (df + t^2). Many degrees of freedom
  * take the wide path with 1 - x = t^2 / (df + t^2) worked out exactly, since 1 - x rounded would lose its digits.
  */
 function tUpper(t: number, df: number): number {
-  if (df > T_NORMAL) {
-    // Abramowitz and Stegun 26.7.5: Phi(-t) + phi(t) (g1 / df + g2 / df^2), with the next term near 1E-21 here.
-    const t2 = t * t;
-    const g1 = (t2 * t + t) / 4;
-    const g2 = (t * (((3 * t2 - 7) * t2 - 5) * t2 - 3)) / 96;
-    return normCdf(-t) + normPdf(t) * (g1 / df + g2 / (df * df));
-  }
-  const [x, y] = [df / (df + t * t), (t * t) / (df + t * t)];
+  if (t < T_CENTER) return 0.5 - tCentral(t, df);
+  const t2 = t * t;
+  if (df > T_NORMAL) return normCdf(-t) + normPdf(t) * tSeries(t, t2, df);
+  const [x, y] = [df / (df + t2), t2 / (df + t2)];
   return 0.5 * (df >= 2 * WIDE ? betaIncWide(x, df / 2, 0.5, y) : betaInc(x, df / 2, 0.5));
+}
+
+/** Abramowitz and Stegun 26.7.5: P(T > t) = Phi(-t) + phi(t) (g1 / df + g2 / df^2); the next term is near 1E-21. */
+function tSeries(t: number, t2: number, df: number): number {
+  const g1 = (t2 * t + t) / 4;
+  const g2 = (t * (((3 * t2 - 7) * t2 - 5) * t2 - 3)) / 96;
+  return g1 / df + g2 / (df * df);
+}
+
+/**
+ * The central mass P(0 < T < t) for t >= 0. Below T_CENTER it is I_y(1/2, df / 2) / 2 with y = t^2 / (df + t^2),
+ * which keeps every digit for a small t; the tail from x = df / (df + t^2) would not, since x rounds to 1. Past
+ * T_NORMAL it is erf(t / sqrt 2) / 2 less the series term. At or above T_CENTER it is one half less the tail.
+ */
+export function tCentral(t: number, df: number): number {
+  if (t >= T_CENTER) return 0.5 - tUpper(t, df);
+  const t2 = t * t;
+  if (df > T_NORMAL) return 0.5 * erf(t / SQRT2) - normPdf(t) * tSeries(t, t2, df);
+  const [y, x] = [t2 / (df + t2), df / (df + t2)];
+  return 0.5 * (df >= 2 * WIDE ? betaIncWide(y, 0.5, df / 2, x) : betaInc(y, 0.5, df / 2));
 }
 
 export const tCdf = (t: number, df: number): number => (t >= 0 ? 1 - tUpper(t, df) : tUpper(-t, df));
@@ -272,12 +300,27 @@ export function tPdf(t: number, df: number): number {
 
 // F.
 
+/**
+ * [y, 1 - y] with y = d1 x / (d1 x + d2). Past d1 x = d2 it is worked from q = d2 / (d1 x) as [1, q] / (1 + q), so
+ * a huge x, where d1 x overflows, still gives y = 1.
+ */
+function fSplit(x: number, d1: number, d2: number): [number, number] {
+  const dx = d1 * x;
+  if (dx <= d2) return [dx / (dx + d2), d2 / (dx + d2)];
+  const q = d2 / d1 / x;
+  return [1 / (1 + q), q / (1 + q)];
+}
+
 export function fCdf(x: number, d1: number, d2: number): number {
-  return x <= 0 ? 0 : betaIncWide((d1 * x) / (d1 * x + d2), d1 / 2, d2 / 2, d2 / (d1 * x + d2));
+  if (x <= 0) return 0;
+  const [y, z] = fSplit(x, d1, d2);
+  return betaIncWide(y, d1 / 2, d2 / 2, z);
 }
 
 export function fSf(x: number, d1: number, d2: number): number {
-  return x <= 0 ? 1 : betaIncWide(d2 / (d2 + d1 * x), d2 / 2, d1 / 2, (d1 * x) / (d2 + d1 * x));
+  if (x <= 0) return 1;
+  const [y, z] = fSplit(x, d1, d2);
+  return betaIncWide(z, d2 / 2, d1 / 2, y);
 }
 
 export function fPdf(x: number, d1: number, d2: number): number {
@@ -339,7 +382,8 @@ export function binomPmf(k: number, n: number, p: number): number {
   if (p === 1) return k === n ? 1 : 0;
   const c = choose(n, k);
   if (Number.isFinite(c) && c < 2 ** 53) {
-    const v = c * p ** k * (1 - p) ** (n - k);
+    // (1 - p) rounded carries an error near 1E-16, which the power multiplies by n - k; log1p keeps it exact.
+    const v = c * p ** k * Math.exp((n - k) * Math.log1p(-p));
     if (v > 1e-280) return v;
   }
   return Math.exp(lnBinomTerm(k, n, p, 1 - p));
@@ -350,13 +394,13 @@ export function binomPmf(k: number, n: number, p: number): number {
  * so past the exact product it is r / (x + r) times the binomial term of r successes in x + r trials.
  */
 export function negbinomPmf(x: number, r: number, p: number): number {
-  const c = choose(x + r - 1, r - 1);
-  if (Number.isFinite(c) && c < 2 ** 53) {
-    const v = c * p ** r * (1 - p) ** x;
-    if (v > 1e-280 || p === 0 || p === 1) return v;
-  }
   if (p === 1) return x === 0 ? 1 : 0;
   if (p === 0) return 0;
+  const c = choose(x + r - 1, r - 1);
+  if (Number.isFinite(c) && c < 2 ** 53) {
+    const v = c * p ** r * Math.exp(x * Math.log1p(-p));
+    if (v > 1e-280) return v;
+  }
   return (r / (x + r)) * Math.exp(lnBinomTerm(r, x + r, p, 1 - p));
 }
 
@@ -417,9 +461,11 @@ export function hypgeomTail(k: number, draws: number, succ: number, pop: number)
   // up(i) = pmf(i + 1) / pmf(i).
   const up = (i: number) => ((succ - i) * (draws - i)) / ((i + 1) * (pop - succ - draws + i + 1));
   let total = 0;
+  let steps = 0;
   if (k < mode) {
     let term = hypgeomPmf(k, draws, succ, pop);
     for (let i = k; i >= low && term > 1e-17 * total; i--) {
+      if (++steps > HYPGEOM_TERMS) return NaN;
       total += term;
       term /= up(i - 1);
     }
@@ -428,29 +474,42 @@ export function hypgeomTail(k: number, draws: number, succ: number, pop: number)
   if (k >= high) return 1;
   let term = hypgeomPmf(k + 1, draws, succ, pop);
   for (let i = k + 1; i <= high && term > 1e-17 * total; i++) {
+    if (++steps > HYPGEOM_TERMS) return NaN;
     total += term;
     term *= up(i);
   }
   return Math.max(0, 1 - total);
 }
 
+/**
+ * No more terms than this in hypgeomTail; past it the sum is NaN, which shows as #NUM!. The tail needs about 40
+ * standard deviations of terms, so this serves a spread of about 500,000, a population near 1E12 at an even split.
+ */
+const HYPGEOM_TERMS = 20_000_000;
+
 // Inverses.
 
 /**
  * Solves cdf(x) = p for an increasing cdf on (lo, hi), widening `hi` while it is finite and too small. Bisection,
- * which needs no derivative and always lands within the digits of a double.
+ * which needs no derivative and always lands within the digits of a double. NaN as soon as the cdf gives NaN, which
+ * is how it says its terms ran out: bisecting on would land at the edge of that zone, a wrong number.
  */
 export function invert(cdf: (x: number) => number, p: number, lo: number, hi: number): number {
   let a = lo;
   let b = hi;
-  while (cdf(b) < p && b < 1e300) {
+  for (;;) {
+    const v = cdf(b);
+    if (Number.isNaN(v)) return NaN;
+    if (v >= p || b >= 1e300) break;
     a = b;
     b *= 2;
   }
   for (let i = 0; i < 2000; i++) {
     const m = a + (b - a) / 2;
     if (m === a || m === b) break;
-    if (cdf(m) < p) a = m;
+    const v = cdf(m);
+    if (Number.isNaN(v)) return NaN;
+    if (v < p) a = m;
     else b = m;
   }
   return a + (b - a) / 2;
