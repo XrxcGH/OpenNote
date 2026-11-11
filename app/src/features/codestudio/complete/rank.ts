@@ -84,12 +84,52 @@ function details() {
   };
 }
 
-let wordCache: { text: string; counts: Map<string, number> } | null = null;
+/** The words source reads this many characters of the file around the caret, and as many of the other files. */
+export const WORDS_WINDOW = 200_000;
+/** The window's edges snap to blocks of this size, so it stays put while the caret moves within a block. */
+const WORDS_BLOCK = 16_384;
+/** The list returns at most this many items. */
+export const MAX_ITEMS = 200;
 
-/** Identifier counts in the file and the other open files; the last answer is kept for the next keystroke. */
-function wordCounts(text: string): Map<string, number> {
-  if (wordCache?.text !== text) wordCache = { text, counts: countWords(text) };
-  return new Map(wordCache.counts);
+const EMPTY = new Map<string, number>();
+
+/** Counts of the file's window outside the caret's line. Typing on one line leaves both texts unchanged. */
+let aroundCache: { head: string; tail: string; counts: Map<string, number> } | null = null;
+/** Counts of the other open files, by the texts last seen. */
+let otherCache: { texts: readonly string[]; counts: Map<string, number> } | null = null;
+
+function sameTexts(a: readonly string[], b: readonly string[]): boolean {
+  return a.length === b.length && a.every((text, i) => text === b[i]);
+}
+
+/** The file's window split at the caret's line: the counts outside it (kept between keystrokes) and the line itself. */
+function fileCounts(text: string, pos: number): { around: Map<string, number>; line: Map<string, number> } {
+  const from = Math.max(0, Math.floor((pos - WORDS_WINDOW / 2) / WORDS_BLOCK) * WORDS_BLOCK);
+  const to = Math.min(text.length, from + WORDS_WINDOW);
+  const lineStart = Math.max(from, text.lastIndexOf('\n', pos - 1) + 1);
+  const newline = text.indexOf('\n', pos);
+  const lineEnd = Math.min(to, newline < 0 ? text.length : newline);
+  const head = text.slice(from, lineStart);
+  const tail = text.slice(lineEnd, to);
+  if (aroundCache?.head !== head || aroundCache.tail !== tail) {
+    aroundCache = { head, tail, counts: countWords(`${head}\n${tail}`) };
+  }
+  return { around: aroundCache.counts, line: countWords(text.slice(lineStart, lineEnd)) };
+}
+
+/** Counts of the other open files, up to WORDS_WINDOW characters in all. */
+function otherCounts(texts: readonly string[]): Map<string, number> {
+  if (!texts.length) return EMPTY;
+  if (otherCache && sameTexts(otherCache.texts, texts)) return otherCache.counts;
+  let left = WORDS_WINDOW;
+  const kept: string[] = [];
+  for (const text of texts) {
+    if (left <= 0) break;
+    kept.push(text.slice(0, left));
+    left -= text.length + 1;
+  }
+  otherCache = { texts: [...texts], counts: countWords(kept.join('\n')) };
+  return otherCache.counts;
 }
 
 type Details = ReturnType<typeof details>;
@@ -117,24 +157,38 @@ function tableCandidates(language: string, detail: Details): Candidate[] {
 
 /** Identifiers in the file and the other open files, by frequency; the word being typed does not count itself. */
 function wordCandidates(context: CompletionContext, input: RankInput, detail: Details): Candidate[] {
-  const { text, word } = context;
-  const counts = wordCounts([text, ...(input.otherTexts ?? [])].join('\n'));
-  if (word.text) counts.set(word.text, (counts.get(word.text) ?? 1) - 1);
+  const { text, pos, word } = context;
+  const { around, line } = fileCounts(text, pos);
+  const others = otherCounts(input.otherTexts ?? []);
   const list: Candidate[] = [];
-  for (const [label, count] of counts) {
-    if (count < 1 || label.length < 2) continue;
+  const add = (label: string, own: number, sources: ReadonlyArray<Map<string, number>>) => {
+    if (label.length < 2 || matchScore(label, word.text) === null) return;
+    let count = own - (label === word.text ? 1 : 0);
+    for (const counts of sources) count += counts.get(label) ?? 0;
+    if (count < 1) return;
     const extra = Math.min(1, Math.log2(1 + count) / 3);
     list.push({ label, kind: 'text', source: 'words', detail: detail.word, extra });
-  }
+  };
+  for (const [label, count] of around) add(label, count, [line, others]);
+  for (const [label, count] of line) if (!around.has(label)) add(label, count, [others]);
+  for (const [label, count] of others) if (!around.has(label) && !line.has(label)) add(label, count, []);
   return list;
+}
+
+/** True when the word follows a `.` that is not part of `..` or `...`: a member access, a number, or a chain. */
+function afterDot(text: string, from: number): boolean {
+  return text[from - 1] === '.' && text[from - 2] !== '.';
 }
 
 function candidates(context: CompletionContext, input: RankInput): Candidate[] {
   const { language, text, word } = context;
   const detail = details();
   const receiver = receiverAt(text, word.from - 1);
+  // After `get().`, `rows[0].`, `3.`, or a `.` that starts a line, the receiver is unknown: the general list
+  // would only offer names that cannot follow.
+  if (!receiver && afterDot(text, word.from)) return [];
   if (receiver) {
-    return membersOf(language, text, receiver).map((member) => ({
+    return membersOf(language, text, receiver, word.from - 1).map((member) => ({
       label: member.name,
       kind: member.module ? 'property' : 'method',
       source: 'members',
@@ -143,17 +197,22 @@ function candidates(context: CompletionContext, input: RankInput): Candidate[] {
     }));
   }
   const scope: Candidate[] = input.tree
-    ? namesInScope(bindings(input.tree, text, language), text, context.pos, word.from).map(({ name, proximity }) => ({
-        label: name,
-        kind: 'variable',
-        source: 'scope',
-        extra: proximity,
-      }))
+    ? namesInScope(bindings(input.tree, text, language, context.pos), text, context.pos, word.from).map(
+        ({ name, proximity }) => ({
+          label: name,
+          kind: 'variable',
+          source: 'scope',
+          extra: proximity,
+        }),
+      )
     : [];
   return [...scope, ...tableCandidates(language, detail), ...wordCandidates(context, input, detail)];
 }
 
-/** The ranked list for a context: deduplicated by label (the best source wins), best first, ties alphabetical. */
+/**
+ * The ranked list for a context: deduplicated by label (the best source wins), best first, ties alphabetical, and at
+ * most MAX_ITEMS long.
+ */
 export function rank(context: CompletionContext, input: RankInput = {}): CompletionItem[] {
   const best = new Map<string, CompletionItem>();
   for (const candidate of candidates(context, input)) {
@@ -167,7 +226,10 @@ export function rank(context: CompletionContext, input: RankInput = {}): Complet
     const known = best.get(key);
     if (!known || score > known.score) best.set(key, { ...item, score: Math.round(score * 1000) / 1000 });
   }
-  return [...best.values()].sort((a, b) => b.score - a.score || (a.label < b.label ? -1 : a.label > b.label ? 1 : 0));
+  const sorted = [...best.values()].sort(
+    (a, b) => b.score - a.score || (a.label < b.label ? -1 : a.label > b.label ? 1 : 0),
+  );
+  return sorted.slice(0, MAX_ITEMS);
 }
 
 /**

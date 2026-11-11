@@ -8,9 +8,10 @@ export interface Token {
   text: string;
 }
 
-// A run of letters (with `_` and `$`), a run of digits, white space, or any single other character.
-// A name such as `a1` splits into `a` and `1`, so a numeric step inside a name can be extrapolated.
-const TOKEN = /[\p{L}_$]+|\d+(?:\.\d+)?|\s+|[^\p{L}\p{N}_$\s]/gu;
+// A run of letters (with `_` and `$`), a run of ASCII digits, white space, or any single other character, which
+// includes digits outside ASCII such as `²`. A name such as `a1` splits into `a` and `1`, so a numeric step inside a
+// name can be extrapolated.
+const TOKEN = /[\p{L}_$]+|\d+(?:\.\d+)?|\s+|[^\p{L}\d_$\s]/gu;
 
 export function tokenize(line: string): Token[] {
   const tokens: Token[] = [];

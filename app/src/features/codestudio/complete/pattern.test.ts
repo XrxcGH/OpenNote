@@ -5,6 +5,7 @@ import { pythonLanguage } from '@codemirror/lang-python';
 import { describe, expect, it } from 'vitest';
 import { suggest } from './ghost';
 import { AUTO_THRESHOLD, EXPLICIT_THRESHOLD, predict } from './pattern';
+import { tokenize } from './tokens';
 
 /** The automatic ghost text at the end of `text`. */
 const ghost = (language: string, text: string): string | null =>
@@ -56,6 +57,29 @@ describe('pattern ghost text', () => {
   it('reuses an earlier line with the same start', () => {
     const text = 'print("total:", total, sep="")\nx = 1\nprint("total:", ';
     expect(ghost('python', text)).toBe('total, sep="")');
+  });
+
+  it('keeps nested brackets and strings when the editor already typed the closer', () => {
+    const text = 'print("total:", foo(total), sep="")\nx = 1\nprint("total:", )';
+    expect(predict('python', text, text.length - 1, false)?.text).toBe('foo(total), sep=""');
+    const listed = 'rows.append([a[0], b])\nrows.append([])';
+    expect(predict('python', listed, listed.length - 2, true)?.text).toBe('a[0], b');
+  });
+
+  it('keeps padded widths and never steps below zero or past exact integers', () => {
+    expect(ghost('python', 'img01 = load(1)\nimg02 = load(2)\nimg')).toBe('03 = load(3)');
+    expect(ghost('python', 'a1 = 1\na0 = 0\na')).toBeNull();
+    const huge = 'n = 9007199254740990\nn = 9007199254740991\nn';
+    expect(ghost('python', huge)).toBeNull();
+  });
+
+  it('tokenizes digits outside ASCII as single characters, so a line rebuilds exactly', () => {
+    const line = 'x² = ٣ + ①';
+    expect(
+      tokenize(line)
+        .map((token) => token.text)
+        .join(''),
+    ).toBe(line);
   });
 
   it('stops before a closer the editor already typed', () => {

@@ -80,10 +80,18 @@ const IDIOMS: Readonly<Record<string, readonly Idiom[]>> = {
   sql: [lastTable],
 };
 
-/** A Python `def` or `class` line whose parameters are closed gets its `:`. */
+/** A Python `def` or `class` line whose parameters are closed gets its `:`. Read with string operations. */
 function signature(line: Line, language: string): { text: string; confidence: number } | null {
   if (family(language) !== 'python') return null;
-  const done = /^\s*(?:async\s+)?def\s+\w+\s*\(.*\)(?:\s*->\s*[^:]+?)?$|^\s*class\s+\w+\s*\(.*\)$/.test(line.before);
+  const { before } = line;
+  let done = false;
+  if (/^\s*class\s+\w+\s*\(/.test(before)) done = before.endsWith(')');
+  else if (/^\s*(?:async\s+)?def\s+\w+\s*\(/.test(before)) {
+    const arrow = before.lastIndexOf('->');
+    const result = arrow < 0 ? '' : before.slice(arrow + 2).trim();
+    const head = arrow < 0 ? before : before.slice(0, arrow).trimEnd();
+    done = head.endsWith(')') && (arrow < 0 || (result.length > 0 && !result.includes(':')));
+  }
   return done ? { text: ':', confidence: 0.9 } : null;
 }
 
@@ -99,10 +107,14 @@ function extrapolate(older: Token[], newer: Token[]): { tokens: string[]; steps:
     const b = newer[i]!;
     if (a.text === b.text) {
       tokens.push(b.text);
-    } else if (a.kind === 'number' && b.kind === 'number' && /^\d+$/.test(a.text) && /^\d+$/.test(b.text)) {
+    } else if (a.kind === 'number' && b.kind === 'number' && /^\d{1,15}$/.test(a.text) && /^\d{1,15}$/.test(b.text)) {
+      // Integers of at most 15 digits stay exact. A step below zero would change the line's shape, and a padded
+      // number such as `02` keeps its width.
       const step = Number(b.text) - Number(a.text);
+      const value = Number(b.text) + step;
+      if (value < 0 || String(value).length > 15) return null;
       steps.push(step);
-      tokens.push(String(Number(b.text) + step));
+      tokens.push(b.text.startsWith('0') ? String(value).padStart(b.text.length, '0') : String(value));
     } else if (a.kind === 'space' && b.kind === 'space') {
       tokens.push(b.text);
     } else {
@@ -175,19 +187,48 @@ function sameStart(
 
 // Text after the caret that ghost text may sit before: closing brackets and quotes the editor added.
 const CLOSERS = /^[)\]}>"'`]*\s*$/;
+const QUOTES = '"\'`';
 
-/** Cuts a prediction before the closer that already follows the caret, so accepting never doubles it. */
+/**
+ * Cuts a prediction before the closer that already follows the caret, so accepting never doubles it. Brackets and
+ * strings the prediction opens itself are skipped, so `foo(total), sep="")` before `)` keeps `foo(total), sep=""`.
+ * Inside a string (the closer is a quote) the cut is at the first matching quote.
+ */
 function fit(text: string, after: string): string {
   const closer = after.trim()[0];
   if (!closer) return text;
-  const at = text.indexOf(closer);
-  return at < 0 ? text : text.slice(0, at);
+  if (QUOTES.includes(closer)) {
+    const at = text.indexOf(closer);
+    return at < 0 ? text : text.slice(0, at);
+  }
+  let depth = 0;
+  let quote = '';
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i]!;
+    if (quote) {
+      if (char === '\\') i++;
+      else if (char === quote) quote = '';
+    } else if (QUOTES.includes(char)) quote = char;
+    else if ('([{'.includes(char)) depth++;
+    else if (depth > 0 && ')]}'.includes(char)) depth--;
+    else if (char === closer || ')]}'.includes(char)) return text.slice(0, i);
+  }
+  return text;
 }
 
+/** The predictor skips a caret line longer than this, and reads at most PREDICT_WINDOW characters around it. */
+export const MAX_PREDICT_LINE = 500;
+const PREDICT_WINDOW = 100_000;
+
 /** The ghost text for the caret, or null when no rule is confident enough. */
-export function predict(language: string, text: string, pos: number, explicit: boolean): Prediction | null {
-  const { before, after } = lineAt(text, pos);
-  if (!CLOSERS.test(after)) return null;
+export function predict(language: string, fullText: string, fullPos: number, explicit: boolean): Prediction | null {
+  const { before, after } = lineAt(fullText, fullPos);
+  if (before.length + after.length > MAX_PREDICT_LINE || !CLOSERS.test(after)) return null;
+  // A window of whole lines around the caret bounds the work in a large file.
+  const from = fullPos <= PREDICT_WINDOW ? 0 : fullText.lastIndexOf('\n', fullPos - PREDICT_WINDOW) + 1;
+  const newline = fullText.indexOf('\n', fullPos + PREDICT_WINDOW);
+  const text = fullText.slice(from, newline < 0 ? fullText.length : newline);
+  const pos = fullPos - from;
   const threshold = explicit ? EXPLICIT_THRESHOLD : AUTO_THRESHOLD;
   const line: Line = { text, before, pos };
   const lang = family(language);

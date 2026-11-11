@@ -1,5 +1,5 @@
 // The scope source (DESIGN 10.2): identifiers declared in the scopes around the caret, read from the Lezer tree.
-// A nearer scope and a nearer line rank higher. One walk per tree is cached, so typing only filters.
+// A nearer scope and a nearer line rank higher. The walk skips the insides of scopes away from the caret.
 
 import type { syntaxTree } from '@codemirror/language';
 
@@ -45,28 +45,46 @@ interface Open {
   to: number;
   definition: boolean;
   named: boolean;
+  /** The scope does not contain the caret, so only its own name can be visible there. */
+  away: boolean;
 }
 
-const cache = new WeakMap<SyntaxTree, Binding[]>();
+/** The walk reads the nodes within this many characters of the caret, and the scopes that enclose them. */
+export const SCOPE_WINDOW = 60_000;
 
-/** Every binding in the tree. Cached per tree, so a keystroke that does not reparse costs nothing here. */
-export function bindings(tree: SyntaxTree, text: string, language: string): Binding[] {
+const cache = new WeakMap<SyntaxTree, { pos: number; found: Binding[] }>();
+
+/**
+ * The bindings that can be visible at `pos`: those of the scopes around it, and the own names of the scopes away
+ * from it, whose insides the walk skips. Only nodes within SCOPE_WINDOW of the caret are read, so a large file costs
+ * no more than its window. Cached per tree and caret.
+ */
+export function bindings(tree: SyntaxTree, text: string, language: string, pos: number): Binding[] {
+  const from = Math.max(0, pos - SCOPE_WINDOW);
+  const to = pos + SCOPE_WINDOW;
   const known = cache.get(tree);
-  if (known) return known;
+  if (known?.pos === pos) return known.found;
   const scopes = language === 'python' ? PYTHON_SCOPES : BLOCK_SCOPES;
   const found: Binding[] = [];
-  const stack: Open[] = [{ from: 0, to: Number.MAX_SAFE_INTEGER, definition: false, named: true }];
+  const stack: Open[] = [{ from: 0, to: Number.MAX_SAFE_INTEGER, definition: false, named: true, away: false }];
   let inParameters = 0;
   tree.iterate({
+    from,
+    to,
     enter(node) {
       const name = node.name;
+      const top = stack[stack.length - 1]!;
+      // A skipped node gets no leave call, so it must not touch the stack or the parameter count.
+      if (top.away && top.named) return false;
       if (scopes.has(name)) {
-        stack.push({ from: node.from, to: node.to, definition: DEFINITIONS.has(name), named: false });
+        const away = pos < node.from || pos > node.to;
+        const definition = DEFINITIONS.has(name);
+        if (away && !definition) return false;
+        stack.push({ from: node.from, to: node.to, definition, named: false, away });
         return;
       }
       if (PARAMETERS.has(name)) inParameters++;
       if (!NAMES.has(name)) return;
-      const top = stack[stack.length - 1]!;
       // The first name inside a function or class definition is its own name, bound in the outer scope.
       const own = top.definition && !top.named && inParameters === 0;
       if (top.definition) top.named = true;
@@ -85,7 +103,7 @@ export function bindings(tree: SyntaxTree, text: string, language: string): Bind
       else if (PARAMETERS.has(node.name)) inParameters--;
     },
   });
-  cache.set(tree, found);
+  cache.set(tree, { pos, found });
   return found;
 }
 

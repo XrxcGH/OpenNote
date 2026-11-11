@@ -40,6 +40,26 @@ describe('the ranked list', () => {
     expect(labels('cpp', 'std::vector<int> values;\nvalues.').slice(0, 3)).toContain('push_back');
   });
 
+  it('offers nothing after a dot whose receiver is unknown', () => {
+    expect(labels('python', 'def get():\n    return 1\nvalue = get().')).toEqual([]);
+    expect(labels('python', 'rows = [[1]]\nrows[0].')).toEqual([]);
+    expect(labels('python', 'x = 3.')).toEqual([]);
+    expect(labels('javascript', 'const total = 1;\nfetch(url)\n  .')).toEqual([]);
+    // A spread is not a member access.
+    expect(labels('javascript', 'const items = [];\nconst more = [...ite')).toContain('items');
+  });
+
+  it('reads parameter and bare annotations, and the nearest assignment before the caret', () => {
+    expect(labels('python', 'def f(name: str):\n    return name.').slice(0, 3)).toContain('join');
+    expect(labels('python', 'nums: list[int]\nnums.').slice(0, 3)).toContain('append');
+    expect(labels('python', 'def g(self, rows: list, k=1):\n    rows.').slice(0, 3)).toContain('append');
+    expect(labels('python', 'data = "a"\ndata = []\ndata.').slice(0, 3)).toContain('append');
+    // An assignment after the caret does not count.
+    expect(labels('python', 'data = []\ndata.|\ndata = "a"').slice(0, 3)).toContain('append');
+    expect(labels('javascript', 'function f(items: string[]) {\n  items.').slice(0, 3)).toContain('push');
+    expect(labels('javascript', 'const f = (items?: number[]) => items.').slice(0, 3)).toContain('push');
+  });
+
   it('ranks a nearer scope above a farther one, and a scope name above a keyword', () => {
     const text = 'value_outer = 1\ndef f(value_inner):\n    return valu';
     expect(labels('python', text).slice(0, 2)).toEqual(['value_inner', 'value_outer']);
