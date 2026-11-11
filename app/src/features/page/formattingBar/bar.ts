@@ -4,15 +4,40 @@
 //
 // Escape, scrolling, or a tap elsewhere closes it. Arrow keys move between its buttons, and the editor keeps the
 // selection, because pressing a button never takes focus from the text.
+import { createElement } from 'react';
+import { createRoot } from 'react-dom/client';
+import type { Root } from 'react-dom/client';
+import { isEnabled } from '../../../app/flags';
 import { executeCommand } from '../../../commands/registry';
 import type { CommandId } from '../../../commands/types';
 import { commands } from '../../../registries';
+import { getSizeClass } from '../../../state/layout';
 import { t } from '../../../strings/t';
 import { openMenu } from '../../../ui';
 import type { MenuItemSpec } from '../../../ui';
 import styles from './bar.module.css';
 
 const BUTTONS: readonly CommandId[] = ['format.bold', 'format.italic', 'format.highlight', 'format.link'];
+// Beta 10 (text.v2Controls): two rows, as Word's mini toolbar has. The compact class keeps one row and adds Aa.
+const ROW_FONT: readonly CommandId[] = ['format.growFont', 'format.shrinkFont', 'format.painter', 'styles.apply'];
+const ROW_FORMAT: readonly CommandId[] = [
+  'format.bold',
+  'format.italic',
+  'format.underline',
+  'format.highlight',
+  'format.textColor',
+  'block.bulletList',
+  'block.orderedList',
+  'format.link',
+];
+const ROW_COMPACT: readonly CommandId[] = [
+  'format.bold',
+  'format.italic',
+  'format.underline',
+  'format.highlight',
+  'format.textColor',
+  'text.compactSheet',
+];
 const MORE: readonly CommandId[] = [
   'format.underline',
   'format.strike',
@@ -21,6 +46,16 @@ const MORE: readonly CommandId[] = [
   'format.clear',
   'block.turnInto',
 ];
+/** Buttons that leave the bar open: they change the text and the selection stays. */
+const KEEP_OPEN: ReadonlySet<string> = new Set([
+  'format.growFont',
+  'format.shrinkFont',
+  'format.bold',
+  'format.italic',
+  'format.underline',
+  'block.bulletList',
+  'block.orderedList',
+]);
 /** The gap between the selection and the bar. */
 const GAP = 8;
 
@@ -52,11 +87,26 @@ function makeButton(text: string, onPress: (element: HTMLButtonElement) => void)
 }
 
 function commandButton(id: CommandId, onPress: () => void): HTMLButtonElement {
-  const element = makeButton(label(id), onPress);
+  const element = makeButton(id === 'text.compactSheet' ? t('textHome.sheet.open') : label(id), onPress);
   element.dataset.command = id;
+  if (id === 'text.compactSheet') element.setAttribute('aria-label', t('textHome.sheet.label'));
   const checked = commands.get(id)?.checked;
   if (checked) element.setAttribute('aria-pressed', String(checked({} as never)));
   return element;
+}
+
+/** A command that exists and whose flag is on. */
+function usable(id: CommandId): boolean {
+  const def = commands.get(id);
+  return def !== undefined && (!def.flag || isEnabled(def.flag));
+}
+
+function makeRow(labelKey: 'textHome.mini.row1' | 'textHome.mini.row2'): HTMLElement {
+  const row = document.createElement('div');
+  row.className = styles.row;
+  row.setAttribute('role', 'group');
+  row.setAttribute('aria-label', t(labelKey));
+  return row;
 }
 
 /** Above the selection, or below it when the bar wouldn't fit above. */
@@ -94,6 +144,7 @@ export function showFormattingBar(rect: DOMRect): { close(): void } {
   bar.setAttribute('aria-label', t('editor.bar.label'));
   bar.setAttribute('popover', 'manual');
   const close = () => {
+    (boxes as Root | null)?.unmount();
     bar.remove();
     document.removeEventListener('keydown', escape, true);
     document.removeEventListener('pointerdown', outside, true);
@@ -102,16 +153,48 @@ export function showFormattingBar(rect: DOMRect): { close(): void } {
   };
   const run = (id: CommandId) => () => {
     void executeCommand(id, undefined, 'commandBar');
-    close();
+    // Format buttons keep the bar open, so the next one is a press away; the others close it.
+    if (!(isEnabled('text.v2Controls') && KEEP_OPEN.has(id))) close();
   };
   const more = makeButton(t('editor.bar.more'), async (element) => {
     const chosen = await openMenu({ label: t('editor.bar.more'), items: moreItems(), anchor: element });
     if (chosen) close();
   });
   more.setAttribute('aria-haspopup', 'menu');
-  const buttons = BUTTONS.filter((id) => commands.get(id)).map((id) => commandButton(id, run(id)));
-  bar.append(...buttons, more);
-  buttons[0]?.setAttribute('tabindex', '0');
+  let boxes: Root | null = null;
+  const press = (id: CommandId) => commandButton(id, run(id));
+  const buttons: HTMLButtonElement[] = [];
+  if (isEnabled('text.v2Controls') && getSizeClass() === 'compact') {
+    const row = makeRow('textHome.mini.row2');
+    buttons.push(...ROW_COMPACT.filter(usable).map(press));
+    row.append(...buttons, more);
+    bar.append(row);
+  } else if (isEnabled('text.v2Controls')) {
+    const first = makeRow('textHome.mini.row1');
+    const holder = document.createElement('span');
+    holder.className = styles.boxes;
+    first.append(holder);
+    const fontButtons = ROW_FONT.filter(usable).map(press);
+    first.append(...fontButtons);
+    const second = makeRow('textHome.mini.row2');
+    const formatButtons = ROW_FORMAT.filter(usable).map(press);
+    second.append(...formatButtons, more);
+    bar.append(first, second);
+    buttons.push(...formatButtons, ...fontButtons);
+    // The font and size boxes are the Home tab's own, so they load with the first press on the bar.
+    void import('../homeTab/tools').then(({ FontBox, SizeControl }) => {
+      if (open !== handle) return;
+      boxes = createRoot(holder);
+      boxes.render(
+        createElement('span', { className: styles.boxes }, createElement(FontBox), createElement(SizeControl)),
+      );
+    });
+  } else {
+    const row = makeRow('textHome.mini.row2');
+    buttons.push(...BUTTONS.filter((id) => commands.get(id)).map(press));
+    row.append(...buttons, more);
+    bar.append(row);
+  }
   bar.addEventListener('keydown', (event) => onKey(bar, event, close));
   const escape = (event: KeyboardEvent) => {
     if (event.key === 'Escape' && !bar.contains(event.target as Node)) close();

@@ -7,6 +7,7 @@ import { BooksIcon } from '@phosphor-icons/react/dist/csr/Books';
 import { DotsThreeIcon } from '@phosphor-icons/react/dist/csr/DotsThree';
 import { FilePlusIcon } from '@phosphor-icons/react/dist/csr/FilePlus';
 import { MagnifyingGlassIcon } from '@phosphor-icons/react/dist/csr/MagnifyingGlass';
+import { TextAaIcon } from '@phosphor-icons/react/dist/csr/TextAa';
 import { useEffect, useRef, useState } from 'react';
 import type { ComponentType } from 'react';
 import { ariaKeyShortcuts, formatChord, useKeysFor } from '../../commands/keymap';
@@ -37,6 +38,8 @@ const ACTIONS: readonly BottomAction[] = [
   { command: 'layout.toggleNotebooks', label: 'commands.bar.notebooks', icon: BooksIcon, screen: 'notebooks' },
   { command: 'app.palette', label: 'commands.bar.search', icon: MagnifyingGlassIcon },
   { command: 'notes.newPage', label: 'commands.bar.newPage', icon: FilePlusIcon },
+  // The Aa sheet shows while a text block is being edited (text.v2Controls).
+  { command: 'text.compactSheet', label: 'textHome.sheet.open', icon: TextAaIcon },
 ];
 
 const MORE: readonly { command: CommandId; label: MessageKey }[] = [

@@ -65,7 +65,7 @@ function IconSlot({ children }: { children?: ReactNode }) {
 }
 
 function Tool({ entry }: { entry: BarEntry }) {
-  const { item, def, disabled, checked } = entry;
+  const { item, def, disabled, checked, mixed } = entry;
   const keys = useKeysFor(def.id);
   const [menuOpen, setMenuOpen] = useState(false);
   const loaded = useSyncExternalStore(subscribeLazyIcons, lazyIconsLoaded);
@@ -99,7 +99,7 @@ function Tool({ entry }: { entry: BarEntry }) {
       data-kind={glyph ? 'glyph' : named && (icon || pending) ? 'named' : undefined}
       aria-label={glyph || label !== full ? full : undefined}
       aria-disabled={disabled || undefined}
-      aria-pressed={item.presentation === 'toggle' ? Boolean(checked) : undefined}
+      aria-pressed={item.presentation === 'toggle' ? (mixed ? 'mixed' : Boolean(checked)) : undefined}
       aria-haspopup={item.menu ? 'menu' : undefined}
       aria-expanded={item.menu ? menuOpen : undefined}
       aria-keyshortcuts={keys.length ? ariaKeyShortcuts(keys) : undefined}

@@ -8,8 +8,12 @@
 import { createElement } from 'react';
 import type { ReactElement } from 'react';
 import type { IconComponent } from './icons';
+import { ArrowFatDownIcon } from '@phosphor-icons/react/dist/csr/ArrowFatDown';
+import { ArrowFatUpIcon } from '@phosphor-icons/react/dist/csr/ArrowFatUp';
 import { ArrowUUpLeftIcon } from '@phosphor-icons/react/dist/csr/ArrowUUpLeft';
+import { ArrowsVerticalIcon } from '@phosphor-icons/react/dist/csr/ArrowsVertical';
 import { BinocularsIcon } from '@phosphor-icons/react/dist/csr/Binoculars';
+import { BoundingBoxIcon } from '@phosphor-icons/react/dist/csr/BoundingBox';
 import { CheckSquareIcon } from '@phosphor-icons/react/dist/csr/CheckSquare';
 import { ChecksIcon } from '@phosphor-icons/react/dist/csr/Checks';
 import { ExportIcon } from '@phosphor-icons/react/dist/csr/Export';
@@ -22,16 +26,25 @@ import { HighlighterCircleIcon } from '@phosphor-icons/react/dist/csr/Highlighte
 import { HouseIcon } from '@phosphor-icons/react/dist/csr/House';
 import { ListBulletsIcon } from '@phosphor-icons/react/dist/csr/ListBullets';
 import { ListChecksIcon } from '@phosphor-icons/react/dist/csr/ListChecks';
+import { ListDashesIcon } from '@phosphor-icons/react/dist/csr/ListDashes';
 import { ListNumbersIcon } from '@phosphor-icons/react/dist/csr/ListNumbers';
 import { MicrophoneIcon } from '@phosphor-icons/react/dist/csr/Microphone';
 import { NotePencilIcon } from '@phosphor-icons/react/dist/csr/NotePencil';
 import { NotebookIcon } from '@phosphor-icons/react/dist/csr/Notebook';
+import { PaintBrushIcon } from '@phosphor-icons/react/dist/csr/PaintBrush';
+import { PaintBucketIcon } from '@phosphor-icons/react/dist/csr/PaintBucket';
 import { ParagraphIcon } from '@phosphor-icons/react/dist/csr/Paragraph';
 import { RecordIcon } from '@phosphor-icons/react/dist/csr/Record';
 import { ShareNetworkIcon } from '@phosphor-icons/react/dist/csr/ShareNetwork';
+import { SparkleIcon } from '@phosphor-icons/react/dist/csr/Sparkle';
 import { TextAUnderlineIcon } from '@phosphor-icons/react/dist/csr/TextAUnderline';
 import { TextAaIcon } from '@phosphor-icons/react/dist/csr/TextAa';
+import { TextAlignCenterIcon } from '@phosphor-icons/react/dist/csr/TextAlignCenter';
+import { TextAlignJustifyIcon } from '@phosphor-icons/react/dist/csr/TextAlignJustify';
+import { TextAlignLeftIcon } from '@phosphor-icons/react/dist/csr/TextAlignLeft';
+import { TextAlignRightIcon } from '@phosphor-icons/react/dist/csr/TextAlignRight';
 import { TextBIcon } from '@phosphor-icons/react/dist/csr/TextB';
+import { TextHIcon } from '@phosphor-icons/react/dist/csr/TextH';
 import { TextIndentIcon } from '@phosphor-icons/react/dist/csr/TextIndent';
 import { TextItalicIcon } from '@phosphor-icons/react/dist/csr/TextItalic';
 import { TextOutdentIcon } from '@phosphor-icons/react/dist/csr/TextOutdent';
@@ -62,6 +75,19 @@ export const HOME_ICONS: Readonly<Record<string, IconComponent>> = {
   'outline.promote': TextOutdentIcon,
   'outline.demote': TextIndentIcon,
   'text.formattingMarks': ParagraphIcon,
+  'format.growFont': ArrowFatUpIcon,
+  'format.shrinkFont': ArrowFatDownIcon,
+  'format.changeCase': TextHIcon,
+  'format.painter': PaintBrushIcon,
+  'format.effect': SparkleIcon,
+  'para.alignStart': TextAlignLeftIcon,
+  'para.alignCenter': TextAlignCenterIcon,
+  'para.alignEnd': TextAlignRightIcon,
+  'para.justify': TextAlignJustifyIcon,
+  'para.lineSpacing': ArrowsVerticalIcon,
+  'para.shade': PaintBucketIcon,
+  'para.border': BoundingBoxIcon,
+  'list.multilevel': ListDashesIcon,
   'block.toggleCheck': CheckSquareIcon,
   'checklist.checkAll': ChecksIcon,
   'page.find': BinocularsIcon,

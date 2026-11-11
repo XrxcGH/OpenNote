@@ -22,11 +22,13 @@ import {
   marksAllowed,
 } from '../../../editor/commands/state';
 import type { BlockKindName, FoldsDetail, FoldsRequestDetail, MergeBlocksDetail } from '../../../editor/commands/state';
+import './text';
 import { commandBar, commands, contextMenus } from '../../../registries';
 import type { CommandBarItem, ContextMenuItem } from '../../../registries/types';
 import type { MessageKey } from '../../../strings/t';
 import { t } from '../../../strings/t';
 import { editMenu, registerAppMenu } from '../../../ui/appMenu';
+import { bumpBar } from '../../../shell/commandbar/barTick';
 import { targetEditor } from '../formattingBar/target';
 import { getSettings } from '../../../state/settings';
 import { registerPageCommand } from '../keys';
@@ -106,7 +108,7 @@ function register({ id, title, keywords, category = 'format', flag = 'page.edito
         }
       : {}),
     ...(on ? { checked: withEditor(on, false) } : {}),
-    run: (_ctx, args) => withFormatting((m) => m.runFormatting(wordStep(id), args)),
+    run: (_ctx, args) => withFormatting((m) => m.runFormatting(wordStep(id), args)).then(bumpBar),
   });
 }
 
@@ -272,27 +274,6 @@ const bar = (item: Omit<CommandBarItem, 'id' | 'tab'> & { tab?: CommandBarItem['
   ...item,
 });
 const BAR: readonly CommandBarItem[] = [
-  bar({ group: 'text', command: 'format.bold', priority: 70, presentation: 'toggle' }),
-  bar({ group: 'text', command: 'format.italic', priority: 69, presentation: 'toggle' }),
-  bar({ group: 'text', command: 'format.underline', priority: 68, presentation: 'toggle' }),
-  bar({ group: 'text', command: 'format.strike', priority: 40, presentation: 'toggle' }),
-  bar({ group: 'text', command: 'format.highlight', priority: 67, presentation: 'toggle' }),
-  bar({ group: 'text', command: 'format.textColor', priority: 45 }),
-  bar({ group: 'text', command: 'format.textSize', priority: 30 }),
-  bar({ group: 'text', command: 'format.subscript', priority: 20, presentation: 'toggle' }),
-  bar({ group: 'text', command: 'format.superscript', priority: 20, presentation: 'toggle' }),
-  bar({ group: 'text', command: 'format.clear', priority: 35 }),
-  bar({ group: 'paragraph', command: 'block.bulletList', priority: 66, presentation: 'toggle' }),
-  bar({ group: 'paragraph', command: 'block.orderedList', priority: 65, presentation: 'toggle' }),
-  bar({ group: 'paragraph', command: 'block.checklist', priority: 64, presentation: 'toggle' }),
-  bar({ group: 'paragraph', command: 'outline.promote', priority: 37, flag: 'page.outline' }),
-  bar({ group: 'paragraph', command: 'outline.demote', priority: 37, flag: 'page.outline' }),
-  bar({ group: 'paragraph', command: 'block.toggleCheck', priority: 38 }),
-  bar({ group: 'styles', command: 'block.normal', priority: 50, presentation: 'toggle' }),
-  bar({ group: 'styles', command: 'block.heading1', priority: 49, presentation: 'toggle' }),
-  bar({ group: 'styles', command: 'block.heading2', priority: 48, presentation: 'toggle' }),
-  bar({ group: 'styles', command: 'block.heading3', priority: 47, presentation: 'toggle' }),
-  bar({ group: 'styles', command: 'block.turnInto', priority: 25, flag: 'page.slashMenu' }),
   bar({ tab: 'view', group: 'outline', command: 'outline.showAll', priority: 20, flag: 'page.outline' }),
   bar({ tab: 'insert', group: 'text', command: 'format.link', priority: 60 }),
   bar({ tab: 'insert', group: 'blocks', command: 'block.codeBlock', priority: 50 }),
