@@ -223,6 +223,11 @@ describe('verification gaps (G4, G5, G6, G7)', () => {
     expect(fnLogicInfo.ERROR_TYPE.about).toMatch(/\S/);
   });
 
+  it('L2: SWITCH returns an error in a match value reached before a match', () => {
+    expect(runIn(data, '=SWITCH(1,1/0,"x",1,"ok")')).toEqual({ error: 'DIV0' });
+    expect(runIn(data, '=SWITCH(1,1,"ok",1/0,"x")')).toBe('ok');
+  });
+
   it('G7: SWITCH returns an array result whole, and ISFORMULA lifts over a range', () => {
     expect(runIn(data, '=SUM(SWITCH(1,1,A1:B2))')).toBe(10);
     expect(runIn(data, '=SUM(--ISFORMULA(C1:D1))')).toBe(1);
@@ -249,6 +254,13 @@ describe('ISDATE reads the column type (H1)', () => {
     t = setCellInput(t, { row: 2, col: 3, raw: formula }, EN_US, DEFAULT_ENV);
     return t.rows[2].cells[3].value;
   }
+  it('accepts the documented reference-page examples (M1)', () => {
+    expect(ask('=ISDATE("1969-20-07")')).toBe(true);
+    expect(ask('=ISDATE("July 20 1969")')).toBe(true);
+    expect(ask('=ISDATE("July")')).toBe(false);
+    expect(ask('=ISDATE("Feb 30")')).toBe(false);
+    expect(ask('=ISDATE("1969-20-37")')).toBe(false);
+  });
   it('is TRUE for a date-column cell and for date text, FALSE otherwise', () => {
     expect(ask('=ISDATE(A1)')).toBe(true);
     expect(ask('=ISDATE(B1)')).toBe(true);

@@ -451,6 +451,33 @@
       "formula": "=ISDATE(5)",
       "expect": false,
       "source": "Hand-worked from the documented rule of ISDATE on the fixture data (A1=1, B1=2, C1=\"x\", D1 blank); the result follows from that rule alone."
+    },
+    {
+      "formula": "=ISDATE(\"1969-20-07\")",
+      "expect": true,
+      "source": "Documented example: the ISDATE reference page on support.google.com/docs (answer 9061381)."
+    },
+    {
+      "formula": "=ISDATE(\"July 20 1969\")",
+      "expect": true,
+      "source": "Documented example: the ISDATE reference page on support.google.com/docs (answer 9061381)."
+    },
+    {
+      "formula": "=ISDATE(\"July\")",
+      "expect": false,
+      "source": "Documented example: the ISDATE reference page on support.google.com/docs (answer 9061381)."
+    },
+    {
+      "formula": "=ISDATE(\"Feb 30\")",
+      "expect": false,
+      "source": "Documented example: the ISDATE reference page on support.google.com/docs (answer 9061381)."
+    },
+    {
+      "formula": "=SWITCH(1,1/0,\"x\",1,\"ok\")",
+      "expect": {
+        "error": "#DIV/0!"
+      },
+      "source": "Hand-worked: match values are read in order; the first match value is an error reached before the match 1."
     }
   ]
 }

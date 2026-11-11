@@ -342,7 +342,14 @@ export const functions: readonly FnSpec2[] = [
     refArgs: true,
     handlesErrors: true,
     run: ([v], env) => {
-      const isDate = (x: unknown): boolean => typeof x === 'string' && parseDate(x, 'mdy') !== null;
+      const isDate = (x: unknown): boolean => {
+        if (typeof x !== 'string') return false;
+        if (parseDate(x, 'mdy') !== null) return true;
+        // Year first with a day over 12 in the middle, as in "1969-20-07" (the ISDATE reference page).
+        const m = /^\s*(\d{4})([-/.])(\d{1,2})\2(\d{1,2})\s*$/.exec(x);
+        if (!m || Number(m[3]) <= 12) return false;
+        return parseDate(`${m[1]}-${m[4]}-${m[3]}`, 'mdy') !== null;
+      };
       if (isRef(v)) {
         // A cell in a date column holds a date value, so it counts. Other cells count when their text reads as a date.
         const one = (r: number, c: number): boolean => {

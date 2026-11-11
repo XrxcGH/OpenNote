@@ -166,7 +166,11 @@ export const functions: readonly FnSpec2[] = [
       const raw = args.slice(1);
       const pairs = Math.floor(rest.length / 2);
       // The chosen result is returned as it is, so an array result is not cut down to its first element.
-      for (let i = 0; i < pairs; i++) if (same(value, rest[2 * i])) return raw[2 * i + 1];
+      for (let i = 0; i < pairs; i++) {
+        // A match value is read in order, so an error in it is returned when it is reached before a match.
+        if (isError(rest[2 * i])) return rest[2 * i];
+        if (same(value, rest[2 * i])) return raw[2 * i + 1];
+      }
       return rest.length % 2 === 1 ? raw[raw.length - 1] : err('NA');
     },
     meta: {
