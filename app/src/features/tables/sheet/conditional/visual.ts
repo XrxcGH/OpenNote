@@ -111,7 +111,7 @@ export function barOf(c: RuleContext, scheme: Scheme): Bar | undefined {
     unit = Math.max(Math.abs(min), Math.abs(max)) === 0 ? 0 : 50 / Math.max(Math.abs(min), Math.abs(max));
   } else if (axisMode === 'none' || min >= 0) {
     axis = 0;
-    unit = span === 0 ? 0 : 100 / (axisMode === 'none' ? span : max);
+    unit = span === 0 ? 0 : 100 / span;
   } else if (max <= 0) {
     axis = 100;
     unit = 100 / -min;
@@ -121,8 +121,16 @@ export function barOf(c: RuleContext, scheme: Scheme): Bar | undefined {
   }
   const value = Math.min(max, Math.max(min, n));
   const negative = value < 0 && axisMode !== 'none';
-  let width = axisMode === 'none' ? (span === 0 ? 100 : ((value - min) / span) * 100) : Math.abs(value) * unit;
-  if (axisMode === 'none') width = Math.min(100, width);
+  // With no negative side the bar grows from the minimum: a minimum of 50 and a maximum of 100 draw 75 at half width.
+  const fromMin = axisMode === 'none' || (axisMode === 'auto' && min >= 0);
+  let width = fromMin
+    ? span === 0
+      ? axisMode === 'none'
+        ? 100
+        : 0
+      : ((value - min) / span) * 100
+    : Math.abs(value) * unit;
+  if (fromMin) width = Math.min(100, width);
   else width = Math.min(width, negative ? axis : 100 - axis);
   width = Math.max(0, width);
   const color = colorFor(n < 0 ? own(rule, 'negative') : own(rule, 'color'), scheme, n < 0 ? 'brick' : 'indigo');
@@ -151,10 +159,11 @@ const level = (key: 'rating' | 'quarter' | 'box' | 'star', glyphs: string[]): Ic
     glyph,
     text: () => t(`sheetConditional.icon.${key}`, { level: i + 1, count: glyphs.length }),
   }));
-const icon = (glyph: string, key: Parameters<typeof t>[0], tone?: IconDef['tone']): IconDef => ({
+type IconKey = Extract<Parameters<typeof t>[0], `sheetConditional.icon.${string}`>;
+const icon = (glyph: string, key: IconKey, tone?: IconDef['tone']): IconDef => ({
   glyph,
   tone,
-  text: () => t(key as never),
+  text: () => t(key),
 });
 
 /** The icon sets, each from the lowest icon to the highest. */
@@ -170,8 +179,8 @@ export const ICON_SETS: Record<string, IconDef[]> = {
     icon('▲', 'sheetConditional.icon.triangleUp', 'fern'),
   ],
   '3TrafficLights': [
-    icon('●', 'sheetConditional.icon.lightRed', 'brick'),
-    icon('●', 'sheetConditional.icon.lightYellow', 'amber'),
+    icon('○', 'sheetConditional.icon.lightRed', 'brick'),
+    icon('◐', 'sheetConditional.icon.lightYellow', 'amber'),
     icon('●', 'sheetConditional.icon.lightGreen', 'fern'),
   ],
   '3Signs': [
@@ -186,8 +195,8 @@ export const ICON_SETS: Record<string, IconDef[]> = {
   ],
   '3Flags': [
     icon('⚑', 'sheetConditional.icon.flagRed', 'brick'),
-    icon('⚑', 'sheetConditional.icon.flagYellow', 'amber'),
-    icon('⚑', 'sheetConditional.icon.flagGreen', 'fern'),
+    icon('⚑⚑', 'sheetConditional.icon.flagYellow', 'amber'),
+    icon('⚑⚑⚑', 'sheetConditional.icon.flagGreen', 'fern'),
   ],
   '3Stars': level('star', ['☆', '✩', '★']),
   '4Arrows': [
@@ -224,7 +233,9 @@ export interface Icon {
 export function iconOf(c: RuleContext, scheme: Scheme): Icon | undefined {
   const n = numberAt(c);
   const rule = c.rule.rule;
-  const set = ICON_SETS[String(own(rule, 'set') ?? '3Arrows')];
+  const name = String(own(rule, 'set') ?? '3Arrows');
+  // An unknown set, or a name such as `constructor` from a hostile note, makes the rule do nothing.
+  const set = Object.hasOwn(ICON_SETS, name) ? ICON_SETS[name] : undefined;
   if (n === undefined || !set) return undefined;
   const stats = statsOf(c.sheet, c.table, c.rule);
   const cuts = (Array.isArray(own(rule, 'thresholds')) ? (own(rule, 'thresholds') as unknown[]) : []).filter(isObject);

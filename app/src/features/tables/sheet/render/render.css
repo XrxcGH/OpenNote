@@ -245,6 +245,24 @@
       background-color: Canvas;
     }
 
+    /* A data bar stays: forced colors keep it as a gradient, with an outline so it shows without its color, and the
+       value of a bar-only cell stays readable. Icon sets differ by shape, not by color alone (R-SHT-15). */
+    table[data-sheet] :is(td, th)[data-cell][data-bar] {
+      background-image: var(--cell-bar);
+      forced-color-adjust: none;
+      color: CanvasText;
+      outline: 1px solid CanvasText;
+      outline-offset: -2px;
+    }
+
+    table[data-sheet] :is(td, th)[data-cell]:is([data-icon-only], [data-bar-only]) > p {
+      color: CanvasText;
+    }
+
+    table[data-sheet] :is(td, th)[data-cell][data-icon-glyph] > p:first-child::before {
+      color: CanvasText;
+    }
+
     table[data-sheet] :is(td, th)[data-cell][data-filled] {
       outline: 1px solid CanvasText;
       outline-offset: -2px;

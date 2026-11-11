@@ -29,13 +29,17 @@ describe('the sheet contribution registry', () => {
     );
     undo.push(take);
     expect(commands.get('sheetTest.bold')).toBeDefined();
-    expect(sheetMenu('format').map((item) => item.id)).toEqual(['a', 'b']);
+    expect(
+      sheetMenu('format')
+        .filter((item) => item.lane === 'merge')
+        .map((item) => item.id),
+    ).toEqual(['a', 'b']);
     expect(sheetMenu('data').map((item) => item.id)).toEqual(['c']);
     expect(sheetToolbar().map((group) => group.id)).toEqual(['font']);
     expect(contextMenus.get('sheetTest.merge')?.menu).toBe(SHEET_CONTEXT_MENU);
     take();
     expect(commands.get('sheetTest.bold')).toBeUndefined();
-    expect(sheetMenu('format')).toEqual([]);
+    expect(sheetMenu('format').filter((item) => item.lane === 'merge')).toEqual([]);
     expect(contextMenus.get('sheetTest.merge')).toBeUndefined();
   });
 

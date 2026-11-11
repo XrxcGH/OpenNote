@@ -1,4 +1,13 @@
 export { RuleManager } from './RuleManager';
 export type { RuleManagerProps } from './RuleManager';
-export { deleteRule, describeRanges, describeRule, managedRules, moveRule, setStop } from './manage';
-export type { Changed, ManagedRule, Scope } from './manage';
+export {
+  deleteRule,
+  describeRanges,
+  describeRule,
+  managedPageRules,
+  managedRules,
+  moveRule,
+  refOf,
+  setStop,
+} from './manage';
+export type { Changed, ManagedRule, RuleRef, Scope } from './manage';

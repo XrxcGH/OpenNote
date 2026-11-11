@@ -2,6 +2,7 @@
 // each text occurs. Worked out once per rule and table object, as the model reads rules (rules.ts).
 
 import type { Rule } from '../model/rules';
+import { own } from '../model/json';
 import type { Sheet, TableLike } from '../model/types';
 import { textOf, valueOfCell, type CellValue } from './value';
 
@@ -41,14 +42,24 @@ export function eachCell(rule: Rule, table: TableLike, visit: (row: number, col:
   }
 }
 
-const kept = new WeakMap<object, WeakMap<TableLike, Stats>>();
+interface Kept {
+  stats: Stats;
+  rows: unknown;
+  values: unknown;
+  stamp: unknown;
+}
+const kept = new WeakMap<object, WeakMap<TableLike, Kept>>();
 
 /** The statistics of a rule's range. */
 export function statsOf(sheet: Sheet, table: TableLike, rule: Rule): Stats {
-  const byTable = kept.get(rule.rule) ?? new WeakMap<TableLike, Stats>();
+  const byTable = kept.get(rule.rule) ?? new WeakMap<TableLike, Kept>();
   kept.set(rule.rule, byTable);
+  // The value cache is written in place (writeValues), so what was worked out is kept only while the rows and the
+  // cached values are the same objects.
+  const values = own(sheet, 'values');
+  const stamp = own(sheet, 'valuesOf');
   const known = byTable.get(table);
-  if (known) return known;
+  if (known && known.rows === table.rows && known.values === values && known.stamp === stamp) return known.stats;
   const numbers: number[] = [];
   const counts = new Map<string, number>();
   eachCell(rule, table, (r, c) => {
@@ -65,7 +76,7 @@ export function statsOf(sheet: Sheet, table: TableLike, rule: Rule): Stats {
   const average = n === 0 ? 0 : sum / n;
   const deviation = n < 2 ? 0 : Math.sqrt(numbers.reduce((a, b) => a + (b - average) ** 2, 0) / (n - 1));
   const stats: Stats = { numbers, min: numbers[0] ?? 0, max: numbers[n - 1] ?? 0, average, deviation, counts };
-  byTable.set(table, stats);
+  byTable.set(table, { stats, rows: table.rows, values, stamp });
   return stats;
 }
 

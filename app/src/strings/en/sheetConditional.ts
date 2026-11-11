@@ -3,6 +3,10 @@
 // Every interface string is a full sentence here, never joined from pieces (ARCHITECTURE.md section 19).
 
 export const sheetConditional = {
+  command: {
+    manage: 'Conditional formatting rules',
+    manageKeywords: 'conditional format rules color scale data bar icon set highlight',
+  },
   icon: {
     arrowDown: 'Down arrow',
     arrowSide: 'Sideways arrow',
@@ -48,6 +52,7 @@ export const sheetConditional = {
     wholeRow: 'row {number}',
     cells: 'cells {from} to {to}',
     limit: 'This table already has 256 conditional formatting rules, the most a table can hold.',
+    problem: 'This formula cannot be read, so the rule does nothing.',
     done: 'Done',
     newRule: 'New rule',
     ruleType: 'Rule type',

@@ -33,14 +33,14 @@ describe('RuleManager', () => {
   it('reports raise, lower, stop, delete, and scope changes', async () => {
     const h = open();
     await userEvent.click(screen.getAllByRole('button', { name: 'Lower priority' })[0]);
-    expect(h.onMove).toHaveBeenCalledWith('c1', 1);
+    expect(h.onMove).toHaveBeenCalledWith({ ruleId: 'c1' }, 1);
     await userEvent.click(screen.getAllByRole('button', { name: 'Raise priority' })[1]);
-    expect(h.onMove).toHaveBeenCalledWith('c2', -1);
+    expect(h.onMove).toHaveBeenCalledWith({ ruleId: 'c2' }, -1);
     await userEvent.click(screen.getAllByRole('switch', { name: 'Stop if true' })[0]);
-    expect(h.onStop).toHaveBeenCalledWith('c1', true);
+    expect(h.onStop).toHaveBeenCalledWith({ ruleId: 'c1' }, true);
     expect(screen.getAllByRole('switch', { name: 'Stop if true' })[1]).toBeChecked();
     await userEvent.click(screen.getAllByRole('button', { name: 'Delete rule' })[1]);
-    expect(h.onRemove).toHaveBeenCalledWith('c2');
+    expect(h.onRemove).toHaveBeenCalledWith({ ruleId: 'c2' });
     await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Show rules for' }), 'page');
     expect(h.onScope).toHaveBeenCalledWith('page');
   });
@@ -56,5 +56,30 @@ describe('RuleManager', () => {
     const { container } = open([]);
     expect(screen.getByText('There are no conditional formatting rules here.')).toBeVisible();
     await expectNoAxeViolations(container);
+  });
+
+  it('reports the table with a rule on the page scope, since rule IDs repeat across tables', async () => {
+    const h = open([
+      { id: 'c1', summary: 'One', ranges: 'column A', stop: false, tableId: 'tA', tableLabel: 'Table 1' },
+      { id: 'c1', summary: 'Two', ranges: 'column A', stop: false, tableId: 'tB', tableLabel: 'Table 2' },
+    ]);
+    await userEvent.click(screen.getAllByRole('button', { name: 'Delete rule' })[1]);
+    expect(h.onRemove).toHaveBeenCalledWith({ ruleId: 'c1', tableId: 'tB' });
+  });
+
+  it('keeps a rule inside its table: no move across a table boundary on the page scope', () => {
+    open([
+      { id: 'c1', summary: 'One', ranges: 'column A', stop: false, tableId: 'tA', tableLabel: 'Table 1' },
+      { id: 'c1', summary: 'Two', ranges: 'column A', stop: false, tableId: 'tB', tableLabel: 'Table 2' },
+    ]);
+    const down = screen.getAllByRole('button', { name: 'Lower priority' });
+    const up = screen.getAllByRole('button', { name: 'Raise priority' });
+    expect(down[0]).toBeDisabled();
+    expect(up[1]).toBeDisabled();
+  });
+
+  it('says so when a formula does not read', () => {
+    open([{ id: 'c1', summary: 'Formula', ranges: 'column A', stop: false, problem: true }]);
+    expect(screen.getByRole('alert').textContent).toContain('cannot be read');
   });
 });

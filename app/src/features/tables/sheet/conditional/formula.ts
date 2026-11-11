@@ -5,6 +5,7 @@
 // ranges, `+ - * / ^ & = <> < > <= >=`, and a short list of functions.
 
 import { letterToColumn } from '../../engine/model';
+import { own } from '../model/json';
 import type { Sheet, TableLike } from '../model/types';
 import { BLANK, textOf, valueOfCell, type CellValue } from './value';
 
@@ -44,9 +45,11 @@ const NOTHING: Node = { t: 'val', v: BLANK };
 
 const TOKEN = new RegExp(
   [
-    String.raw`\s*(?:(\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)`, // a number
+    String.raw`\s*(?:(\$?\d+:\$?\d+)(?![\d.])`, // whole rows: 1:1
+    String.raw`(\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)`, // a number
     String.raw`"((?:[^"]|"")*)"`, // text
     String.raw`(\$?[A-Za-z]{1,3}\$?\d+)(?![A-Za-z0-9_(])`, // a cell
+    String.raw`(\$?[A-Za-z]{1,3}:\$?[A-Za-z]{1,3})(?![A-Za-z0-9_(.])`, // whole columns: A:A
     String.raw`([A-Za-z_][A-Za-z0-9_.]*)\s*(\()?`, // a name or a function
     String.raw`(<=|>=|<>|[-+*/^&=<>(),:%]))`, // an operator
   ].join('|'),
@@ -60,11 +63,13 @@ function tokenize(text: string): string[][] | null {
     if (/^\s*$/.test(text.slice(TOKEN.lastIndex))) break;
     const m = TOKEN.exec(text);
     if (!m) return null;
-    if (m[1] !== undefined) out.push(['n', m[1]]);
-    else if (m[2] !== undefined) out.push(['s', m[2].replace(/""/g, '"')]);
-    else if (m[3] !== undefined) out.push(['ref', m[3]]);
-    else if (m[4] !== undefined) out.push([m[5] ? 'fn' : 'name', m[4]]);
-    else out.push(['op', m[6]]);
+    if (m[1] !== undefined) out.push(['rr', m[1]]);
+    else if (m[2] !== undefined) out.push(['n', m[2]]);
+    else if (m[3] !== undefined) out.push(['s', m[3].replace(/""/g, '"')]);
+    else if (m[4] !== undefined) out.push(['ref', m[4]]);
+    else if (m[5] !== undefined) out.push(['cr', m[5]]);
+    else if (m[6] !== undefined) out.push([m[7] ? 'fn' : 'name', m[6]]);
+    else out.push(['op', m[8]]);
   }
   return out;
 }
@@ -78,6 +83,28 @@ function refOf(text: string): Ref {
     rAbs: m[3] === '$',
     r: Number(m[4]) - 1,
   };
+}
+
+/** The last row and column a sheet has (1,048,576 rows by 16,384 columns); a whole column or row reaches them. */
+const LAST_ROW = 1_048_575;
+const LAST_COL = 16_383;
+
+/** A whole column (A:B) or whole row (1:3) as a range; the read clamps it to the table. */
+function wholeOf(text: string, rows: boolean): Ref {
+  const [x, y] = text.split(':');
+  const side = (part: string) => {
+    const abs = part.startsWith('$');
+    const body = abs ? part.slice(1) : part;
+    return rows ? { abs, n: Number(body) - 1 } : { abs, n: letterToColumn(body.toUpperCase()) };
+  };
+  const a = side(x);
+  const b = side(y);
+  const end: Ref = rows
+    ? { t: 'ref', c: LAST_COL, cAbs: true, r: b.n, rAbs: b.abs }
+    : { t: 'ref', c: b.n, cAbs: b.abs, r: LAST_ROW, rAbs: true };
+  return rows
+    ? { t: 'ref', c: 0, cAbs: true, r: a.n, rAbs: a.abs, to: end }
+    : { t: 'ref', c: a.n, cAbs: a.abs, r: 0, rAbs: true, to: end };
 }
 
 const cache = new Map<string, Node | null>();
@@ -103,6 +130,7 @@ function build(tokens: string[][]): Node | null {
     if (!tok) return bad();
     if (tok[0] === 'n') return { t: 'val', v: num(Number(tok[1])) };
     if (tok[0] === 's') return { t: 'val', v: { kind: 'text', s: tok[1] } };
+    if (tok[0] === 'rr' || tok[0] === 'cr') return wholeOf(tok[1], tok[0] === 'rr');
     if (tok[0] === 'ref') {
       const from = refOf(tok[1]);
       if (!op(':')) return from;
@@ -184,10 +212,10 @@ const asBool = (v: CellValue): boolean | CellValue => {
 /** Excel's order of types: numbers before text before booleans. Blank takes the type of what it is compared with. */
 export function compareValues(a: CellValue, b: CellValue): number {
   const rank = (v: CellValue) => (v.kind === 'num' ? 0 : v.kind === 'text' ? 1 : 2);
-  const like = (blank: CellValue, other: CellValue): CellValue =>
+  const like = (other: CellValue): CellValue =>
     other.kind === 'text' ? { kind: 'text', s: '' } : other.kind === 'bool' ? bool(false) : num(0);
-  const x = a.kind === 'blank' ? like(a, b) : a;
-  const y = b.kind === 'blank' ? like(b, a) : b;
+  const x = a.kind === 'blank' ? like(b) : a;
+  const y = b.kind === 'blank' ? like(a) : b;
   if (rank(x) !== rank(y)) return rank(x) - rank(y);
   if (x.kind === 'num' && y.kind === 'num') return x.n - y.n;
   if (x.kind === 'bool' && y.kind === 'bool') return Number(x.b) - Number(y.b);
@@ -205,6 +233,43 @@ const COMPARE: Record<string, (d: number) => boolean> = {
   '>=': (d) => d >= 0,
 };
 
+interface Memo {
+  rows: unknown;
+  values: unknown;
+  stamp: unknown;
+  ranges: Map<string, CellValue[]>;
+  results: Map<string, CellValue>;
+}
+const memos = new WeakMap<object, Memo>();
+
+/** What was read from a table, kept while its rows and its value cache are the same objects. */
+function memoOf(ctx: FormulaContext): Memo {
+  const known = memos.get(ctx.table);
+  const values = own(ctx.sheet, 'values');
+  const stamp = own(ctx.sheet, 'valuesOf');
+  if (known && known.rows === ctx.table.rows && known.values === values && known.stamp === stamp) return known;
+  const fresh: Memo = { rows: ctx.table.rows, values, stamp, ranges: new Map(), results: new Map() };
+  memos.set(ctx.table, fresh);
+  return fresh;
+}
+
+/** True when the formula reads the same cells for every cell of the rule, so one result serves them all. */
+function isAbsolute(node: Node): boolean {
+  switch (node.t) {
+    case 'val':
+      return true;
+    case 'ref':
+      return node.cAbs && node.rAbs && (!node.to || (node.to.cAbs && node.to.rAbs));
+    case 'un':
+      return isAbsolute(node.a);
+    case 'bin':
+      return isAbsolute(node.a) && isAbsolute(node.b);
+    case 'fn':
+      return node.name !== 'ROW' && node.name !== 'COLUMN' && node.args.every(isAbsolute);
+  }
+}
+const absolute = new WeakMap<Node, boolean>();
+
 function run(node: Node, ctx: FormulaContext, depth: number): V {
   if (depth > 64) return fail('#VALUE!');
   const dr = ctx.at.row - ctx.anchor.row;
@@ -221,10 +286,21 @@ function run(node: Node, ctx: FormulaContext, depth: number): V {
       const a = at(node);
       if (!node.to) return a.r < 0 || a.c < 0 ? fail('#REF!') : valueOfCell(ctx.sheet, ctx.table, a.r, a.c);
       const b = at(node.to);
+      const r0 = Math.max(0, Math.min(a.r, b.r));
+      const r1 = Math.min(ctx.table.rows.length - 1, Math.max(a.r, b.r));
+      const c0 = Math.max(0, Math.min(a.c, b.c));
+      const c1 = Math.min(ctx.table.columns.length - 1, Math.max(a.c, b.c));
+      const memo = memoOf(ctx);
+      const key = `${r0},${r1},${c0},${c1}`;
+      const known = memo.ranges.get(key);
+      if (known) return { kind: 'array', items: known };
       const items: CellValue[] = [];
-      for (let r = Math.max(0, Math.min(a.r, b.r)); r <= Math.min(ctx.table.rows.length - 1, Math.max(a.r, b.r)); r++)
-        for (let c = Math.max(0, Math.min(a.c, b.c)); c <= Math.max(a.c, b.c); c++)
-          if (items.length < 100_000) items.push(valueOfCell(ctx.sheet, ctx.table, r, c));
+      outer: for (let r = r0; r <= r1; r++)
+        for (let c = c0; c <= c1; c++) {
+          if (items.length >= 100_000) break outer;
+          items.push(valueOfCell(ctx.sheet, ctx.table, r, c));
+        }
+      memo.ranges.set(key, items);
       return { kind: 'array', items };
     }
     case 'un': {
@@ -340,8 +416,16 @@ function call(name: string, args: Node[], ctx: FormulaContext, depth: number, sc
 export const simpleEvaluator: FormulaEvaluator = (formula, ctx) => {
   const node = parse(formula);
   if (!node) return fail('#NAME?');
+  let abs = absolute.get(node);
+  if (abs === undefined) absolute.set(node, (abs = isAbsolute(node)));
+  const memo = abs ? memoOf(ctx) : undefined;
+  const key = `${formula}|${ctx.today ?? ''}`;
+  const hit = memo?.results.get(key);
+  if (hit) return hit;
   const v = run(node, ctx, 0);
-  return v.kind === 'array' ? (v.items[0] ?? BLANK) : v;
+  const out = v.kind === 'array' ? (v.items[0] ?? BLANK) : v;
+  memo?.results.set(key, out);
+  return out;
 };
 
 let evaluator: FormulaEvaluator = simpleEvaluator;

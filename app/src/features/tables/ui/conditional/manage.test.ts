@@ -1,8 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { applyPatch } from '../../sheet/model/json';
+import { applyPatch, type JsonObject } from '../../sheet/model/json';
 import { K, R } from '../../sheet/model/testing';
 import type { Sheet, TableLike } from '../../sheet/model/types';
-import { deleteRule, describeRanges, describeRule, managedRules, moveRule, setStop } from './manage';
+import {
+  deleteRule,
+  describeRanges,
+  describeRule,
+  managedPageRules,
+  managedRules,
+  moveRule,
+  refOf,
+  setStop,
+} from './manage';
 
 const table: TableLike = {
   header: false,
@@ -31,8 +40,8 @@ describe('rule manager model', () => {
   });
 
   it('describes ranges', () => {
-    expect(describeRanges(sheet().conditional?.c1 as never, table)).toBe('column A');
-    expect(describeRanges(sheet().conditional?.c3 as never, table)).toBe('cells A1 to B2');
+    expect(describeRanges((sheet().conditional as Record<string, JsonObject>).c1, table)).toBe('column A');
+    expect(describeRanges((sheet().conditional as Record<string, JsonObject>).c3, table)).toBe('cells A1 to B2');
     expect(describeRanges({ ranges: [{ row: R(3) }] }, table)).toBe('row 3');
   });
 
@@ -63,5 +72,17 @@ describe('rule manager model', () => {
     expect(managedRules(gone.sheet, table, 'table').map((r) => r.id)).toEqual(['c1', 'c3']);
     const empty = deleteRule(deleteRule(deleteRule(sheet(), 'c1').sheet, 'c2').sheet, 'c3');
     expect(empty.sheet.conditional).toBeUndefined();
+  });
+});
+
+describe('page scope', () => {
+  it('lists the rules of every table with the table each belongs to, so a repeated rule ID is not ambiguous', () => {
+    const rules = managedPageRules([
+      { tableId: 'tA', label: 'Table 1', table, sheet: sheet() },
+      { tableId: 'tB', label: 'Table 2', table, sheet: sheet() },
+    ]);
+    expect(rules.map((r) => `${r.tableId}:${r.id}`)).toEqual(['tA:c1', 'tA:c2', 'tA:c3', 'tB:c1', 'tB:c2', 'tB:c3']);
+    expect(refOf(rules[3])).toEqual({ ruleId: 'c1', tableId: 'tB' });
+    expect(refOf(managedRules(sheet(), table, 'table')[0])).toEqual({ ruleId: 'c1' });
   });
 });

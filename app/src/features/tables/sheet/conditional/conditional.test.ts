@@ -7,15 +7,17 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { resolveColor } from '../../../../ui/color/parse';
 import { resolve } from '../model/resolve';
-import { setLayerScheme } from '../model/rules';
+import { rulesAt, setLayerScheme } from '../model/rules';
+import { writeValues } from '../model/cache';
 import { intern } from '../model/styles';
-import { K, R, range } from '../model/testing';
+import { K, R, range, specCase } from '../model/testing';
 import type { CellStyle, Sheet, TableLike } from '../model/types';
 import { conditionalLayer, drawnLayer, barCss } from './layer';
 import { hexToLab, labToHex } from './oklab';
 import { setToday } from './match';
-import { setFormulaEvaluator } from './formula';
-import { ICON_SETS } from './visual';
+import { evaluateFormula, setFormulaEvaluator } from './formula';
+import { hybridEvaluator } from './engineEval';
+import { ICON_SETS, barOf } from './visual';
 
 const COL = K(1);
 const rowsOf = (values: (string | number)[], more: Record<string, string>[] = []): TableLike => ({
@@ -93,7 +95,7 @@ describe('color scales', () => {
     const a = oklabByMatrix(brick);
     const b = oklabByMatrix(amber);
     const mixed = a.map((x, i) => x + (b[i] - x) * t);
-    const got = hexToLab(at(sheet, table, 3).fill as string) as number[];
+    const got = hexToLab(at(sheet, table, 3).fill as string) as unknown as number[];
     got.forEach((x, i) => expect(x).toBeCloseTo(mixed[i], 2));
     // The byte values agree with the mix of the independent lab values to one step.
     const want = channels(labToHex(mixed as [number, number, number]));
@@ -445,5 +447,191 @@ describe('the rule applies to the right cells', () => {
     const table = { ...rowsOf([5, 5]), header: true };
     expect(at(sheet, table, 1).fill).toBeUndefined();
     expect(at(sheet, table, 2).fill).toBe('#ff0000');
+  });
+});
+
+const decorate = (sheet: Sheet, table: TableLike, row: number) =>
+  drawnLayer({ row: row - 1, col: 0 }, sheet, table, 'light');
+const barAt = (sheet: Sheet, table: TableLike, row: number) => {
+  const rule = rulesAt(sheet, table, 'conditional', row - 1, 0)[0];
+  return barOf({ sheet, table, rule, row: row - 1, col: 0 }, 'light');
+};
+const styled = (rules: Record<string, object>): Sheet => {
+  const sheet = withRules(rules);
+  sheet.styles = {};
+  const id = styleRef(sheet, RED);
+  for (const r of Object.values(sheet.conditional as Record<string, { type: string; style?: string }>))
+    if (!['bar', 'icons', 'scale'].includes(r.type)) r.style = id;
+  return sheet;
+};
+
+describe('verification fixes 1', () => {
+  it('an icon set named after an Object.prototype member draws nothing and cannot break the draw', () => {
+    const table = rowsOf([1, 2, 3]);
+    for (const set of ['constructor', 'toString', '__proto__', 'hasOwnProperty']) {
+      const sheet = withRules({ c1: { order: 1, type: 'icons', set } });
+      expect(decorate(sheet, table, 2), set).toBeUndefined();
+    }
+  });
+
+  it('a layer that throws leaves the cell plain', () => {
+    const table = rowsOf([1]);
+    const sheet = withRules({ c1: { order: 1, type: 'bar' } });
+    const hostile = { ...table, columns: undefined } as unknown as TableLike;
+    expect(() => decorate(sheet, hostile, 1)).not.toThrow();
+  });
+
+  it('a bar grows from the minimum: 50 to 100 draws 0, 50, and 100 percent', () => {
+    const sheet = withRules({
+      c1: { order: 1, type: 'bar', min: { at: 'num', value: '50' }, max: { at: 'num', value: '100' } },
+    });
+    const table = rowsOf([50, 75, 100]);
+    expect([1, 2, 3].map((r) => barAt(sheet, table, r)?.width)).toEqual([0, 50, 100]);
+  });
+
+  it('a bar with the minimum at "min" on 2, 3, 4 draws 0, 50, and 100 percent', () => {
+    const sheet = withRules({ c1: { order: 1, type: 'bar', min: { at: 'min' }, max: { at: 'max' } } });
+    const table = rowsOf([2, 3, 4]);
+    expect([1, 2, 3].map((r) => barAt(sheet, table, r)?.width)).toEqual([0, 50, 100]);
+  });
+
+  it('a bar with the minimum as a percent of the range starts there', () => {
+    // 10..30: 50 percent is 20, so 20 draws 0 and 30 draws full width.
+    const sheet = withRules({
+      c1: { order: 1, type: 'bar', min: { at: 'percent', value: '50' }, max: { at: 'max' } },
+    });
+    const table = rowsOf([10, 20, 30]);
+    expect([1, 2, 3].map((r) => barAt(sheet, table, r)?.width)).toEqual([0, 0, 100]);
+  });
+});
+
+describe('verification fixes 2', () => {
+  it('a matching rule with stop hides the bars and icons below it', () => {
+    const sheet = styled({
+      c1: { order: 1, type: 'formula', a: 'A1>5', stop: true },
+      c2: { order: 2, type: 'bar' },
+      c3: { order: 3, type: 'icons', set: '3Arrows' },
+    });
+    const table = rowsOf([10, 1, 20]);
+    expect(decorate(sheet, table, 1)).toBeUndefined();
+    expect(decorate(sheet, table, 3)).toBeUndefined();
+    const small = decorate(sheet, table, 2);
+    expect(small?.data['data-bar']).toBe('right');
+    expect(small?.data['data-icon-glyph']).toBeDefined();
+  });
+
+  it('a rule that matches without stop leaves the bars below it', () => {
+    const sheet = styled({
+      c1: { order: 1, type: 'formula', a: 'A1>5' },
+      c2: { order: 2, type: 'bar' },
+    });
+    expect(decorate(sheet, rowsOf([10, 1]), 1)?.data['data-bar']).toBe('right');
+  });
+
+  it('whole column and whole row references read the table', () => {
+    const table = rowsOf([1, 2, 3], [{ 0: '10', 1: '20', 2: '90' }]);
+    const ctx = (row: number) => ({
+      sheet: {} as Sheet,
+      table,
+      at: { row, col: 0 },
+      anchor: { row: 0, col: 0 },
+    });
+    expect(evaluateFormula('MAX(B:B)', ctx(0))).toEqual({ kind: 'num', n: 90 });
+    expect(evaluateFormula('AVERAGE($A:$A)', ctx(0))).toEqual({ kind: 'num', n: 2 });
+    expect(evaluateFormula('SUM(1:1)', ctx(0))).toEqual({ kind: 'num', n: 11 });
+    expect(evaluateFormula('SUM($2:$3)', ctx(0))).toEqual({ kind: 'num', n: 2 + 20 + 3 + 90 });
+  });
+});
+
+describe('verification fixes 3', () => {
+  it('every formula level of the spec fixture of rule types reads without #NAME?', () => {
+    const c = specCase('conditional-types.json');
+    const table = c.data;
+    const sheet = c.data.sheet as Sheet;
+    const seen: string[] = [];
+    const visit = (v: unknown): void => {
+      if (Array.isArray(v)) v.forEach(visit);
+      else if (v && typeof v === 'object') {
+        const o = v as Record<string, unknown>;
+        if (o.at === 'formula' && typeof o.value === 'string') seen.push(o.value);
+        if (o.type === 'formula' && typeof o.a === 'string') seen.push(o.a);
+        Object.values(o).forEach(visit);
+      }
+    };
+    visit(sheet.conditional);
+    expect(seen).toContain('MAX(B:B)');
+    expect(seen).toContain('AVERAGE(B:B)');
+    for (const f of seen) {
+      const v = evaluateFormula(f, { sheet, table, at: { row: 1, col: 1 }, anchor: { row: 0, col: 0 } });
+      expect(v, f).not.toEqual({ kind: 'error', e: '#NAME?' });
+    }
+  });
+
+  it('a range far wider than the table is clamped and does not stall the draw', () => {
+    const table = rowsOf(Array.from({ length: 200 }, (_, i) => i));
+    const sheet = styled({ c1: { order: 1, type: 'formula', a: 'SUM($A$1:$ZZZ$1048576)>0' } });
+    const started = performance.now();
+    for (let i = 1; i <= 200; i++) at(sheet, table, i);
+    expect(performance.now() - started).toBeLessThan(1500);
+  });
+});
+
+describe('verification fixes 4', () => {
+  it('statistics follow the value cache when it is written in place', () => {
+    const cells = ['=1', '=2', '=3'];
+    const table: TableLike = {
+      header: false,
+      columns: [{ id: COL }],
+      rows: cells.map((m, i) => ({ id: R(i + 1), cells: { [COL]: { markdown: m } } })),
+    };
+    const sheet = styled({ c1: { order: 1, type: 'top', rank: 1 } });
+    const write = (values: number[]) =>
+      writeValues(sheet, table, new Map(values.map((n, i) => [R(i + 1), new Map([[COL, n]])])));
+    write([1, 2, 3]);
+    expect(fills(sheet, table)).toEqual([undefined, undefined, '#ff0000']);
+    write([9, 2, 3]);
+    expect(fills(sheet, table)).toEqual(['#ff0000', undefined, undefined]);
+  });
+
+  it('a duplicate rule over 2,000 rows draws within a budget', () => {
+    const table = rowsOf(Array.from({ length: 2000 }, (_, i) => i % 1000));
+    const sheet = styled({ c1: { order: 1, type: 'formula', a: 'COUNTIF($A$1:$A$2000,A1)>1' } });
+    const started = performance.now();
+    for (let i = 1; i <= 2000; i++) at(sheet, table, i);
+    const first = performance.now() - started;
+    expect(at(sheet, table, 1).fill).toBe('#ff0000');
+    expect(first).toBeLessThan(2500);
+  });
+
+  it('the full column and the full sheet read within a budget', () => {
+    const table = rowsOf(Array.from({ length: 300 }, (_, i) => i));
+    const sheet = styled({ c1: { order: 1, type: 'formula', a: 'COUNTIF($A:$A,A1)>0' } });
+    const started = performance.now();
+    for (let i = 1; i <= 300; i++) at(sheet, table, i);
+    expect(performance.now() - started).toBeLessThan(1500);
+  });
+});
+
+describe('verification fixes 5', () => {
+  it('a formula with a function the built-in reader lacks runs on the engine', () => {
+    setFormulaEvaluator(hybridEvaluator);
+    const table = rowsOf([1, 2, 3, 10]);
+    // MEDIAN of 1, 2, 3, 10 is 2.5 (hand-worked), so the rows above it are 3 and 10.
+    const sheet = styled({ c1: { order: 1, type: 'formula', a: 'A1>MEDIAN($A$1:$A$4)' } });
+    expect(fills(sheet, table)).toEqual([undefined, undefined, '#ff0000', '#ff0000']);
+  });
+
+  it('an unknown function still matches nothing and does not throw on the engine', () => {
+    setFormulaEvaluator(hybridEvaluator);
+    const table = rowsOf([1, 2]);
+    const sheet = styled({ c1: { order: 1, type: 'formula', a: 'NOSUCHFUNCTION(A1)' } });
+    expect(fills(sheet, table)).toEqual([undefined, undefined]);
+  });
+
+  it('the levels of the color-only icon sets differ by shape', () => {
+    for (const name of ['3TrafficLights', '3Flags']) {
+      const glyphs = ICON_SETS[name].map((d) => d.glyph);
+      expect(new Set(glyphs).size, name).toBe(3);
+    }
   });
 });

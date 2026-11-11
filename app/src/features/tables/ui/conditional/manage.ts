@@ -3,6 +3,7 @@
 
 import { t } from '../../../../strings/t';
 import { columnLetter } from '../../engine/model';
+import { parseFormula } from '../../engine/formula/parser';
 import { gridOf, type Box } from '../../sheet/model/grid';
 import { isObject, own, type JsonObject } from '../../sheet/model/json';
 import { applyOrder, rangeBox, removeRule, rulesOf, setRule, type Rule } from '../../sheet/model/rules';
@@ -19,6 +20,21 @@ export interface ManagedRule {
   stop: boolean;
   /** The table's label, for the page scope. */
   tableLabel?: string;
+  /** The table's block ID, for the page scope: rule IDs such as `c1` repeat across tables. */
+  tableId?: string;
+  /** True when a formula of the rule does not read, so the rule matches nothing. */
+  problem?: boolean;
+}
+
+/** Names one rule for a change: its ID and, on the page scope, the table it belongs to. */
+export interface RuleRef {
+  ruleId: string;
+  tableId?: string;
+}
+
+/** The reference a listed rule stands for. */
+export function refOf(rule: ManagedRule): RuleRef {
+  return rule.tableId === undefined ? { ruleId: rule.id } : { ruleId: rule.id, tableId: rule.tableId };
 }
 
 const str = (v: unknown): string => (typeof v === 'string' ? v : '');
@@ -136,8 +152,16 @@ export function describeRanges(rule: JsonObject, table: TableLike): string {
   return parts.join(', ');
 }
 
+/** True when a formula rule's formula does not parse, so the manager can say the rule does nothing. */
+function unreadable(rule: JsonObject): boolean {
+  if (own(rule, 'type') !== 'formula') return false;
+  const text = str(own(rule, 'a')).trim().replace(/^=/, '');
+  return !parseFormula(text).ok;
+}
+
 function managed(rule: Rule, table: TableLike, tableLabel?: string): ManagedRule {
   return {
+    ...(unreadable(rule.rule) ? { problem: true } : {}),
     id: rule.id,
     summary: describeRule(rule.rule),
     ranges: describeRanges(rule.rule, table),
@@ -169,6 +193,15 @@ export function managedRules(
     })
     .filter((r) => scope === 'table' || !selection || r.boxes.some((b) => touches(b, selection)))
     .map((r) => managed(r, table, tableLabel));
+}
+
+/** The rules of every table on the page, each with the table it belongs to, for the page scope. */
+export function managedPageRules(
+  tables: readonly { tableId: string; label: string; table: TableLike; sheet: Sheet }[],
+): ManagedRule[] {
+  return tables.flatMap((x) =>
+    managedRules(x.sheet, x.table, 'table', undefined, x.label).map((r) => ({ ...r, tableId: x.tableId })),
+  );
 }
 
 export interface Changed {
