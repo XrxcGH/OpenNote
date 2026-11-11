@@ -40,22 +40,24 @@ const BY_FAMILY: Partial<Record<Family, string[]>> = {
 
 describe('the function registry', () => {
   it('holds the 48 names of before, each in its family', () => {
-    expect(REGISTRY.size).toBe(48);
+    // Family lanes add functions, so each family holds at least the names it always had.
+    expect(REGISTRY.size).toBeGreaterThanOrEqual(48);
     for (const [family, names] of Object.entries(BY_FAMILY)) {
       const found = [...REGISTRY.values()].filter((spec) => spec.family === family).map((spec) => spec.name);
-      expect(found.sort(), family).toEqual(names);
+      expect(found, family).toEqual(expect.arrayContaining(names));
     }
   });
 
   it('keeps the argument counts and the kinds the compiler knew', () => {
-    expect(Object.keys(FUNCTIONS)).toHaveLength(46);
+    expect(Object.keys(FUNCTIONS).length).toBeGreaterThanOrEqual(46);
     expect(SPECIAL_FORMS).toEqual({ IF: { min: 2, max: 3 }, IFERROR: { min: 2, max: 2 } });
     expect(FUNCTIONS.SUM).toMatchObject({ kind: 'aggregate', min: 1, max: Infinity });
     expect(FUNCTIONS.COUNTA).toMatchObject({ kind: 'aggregate', raw: true });
     expect(FUNCTIONS.ROUND).toMatchObject({ kind: 'scalar', min: 1, max: 2 });
     expect(FUNCTIONS.PI).toMatchObject({ min: 0, max: 0 });
     expect(FUNCTIONS.ISBLANK).toMatchObject({ handlesErrors: true });
-    expect(FUNCTIONS.CONCAT).toMatchObject({ kind: 'scalar', min: 1, max: Infinity });
+    // CONCAT joins every cell of a range, so it is an aggregate that keeps its values as they are.
+    expect(FUNCTIONS.CONCAT).toMatchObject({ kind: 'aggregate', raw: true, min: 1, max: Infinity });
     expect(REGISTRY.get('TODAY')?.volatile).toBe(true);
   });
 

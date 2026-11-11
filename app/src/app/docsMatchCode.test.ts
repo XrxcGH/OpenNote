@@ -179,3 +179,39 @@ describe('status pages', () => {
       expect(spec).toContain(key);
   });
 });
+
+// The two help index tests are guards. They also pass without new work, so they do not prove it.
+describe('help index', () => {
+  it('links every help page', () => {
+    const index = read('help', 'README.md');
+    const pages = readdirSync(join(docs, 'help')).filter((f) => f.endsWith('.md') && f !== 'README.md');
+    expect(pages.filter((f) => !index.includes(`](${f})`))).toEqual([]);
+  });
+
+  it('links only pages that exist', () => {
+    const index = read('help', 'README.md');
+    const dead = [...index.matchAll(/\]\(([a-z0-9-]+\.md)\)/g)]
+      .map((m) => m[1])
+      .filter((f) => !existsSync(join(docs, 'help', f)));
+    expect(dead).toEqual([]);
+  });
+});
+
+describe('ADR index status', () => {
+  const escape = (t: string) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const firstWord = (t: string) => /^- Status: (\w+)/m.exec(t)?.[1];
+  const records = () => readdirSync(join(docs, 'adr')).filter((f) => /^\d{4}-.*\.md$/.test(f) && !f.startsWith('0000'));
+
+  it('shows the same first status word in the index and in the record file, both ways', () => {
+    const index = read('adr', 'README.md');
+    const wrong = records().filter((f) => {
+      const row = new RegExp(`\\]\\(${escape(f)}\\) *\\|[^|\\n]*\\| *(\\w+)`).exec(index);
+      return !row || row[1] !== firstWord(read('adr', f));
+    });
+    expect(wrong).toEqual([]);
+  });
+
+  it('escapes dots in a file name', () => {
+    expect(new RegExp(escape('a.md')).test('axmd')).toBe(false);
+  });
+});

@@ -4,6 +4,7 @@
 
 import { isObject, geometry, type Json, type JsonObject } from '../layout/json';
 import { readView, type PageViewSpec } from '../layout/view';
+import { readTextLayout, type TextLayout } from '../print/textLayout';
 import { numberMarkdown } from '../../../editor/equations';
 import { readingOrder } from './order';
 
@@ -38,6 +39,8 @@ export interface TextBlock extends BlockBase {
   readonly markdown: string;
   /** The block's element IDs, paragraph formatting, and named styles (`data.ids`, `paras`, and `styles`). */
   readonly elements?: TextElements;
+  /** Columns or vertical writing, when the block has them (R-LAY-1). Missing for an ordinary block. */
+  readonly layout?: TextLayout;
 }
 
 /** What a text block keeps beside its Markdown for each element (format spec 6.6 and 6.8). */
@@ -233,7 +236,13 @@ function readData(type: string, data: JsonObject, fallback: Json | undefined): B
   const alt = { alt: str(data.alt), decorative: flag(data.decorative) };
   if (type === 'text' && typeof data.markdown === 'string') {
     const elements = readElements(data);
-    return { type, markdown: data.markdown, ...(elements ? { elements } : {}) };
+    const layout = readTextLayout(data);
+    return {
+      type,
+      markdown: data.markdown,
+      ...(elements ? { elements } : {}),
+      ...(layout.columns > 1 || layout.vertical ? { layout } : {}),
+    };
   }
   if (type === 'ink') {
     const anchor = readAnchor(data.anchor);
@@ -340,7 +349,10 @@ export function readExportPage(raw: unknown, strokes: readonly ExportStroke[] = 
 
 /** True when a block is positioned on the page: its frame has both `x` and `y` (format spec 6.2). */
 export function isFloating(block: ExportBlock): boolean {
-  return block.frame?.x !== undefined && block.frame?.y !== undefined;
+  // A break has no frame (R-BRK-1): a reader ignores one.
+  return (
+    !(block.type === 'other' && block.kind === 'break') && block.frame?.x !== undefined && block.frame?.y !== undefined
+  );
 }
 
 /** Gives the labeled display equations their numbers and resolves references, across the page's text in reading order. */

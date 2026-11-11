@@ -99,17 +99,54 @@ export interface RuntimeDiagnostic {
 /** Every message a worker may send. The page checks each one before it reads it. */
 export type WorkerMessage =
   | { kind: 'loading'; percent: number }
-  | { kind: 'started' }
+  | { kind: 'started'; version?: string; interactive?: boolean }
   | { kind: 'out'; stream: Stream; text: string }
   | { kind: 'input-wanted'; prompt: string }
   | { kind: 'rich'; mime: RichMime; data: string }
   | { kind: 'diagnostic'; items: RuntimeDiagnostic[] }
   | { kind: 'trace'; chunk: TraceEvent[] }
   | { kind: 'test'; result: TestResult }
-  | { kind: 'done'; status: RunStatus; exitCode?: number; message: string };
+  | { kind: 'done'; status: RunStatus; exitCode?: number; message: string; written?: RunFile[]; inputEnded?: boolean };
 
 /** Sends one message from inside the worker to the page. */
 export type Emit = (message: WorkerMessage) => void;
+
+/** Standard input inside the worker (DESIGN 4.4). Prefilled text is read first; at its end comes EOF (null). */
+export interface RunInput {
+  /** True when the page answers `lineAsync`, false when only the prefilled text is there. */
+  interactive: boolean;
+  /** The next line without its line break, or null at the end of input. */
+  line(): string | null;
+  /** Up to `count` characters, or everything left; null at the end of input. */
+  read(count?: number): string | null;
+  /** Asks the page for a line when interactive; otherwise the same as `line`. */
+  lineAsync(prompt: string): Promise<string | null>;
+}
+
+/** The project inside the worker: files read-only, writes kept in an overlay shown after the run (DESIGN 4.3). */
+export interface RunMount {
+  paths(): string[];
+  read(path: string): string | null;
+  /** Writes to the overlay. False when the path or size is outside the project limits. */
+  write(path: string, text: string): boolean;
+}
+
+/** What the worker hands an adapter for one run, besides the request (DESIGN 4.3 to 4.5). */
+export interface RunContext {
+  stdin: RunInput;
+  files: RunMount;
+  /** The seeded random source, the same sequence for the same `seed`. Numbers in [0, 1). */
+  random(): number;
+  /** Fills `bytes` from the seeded source, for WASI's random_get. */
+  randomBytes(bytes: Uint8Array): void;
+  /** Kept for the adapter to stop at the time limit, as a performance.now() time. */
+  deadline: number;
+}
+
+/** Turns a runtime's error text into diagnostics on project files (DESIGN 4.6). */
+export interface DiagnosticMapper {
+  map(errorText: string, files: readonly RunFile[]): RuntimeDiagnostic[];
+}
 
 /** How a runtime records a trace for the debugger (DESIGN 8.2). Lane code:L14a fills these in. */
 export interface TraceHooks {
@@ -121,9 +158,17 @@ export interface TraceHooks {
   stop(): void;
 }
 
+/** How one run ended, as the adapter tells the worker. */
+export interface RunEnd {
+  status: RunStatus;
+  exitCode?: number;
+  /** For "error", the error's type when the runtime gives one. */
+  message: string;
+}
+
 /**
  * One in-app runtime, living inside its worker. `load` prepares a warm worker before lockdown; `run` runs one
- * request and resolves when `done` was sent; `check` finds errors without running (DESIGN 6.1, layer L-c).
+ * request and resolves with how it ended; `check` finds errors without running (DESIGN 6.1, layer L-c).
  */
 export interface RuntimeAdapter {
   id: RuntimeId;
@@ -131,8 +176,13 @@ export interface RuntimeAdapter {
   pack?: PackId;
   /** Names of globals the generalized lockdown keeps for this runtime. */
   allowances?: readonly string[];
+  /** The runtime's version, reported when a run starts, such as `MicroPython 1.27.0`. */
+  version?: string;
   load(onProgress: (percent: number) => void): Promise<void>;
-  run(request: RunRequest, emit: Emit): Promise<void>;
+  /** Runs one request and sends everything but `started` and `done`; the worker sends those. */
+  run(request: RunRequest, emit: Emit, context: RunContext): Promise<RunEnd>;
+  /** Maps the error text of a run to project lines. */
+  diagnostics?: DiagnosticMapper;
   check?(file: RunFile, files: RunFile[]): Promise<RuntimeDiagnostic[]>;
   traceHooks?: TraceHooks;
 }
