@@ -55,6 +55,29 @@ describe('completion latency in a 1,000-line file', () => {
     expect(ms).toBeLessThan(20);
   }, 60_000);
 
+  it('keeps the word counts while typing on one line of a 300 KB file', () => {
+    const lines: string[] = [];
+    for (let i = 0; lines.join('\n').length < 300_000; i++) {
+      for (let j = 0; j < 100; j++) lines.push(`value_${i % 8}_${j % 10} = compute(item_${j % 30}, limit) + offset`);
+    }
+    const middle = lines.length >> 1;
+    const head = `${lines.slice(0, middle).join('\n')}\n`;
+    const tail = `\n${lines.slice(middle).join('\n')}`;
+    const typed = 'value_12_3';
+    const times: number[] = [];
+    for (let k = 1; k <= typed.length; k++) {
+      const text = `${head}${typed.slice(0, k)}${tail}`;
+      // The editor's document text is one flat string; a search flattens the joined test text the same way.
+      text.indexOf('\u0001');
+      const start = performance.now();
+      rank(contextAt('python', text, head.length + k));
+      times.push(performance.now() - start);
+    }
+    // The first keystroke on the line counts the window; every later one reuses those counts.
+    const later = times.slice(1).sort((a, b) => a - b);
+    expect(later[later.length >> 1]).toBeLessThan(2);
+  });
+
   it('computes the ghost text under 30 ms, cold', () => {
     for (const explicit of [false, true]) {
       const ms = best(base, (text, tree) =>

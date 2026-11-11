@@ -2,7 +2,7 @@
 // Rules, in order: the language's idioms, closing a `def` or `class` line, repeated lines with a numeric step,
 // and an earlier line with the same start. Block bodies after a new line are left to the model.
 
-import { family } from './tables';
+import { family, own } from './tables';
 import { lineAt, tokenize } from './tokens';
 import type { Token } from './tokens';
 
@@ -46,7 +46,7 @@ const ends =
 
 /** `for (int i = 0; i < ` gives `n; i++) {`, with the bound from a nearby `n`, `.size()`, or `.length`. */
 const countedFor: Idiom = ({ before, text, pos }, language) => {
-  const match = /\bfor\s*\(\s*(?:int|let|var|size_t|auto|long)\s+(\w+)\s*=\s*0\s*;\s*\1\s*<\s*$/.exec(before);
+  const match = /^\s*for\s*\(\s*(?:int|let|var|size_t|auto|long)\s+(\w+)\s*=\s*0\s*;\s*\1\s*<\s*$/.exec(before);
   if (!match) return null;
   const counter = match[1]!;
   const nearby = text.slice(Math.max(0, pos - before.length - 2000), pos - before.length);
@@ -57,42 +57,68 @@ const countedFor: Idiom = ({ before, text, pos }, language) => {
   return { text: `${bound}; ${counter}++) {`, confidence };
 };
 
-/** `SELECT * FROM ` gives the table mentioned last before it. */
+/** `SELECT * FROM ` gives the table named last in the PREDICT_WINDOW characters above. Not in a comment. */
 const lastTable: Idiom = ({ before, text, pos }) => {
-  if (!/\bFROM\s$/i.test(before)) return null;
-  const earlier = text.slice(0, pos - before.length);
+  if (!/\bFROM\s$/i.test(before) || before.includes('--') || before.split("'").length % 2 === 0) return null;
+  const start = pos - before.length;
+  const earlier = text.slice(Math.max(0, start - PREDICT_WINDOW), start);
   const tables = [...earlier.matchAll(/\b(?:FROM|JOIN|INTO|UPDATE|TABLE)\s+([A-Za-z_]\w*)/gi)];
   return sure(tables.pop()?.[1] ?? null, 0.7);
 };
 
+// Each idiom starts at the line start, so the same words inside a string or after a comment marker never match.
 const IDIOMS: Readonly<Record<string, readonly Idiom[]>> = {
   python: [
-    ends(/\bif __name__ == "$/, '__main__":'),
-    ends(/\bif __name__ == '$/, "__main__':"),
+    ends(/^\s*if __name__ == "$/, '__main__":'),
+    ends(/^\s*if __name__ == '$/, "__main__':"),
     alias('numpy', 'np'),
     alias('pandas', 'pd'),
     alias('matplotlib.pyplot', 'plt'),
   ],
-  c: [ends(/^\s*#\s*include\s*<$/, 'stdio.h>'), ends(/\bint main\($/, 'void) {'), countedFor],
-  cpp: [ends(/^\s*#\s*include\s*<$/, 'iostream>'), ends(/\bint main\($/, ') {'), countedFor],
-  java: [ends(/\bpublic static void main\($/, 'String[] args) {'), countedFor],
+  c: [ends(/^\s*#\s*include\s*<$/, 'stdio.h>'), ends(/^\s*int main\($/, 'void) {'), countedFor],
+  cpp: [ends(/^\s*#\s*include\s*<$/, 'iostream>'), ends(/^\s*int main\($/, ') {'), countedFor],
+  java: [ends(/^\s*public static void main\($/, 'String[] args) {'), countedFor],
   javascript: [countedFor],
   sql: [lastTable],
 };
 
-/** A Python `def` or `class` line whose parameters are closed gets its `:`. Read with string operations. */
+// Return annotations that are whole words: `-> None` gets its `:` at once.
+const ANNOTATIONS = new Set(['None', 'int', 'str', 'float', 'bool', 'bytes', 'list', 'dict', 'tuple', 'set', 'object']);
+
+/**
+ * A Python `def` or `class` line whose parameters are closed gets its `:`. One pass tracks bracket depth and strings,
+ * so a nested `(`, a `)` inside a string, or a comment never counts as the close. After the parameters only a return
+ * annotation may follow. An annotation that ends in a word the user may still be typing (`-> tup`) shows only on
+ * request.
+ */
 function signature(line: Line, language: string): { text: string; confidence: number } | null {
   if (family(language) !== 'python') return null;
   const { before } = line;
-  let done = false;
-  if (/^\s*class\s+\w+\s*\(/.test(before)) done = before.endsWith(')');
-  else if (/^\s*(?:async\s+)?def\s+\w+\s*\(/.test(before)) {
-    const arrow = before.lastIndexOf('->');
-    const result = arrow < 0 ? '' : before.slice(arrow + 2).trim();
-    const head = arrow < 0 ? before : before.slice(0, arrow).trimEnd();
-    done = head.endsWith(')') && (arrow < 0 || (result.length > 0 && !result.includes(':')));
+  const isClass = /^\s*class\s+\w+\s*\(/.test(before);
+  if (!isClass && !/^\s*(?:async\s+)?def\s+\w+\s*\(/.test(before)) return null;
+  let depth = 0;
+  let quote = '';
+  let close = -1;
+  for (let i = 0; i < before.length; i++) {
+    const char = before[i]!;
+    if (quote) {
+      if (char === '\\') i++;
+      else if (char === quote) quote = '';
+    } else if (char === '"' || char === "'") quote = char;
+    else if (char === '#') return null;
+    else if ('([{'.includes(char)) depth++;
+    else if (')]}'.includes(char)) {
+      depth--;
+      if (depth < 0) return null;
+      if (depth === 0 && close < 0) close = i;
+    } else if (char === ':' && depth === 0 && close >= 0) return null;
   }
-  return done ? { text: ':', confidence: 0.9 } : null;
+  if (quote || depth !== 0 || close < 0) return null;
+  const rest = before.slice(close + 1).trim();
+  if (!rest) return { text: ':', confidence: 0.9 };
+  if (isClass || !rest.startsWith('->') || !rest.slice(2).trim()) return null;
+  const word = /\w+$/.exec(rest)?.[0];
+  return { text: ':', confidence: !word || ANNOTATIONS.has(word) ? 0.9 : 0.5 };
 }
 
 const indentOf = (line: string): string => /^\s*/.exec(line)?.[0] ?? '';
@@ -110,9 +136,13 @@ function extrapolate(older: Token[], newer: Token[]): { tokens: string[]; steps:
     } else if (a.kind === 'number' && b.kind === 'number' && /^\d{1,15}$/.test(a.text) && /^\d{1,15}$/.test(b.text)) {
       // Integers of at most 15 digits stay exact. A step below zero would change the line's shape, and a padded
       // number such as `02` keeps its width.
+      // `0x08` reads as `0`, `x`, `08`. Its digits are not decimal, so a base prefix stops the rule.
+      if (/^[xXbBoO]$/.test(newer[i - 1]?.text ?? '') && newer[i - 2]?.text === '0') return null;
       const step = Number(b.text) - Number(a.text);
       const value = Number(b.text) + step;
       if (value < 0 || String(value).length > 15) return null;
+      // After a minus sign, zero would read `-0`.
+      if (value === 0 && newer[i - 1]?.text === '-') return null;
       steps.push(step);
       tokens.push(b.text.startsWith('0') ? String(value).padStart(b.text.length, '0') : String(value));
     } else if (a.kind === 'space' && b.kind === 'space') {
@@ -129,7 +159,8 @@ function step(lines: readonly string[], index: number, before: string): { text: 
   const above: string[] = [];
   for (let i = index - 1; i >= 0 && above.length < 3; i--) {
     const line = lines[i]!;
-    if (!line.trim()) break;
+    // A long line (a data dump or minified code) is never tokenized: it ends the run.
+    if (line.length > MAX_PREDICT_LINE || !line.trim()) break;
     if (indentOf(line) !== indent) break;
     above.push(line.trim());
   }
@@ -224,10 +255,15 @@ const PREDICT_WINDOW = 100_000;
 export function predict(language: string, fullText: string, fullPos: number, explicit: boolean): Prediction | null {
   const { before, after } = lineAt(fullText, fullPos);
   if (before.length + after.length > MAX_PREDICT_LINE || !CLOSERS.test(after)) return null;
-  // A window of whole lines around the caret bounds the work in a large file.
-  const from = fullPos <= PREDICT_WINDOW ? 0 : fullText.lastIndexOf('\n', fullPos - PREDICT_WINDOW) + 1;
-  const newline = fullText.indexOf('\n', fullPos + PREDICT_WINDOW);
-  const text = fullText.slice(from, newline < 0 ? fullText.length : newline);
+  // A window of whole lines around the caret bounds the work in a large file. A very long line at an edge is cut, so
+  // the window never reaches past twice PREDICT_WINDOW on either side.
+  // Each edge searches only its own band, so the search never crosses a long line.
+  const low = Math.max(0, fullPos - 2 * PREDICT_WINDOW);
+  const from =
+    fullPos <= PREDICT_WINDOW ? 0 : low + fullText.slice(low, fullPos - PREDICT_WINDOW).lastIndexOf('\n') + 1;
+  const high = Math.min(fullText.length, fullPos + 2 * PREDICT_WINDOW);
+  const newline = fullText.slice(0, high).indexOf('\n', fullPos + PREDICT_WINDOW);
+  const text = fullText.slice(from, newline < 0 ? high : newline);
   const pos = fullPos - from;
   const threshold = explicit ? EXPLICIT_THRESHOLD : AUTO_THRESHOLD;
   const line: Line = { text, before, pos };
@@ -235,7 +271,7 @@ export function predict(language: string, fullText: string, fullPos: number, exp
   const lines = text.split('\n');
   const index = text.slice(0, pos).split('\n').length - 1;
   const rules: Array<[PatternRule, () => { text: string; confidence: number } | null]> = [
-    ...(IDIOMS[lang] ?? []).map((idiom): [PatternRule, () => { text: string; confidence: number } | null] => [
+    ...(own(IDIOMS, lang) ?? []).map((idiom): [PatternRule, () => { text: string; confidence: number } | null] => [
       'idiom',
       () => idiom(line, lang),
     ]),

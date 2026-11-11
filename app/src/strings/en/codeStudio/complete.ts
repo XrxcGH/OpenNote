@@ -9,7 +9,8 @@ export const codeStudioComplete = {
     member: 'member',
     module: 'module member',
     word: 'from open files',
-    snippet: 'snippet',
+    /** A snippet's note: what it inserts. The list shows no icons, so the word marks it as a snippet. */
+    snippet: 'snippet: {note}',
   },
   /** What each snippet inserts, shown beside its label. */
   snippets: {

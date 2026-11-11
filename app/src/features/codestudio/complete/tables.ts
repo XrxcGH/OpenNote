@@ -170,6 +170,11 @@ export const MODULE_MEMBERS: Readonly<Record<string, readonly string[]>> = {
 };
 
 /** Which language family a table key uses. TypeScript reads JavaScript's members, C++'s tables serve C++ only. */
+/** A table's own entry for `key`, so a key such as `constructor` never reads the object's prototype. */
+export function own<T>(table: Readonly<Record<string, T>>, key: string): T | undefined {
+  return Object.hasOwn(table, key) ? table[key] : undefined;
+}
+
 export function family(language: string): string {
   return language === 'typescript' ? 'javascript' : language;
 }

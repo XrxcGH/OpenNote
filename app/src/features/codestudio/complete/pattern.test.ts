@@ -101,6 +101,47 @@ describe('pattern ghost text', () => {
   });
 });
 
+describe('ghost text guards', () => {
+  it('closes a signature only when its brackets and strings are balanced', () => {
+    expect(ghost('python', 'def f(a, b=(1, 2))')).toBe(':');
+    expect(ghost('python', 'class A(B())')).toBe(':');
+    expect(ghost('python', 'def f(a) -> list[int]')).toBe(':');
+    expect(ghost('python', 'def f(a) -> None')).toBe(':');
+    expect(ghost('python', 'def f(a=(1, 2)')).toBeNull();
+    // The editor already closed the `)` after the caret.
+    expect(predict('python', 'def f(x=g())', 'def f(x=g()'.length, false)).toBeNull();
+    expect(predict('python', 'class A(B())', 'class A(B()'.length, false)).toBeNull();
+    expect(ghost('python', 'def f(a, b="x)')).toBeNull();
+    expect(ghost('python', 'def f(a=lambda: g()')).toBeNull();
+    expect(ghost('python', 'def f(a)  # note (x)')).toBeNull();
+    expect(ghost('python', 'def f(a):')).toBeNull();
+    // The caret may still be typing the annotation; an explicit request still offers the colon.
+    expect(ghost('python', 'def f(a) -> tup')).toBeNull();
+    expect(predict('python', 'def f(a) -> tup', 15, true)?.text).toBe(':');
+  });
+
+  it('does not step hex digits as decimal or step past zero after a minus', () => {
+    expect(ghost('python', 'v = -2\nv = -1\nv')).toBeNull();
+    expect(ghost('python', 'v = -3\nv = -2\nv')).toBe(' = -1');
+    expect(ghost('c', 'a = 0x08;\na = 0x09;\na')).toBeNull();
+  });
+
+  it('does not fire idioms inside a string or a comment', () => {
+    expect(ghost('python', 'x = "if __name__ == "')).toBeNull();
+    expect(ghost('cpp', '// for (int i = 0; i < ')).toBeNull();
+    expect(ghost('cpp', '// int main(')).toBeNull();
+    expect(ghost('sql', 'CREATE TABLE t (a INT);\n-- SELECT * FROM ')).toBeNull();
+    expect(ghost('sql', "CREATE TABLE t (a INT);\nSELECT 'x FROM ")).toBeNull();
+    expect(ghost('sql', 'CREATE TABLE t (a INT);\nSELECT * FROM ')).toBe('t');
+  });
+
+  it('treats a language named like an object key as unknown', () => {
+    for (const language of ['constructor', 'toString', '__proto__']) {
+      expect(() => predict(language, 'x = 1\nx', 7, true)).not.toThrow();
+    }
+  });
+});
+
 describe('explicit requests', () => {
   it('inserts the leading list item where the automatic predictor shows nothing', () => {
     const text = 'total = 0\nfor n in nums:\n    tot';

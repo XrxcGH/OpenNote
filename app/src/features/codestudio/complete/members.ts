@@ -6,7 +6,7 @@
 // characters side by side, so a hostile line costs linear time. Lines longer than MAX_LINE are skipped, and only
 // the WINDOW characters before the caret are read.
 
-import { family, MODULE_MEMBERS, TYPE_MEMBERS } from './tables';
+import { family, MODULE_MEMBERS, own, TYPE_MEMBERS } from './tables';
 
 /** Lines longer than this are skipped by the type rules. */
 export const MAX_LINE = 500;
@@ -133,6 +133,62 @@ export function typeOf(language: string, text: string, name: string, pos = text.
   return null;
 }
 
+// Words that start a table constraint, not a column, inside `CREATE TABLE (...)`.
+const SQL_CONSTRAINTS = new Set(['constraint', 'primary', 'foreign', 'unique', 'check', 'key', 'index']);
+/** A CREATE TABLE's column list is read for at most this many characters. */
+const SQL_COLUMNS_SPAN = 20_000;
+
+const sqlName = (name: string): string =>
+  name
+    .replace(/["`[\]]/g, '')
+    .split('.')
+    .pop()!
+    .toLowerCase();
+
+/** The columns of a `CREATE TABLE` whose `(` is at `open`, in order: the first word of each top-level item. */
+function sqlColumns(text: string, open: number): string[] {
+  const columns: string[] = [];
+  let depth = 0;
+  let item = '';
+  const end = Math.min(text.length, open + SQL_COLUMNS_SPAN);
+  for (let i = open; i < end; i++) {
+    const char = text[i]!;
+    if (char === '(') depth++;
+    else if (char === ')') depth--;
+    if (depth === 1 && char !== '(' && char !== ',') item += char;
+    if ((depth === 1 && char === ',') || depth === 0) {
+      const name = /^\s*["`[]?([\p{L}_][\p{L}\p{N}_]*)/u.exec(item)?.[1];
+      if (name && !SQL_CONSTRAINTS.has(name.toLowerCase())) columns.push(name);
+      item = '';
+    }
+    if (depth === 0) break;
+  }
+  return columns;
+}
+
+/**
+ * The SQL columns after `table.`: the nearest `CREATE TABLE table (...)` around the caret. An alias from
+ * `FROM table alias` or `JOIN table AS alias` is read first.
+ */
+function sqlMembers(text: string, receiver: string, pos: number): string[] {
+  const near = text.slice(Math.max(0, pos - WINDOW), pos + WINDOW);
+  const offset = Math.max(0, pos - WINDOW);
+  const want = sqlName(receiver);
+  let table = want;
+  for (const match of near.matchAll(/\b(?:FROM|JOIN)\s+([\w.]+)\s+(?:AS\s+)?(\w+)/gi)) {
+    if (match[2]!.toLowerCase() === want) table = sqlName(match[1]!);
+  }
+  let best: { at: number; open: number } | null = null;
+  for (const match of near.matchAll(
+    /\bCREATE\s+(?:TEMP(?:ORARY)?\s+)?TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?([\w."`[\]]+)\s*\(/gi,
+  )) {
+    if (sqlName(match[1]!) !== table) continue;
+    const at = offset + match.index;
+    if (!best || Math.abs(at - pos) < Math.abs(best.at - pos)) best = { at, open: at + match[0].length - 1 };
+  }
+  return best ? sqlColumns(text, best.open) : [];
+}
+
 /** A member name and its rank in its table (0 is the most used), or -1 when it came from the file. */
 export interface Member {
   name: string;
@@ -144,11 +200,15 @@ export interface Member {
 /** The members after `receiver.` at `pos`: the type's or module's table, else names used after it near the caret. */
 export function membersOf(language: string, text: string, receiver: string, pos = text.length): Member[] {
   const lang = family(language);
-  const module = MODULE_MEMBERS[`${lang}:${receiver}`];
+  const module = own(MODULE_MEMBERS, `${lang}:${receiver}`);
   const type = module ? null : typeOf(language, text, receiver, pos);
-  const table = module ?? (type ? TYPE_MEMBERS[`${lang}:${type}`] : undefined);
+  const table = module ?? (type ? own(TYPE_MEMBERS, `${lang}:${type}`) : undefined);
   if (table) return table.map((name, rank) => ({ name, rank, size: table.length, module: Boolean(module) }));
   if (receiver === '"') return [];
+  if (lang === 'sql') {
+    const columns = sqlMembers(text, receiver, pos);
+    if (columns.length) return columns.map((name, rank) => ({ name, rank, size: columns.length, module: false }));
+  }
   const used = new Set<string>();
   const near = text.slice(Math.max(0, pos - WINDOW), pos + WINDOW);
   for (const match of near.matchAll(new RegExp(`\\b${escape(receiver)}\\.([\\p{L}_$][\\p{L}\\p{N}_$]*)`, 'gu'))) {

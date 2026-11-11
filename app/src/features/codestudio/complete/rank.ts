@@ -8,7 +8,7 @@ import { membersOf, receiverAt } from './members';
 import { bindings, namesInScope } from './scope';
 import type { SyntaxTree } from './scope';
 import { SNIPPETS } from './snippets';
-import { BUILTINS, KEYWORDS } from './tables';
+import { BUILTINS, KEYWORDS, own } from './tables';
 import { countWords } from './tokens';
 
 /** Each source's prior weight. */
@@ -102,15 +102,20 @@ function sameTexts(a: readonly string[], b: readonly string[]): boolean {
   return a.length === b.length && a.every((text, i) => text === b[i]);
 }
 
-/** The file's window split at the caret's line: the counts outside it (kept between keystrokes) and the line itself. */
+const snap = (offset: number): number => Math.max(0, Math.floor(offset / WORDS_BLOCK) * WORDS_BLOCK);
+
+/**
+ * The file's window split at the caret's line: the counts outside it (kept between keystrokes) and the line itself.
+ * The head ends at the line start. The tail starts at the line end, and the line start fixes its length. So typing on
+ * one line leaves both texts unchanged. A line longer than WORDS_WINDOW is cut at block edges.
+ */
 function fileCounts(text: string, pos: number): { around: Map<string, number>; line: Map<string, number> } {
-  const from = Math.max(0, Math.floor((pos - WORDS_WINDOW / 2) / WORDS_BLOCK) * WORDS_BLOCK);
-  const to = Math.min(text.length, from + WORDS_WINDOW);
-  const lineStart = Math.max(from, text.lastIndexOf('\n', pos - 1) + 1);
+  const lineStart = Math.max(text.lastIndexOf('\n', pos - 1) + 1, snap(pos - WORDS_WINDOW / 2));
+  const from = snap(lineStart - WORDS_WINDOW / 2);
   const newline = text.indexOf('\n', pos);
-  const lineEnd = Math.min(to, newline < 0 ? text.length : newline);
+  const lineEnd = Math.min(newline < 0 ? text.length : newline, lineStart + WORDS_WINDOW);
   const head = text.slice(from, lineStart);
-  const tail = text.slice(lineEnd, to);
+  const tail = text.slice(lineEnd, lineEnd + (from + WORDS_WINDOW - lineStart));
   if (aroundCache?.head !== head || aroundCache.tail !== tail) {
     aroundCache = { head, tail, counts: countWords(`${head}\n${tail}`) };
   }
@@ -137,18 +142,19 @@ type Details = ReturnType<typeof details>;
 /** Keywords and built-ins from the bundled tables, and the language's snippets. */
 function tableCandidates(language: string, detail: Details): Candidate[] {
   const list: Candidate[] = [];
-  const keywords = KEYWORDS[language] ?? [];
+  const keywords = own(KEYWORDS, language) ?? [];
   keywords.forEach((label, rank) => {
     const extra = frequency(rank, keywords.length);
     list.push({ label, kind: 'keyword', source: 'keywords', detail: detail.keyword, extra });
   });
-  const builtins = BUILTINS[language] ?? [];
+  const builtins = own(BUILTINS, language) ?? [];
   builtins.forEach((label, rank) => {
     const extra = frequency(rank, builtins.length);
     list.push({ label, kind: 'function', source: 'keywords', detail: detail.builtin, extra });
   });
-  for (const snippet of SNIPPETS[language] ?? []) {
-    const note = t(`codeStudio.complete.snippets.${snippet.note}`);
+  for (const snippet of own(SNIPPETS, language) ?? []) {
+    // The list shows no icons, so the note itself says that the item is a snippet.
+    const note = t('codeStudio.complete.detail.snippet', { note: t(`codeStudio.complete.snippets.${snippet.note}`) });
     const { label, template } = snippet;
     list.push({ label, kind: 'snippet', source: 'snippets', detail: note, insert: template, snippet: true, extra: 0 });
   }
@@ -161,9 +167,9 @@ function wordCandidates(context: CompletionContext, input: RankInput, detail: De
   const { around, line } = fileCounts(text, pos);
   const others = otherCounts(input.otherTexts ?? []);
   const list: Candidate[] = [];
-  const add = (label: string, own: number, sources: ReadonlyArray<Map<string, number>>) => {
+  const add = (label: string, mine: number, sources: ReadonlyArray<Map<string, number>>) => {
     if (label.length < 2 || matchScore(label, word.text) === null) return;
-    let count = own - (label === word.text ? 1 : 0);
+    let count = mine - (label === word.text ? 1 : 0);
     for (const counts of sources) count += counts.get(label) ?? 0;
     if (count < 1) return;
     const extra = Math.min(1, Math.log2(1 + count) / 3);

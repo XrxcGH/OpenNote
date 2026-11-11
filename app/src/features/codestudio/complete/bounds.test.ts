@@ -29,7 +29,7 @@ describe('hostile lines before a member access', () => {
       ['cpp', `vector${spaces}${'vector <a '.repeat(500)}\nself.`],
       ['cpp', `std::vector${spaces}&${spaces}x\nself.`],
     ];
-    for (const [language, text] of cases) expect(timed(() => listAfter(language, text))).toBeLessThan(250);
+    for (const [language, text] of cases) expect(timed(() => listAfter(language, text))).toBeLessThan(100);
   });
 
   it('reads a type from a line of ordinary length after a hostile one', () => {
@@ -48,8 +48,8 @@ describe('large files', () => {
     const items = listAfter('python', general);
     expect(items.length).toBeLessThanOrEqual(MAX_ITEMS);
     expect(items.length).toBeGreaterThan(0);
-    expect(timed(() => listAfter('python', `${big}\nva`))).toBeLessThan(400);
-    expect(timed(() => listAfter('python', `${big}\nunknown.`))).toBeLessThan(400);
+    expect(timed(() => listAfter('python', `${big}\nva`))).toBeLessThan(150);
+    expect(timed(() => listAfter('python', `${big}\nunknown.`))).toBeLessThan(150);
   });
 
   it('caps the scope walk with a tree', () => {
@@ -61,14 +61,25 @@ describe('large files', () => {
     let top = '';
     expect(
       timed(() => (top = rank(contextAt('python', longer, longer.length), { tree: fresh })[0]!.label)),
-    ).toBeLessThan(400);
+    ).toBeLessThan(150);
     expect(top).toBe('radius');
   }, 60_000);
 
+  it('reads a bounded window next to a multi-megabyte line', () => {
+    const dump = `CREATE TABLE big (a INT);\nINSERT INTO big VALUES ${'(1),'.repeat(1_750_000)}(1);\n`;
+    const select = `${dump}SELECT * FROM `;
+    const other = `${dump}x = 1\nx`;
+    // The editor's document text is one flat string; a search flattens the joined test texts the same way.
+    select.indexOf('\u0001');
+    other.indexOf('\u0001');
+    expect(timed(() => predict('sql', select, select.length, false))).toBeLessThan(50);
+    expect(timed(() => predict('python', other, other.length, true))).toBeLessThan(15);
+  });
+
   it('keeps the pattern rules fast on long lines', () => {
     const arrows = `def f(x) ${') -> '.repeat(16_000)}`;
-    expect(timed(() => predict('python', arrows, arrows.length, true))).toBeLessThan(250);
+    expect(timed(() => predict('python', arrows, arrows.length, true))).toBeLessThan(50);
     const run = `${'a1 = 1\n'.repeat(3)}${'x'.repeat(100_000)}`;
-    expect(timed(() => predict('python', run, run.length, true))).toBeLessThan(250);
+    expect(timed(() => predict('python', run, run.length, true))).toBeLessThan(50);
   });
 });

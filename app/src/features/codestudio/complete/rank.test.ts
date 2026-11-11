@@ -108,6 +108,29 @@ describe('the ranked list', () => {
   });
 });
 
+describe('SQL members, snippet notes, and unknown languages', () => {
+  it('offers SQL columns after "table." from the CREATE TABLE', () => {
+    const sql = (text: string) => rank(contextAt('sql', text, text.length)).map((item) => item.label);
+    expect(sql('CREATE TABLE users (id INT, name TEXT);\nSELECT users.')).toEqual(['id', 'name']);
+    const keyed = 'CREATE TABLE IF NOT EXISTS "users" (\n  id INT,\n  name VARCHAR(20, 0),\n  PRIMARY KEY (id)\n);\n';
+    // An alias after FROM names the table; a constraint item is not a column.
+    const aliased = `${keyed}SELECT u. FROM users u`;
+    const at = keyed.length + 'SELECT u.'.length;
+    expect(rank(contextAt('sql', aliased, at)).map((item) => item.label)).toEqual(['id', 'name']);
+  });
+
+  it('marks snippets as snippets in the list', () => {
+    const item = rank(contextAt('python', 'fo', 2)).find((entry) => entry.snippet);
+    expect(item?.detail).toMatch(/^snippet: /);
+  });
+
+  it('treats a language named like an object key as unknown', () => {
+    for (const language of ['constructor', 'toString', '__proto__']) {
+      expect(() => rank(contextAt(language, 'value = 1\nva', 12))).not.toThrow();
+    }
+  });
+});
+
 describe('the leader for an explicit request', () => {
   it('returns the rest of a word whose top item leads by the margin', () => {
     const text = 'total = 0\nfor n in nums:\n    tot';
