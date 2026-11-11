@@ -125,3 +125,19 @@ export async function measureChecker(language: EditorLanguage, text: string, run
   times.sort((a, b) => a - b);
   return times[Math.floor(times.length / 2)];
 }
+
+/** The best of `attempts` medians per language, for a run that wants one number per language. */
+export async function benchmark(
+  languages: readonly EditorLanguage[],
+  lines = 1000,
+  attempts = 3,
+): Promise<Record<string, number>> {
+  const result: Record<string, number> = {};
+  for (const language of languages) {
+    const text = sampleFile(language, lines);
+    let best = Infinity;
+    for (let i = 0; i < attempts; i += 1) best = Math.min(best, await measureChecker(language, text));
+    result[language] = best;
+  }
+  return result;
+}
