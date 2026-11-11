@@ -8,8 +8,9 @@ import releaseSync from '@jitl/quickjs-wasmfile-release-sync';
 import wasmUrl from '@jitl/quickjs-wasmfile-release-sync/wasm?url';
 import type { RuntimeAdapter } from '../../contracts/run';
 import { ALLOWANCES } from '../../run/adapters';
+import { RUN_LIMITS } from '../../run/protocol';
 import { quickjsMapper } from './diagnostics';
-import { runProgram } from './engine';
+import { cappedHeap, runProgram } from './engine';
 import type { Engine } from './engine';
 
 /** The pinned versions in package.json (a unit test keeps them equal). */
@@ -20,7 +21,9 @@ let engine: Engine | null = null;
 async function loadEngine(onProgress: (percent: number) => void): Promise<Engine> {
   if (engine) return engine;
   onProgress(10);
-  const quickjs = await newQuickJSWASMModuleFromVariant(newVariant(releaseSync, { wasmLocation: wasmUrl }));
+  // The worker runs one program, so its heap is capped at the page's memory limit (engine.ts).
+  const wasmMemory = cappedHeap(RUN_LIMITS.memoryBytes);
+  const quickjs = await newQuickJSWASMModuleFromVariant(newVariant(releaseSync, { wasmLocation: wasmUrl, wasmMemory }));
   onProgress(70);
   const { transform } = await import('sucrase');
   engine = { quickjs, transform };

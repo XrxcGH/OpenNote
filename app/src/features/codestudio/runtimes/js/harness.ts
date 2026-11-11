@@ -16,20 +16,44 @@
 // the message. A class must be the error's class or a parent of it. An error must have the same message.
 //
 // afterEach hooks run from the innermost describe outward. beforeEach hooks run from the outermost inward.
+//
+// beforeAll runs once before the first test of its describe, and afterAll once after the last one. When a beforeAll
+// fails, every test of its describe fails with that error. A test cannot start inside another test.
+//
+// `.only` and `.each` are not supported: they throw a clear error, so a file that uses them does not pass silently.
+// The third argument is the text of those errors, from the strings file. The harness keeps its own JSON.stringify and
+// Object.keys, so a program that replaces them cannot break the reports.
 
-export const TEST_API = String.raw`(function (report, load) {
+export const TEST_API = String.raw`(function (report, load, textJson) {
   'use strict';
-  const root = { titles: [], beforeEach: [], afterEach: [], parent: null };
+  const text = JSON.parse(textJson);
+  const stringify = JSON.stringify;
+  const objectKeys = Object.keys;
+  const ownSymbols = Object.getOwnPropertySymbols;
+  const consoleError = console.error;
+  function suiteIn(parent, titles) {
+    return { titles, beforeEach: [], afterEach: [], beforeAll: [], afterAll: [], parent, started: false, failure: null };
+  }
+  const root = suiteIn(null, []);
   const tests = [];
   let current = root;
   let skipping = 0;
   let file = '';
+  let running = false;
+  let planned = 0;
 
+  function outsideTests() {
+    if (running) throw new Error(text.nested);
+  }
   function addTest(name, fn, skip) {
-    tests.push({ titles: current.titles.concat(String(name)), fn, suite: current, file, skip: skip || skipping > 0 });
+    outsideTests();
+    tests.push({
+      titles: current.titles.concat(String(name)), fn, suite: current, file, skip: skip || skipping > 0, index: tests.length,
+    });
   }
   function describe(name, fn) {
-    const suite = { titles: current.titles.concat(String(name)), beforeEach: [], afterEach: [], parent: current };
+    outsideTests();
+    const suite = suiteIn(current, current.titles.concat(String(name)));
     const saved = current;
     current = suite;
     try {
@@ -55,13 +79,27 @@ export const TEST_API = String.raw`(function (report, load) {
   test.todo = function (name) {
     addTest(name, undefined, true);
   };
+  function it(name, fn) {
+    addTest(name, fn, false);
+  }
+  it.skip = test.skip;
+  it.todo = test.todo;
+  function notSupported(name) {
+    return function () { throw new Error(text.notSupported[name]); };
+  }
+  test.only = notSupported('test.only');
+  test.each = notSupported('test.each');
+  it.only = notSupported('it.only');
+  it.each = notSupported('it.each');
+  describe.only = notSupported('describe.only');
+  describe.each = notSupported('describe.each');
 
   class AssertionError extends Error {}
   AssertionError.prototype.name = 'AssertionError';
 
   function format(value, depth) {
     depth = depth || 0;
-    if (typeof value === 'string') return JSON.stringify(value);
+    if (typeof value === 'string') return stringify(value);
     if (typeof value === 'number') return Object.is(value, -0) ? '-0' : String(value);
     if (typeof value === 'bigint') return String(value) + 'n';
     if (typeof value === 'function') return '[Function ' + (value.name || 'anonymous') + ']';
@@ -79,7 +117,7 @@ export const TEST_API = String.raw`(function (report, load) {
     if (value instanceof Set) {
       return 'Set {' + Array.from(value).map(function (item) { return format(item, depth + 1); }).join(', ') + '}';
     }
-    const keys = Object.keys(value);
+    const keys = objectKeys(value);
     return '{' + keys.map(function (key) { return key + ': ' + format(value[key], depth + 1); }).join(', ') + '}';
   }
 
@@ -87,8 +125,12 @@ export const TEST_API = String.raw`(function (report, load) {
   const has = function (object, key) { return Object.prototype.hasOwnProperty.call(object, key); };
 
   function keysOf(object, strict) {
-    return Object.keys(object).filter(function (key) { return strict || object[key] !== undefined; });
+    const symbols = ownSymbols(object).filter(function (key) {
+      return Object.prototype.propertyIsEnumerable.call(object, key);
+    });
+    return objectKeys(object).concat(symbols).filter(function (key) { return strict || object[key] !== undefined; });
   }
+  const isIndex = function (key) { return typeof key === 'string' && String(key >>> 0) === key; };
 
   function equals(a, b, strict, seen) {
     if (Object.is(a, b)) return true;
@@ -103,7 +145,21 @@ export const TEST_API = String.raw`(function (report, load) {
     seen = seen.concat([[a, b]]);
     if (a instanceof Map) {
       if (a.size !== b.size) return false;
-      for (const pair of a) if (!b.has(pair[0]) || !equals(pair[1], b.get(pair[0]), strict, seen)) return false;
+      for (const pair of a) {
+        if (b.has(pair[0])) {
+          if (!equals(pair[1], b.get(pair[0]), strict, seen)) return false;
+          continue;
+        }
+        // A key that is an object or an array matches an equal key, as Jest compares Map keys.
+        let matched = false;
+        for (const other of b) {
+          if (equals(pair[0], other[0], strict, seen) && equals(pair[1], other[1], strict, seen)) {
+            matched = true;
+            break;
+          }
+        }
+        if (!matched) return false;
+      }
       return true;
     }
     if (a instanceof Set) {
@@ -124,8 +180,8 @@ export const TEST_API = String.raw`(function (report, load) {
         if (!equals(a[i], b[i], strict, seen)) return false;
       }
     }
-    const ka = keysOf(a, strict).filter(function (key) { return !Array.isArray(a) || String(key >>> 0) !== key; });
-    const kb = keysOf(b, strict).filter(function (key) { return !Array.isArray(b) || String(key >>> 0) !== key; });
+    const ka = keysOf(a, strict).filter(function (key) { return !Array.isArray(a) || !isIndex(key); });
+    const kb = keysOf(b, strict).filter(function (key) { return !Array.isArray(b) || !isIndex(key); });
     if (ka.length !== kb.length) return false;
     for (const key of ka) if (!has(b, key) || !equals(a[key], b[key], strict, seen)) return false;
     return true;
@@ -196,7 +252,7 @@ export const TEST_API = String.raw`(function (report, load) {
   function expect(received) {
     function bind(negated) {
       const bound = {};
-      Object.keys(matchers).forEach(function (name) {
+      objectKeys(matchers).forEach(function (name) {
         bound[name] = function () {
           const args = Array.prototype.slice.call(arguments);
           const result = matchers[name].apply(null, [received].concat(args));
@@ -237,7 +293,9 @@ export const TEST_API = String.raw`(function (report, load) {
   }
 
   function send(entry, status, started, failure) {
-    const result = { name: entry.titles.join(' > '), file: entry.file, status, timeMs: Date.now() - started };
+    const result = {
+      name: entry.titles.join(' > '), file: entry.file, status, timeMs: Date.now() - started, index: entry.index,
+    };
     if (failure !== undefined) {
       result.message = failure instanceof Error ? failure.name + ': ' + failure.message : 'Thrown: ' + format(failure);
       if (failure instanceof AssertionError) {
@@ -247,15 +305,59 @@ export const TEST_API = String.raw`(function (report, load) {
       }
       if (failure instanceof Error && failure.stack) result.stack = String(failure.stack);
     }
-    report(JSON.stringify(result));
+    report(stringify(result));
+  }
+
+  function suitesOf(entry) {
+    const list = [];
+    for (let s = entry.suite; s; s = s.parent) list.unshift(s);
+    return list;
+  }
+
+  function runs(entry) {
+    return !entry.skip && typeof entry.fn === 'function';
+  }
+
+  function beforeAll(entry) {
+    let step = Promise.resolve();
+    suitesOf(entry).forEach(function (suite) {
+      if (suite.started) return;
+      suite.started = true;
+      suite.beforeAll.forEach(function (hook) {
+        step = step.then(function () { if (!suite.failure) return call(hook); }).then(undefined, function (error) {
+          if (!suite.failure) suite.failure = { error };
+        });
+      });
+    });
+    return step;
+  }
+
+  function afterAll(entry, index, last) {
+    let step = Promise.resolve();
+    suitesOf(entry).reverse().forEach(function (suite) {
+      if (!suite.started || last.get(suite) !== index) return;
+      suite.afterAll.forEach(function (hook) {
+        step = step.then(function () { return call(hook); }).then(undefined, function (error) {
+          consoleError('afterAll: ' + messageOf(error));
+        });
+      });
+    });
+    return step;
   }
 
   function runOne(entry) {
     const started = Date.now();
-    if (entry.skip || typeof entry.fn !== 'function') {
+    if (!runs(entry)) {
       send(entry, 'skipped', started);
       return Promise.resolve();
     }
+    const blocked = suitesOf(entry).find(function (suite) { return suite.failure; });
+    if (blocked) {
+      const error = blocked.failure.error;
+      send(entry, error instanceof AssertionError ? 'fail' : 'error', started, error);
+      return Promise.resolve();
+    }
+    running = true;
     let failure;
     let failed = false;
     const note = function (error) { if (!failed) { failed = true; failure = error; } };
@@ -266,19 +368,21 @@ export const TEST_API = String.raw`(function (report, load) {
       step = step.then(function () { return call(hook); }).then(undefined, note);
     });
     return step.then(function () {
+      running = false;
       const status = !failed ? 'pass' : failure instanceof AssertionError ? 'fail' : 'error';
       send(entry, status, started, failed ? failure : undefined);
     });
   }
 
-  let next = 0;
   const api = {
     describe,
-    it: test,
+    it,
     test,
     expect,
     beforeEach: function (fn) { current.beforeEach.push(fn); },
     afterEach: function (fn) { current.afterEach.push(fn); },
+    beforeAll: function (fn) { current.beforeAll.push(fn); },
+    afterAll: function (fn) { current.afterAll.push(fn); },
   };
   Object.keys(api).forEach(function (name) { globalThis[name] = api[name]; });
 
@@ -288,16 +392,28 @@ export const TEST_API = String.raw`(function (report, load) {
       current = root;
       load(path);
     },
-    run: function () {
+    run: function (limit) {
+      planned = Math.min(limit, tests.length);
+      const last = new Map();
+      for (let i = 0; i < planned; i++) {
+        if (runs(tests[i])) suitesOf(tests[i]).forEach(function (suite) { last.set(suite, i); });
+      }
       let step = Promise.resolve();
-      tests.forEach(function (entry, index) {
-        step = step.then(function () { next = index; return runOne(entry); });
+      tests.slice(0, planned).forEach(function (entry, index) {
+        step = step.then(function () {
+          const before = runs(entry) ? beforeAll(entry) : Promise.resolve();
+          return before.then(function () { return runOne(entry); }).then(function () {
+            return afterAll(entry, index, last);
+          });
+        });
       });
-      return step.then(function () { next = tests.length; });
+      return step;
     },
-    unfinished: function (stuck, notRun) {
-      for (let i = next; i < tests.length; i++) send(tests[i], 'error', Date.now(), new Error(i === next ? stuck : notRun));
-      next = tests.length;
+    unfinished: function (from, firstStatus, firstMessage, restStatus, restMessage) {
+      for (let i = from; i < planned; i++) {
+        const first = i === from;
+        send(tests[i], first ? firstStatus : restStatus, Date.now(), new Error(first ? firstMessage : restMessage));
+      }
     },
     count: function () { return tests.length; },
   };

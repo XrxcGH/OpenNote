@@ -8,7 +8,7 @@
 // checks-disable-file modifiability: one describe block per feature
 import { readFileSync } from 'node:fs';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { newQuickJSWASMModuleFromVariant } from 'quickjs-emscripten-core';
+import { newQuickJSWASMModuleFromVariant, newVariant } from 'quickjs-emscripten-core';
 import releaseSync from '@jitl/quickjs-wasmfile-release-sync';
 import { transform } from 'sucrase';
 import type { RunFile, RunRequest, RuntimeDiagnostic, WorkerMessage } from '../../contracts/run';
@@ -20,14 +20,22 @@ import { seeded } from '../../run/random';
 import { Stdin } from '../../run/stdin';
 import { VERSIONS } from './adapter';
 import { quickjsMapper } from './diagnostics';
-import { runProgram } from './engine';
+import { BASE_HEAP_BYTES, cappedHeap, runProgram } from './engine';
 import type { Engine } from './engine';
 import { resolveModule } from './modules';
 import { compile, usesModules } from './transpile';
 
+/** A fresh QuickJS with its heap capped, as the worker makes one for each run. */
+async function newEngine(memoryBytes = RUN_LIMITS.memoryBytes): Promise<Engine> {
+  const quickjs = await newQuickJSWASMModuleFromVariant(
+    newVariant(releaseSync, { wasmMemory: cappedHeap(memoryBytes) }),
+  );
+  return { quickjs, transform };
+}
+
 let engine: Engine;
 beforeAll(async () => {
-  engine = { quickjs: await newQuickJSWASMModuleFromVariant(releaseSync), transform };
+  engine = await newEngine();
 });
 
 interface Ran {
@@ -41,7 +49,15 @@ interface Ran {
 
 function run(
   files: Record<string, string>,
-  more: { main?: string; stdin?: string; args?: string[]; tests?: boolean; timeMs?: number } = {},
+  more: {
+    main?: string;
+    stdin?: string;
+    args?: string[];
+    tests?: boolean;
+    timeMs?: number;
+    memoryBytes?: number;
+    engine?: Engine;
+  } = {},
 ): Ran {
   const list: RunFile[] = Object.entries(files).map(([path, text]) => ({ path, text }));
   const request: RunRequest = {
@@ -51,13 +67,17 @@ function run(
     main: more.main ?? list[0]!.path,
     args: more.args ?? [],
     stdin: { mode: 'prefilled', text: more.stdin ?? '' },
-    limits: { ...RUN_LIMITS, timeMs: more.timeMs ?? RUN_LIMITS.timeMs },
+    limits: {
+      ...RUN_LIMITS,
+      timeMs: more.timeMs ?? RUN_LIMITS.timeMs,
+      memoryBytes: more.memoryBytes ?? RUN_LIMITS.memoryBytes,
+    },
     seed: 1,
     ...(more.tests ? { test: { cases: [], framework: true } } : {}),
   };
   const messages: WorkerMessage[] = [];
   const random = seeded(request.seed);
-  const end = runProgram(engine, request, (message) => messages.push(message), {
+  const end = runProgram(more.engine ?? engine, request, (message) => messages.push(message), {
     stdin: new Stdin(request.stdin.text, false),
     files: new Mount(list),
     random: random.random,
@@ -328,11 +348,76 @@ describe('the run', () => {
     expect(ran.status).toBe('error');
   });
 
-  // The first growth of a fresh WebAssembly heap to the memory limit can take seconds on a loaded machine.
-  it('stops at the memory limit and at the time limit', { timeout: 120_000 }, () => {
-    const hog = 'const a = []; while (true) a.push(new Array(1e5).fill(1));';
-    expect(run({ 'main.js': hog }, { timeMs: 100_000 }).status).toBe('memory');
+  // QuickJS's own limit cannot see block sizes in this build. Without the heap cap, the program below grew the heap
+  // to its 2 GB ceiling (1,935 arrays of 800 KB), whatever limit was set.
+  it('stops at the memory limit within the capped heap, in well under 2 s', async () => {
+    const limit = 16 * 1024 * 1024;
+    const small = await newEngine(limit);
+    const started = performance.now();
+    const ran = run(
+      { 'main.js': 'const a = []; while (true) a.push(new Array(1e5).fill(1));' },
+      { engine: small, memoryBytes: limit, timeMs: 60_000 },
+    );
+    expect(ran.status).toBe('memory');
+    expect(performance.now() - started).toBeLessThan(2000);
+    expect(small.quickjs.getWasmMemory().buffer.byteLength).toBeLessThanOrEqual(BASE_HEAP_BYTES + limit);
+  });
+
+  it("ends the run when the heap grows past the run's own, smaller limit", async () => {
+    const fresh = await newEngine();
+    const limit = 4 * 1024 * 1024;
+    const ran = run(
+      // Arrays that grow by push are the blocks QuickJS's own limit misses: alone, it let this program use 64 MB.
+      {
+        'main.js': 'const a = []; while (true) { const b = []; for (let i = 0; i < 1000; i++) b.push(i); a.push(b); }',
+      },
+      { engine: fresh, memoryBytes: limit, timeMs: 60_000 },
+    );
+    expect(ran.status).toBe('memory');
+    // The heap grows in steps of about a fifth, so it stops a few megabytes past the limit, far below the cap.
+    expect(fresh.quickjs.getWasmMemory().buffer.byteLength).toBeLessThan(BASE_HEAP_BYTES + 3 * limit);
+  });
+
+  it('stops at the time limit, also inside a promise job', () => {
     expect(run({ 'main.js': 'while (true) {}' }, { timeMs: 300 }).status).toBe('time');
+    const later = 'async function main() { await null; while (true) {} }\nmain();\nconsole.log("started");';
+    const ran = run({ 'main.js': later }, { timeMs: 600 });
+    expect(ran.status).toBe('time');
+    expect(ran.out).toBe('started\n');
+  });
+
+  it('does not count a thrown look-alike of the interrupt as the time limit', () => {
+    const ran = run({ 'main.js': 'throw { name: "InternalError", message: "interrupted" };' });
+    expect(ran.status).toBe('error');
+  });
+
+  it('prints any thrown value, and never fails the run while formatting it', () => {
+    const cases: [string, string][] = [
+      ['throw 10n;', 'Uncaught 10n\n'],
+      ['Promise.reject(10n)', 'Uncaught 10n\n'],
+      ['throw Symbol("s");', 'Uncaught Symbol(s)\n'],
+      ['throw null;', 'Uncaught null\n'],
+      ['throw undefined;', 'Uncaught undefined\n'],
+      ['throw "text";', 'Uncaught "text"\n'],
+      ['const o = { a: 1 }; o.self = o; throw o;', 'Uncaught { a: 1, self: [Circular] }\n'],
+    ];
+    for (const [program, err] of cases) {
+      const ran = run({ 'main.js': program });
+      expect([program, ran.status, ran.err]).toEqual([program, 'error', err]);
+    }
+    const proxy = 'throw new Proxy({}, { get() { throw new Error("no"); }, ownKeys() { throw new Error("no"); } });';
+    expect(run({ 'main.js': proxy }).status).toBe('error');
+  });
+
+  it('pins that a rejection is silent unless it is the last value (no rejection tracker in quickjs-emscripten)', () => {
+    const ran = run({ 'main.js': 'async function main() { throw new Error("boom"); }\nmain();\nconsole.log("done");' });
+    expect([ran.status, ran.out, ran.err]).toEqual(['ok', 'done\n', '']);
+  });
+
+  it('ends with a clear error when the main file is not in the project', () => {
+    const ran = run({ 'util.js': '1' }, { main: 'main.js' });
+    expect(ran.status).toBe('error');
+    expect(ran.err).toContain('The project has no file with that name');
   });
 
   it('reports an uncaught error with its type, and a rejected last promise', () => {
@@ -369,9 +454,7 @@ describe('Sucrase keeps line numbers', () => {
   it('reports a runtime error on line 9 of a TypeScript file with interfaces above as line 9', () => {
     const ran = run({ 'main.ts': `${header}\nthrow new Error("line nine");\n` });
     expect(ran.out).toBe('2\n');
-    expect(ran.diagnostics).toEqual([
-      { file: 'main.ts', line: 9, column: expect.any(Number), message: 'line nine', kind: 'Error' },
-    ]);
+    expect(ran.diagnostics).toEqual([{ file: 'main.ts', line: 9, column: 16, message: 'line nine', kind: 'Error' }]);
   });
 
   it('reports an error inside a function called later at the function line', () => {
@@ -396,6 +479,42 @@ describe('Sucrase keeps line numbers', () => {
     expect(usesModules('a.import = 1; exported = 2;')).toBe(false);
     expect(usesModules('import x from "./x";')).toBe(true);
     expect(run({ 'main.js': 'undeclared = 5;\nconsole.log(undeclared);' }).out).toBe('5\n');
+    // The words import and export in a string or a comment do not make a module.
+    expect(run({ 'main.js': 'x = 1; console.log("please import data", x);' }).out).toBe('please import data 1\n');
+    expect(run({ 'main.js': '// TODO: export later\ny = 2;\nconsole.log(y);' }).out).toBe('2\n');
+  });
+
+  it('keeps columns on line 1 of a transpiled file equal to the plain file', () => {
+    const column = (files: Record<string, string>) => run(files).diagnostics[0]?.column;
+    const plain = column({ 'main.js': 'throw new Error("one");' });
+    expect(plain).toBe(16);
+    expect(column({ 'main.ts': 'throw new Error("one");' })).toBe(plain);
+    expect(column({ 'main.js': 'throw new Error("one");\nimport "./u.js";', 'u.js': '' })).toBe(plain);
+    expect(column({ 'main.js': 'require("./u.js");', 'u.js': 'throw new Error("one");' })).toBe(plain);
+  });
+
+  it('stops with a clear message at constructs Sucrase 3.35.1 compiles wrong', () => {
+    const several = run({ 'main.ts': 'const x = 1;\nexport const a = 1, b = 2;\nconsole.log(a, b);' });
+    expect(several.status).toBe('error');
+    expect(several.err).toContain('Export one name in each statement here');
+    expect(several.diagnostics).toEqual([expect.objectContaining({ file: 'main.ts', line: 2, kind: 'SyntaxError' })]);
+    const namespace = run({
+      'main.ts': '// set up\nnamespace Setup { console.log("configured"); }\nconsole.log("done");',
+    });
+    expect(namespace.status).toBe('error');
+    expect(namespace.out).toBe('');
+    expect(namespace.err).toContain('A namespace or module block with code in it cannot run here');
+    expect(namespace.diagnostics).toEqual([expect.objectContaining({ file: 'main.ts', line: 2 })]);
+    const imported = run({ 'main.ts': 'import { a } from "./u";\nconsole.log(a);', 'u.ts': 'export let a = 1, b;' });
+    expect(imported.diagnostics).toEqual([expect.objectContaining({ file: 'u.ts', line: 1, kind: 'SyntaxError' })]);
+    // A declared namespace has no code, so Sucrase may drop it; one export per statement is fine.
+    const fine = [
+      'declare namespace D { const x: number; }',
+      'export const a = 1;',
+      'export const m: Map<string, number> = new Map();',
+      'console.log(a, m.size);',
+    ].join('\n');
+    expect(run({ 'main.ts': fine }).out).toBe('1 0\n');
   });
 });
 
@@ -586,5 +705,167 @@ describe('the Jest-compatible test API (known answers from Jest documentation)',
       ['uses', 'pass'],
     ]);
     expect(ran.tests[0]!.message).toContain("Cannot find module './missing'");
+  });
+});
+
+describe('limits and caps in a test run', () => {
+  it('ends the run at the time limit inside a test, sync or async, and does not run later tests', () => {
+    for (const body of ['() => { while (true) {} }', 'async () => { await null; while (true) {} }']) {
+      const ran = run(
+        {
+          'spin.test.js': ['test("first", () => {});', `test("spin", ${body});`, 'test("later", () => {});'].join('\n'),
+        },
+        { tests: true, timeMs: 500 },
+      );
+      expect(ran.status).toBe('time');
+      expect(ran.tests.map((result) => [result.name, result.status])).toEqual([
+        ['first', 'pass'],
+        ['spin', 'time'],
+        ['later', 'skipped'],
+      ]);
+      expect(ran.tests[1]!.message).toContain('time limit');
+    }
+  });
+
+  it('ends the run when a test runs out of memory', async () => {
+    const limit = 16 * 1024 * 1024;
+    const ran = run(
+      {
+        'hog.test.js': [
+          'test("hog", () => { const a = []; while (true) a.push(new Array(1e5).fill(1)); });',
+          'test("later", () => {});',
+        ].join('\n'),
+      },
+      { tests: true, engine: await newEngine(limit), memoryBytes: limit, timeMs: 60_000 },
+    );
+    expect(ran.status).toBe('memory');
+    expect(ran.tests.map((result) => [result.name, result.status])).toEqual([
+      ['hog', 'error'],
+      ['later', 'skipped'],
+    ]);
+  });
+
+  it('runs at most PROJECT_LIMITS.tests tests, says so, and numbers equal names', () => {
+    const ran = run(
+      { 'many.test.js': 'for (let i = 0; i < 501; i++) test("same", () => {});' },
+      { tests: true, timeMs: 60_000 },
+    );
+    expect(ran.tests).toHaveLength(500);
+    expect(ran.err).toContain('This run has 501 tests. Only the first 500 ran.');
+    expect(ran.status).toBe('error');
+    expect(ran.tests.slice(0, 3).map((result) => result.id)).toEqual([
+      'many.test.js::same',
+      'many.test.js::same (2)',
+      'many.test.js::same (3)',
+    ]);
+    expect(new Set(ran.tests.map((result) => result.id)).size).toBe(500);
+  });
+
+  it('stops sending results after process.exit in a test', () => {
+    const ran = tests('test("a", () => {});\ntest("b", () => { process.exit(0); });\ntest("c", () => {});');
+    expect(ran.tests.map((result) => result.name)).toEqual(['a']);
+    expect(ran.exitCode).toBe(0);
+  });
+});
+
+describe('more of the test API', () => {
+  it('runs beforeAll and afterAll once around their describe block', () => {
+    const ran = tests(
+      [
+        'const log = [];',
+        'beforeAll(() => log.push("all"));',
+        'describe("d", () => {',
+        '  beforeAll(() => log.push("d-all"));',
+        '  afterAll(() => log.push("d-end"));',
+        '  test("one", () => log.push("one"));',
+        '  test("two", () => log.push("two"));',
+        '});',
+        'test("check", () => expect(log).toEqual(["all", "d-all", "one", "two", "d-end"]));',
+      ].join('\n'),
+    );
+    expect(ran.tests.map((result) => result.status)).toEqual(['pass', 'pass', 'pass']);
+  });
+
+  it('fails every test of a describe whose beforeAll throws', () => {
+    const ran = tests(
+      'describe("d", () => {\n  beforeAll(() => { throw new Error("setup"); });\n  test("x", () => {});\n});',
+    );
+    expect(ran.tests.map((result) => [result.status, result.message])).toEqual([['error', 'Error: setup']]);
+  });
+
+  it('refuses .only and .each, and a test inside a test, with clear errors', () => {
+    const only = tests('test.only("x", () => {});');
+    expect(only.tests[0]!.message).toContain('test.only is not supported here');
+    const each = tests('it.each([1])("x", () => {});');
+    expect(each.tests[0]!.message).toContain('it.each is not supported here');
+    const nested = tests('test("outer", () => { test("inner", () => {}); });');
+    expect(nested.tests.map((result) => result.status)).toEqual(['error']);
+    expect(nested.tests[0]!.message).toContain('A test cannot start inside another test');
+  });
+
+  it('compares symbol keys, and Map keys by value, in toEqual', () => {
+    const ran = tests(
+      [
+        'const s = Symbol("s");',
+        'test("symbols", () => expect({ [s]: 1 }).not.toEqual({ [s]: 2 }));',
+        'test("map keys", () => expect(new Map([[{ k: 1 }, "v"]])).toEqual(new Map([[{ k: 1 }, "v"]])));',
+      ].join('\n'),
+    );
+    expect(ran.tests.map((result) => result.status)).toEqual(['pass', 'pass']);
+  });
+
+  it('keeps reporting when the program replaces JSON.stringify and Object.keys', () => {
+    const ran = tests(
+      'JSON.stringify = () => "x";\nObject.keys = () => [];\ntest("a", () => expect({ a: 1 }).not.toEqual({ a: 2 }));',
+    );
+    expect(ran.tests.map((result) => result.status)).toEqual(['pass']);
+  });
+});
+
+describe('diagnostics in project paths with spaces and parentheses', () => {
+  const files = (paths: string[]): RunFile[] => paths.map((path) => ({ path, text: 'a\nb\nc' }));
+
+  it('finds the file from the end of each frame, longest path first', () => {
+    const list = files(['my file.ts', 'file.ts', 'main (1).js', 'src/my dir/x (2).ts']);
+    const map = (text: string) => quickjsMapper.map(text, list);
+    expect(map('Error: a\n    at <eval> (my file.ts:2:16)\n')).toEqual([
+      { file: 'my file.ts', line: 2, column: 16, message: 'a', kind: 'Error' },
+    ]);
+    expect(map('TypeError: b\n    at f (main (1).js:3:1)\n')[0]).toMatchObject({ file: 'main (1).js', line: 3 });
+    expect(map('Error: c\n    at src/my dir/x (2).ts:1:2\n')[0]).toMatchObject({ file: 'src/my dir/x (2).ts' });
+    expect(map('SyntaxError: Unexpected token (main (1).js:2:3)\n')[0]).toMatchObject({
+      file: 'main (1).js',
+      line: 2,
+      message: 'Unexpected token',
+    });
+  });
+
+  it('keeps the first error line as the header when its message has more lines', () => {
+    const text =
+      'AssertionError: expect(received).toBe(2)\n\nExpected: 2\nReceived: 1\n    at <eval> (a.test.ts:2:5)\n';
+    expect(quickjsMapper.map(text, files(['a.test.ts']))).toEqual([
+      { file: 'a.test.ts', line: 2, column: 5, message: 'expect(received).toBe(2)', kind: 'AssertionError' },
+    ]);
+  });
+
+  it('maps a real run and a failing test in such files', () => {
+    const ran = run({ 'my file.ts': 'const a = 1;\nthrow new Error("here");' });
+    expect(ran.diagnostics).toEqual([expect.objectContaining({ file: 'my file.ts', line: 2 })]);
+    const tested = run({ 'main (1).test.js': 'test("t", () => {\n  expect(1).toBe(2);\n});' }, { tests: true });
+    expect(tested.tests[0]!.location).toEqual({ file: 'main (1).test.js', line: 2 });
+  });
+});
+
+describe('module edges', () => {
+  it('imports "." and ".." as their folder index, and a module that starts with "#!"', () => {
+    const ran = run({
+      'main.js': 'const a = require("./lib/a.js");\nconsole.log(a.value, require("./tool.js").name);',
+      'lib/a.js': 'module.exports = { value: require(".").base + require("..").top };',
+      'lib/index.js': 'module.exports = { base: 1 };',
+      'index.js': 'module.exports = { top: 2 };',
+      'tool.js': '#!/usr/bin/env node\nexports.name = "tool";',
+    });
+    expect(ran.err).toBe('');
+    expect(ran.out).toBe('3 tool\n');
   });
 });

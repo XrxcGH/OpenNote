@@ -58,9 +58,22 @@ describe('the sandbox', () => {
     expect(ran.out).toBe('none\nundefined\nno import\n');
   });
 
+  // Without the capped heap, the memory program grew toward the 2 GB WebAssembly ceiling and met the time limit first.
   it('stops a program at the time limit and at the memory limit', async () => {
     expect((await js('while (true) {}', QUICK)).status).toBe('time');
-    expect((await js('const a = []; while (true) a.push(new Array(1e5).fill(1));')).status).toBe('memory');
+    const hog = await js('const a = []; while (true) a.push(new Array(1e5).fill(1));', QUICK);
+    expect(hog.status).toBe('memory');
+    // A smaller limit of the run's own: arrays grown by push, which QuickJS's own count misses.
+    const pushes = 'const a = []; while (true) { const b = []; for (let i = 0; i < 1000; i++) b.push(i); a.push(b); }';
+    expect((await js(pushes, { ...RUN_LIMITS, memoryBytes: 8 * 1024 * 1024 })).status).toBe('memory');
+  });
+
+  it('ends at the time limit when the loop runs inside a promise job', async () => {
+    const ran = await js(
+      'async function main() { await null; while (true) {} }\nmain();\nconsole.log("started");',
+      QUICK,
+    );
+    expect(ran.status).toBe('time');
   });
 
   it('reports deep recursion as an error in the program', async () => {

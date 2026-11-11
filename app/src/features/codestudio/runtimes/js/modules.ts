@@ -38,7 +38,9 @@ export type Resolved = { path: string } | { missing: 'file' | 'package' };
  * The project file `specifier` names when imported from `from`. A specifier that does not start with "./" or "../"
  * is a package, which the sandbox does not have. TypeScript's own rule is kept too: "./util.js" finds util.ts.
  */
-export function resolveModule(specifier: string, from: string, exists: (path: string) => boolean): Resolved {
+export function resolveModule(written: string, from: string, exists: (path: string) => boolean): Resolved {
+  // "." and ".." name a folder, as in Node: its index file.
+  const specifier = written === '.' || written === '..' ? `${written}/index` : written;
   if (!specifier.startsWith('./') && !specifier.startsWith('../')) return { missing: 'package' };
   const joined = joinPath(folderOf(from), specifier);
   if (joined === null) return { missing: 'file' };
