@@ -6,6 +6,7 @@
 // A chord the app uses elsewhere refines that command, so the conflict checker knows the code editor wins there.
 // Ctrl+Tab: code.completion.accept refines tabs.next. With a suggestion showing it accepts; with none it asks for
 // one; with suggestions Off and nothing showing it is disabled, so the key goes on to the next page tab.
+// Ctrl+Space, Ctrl+Shift+K, and Ctrl+M refine clear formatting, small caps, and indent the same way.
 
 import { chord, defineCommand } from '../../../commands/registry';
 import type { CommandDef, CommandId } from '../../../commands/types';
@@ -56,6 +57,7 @@ export const CODE_EDITOR_ROWS: readonly Row[] = [
     action: 'completion.list',
     title: 'codeStudio.editor.commands.list',
     keys: ['Ctrl+Space'],
+    refines: 'format.clearCharacter',
     edits: true,
   },
   {
@@ -150,6 +152,7 @@ export const CODE_EDITOR_ROWS: readonly Row[] = [
     action: 'deleteLine',
     title: 'codeStudio.editor.commands.deleteLine',
     keys: ['Ctrl+Shift+K'],
+    refines: 'format.smallCaps',
     edits: true,
   },
   {
@@ -275,6 +278,7 @@ export const tabMovesFocusCommand = defineCommand({
   category: 'code',
   scope: 'codeEditor',
   keys: [chord('Ctrl+M')],
+  refines: 'para.indent',
   allowInTextInput: true,
   palette: false,
   flag: 'code.studio',
