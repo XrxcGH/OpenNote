@@ -183,6 +183,292 @@
       "flag": "canvas.cards"
     },
     {
+      "id": "code.completion.accept",
+      "title": "Accept suggestion",
+      "category": "code",
+      "keys": [
+        "Ctrl+Tab"
+      ],
+      "flag": "code.studio",
+      "palette": false
+    },
+    {
+      "id": "code.completion.request",
+      "title": "Show a suggestion",
+      "category": "code",
+      "keys": [
+        "Alt+\\"
+      ],
+      "flag": "code.studio",
+      "palette": false
+    },
+    {
+      "id": "code.completion.list",
+      "title": "Show completions",
+      "category": "code",
+      "keys": [
+        "Ctrl+Space"
+      ],
+      "flag": "code.studio",
+      "palette": false
+    },
+    {
+      "id": "code.completion.acceptWord",
+      "title": "Accept the next word of the suggestion",
+      "category": "code",
+      "keys": [
+        "Ctrl+Right"
+      ],
+      "flag": "code.studio",
+      "palette": false
+    },
+    {
+      "id": "code.completion.acceptLine",
+      "title": "Accept the next line of the suggestion",
+      "category": "code",
+      "keys": [],
+      "flag": "code.studio",
+      "palette": false
+    },
+    {
+      "id": "code.completion.dismiss",
+      "title": "Dismiss suggestion",
+      "category": "code",
+      "keys": [],
+      "flag": "code.studio",
+      "palette": false
+    },
+    {
+      "id": "code.completion.next",
+      "title": "Next suggestion",
+      "category": "code",
+      "keys": [
+        "Alt+]"
+      ],
+      "flag": "code.studio",
+      "palette": false
+    },
+    {
+      "id": "code.completion.previous",
+      "title": "Previous suggestion",
+      "category": "code",
+      "keys": [
+        "Alt+["
+      ],
+      "flag": "code.studio",
+      "palette": false
+    },
+    {
+      "id": "code.editor.addNextOccurrence",
+      "title": "Add the next occurrence",
+      "category": "code",
+      "keys": [
+        "Ctrl+D"
+      ],
+      "flag": "code.studio",
+      "palette": false
+    },
+    {
+      "id": "code.editor.toggleLineComment",
+      "title": "Toggle line comment",
+      "category": "code",
+      "keys": [
+        "Ctrl+/"
+      ],
+      "flag": "code.studio",
+      "palette": false
+    },
+    {
+      "id": "code.editor.toggleBlockComment",
+      "title": "Toggle block comment",
+      "category": "code",
+      "keys": [
+        "Alt+Shift+A"
+      ],
+      "flag": "code.studio",
+      "palette": false
+    },
+    {
+      "id": "code.editor.moveLineUp",
+      "title": "Move line up",
+      "category": "code",
+      "keys": [
+        "Alt+Up"
+      ],
+      "flag": "code.studio",
+      "palette": false
+    },
+    {
+      "id": "code.editor.moveLineDown",
+      "title": "Move line down",
+      "category": "code",
+      "keys": [
+        "Alt+Down"
+      ],
+      "flag": "code.studio",
+      "palette": false
+    },
+    {
+      "id": "code.editor.copyLineUp",
+      "title": "Copy line up",
+      "category": "code",
+      "keys": [
+        "Alt+Shift+Up"
+      ],
+      "flag": "code.studio",
+      "palette": false
+    },
+    {
+      "id": "code.editor.copyLineDown",
+      "title": "Copy line down",
+      "category": "code",
+      "keys": [
+        "Alt+Shift+Down"
+      ],
+      "flag": "code.studio",
+      "palette": false
+    },
+    {
+      "id": "code.editor.deleteLine",
+      "title": "Delete line",
+      "category": "code",
+      "keys": [
+        "Ctrl+Shift+K"
+      ],
+      "flag": "code.studio",
+      "palette": false
+    },
+    {
+      "id": "code.editor.cursorAbove",
+      "title": "Add a caret above",
+      "category": "code",
+      "keys": [
+        "Ctrl+Alt+Up"
+      ],
+      "flag": "code.studio",
+      "palette": false
+    },
+    {
+      "id": "code.editor.cursorBelow",
+      "title": "Add a caret below",
+      "category": "code",
+      "keys": [
+        "Ctrl+Alt+Down"
+      ],
+      "flag": "code.studio",
+      "palette": false
+    },
+    {
+      "id": "code.editor.find",
+      "title": "Find in code",
+      "category": "code",
+      "keys": [
+        "Ctrl+F"
+      ],
+      "flag": "code.studio",
+      "palette": false
+    },
+    {
+      "id": "code.editor.replace",
+      "title": "Replace in code",
+      "category": "code",
+      "keys": [
+        "Ctrl+H"
+      ],
+      "flag": "code.studio",
+      "palette": false
+    },
+    {
+      "id": "code.editor.goToLine",
+      "title": "Go to line",
+      "category": "code",
+      "keys": [
+        "Ctrl+G"
+      ],
+      "flag": "code.studio",
+      "palette": false
+    },
+    {
+      "id": "code.editor.expandSelection",
+      "title": "Expand selection",
+      "category": "code",
+      "keys": [
+        "Alt+Shift+Right"
+      ],
+      "flag": "code.studio",
+      "palette": false
+    },
+    {
+      "id": "code.editor.shrinkSelection",
+      "title": "Shrink selection",
+      "category": "code",
+      "keys": [
+        "Alt+Shift+Left"
+      ],
+      "flag": "code.studio",
+      "palette": false
+    },
+    {
+      "id": "code.editor.wordWrap",
+      "title": "Toggle word wrap",
+      "category": "code",
+      "keys": [
+        "Alt+Z"
+      ],
+      "flag": "code.studio",
+      "palette": false
+    },
+    {
+      "id": "code.editor.zoomIn",
+      "title": "Zoom in on code",
+      "category": "code",
+      "keys": [
+        "Ctrl+="
+      ],
+      "flag": "code.studio",
+      "palette": false
+    },
+    {
+      "id": "code.editor.zoomOut",
+      "title": "Zoom out of code",
+      "category": "code",
+      "keys": [
+        "Ctrl+-"
+      ],
+      "flag": "code.studio",
+      "palette": false
+    },
+    {
+      "id": "code.problem.next",
+      "title": "Go to the next problem",
+      "category": "code",
+      "keys": [
+        "F8"
+      ],
+      "flag": "code.studio",
+      "palette": false
+    },
+    {
+      "id": "code.problem.previous",
+      "title": "Go to the previous problem",
+      "category": "code",
+      "keys": [
+        "Shift+F8"
+      ],
+      "flag": "code.studio",
+      "palette": false
+    },
+    {
+      "id": "code.editor.tabMovesFocus",
+      "title": "Toggle Tab moves focus",
+      "category": "code",
+      "keys": [
+        "Ctrl+M"
+      ],
+      "flag": "code.studio",
+      "palette": false
+    },
+    {
       "id": "collections.open",
       "title": "Open collections",
       "category": "navigation",
@@ -864,6 +1150,13 @@
         "Ctrl+Alt+Shift+K"
       ],
       "flag": "math.codeCells"
+    },
+    {
+      "id": "insert.codeProject",
+      "title": "Insert code project",
+      "category": "insert",
+      "keys": [],
+      "flag": "code.studio"
     },
     {
       "id": "tools.code",
@@ -3852,6 +4145,71 @@
       "category": "general",
       "keys": [],
       "flag": "kits.thermo"
+    },
+    {
+      "id": "insert.pageBreakMenu",
+      "title": "Page break",
+      "category": "insert",
+      "keys": [],
+      "flag": "text.layout"
+    },
+    {
+      "id": "insert.columnBreak",
+      "title": "Column break",
+      "category": "insert",
+      "keys": [
+        "Ctrl+Shift+Enter"
+      ],
+      "flag": "text.layout"
+    },
+    {
+      "id": "layout.columns1",
+      "title": "One column",
+      "category": "insert",
+      "keys": [],
+      "flag": "text.layout"
+    },
+    {
+      "id": "layout.columns2",
+      "title": "2 columns",
+      "category": "insert",
+      "keys": [],
+      "flag": "text.layout"
+    },
+    {
+      "id": "layout.columns3",
+      "title": "3 columns",
+      "category": "insert",
+      "keys": [],
+      "flag": "text.layout"
+    },
+    {
+      "id": "layout.columns4",
+      "title": "4 columns",
+      "category": "insert",
+      "keys": [],
+      "flag": "text.layout"
+    },
+    {
+      "id": "layout.verticalText",
+      "title": "Vertical text",
+      "category": "insert",
+      "keys": [],
+      "flag": "text.layout"
+    },
+    {
+      "id": "layout.lineNumbers",
+      "title": "Line numbers",
+      "category": "insert",
+      "keys": [],
+      "flag": "text.layout"
+    },
+    {
+      "id": "layout.headerFooter",
+      "title": "Header and footer",
+      "category": "insert",
+      "keys": [],
+      "flag": "text.layout"
     },
     {
       "id": "insert.plot3d",

@@ -60,4 +60,14 @@ export const TEXT_KEYS = {
     scope: 'page',
     allowInTextInput: true,
   },
+  // text:page-layout: Word's and Docs' key for a column break. The layout commands have no chord.
+  'insert.columnBreak': text(['Ctrl+Shift+Enter'], ['Ctrl+Shift+Enter'], []),
+  'insert.pageBreakMenu': text([], [], []),
+  'layout.headerFooter': text([], []),
+  'layout.lineNumbers': text([], []),
+  'layout.verticalText': text([], []),
+  'layout.columns1': text([], []),
+  'layout.columns2': text([], []),
+  'layout.columns3': text([], []),
+  'layout.columns4': text([], []),
 } as const satisfies Record<string, KeySpec>;

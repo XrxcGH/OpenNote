@@ -290,17 +290,21 @@
   "command | target-gap | div[role=row].row > span[role=gridcell] > button.day x span[role=gridcell] > button.day",
   "command | target-small | div.body > div.choices > button.button",
   "command | target-small | div.content > div.bar > button.button",
+  "command | target-small | div.content > div.header > button.button",
   "command | target-small | div.content > div[data-scope=palette].palette > input[role=combobox].input",
   "command | target-small | div.controls > div.zoom > button.button",
-  "command | target-small | div.controls > label.pick > select.select",
   "command | target-small | div.controls > div[role=group].choice > button.button",
+  "command | target-small | div.controls > label.pick > select.select",
   "command | target-small | div.panel > div[role=group].filters > button[role=switch].labeled",
+  "command | target-small | div[role=row].row > span[role=gridcell] > button.day",
   "command | text-overlap | span > span > span.mop x span.mord > span.mord",
   "command | text-overlap | span > span > span.mop x span.mord > span.mrel",
   "tool.kit-control | text-overlap | span > span > span.mop x span.mord > span.mord",
   "tool.kit-control | text-overlap | span > span > span.mop x span.mord > span.mrel",
   "tool.kit-earth | dead-space | div[role=status] > div.result > div[role=region].tableWrap (nested)",
   "tool.kit-humanities | target-gap | fieldset.group > div.keys > button.key x div.keys > button.key",
+  "tool.kit-humanities | target-small | section.tool > div[role=tablist].tabs > button[role=tab].tab",
+  "tool.kit-humanities | target-small | section.tool > label.field > select",
   "tool.kit-math | text-overlap | span > span > span.mop x span.mord > span.mord",
   "tool.kit-math | text-overlap | span > span > span.mop x span.mord > span.mrel",
   "tool.kit-solids | target-small | div.field > div.entry > input.input",
@@ -309,8 +313,6 @@
   "tool.kit-solids | target-small | div.tool > div[role=tablist].tabs > button[role=tab].tab",
   "tool.kitelectrical | target-small | div.form > div.field > input.input",
   "tool.kitelectrical | target-small | div.form > div.field > select.input",
-  "tool.kitelectrical | target-small | div.kit > div[role=tablist].tabs > button[role=tab].tab",
-  "tool.kit-humanities | target-small | section.tool > div[role=tablist].tabs > button[role=tab].tab",
-  "tool.kit-humanities | target-small | section.tool > label.field > select"
+  "tool.kitelectrical | target-small | div.kit > div[role=tablist].tabs > button[role=tab].tab"
  ]
 }

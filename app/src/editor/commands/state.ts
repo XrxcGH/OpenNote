@@ -116,6 +116,16 @@ export function inTaskItem(state: EditorState): boolean {
 /** The event an editor sends when Backspace at its very start should merge it into the text block above. */
 export const MERGE_BLOCKS_EVENT = 'opennote:mergeblocks';
 
+/** Backspace at the start of a text block right after a break block: the page removes the break (as Word does). */
+export const REMOVE_BREAK_EVENT = 'opennote:removebreak';
+
+export interface RemoveBreakDetail {
+  /** The break block above. */
+  breakBlock: string;
+  /** The text block whose caret stays. */
+  block: string;
+}
+
 export interface MergeBlocksDetail {
   /** The block whose text moves up. */
   block: string;
