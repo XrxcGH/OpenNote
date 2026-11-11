@@ -2,7 +2,7 @@
 
 Every tool, action, and feature in OpenNote, grouped by category, with one sentence each. `npm run docs:features` makes this page. The commands, tool windows, title bar items, settings sections, and setup steps come from what the app registers, so a new one shows up here or fails the tests. The feature sentences come from [FEATURES.md](FEATURES.md), which also says what has been tested by hand and which flag turns each one on. The [help pages](help/README.md) explain how to use them. [docs/screens](screens/README.md) has every picture in light and dark.
 
-The app registers 945 commands and 48 tool windows. 24 of the windows are subject and engineering kits. The count includes the ink commands, which register when a page first shows its ink, and the commands that register once start-up is done or with the first page: on-device intelligence, the second pass of page commands, and the code block and table commands. The command palette (Ctrl+K) runs every command not marked as left out of it. Some commands need a feature flag, which FEATURES.md names. The keys shown are the defaults of the standard shortcut set.
+The app registers 948 commands and 48 tool windows. 24 of the windows are subject and engineering kits. The count includes the ink commands, which register when a page first shows its ink, and the commands that register once start-up is done or with the first page: on-device intelligence, the second pass of page commands, and the code block and table commands. The command palette (Ctrl+K) runs every command not marked as left out of it. Some commands need a feature flag, which FEATURES.md names. The keys shown are the defaults of the standard shortcut set.
 
 ## Contents
 
@@ -146,6 +146,9 @@ Open it with the command "Open the code studio".
 | Edit link (not in the palette) | Edits the text and address of the link at the caret. |  |
 | Remove link (not in the palette) | Removes the link but keeps its text. |  |
 | Text styles | Edits the look of the text styles, such as headings and quotes. |  |
+| Open the Format pane on Text | Opens the Format pane on the Text tab: font, size, color, underline, effects, and a preview of the selected text. |  |
+| Open the Format pane on Paragraph | Opens the Format pane on the Paragraph tab: alignment, indents, spacing, line spacing, and pagination. |  |
+| Reveal formatting | Says where each format at the caret comes from: the run, the paragraph, or its style. |  |
 | Image… | Inserts a picture from a file. |  |
 | Crop image | Crops the edges of the selected image. |  |
 | Alt text… | Writes the alt text that screen readers read for the image, or marks it decorative. |  |
