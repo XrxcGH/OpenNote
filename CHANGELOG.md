@@ -32,6 +32,7 @@ The current build is beta 8. The block below lists Beta 9 to 12 work on the beta
 
 ### Changed
 
+- Text keys follow Word, and Settings, Shortcuts offers a Google Docs set (Beta 10, ADR 0085). Some keys moved. Inline code is Ctrl+` and Ctrl+E now centers. Strikethrough is Ctrl+Shift+X, or Alt+Shift+5 in the Docs set. Ctrl+Shift+S applies a style once the styles gallery lands. Ctrl+Enter breaks the page on a paginated page, or toggles a task's check. Subscript is Ctrl+= and superscript is Ctrl++. The old keys stay until the new text controls are on.
 - The dark theme's neutral colors are a charcoal gray, not brown.
 - The save status in the title bar says Saving until an edit is written, and Saved only once it is. A closed page stays Saving until its last edit is saved.
 - The custom title bar is recomputed, so the Windows title bar no longer stays above OpenNote's own.

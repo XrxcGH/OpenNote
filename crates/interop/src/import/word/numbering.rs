@@ -50,6 +50,9 @@ struct Level {
     hanging: Option<i32>,
     jc: Option<String>,
     font: Option<String>,
+    /// `w:lvlRestart` (ECMA-376 Part 1, 17.9.10): the one-based level after which this level starts again, or 0
+    /// for never. `None` starts again after any shallower level.
+    restart: Option<u32>,
 }
 
 fn read_level(lvl: &Element) -> Level {
@@ -69,6 +72,7 @@ fn read_level(lvl: &Element) -> Level {
         font: fonts
             .and_then(|f| f.attr("w:ascii").or_else(|| f.attr("w:hansi")))
             .map(str::to_owned),
+        restart: val(lvl, "w:lvlrestart").and_then(|v| v.trim().parse().ok()),
     }
 }
 
@@ -101,10 +105,20 @@ pub(super) struct Numbering {
 impl Numbering {
     pub fn read(root: &Element) -> Numbering {
         let mut numbering = Numbering::default();
+        // A definition can borrow its levels from a numbering style (ECMA-376 Part 1, 17.9.21 and 17.9.27): its
+        // `w:numStyleLink` names the style, and the definition with that `w:styleLink` holds the levels.
+        let mut borrowers: HashMap<u32, String> = HashMap::new();
+        let mut lenders: HashMap<String, u32> = HashMap::new();
         for abs in children(root, "w:abstractnum") {
             let Some(id) = abs.attr("w:abstractnumid").and_then(|v| v.parse().ok()) else {
                 continue;
             };
+            if let Some(style) = val(abs, "w:numstylelink") {
+                borrowers.insert(id, style.to_owned());
+            }
+            if let Some(style) = val(abs, "w:stylelink") {
+                lenders.entry(style.to_owned()).or_insert(id);
+            }
             let mut levels = BTreeMap::new();
             for lvl in children(abs, "w:lvl") {
                 let Some(ilvl) = lvl
@@ -122,8 +136,10 @@ impl Numbering {
             let Some(id) = num.attr("w:numid").and_then(|v| v.parse::<u32>().ok()) else {
                 continue;
             };
-            if let Some(abs) = val(num, "w:abstractnumid").and_then(|v| v.parse().ok()) {
-                numbering.nums.insert(id, abs);
+            if let Some(abs) = val(num, "w:abstractnumid").and_then(|v| v.parse::<u32>().ok()) {
+                // Lists of a numbering style use the style's definition, so they count on as one list.
+                let lender = borrowers.get(&abs).and_then(|style| lenders.get(style)).copied();
+                numbering.nums.insert(id, lender.unwrap_or(abs));
             }
             for over in children(num, "w:lvloverride") {
                 let Some(ilvl) = over
@@ -191,6 +207,17 @@ impl Numbering {
     /// Whether the numbering of a level starts again in this `w:num`.
     pub fn restarts(&self, num_id: u32, ilvl: u32) -> bool {
         self.overrides.contains_key(&(num_id, ilvl))
+    }
+
+    /// Whether the counter of level `deeper` starts again after an item of the shallower level `level`, as the
+    /// deeper level's `w:lvlRestart` says.
+    pub fn restarts_after(&self, num_id: u32, deeper: u32, level: u32) -> bool {
+        match self.find(num_id, deeper).and_then(|l| l.restart) {
+            Some(0) => false,
+            // The value names a shallower level; one that is not shallower is ignored.
+            Some(after) if after <= deeper => level < after,
+            _ => true,
+        }
     }
 
     /// The definition of a list ID as `data.lists` holds it.
@@ -344,5 +371,27 @@ mod tests {
                 {"format": "lowerLetter", "text": "(%2)", "align": "end"}
             ]})
         );
+    }
+
+    #[test]
+    fn a_numbering_style_lends_its_levels_and_restarts_follow_lvl_restart() {
+        let xml = r#"<w:numbering>
+            <w:abstractNum w:abstractNumId="4"><w:styleLink w:val="LegalList"/>
+              <w:lvl w:ilvl="0"><w:numFmt w:val="upperRoman"/><w:lvlText w:val="%1."/></w:lvl>
+              <w:lvl w:ilvl="1"><w:numFmt w:val="decimal"/><w:lvlText w:val="%2."/></w:lvl>
+              <w:lvl w:ilvl="2"><w:lvlRestart w:val="0"/><w:numFmt w:val="decimal"/><w:lvlText w:val="%3."/></w:lvl>
+              <w:lvl w:ilvl="3"><w:lvlRestart w:val="1"/><w:numFmt w:val="decimal"/><w:lvlText w:val="%4."/></w:lvl>
+            </w:abstractNum>
+            <w:abstractNum w:abstractNumId="5"><w:numStyleLink w:val="LegalList"/></w:abstractNum>
+            <w:num w:numId="7"><w:abstractNumId w:val="5"/></w:num>
+            </w:numbering>"#;
+        let numbering = Numbering::read(&parse(xml));
+        // ECMA-376 Part 1, 17.9.27: the definition takes the levels of the one whose styleLink it names.
+        assert_eq!(numbering.list_id(7).as_deref(), Some("a4"));
+        assert!(numbering.level(7, 0).exotic, "upper Roman numerals from the style");
+        // 17.9.10: no lvlRestart starts again after any shallower level; 0 never; 1 only after level 1.
+        assert!(numbering.restarts_after(7, 1, 0));
+        assert!(!numbering.restarts_after(7, 2, 0) && !numbering.restarts_after(7, 2, 1));
+        assert!(numbering.restarts_after(7, 3, 0) && !numbering.restarts_after(7, 3, 1));
     }
 }

@@ -80,6 +80,8 @@ export interface CommandDef<Args = void> {
    * OneNote's meaning (AMENDMENTS.md P2-4). Missing sets use `keys`; an empty list means no shortcut there.
    */
   presetKeys?: { readonly [P in KeymapPresetId]?: readonly Chord[] };
+  /** Chords for the sets without their own list while `flag` is off, so a key that a flagged command takes over stays. */
+  keysWhileOff?: { readonly flag: FlagId; readonly keys: readonly Chord[] };
   /** Default 'global'. */
   scope?: KeyScope;
   /**

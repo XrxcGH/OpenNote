@@ -1,8 +1,9 @@
-// Editable text styles (ARCHITECTURE.md section 17.3; owner: WP4). A notebook's styles become CSS custom properties
-// on a root, such as --style-h2-size, and the page's CSS reads only those, with the type tokens as fallbacks.
-// Changing a style re-renders nothing and moves nothing: it swaps variables. Markdown stays semantic.
+// The Text styles dialog's values (ARCHITECTURE.md section 17.3): the version 1 keys of the ten first styles, in
+// page units, as the dialog shows them. The notebook keeps version 2 keys (ADR 0082); `dialogValues` and
+// `fromDialog` convert between the two. cssVars.ts puts the styles on the page.
 import { tokens } from '../../../theme/tokens';
-import './styleVars.css';
+import { patchStyle, readStyle } from './model';
+import type { StyleFormat, StyleJson, StyleSheetJson } from './model';
 
 export const STYLE_NAMES = ['normal', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'title', 'quote', 'code'] as const;
 export type StyleName = (typeof STYLE_NAMES)[number];
@@ -47,56 +48,74 @@ export const STYLE_LIMITS = {
 const PROPERTIES = ['font', 'size', 'weight', 'color', 'spaceBefore', 'spaceAfter', 'lineHeight'] as const;
 type Property = (typeof PROPERTIES)[number];
 
-const kebab = (name: string) => name.replace(/[A-Z]/g, (char) => `-${char.toLowerCase()}`);
+const isFont = (value: unknown): value is StyleFont => STYLE_FONTS.includes(value as StyleFont);
+const round = (value: number, step: number) => Math.round(value / step) * step;
+const toPx = (points: unknown) => (typeof points === 'number' ? Math.round((points * 4) / 3) : undefined);
 
-/** The custom property for a style's value: --style-h2-space-before. */
-export function styleVar(style: StyleName, property: Property): string {
-  return `--style-${style}-${kebab(property)}`;
+/** A style's dialog values from what the notebook keeps. Values the dialog can't show are left out. */
+export function dialogValuesOf(raw: StyleJson | undefined): StyleValues {
+  const format = readStyle(raw);
+  const values: StyleValues = {
+    font: isFont(format.font) ? format.font : undefined,
+    size: toPx(format.sizePt),
+    weight: format.weight !== undefined && format.weight >= 400 && format.weight <= 700 ? format.weight : undefined,
+    color: format.textColor?.startsWith('theme:') ? undefined : format.textColor,
+    spaceBefore: toPx(format.before),
+    spaceAfter: toPx(format.after),
+    lineHeight: format.line?.rule === 'multiple' ? format.line.value : undefined,
+  };
+  return Object.fromEntries(Object.entries(values).filter(([, value]) => value !== undefined)) as StyleValues;
 }
 
-const PENS = new Set(tokens.ink.pens.map((pen) => pen.name.toLowerCase()));
-
-function cssValue(property: Property, value: string | number): string | null {
-  switch (property) {
-    case 'font':
-      return STYLE_FONTS.includes(value as StyleFont) ? `"${value}"` : null;
-    case 'color':
-      if (PENS.has(String(value))) return `var(--ink-${value})`;
-      return /^#[0-9a-f]{6}$/i.test(String(value)) ? String(value) : null;
-    case 'lineHeight':
-      return typeof value === 'number' ? String(clamp(value, STYLE_LIMITS.lineHeight)) : null;
-    default: {
-      if (typeof value !== 'number') return null;
-      const clamped = clamp(Math.round(value), STYLE_LIMITS[property]);
-      return property === 'weight' ? String(clamped) : `${clamped}px`;
-    }
+/** The dialog values of every style the dialog lists. */
+export function dialogValues(sheet: StyleSheetJson): NotebookStyles {
+  const out: NotebookStyles = {};
+  for (const name of STYLE_NAMES) {
+    const values = dialogValuesOf(sheet[name]);
+    if (Object.keys(values).length > 0) out[name] = values;
   }
+  return out;
 }
 
-function clamp(value: number, [min, max]: readonly [number, number]): number {
-  return Math.min(max, Math.max(min, value));
+/** The version 2 key and value of one dialog value. */
+function v2(property: Property, value: string | number | undefined): [keyof StyleFormat, unknown] {
+  const num = typeof value === 'number' ? value : undefined;
+  switch (property) {
+    case 'size':
+      return ['sizePt', num === undefined ? undefined : round((num * 3) / 4, 0.5)];
+    case 'color':
+      return ['textColor', value];
+    case 'spaceBefore':
+      return ['before', num === undefined ? undefined : round((num * 3) / 4, 0.05)];
+    case 'spaceAfter':
+      return ['after', num === undefined ? undefined : round((num * 3) / 4, 0.05)];
+    case 'lineHeight':
+      return ['line', num === undefined ? undefined : { rule: 'multiple', value: round(num, 0.01) }];
+    default:
+      return [property, value];
+  }
 }
 
 /**
- * Sets the notebook's styles as custom properties on `root`, and marks each set property with a data attribute
- * that the page's CSS keys on. Properties the styles don't set are removed, so the tokens apply.
+ * The notebook's styles after the dialog. Each value the person changed is written as its version 2 key. Every other
+ * key of the style, known or not, stays as it was.
  */
-export function applyNotebookStyles(root: HTMLElement, styles: NotebookStyles | undefined): void {
-  for (const style of STYLE_NAMES) {
+export function fromDialog(sheet: StyleSheetJson, before: NotebookStyles, after: NotebookStyles): StyleSheetJson {
+  const next: Record<string, StyleJson> = { ...sheet };
+  for (const name of STYLE_NAMES) {
+    const patch: Record<string, unknown> = {};
     for (const property of PROPERTIES) {
-      const name = styleVar(style, property);
-      const raw = styles?.[style]?.[property];
-      const value = raw === undefined ? null : cssValue(property, raw);
-      const flag = `data-${name.slice(2)}`;
-      if (value === null) {
-        root.style.removeProperty(name);
-        root.removeAttribute(flag);
-      } else {
-        root.style.setProperty(name, value);
-        root.setAttribute(flag, '');
-      }
+      const value = after[name]?.[property];
+      if (before[name]?.[property] === value) continue;
+      const [key, converted] = v2(property, value === '' ? undefined : value);
+      patch[key] = typeof converted === 'number' ? Math.round(converted * 100) / 100 : converted;
     }
+    if (Object.keys(patch).length === 0) continue;
+    const style = patchStyle(sheet[name], patch);
+    if (Object.keys(style).length === 0) delete next[name];
+    else next[name] = style;
   }
+  return next;
 }
 
 function channel(value: number): number {

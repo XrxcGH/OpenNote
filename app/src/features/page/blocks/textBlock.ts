@@ -2,6 +2,7 @@
 // its parsed Markdown, inside the element its editor will edit. The pool mounts the editor in place on pointer
 // down, focus, a target, or in idle time, and demotes it back to static DOM when it is far away and idle. The
 // editing root keeps its role, name, and focus through both, so assistive technology sees one node throughout.
+import { applyTextLayout } from '../textLayout/apply';
 import type { Editor } from '@tiptap/core';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import { createBlockEditor } from '../../../editor/extensions/kit';
@@ -87,7 +88,8 @@ const markdownOf = (block: BlockJson) => (typeof block.data.markdown === 'string
 
 /** Whether a block sits at its own frame rather than in the flow. */
 export function isFloating(block: BlockJson): boolean {
-  return block.frame?.x !== undefined && block.frame?.y !== undefined;
+  // A break has no frame (R-BRK-1): a reader ignores one.
+  return block.type !== 'break' && block.frame?.x !== undefined && block.frame?.y !== undefined;
 }
 
 /** Whether a block is a text box or a panel (study tape, flashcards, a mind map...): the kinds that have a grip. */
@@ -111,6 +113,7 @@ export function placeBlock(element: HTMLElement, block: BlockJson): void {
   // A floating text box without a width is as wide as its content (ARCHITECTURE.md section 6.3).
   element.classList.toggle(layoutStyles.autoWidth, text && frame?.w === undefined);
   element.classList.toggle(layoutStyles.setWidth, text && frame?.w !== undefined);
+  applyTextLayout(element, block);
 }
 
 /** The height an unrendered block holds: the one remembered on this device, or a guess from its Markdown. */

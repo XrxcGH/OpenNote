@@ -22,6 +22,9 @@ pub(super) struct Theme {
     pub minor: FontSet,
     /// Scheme colors by their `a:clrScheme` name (`dk1`, `lt1`, `accent1`, ...), as six lowercase hex digits.
     pub colors: HashMap<String, String>,
+    /// The document's `w:clrSchemeMapping` (ECMA-376 Part 1, 17.15.1.20): which scheme color a theme color such as
+    /// `text1` stands for, by the mapping's attribute name (`t1`, `bg1`, ...). Empty means the default mapping.
+    pub mapping: HashMap<String, String>,
 }
 
 /// The script of a run, which picks its font slot.
@@ -92,7 +95,64 @@ impl Theme {
             major: font_set(fonts.and_then(|f| child(f, "a:majorfont"))),
             minor: font_set(fonts.and_then(|f| child(f, "a:minorfont"))),
             colors,
+            mapping: HashMap::new(),
         }
+    }
+
+    /// Reads the color mapping of `settings.xml`. Word's default maps `text1` to `dark1` and `background1` to
+    /// `light1`; a document can swap them.
+    pub fn read_mapping(&mut self, settings: &Element) {
+        let Some(map) = child(settings, "w:clrschememapping") else {
+            return;
+        };
+        for (key, value) in &map.attrs {
+            if let Some(name) = key.strip_prefix("w:") {
+                self.mapping.insert(name.to_ascii_lowercase(), value.clone());
+            }
+        }
+    }
+
+    /// The `a:clrScheme` slot (`dk1`, `lt1`, `accent1`, ...) that a theme color name stands for.
+    fn scheme_slot(&self, name: &str) -> String {
+        let mapped = match name {
+            "text1" => self.mapping.get("t1"),
+            "background1" => self.mapping.get("bg1"),
+            "text2" => self.mapping.get("t2"),
+            "background2" => self.mapping.get("bg2"),
+            _ => None,
+        };
+        let index = mapped.map_or(name, String::as_str);
+        match index {
+            "text1" | "dark1" => "dk1",
+            "background1" | "light1" => "lt1",
+            "text2" | "dark2" => "dk2",
+            "background2" | "light2" => "lt2",
+            "hyperlink" => "hlink",
+            "followedHyperlink" => "folhlink",
+            other => other,
+        }
+        .to_ascii_lowercase()
+    }
+
+    /// The OpenNote theme color (R-THM-2) that a Word theme color stands for, such as `theme:accent1`. Only a
+    /// plain theme color the theme defines has one: a tint or shade makes a color of its own.
+    pub fn theme_slot(&self, color: &ColorRef) -> Option<String> {
+        if color.tint.is_some() || color.shade.is_some() {
+            return None;
+        }
+        let slot = self.scheme_slot(color.theme.as_deref()?);
+        if !self.colors.contains_key(&slot) {
+            return None;
+        }
+        let name = match slot.as_str() {
+            "dk1" => "text",
+            "lt1" => "background",
+            accent if accent.starts_with("accent") && accent.len() == 7 => accent,
+            _ => return None,
+        };
+        crate::doc::values::THEME_COLORS
+            .contains(&name)
+            .then(|| format!("theme:{name}"))
     }
 
     /// The font a theme font name such as `minorHAnsi` stands for.
@@ -143,18 +203,10 @@ impl Theme {
     /// A color as six lowercase hex digits, or `None` for automatic. A theme color wins over the RGB value that
     /// Word writes next to it, and a tint or shade changes its lightness.
     pub fn color(&self, color: &ColorRef) -> Option<String> {
-        let from_theme = color.theme.as_deref().and_then(|name| {
-            let key = match name {
-                "text1" | "dark1" => "dk1",
-                "background1" | "light1" => "lt1",
-                "text2" | "dark2" => "dk2",
-                "background2" | "light2" => "lt2",
-                "hyperlink" => "hlink",
-                "followedHyperlink" => "folhlink",
-                other => other,
-            };
-            self.colors.get(&key.to_ascii_lowercase()).cloned()
-        });
+        let from_theme = color
+            .theme
+            .as_deref()
+            .and_then(|name| self.colors.get(&self.scheme_slot(name)).cloned());
         let base = from_theme.clone().or_else(|| color.rgb.clone())?;
         if from_theme.is_none() {
             return Some(base);
@@ -281,5 +333,28 @@ mod tests {
             ..ColorRef::default()
         };
         assert_eq!(theme.color(&plain).as_deref(), Some("00ff00"));
+    }
+
+    #[test]
+    fn plain_theme_colors_keep_their_slot_and_follow_the_mapping() {
+        let mut theme = Theme::read(&parse(THEME));
+        let slot = |theme: &Theme, name: &str, shade: Option<u8>| theme.theme_slot(&theme_color(name, None, shade));
+        assert_eq!(slot(&theme, "accent1", None).as_deref(), Some("theme:accent1"));
+        assert_eq!(slot(&theme, "text1", None).as_deref(), Some("theme:text"));
+        assert_eq!(
+            slot(&theme, "accent1", Some(0xbf)),
+            None,
+            "a shade is a color of its own"
+        );
+        assert_eq!(slot(&theme, "accent2", None), None, "the theme does not define accent2");
+        // ECMA-376 Part 1, 17.15.1.20: the mapping can make text1 the light color.
+        theme.read_mapping(&parse(
+            r#"<w:settings><w:clrSchemeMapping w:t1="light1" w:bg1="dark1"/></w:settings>"#,
+        ));
+        assert_eq!(slot(&theme, "text1", None).as_deref(), Some("theme:background"));
+        assert_eq!(
+            theme.color(&theme_color("background1", None, None)).as_deref(),
+            Some("000000")
+        );
     }
 }

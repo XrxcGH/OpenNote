@@ -2,11 +2,12 @@
 // with the paginator that print uses, and pushes content past each sheet edge: a margin above a block, or a spacer
 // inside a text block's lines. The content itself never changes. A text block is cut into the same units print uses:
 // each top-level element of the text is one unit, and a heading stays with what follows it.
+import { readTextLayout } from '../print/textLayout';
 import type { MountedPage } from '../../page';
 import type { BlockJson } from '../../../services/pages/types';
 import { planFlow } from '../layout';
 import type { PageLayout } from '../layout';
-import { sheetAt } from '../pagination';
+import { contentBox, sheetAt } from '../pagination';
 import type { BlockMeasure, FlowBlock, SheetBreak } from '../pagination';
 import { paperRules } from '../paper/rules';
 import { linesOf, ruledCell } from '../print/dom';
@@ -49,7 +50,8 @@ interface BlockSpacers {
   readonly lines: { at: LineStart; push: number }[];
 }
 
-const isFloating = (block: BlockJson): boolean => block.frame?.x !== undefined && block.frame?.y !== undefined;
+const isFloating = (block: BlockJson): boolean =>
+  block.type !== 'break' && block.frame?.x !== undefined && block.frame?.y !== undefined;
 const HEADING = /^H[1-6]$/;
 const MAX_SHEETS = 2_000;
 /** The most times one run lays the page out again because a ruled pad moved: a page whose pads never settle stops here. */
@@ -217,7 +219,21 @@ class ScreenPaginator implements Paginator {
     for (const block of layer.blocks()) {
       const wrapper = layer.view(block.id)?.element;
       if (isFloating(block) || !wrapper || wrapper.hidden) continue;
-      const root = block.type === 'text' ? wrapper.querySelector<HTMLElement>('[data-block]') : null;
+      // A break is a new sheet and takes no room of its own (R-BRK-3).
+      if (block.type === 'break') {
+        const flow: FlowBlock = { id: block.id, kind: 'break' };
+        const measure = this.box(wrapper, origin, zoom);
+        units.push({ id: block.id, block: block.id, element: null, index: 0, wrapper, flow, measure, starts: [] });
+        continue;
+      }
+      // A block with columns never splits: its lines lie side by side, so no line is a place to cut. One taller than
+      // a content box would run off its sheet, so it flows in one column instead (live.module.css).
+      let columned = block.type === 'text' && readTextLayout(block.data).columns > 1;
+      if (columned && this.box(wrapper, origin, zoom).height > contentBox(this.hooks.layout().flowSheet, 0).h) {
+        wrapper.dataset.columnsFlow = '';
+        columned = false;
+      }
+      const root = block.type === 'text' && !columned ? wrapper.querySelector<HTMLElement>('[data-block]') : null;
       const elements = root ? this.textElements(block.id, root) : [];
       if (elements.length > 0) {
         units.push(...this.textUnits(block, wrapper, elements, origin));
@@ -242,7 +258,10 @@ class ScreenPaginator implements Paginator {
     const { layer, pool } = this.mounted;
     for (const block of layer.blocks()) {
       const wrapper = layer.view(block.id)?.element;
-      if (wrapper) wrapper.style.marginBlockStart = '';
+      if (wrapper) {
+        wrapper.style.marginBlockStart = '';
+        delete wrapper.dataset.columnsFlow;
+      }
       const root = wrapper?.querySelector<HTMLElement>('[data-block]');
       if (!root || pool.editor(block.id)) continue;
       removeStaticSpacers(root);

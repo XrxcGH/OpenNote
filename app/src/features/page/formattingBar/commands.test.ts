@@ -12,6 +12,7 @@ import { createMarkdownCache, serializeTextBlock } from '../../../editor/markdow
 import { commands } from '../../../registries';
 import { DEFAULT_SETTINGS, settingsStore } from '../../../state/settings';
 import { PAGE_KEYS } from '../keys';
+import { TEXT_KEYS } from '../keys/text';
 import type { PageCommandId } from '../keys';
 import { selectOnPage } from '../seams/selectionStore';
 import { md } from '../test/builders';
@@ -80,8 +81,9 @@ const CASES: Partial<Record<PageCommandId | 'link.remove' | 'link.edit', Case>> 
   'format.code': { before: 'a [b] c', after: 'a `b` c' },
   'format.subscript': { before: 'H[2]O', after: 'H<sub>2</sub>O' },
   'format.superscript': { before: 'x[2]', after: 'x<sup>2</sup>' },
-  'format.larger': { before: 'a [b] c', after: 'a <span data-size="large">b</span> c' },
-  'format.smaller': { before: 'a [b] c', after: 'a <span data-size="small">b</span> c' },
+  // With text.v2Controls on (the test build), the keys step the size on Word's list from the 12 pt body (ADR 0085).
+  'format.larger': { before: 'a [b] c', after: 'a <span data-size="14">b</span> c' },
+  'format.smaller': { before: 'a [b] c', after: 'a <span data-size="11">b</span> c' },
   'format.textColor': { before: 'a [b] c', after: 'a <span data-color="fern">b</span> c', args: { color: 'fern' } },
   'format.textSize': { before: 'a [b] c', after: 'a <span data-size="xlarge">b</span> c', args: { size: 'xlarge' } },
   'format.clear': { before: 'a **[b]** c', after: 'a b c' },
@@ -129,8 +131,8 @@ const CASES: Partial<Record<PageCommandId | 'link.remove' | 'link.edit', Case>> 
 };
 
 /** WP4's commands: every PAGE_KEYS entry in its sections of PLAN.md section 3.10. */
-const WP4 = (Object.keys(PAGE_KEYS) as PageCommandId[]).filter((id) =>
-  /^(format|block|outline|insert\.(date|time|dateTime)$|text\.setColor$)/.test(id),
+const WP4 = (Object.keys(PAGE_KEYS) as PageCommandId[]).filter(
+  (id) => !(id in TEXT_KEYS) && /^(format|block|outline|insert\.(date|time|dateTime)$|text\.setColor$)/.test(id),
 );
 
 describe('WP4’s page commands', () => {
