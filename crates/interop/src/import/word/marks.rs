@@ -4,7 +4,7 @@
 
 use serde_json::{Map, Value};
 
-use super::props::{FontRef, RunProps, Toggle};
+use super::props::{ColorRef, FontRef, RunProps, Toggle};
 use super::theme::{Script as TextScript, Theme};
 use super::values::{hex, num, text};
 use crate::doc::values as grammar;
@@ -171,8 +171,28 @@ pub(super) fn marks_of(props: &RunProps, theme: &Theme, script: TextScript) -> M
     } else {
         props.lang.clone().filter(|l| grammar::lang(l))
     };
-    marks.dir = (props.rtl == Some(true)).then(|| "rtl".to_owned());
+    marks.dir = props.rtl.map(|rtl| if rtl { "rtl" } else { "ltr" }.to_owned());
+    theme_colors(props, theme, &mut marks);
     marks
+}
+
+/// Plain theme colors stay theme colors (`theme:accent1`), so they follow the page theme as they follow the
+/// document theme in Word. The page theme holds the document's theme colors (R-THM-1).
+fn theme_colors(props: &RunProps, theme: &Theme, marks: &mut Marks) {
+    let slot = |color: Option<&ColorRef>| color.and_then(|c| theme.theme_slot(c));
+    if let Some(color) = slot(props.color.as_ref()) {
+        marks.color = Some(color);
+    }
+    if marks.underline {
+        if let Some(color) = slot(props.underline.as_ref().and_then(|(_, c)| c.as_ref())) {
+            marks.underline_color = Some(color);
+        }
+    }
+    if marks.text_box.is_some() {
+        if let Some(color) = slot(props.border.as_ref().and_then(|(_, c)| c.as_ref())) {
+            marks.box_color = Some(color);
+        }
+    }
 }
 
 /// A size in half-points as a mark. 10, 15, and 18 points keep the names of version 1, so OpenNote's own
@@ -193,11 +213,21 @@ fn size_mark(half_points: u32) -> Option<String> {
 fn otf(props: &RunProps) -> Option<String> {
     let mut tokens: Vec<String> = Vec::new();
     if let Some(lig) = props.ligatures.as_deref() {
+        // ST_Ligatures ([MS-DOCX] 2.6.1.3) names the kinds that are on, such as `standardContextual`, or `all`
+        // or `none`. Standard and contextual ligatures are on by default in OpenNote, so a value without them
+        // turns them off.
         let lower = lig.to_ascii_lowercase();
-        if lower.contains("historical") || lower == "all" {
+        let all = lower == "all";
+        let has = |kind: &str| all || lower.contains(kind);
+        for (kind, off) in [("standard", "liga-none"), ("contextual", "clig-none")] {
+            if !has(kind) {
+                tokens.push(off.to_owned());
+            }
+        }
+        if has("historical") {
             tokens.push("hlig".to_owned());
         }
-        if lower.contains("discretional") || lower == "all" {
+        if has("discretional") {
             tokens.push("dlig".to_owned());
         }
     }
@@ -426,8 +456,9 @@ pub(super) fn style_keys(props: &RunProps, theme: &Theme, out: &mut Map<String, 
     {
         out.insert("tracking".to_owned(), num(t));
     }
-    if let Some(color) = props.color.as_ref().and_then(|c| theme.color(c)) {
-        let color = pen_name(&color);
+    let theme_color = props.color.as_ref().and_then(|c| theme.theme_slot(c));
+    if let Some(color) = theme_color.or_else(|| props.color.as_ref().and_then(|c| theme.color(c)).map(|c| pen_name(&c)))
+    {
         out.insert("textColor".to_owned(), Value::from(color.clone()));
         if grammar::v1_text_color(&color) {
             out.insert("color".to_owned(), Value::from(color));
@@ -486,5 +517,26 @@ mod tests {
             "a run that is not bold in a bold style turns bold off"
         );
         assert_eq!(plain_style_name(OFF_BOLD | OFF_ITALIC), "u-plain-bi");
+    }
+
+    #[test]
+    fn ligature_values_turn_the_default_ligatures_off() {
+        let otf = |value: &str| marks(&format!(r#"<w:rPr><w14:ligatures w14:val="{value}"/></w:rPr>"#)).otf;
+        // [MS-DOCX] 2.6.1.3: the value lists the kinds that are on.
+        assert_eq!(otf("none").as_deref(), Some("clig-none liga-none"));
+        assert_eq!(otf("standard").as_deref(), Some("clig-none"));
+        assert_eq!(otf("standardContextual"), None, "the defaults are on");
+        assert_eq!(otf("all").as_deref(), Some("dlig hlig"));
+        assert_eq!(otf("contextualHistorical").as_deref(), Some("hlig liga-none"));
+    }
+
+    #[test]
+    fn rtl_off_is_left_to_right() {
+        assert_eq!(
+            marks(r#"<w:rPr><w:rtl w:val="0"/></w:rPr>"#).dir.as_deref(),
+            Some("ltr")
+        );
+        assert_eq!(marks(r#"<w:rPr><w:rtl/></w:rPr>"#).dir.as_deref(), Some("rtl"));
+        assert_eq!(marks("<w:rPr/>").dir, None);
     }
 }

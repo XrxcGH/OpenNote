@@ -14,6 +14,7 @@ import {
   isRef,
   parseCanonicalNumber,
   toScalar,
+  reasonOf,
   type RefValue,
   type Scalar,
   type Value,
@@ -104,6 +105,11 @@ export function compileLibrary(h: Host, spec: FnSpec2, node: Call): Fn {
   return plain(h, spec, node);
 }
 
+function reasonField(v: Value): { reason?: string } {
+  const reason = reasonOf(v);
+  return reason === undefined ? {} : { reason };
+}
+
 function originOf(spec: FnSpec2, node: Call): ErrorOrigin {
   return { code: 'VALUE', kind: 'function', name: spec.name, start: node.start, end: node.end };
 }
@@ -140,7 +146,7 @@ function aggregate(h: Host, spec: FnSpec2, node: Call): Fn {
   const origin = originOf(spec, node);
   const compute: Fn = (ctx) => {
     const v = spec.run((lists.length === 1 ? lists[0](ctx) : lists.flatMap((list) => list(ctx))) as Value[], env);
-    if (ctx.origin === null && isError(v)) ctx.origin = { ...origin, code: v.error };
+    if (ctx.origin === null && isError(v)) ctx.origin = { ...origin, code: v.error, ...reasonField(v) };
     return v;
   };
   if (!shareable) return compute;
@@ -236,7 +242,7 @@ function plain(h: Host, spec: FnSpec2, node: Call): Fn {
     let v = runLifted(spec, values, scalar, env);
     if (isRef(v)) v = readReturned(h, ctx, v);
     if (ctx.origin === null && isError(v) && !values.some((a) => a === v)) {
-      ctx.origin = { ...origin, code: v.error, args: values.map(summarize) };
+      ctx.origin = { ...origin, code: v.error, args: values.map(summarize), ...reasonField(v) };
     }
     return v;
   };

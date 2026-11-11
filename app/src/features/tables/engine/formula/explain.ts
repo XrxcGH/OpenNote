@@ -32,6 +32,8 @@ export interface ErrorOrigin {
   readonly args?: readonly (Scalar | ArgSummary)[];
   /** For 'cell', the cell the error was read from; for 'spill', the cell that blocks the spill. */
   readonly cell?: OriginCell;
+  /** The key of a sentence in the interface strings that says why the function refused (for example a limit). */
+  readonly reason?: string;
 }
 
 /**
@@ -55,6 +57,8 @@ export type OriginSentence =
 export interface OriginSentenceValues {
   readonly name?: string;
   readonly cell?: string;
+  /** The reason key of a function origin, when it has one: the formula bar shows that sentence too. */
+  readonly reason?: string;
 }
 
 /** The key and values for an origin's sentence. */
@@ -64,7 +68,9 @@ export function originSentence(
 ): { key: OriginSentence; values: OriginSentenceValues } {
   switch (origin.kind) {
     case 'function':
-      return origin.name ? { key: 'function', values: { name: origin.name } } : { key: 'functionUnnamed', values: {} };
+      return origin.name
+        ? { key: 'function', values: { name: origin.name, ...(origin.reason ? { reason: origin.reason } : {}) } }
+        : { key: 'functionUnnamed', values: {} };
     case 'operator':
       return { key: 'operator', values: { name: origin.name ?? '' } };
     case 'cell':
