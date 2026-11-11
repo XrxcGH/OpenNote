@@ -199,7 +199,10 @@ function figure(svg: string, alt: string): string {
 export function renderBlock(block: ExportBlock, cx: BlockContext): string {
   switch (block.type) {
     case 'text': {
-      const html = renderHtml(parseMarkdown(block.markdown), htmlOptions(cx));
+      const html = renderHtml(parseMarkdown(block.markdown), {
+        ...htmlOptions(cx),
+        ...(block.elements ? { elements: block.elements } : {}),
+      });
       const moment = cx.player?.moments.get(block.id);
       const shown = moment === undefined ? html : momentHtml(html, moment, ENGLISH_PLAYER_LABELS);
       // The study tape answer key starts a new sheet when the page prints.

@@ -10,6 +10,7 @@ import type { EditorHost } from '../../../../editor/host';
 import { createMarkdownCache } from '../../../../editor/markdown';
 import type { TableData } from '../../../../editor/schema/specs';
 import { tableDataToDoc } from '../../../../editor/table/mapping';
+import { installLayerEscape } from '../../../../state/layers';
 import { expectNoAxeViolations, renderUi } from '../../../../test';
 import type { TableExtraHost } from '../../../page';
 // The toolbar's own style module decides when it shows, so the test uses it as the page does.
@@ -179,6 +180,7 @@ describe('the cell format bar, keyboard', () => {
 
 describe('the cell format bar, palette focus', () => {
   it('returns focus to Fill color when Escape closes the palette opened by keyboard', async () => {
+    const stopEscape = installLayerEscape();
     mount();
     renderUi(<CellFormatBar block="b1" />);
     await new Promise((done) => setTimeout(done, 100));
@@ -190,6 +192,7 @@ describe('the cell format bar, palette focus', () => {
     expect(document.activeElement).not.toBe(document.body);
     await userEvent.keyboard('{Escape}');
     await vi.waitFor(() => expect(document.activeElement).toBe(button));
+    stopEscape();
   });
 });
 

@@ -147,14 +147,19 @@ function Tool({ tool, name, icon, onPress, pressed, popup, expanded }: ToolProps
   );
 }
 
-/** A ref to a button inside `wrap`, so a popover anchors to (and returns focus to) a control that can take focus. */
-function buttonIn(wrap: RefObject<HTMLElement | null>, last = false): RefObject<HTMLElement | null> {
-  return {
-    get current() {
-      const all = wrap.current?.querySelectorAll<HTMLElement>('button');
-      return (last ? all?.[all.length - 1] : all?.[0]) ?? wrap.current;
-    },
-  } as RefObject<HTMLElement | null>;
+/** A wrapper ref plus an anchor ref to a button inside it, so a popover anchors to (and returns focus to) a control that can take focus. */
+function useButtonAnchor(last = false) {
+  const wrap = useRef<HTMLSpanElement>(null);
+  const [anchor] = useState(
+    () =>
+      ({
+        get current() {
+          const all = wrap.current?.querySelectorAll<HTMLElement>('button');
+          return (last ? all?.[all.length - 1] : all?.[0]) ?? wrap.current;
+        },
+      }) as RefObject<HTMLElement | null>,
+  );
+  return { wrap, anchor };
 }
 
 interface PaletteProps {
@@ -203,7 +208,7 @@ interface ColorToolProps {
 
 /** A button that opens a color palette in a popover. */
 function ColorTool({ block, against, paper, tool, name, paletteName, icon, current, onPick }: ColorToolProps) {
-  const wrap = useRef<HTMLSpanElement>(null);
+  const { wrap, anchor } = useButtonAnchor();
   const [open, setOpen] = useState(false);
   // The palette command opens this table's own palette (hosts.ts).
   useEffect(() => addOpener(block, tool, () => setOpen(true)), [block, tool]);
@@ -216,7 +221,7 @@ function ColorTool({ block, against, paper, tool, name, paletteName, icon, curre
         fill={tool === 'fill'}
         against={against}
         paper={paper}
-        anchor={buttonIn(wrap)}
+        anchor={anchor}
         open={open}
         onClose={() => setOpen(false)}
         onPick={(choice) => {
@@ -230,7 +235,7 @@ function ColorTool({ block, against, paper, tool, name, paletteName, icon, curre
 
 /** The split Borders button: the last preset, and the menu of all of them with line style and color. */
 function BordersTool({ host, run, paper }: { host: TableExtraHost; run: Run; paper?: string }) {
-  const wrap = useRef<HTMLSpanElement>(null);
+  const { wrap, anchor } = useButtonAnchor(true);
   const [color, setColor] = useState(false);
   useEffect(() => addOpener(host.block, 'borderColor', () => setColor(true)), [host.block]);
   const menu = (anchor: HTMLElement) => {
@@ -269,7 +274,7 @@ function BordersTool({ host, run, paper }: { host: TableExtraHost; run: Run; pap
         name="sheetToolbar.borderColor"
         paper={paper}
         against={paper}
-        anchor={buttonIn(wrap, true)}
+        anchor={anchor}
         open={color}
         onClose={() => setColor(false)}
         onPick={(choice) => {

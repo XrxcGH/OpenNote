@@ -2,7 +2,7 @@
 
 Every tool, action, and feature in OpenNote, grouped by category, with one sentence each. `npm run docs:features` makes this page. The commands, tool windows, title bar items, settings sections, and setup steps come from what the app registers, so a new one shows up here or fails the tests. The feature sentences come from [FEATURES.md](FEATURES.md), which also says what has been tested by hand and which flag turns each one on. The [help pages](help/README.md) explain how to use them. [docs/screens](screens/README.md) has every picture in light and dark.
 
-The app registers 1007 commands and 48 tool windows. 24 of the windows are subject and engineering kits. The count includes the ink commands, which register when a page first shows its ink, and the commands that register once start-up is done or with the first page: on-device intelligence, the second pass of page commands, and the code block and table commands. The command palette (Ctrl+K) runs every command not marked as left out of it. Some commands need a feature flag, which FEATURES.md names. The keys shown are the defaults of the standard shortcut set.
+The app registers 1037 commands and 48 tool windows. 24 of the windows are subject and engineering kits. The count includes the ink commands, which register when a page first shows its ink, and the commands that register once start-up is done or with the first page: on-device intelligence, the second pass of page commands, and the code block and table commands. The command palette (Ctrl+K) runs every command not marked as left out of it. Some commands need a feature flag, which FEATURES.md names. The keys shown are the defaults of the standard shortcut set.
 
 ## Contents
 
@@ -82,9 +82,39 @@ Open it with the command "Open the code studio".
 
 | Command | What it does | Default keys |
 | --- | --- | --- |
+| Accept suggestion (not in the palette) | Accepts the whole suggestion shown in gray in the code editor. | Ctrl+Tab |
+| Show a suggestion (not in the palette) | Asks for a suggestion at the caret in the code editor. | Alt+\ |
+| Show completions (not in the palette) | Opens the list of completions at the caret in the code editor. | Ctrl+Space |
+| Accept the next word of the suggestion (not in the palette) | Accepts the next word of the suggestion. | Ctrl+Right |
+| Accept the next line of the suggestion (not in the palette) | Accepts the next line of the suggestion. |  |
+| Dismiss suggestion (not in the palette) | Dismisses the suggestion without inserting it. |  |
+| Next suggestion (not in the palette) | Shows the next suggestion. | Alt+] |
+| Previous suggestion (not in the palette) | Shows the previous suggestion. | Alt+[ |
+| Add the next occurrence (not in the palette) | Adds a caret at the next match of the selected text. | Ctrl+D |
+| Toggle line comment (not in the palette) | Comments or uncomments the selected lines. | Ctrl+/ |
+| Toggle block comment (not in the palette) | Wraps the selection in a block comment, or removes it. | Alt+Shift+A |
+| Move line up (not in the palette) | Moves the selected lines up one line. | Alt+Up |
+| Move line down (not in the palette) | Moves the selected lines down one line. | Alt+Down |
+| Copy line up (not in the palette) | Copies the selected lines above themselves. | Alt+Shift+Up |
+| Copy line down (not in the palette) | Copies the selected lines below themselves. | Alt+Shift+Down |
+| Delete line (not in the palette) | Deletes the lines that hold a caret or selection. | Ctrl+Shift+K |
+| Add a caret above (not in the palette) | Adds a caret on the line above. | Ctrl+Alt+Up |
+| Add a caret below (not in the palette) | Adds a caret on the line below. | Ctrl+Alt+Down |
+| Find in code (not in the palette) | Opens find in the code editor. | Ctrl+F |
+| Replace in code (not in the palette) | Opens find and replace in the code editor. | Ctrl+H |
+| Go to line (not in the palette) | Jumps to a line number you type. | Ctrl+G |
+| Expand selection (not in the palette) | Grows the selection to the next larger syntax block. | Alt+Shift+Right |
+| Shrink selection (not in the palette) | Shrinks the selection back to the previous size. | Alt+Shift+Left |
+| Toggle word wrap (not in the palette) | Turns word wrap in the code editor on or off. | Alt+Z |
+| Zoom in on code (not in the palette) | Makes the code text larger. | Ctrl+= |
+| Zoom out of code (not in the palette) | Makes the code text smaller. | Ctrl+- |
+| Go to the next problem (not in the palette) | Jumps to the next problem found in the code. | F8 |
+| Go to the previous problem (not in the palette) | Jumps to the previous problem found in the code. | Shift+F8 |
+| Toggle Tab moves focus (not in the palette) | Makes Tab move focus out of the editor instead of indenting, for keyboard users. | Ctrl+M |
 | Insert mind map | Inserts a mind map to brainstorm ideas as branches. |  |
 | Insert diagram from text | Inserts a diagram drawn from text, such as a Mermaid flowchart or timeline. |  |
 | Insert code cell | Inserts a code cell that runs Python or JavaScript in a sandbox. | Ctrl+Alt+Shift+K |
+| Insert code project | Inserts a code project: a folder of files that you can run, export, and import as a .zip. |  |
 | Number this equation | Gives the equation at the caret a number. |  |
 | Number all equations | Numbers every display equation on the page. |  |
 | Remove equation number | Removes the number from the equation at the caret. |  |

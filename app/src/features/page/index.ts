@@ -2,6 +2,7 @@
 
 export { PageView } from './PageView';
 export { installPageZoom } from './zoom';
+export { configureStyleStorage, loadStyles, localStylesClient, saveStyles, stylesFor } from './styles/store';
 export { installPages } from './runtime';
 export { mountedPageHooks, shownAssetUrl, shownMounted, snapshotShownPage } from './pagesApi';
 /** The editor that formatting commands act on (a light module). */

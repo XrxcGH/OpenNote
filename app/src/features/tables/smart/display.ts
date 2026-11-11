@@ -2,13 +2,16 @@
 // the cell holds while you edit it. Everywhere else the cell shows the result, drawn by a decoration: the typed
 // text stays in place but hidden, so the caret can still reach it, and the result is drawn over it from the cell's
 // data-shown attribute. Rows a filter leaves out are hidden the same way. The decorations are computed a moment
-// after typing stops, and ProseMirror maps them through any edit in between.
+// after typing stops, and ProseMirror maps them through any edit in between. An error shows Excel's token, with
+// the words in a tooltip and a description for screen readers (decision 3). A formula whose result spills draws
+// an outline around the cells it fills; one with no room shows #SPILL!.
 import type { Node as PMNode } from '@tiptap/pm/model';
 import { CellSelection } from '@tiptap/pm/tables';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
 import type { EditorState } from '@tiptap/pm/state';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
-import type { Locale } from '../engine';
+import { t } from '../../../strings/t';
+import type { ErrorCode, Locale } from '../engine';
 import type { SmartData } from './data';
 import { choiceOf, readCell } from './choice';
 import type { ChoiceInfo } from './choice';
@@ -70,6 +73,42 @@ function chipDecorations(cell: PMNode, from: number, info: ChoiceInfo): Decorati
 
 const KIND_CLASS = { number: styles.number, error: styles.error, text: styles.text } as const;
 
+/** The words and the screen reader description of an error. */
+export type ErrorLabel = (code: ErrorCode) => { words: string; description: string };
+
+/** Excel's plain words in the tooltip, and a longer description for screen readers (decision 3). */
+export const errorLabel: ErrorLabel = (code) => ({
+  words: t(`smart.table.errorWords.${code}`),
+  description: t(`smart.table.errorDescriptions.${code}`),
+});
+
+/**
+ * The cells each spilling formula fills, with the edges of its outline: "t", "r", "b", and "l" for the sides of the
+ * range that cell is on. Read from the results: the formula's cell, then the spilled cells right of it and below it.
+ */
+export function spillEdges(model: SmartModel): Map<string, string> {
+  const edges = new Map<string, string>();
+  const rows = model.table.rows;
+  const spilled = (r: number, c: number) => rows[r]?.cells[c]?.spill === true && rows[r].cells[c].formula === undefined;
+  rows.forEach((row, r) => {
+    row.cells.forEach((cell, c) => {
+      if (cell.formula === undefined || cell.spill) return;
+      let width = 1;
+      while (spilled(r, c + width)) width += 1;
+      let height = 1;
+      while (spilled(r + height, c)) height += 1;
+      if (width * height === 1) return;
+      for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          const sides = `${y === 0 ? 't' : ''}${x === width - 1 ? 'r' : ''}${y === height - 1 ? 'b' : ''}${x === 0 ? 'l' : ''}`;
+          edges.set(`${r + y},${c + x}`, sides);
+        }
+      }
+    });
+  });
+  return edges;
+}
+
 /** Decorations for the cells that show a result and the rows a filter hides. */
 export function buildDecorations(
   doc: PMNode,
@@ -77,10 +116,12 @@ export function buildDecorations(
   smart: SmartData,
   locale: Locale,
   typedLabel: (typed: string) => string,
+  labelOf: ErrorLabel = errorLabel,
 ): DecorationSet {
   const table = doc.firstChild;
   if (!table) return DecorationSet.empty;
   const visible = new Set(model.shown);
+  const spills = spillEdges(model);
   const found: Decoration[] = [];
   table.forEach((row, rowOffset, r) => {
     const dataRow = r - model.offset;
@@ -94,16 +135,27 @@ export function buildDecorations(
       const from = rowFrom + 1 + cellOffset;
       const choice = choiceOf(smart, model.columnIds[c]);
       if (choice) found.push(...chipDecorations(cell, from, choice));
+      const edge = spills.get(`${dataRow},${c}`);
       const shown = shownFor(model, smart, dataRow, c, locale);
-      if (!shown) return;
+      if (!shown) {
+        // A typed cell inside a spill range cannot happen (it blocks the spill), so only the outline is drawn here.
+        if (edge) found.push(Decoration.node(from, from + cell.nodeSize, { 'data-spill': edge }, { kind: 'spill' }));
+        return;
+      }
+      const label = shown.error ? labelOf(shown.error) : null;
+      const classes = [styles.shown, KIND_CLASS[shown.kind]];
+      if (shown.error === 'SPILL') classes.push(styles.spillBlocked);
+      if (shown.error === 'BUSY') classes.push(styles.busy);
       found.push(
         Decoration.node(
           from,
           from + cell.nodeSize,
           {
-            class: `${styles.shown} ${KIND_CLASS[shown.kind]}`,
+            class: classes.join(' '),
             'data-shown': shown.text,
-            title: typedLabel(cell.textContent),
+            title: label ? label.words : typedLabel(cell.textContent),
+            ...(label ? { 'aria-description': label.description, 'data-error': shown.error } : {}),
+            ...(edge ? { 'data-spill': edge } : {}),
           },
           { kind: 'shown' },
         ),
