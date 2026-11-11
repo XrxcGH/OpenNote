@@ -381,7 +381,6 @@ describe('project import', () => {
   });
 
   it('gives one file for download under its own name', () => {
-
     const download = fileDownload(sample(), 'f02')!;
     expect(download.name).toBe('util.py');
     expect(decoder.decode(download.bytes)).toBe('def two_sum(nums, target):\n    return [0, 1]\n');

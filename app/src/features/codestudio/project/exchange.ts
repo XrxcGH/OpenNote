@@ -4,7 +4,14 @@
 // limits goes in, and everything else is listed as skipped with the reason.
 
 import { t } from '../../../strings/t';
-import { CODE_PROJECT_VERSION, COMPARE_MODES, PROJECT_LANGUAGES, PROJECT_LIMITS, RUNTIME_IDS, TEST_KINDS } from '../contracts';
+import {
+  CODE_PROJECT_VERSION,
+  COMPARE_MODES,
+  PROJECT_LANGUAGES,
+  PROJECT_LIMITS,
+  RUNTIME_IDS,
+  TEST_KINDS,
+} from '../contracts';
 import type { CodeFile, CodeProject, TestCase } from '../contracts';
 import { NAME_CHARS, RESERVED_ROOT_FILES, nextId, nextOrder, readProject, sortedFiles } from './model';
 import { pathKey, pathProblemAmong } from './paths';
