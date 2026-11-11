@@ -243,6 +243,10 @@ impl Styles {
                 .fold(0u32, |h, b| h.wrapping_mul(31).wrapping_add(u32::from(b)));
             slug = format!("{hash:x}");
         }
+        // OpenNote's own exports keep a user style's name as its ID, which already starts with `u-`.
+        if slug.starts_with("u-") && slug.len() > 2 {
+            return slug;
+        }
         format!("u-{slug}")
     }
 
