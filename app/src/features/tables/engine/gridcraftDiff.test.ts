@@ -90,8 +90,7 @@ const CASES: Record<string, string[]> = {
 
 /** Differences that are understood. The key is the formula; the value says why the two engines part. */
 const KNOWN: Record<string, string> = {
-  'UPPER("straße")':
-    'OpenNote keeps the sharp s (STRAßE), as Excel does. GridCraft expands it to SS.',
+  'UPPER("straße")': 'OpenNote keeps the sharp s (STRAßE), as Excel does. GridCraft expands it to SS.',
   '2^3^2': 'OpenNote chains powers to the right, as in mathematics (512). Excel chains to the left (64).',
   '-2^2': 'OpenNote binds the power tighter than the minus sign (-4), as in mathematics. Excel negates first (4).',
   'ROUND(7)':
