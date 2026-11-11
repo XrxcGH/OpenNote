@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { analyze } from './analyze';
 import { GRAMMAR_LANGUAGES, loadParser } from './parsers';
+import { loadWorkerParser } from './workerParsers';
 import { toDiagnostic } from './providers';
 import { lineAt, lineStarts } from './text';
 import type { EditorLanguage } from './types';
@@ -24,8 +25,12 @@ describe('Lezer syntax errors', () => {
       'sql',
       'typescript',
     ]);
-    for (const language of GRAMMAR_LANGUAGES) expect(typeof (await loadParser(language))?.parse).toBe('function');
+    for (const language of GRAMMAR_LANGUAGES) {
+      expect(typeof (await loadParser(language))?.parse).toBe('function');
+      expect(typeof (await loadWorkerParser(language))?.parse).toBe('function');
+    }
     expect(loadParser('lua')).toBeNull();
+    expect(loadWorkerParser('lua')).toBeNull();
   }, 60_000);
 
   it("says a Python block header lacks its ':'", async () => {

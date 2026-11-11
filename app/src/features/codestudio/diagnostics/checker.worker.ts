@@ -2,6 +2,7 @@
 // parsing and checking a large file never holds up typing.
 
 import { analyze, type AnalyzeRequest, type AnalyzeResult } from './analyze';
+import { loadWorkerParser } from './workerParsers';
 
 export interface WorkerRequest extends AnalyzeRequest {
   id: number;
@@ -18,7 +19,7 @@ if ('WorkerGlobalScope' in globalThis) {
   const scope = globalThis as unknown as WorkerScope;
   scope.onmessage = (event) => {
     const { id } = event.data;
-    analyze(event.data).then(
+    analyze(event.data, loadWorkerParser).then(
       (result) => scope.postMessage({ id, result }),
       (error: unknown) => scope.postMessage({ id, error: String(error) }),
     );

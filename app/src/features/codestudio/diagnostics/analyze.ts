@@ -4,7 +4,7 @@
 import { checkCLike } from './clike';
 import { checkJavaScript } from './javascript';
 import { checkLua } from './lua';
-import { loadParser } from './parsers';
+import { loadParser, type ParserLoader } from './parsers';
 import { checkPython } from './python';
 import { syntaxFindings } from './syntax';
 import { lineAt, lineStarts } from './text';
@@ -24,10 +24,11 @@ export interface AnalyzeResult {
   checker: Finding[];
 }
 
-export async function analyze(request: AnalyzeRequest): Promise<AnalyzeResult> {
+/** Analyzes one file. The worker passes its own parser loader; the page uses the language packs' parsers. */
+export async function analyze(request: AnalyzeRequest, load: ParserLoader = loadParser): Promise<AnalyzeResult> {
   const { language, text, layers } = request;
   if (language === 'lua') return { syntax: [], checker: layers.includes('checker') ? checkLua(text) : [] };
-  const loading = loadParser(language);
+  const loading = load(language);
   if (!loading) return { syntax: [], checker: [] };
   const tree = (await loading).parse(text);
   const syntax = syntaxFindings(text, tree, language);
