@@ -98,7 +98,7 @@ Accepted records aren't rewritten when plans change. Instead, write a new ADR fo
 | [0065](0065-incremental-recalculation.md) | Incremental recalculation, iterative calculation, and the worker | Proposed | 2026-11-01 |
 | [0066](0066-table-merge-on-sync.md) | Three-way merge of table blocks when two devices edit one page | Proposed | 2026-11-01 |
 | [0067](0067-spreadsheet-interchange.md) | Excel, Sheets, and clipboard interchange of formulas, formats, and styles | Proposed | 2026-11-01 |
-| [0068](0068-code-editor.md) | CodeMirror 6 for the Code studio and code cells | Proposed | 2026-11-01 |
+| [0068](0068-code-editor.md) | CodeMirror 6 for the Code studio and code cells | Accepted | 2026-11-01 |
 | [0069](0069-code-project-block.md) | Code projects as a page block, and code cell data version 2 | Proposed | 2026-11-01 |
 | [0070](0070-runtime-packs.md) | In-app language runtimes, bundled, or downloaded as packs | Proposed | 2026-11-01 |
 | [0071](0071-local-toolchain-runner.md) | Running code with the person's installed toolchains | Proposed | 2026-11-01 |
