@@ -14,13 +14,44 @@ export type Mark =
   | { readonly link: string }
   | { readonly highlight: string }
   | { readonly color: string }
-  | { readonly size: string };
+  | { readonly size: string }
+  | V2Mark;
+
+/** The marks of format version 2 that are one value in text, in the neutral form of the inline-v2 fixtures. */
+export type ValueMarkKey =
+  | 'font'
+  | 'weight'
+  | 'caps'
+  | 'tracking'
+  | 'scale'
+  | 'shift'
+  | 'kern'
+  | 'otf'
+  | 'effect'
+  | 'shade'
+  | 'lang'
+  | 'dir'
+  | 'comment'
+  | 'ins'
+  | 'del'
+  | 'fmt'
+  | 'style'
+  | 'float'
+  | 'foreign';
+
+/** The marks of version 2 that the version 1 forms above do not cover. */
+export type V2Mark =
+  | { readonly [K in ValueMarkKey]: { readonly [P in K]: string } }[ValueMarkKey]
+  | { readonly underline: { readonly line?: string; readonly color?: string } }
+  | { readonly strike: 'double' }
+  | { readonly box: { readonly style: string; readonly color?: string } };
 
 export type Inline =
   | { readonly text: string; readonly marks: readonly Mark[] }
   | { readonly hardBreak: true }
   | { readonly image: string; readonly alt: string }
-  | { readonly math: string };
+  | { readonly math: string }
+  | { readonly footnote: string; readonly marks: readonly Mark[] };
 
 export interface ListItem {
   readonly task: 'open' | 'done' | null;
@@ -53,7 +84,17 @@ export type Document = readonly Block[];
 /** The plain text of inline content: no marks, and a hard break as a line break. Images give their description. */
 export function inlineText(content: readonly Inline[]): string {
   return content
-    .map((run) => ('text' in run ? run.text : 'hardBreak' in run ? '\n' : 'math' in run ? run.math : run.alt))
+    .map((run) =>
+      'text' in run
+        ? run.text
+        : 'hardBreak' in run
+          ? '\n'
+          : 'math' in run
+            ? run.math
+            : 'footnote' in run
+              ? ''
+              : run.alt,
+    )
     .join('')
     .replace(/\s+/g, ' ')
     .trim();

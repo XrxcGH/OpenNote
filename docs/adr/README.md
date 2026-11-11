@@ -100,7 +100,7 @@ Accepted records aren't rewritten when plans change. Instead, write a new ADR fo
 | [0067](0067-spreadsheet-interchange.md) | Excel, Sheets, and clipboard interchange of formulas, formats, and styles | Proposed | 2026-11-01 |
 | [0068](0068-code-editor.md) | CodeMirror 6 for the Code studio and code cells | Accepted | 2026-11-01 |
 | [0069](0069-code-project-block.md) | Code projects as a page block, and code cell data version 2 | Proposed | 2026-11-01 |
-| [0070](0070-runtime-packs.md) | In-app language runtimes, bundled, or downloaded as packs | Proposed | 2026-11-01 |
+| [0070](0070-runtime-packs.md) | In-app language runtimes, bundled, or downloaded as packs | Accepted | 2026-11-01 |
 | [0071](0071-local-toolchain-runner.md) | Running code with the person's installed toolchains | Proposed | 2026-11-01 |
 | [0072](0072-code-intelligence-on-device.md) | Code completion and fixes with on-device code models only | Proposed | 2026-11-01 |
 | [0073](0073-trace-replay-debugger.md) | Step debugging by recording and replaying, behind one Debug Adapter Protocol contract | Proposed | 2026-11-01 |
