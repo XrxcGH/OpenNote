@@ -7,6 +7,7 @@ import type { Node as PMNode } from '@tiptap/pm/model';
 import type { EditorState, Transaction } from '@tiptap/pm/state';
 import { LISTS_META, listDefinitionsOf } from '../extensions/listItem';
 import { META_ELEMENT_DATA } from '../meta';
+import { isFontName } from '../schema/constants';
 import { LIST_ID } from '../paragraph/attributes';
 import { MAX_LEVELS, MAX_START, NUMBER_FORMATS, levelOf, numberItems } from '../paragraph/numbering';
 import type { ListDefinitions, ListLevel, NumberFormat } from '../paragraph/numbering';
@@ -187,6 +188,7 @@ export function applyBullet(symbol: string, font: string | null = null): Command
   const chars = [...symbol];
   // An invisible bullet is refused: controls, format characters, spaces, and a lone combining mark.
   if (chars.length !== 1 || /^[\p{C}\p{Z}\p{M}]$/u.test(symbol)) return () => false;
+  if (font && !isFontName(font)) return () => false;
   return redefine('bulletList', (levels, depth) => {
     levels[depth] = { ...levels[depth], format: 'bullet', symbol, ...(font ? { font } : {}) };
     return levels;
@@ -341,6 +343,7 @@ export function setListLevel(patch: Level): Command {
     (patch.start === undefined || (Number.isInteger(patch.start) && patch.start >= 0 && patch.start <= MAX_START)) &&
     (patch.indent === undefined || (patch.indent >= 0 && patch.indent <= 1584)) &&
     (patch.hanging === undefined || (patch.hanging >= 0 && patch.hanging <= 1584)) &&
+    (patch.font == null || isFontName(patch.font)) &&
     chars === 1 &&
     (patch.symbol == null || !/^[\p{C}\p{Z}\p{M}]$/u.test(patch.symbol));
   if (!valid) return () => false;

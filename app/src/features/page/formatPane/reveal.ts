@@ -11,6 +11,7 @@ import { styleOfNode } from '../styles/commands';
 import { styleLabel } from '../styles/model';
 import { resolveStyle } from '../styles/resolve';
 import type { StyleContext } from '../styles/resolve';
+import { optionLabel } from './labels';
 import { formatPoints } from './units';
 
 export type RevealSource = 'direct' | 'paragraph' | 'style';
@@ -87,6 +88,18 @@ const MARK_KEYS: Readonly<Record<string, { key: string; attr: string | null }>> 
   dir: { key: 'dir', attr: 'dir' },
 };
 
+const tokens = (raw: string): string[] => raw.split(' ').filter(Boolean);
+
+/** An OpenType token in words: a stylistic set, or one of the named features. */
+function otfWord(token: string): string {
+  return /^ssdd$/.test(token) ? optionLabel('stylisticSet', token) : optionLabel('otfToken', token);
+}
+
+/** A line spacing as words: "At least 12". */
+function lineWords(rule: string, value: number): string {
+  return t('textPane.reveal.what.lineValue', { rule: optionLabel('lineRule', rule), value: formatPoints(value) });
+}
+
 /** The words for one run format: `Georgia`, `13 pt`, `Bold`. */
 function runWords(mark: Mark): string | null {
   const row = MARK_KEYS[mark.type.name];
@@ -100,9 +113,22 @@ function runWords(mark: Mark): string | null {
     case 'textSize':
       return what('size', raw);
     case 'underline':
-      return what('underline', raw === '' ? 'single' : raw);
+      return what('underline', optionLabel('underline', raw === '' ? 'single' : raw));
     case 'strike':
       return what(raw === 'double' ? 'strikeDouble' : 'strike');
+    case 'caps':
+      return what('caps', optionLabel('caps', raw));
+    case 'dir':
+      return what('dir', optionLabel('dir', raw));
+    case 'effect':
+      return what(
+        'effect',
+        tokens(raw)
+          .map((token) => optionLabel('effect', token))
+          .join(', '),
+      );
+    case 'otf':
+      return what('otf', tokens(raw).map(otfWord).join(', '));
     default:
       return what(row.key, raw);
   }
@@ -119,9 +145,10 @@ function styleWords(key: string, value: unknown): string | null {
     case 'italic':
       return value === true ? what('italic') : null;
     case 'underline':
-    case 'strike':
     case 'caps':
-      return value === 'none' ? null : what(key, String(value));
+      return value === 'none' ? null : what(key, optionLabel(key, String(value)));
+    case 'strike':
+      return value === 'none' ? null : what(value === 'double' ? 'strikeDouble' : 'strike');
     case 'tracking':
       return value === 0 ? null : what(key, String(value));
     case 'textColor':
@@ -129,15 +156,22 @@ function styleWords(key: string, value: unknown): string | null {
     case 'font':
       return what(key, String(value));
     case 'align':
-      return what('align', String(value));
+      return what('align', optionLabel('align', String(value)));
     case 'before':
     case 'after':
       return what(key, String(value));
     case 'line':
-      return what('line', JSON.stringify(value));
+      return lineStyleWords(value);
     default:
       return null;
   }
+}
+
+/** A style's line spacing, `{rule, value}`, as words. Anything else says nothing. */
+function lineStyleWords(value: unknown): string | null {
+  const line = value as { rule?: unknown; value?: unknown } | null;
+  if (typeof line?.rule !== 'string' || typeof line.value !== 'number') return null;
+  return what('line', lineWords(line.rule, line.value));
 }
 
 const RUN_STYLE_KEYS = [
@@ -164,18 +198,18 @@ const marksAt = (state: EditorState): readonly Mark[] => {
 function paragraphWords(state: EditorState): [string, string][] {
   const format = paraAt(state);
   const out: [string, string][] = [];
-  if (format.align) out.push(['align', what('align', format.align)]);
+  if (format.align) out.push(['align', what('align', optionLabel('align', format.align))]);
   if (format.indent) {
     const { start, end, first } = format.indent;
     out.push(['indent', what('indent', `${formatPoints(start)}, ${formatPoints(end)}, ${formatPoints(first)}`)]);
   }
   if (format.before !== undefined) out.push(['before', what('before', String(format.before))]);
   if (format.after !== undefined) out.push(['after', what('after', String(format.after))]);
-  if (format.line) out.push(['line', what('line', `${format.line.rule} ${formatPoints(format.line.value)}`)]);
+  if (format.line) out.push(['line', what('line', lineWords(format.line.rule, format.line.value))]);
   if (format.outline !== undefined) out.push(['outline', what('outline', String(format.outline))]);
   if (format.keepNext) out.push(['keepNext', what('keepNext')]);
   if (format.keepLines) out.push(['keepLines', what('keepLines')]);
-  if (format.dir) out.push(['dir', what('dir', format.dir)]);
+  if (format.dir) out.push(['dir', what('dir', optionLabel('dir', format.dir))]);
   if (format.tabs?.length) out.push(['tabs', what('tabs', String(format.tabs.length))]);
   if (format.border) out.push(['border', what('border')]);
   if (format.shade) out.push(['shade', what('shade')]);

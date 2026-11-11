@@ -24,6 +24,7 @@ import { TABS, fieldById } from './fields';
 import type { Field, StyleValues, TabId } from './fields';
 import { fieldLabel } from './labels';
 import { ListsPanel } from './ListsPanel';
+import { paneKey } from './paneKey';
 import { revealFormatting } from './reveal';
 import { TabsPanel } from './TabsPanel';
 import styles from './FormatPane.module.css';
@@ -83,19 +84,31 @@ export interface FormatPaneProps {
 
 /** The editor, and a function that draws the pane again. It also follows the selection and the focus. */
 function useEditor(editorOf: () => Editor | null): { editor: Editor | null; refresh(): void } {
-  const [, bump] = useReducer((n: number) => n + 1, 0);
+  const [, redraw] = useReducer((n: number) => n + 1, 0);
   const editor = editorOf();
+  const drawn = useRef<string | null>(null);
+  const bump = () => {
+    drawn.current = editor ? paneKey(editor.state) : null;
+    redraw();
+  };
   useEffect(() => {
     if (!editor) return undefined;
-    editor.on('transaction', bump);
-    editor.on('selectionUpdate', bump);
+    // Typing at a caret shows the same format, so it does not draw the pane (a key per transaction was too much).
+    const change = () => {
+      const key = paneKey(editor.state);
+      if (key !== null && key === drawn.current) return;
+      drawn.current = key;
+      redraw();
+    };
+    editor.on('transaction', change);
+    editor.on('selectionUpdate', change);
     return () => {
-      editor.off('transaction', bump);
-      editor.off('selectionUpdate', bump);
+      editor.off('transaction', change);
+      editor.off('selectionUpdate', change);
     };
   }, [editor]);
   useEffect(() => {
-    const again = () => bump();
+    const again = () => redraw();
     document.addEventListener('focusin', again);
     return () => document.removeEventListener('focusin', again);
   }, []);
@@ -361,9 +374,12 @@ export function FormatPane({
   useStore(pageSheet, (sheet) => sheet);
   const { editor, refresh } = useEditor(editorOf);
   const headingId = useId();
+  const section = useRef<HTMLElement>(null);
   const idBase = useId();
   const tabs = style ? STYLE_TABS : TABS;
   const [current, setCurrent] = useState<TabId>(tabs.includes(tab) ? tab : 'text');
+  // Opening the pane puts focus on its selected tab, so the keys reach it at once (the Styles pane does the same).
+  useEffect(() => section.current?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')?.focus(), []);
   const ctx = shownContext(notebook);
   const values = style ? resolveStyle(ctx, style).values : {};
   const source: Source = { editor, style: style ?? null, values, notebook, refresh };
@@ -372,6 +388,7 @@ export function FormatPane({
     : '';
   return (
     <section
+      ref={section}
       aria-labelledby={headingId}
       className={styles.stack}
       onKeyDown={(event) => {
@@ -389,6 +406,7 @@ export function FormatPane({
         </Button>
       </div>
       {style ? <p className={styles.help}>{t('textPane.styleModeHint')}</p> : null}
+      {style && ctx.page?.[style] ? <p className={styles.help}>{t('textPane.stylePageOverrides')}</p> : null}
       <TabList tabs={tabs} current={current} idBase={idBase} onChange={setCurrent} />
       <div role="tabpanel" id={`${idBase}-panel`} aria-labelledby={`${idBase}-tab-${current}`} className={styles.panel}>
         <Panel tab={current} source={source} state={editor?.state} fonts={fonts} />

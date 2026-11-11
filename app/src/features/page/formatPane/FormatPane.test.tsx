@@ -123,7 +123,8 @@ describe('the Format pane, keyboard and accessibility', () => {
       'Borders and shading',
       'Lists',
     ]);
-    tabs[0].focus();
+    // Opening the pane puts the focus on its selected tab, with no Tab through the page first.
+    expect(document.activeElement).toBe(tabs[0]);
     for (let index = 0; index < TABS.length; index += 1) {
       const current = within(pane()).getAllByRole('tab')[index];
       expect(document.activeElement).toBe(current);
@@ -150,7 +151,6 @@ describe('the Format pane, keyboard and accessibility', () => {
     const opener = document.body.appendChild(document.createElement('button'));
     opener.focus();
     open('one [two] three');
-    within(pane()).getAllByRole('tab')[0].focus();
     await userEvent.keyboard('{Escape}');
     expect(document.querySelector('[data-region="format-pane"]')).toBeNull();
     expect(document.activeElement).toBe(opener);
@@ -163,6 +163,11 @@ describe('the Format pane, keyboard and accessibility', () => {
       await userEvent.click(within(pane()).getByRole('tab', { name }));
       await expectNoAxeViolations(pane());
     }
+  });
+
+  it('focuses the tab it opens on, such as Paragraph', () => {
+    open('one [two] three', { tab: 'paragraph' });
+    expect(document.activeElement).toBe(within(pane()).getByRole('tab', { name: 'Paragraph' }));
   });
 
   it('shows the Lists tab for a list item', async () => {

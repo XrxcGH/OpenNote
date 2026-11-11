@@ -70,7 +70,7 @@ function Interval() {
       step={1}
       error={error}
       onCommit={(text) => {
-        const result = lengthParse(1, 720)(text);
+        const result = lengthParse(1, 1584)(text);
         const ok = result.ok && typeof result.value === 'number';
         if (!ok) return setError(result.ok ? t('textPane.invalid', { example: '36, 0.5in' }) : result.message);
         setError(undefined);

@@ -46,7 +46,7 @@ function Kind({ at, edit }: { at: ListLevelAt; edit: ReturnType<typeof useLevelE
           label={t('textPane.lists.symbolFont')}
           value={level.font ?? ''}
           error={errors['font']}
-          onCommit={(text) => set('font', { font: text === '' ? undefined : text })}
+          onCommit={(text) => set('font', { font: text === '' ? undefined : text }, t('textPane.fontTooLong'))}
         />
       </>
     );
@@ -65,7 +65,11 @@ function Kind({ at, edit }: { at: ListLevelAt; edit: ReturnType<typeof useLevelE
         value={String(level.start)}
         step={1}
         error={errors['start']}
-        onCommit={(text) => set('start', { start: Number(text) }, t('textPane.range', { min: '0', max: '32767' }))}
+        onCommit={(text) => {
+          // A blank box changes nothing (Number('') is 0, which would set the start to 0).
+          if (text.trim() === '') return;
+          set('start', { start: Number(text) }, t('textPane.range', { min: '0', max: '32767' }));
+        }}
       />
     </>
   );
@@ -78,7 +82,7 @@ export function ListsPanel(props: PanelProps) {
   const { level, depth } = at;
   return (
     <div className={styles.panel}>
-      <Group title={`${t('textPane.group.level')}: ${t('textPane.lists.levelNow', { level: String(depth + 1) })}`}>
+      <Group title={t('textPane.group.level', { level: String(depth + 1) })}>
         <Choice
           label={t('textPane.lists.format')}
           field="format"

@@ -13,7 +13,9 @@ import type {
   TabLeader,
   TabStop,
 } from '../../../editor/paragraph/attributes';
+import { getDefaultTab, onDefaultTab, setDefaultTab } from '../../../editor/paragraph/defaultTab';
 import { createStore } from '../../../state/store';
+import { shownMounted } from '../pagesApi';
 
 export const TAB_ALIGNS: readonly TabAlign[] = ['start', 'center', 'end', 'decimal', 'bar'];
 export const TAB_LEADERS: readonly TabLeader[] = ['none', 'dot', 'hyphen', 'underscore', 'heavy', 'middleDot'];
@@ -48,29 +50,14 @@ export function clearAllTabStops(): Command {
   return setPara('tabs', null);
 }
 
-/** The default tab interval in points (Word's Default tab stops), kept on this device. */
-const INTERVAL_KEY = 'opennote.defaultTabInterval';
+/** The default tab interval in points (Word's Default tab stops): the page's `view.text.defaultTab`. */
+export const defaultTabInterval = createStore<number>(getDefaultTab(), 'default tab interval');
+onDefaultTab(() => defaultTabInterval.set(getDefaultTab()));
 
-function readInterval(): number {
-  try {
-    const stored = Number(globalThis.localStorage?.getItem(INTERVAL_KEY));
-    return stored >= 1 && stored <= 720 ? stored : 36;
-  } catch {
-    return 36;
-  }
-}
-
-export const defaultTabInterval = createStore<number>(readInterval(), 'default tab interval');
-
-/** Sets the default interval, 1 to 720 points. */
+/** Sets the default interval, 1 to 1584 points, and saves it with the page. 36 is the default, so it is removed. */
 export function setDefaultTabInterval(points: number): boolean {
-  if (!(points >= 1 && points <= 720)) return false;
-  defaultTabInterval.set(points);
-  try {
-    globalThis.localStorage?.setItem(INTERVAL_KEY, String(points));
-  } catch {
-    // The value still holds for this session.
-  }
+  if (!setDefaultTab(points)) return false;
+  shownMounted.get()?.layout.patchView({ text: { defaultTab: points === 36 ? null : points } });
   return true;
 }
 

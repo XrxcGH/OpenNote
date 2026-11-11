@@ -45,6 +45,7 @@ import { createSyncQueue, exitHook, shownQueue } from './sync';
 import { keepLinksInPlace } from './linkClicks';
 import type { FrameContext, SyncQueue } from './sync';
 import type { Point } from './viewport/camera';
+import { readDefaultTab, setDefaultTab } from '../../editor/paragraph/defaultTab';
 import { createGestureTool } from './viewport/gestures';
 import { rememberView, restoreView } from './viewport/remember';
 import { dropDuplicateMenus } from './viewport/menuRequests';
@@ -314,6 +315,7 @@ export function mountPage(container: HTMLElement, page: OpenPage, options: Mount
   const viewport = createViewport(container, options.classNames);
   const flow = createFlow(viewport);
   flow.setView(page.initial.view);
+  setDefaultTab(readDefaultTab(page.initial.view));
   const reading = opensInReading(page, options);
   flow.setReading(reading);
   restoreView(page.id, viewport, () => flow.extent());
@@ -327,6 +329,7 @@ export function mountPage(container: HTMLElement, page: OpenPage, options: Mount
     setPageFields(fields) {
       if (fields.view) {
         layout.setView(fields.view);
+        setDefaultTab(readDefaultTab(fields.view));
         layer.setPreferredOrder(fields.view.readingOrder ?? []);
       }
       if (fields.title !== undefined) title?.setTitle(fields.title);

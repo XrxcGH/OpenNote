@@ -7,14 +7,13 @@ import type { EditorState, Selection } from '@tiptap/pm/state';
 import { META_ELEMENT_DATA } from '../meta';
 import { PARA_KEYS, PARA_NODES, paraFormat } from '../paragraph/attributes';
 import type { Align, Indent, LineSpacing, ParaFormat, ParaKey } from '../paragraph/attributes';
+import { getDefaultTab } from '../paragraph/defaultTab';
 import { fromChange, textblocksBetween } from './command';
 import type { Change, Command } from './command';
 import { viaFormatTarget } from './formatTarget';
 import { clearFormattingChange } from './marks';
 import { turnIntoChange } from './turnInto';
 
-/** The default tab interval in points: Ctrl+M moves the indent to the next multiple (Word). */
-export const DEFAULT_TAB = 36;
 /** Ctrl+0 toggles this space before (Word). */
 export const OPEN_SPACE = 12;
 
@@ -138,11 +137,11 @@ export function toggleSpaceBefore(): Command {
 // ---- Indents ----
 
 /** The next default tab stop past `points` (1), or the one before it (-1), from 0 to 1584. */
-export function nextTabStop(points: number, direction: 1 | -1): number {
+export function nextTabStop(points: number, direction: 1 | -1, interval = getDefaultTab()): number {
   const next =
     direction > 0
-      ? Math.floor(points / DEFAULT_TAB + 1e-9) * DEFAULT_TAB + DEFAULT_TAB
-      : Math.ceil(points / DEFAULT_TAB - 1e-9) * DEFAULT_TAB - DEFAULT_TAB;
+      ? Math.floor(points / interval + 1e-9) * interval + interval
+      : Math.ceil(points / interval - 1e-9) * interval - interval;
   return Math.min(1584, Math.max(0, next));
 }
 

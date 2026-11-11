@@ -175,6 +175,15 @@ function numberMark(
   });
 }
 
+/** Kerning is off (0) or starts at 1 point, as the page format says (R-MRK-10). */
+const kernParse = (input: string | boolean): Parsed => {
+  const result = lengthParse(0, 1638, 0.5)(input);
+  if (result.ok && typeof result.value === 'number' && result.value > 0 && result.value < 1) {
+    return fail(t('textPane.kernRange'));
+  }
+  return result;
+};
+
 const underlineAttrs = (state: EditorState) => firstMark(state, 'underline')?.attrs ?? {};
 
 const sizeParse = (input: string | boolean): Parsed => {
@@ -240,8 +249,16 @@ const TEXT_FIELDS: readonly Field[] = [
     tab: 'text',
     kind: 'color',
     read: (state) => runValue(state, 'underline', 'color'),
-    parse: colorParse,
+    // A color needs a line to color: setting it on text with no underline would turn the underline on.
+    parse: (input, state) => {
+      const parsed = colorParse(input);
+      if (parsed.ok && parsed.value !== null && state && !firstMark(state, 'underline')) {
+        return fail(t('textPane.underlineFirst'));
+      }
+      return parsed;
+    },
     apply: (value) => (state, dispatch) => {
+      if (!firstMark(state, 'underline')) return false;
       const { line } = underlineAttrs(state);
       const attrs = { ...(line ? { line } : {}), ...(value ? { color: value } : {}) };
       return setRunMark('underline', attrs)(state, dispatch);
@@ -275,7 +292,9 @@ const TEXT_FIELDS: readonly Field[] = [
   }),
   ...TEXT_EFFECTS.map(effect),
   span('highlight', 'text', 'color', 'highlight', 'color', colorParse, {
-    apply: (value) => setRunMark('highlight', value === null ? null : { color: String(value) }),
+    // Honey is the highlighter's own color and has no name in the mark: the mark with no color.
+    apply: (value) =>
+      setRunMark('highlight', value === null ? null : value === 'honey' ? {} : { color: String(value) }),
     style: { read: (v) => String(v.highlight ?? ''), patch: (value) => ({ highlight: value ?? undefined }) },
   }),
 ];
@@ -299,7 +318,7 @@ const ADVANCED_FIELDS: readonly Field[] = [
     },
   }),
   numberMark('shift', SHIFT_POINTS, lengthParse(SHIFT_POINTS.min, SHIFT_POINTS.max, 0.5), 'pt'),
-  span('kern', 'advanced', 'text', 'kern', 'kern', lengthParse(0, 1638, 0.5), { unit: 'pt' }),
+  span('kern', 'advanced', 'text', 'kern', 'kern', kernParse, { unit: 'pt' }),
   otf('ligatures', ['liga-none', 'clig-none', 'dlig', 'hlig']),
   otf('numberForms', ['lnum', 'onum']),
   otf('numberSpacing', ['pnum', 'tnum']),

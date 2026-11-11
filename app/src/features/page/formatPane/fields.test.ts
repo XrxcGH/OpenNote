@@ -338,3 +338,35 @@ describe('lists', () => {
     expect(listLevelAt(mounted!.editor.state)).toBeNull();
   });
 });
+
+describe('values the command refuses are refused by the field with a message', () => {
+  it('kerning is 0 or 1 to 1638 points', () => {
+    open('one [two]');
+    expect(type('kern', '0.5')).toBe(t('textPane.kernRange'));
+    expect(type('kern', '0')).toBeNull();
+    expect(type('kern', '12')).toBeNull();
+    expect(type('kern', '2000')).toBe(range('0', '1638'));
+  });
+
+  it('highlight takes honey, the highlighter color with no name', () => {
+    open('one [two]');
+    expect(type('highlight', 'honey')).toBeNull();
+    expect(shown('highlight')).not.toBe('');
+  });
+
+  it('an underline color needs an underline, and does not turn one on', () => {
+    open('one [two]');
+    expect(type('underlineColor', 'brick')).toBe(t('textPane.underlineFirst'));
+    expect(shown('underline')).toBe('');
+    expect(mounted!.markdown()).toBe('one two');
+    expect(type('underline', 'single')).toBeNull();
+    expect(type('underlineColor', 'brick')).toBeNull();
+    expect(shown('underlineColor')).toBe('brick');
+  });
+
+  it('a list symbol font is checked like a font name', () => {
+    open('- [one]');
+    expect(run(setListLevel({ font: 'x'.repeat(5000) }))).toBe(false);
+    expect(run(setListLevel({ font: 'Georgia' }))).toBe(true);
+  });
+});
