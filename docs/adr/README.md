@@ -115,7 +115,7 @@ Accepted records aren't rewritten when plans change. Instead, write a new ADR fo
 | [0082](0082-named-styles-v2.md) | Named styles move to notebook.json, gain inheritance and user styles, and pages can carry their own sheet | Proposed | 2026-11-01 |
 | [0083](0083-docx-writer-and-reader.md) | Keep the hand-written DOCX writer and reader, and extend them to full formatting fidelity | Accepted for the writer | 2026-11-01 |
 | [0084](0084-clipboard-fidelity.md) | Copy writes formatting other apps read, and paste keeps source formatting with Paste Options | Accepted | 2026-11-01 |
-| [0085](0085-text-shortcut-policy.md) | The default shortcut set follows Word, with a Google Docs preset beside the OneNote set | Proposed | 2026-11-01 |
+| [0085](0085-text-shortcut-policy.md) | The default shortcut set follows Word, with a Google Docs preset beside the OneNote set | Accepted | 2026-11-01 |
 | [0086](0086-comments-and-suggestions.md) | Comments and suggestions are stored in the page, anchored by inline tags, with local author names | Proposed | 2026-11-01 |
 | [0087](0087-footnotes-and-breaks.md) | Footnotes use `[^id]` with their text in data.notes, and page breaks are `break` blocks | Proposed | 2026-11-01 |
 | [0088](0088-symbol-data.md) | The symbol dialog searches a subset of Unicode names generated at build time | Accepted | 2026-11-01 |
