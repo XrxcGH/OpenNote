@@ -62,6 +62,8 @@ export interface LexSpec {
    * "]]" stays an escaped "]", as in [Unit price [EUR]]].
    */
   nestedBrackets?: boolean;
+  /** Error values such as #REF! and #N/A, read as a name that starts with "#". */
+  errorLiterals?: boolean;
   /**
    * A mark that groups digits in threes, as in 1,200. Only a mark followed by exactly three digits counts, so a
    * dialect that also separates arguments with this mark reads max(1,200) as one number. Give such a dialect a
@@ -80,6 +82,7 @@ const NAME_PATTERNS = {
   letters: /\p{L}+\d*/uy,
 } as const;
 const WHITESPACE = /\s/;
+const ERROR_LITERAL = /^#(?:NULL!|DIV\/0!|VALUE!|REF!|NAME\?|NUM!|N\/A|SPILL!|CALC!|FIELD!|BUSY!)/i;
 
 const escape = (mark: string): string => (/[.\\^$*+?()|[\]{}]/.test(mark) ? `\\${mark}` : mark);
 
@@ -237,6 +240,11 @@ class Lexer {
     if (word !== undefined) return this.push(token('name', word, this.at, this.at + 1));
     if (this.spec.superscripts && (SUPERSCRIPT_DIGITS.includes(char) || char === SUPERSCRIPT_MINUS)) {
       return this.readSuperscript();
+    }
+    if (char === '#' && this.spec.errorLiterals === true) {
+      const literal = ERROR_LITERAL.exec(source.slice(this.at, this.at + 8));
+      if (literal !== null)
+        return this.push(token('name', literal[0].toUpperCase(), this.at, this.at + literal[0].length));
     }
     const operator = this.operatorAt(char);
     if (operator !== null) return this.push(operator);

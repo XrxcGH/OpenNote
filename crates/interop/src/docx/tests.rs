@@ -4,6 +4,7 @@
 mod features;
 mod props;
 mod readback;
+mod roundtrip;
 mod schema;
 mod sections;
 
@@ -121,7 +122,7 @@ fn every_written_part_is_well_formed_and_follows_the_schema_order() {
         family: fonts::APP_SANS.to_owned(),
         bold: false,
         italic: false,
-        bytes: schema::tiny_font(0),
+        bytes: schema::tiny_font(0).into(),
     }];
     let all = files(&input(parts, setup));
     let mut checked = 0;
@@ -270,9 +271,10 @@ fn a_rich_document_writes_notes_comments_changes_lists_and_sections() {
     assert!(foot.contains("w:type=\"separator\" w:id=\"-1\"") && foot.contains("<w:footnoteRef/>"));
     assert!(foot.contains(">footnote</w:t>") && foot.contains("<w:b/>"), "{foot}");
     assert!(
-        !foot.contains("r:id="),
-        "a note has no relationships of its own: {foot}"
+        foot.contains("<w:hyperlink r:id=\"rId"),
+        "a note's link is a relationship of the notes part: {foot}"
     );
+    assert!(all["word/_rels/footnotes.xml.rels"].contains("Target=\"https://example.org\" TargetMode=\"External\""));
     assert!(all["word/settings.xml"].contains("<w:footnotePr>"));
     // Comments: the comment and its reply, both resolved, each with a range around the text.
     let comments = &all["word/comments.xml"];

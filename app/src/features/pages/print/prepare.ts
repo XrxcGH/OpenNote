@@ -15,10 +15,11 @@ import { own } from '../layout/json';
 import { pageLayout } from '../layout/page';
 import { paperRules } from '../paper/rules';
 import { planPage } from '../layout/plan';
-import { EPS, type Rect } from '../pagination/geometry';
+import { EPS, contentBox, type Rect } from '../pagination/geometry';
 import type { BlockMeasure, Measure } from '../pagination/types';
-import { measureDocument, printDocument, type DocumentSetup } from './document';
+import { measureDocument, printDocument } from './document';
 import { FlowMeasurer, settle, type UnitMeasure } from './dom';
+import { readLineNumbers, readPageNumbers, readSavedBands } from './headerFooter';
 import { planPrint, type PrintOptions, type PrintPlan } from './sheets';
 import { pageUnits, withTitle } from './units';
 
@@ -46,6 +47,21 @@ export interface PrepareResult {
   readonly warnings: readonly string[];
   /** Milliseconds spent measuring, planning, and building. */
   readonly timings: { readonly measure: number; readonly plan: number; readonly build: number };
+}
+
+/**
+ * The print options with what the page saved (`view.print`, `view.text`): the saved headers and footers, page
+ * numbers, and line numbers. What the print dialog set for itself wins, so the dialog can still change a print.
+ */
+export function withSavedSettings(options: PrintOptions | undefined, rawView: unknown): PrintOptions {
+  const saved = readSavedBands(rawView);
+  return {
+    ...options,
+    header: options?.header ?? saved.header,
+    footer: options?.footer ?? saved.footer,
+    pageNumbers: options?.pageNumbers ?? readPageNumbers(rawView),
+    lineNumbers: options?.lineNumbers ?? readLineNumbers(rawView) ?? undefined,
+  };
 }
 
 /** The box around a rectangle turned by `degrees` about its center. */
@@ -126,13 +142,30 @@ export async function preparePrint(doc: Document, input: PrepareInput): Promise<
     strokes: strokesByBlock(page.strokes),
     renderers,
   };
-  const body = pageUnits(readingOrder(page.blocks, page.view.readingOrder), cx);
-  const units = input.print?.title ? withTitle(body, page, cx) : body;
-  const setup: DocumentSetup = { page, layout, units, cx, theme: input.theme ?? lightTheme(), styles: input.styles };
-  await showDocument(doc, measureDocument(setup));
+  const ordered = readingOrder(page.blocks, page.view.readingOrder);
+  const build = (plain: ReadonlySet<string>) => {
+    const body = pageUnits(ordered, cx, plain);
+    const units = input.print?.title ? withTitle(body, page, cx) : body;
+    return { units, setup: { page, layout, units, cx, theme: input.theme ?? lightTheme(), styles: input.styles } };
+  };
   // On ruled paper the paginator places the cells the lines sit in, so every sheet starts on a rule.
   const rules = paperRules(layout.background, layout.sheet, true);
-  const measurer = new FlowMeasurer(doc.getElementById('measure') as HTMLElement, rules);
+  const show = async (made: ReturnType<typeof build>) => {
+    await showDocument(doc, measureDocument(made.setup));
+    return new FlowMeasurer(doc.getElementById('measure') as HTMLElement, rules);
+  };
+  let { units, setup } = build(new Set());
+  let measurer = await show({ units, setup });
+  // A block of columns is one unit that never splits. One taller than a content box would lose its tail, so it
+  // flows in one column instead.
+  const room = contentBox(layout.flowSheet, 0).h;
+  const tall = new Set(
+    units.flow.filter((u) => u.columns && measurer.measure(u.id).height > room + EPS).map((u) => u.block),
+  );
+  if (tall.size > 0) {
+    ({ units, setup } = build(tall));
+    measurer = await show({ units, setup });
+  }
   const measured = new Map<string, UnitMeasure>();
   const measure: Measure = (block) => {
     const m = measurer.measure(block.id);
@@ -157,7 +190,7 @@ export async function preparePrint(doc: Document, input: PrepareInput): Promise<
   ];
   const measureEnd = performance.now();
   const plan = planPage(layout, { flowPlan: flow, floating });
-  const print = planPrint(layout.sheet, plan.sheets + plan.cut, input.print);
+  const print = planPrint(layout.sheet, plan.sheets + plan.cut, withSavedSettings(input.print, page.rawView));
   const planEnd = performance.now();
   const unitTops = new Map([...measured].map(([id, m]) => [id, { top: m.top, first: m.first }] as const));
   const html = printDocument(setup, print, {

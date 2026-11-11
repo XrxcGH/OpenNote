@@ -8,14 +8,13 @@ import type { MessageKey } from '../../strings/t';
 import { hostOf } from '../extensions/keys';
 import type { HighlightColor, TextSizeName } from '../schema/specs';
 import { cycleTodo, insertDivider, toggleCheck } from './blocks';
-import { fromChange, runCommand } from './command';
+import { runCommand } from './command';
 import type { Command } from './command';
 import { insertDateTime } from './insertDate';
 import { OUTLINE_IDS, runOutline } from './outlineRun';
 import { removeLink, setLink } from './links';
 import {
   clearFormatting,
-  clearFormattingChange,
   currentTextSize,
   setHighlight,
   setTextColor,
@@ -26,18 +25,26 @@ import {
 } from './marks';
 import type { ToggledMark } from './marks';
 import { blockKindAt, isMarkActive, markAttrs } from './state';
-import { toggleKind, turnInto, turnIntoChange } from './turnInto';
+import { toggleKind, turnInto } from './turnInto';
 import type { BlockKind } from './turnInto';
 import { TEXT_PARA_ENTRIES } from './textParaCatalog';
-import { TEXT_RUN_ENTRIES } from './textRunCatalog';
+import { TEXT_RUN_ENTRIES, sizeAnnouncement } from './textRunCatalog';
+import { clearAll } from './paragraph';
+import { noteCommand } from './repeat';
+import { TEXT_SIZES } from '../schema/constants';
 
-/** What a command may take: a color, a size, a block kind, or a link. */
+/** What a command may take: a color, a size, a block kind, a link, or a format's value, key, and attributes. */
 export interface EditorCommandArgs {
   color?: string | null;
   size?: TextSizeName | null;
   kind?: BlockKind;
   href?: string;
   text?: string;
+  value?: string | number | null;
+  key?: string;
+  attrs?: Record<string, unknown> | null;
+  /** The weights the run's font family has, for Set weight. */
+  faces?: readonly number[];
 }
 
 export interface CatalogEntry {
@@ -48,6 +55,8 @@ export interface CatalogEntry {
   /** The name to announce: "Bold on" for toggles, "Heading 2" for blocks. */
   name?: MessageKey;
   announce?: 'toggle' | 'block';
+  /** The announcement after the command ran, when it is more than "on" or "off", or null for none. */
+  say?(state: EditorState, args: EditorCommandArgs): string | null;
 }
 
 const mark = (name: ToggledMark, title: MessageKey): CatalogEntry => ({
@@ -86,9 +95,7 @@ const BUILT_IN: Record<string, CatalogEntry> = {
   'format.textColor': { command: ({ color }) => (color === undefined ? null : setTextColor(color)) },
   'format.textSize': { command: ({ size }) => (size === undefined ? null : setTextSize(size)) },
   'format.clear': { command: () => clearFormatting() },
-  'format.clearAll': {
-    command: () => fromChange((tr) => [clearFormattingChange(tr), turnIntoChange('paragraph')(tr)].some(Boolean)),
-  },
+  'format.clearAll': { command: () => clearAll() },
   'format.link': {
     command: ({ href, text }) => (href === undefined ? null : href === '' ? removeLink() : setLink(href, text)),
   },
@@ -150,8 +157,10 @@ function announcement(id: string, state: EditorState, args: EditorCommandArgs): 
     const checked = state.selection.$from.node(-1)?.attrs.checked;
     return t(checked ? 'editor.announce.checked' : 'editor.announce.unchecked');
   }
+  if (entry?.say) return entry.say(state, args);
   if (id === 'format.larger' || id === 'format.smaller' || (id === 'format.textSize' && args.size !== undefined)) {
     const size = currentTextSize(state);
+    if (size && !(TEXT_SIZES as readonly string[]).includes(size)) return sizeAnnouncement(state);
     return size ? t(`editor.sizes.${size}`) : t('editor.announce.sizeNormal');
   }
   if (id === 'format.link' && args.href === '') return t('editor.announce.linkRemoved');
@@ -175,6 +184,7 @@ export function runEditorCommand(
   const command = editorCommand(id, args);
   if (!command) return false;
   const ran = runCommand(editor, command, options);
+  if (ran) noteCommand(id, command);
   const text = ran ? announcement(id, editor.state, args) : null;
   if (text) hostOf(editor)?.announce(text);
   return ran;

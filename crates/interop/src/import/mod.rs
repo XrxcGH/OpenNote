@@ -27,6 +27,7 @@ mod mime;
 mod notes_apps;
 mod notion;
 mod odt;
+mod odt_props;
 mod onenote;
 mod onenote_page;
 mod pictures;

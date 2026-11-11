@@ -69,8 +69,9 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
-    # Normally under 4 minutes.
-    timeout-minutes: 15
+    # Five runs of about 3 minutes each on a Windows runner plus the install: about 16 minutes, so a 15 minute limit
+    # canceled the last run with every test passing.
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:

@@ -113,12 +113,12 @@ Accepted records aren't rewritten when plans change. Instead, write a new ADR fo
 | [0080](0080-font-discovery.md) | The Rust side lists the device's fonts with fontdb, and the list never leaves the device | Proposed | 2026-11-01 |
 | [0081](0081-bundled-fonts.md) | Bundle Carlito and Caladea as metric stand-ins, loaded on demand | Accepted | 2026-11-01 |
 | [0082](0082-named-styles-v2.md) | Named styles move to notebook.json, gain inheritance and user styles, and pages can carry their own sheet | Proposed | 2026-11-01 |
-| [0083](0083-docx-writer-and-reader.md) | Keep the hand-written DOCX writer and reader, and extend them to full formatting fidelity | Proposed | 2026-11-01 |
-| [0084](0084-clipboard-fidelity.md) | Copy writes formatting other apps read, and paste keeps source formatting with Paste Options | Proposed | 2026-11-01 |
-| [0085](0085-text-shortcut-policy.md) | The default shortcut set follows Word, with a Google Docs preset beside the OneNote set | Proposed | 2026-11-01 |
+| [0083](0083-docx-writer-and-reader.md) | Keep the hand-written DOCX writer and reader, and extend them to full formatting fidelity | Accepted for the writer | 2026-11-01 |
+| [0084](0084-clipboard-fidelity.md) | Copy writes formatting other apps read, and paste keeps source formatting with Paste Options | Accepted | 2026-11-01 |
+| [0085](0085-text-shortcut-policy.md) | The default shortcut set follows Word, with a Google Docs preset beside the OneNote set | Accepted | 2026-11-01 |
 | [0086](0086-comments-and-suggestions.md) | Comments and suggestions are stored in the page, anchored by inline tags, with local author names | Proposed | 2026-11-01 |
 | [0087](0087-footnotes-and-breaks.md) | Footnotes use `[^id]` with their text in data.notes, and page breaks are `break` blocks | Proposed | 2026-11-01 |
-| [0088](0088-symbol-data.md) | The symbol dialog searches a subset of Unicode names generated at build time | Proposed | 2026-11-01 |
+| [0088](0088-symbol-data.md) | The symbol dialog searches a subset of Unicode names generated at build time | Accepted | 2026-11-01 |
 
 The numbers 0009, 0018, 0019, 0028, 0029, and 0031 to 0034 have no record. A number is never reused.
 
