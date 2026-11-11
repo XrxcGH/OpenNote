@@ -65,7 +65,7 @@ function highlightItems(scheme: Scheme): MenuItemSpec[] {
     ...names.map((name) => ({
       id: `highlight.${name}`,
       label: t(`textHome.shading.${name}`),
-      icon: swatchIcon(resolveColor(name, scheme) ?? '#cccccc'),
+      icon: swatchIcon(resolveColor(name, scheme) ?? 'transparent'),
       onSelect: () => run('format.highlight', { color: name === 'honey' ? null : name }),
     })),
     {

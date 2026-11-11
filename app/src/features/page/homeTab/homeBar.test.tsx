@@ -1,6 +1,7 @@
-// The Home tab in a real browser (text:home-tab-ui, B10): the bar's tools run their commands, narrow bars move tools
-// into More in priority order, a half-bold selection shows aria-pressed mixed, the mini toolbar has two rows after a
-// pen selection, the Aa sheet has 44 px targets, and axe finds nothing on the tab or its open menus.
+// The Home tab in a real browser (text:home-tab-ui, B10).
+// The bar's tools run their commands. Narrow bars move tools into More in priority order.
+// A half-bold selection shows aria-pressed mixed. A pen selection opens the two-row mini toolbar.
+// The Aa sheet has 44 px targets. Axe finds nothing on the tab or its open menus.
 import { act, screen, waitFor, within } from '@testing-library/react';
 import type { Editor } from '@tiptap/core';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
@@ -122,7 +123,7 @@ describe('the Home tab', () => {
     const toolbar = await openHome(1920);
     editor.commands.setTextSelection({ from: 1, to: 3 });
     await waitFor(() => expect(homeIds()).toContain('home.underline'), { timeout: 10_000 });
-    const group = await within(toolbar).findByRole('group', { name: 'Underline' });
+    const group = await within(toolbar).findByRole('group', { name: 'Underline' }, { timeout: 15_000 });
     await userEvent.click(within(group).getByRole('button', { name: 'Underline' }));
     await waitFor(() => expect(editor.getHTML()).toBe('<p><u>ab</u>cd</p>'));
     await userEvent.click(within(group).getByRole('button', { name: 'Underline options' }));

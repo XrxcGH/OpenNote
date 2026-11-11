@@ -53,7 +53,7 @@ You keep notebooks, sections, and pages in a notes folder you choose, as plain f
 
 ### Write and draw
 
-- [Typed notes](docs/help/typed-notes.md): text, headings, text styles kept with the notebook, lists, checklists, tables, code, callouts, Markdown, templates, and find and replace, with typed web and e-mail addresses turning into links, pasted tables and spreadsheet cells becoming tables, and copies that give other apps plain text.
+- [Typed notes](docs/help/typed-notes.md): text, headings, text styles kept with the notebook, a Home tab with font and size boxes, split buttons for underline, colors, and lists, and a styles gallery, lists, checklists, tables, code, callouts, Markdown, templates, and find and replace, with typed web and e-mail addresses turning into links, pasted tables and spreadsheet cells becoming tables, and copies that give other apps plain text.
 - [Moving between blocks](docs/help/moving-between-blocks.md): keys that move between text, pictures, tables, and code without the mouse.
 - [Document structure](docs/help/document-structure.md): equation numbers and references, formula sheets, practice mode, problem-set templates, and figures.
 - [Code cells](docs/help/code-cells.md): short Python or JavaScript programs that run on the page; a cell from a newer version opens read-only instead of being changed.

@@ -1,8 +1,9 @@
-// The Home tab of the text program (Beta 10, text:home-tab-ui): the formatting commands that take a choice (font,
-// size, underline style, effects, case, list looks, line spacing, shading, borders), the format painter, the Home
-// groups with their overflow priorities, the page's context menu items for Font and Paragraph, and the Aa sheet for
-// the compact class. Every control sits behind text.v2Controls; with it off, the Home tab keeps its version 1 tools.
-// This file loads at start-up, so it holds only definitions: the controls load when the bar draws them.
+// The Home tab of the text program (Beta 10, text:home-tab-ui).
+// It registers the formatting commands that take a choice: font, size, underline style, effects, case, list looks,
+// line spacing, shading, and borders. It also registers the format painter and the Home groups with their overflow
+// priorities. The page's context menu gets Font and Paragraph, and the compact class gets the Aa sheet.
+// Every control sits behind text.v2Controls. With it off, the Home tab keeps its version 1 tools.
+// This file loads at start-up, so it holds only definitions. The controls load when the bar draws them.
 import { defineCommand } from '../../../commands/registry';
 import type { CommandId } from '../../../commands/types';
 import { runMarkPressed } from '../../../editor/commands/runFormat';

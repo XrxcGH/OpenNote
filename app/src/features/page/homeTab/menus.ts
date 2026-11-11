@@ -132,7 +132,7 @@ export function shadeItems(scheme: Scheme): MenuItemSpec[] {
   const fills = ['honey', 'mint', 'rose', 'apricot', 'lilac'];
   return [
     ...fills.map((name) => {
-      const hex = resolveColor(name, scheme) ?? '#cccccc';
+      const hex = resolveColor(name, scheme) ?? 'transparent';
       return item(
         `shade.${name}`,
         t(`textHome.shading.${name}` as MessageKey),
