@@ -35,7 +35,7 @@ describe('ValidationDialog', () => {
     fireEvent.change(screen.getByLabelText('Allow'), { target: { value: 'decimal' } });
     fireEvent.change(screen.getByLabelText('Minimum'), { target: { value: '0' } });
     fireEvent.change(screen.getByLabelText('Maximum'), { target: { value: '100' } });
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Show an alert when the value is not valid' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Use my own alert style, title, and text' }));
     fireEvent.change(screen.getByLabelText('Alert text'), { target: { value: 'Enter 0 to 100.' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     expect(onSave).toHaveBeenCalledWith({

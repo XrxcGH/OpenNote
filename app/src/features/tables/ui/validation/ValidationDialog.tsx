@@ -4,7 +4,9 @@ import { useId, useState } from 'react';
 import type { ReactNode } from 'react';
 import { t } from '../../../../strings/t';
 import { Dialog } from '../../../../ui/Dialog';
+import type { Locale } from '../../engine';
 import type { JsonObject } from '../../sheet/model';
+import { RULE_LIMIT } from '../../sheet/model';
 import { COMPARES, KINDS, OPS, draftOf, ruleOf } from './draft';
 import type { Draft, Problem } from './draft';
 import styles from './validation.module.css';
@@ -13,6 +15,10 @@ export interface ValidationDialogProps {
   /** The ranges the rule covers, as `data.sheet` writes them, and how to say them ("B2:B20"). */
   ranges: readonly JsonObject[];
   rangeLabel: string;
+  /** The reader's region: numbers, dates, and formulas are typed in it and stored in the invariant form. */
+  locale?: Locale;
+  /** How many validation rules the table holds now: a new rule past 256 is refused. */
+  ruleCount?: number;
   /** The rule there now, if any. */
   current?: JsonObject;
   onSave(rule: JsonObject): void;
@@ -27,6 +33,7 @@ const PROBLEM_KEY = {
   operand: 'sheetValidation.problemOperand',
   order: 'sheetValidation.problemOrder',
   formula: 'sheetValidation.problemFormula',
+  limit: 'sheetValidation.problemLimit',
 } as const;
 
 /** What each section of the form reads and writes. */
@@ -232,8 +239,8 @@ function Fields({ part }: { part: Part }) {
 }
 
 export function ValidationDialog(props: ValidationDialogProps) {
-  const { ranges, rangeLabel, current, onSave, onClear, onCancel } = props;
-  const [d, setD] = useState<Draft>(() => draftOf(current));
+  const { ranges, rangeLabel, current, onSave, onClear, onCancel, locale, ruleCount = 0 } = props;
+  const [d, setD] = useState<Draft>(() => draftOf(current, locale));
   const [problems, setProblems] = useState<Problem[]>([]);
   const part: Part = {
     d,
@@ -242,8 +249,9 @@ export function ValidationDialog(props: ValidationDialogProps) {
   };
 
   const save = () => {
-    const made = ruleOf(d, ranges);
-    if ('rule' in made) onSave(made.rule);
+    const made = ruleOf(d, ranges, locale);
+    if (current === undefined && ruleCount >= RULE_LIMIT) setProblems(['limit']);
+    else if ('rule' in made) onSave(made.rule);
     else setProblems(made.problems);
   };
   const clear = onClear

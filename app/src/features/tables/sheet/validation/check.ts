@@ -7,7 +7,7 @@ import { gridOf, validationAt } from '../model';
 import type { Box, JsonObject, TableLike } from '../model';
 import { evalMany } from './batch';
 import type { Job } from './batch';
-import { evalFormula, listItems, operand, readText, scalarText, shiftedOf, recall } from './operands';
+import { RANGE, evalFormula, keyOf, listItems, operand, readText, recall, sameValue, scalarText, shiftedOf } from './operands';
 import type { Kind } from './operands';
 import type { Alert, At, Context, Reason, Verdict } from './types';
 
@@ -127,7 +127,8 @@ function judge(
   if (kind === 'list') {
     const items = listItems(ctx, rule, at, anchor);
     const typed = Array.isArray(rule.items);
-    const same = (x: string, y: string) => (typed ? x === y : x.toLowerCase() === y.toLowerCase());
+    const same = (x: string, y: string) =>
+      (typed ? x === y : x.toLowerCase() === y.toLowerCase()) || sameValue(x, y, ctx);
     const column = ctx.table.columns[at.col];
     const names = column?.type === 'choice' && column.multi ? splitChoices(text) : [text.trim()];
     return names.every((n) => items.some((i) => same(i, n))) ? null : 'list';
@@ -174,14 +175,36 @@ function prime(ctx: Context, cells: readonly { at: At; found: Found }[]): void {
       if (field === 'b' && !['between', 'notBetween'].includes(opOf(rule))) continue;
       const shifted = shiftedOf(ctx, text, at, anchor);
       if (typeof shifted !== 'string') continue;
-      const key = `${at.row}:${at.col}`;
-      if (recall(ctx, 'n', shifted, at) !== undefined || seen.has(shifted)) continue;
-      seen.add(shifted);
+      // The memo key names the cell too when the formula calls ROW() or COLUMN(), so dedupe by that key.
+      const key = keyOf('n', shifted, at);
+      if (recall(ctx, 'n', shifted, at) !== undefined || seen.has(key)) continue;
+      seen.add(key);
       jobs.push({ at, anchor, formula: text });
-      void key;
     }
     if (jobs.length > 0) evalMany(ctx, jobs);
   }
+  primeSources(ctx, cells);
+}
+
+/**
+ * List sources that are formulas (not a range) with references that move from cell to cell: one recalculation for
+ * all the cells, without the padding rows a spilling source needs. A source that spills (array or error here) is
+ * left for the single-cell path, which pads.
+ */
+function primeSources(ctx: Context, cells: readonly { at: At; found: Found }[]): void {
+  const jobs: Job[] = [];
+  const seen = new Set<string>();
+  for (const { at, found } of cells) {
+    const { rule, anchor } = found;
+    if (kindOf(rule) !== 'list' || typeof rule.source !== 'string' || RANGE.test(rule.source)) continue;
+    const shifted = shiftedOf(ctx, rule.source, at, anchor);
+    if (typeof shifted !== 'string' || RANGE.test(shifted)) continue;
+    const key = keyOf('p', shifted, at);
+    if (recall(ctx, 'p', shifted, at) !== undefined || seen.has(key)) continue;
+    seen.add(key);
+    jobs.push({ at, anchor, formula: rule.source });
+  }
+  if (jobs.length > 1) evalMany(ctx, jobs, 'p');
 }
 
 /** One invalid cell and why. */

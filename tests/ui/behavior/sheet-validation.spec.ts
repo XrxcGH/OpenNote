@@ -52,10 +52,26 @@ test('the circle stays inside its cell and the cell keeps its size', async ({ pa
   await show(page);
   const box = await page.locator('#bad').boundingBox();
   expect(box?.width).toBeGreaterThan(80);
+  // The ::after box (position: absolute; inset: 1px) is the circle: its box is the cell's box less the inset.
   const circle = await page.locator('#bad').evaluate((el) => {
     const r = el.getBoundingClientRect();
-    return { w: r.width, h: r.height, scrolls: document.documentElement.scrollWidth > window.innerWidth };
+    const c = getComputedStyle(el, '::after');
+    const cell = getComputedStyle(el);
+    return {
+      cw: r.width,
+      ch: r.height,
+      w: parseFloat(c.width),
+      h: parseFloat(c.height),
+      left: parseFloat(c.left),
+      top: parseFloat(c.top),
+      cellBorder: parseFloat(cell.borderTopWidth),
+      scrolls: document.documentElement.scrollWidth > window.innerWidth,
+    };
   });
+  expect(circle.left).toBeGreaterThanOrEqual(0);
+  expect(circle.top).toBeGreaterThanOrEqual(0);
+  expect(circle.left + circle.w).toBeLessThanOrEqual(circle.cw - 2 * circle.cellBorder + 0.5);
+  expect(circle.top + circle.h).toBeLessThanOrEqual(circle.ch - 2 * circle.cellBorder + 0.5);
   expect(circle.scrolls).toBe(false);
 });
 

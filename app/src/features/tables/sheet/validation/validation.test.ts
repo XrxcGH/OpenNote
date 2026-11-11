@@ -185,11 +185,6 @@ describe('kinds and operators', () => {
     expect(one({ kind: 'decimal', op: 'greater', a: '0' }, '2.5')).toBe(true);
   });
 
-  it('reads numbers in the convention of the region', () => {
-    expect(one({ kind: 'decimal', op: 'lessOrEqual', a: '2,5' }, '2,5', DE_DE)).toBe(true);
-    expect(one({ kind: 'decimal', op: 'lessOrEqual', a: '2,5' }, '2,6', DE_DE)).toBe(false);
-  });
-
   it('date compares serials: between 2026-01-01 and 2026-12-31', () => {
     const rule = { kind: 'date', op: 'between', a: '2026-01-01', b: '2026-12-31' };
     expect(one(rule, '2026-06-15')).toBe(true);
@@ -305,6 +300,52 @@ describe('circle invalid data', () => {
       [0, 1],
       [1, 0],
     ]);
+  });
+});
+
+describe('regions and list items', () => {
+  const at = { row: 0, col: 0 };
+  const one = (rule: JsonObject, value: string, locale: Locale = EN_US) =>
+    check(make(grid(1), { v1: { ranges: [col(0)], ...rule } }, COLS, locale), at, value).ok;
+
+  it('reads typed values in the region and rule constants in the stored form', () => {
+    // The rule is stored with "." (format spec R-SHT-14); the typed value is read in the region of the reader.
+    expect(one({ kind: 'decimal', op: 'lessOrEqual', a: '2.5' }, '2,5', DE_DE)).toBe(true);
+    expect(one({ kind: 'decimal', op: 'lessOrEqual', a: '2.5' }, '2,6', DE_DE)).toBe(false);
+    expect(one({ kind: 'decimal', op: 'lessOrEqual', a: '2.5' }, '20', DE_DE)).toBe(false);
+    expect(one({ kind: 'decimal', op: 'lessOrEqual', a: '2.5' }, '20', EN_US)).toBe(false);
+  });
+
+  it('reads a stored formula with "," between arguments in every region', () => {
+    // =AND(A1>0,A1<10) is the stored form; the typed 5 is in 1..9, so both regions accept it and refuse 50.
+    const rule = { kind: 'custom', a: '=AND(A1>0,A1<10)' };
+    expect(one(rule, '5', DE_DE)).toBe(true);
+    expect(one(rule, '50', DE_DE)).toBe(false);
+    expect(one(rule, '5', EN_US)).toBe(true);
+  });
+
+  it('a date range offers the dates the cells show and matches numbers by value', () => {
+    const inits: ColumnInit[] = [{ name: 'D', type: 'date' }, { name: 'N', type: 'number' }, ...COLS.slice(2)];
+    const data = [
+      ['2026-01-01', '', '', '', ''],
+      ['2026-02-01', '', '', '', ''],
+    ];
+    const ctx = make(data, { v1: { ranges: [col(1)], kind: 'list', source: 'A1:A2' } }, inits);
+    const offer = openList(ctx, { row: 0, col: 1 });
+    expect(offer?.items.every((i) => !/^\d{5}$/.test(i))).toBe(true);
+    expect(offer?.items[0]).toMatch(/2026|26/);
+    expect(check(ctx, { row: 0, col: 1 }, '2026-01-01').ok).toBe(true);
+    const nums = make([['1.5', '', '', '', '']], { v1: { ranges: [col(1)], kind: 'list', items: ['1.5'] } });
+    expect(check(nums, { row: 0, col: 1 }, '1.50').ok).toBe(true);
+    expect(check(nums, { row: 0, col: 1 }, '1.6').ok).toBe(false);
+  });
+
+  it('a relative list source over 2,000 rows is checked in one pass', () => {
+    const data = Array.from({ length: 2000 }, (_, i) => [String(i), '', '', '', '']);
+    const ctx = make(data, { v1: { ranges: [col(1)], kind: 'list', source: '=A1&""' } });
+    const start = Date.now();
+    expect(invalidCells(ctx)).toEqual([]);
+    expect(Date.now() - start).toBeLessThan(8000);
   });
 });
 

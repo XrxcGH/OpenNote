@@ -50,7 +50,7 @@ export const sheetValidation = {
   showInput: 'Show a message when the cell is selected',
   inputTitle: 'Message title',
   inputText: 'Message',
-  showError: 'Show an alert when the value is not valid',
+  showError: 'Use my own alert style, title, and text',
   alert: 'Alert style',
   alertStop: 'Stop: refuse the value',
   alertWarning: 'Warning: ask first',

@@ -1,8 +1,8 @@
 // Reading the operands of a rule: constants, formulas relative to the rule's anchor cell, list items, and the
 // numbers, dates, and times that typed text means. A formula runs in the engine on a scratch copy of the table that
 // holds one extra column, so it sees the same cells, names, and functions as every formula of the table.
-import { EN_US, checkFormulaInput, makeCell, parseDate, parseIsoDate, parseLocaleNumber, recalculate } from '../../engine';
-import type { Cell, Value } from '../../engine';
+import { EN_US, checkFormulaInput, formatValue, makeCell, parseDate, parseIsoDate, parseLocaleNumber, recalculate } from '../../engine';
+import type { Cell, Column, Value } from '../../engine';
 import { isError } from '../../engine';
 import { shiftFormula } from '../../smart/fill';
 import { columnFromLetters } from '../../../../core/expr';
@@ -39,7 +39,7 @@ export const INVARIANT = EN_US;
 const memo = new WeakMap<object, Map<string, unknown>>();
 const VOLATILE = /\b(row|column)\s*\(/i;
 
-const keyOf = (tag: string, shifted: string, at: At) =>
+export const keyOf = (tag: string, shifted: string, at: At) =>
   `${tag}|${VOLATILE.test(shifted) ? `${at.row}:${at.col}|` : ''}${shifted}`;
 
 export function recall<T = Value>(ctx: Context, tag: string, shifted: string, at: At): T | undefined {
@@ -54,7 +54,7 @@ export function remember(ctx: Context, tag: string, shifted: string, at: At, val
 
 /** A rule's formula (invariant form, with or without "=") as stored text moved from `anchor` to `at`. */
 export function shiftedOf(ctx: Context, text: string, at: At, anchor: At): string | { error: 'NAME' | 'REF' } {
-  const stored = checkFormulaInput(text.trim().replace(/^=/, ''), ctx.locale, ctx.table);
+  const stored = checkFormulaInput(text.trim().replace(/^=/, ''), INVARIANT, ctx.table);
   if (typeof stored !== 'string') return { error: 'NAME' };
   return shiftFormula(stored, at.row - anchor.row, at.col - anchor.col) ?? { error: 'REF' };
 }
@@ -149,7 +149,7 @@ export function operand(ctx: Context, kind: Kind, text: unknown, at: At, anchor:
     const v = evalFormula(ctx, text, at, anchor);
     return isError(v) ? null : readValue(k, v, ctx);
   }
-  return readText(k, text, ctx);
+  return readConstant(k, text);
 }
 
 /** A value as the text a cell would show for it: numbers use the region's decimal mark. */
@@ -161,8 +161,24 @@ export function scalarText(v: Value, ctx: Context): string {
   return '';
 }
 
-const RANGE = /^=?\s*\$?([A-Za-z]{1,3})\$?(\d+)(?::\$?([A-Za-z]{1,3})\$?(\d+))?\s*$/;
+export const RANGE = /^=?\s*\$?([A-Za-z]{1,3})\$?(\d+)(?::\$?([A-Za-z]{1,3})\$?(\d+))?\s*$/;
 const MAX_ITEMS = 1000;
+
+/** The text a cell shows for a value, so a list offers what the person sees (dates as dates, not serials). */
+function shown(v: Value, column: Column, ctx: Context): string {
+  if (v === null || (typeof v === 'object' && !isError(v))) return '';
+  return formatValue(v, column, ctx.locale);
+}
+
+/** True when two texts mean one value: the same number or the same date, as the reader's region reads them. */
+export function sameValue(x: string, y: string, ctx: Context): boolean {
+  const nx = parseLocaleNumber(x.trim(), ctx.locale);
+  const ny = parseLocaleNumber(y.trim(), ctx.locale);
+  if (nx !== null && ny !== null) return nx.value === ny.value && nx.percent === ny.percent;
+  const dx = parseDate(x.trim(), ctx.locale.dateOrder) ?? parseIsoDate(x.trim());
+  const dy = parseDate(y.trim(), ctx.locale.dateOrder) ?? parseIsoDate(y.trim());
+  return dx !== null && dy !== null && dx === dy;
+}
 
 /** The items of a list rule at `at`: typed items, or the values of the cells (or the formula) the source names. */
 export function listItems(ctx: Context, rule: Record<string, unknown>, at: At, anchor: At): string[] {
@@ -186,7 +202,8 @@ export function listItems(ctx: Context, rule: Record<string, unknown>, at: At, a
     for (let r = Math.max(0, Math.min(r1, r2)); r <= lastRow && out.length < MAX_ITEMS; r++)
       for (let c = Math.max(0, Math.min(c1, c2)); c <= lastCol && out.length < MAX_ITEMS; c++) {
         const cell = ctx.table.rows[r]?.cells[c];
-        const text = cell ? scalarText(cell.value, ctx) : '';
+        const column = ctx.table.columns[c];
+        const text = cell && column ? shown(cell.value, column, ctx) : '';
         if (text !== '' && !out.includes(text)) out.push(text);
       }
     remember(ctx, 'r', source, at, out);

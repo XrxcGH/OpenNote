@@ -1,7 +1,7 @@
 // Evaluating many validation formulas in one recalculation: the circle-invalid pass on a long column must not
 // rebuild the engine for every cell. Each target column gets one scratch column, and row r of it holds the formula
 // of the cell (r, column).
-import { recalculate } from '../../engine';
+import { isError, recalculate } from '../../engine';
 import type { Cell, Value } from '../../engine';
 import { remember, shiftedOf } from './operands';
 import type { At, Context } from './types';
@@ -15,7 +15,11 @@ export interface Job {
   formula: string;
 }
 
-export function evalMany(ctx: Context, jobs: readonly Job[]): Value[] {
+/**
+ * Results are shared under `tag` ('n': operands; 'p': list sources). Sources are only shared when they came out as a
+ * plain value: an array or an error may be a spill that this unpadded run could not show, so it is left to run alone.
+ */
+export function evalMany(ctx: Context, jobs: readonly Job[], tag: 'n' | 'p' = 'n'): Value[] {
   const { table } = ctx;
   const cols = [...new Set(jobs.map((j) => j.at.col))].sort((p, q) => p - q);
   const slot = new Map(cols.map((c, i) => [c, i]));
@@ -40,7 +44,8 @@ export function evalMany(ctx: Context, jobs: readonly Job[]): Value[] {
     const moved = shifted.get(`${job.at.row}:${job.at.col}`);
     if (moved === undefined) return { error: 'NAME' as const };
     const value = done.rows[job.at.row]?.cells[table.columns.length + (slot.get(job.at.col) ?? 0)]?.value ?? null;
-    remember(ctx, 'n', moved, job.at, value);
+    const plain = tag === 'n' || !(isError(value) || (value !== null && typeof value === 'object'));
+    if (plain) remember(ctx, tag, moved, job.at, value);
     return value;
   });
 }
