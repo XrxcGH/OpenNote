@@ -213,22 +213,6 @@ function build(): Record<string, () => PageFixture> {
         block('image', 3, { asset: null, alt: 'A cropped image', crop: { x: 0.1, y: 0.1, w: 0.5, h: 0.5 } }),
       ]),
     smart: () => page('Smart notes', [text(0, 'Start here.'), table(1, 4)]),
-    // A table that already has data.sheet, so its formula results are cached with each edit (ADR 0061).
-    sheetTable: () =>
-      page('Sheet notes', [
-        text(0, 'Start here.'),
-        tableOf(
-          1,
-          [
-            ['Item', 'Qty', 'Total'],
-            ['Pen', '2', '=B1+3'],
-            ['Ink', '5', '=C1+B2'],
-          ],
-          { sheet: { table: { grid: true } } },
-        ),
-      ]),
-    bigTable: () => page('Big table', [text(0, 'Start here.'), bigTable(1)]),
-    largeSheetTable: () => page('Large sheet', [text(0, 'Start here.'), largeSheetTable(1)]),
     short: () => page('Short note', [text(0, '# Short note\n\nA few words to type after.')]),
     twentyPage: () => page('A twenty-page note', [text(0, longNoteMarkdown())]),
     twentyPageOutline: () => page('An outline', [text(0, outlineMarkdown())]),
@@ -281,15 +265,29 @@ function build(): Record<string, () => PageFixture> {
     // A line of text and a picture with no description, for the accessibility checker's main path.
     unlabeled: () =>
       page('Unlabeled picture', [text(0, 'A picture follows.'), block('image', 1, { asset: null, alt: '' })]),
+    // These sit last: a fixture's block IDs come from its place in this list, so a new one must not move the others.
+    // A table that already has data.sheet, so its formula results are cached with each edit (ADR 0061).
+    sheetTable: () =>
+      page('Sheet notes', [
+        text(0, 'Start here.'),
+        tableOf(
+          1,
+          [
+            ['Item', 'Qty', 'Total'],
+            ['Pen', '2', '=B1+3'],
+            ['Ink', '5', '=C1+B2'],
+          ],
+          { sheet: { table: { grid: true } } },
+        ),
+      ]),
+    bigTable: () => page('Big table', [text(0, 'Start here.'), bigTable(1)]),
+    largeSheetTable: () => page('Large sheet', [text(0, 'Start here.'), largeSheetTable(1)]),
   };
 }
 
 export type PageFixtureName =
   | 'sampler'
   | 'smart'
-  | 'sheetTable'
-  | 'bigTable'
-  | 'largeSheetTable'
   | 'short'
   | 'twentyPage'
   | 'twentyPageOutline'
@@ -298,7 +296,10 @@ export type PageFixtureName =
   | 'budget500'
   | 'ruled'
   | 'ruledSheets'
-  | 'unlabeled';
+  | 'unlabeled'
+  | 'sheetTable'
+  | 'bigTable'
+  | 'largeSheetTable';
 
 const made = new Map<PageFixtureName, PageFixture>();
 const makers = build();
