@@ -7,7 +7,7 @@ import type { ExportsClient } from '../../../platform/types';
 import { inspectPdf } from '../pdf';
 import { pageOf, textBlock } from '../testing/build';
 import { exportHtmlFile, exportMarkdownFile, exportPdfFile, PdfCheckError, prepareInput } from './exporter';
-import { configureStyleStorage, loadStyles, localStylesClient, saveStyles } from '../../page/styles/store';
+import { configureStyleStorage, loadStyles, localStylesClient, saveStyles } from '../../page';
 import type { PageSource } from './source';
 
 const PARAGRAPH =
