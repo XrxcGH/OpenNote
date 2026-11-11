@@ -2,6 +2,7 @@
 // Tables are immutable values. Every edit in edit.ts returns a new table and shares the rows it didn't change.
 
 import { parseDate } from './dates';
+import type { FilterCondition } from './filter';
 import { parseLocaleNumber, type Locale } from './locale';
 import { round15, type Value } from './values';
 import { columnFromLetters, lettersFromColumn } from '../../../core/expr';
@@ -72,6 +73,10 @@ export interface Table {
   calc?: 'auto' | 'manual';
   /** Iterative calculation for circular formulas. Unset means off: a cycle shows Circular. */
   iterate?: IterateSettings;
+  /** The ids of rows the person hid by hand. SUBTOTAL 101 to 111 and AGGREGATE skip them (formula/fn/mathAgg.ts). */
+  hidden?: readonly string[];
+  /** The filter on the table. Rows that fail it count as filtered out for SUBTOTAL and AGGREGATE. */
+  filter?: readonly FilterCondition[];
 }
 
 /** A defined name: a formula text (a range, a constant, a formula, or a function made by LAMBDA) and its scope. */
