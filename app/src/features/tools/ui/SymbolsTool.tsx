@@ -20,7 +20,19 @@ export function SymbolsTool() {
   const shown = useMemo(() => searchSymbols(query, group ?? undefined), [query, group]);
   const recentSymbols = recent.map((char) => BY_CHAR.get(char)).filter((one): one is MathSymbol => one !== undefined);
 
+  // With Copy on, a symbol goes to the clipboard instead of the page, for text outside a page.
+  const [copying, setCopying] = useState(false);
+  const copy = async (symbol: MathSymbol) => {
+    try {
+      await navigator.clipboard.writeText(symbol.char);
+      setRecent(pushRecent(symbol.char));
+      announce(t('study.symbols.copied', { name: symbol.name }));
+    } catch {
+      announce(t('study.symbols.copyFailed'));
+    }
+  };
   const choose = (symbol: MathSymbol) => {
+    if (copying) return void copy(symbol);
     if (!insertIntoPage({ text: symbol.char })) return announce(t('study.symbols.noPage'));
     setRecent(pushRecent(symbol.char));
     announce(t('study.symbols.inserted', { name: symbol.name }));
@@ -30,7 +42,7 @@ export function SymbolsTool() {
     <Button
       key={symbol.char}
       variant="secondary"
-      aria-label={t('study.symbols.pick', { name: symbol.name })}
+      aria-label={t(copying ? 'study.symbols.pickCopy' : 'study.symbols.pick', { name: symbol.name })}
       title={`${symbol.name}  \\${symbol.commands[0] ?? ''}`}
       onClick={() => choose(symbol)}
     >
@@ -42,6 +54,9 @@ export function SymbolsTool() {
     <div className={styles.toolFill}>
       <TextField label={t('study.symbols.search')} value={query} onChange={setQuery} />
       <p className={styles.empty}>{t('study.symbols.searchHelp')}</p>
+      <Button variant="quiet" aria-pressed={copying} onClick={() => setCopying(!copying)}>
+        {t('study.symbols.copyMode')}
+      </Button>
       <div className={sym.categories} role="group" aria-label={t('study.symbols.groups')}>
         {[null, ...SYMBOL_GROUPS].map((one) => (
           <button

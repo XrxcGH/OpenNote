@@ -5,6 +5,7 @@
 import { Node } from '@tiptap/core';
 import type { TagParseRule } from '@tiptap/pm/model';
 import { paraAttributes, paraRestAttribute } from '../paragraph/attributes';
+import { paraDom } from '../render/paraStyle';
 import { CALLOUT_TYPE_PATTERN, FOLDS, LANGUAGE_PATTERN } from './constants';
 
 const META_OFF = { rendered: false, parseHTML: () => null };
@@ -46,7 +47,7 @@ export const Paragraph = Node.create({
   content: 'inline*',
   addAttributes: formattedAttributes,
   parseHTML: () => [{ tag: 'p' }],
-  renderHTML: () => ['p', 0],
+  renderHTML: ({ node }) => ['p', paraDom(node.attrs), 0],
 });
 
 export const Heading = Node.create({
@@ -57,7 +58,7 @@ export const Heading = Node.create({
   // The level comes from the tag the rule matched, never from a `level` attribute on the pasted element.
   addAttributes: () => ({ level: { default: 1, rendered: false, parseHTML: () => null }, ...formattedAttributes() }),
   parseHTML: () => [1, 2, 3, 4, 5, 6].map((level): TagParseRule => ({ tag: `h${level}`, attrs: { level } })),
-  renderHTML: ({ node }) => [headingTag(node.attrs.level), 0],
+  renderHTML: ({ node }) => [headingTag(node.attrs.level), paraDom(node.attrs), 0],
 });
 
 export const HardBreak = Node.create({
@@ -110,7 +111,7 @@ export const ListItem = Node.create({
   parseHTML: () => [{ tag: 'li' }],
   renderHTML: ({ node }) => {
     const checked = node.attrs.checked as boolean | null;
-    return ['li', checked === null ? {} : { 'data-checked': String(checked) }, 0];
+    return ['li', { ...paraDom(node.attrs), ...(checked === null ? {} : { 'data-checked': String(checked) }) }, 0];
   },
 });
 

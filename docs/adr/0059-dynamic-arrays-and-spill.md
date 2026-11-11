@@ -32,3 +32,14 @@ We will add array, reference, and lambda values to the engine, and spill the arr
 - Recalculation orders spills before readers of the spilled cells and re-checks blocking on every pass.
 - Exports write spilled formulas as dynamic array formulas with each spilled cell's cached value.
 - Older OpenNote versions see empty cells where a spill lands and the formula text in the anchor cell.
+
+## Implementation notes
+
+- Lane tables:engine-eval. A formula's value may be an array or a function made by LAMBDA (`engine/values.ts`). The compiler (`engine/formula/compile.ts`, `refs.ts`, `calls.ts`) reads a reference to more than one cell as an array where a value is needed. Operators and single-value parameters broadcast through `engine/arrays/index.ts`.
+- A cell formula whose result is larger than one cell spills (`engine/arrays/spill.ts`). Spilled cells keep empty text and carry `spill: true` on the engine's `Cell`. Typed text, a single-cell formula, a calculated column, another spill, or the table's edge blocks a spill with `#SPILL!`. The error origin names the blocking cell.
+- The block a spill wants is registered in the dependency graph as a "blocker" read. Typing into it recalculates the spilling formula, but the formula's own results there do not, so a spill never reads itself.
+- When a spill grows or shrinks, formulas that read the cells it took or gave back run again in the same recalculation.
+- `A1#` reads the current spill block of A1, or `#REF!` when A1 holds no formula. `@` takes the cell on the formula's own row or column, or the first item of an array.
+- A calculated column that gives an array larger than one cell shows `#SPILL!` in that row, as Excel tables do.
+- Legacy array formulas: a cell with `array: {rows, cols}` fills exactly that block, with `#N/A` where the result is smaller. Import sets it.
+- Tables hold at most 10,000 rows and 100 columns, so the table's edge stops any spill past 1,000,000 cells. No separate cap was needed.

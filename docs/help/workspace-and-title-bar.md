@@ -45,7 +45,7 @@ Home has five sections: Recent pages, Pinned pages, Today, Saved searches, and U
 ![Three pages open as tabs in the strip above the page](../screens/page-tabs-light.png)
 
 - Press Ctrl+Enter on a page in the pages pane to open it in a new tab.
-- Press Ctrl+Tab and Ctrl+Shift+Tab to switch tabs. Press Ctrl+W to close one, and Ctrl+Shift+T to reopen the last one you closed.
+- Press Ctrl+Tab and Ctrl+Shift+Tab, or Ctrl+Page Down and Ctrl+Page Up, to switch tabs. Press Ctrl+W to close one, and Ctrl+Shift+T to reopen the last one you closed.
 - Drag a tab to reorder it. Open its menu to duplicate it or open it in a new window.
 
 ## Compact layout

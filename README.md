@@ -53,7 +53,7 @@ You keep notebooks, sections, and pages in a notes folder you choose, as plain f
 
 ### Write and draw
 
-- [Typed notes](docs/help/typed-notes.md): text, headings, lists, checklists, tables, code, callouts, Markdown, templates, and find and replace, with typed web and e-mail addresses turning into links, pasted tables and spreadsheet cells becoming tables, and copies that give other apps plain text.
+- [Typed notes](docs/help/typed-notes.md): text, headings, text styles kept with the notebook, lists, checklists, tables, code, callouts, Markdown, templates, and find and replace, with typed web and e-mail addresses turning into links, pasted tables and spreadsheet cells becoming tables, and copies that give other apps plain text.
 - [Moving between blocks](docs/help/moving-between-blocks.md): keys that move between text, pictures, tables, and code without the mouse.
 - [Document structure](docs/help/document-structure.md): equation numbers and references, formula sheets, practice mode, problem-set templates, and figures.
 - [Code cells](docs/help/code-cells.md): short Python or JavaScript programs that run on the page; a cell from a newer version opens read-only instead of being changed.
@@ -80,11 +80,11 @@ You keep notebooks, sections, and pages in a notes folder you choose, as plain f
 - [Math solvers](docs/help/math-solvers.md): calculus, engineering, and statistics problems worked step by step.
 - [3D graphs, vectors, and motion](docs/help/3d-graphs-vectors-and-motion.md): surfaces and curves in space, vectors, lines and planes, solids of revolution, and projectiles.
 - [Tutor](docs/help/tutor.md): hints one step at a time, and explanations of flagged steps, without giving the answer away. Long questions and the full hint ladder now work, and absurd aerospace inputs are reported by name instead of crashing.
-- [Study tools](docs/help/study-tools.md): flashcards, practice exams, Anki decks, study tape, Upcoming, timers, a calculator, and citations.
+- [Study tools](docs/help/study-tools.md): flashcards, practice exams, Anki decks, study tape, Upcoming with calendar export, timers, a calculator, and citations.
 
 ### Subject and engineering kits
 
-- [Subject tool kits](docs/help/subject-tool-kits.md): thirteen kit windows for engineering, science, math, earth sciences, and reasoning, with worked steps.
+- [Subject tool kits](docs/help/subject-tool-kits.md): thirteen kit windows for engineering, science, math, earth sciences, and reasoning, with worked steps and live calculation blocks that reopen the tool with the same inputs.
 - [Engineering tools](docs/help/engineering-tools.md): free-body diagrams, beam and truss solvers, DC circuits, and units in tables.
 - [Civil and chemical engineering](docs/help/civil-and-chemical-engineering.md): structures, soils, foundations, water, transportation, material balances, and reactors.
 - [Signals and sound](docs/help/signals-tools.md): spectra, filters, sampling, body signals, sound, images, medical imaging, coding, and RF.

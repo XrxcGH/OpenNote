@@ -40,7 +40,9 @@ import { factsFor } from './facts';
 import { imageKind } from './images';
 import { readBlockPayload, pasteBlocks } from './blocks';
 import { sanitizePaste } from './sanitize';
-import type { ImageRequest, PasteResult, PastedPiece } from './types';
+import { offerPasteOptions } from './offer';
+import type { PasteOffer } from './offer';
+import type { ImageRequest, PasteChoice, PasteOptions, PasteResult, PastedPiece } from './types';
 
 export interface PasteRequest {
   html: string | null;
@@ -252,10 +254,15 @@ function placementAfter(mounted: MountedPage, block: BlockId | null, point?: Pas
 }
 
 /** The pieces as one paste result, from the request. */
-export function resultFor(request: PasteRequest, facts: ClipboardFacts | null, target: 'text' | 'page'): PasteResult {
+export function resultFor(
+  request: PasteRequest,
+  facts: ClipboardFacts | null,
+  target: 'text' | 'page',
+  formatting: Pick<PasteOptions, 'fidelity' | 'mode' | 'defaults'> = {},
+): PasteResult {
   return sanitizePaste(
     { html: request.plain ? null : request.html, text: request.text, facts, files: request.files, target },
-    { plain: request.plain },
+    { plain: request.plain, ...formatting },
   );
 }
 
@@ -315,6 +322,32 @@ async function addImages(
   const ack = await mounted.sync.send({ edits });
   showInserted(mounted, edits, ack.orderKeys);
   if (choice === 'ask') offerActualSize(mounted, images.blocks);
+}
+
+interface PasteContext {
+  readonly mounted: MountedPage;
+  readonly request: PasteRequest;
+  readonly facts: ClipboardFacts | null;
+  readonly editor: Editor | null;
+}
+
+/** The Paste Options offer for a paste whose text went into the editor and whose formatting had a choice. */
+function offerOf(
+  { mounted, request, facts, editor }: PasteContext,
+  inserted: { from: number; to: number } | null,
+  result: PasteResult,
+  alone: boolean,
+): PasteOffer | null {
+  if (!editor || !inserted || !alone || !result.choice || !mounted.host.flag('text.pasteFidelity')) return null;
+  // A choice is offered only when it still gives one text piece that joins the editor, as the paste did. One that
+  // gives tables, images, more text, or a cut paste would lose them in a switch, so it gives nothing.
+  const rebuild = (choice: PasteChoice): PMNode | null => {
+    const again = resultFor(request, facts, 'text', { fidelity: true, mode: choice });
+    const fit = fitTextBlocks(splitImages(again.pieces), editor);
+    const only = fit.pieces[0];
+    return fit.pieces.length === 1 && fit.joinsEditor && only?.kind === 'text' ? only.doc : null;
+  };
+  return { editor, ...inserted, choice: result.choice, rebuild, settle: () => mounted.sync.flushAll('command') };
 }
 
 /** Runs one paste or drop on a page view. */
@@ -378,8 +411,38 @@ export async function runPaste(
   // Link over selected words: a lone web address pasted over a selection links it (FEATURES.md, Paste extras).
   if (editor && !request.plain && request.text && linkOverSelection(editor, request.text)) return;
 
+  await pasteContent(mounted, request, clipboard, editor, blockId);
+}
+
+/** The extras of a paste that went into the editor: joined PDF lines and a source link, each its own undo step. */
+async function runExtras(
+  mounted: MountedPage,
+  editor: Editor | null,
+  inserted: { from: number; to: number } | null,
+  result: PasteResult,
+  facts: ClipboardFacts | null,
+): Promise<void> {
+  const settings = getSettings().editing.paste;
+  if (editor && inserted && result.joinedText && settings.joinPdfLines) {
+    await joinPdfLines(mounted, editor, inserted, result.joinedText);
+  }
+  if (facts?.sourceUrl && result.source === 'web' && editor) {
+    await addSourceLink(mounted, editor, facts.sourceUrl, settings.sourceLink);
+  }
+}
+
+/** The text of a paste: into the focused editor, then the blocks and images after it, then the extras. */
+async function pasteContent(
+  mounted: MountedPage,
+  request: PasteRequest,
+  clipboard: ClipboardClient | null,
+  editor: Editor | null,
+  blockId: BlockId | null,
+): Promise<void> {
   const facts = request.origin === 'drop' ? null : (request.facts ?? (await factsFor(clipboard, request.text ?? null)));
-  const result = resultFor(request, facts, editor ? 'text' : 'page');
+  const fidelity = mounted.host.flag('text.pasteFidelity');
+  const formatting = fidelity ? { fidelity, defaults: getSettings().text.paste } : {};
+  const result = resultFor(request, facts, editor ? 'text' : 'page', formatting);
   if (result.plainFallback) showToast({ message: t('paste.tooLarge') });
   const { pieces, joinsEditor } = fitTextBlocks(splitImages(result.pieces), editor);
   if (pieces.length === 0) return;
@@ -391,6 +454,7 @@ export async function runPaste(
     inserted = insertIntoEditor(editor, pieces[0].doc);
     rest = pieces.slice(1);
   }
+  const offered = offerOf({ mounted, request, facts, editor }, inserted, result, rest.length === 0);
   const textAndTables = rest.filter((piece): piece is PastedPiece => piece.kind !== 'image');
   const imageRequests = rest.flatMap((piece) => (piece.kind === 'image' ? [piece.request] : []));
   const place = placementAfter(mounted, editor ? blockId : null, request.point);
@@ -410,13 +474,9 @@ export async function runPaste(
     await addImages(mounted, imageRequests, facts, extras && settings.saveWebImages, imagePlace);
   }
 
-  if (!extras || request.plain) return;
-  if (editor && inserted && result.joinedText && settings.joinPdfLines) {
-    await joinPdfLines(mounted, editor, inserted, result.joinedText);
-  }
-  if (facts?.sourceUrl && result.source === 'web' && editor) {
-    await addSourceLink(mounted, editor, facts.sourceUrl, settings.sourceLink);
-  }
+  if (extras && !request.plain) await runExtras(mounted, editor, inserted, result, facts);
+  // After the extras: a source link below the paste leaves the pasted range alone, and the chip must see the page as it ends.
+  if (offered) offerPasteOptions(offered);
 }
 
 export { importError };

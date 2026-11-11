@@ -8,7 +8,7 @@ import { t } from '../../../../strings/t';
 import { Button } from '../../../../ui';
 import type { AeroStep } from '../common';
 import { DataTable } from './DataTable';
-import { insert } from './insert';
+import { insert, insertLive } from './insert';
 import { PLOT_H, PLOT_W, plotTree, svgText } from './plot';
 import type { SvgNode } from './plot';
 import { plotInSystem, readNumber, runSpec, unitKey, visibleFields } from './spec';
@@ -177,6 +177,19 @@ function Answer({ spec, output, system }: { spec: ToolSpec; output: ToolOutput; 
         </Button>
         <Button variant="quiet" onClick={() => insert({ text: stepsHtml(tool, output.steps) })}>
           {t('kitAero.insertSteps')}
+        </Button>
+        <Button
+          variant="quiet"
+          onClick={(event) =>
+            void insertLive(event.currentTarget, {
+              title: toolText(tool, 'title'),
+              summary: answer,
+              rows: rows.map((entry) => ({ label: entry.label, value: entry.value, unit: '' })),
+              latex: output.latex,
+            })
+          }
+        >
+          {t('kitAero.insertLive')}
         </Button>
       </div>
       {(output.notes ?? []).map((note) => (

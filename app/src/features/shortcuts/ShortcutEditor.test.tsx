@@ -4,11 +4,17 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';
+import { registerAccept } from './registerAcceptStandIn';
 import { closeOverlay } from '../../shell/commandbar/overlays';
 import { getSettings } from '../../state/settings';
 import { announcements, expectFocus, expectNoAxeViolations, pressChord, renderApp } from '../../test';
 
-afterEach(() => closeOverlay());
+const stops: (() => void)[] = [];
+
+afterEach(() => {
+  closeOverlay();
+  stops.splice(0).forEach((stop) => stop());
+});
 
 async function openList() {
   await pressChord('Ctrl+/');
@@ -101,6 +107,32 @@ describe('changing a shortcut', () => {
     await waitFor(() => expect(within(rowOf(dialog, 'Toggle dark mode')).getByText('Ctrl+K')).toBeTruthy());
     expect(within(rowOf(dialog, 'Open command palette')).getByText('None')).toBeTruthy();
     await expectNoAxeViolations(document.body);
+  });
+});
+
+describe('capturing Tab chords', () => {
+  it('captures Ctrl+Tab, and plain Tab still moves focus out of the field', async () => {
+    await renderApp();
+    const dialog = await openList();
+    const { row } = await startChange(dialog, 'Toggle dark mode');
+    await pressChord('Ctrl+Tab');
+    const prompt = await within(row).findByRole('group', { name: 'New shortcut for Toggle dark mode' });
+    expect(prompt.textContent).toContain('Ctrl+Tab is already used by');
+    await userEvent.click(within(prompt).getByRole('button', { name: 'Cancel' }));
+    const again = await startChange(dialog, 'Toggle dark mode');
+    await userEvent.keyboard('{Tab}');
+    await waitFor(() => expect(within(again.row).queryByRole('textbox')).toBeNull());
+    expect(getSettings().shortcuts).toEqual({});
+  });
+
+  it('names both users when Ctrl+Tab goes to a third command', async () => {
+    stops.push(registerAccept());
+    await renderApp();
+    const dialog = await openList();
+    const { row } = await startChange(dialog, 'Toggle dark mode');
+    await pressChord('Ctrl+Tab');
+    const prompt = await within(row).findByRole('group', { name: 'New shortcut for Toggle dark mode' });
+    expect(prompt.textContent).toMatch(/Ctrl\+Tab is already used by (Go to the next tab|Ink) and 1 other command\./);
   });
 });
 

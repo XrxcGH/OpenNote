@@ -50,6 +50,12 @@ function insertRange(editor: Editor, kind: 'word' | 'inline' | 'blocks'): { from
   return { from: from + lead, to: to - trail };
 }
 
+/** Whether the caret (with nothing selected) is in a heading, where an answer must not be appended to the title. */
+function inHeading(editor: Editor): boolean {
+  const { selection } = editor.state;
+  return selection.empty && !('node' in selection) && selection.$from.parent.type.name === 'heading';
+}
+
 /** Each insert is a command, so it is an undo step of its own and never joins the typing before it. */
 function asCommand(
   editor: Editor,
@@ -72,6 +78,11 @@ function asCommand(
 
 /** Puts text (or the HTML of the worked steps) at the caret. False when the editor takes nothing. */
 export function insertTextAtCaret(editor: Editor, text: string): boolean {
+  // In a heading the answer is its own line below it: appended, it would change the title ("2026" became "20264").
+  if (inHeading(editor) && !isBlocks(text)) {
+    const end = afterTopLevel(editor, editor.state.selection.to);
+    return asCommand(editor, `<p>${text}</p>`, { from: end, to: end });
+  }
   return asCommand(editor, text, insertRange(editor, isBlocks(text) ? 'blocks' : 'word'));
 }
 
@@ -79,5 +90,10 @@ export function insertTextAtCaret(editor: Editor, text: string): boolean {
 export function insertMathAtCaret(editor: Editor, source: string, display: boolean): boolean {
   const type = editor.schema.nodes[display ? 'mathBlock' : 'mathInline'];
   if (!type || source.trim() === '') return false;
-  return asCommand(editor, { type: type.name, attrs: { source: source.trim() } }, insertRange(editor, 'inline'));
+  // A display equation does not go inside a heading: it goes on its own line below it.
+  const range =
+    display && inHeading(editor)
+      ? { from: afterTopLevel(editor, editor.state.selection.to), to: afterTopLevel(editor, editor.state.selection.to) }
+      : insertRange(editor, 'inline');
+  return asCommand(editor, { type: type.name, attrs: { source: source.trim() } }, range);
 }

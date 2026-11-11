@@ -6,8 +6,8 @@ export const appScopes: ScopeFixture = {
   owner: 'shared:x-shared',
   commands: [
     { id: 'app.palette', keys: ['Ctrl+K'] },
-    { id: 'tabs.next', keys: ['Ctrl+Tab'] },
-    { id: 'tabs.previous', keys: ['Ctrl+Shift+Tab'] },
+    { id: 'tabs.next', keys: ['Ctrl+Tab', 'Ctrl+PageDown'], presetKeys: { onenote: ['Ctrl+Tab'] } },
+    { id: 'tabs.previous', keys: ['Ctrl+Shift+Tab', 'Ctrl+PageUp'], presetKeys: { onenote: ['Ctrl+Shift+Tab'] } },
   ],
   cases: [
     { chord: 'Ctrl+K', at: 'global', expect: 'app.palette', why: 'Ctrl+K opens the palette' },
