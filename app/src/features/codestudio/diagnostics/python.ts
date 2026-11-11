@@ -9,7 +9,8 @@ import { PYTHON_BUILTINS } from './pythonNames';
 import { lineAt, lineStarts } from './text';
 import type { Finding } from './types';
 
-type ScopeKind = 'module' | 'class' | 'function' | 'comprehension';
+/** An annotation scope holds the type parameters of `def f[T]`, `class C[T]`, and `type A[T]` (PEP 695). */
+type ScopeKind = 'module' | 'class' | 'function' | 'comprehension' | 'annotation';
 type BindKind = 'import' | 'future' | 'def' | 'class' | 'assign' | 'param' | 'loop' | 'except' | 'other';
 
 interface Scope {
@@ -70,6 +71,9 @@ class PythonChecker {
   private readonly scopes: Scope[] = [];
   private readonly exported = new Set<string>();
   private loops: [number, number][] = [];
+  /** Names read inside string annotations, such as `x: "List[int]"`: they count as uses but are never reported. */
+  private readonly softRefs: Ref[] = [];
+  private annotationDepth = 0;
 
   constructor(private readonly text: string) {}
 
@@ -142,7 +146,7 @@ class PythonChecker {
 
   private statementEnd(node: SyntaxNode): number {
     let n = node;
-    while (n.parent && n.parent.name !== 'Body' && n.parent.name !== 'Script') n = n.parent;
+    while (n.parent && !['Body', 'Script', 'StatementGroup'].includes(n.parent.name)) n = n.parent;
     return n.to;
   }
 
@@ -199,6 +203,16 @@ class PythonChecker {
       case 'BinaryExpression':
         this.comparison(node);
         return this.visitAll(kids(node), scope);
+      case 'TypeDefinition':
+        return this.typeAlias(node, scope);
+      case 'TypeDef':
+        this.annotationDepth += 1;
+        this.visitAll(kids(node), scope);
+        this.annotationDepth -= 1;
+        return;
+      case 'String':
+        if (this.annotationDepth) this.stringAnnotation(node, scope);
+        return;
       default:
         if (COMPREHENSIONS.has(node.name)) return this.comprehension(node, scope);
         return this.visitAll(kids(node), scope);
@@ -217,7 +231,7 @@ class PythonChecker {
     const isFrom = parts[0]?.name === 'from';
     const importAt = parts.findIndex((p) => p.name === 'import');
     const module = isFrom ? this.text.slice(parts[0].to, parts[importAt]?.from ?? node.to).trim() : '';
-    const at = this.statementEnd(node);
+    const at = node.to;
     let group: SyntaxNode[] = [];
     const flush = () => {
       const names = group.filter((p) => p.name === 'VariableName');
@@ -242,7 +256,10 @@ class PythonChecker {
     const names: string[] = [];
     for (const child of kids(node)) {
       if (child.name === 'Decorator') {
-        this.visitAll(kids(child), scope);
+        // Lezer names every part of `@app.route` a VariableName; only the first part is a read.
+        for (const part of kids(child)) {
+          if (part.name !== 'VariableName' || part.prevSibling?.name !== '.') this.visit(part, scope);
+        }
         names.push(this.slice(child).replace(/^@\s*/, '').replace(/\(.*$/s, '').trim());
       } else if (child.name === 'FunctionDefinition') this.functionDef(child, scope, names);
       else if (child.name === 'ClassDefinition') this.classDef(child, scope, names);
@@ -259,22 +276,65 @@ class PythonChecker {
     }
   }
 
+  /** The scope that holds a definition's type parameters, or the enclosing scope when it has none. */
+  private typeParams(node: SyntaxNode, scope: Scope): Scope {
+    const list = node.getChild('TypeParamList');
+    if (!list) return scope;
+    const annotation = this.scope('annotation', scope);
+    for (const param of list.getChildren('TypeParam')) {
+      // The first name is the parameter (`T`, `*Ts`, `**P`); a bound or default after it is a read.
+      const name = param.getChild('VariableName');
+      for (const part of kids(param)) {
+        if (part === name || (name && part.from === name.from)) this.bind(annotation, part, 'param', -1);
+        else this.visit(part, annotation);
+      }
+    }
+    return annotation;
+  }
+
   private functionDef(node: SyntaxNode, scope: Scope, decorators: string[]): void {
-    const inner = this.scope('function', scope);
+    const outer = this.typeParams(node, scope);
+    const inner = this.scope('function', outer);
     for (const child of kids(node)) {
       if (child.name === 'VariableName') this.bind(scope, child, 'def', this.statementEnd(node), { decorators });
-      else if (child.name === 'ParamList') this.params(child, scope, inner);
+      else if (child.name === 'TypeParamList') continue;
+      else if (child.name === 'ParamList') this.params(child, outer, inner);
       else if (child.name === 'Body') this.visitAll(kids(child), inner);
-      else this.visit(child, scope);
+      else this.visit(child, outer);
     }
   }
 
   private classDef(node: SyntaxNode, scope: Scope, decorators: string[]): void {
-    const inner = this.scope('class', scope);
+    const outer = this.typeParams(node, scope);
+    const inner = this.scope('class', outer);
     for (const child of kids(node)) {
       if (child.name === 'VariableName') this.bind(scope, child, 'class', this.statementEnd(node), { decorators });
+      else if (child.name === 'TypeParamList') continue;
       else if (child.name === 'Body') this.visitAll(kids(child), inner);
-      else this.visit(child, scope);
+      else this.visit(child, outer);
+    }
+  }
+
+  /** `type Alias[T] = value`: the alias is bound at once, and its value is read lazily, so it may name later names. */
+  private typeAlias(node: SyntaxNode, scope: Scope): void {
+    const name = node.getChild('VariableName');
+    if (name) this.bind(scope, name, 'assign', node.from);
+    const lazy = this.scope('function', this.typeParams(node, scope));
+    for (const child of kids(node)) {
+      if (name && child.from === name.from) continue;
+      if (child.name !== 'TypeParamList') this.visit(child, lazy);
+    }
+  }
+
+  /** The first name of each name path in a string annotation counts as a use. */
+  private stringAnnotation(node: SyntaxNode, scope: Scope): void {
+    const raw = this.slice(node);
+    const quote = /^[rRuUbB]*("""|'''|"|')/.exec(raw);
+    if (!quote) return;
+    const offset = node.from + quote[0].length;
+    const body = raw.slice(quote[0].length, raw.length - quote[1].length);
+    for (const m of body.matchAll(/(?<![.\w])[A-Za-z_]\w*/g)) {
+      this.softRefs.push({ name: m[0], from: offset + m.index, to: offset + m.index + m[0].length, scope, loops: [] });
     }
   }
 
@@ -368,14 +428,15 @@ class PythonChecker {
   private asBindings(node: SyntaxNode, scope: Scope, kind: BindKind): void {
     for (const child of kids(node)) {
       if (child.prevSibling?.name === 'as') {
-        this.target(child, scope, kind, kind === 'except' ? child.from : this.statementEnd(node), kind === 'except');
+        // An except name is visible inside its handler; a `with` or pattern name from the end of its own target.
+        this.target(child, scope, kind, kind === 'except' ? child.from : child.to, kind === 'except');
       } else this.visit(child, scope);
     }
   }
 
   private patternBind(node: SyntaxNode, scope: Scope): void {
     const name = node.firstChild;
-    if (name?.name === 'VariableName') this.bind(scope, name, 'other', this.statementEnd(node));
+    if (name?.name === 'VariableName') this.bind(scope, name, 'other', node.to);
   }
 
   private scopeStatement(node: SyntaxNode, scope: Scope): void {
@@ -391,6 +452,8 @@ class PythonChecker {
   }
 
   private argList(node: SyntaxNode, scope: Scope): void {
+    // A generator as the only argument, `sum(x for x in xs)`, sits directly in the ArgList.
+    if (node.getChild('for')) return this.comprehension(node, scope);
     for (const child of kids(node)) {
       if (child.name === 'VariableName' && child.nextSibling?.name === 'AssignOp') continue;
       this.visit(child, scope);
@@ -446,6 +509,11 @@ class PythonChecker {
     return false;
   }
 
+  private onlyComprehensions(from: Scope, target: Scope): boolean {
+    for (let s: Scope | null = from; s && s !== target; s = s.parent) if (s.kind !== 'comprehension') return false;
+    return true;
+  }
+
   private pick(list: Binding[], ref: Ref, ordered: boolean): Binding | null {
     const before = list.filter((b) => b.at <= ref.from);
     if (before.length) return before[before.length - 1];
@@ -461,7 +529,8 @@ class PythonChecker {
     let star = false;
     while (s) {
       star ||= s.star;
-      const skipClass = s.kind === 'class' && s !== start;
+      // A class body is hidden from the scopes inside it, except from comprehensions directly in it (as pyflakes).
+      const skipClass = s.kind === 'class' && s !== start && !this.onlyComprehensions(start, s);
       const list = skipClass ? undefined : s.bindings.get(ref.name);
       if (list?.length) {
         const ordered = (s.kind === 'module' || s.kind === 'class') && !this.deferred(start, s);
@@ -492,6 +561,10 @@ class PythonChecker {
       const found = this.lookup(ref);
       if (found === null) this.add(ref, 'error', 'F821', 'undefinedName', { name: ref.name });
       else if (typeof found === 'object') this.use(found, ref.scope);
+    }
+    for (const ref of this.softRefs) {
+      const found = this.lookup(ref);
+      if (found !== null && typeof found === 'object') this.use(found, ref.scope);
     }
     for (const name of this.exported) {
       for (const b of this.scopes[0].bindings.get(name) ?? []) b.uses += 1;

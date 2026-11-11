@@ -72,6 +72,49 @@ describe('C and C++ scope checker', () => {
     );
     expect(c(text)).toEqual([]);
   });
+
+  it('leaves macro names of an included system header to clang', () => {
+    const text = join(
+      '#include <errno.h>',
+      '#include <signal.h>',
+      '#include <stdint.h>',
+      '#include <fcntl.h>',
+      'int f(void) {',
+      '  signal(SIGINT, SIG_IGN);',
+      '  unsigned long m = UINT32_MAX + INT64_MAX + O_RDONLY;',
+      '  return errno == ERANGE ? (int)m : 0;',
+      '}',
+    );
+    expect(c(text)).toEqual([]);
+    expect(c(join('int f(void) { return ERANGE; }'))).toEqual(['undeclared-identifier:1:ERANGE']);
+  });
+
+  it('declares function pointer variables and tables', () => {
+    const text = join(
+      'int add(int a, int b) { return a + b; }',
+      'int apply(int (*g)(int, int), int x) { return g(x, x); }',
+      'int f(void) {',
+      '  int (*fp)(int, int) = add;',
+      '  int (*table[2])(int, int) = { add, add };',
+      '  return apply(fp, 1) + table[0](1, 2);',
+      '}',
+    );
+    expect(c(text)).toEqual([]);
+  });
+
+  it('declares the names of structured bindings and range loops', () => {
+    const text = join(
+      '#include <map>',
+      'int f(std::map<int, int> m) {',
+      '  int total = 0;',
+      '  for (auto& [key, val] : m) total += val + key;',
+      '  for (int x : {1, 2}) total += x;',
+      '  auto [lo, hi] = std::pair<int, int>(1, 2);',
+      '  return total + lo + hi;',
+      '}',
+    );
+    expect(c(text)).toEqual([]);
+  });
 });
 
 describe('Lua scope checker', () => {
@@ -106,6 +149,26 @@ describe('Lua scope checker', () => {
   it('ends a local at the end of its block, and reads the outer name in its own initializer', () => {
     const text = join('local x = 1', 'do', '  local y = x', '  local x = x + y', '  print(x)', 'end', 'print(y)');
     expect(lua(text)).toEqual(['W113:7:y']);
+  });
+
+  it('sees a global assigned after a line that ends in true, false, nil, ..., or end', () => {
+    expect(lua(join('debug_mode = false', 'counter = 0', 'print(counter, debug_mode)'))).toEqual([]);
+    const config = join(
+      'fullscreen = false',
+      'width = 800',
+      'title = nil',
+      'height = 600',
+      'vsync = true',
+      'depth = 24',
+    );
+    expect(lua(config + 'print(fullscreen, width, title, height, vsync, depth)\n')).toEqual([]);
+    expect(lua(join('function f(...) local a = ...', '  b = 1', '  return a, b', 'end'))).toEqual([]);
+  });
+
+  it('reads one-line bodies as statements', () => {
+    expect(lua(join('function init() state = 1 end', 'init()', 'print(state)'))).toEqual([]);
+    expect(lua(join('for i = 1, 3 do local v = i * 2 print(v) end'))).toEqual([]);
+    expect(lua(join('local x = 1 return x'))).toEqual([]);
   });
 
   it('keeps a repeat body visible to its until condition', () => {

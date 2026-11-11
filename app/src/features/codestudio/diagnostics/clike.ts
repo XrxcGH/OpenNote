@@ -49,7 +49,11 @@ const DECLARATORS = new Set([
   'ArrayDeclarator',
   'ParenthesizedDeclarator',
   'FunctionDeclarator',
+  'StructuredBindingDeclarator',
 ]);
+
+/** A macro-shaped name. The standard and POSIX headers define hundreds (ERANGE, SIG_IGN, UINT32_MAX, O_RDONLY). */
+const MACRO_SHAPE = /^_?[A-Z][A-Z0-9_]+$/;
 
 function kids(node: SyntaxNode): SyntaxNode[] {
   const out: SyntaxNode[] = [];
@@ -63,6 +67,8 @@ class CChecker {
   private readonly refs: { name: string; from: number; to: number; scope: Scope; quiet: boolean }[] = [];
   private names = C_NAMES;
   private checkUndeclared = true;
+  /** True when the file includes a system header, which may define any macro-shaped name. */
+  private systemHeader = false;
   private member = 0;
 
   constructor(private readonly text: string) {}
@@ -74,6 +80,7 @@ class CChecker {
   run(tree: Tree): void {
     const usings = [...this.text.matchAll(/\busing\s+namespace\s+([\w:]+)/g)].map((m) => m[1]);
     if (usings.some((u) => u !== 'std') || /#\s*include\s*"/.test(this.text)) this.checkUndeclared = false;
+    this.systemHeader = /#\s*include\s*</.test(this.text);
     if (usings.includes('std')) this.names = new Set([...C_NAMES, ...STD_NAMES]);
     const file: Scope = { parent: null, names: new Map() };
     this.visitAll(kids(tree.topNode), file, false);
@@ -81,7 +88,7 @@ class CChecker {
       let found: Variable | undefined;
       for (let s: Scope | null = ref.scope; s && !found; s = s.parent) found = s.names.get(ref.name);
       if (found) found.uses += 1;
-      else if (!ref.quiet && this.checkUndeclared && !this.names.has(ref.name)) {
+      else if (!ref.quiet && this.checkUndeclared && !this.names.has(ref.name) && !this.maybeMacro(ref.name)) {
         this.findings.push({
           from: ref.from,
           to: ref.to,
@@ -105,6 +112,11 @@ class CChecker {
       }
     }
     this.findings.sort((a, b) => a.from - b.from);
+  }
+
+  /** Clang (layer L-e), which reads the headers, is the authority on macro names a system header may define. */
+  private maybeMacro(name: string): boolean {
+    return this.systemHeader && MACRO_SHAPE.test(name);
   }
 
   private declare(scope: Scope, node: SyntaxNode, local: boolean, plain: boolean): void {
@@ -159,9 +171,10 @@ class CChecker {
         this.visitAll(kids(node), { parent: scope, names: new Map() }, false);
         this.member -= 1;
         return;
+      case 'ForRangeLoop':
+        return this.rangeLoop(node, scope);
       case 'CompoundStatement':
       case 'ForStatement':
-      case 'ForRangeLoop':
       case 'LambdaExpression':
       case 'NamespaceDefinition':
         return this.visitAll(
@@ -197,9 +210,16 @@ class CChecker {
     if (!DECLARATORS.has(node.name)) return this.visit(node, scope, local);
     const [first, ...rest] = kids(node);
     if (!first) return;
+    if (node.name === 'StructuredBindingDeclarator') {
+      // `auto [key, value] = ...`: every name in the brackets is declared.
+      for (const id of node.getChildren('Identifier')) this.declare(scope, id, local, false);
+      return;
+    }
     const pointer = node.name === 'PointerDeclarator' || node.name === 'ArrayDeclarator';
     if (node.name === 'FunctionDeclarator') {
       if (first.name === 'Identifier') this.declare(scope, first, false, false);
+      // A function pointer, `int (*fp)(int)` or `int (*table[2])(int)`, declares the name inside the parentheses.
+      else if (DECLARATORS.has(first.name)) this.declarator(first, scope, local, plain);
       const prototype: Scope = { parent: scope, names: new Map() };
       for (const p of rest) this.visit(p, prototype, false);
       return;
@@ -210,6 +230,17 @@ class CChecker {
         : rest.find((r) => DECLARATORS.has(r.name) || r.name === 'Identifier');
     if (lead) this.declarator(lead, scope, local, plain || pointer);
     for (const r of [first, ...rest]) if (r !== lead) this.visit(r, scope, local);
+  }
+
+  /** `for (auto& [k, v] : m)` and `for (int x : v)`: the first declarator after the type is the loop variable. */
+  private rangeLoop(node: SyntaxNode, scope: Scope): void {
+    const inner: Scope = { parent: scope, names: new Map() };
+    const parts = kids(node);
+    const lead = parts.find((p) => p.name === 'Identifier' || DECLARATORS.has(p.name));
+    for (const p of parts) {
+      if (p === lead || p.from === lead?.from) this.declarator(p, inner, true, false);
+      else this.visit(p, inner, true);
+    }
   }
 
   private declaration(node: SyntaxNode, scope: Scope, local: boolean): void {

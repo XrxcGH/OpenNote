@@ -59,6 +59,26 @@ describe('Lezer syntax errors', () => {
     expect(await syntax('javascript', 'const s = "{"; // }\n/* ( */\n')).toEqual([]);
   });
 
+  it('ignores brackets inside a regex, rune, char, text block, macro body, or quoted name', async () => {
+    const valid: [EditorLanguage, string][] = [
+      ['javascript', 'const open = /\\(/;\nconst t = s.replace(/[()]/g, "");\nconst c = /[)\\]}]/.test(ch);\n'],
+      ['typescript', 'const open: RegExp = /\\{/;\n'],
+      ['go', "package main\nfunc f(c rune) bool {\n\treturn c == '(' || c == ']'\n}\n"],
+      ['c', "#define OPEN '{'\n#define CLOSE ')'\nint main(void) { return 0; }\n"],
+      ['cpp', "#define OPEN '['\nint main() { char c = '('; return c; }\n"],
+      ['java', 'class A {\n  String s = """\n    a ( b [\n    """;\n  char c = \'{\';\n}\n'],
+      ['rust', "fn main() { let c = '('; }\n"],
+      ['sql', 'SELECT "col(" FROM t;\n'],
+    ];
+    for (const [language, text] of valid) expect(await syntax(language, text), language).toEqual([]);
+  }, 60_000);
+
+  it('keeps checker marks below a line with a regex that holds a bracket', async () => {
+    const text = 'const open = /\\(/;\nconsole.log(open, missing_name);\n';
+    const { checker } = await analyze({ language: 'javascript', text, layers: ['checker'] });
+    expect(checker.map((f) => f.code)).toEqual(['no-undef']);
+  });
+
   it('names the unexpected token, or the early end of the file', async () => {
     expect(await syntax('javascript', 'let x = 1 +;\n')).toEqual([
       { line: 1, text: "Syntax error: ';' is not expected here." },

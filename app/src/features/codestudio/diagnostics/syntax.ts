@@ -11,21 +11,27 @@ import type { EditorLanguage, Finding } from './types';
 export const MAX_SYNTAX_ERRORS = 10;
 
 const OPAQUE = /String|Comment|Char|Template|Regex|Docstring|Literal$/;
+const BRACKETS = new Set(['(', ')', '[', ']', '{', '}']);
 const PAIRS: Record<string, string> = { ')': '(', ']': '[', '}': '{' };
 const PY_HEADER = /^(?:async\s+)?(if|elif|else|while|for|def|class|try|except|finally|with|match|case)\b(?!\s*[=.])/;
 
-/** Ranges the bracket scan skips: strings, comments, and other literals. */
+/**
+ * Ranges the bracket scan skips. Only a bracket token of the tree, or a bracket inside an error node, counts. So every
+ * other leaf token is skipped: a regex, a rune, a macro body, a text block, or a quoted identifier holds text, not
+ * code. Strings, comments, and templates are skipped whole, with the parts inside them.
+ */
 function opaqueRanges(tree: Tree): [number, number][] {
   const ranges: [number, number][] = [];
-  tree.iterate({
-    enter(node) {
-      if (node.type.isError || !OPAQUE.test(node.name)) return true;
-      if (node.name === 'BooleanLiteral' || node.name === 'NullLiteral') return false;
-      ranges.push([node.from, node.to]);
-      return false;
-    },
-  });
-  return ranges;
+  const cursor = tree.cursor();
+  for (;;) {
+    const error = cursor.type.isError;
+    const literal =
+      !error && OPAQUE.test(cursor.name) && cursor.name !== 'BooleanLiteral' && cursor.name !== 'NullLiteral';
+    if (literal) ranges.push([cursor.from, cursor.to]);
+    else if (cursor.firstChild()) continue;
+    else if (!error && cursor.to > cursor.from && !BRACKETS.has(cursor.name)) ranges.push([cursor.from, cursor.to]);
+    while (!cursor.nextSibling()) if (!cursor.parent()) return ranges;
+  }
 }
 
 /** Brackets that do not pair up. Strings and comments do not count. */

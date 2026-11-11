@@ -14,4 +14,7 @@ const HOST =
   'console setTimeout clearTimeout setInterval clearInterval queueMicrotask structuredClone TextEncoder ' +
   'TextDecoder URL URLSearchParams atob btoa performance crypto prompt alert';
 
-export const JS_GLOBALS: ReadonlySet<string> = new Set(`${ECMASCRIPT} ${HOST}`.split(' '));
+/** The Jest-compatible test API the app injects into JavaScript and TypeScript programs (ADR 0075). */
+const TEST_API = 'describe it test expect beforeEach afterEach beforeAll afterAll';
+
+export const JS_GLOBALS: ReadonlySet<string> = new Set(`${ECMASCRIPT} ${HOST} ${TEST_API}`.split(' '));

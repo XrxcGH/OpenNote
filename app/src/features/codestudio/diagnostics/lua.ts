@@ -36,8 +36,11 @@ const KEYWORDS = new Set(
   ),
 );
 const OPS = ['...', '..', '==', '~=', '<=', '>=', '//', '::', '<<', '>>'];
-/** Tokens after which a name on a new line starts a statement. */
+/** Token kinds that end an expression: a name right after one starts a new statement, even on the same line. */
 const ENDS_EXPRESSION = new Set(['name', 'string', 'number']);
+const ENDS_EXPRESSION_TEXT = /^(?:[)\]}]|true|false|nil|\.\.\.)$/;
+/** Keywords that start a statement, so a pending `local` on the same line is in scope after them. */
+const STATEMENT_KEYWORDS = /^(?:return|if|while|for|local|do|repeat|break|goto|end|else|elseif|until)$/;
 
 function longBracket(text: string, at: number): number {
   const m = /^\[(=*)\[/.exec(text.slice(at, at + 64));
@@ -131,7 +134,15 @@ class LuaChecker {
     if (!prev) return true;
     if (prev.text === ';' || (prev.kind === 'keyword' && /^(?:do|then|else|end|repeat|break|local)$/.test(prev.text)))
       return true;
-    return prev.line < this.tokens[i].line && (ENDS_EXPRESSION.has(prev.kind) || /^[)\]}]$/.test(prev.text));
+    // No expression has a name right after a name, a literal, or a closing bracket. So `x = false\ny = 0` and the
+    // one-line bodies `function init() state = 1 end` and `do local v = 1 print(v) end` start statements there.
+    return ENDS_EXPRESSION.has(prev.kind) || ENDS_EXPRESSION_TEXT.test(prev.text);
+  }
+
+  private startsStatement(i: number): boolean {
+    const tok = this.tokens[i];
+    if (tok.kind === 'keyword') return STATEMENT_KEYWORDS.test(tok.text);
+    return tok.kind === 'name' && this.statementStart(i);
   }
 
   /** True when the name at `i` starts `a, b = ...` or `a = ...`. */
@@ -156,7 +167,9 @@ class LuaChecker {
     const t = this.tokens;
     for (let i = 0; i < t.length; i += 1) {
       const tok = t[i];
-      if (this.pending.length && (tok.line > this.pendingLine || tok.text === ';')) this.flushPending();
+      if (this.pending.length && (tok.line > this.pendingLine || tok.text === ';' || this.startsStatement(i))) {
+        this.flushPending();
+      }
       if (this.repeatUntil >= 0 && tok.line > this.repeatUntil) {
         this.scopes.pop();
         this.repeatUntil = -1;

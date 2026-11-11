@@ -120,6 +120,47 @@ describe('Python checker: scope rules', () => {
     expect(codes('def f():\n    pass\nf()\ndef f():\n    pass\nf()\n')).toEqual([]);
   });
 
+  // Valid programs that pyflakes and Ruff pass without a finding: the checker must give none either.
+  it.each([
+    ['a with name at module level', 'with open("data.txt") as f:\n    data = f.read()\nprint(data)\n'],
+    ['a with name in a class', 'class A:\n    with open("d") as f:\n        text = f.read()\n'],
+    ['a match capture at module level', 'match [1, 2]:\n    case [_, name]:\n        print(name)\n'],
+    ['a match capture with a guard', 'match 3:\n    case n if n > 2:\n        print(n)\n'],
+    ['an as pattern', 'match [1]:\n    case [x] as whole:\n        print(x, whole)\n'],
+    ['a dotted decorator', 'import flask\napp = flask.Flask(__name__)\n@app.route("/")\ndef index():\n    pass\n'],
+    [
+      'a property setter',
+      'class A:\n    @property\n    def x(self):\n        return 1\n    @x.setter\n    def x(self, v):\n        pass\n',
+    ],
+    [
+      'a dotted call decorator',
+      'import functools\ndef deco(fn):\n    @functools.wraps(fn)\n    def w():\n        return fn()\n    return w\n',
+    ],
+    ['a nested dotted decorator', 'import pytest\n@pytest.mark.parametrize("x", [1])\ndef test_x(x):\n    pass\n'],
+    ['a generator as the only argument', 'words = ["a"]\nprint(sum(len(w) for w in words))\n'],
+    ['a generator to join', 'xs = [1]\nprint(",".join(str(c) for c in xs))\n'],
+    ['a generator to any', 'words = ["a"]\nprint(any(w for w in words))\n'],
+    ['a comprehension in a class body', 'class A:\n    xs = [1]\n    ys = [x for x in xs]\n'],
+    ['an import and a use on one line', 'import sys; sys.exit(0)\n'],
+    ['PEP 695 function type parameters', 'def f[T](x: T) -> T:\n    return x\n'],
+    ['PEP 695 class type parameters', 'class Box[T]:\n    def get(self) -> T:\n        return self.v\n'],
+    ['a PEP 695 type alias', 'type Alias = list[int]\nx: Alias = [1]\nprint(x)\n'],
+    ['a recursive type alias', 'type Tree = list[Tree] | int\n'],
+    ['a string annotation', 'from typing import List\nx: "List[int]" = []\nprint(x)\n'],
+    [
+      'a TYPE_CHECKING import',
+      'from typing import TYPE_CHECKING\nif TYPE_CHECKING:\n    from collections import OrderedDict\n' +
+        'def f(d: "OrderedDict[str, int]") -> None:\n    print(d)\n',
+    ],
+  ])('gives nothing on %s', (_label, source) => {
+    expect(codes(source)).toEqual([]);
+  });
+
+  it('still reports a name read in a class method and a with name read before its block', () => {
+    expect(codes('print(f)\nwith open("d") as f:\n    pass\n')).toEqual(['F821:1']);
+    expect(codes('class A:\n    xs = [1]\n    def f(self):\n        return [x for x in xs]\n')).toEqual(['F821:4']);
+  });
+
   it('ignores tabs inside a multi-line string', () => {
     expect(codes('x = """\n\tkept\n"""\nprint(x)\n')).toEqual([]);
   });

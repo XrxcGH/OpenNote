@@ -314,4 +314,19 @@ describe('JavaScript checker: scopes', () => {
     expect(lines(source, 'no-undef', true)).toEqual([]);
     expect(lines(source, 'no-unused-vars', true)).toEqual([]);
   });
+
+  it('knows the test API the app injects (ADR 0075)', () => {
+    const source = join(
+      'function add(a, b) { return a + b; }',
+      'let n = 0;',
+      'beforeAll(() => {}); afterAll(() => {});',
+      'beforeEach(() => { n += 1; }); afterEach(() => {});',
+      "describe('add', () => {",
+      "  it('adds', () => { expect(add(1, 2)).toBe(3); });",
+      "  test('negates', () => { expect(add(1, -1)).not.toBe(1); });",
+      '});',
+    );
+    expect(lines(source, 'no-undef')).toEqual([]);
+    expect(lines(source, 'no-undef', true)).toEqual([]);
+  });
 });
