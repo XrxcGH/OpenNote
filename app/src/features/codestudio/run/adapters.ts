@@ -6,7 +6,10 @@
 import type { RuntimeId } from '../contracts/run';
 import type { AdapterRegistry } from './serve';
 
-export const ADAPTERS: AdapterRegistry = {};
+export const ADAPTERS: AdapterRegistry = {
+  javascript: () => import('../runtimes/js/adapter').then((loaded) => loaded.javascriptAdapter),
+  typescript: () => import('../runtimes/js/adapter').then((loaded) => loaded.typescriptAdapter),
+};
 
 /**
  * The extra globals each runtime's lockdown keeps (RuntimeAdapter.allowances), in one place so the run tests can
