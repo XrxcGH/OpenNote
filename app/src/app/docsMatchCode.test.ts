@@ -200,8 +200,7 @@ describe('help index', () => {
 describe('ADR index status', () => {
   const escape = (t: string) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const firstWord = (t: string) => /^- Status: (\w+)/m.exec(t)?.[1];
-  const records = () =>
-    readdirSync(join(docs, 'adr')).filter((f) => /^\d{4}-.*\.md$/.test(f) && !f.startsWith('0000'));
+  const records = () => readdirSync(join(docs, 'adr')).filter((f) => /^\d{4}-.*\.md$/.test(f) && !f.startsWith('0000'));
 
   it('shows the same first status word in the index and in the record file, both ways', () => {
     const index = read('adr', 'README.md');
