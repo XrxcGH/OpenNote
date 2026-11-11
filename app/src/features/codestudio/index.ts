@@ -9,3 +9,6 @@ export const loadCodeStudioWindow = () => import('./window');
 
 /** Loads the code editor's chunk (features/codestudio/editor, code:L01): createCodeEditor and the diff view. */
 export const loadCodeEditor = () => import('./editor');
+
+/** Loads completion without a model (features/codestudio/complete, code:L12): attachCompletion for an editor. */
+export const loadCompletion = () => import('./complete');
