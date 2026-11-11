@@ -83,6 +83,23 @@ export function err(code: ErrorCode): FormulaError {
   return ERRORS[code];
 }
 
+const REASONS = new WeakMap<FormulaError, string>();
+
+/**
+ * An error that also says why, as the key of a sentence in the interface strings (for example a limit a function
+ * named). It equals the plain error everywhere else, and the formula bar reads the key through `reasonOf`.
+ */
+export function errBecause(code: ErrorCode, reason: string): FormulaError {
+  const e: FormulaError = { error: code };
+  REASONS.set(e, reason);
+  return e;
+}
+
+/** The key an error carries, if it was made with `errBecause`. */
+export function reasonOf(value: Value): string | undefined {
+  return typeof value === 'object' && value !== null && 'error' in value ? REASONS.get(value) : undefined;
+}
+
 export function isError(value: Value): value is FormulaError {
   return typeof value === 'object' && value !== null && 'error' in value;
 }

@@ -46,7 +46,7 @@ OneNote files come over without a Microsoft account. Pick a section file (`.one`
 
 Text, headings, lists, to-do tags, tables, pictures, and attached files come over. Other tags become page tags. Ink and other content that Microsoft does not describe in its published format are listed in the review. A password-protected section is skipped; unlock it in OneNote first. To make a package, in OneNote choose File, then Export, then OneNote Package.
 
-A Word file keeps its styles, lists, paper size and margins, headers and footers, footnotes, and endnotes. Its comments come over with their replies, and its tracked changes become suggestions with their authors and times. The review counts each of them.
+A Word file keeps its styles, lists, paper size and margins, headers and footers, footnotes, and endnotes. Its comments come over with their replies, and its tracked changes become suggestions with their authors and times. Hidden text comes in visible, so nothing is lost. The review counts each of them.
 
 Charts and clip art that Word and PowerPoint save as EMF or WMF pictures come over as sharp SVG pictures. If one is damaged, it becomes its description in brackets and the review counts it.
 
@@ -88,7 +88,7 @@ Open Share, then Export, or press Ctrl+K and choose Export.
 ![The Export dialog with a section and the Word document format chosen](../screens/export-light.png)
 
 - Pages, sections, and whole notebooks export as Markdown, Word, or a single HTML file. A Markdown file starts with the page's title, dates, tags, and [properties](search-and-links.md#tags-and-properties), so apps such as Obsidian can read them.
-- For Word, turn on Remove personal information to leave the names of authors and the dates out of comments, suggestions, and the file details. OpenNote remembers the choice.
+- For Word, turn on Remove personal information to leave the names of authors and the dates out of comments, suggestions, and the file details. Turn on Embed bundled fonts to put the fonts that come with OpenNote into the file. Then it looks the same on a computer without them. OpenNote remembers both choices.
 - Tables export as `.xlsx` or `.csv`. Pages export as a PowerPoint file. [LaTeX](#export-as-latex) makes a `.tex` file.
 - Choose PDF files to export a section or a whole notebook as PDF. Each page is printed the same way as a page's own Export as PDF, into folders that follow your sections, with an `index.html` that links every file. A page that can't be printed is listed in the summary, and the rest still export. Cancel stops at once and keeps nothing.
 - A page's own Export and Print menu makes one PDF of that page. The first time you export a page's PDF, the Save window asks where. After that, the same dialog has an Update button that saves over that file without asking. The old file goes to the Recycle Bin first, and a Replaced notice with Undo puts it back. If the old file is on a network or removable drive, which has no Recycle Bin, OpenNote keeps a copy beside it as "Name (replaced).pdf" and tells you. Update remembers the file until you close OpenNote.

@@ -6,8 +6,8 @@
 //! file that holds the weight axis, so they have no separate bold faces. `app/bundle-budget.json` caps the
 //! total (`wordEmbedFontsKb`).
 //!
-//! The Word writer's `WordOptions.embed_fonts` takes these faces once the export dialog offers "Embed bundled
-//! fonts".
+//! The Word writer takes these faces through `docx::bundled_embeds` when the export dialog's "Embed bundled
+//! fonts" switch is on.
 
 /// One face of a bundled family as a TrueType file.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

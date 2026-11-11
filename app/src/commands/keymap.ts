@@ -9,6 +9,7 @@ import { isEnabled } from '../app/flags';
 import { commands, useRegistry } from '../registries';
 import { getSettings, settingsStore } from '../state/settings';
 import { shallowEqual, useStore } from '../state/store';
+import { hostSystem } from '../platform/system';
 import { formatChord, isChordText } from './chords';
 import type { Chord, CommandDef, CommandId, KeymapPresetId, KeyScope } from './types';
 
@@ -69,8 +70,15 @@ export function refinesEither(a: AnyCommand, b: AnyCommand): boolean {
 
 /** The chords of a shortcut set, before the person's changes. */
 export function setKeys(def: AnyCommand, preset: KeymapPresetId): readonly Chord[] {
-  return def.presetKeys?.[preset] ?? def.keys ?? [];
+  const own = def.presetKeys?.[preset];
+  const off = def.keysWhileOff;
+  const keys = own ?? (off && !isEnabled(off.flag) ? off.keys : (def.keys ?? []));
+  // A Mac answers Command+M and Command+Q itself (minimize, quit), so the paragraph commands have no key on it.
+  if (hostSystem() !== 'macos' || !def.id.startsWith('para.')) return keys;
+  return keys.filter((chord) => !MAC_SYSTEM_CHORDS.has(chord));
 }
+
+const MAC_SYSTEM_CHORDS: ReadonlySet<string> = new Set(['Ctrl+M', 'Ctrl+Q']);
 
 /** The command's chords in the chosen shortcut set, ignoring the person's changes. */
 export function defaultKeysFor(id: CommandId, preset: KeymapPresetId = getSettings().keymap.preset): readonly Chord[] {
@@ -164,9 +172,11 @@ export function setChangeFor(id: CommandId): SetChange | null {
   const takenBy = base
     .filter((chord) => !here.includes(chord))
     .flatMap((chord) => {
-      const other = commands
+      // A command that works only inside the code editor comes second: the window-wide one is why the key moved.
+      const users = commands
         .list()
-        .find((o) => o.id !== id && setKeys(o, preset).includes(chord) && scopesOverlap(def.scope, o.scope));
+        .filter((o) => o.id !== id && setKeys(o, preset).includes(chord) && scopesOverlap(def.scope, o.scope));
+      const other = users.find((o) => o.scope !== 'codeEditor') ?? users[0];
       return other ? [{ chord, id: other.id }] : [];
     });
   return { defaultKeys: base, takenBy };
