@@ -3,6 +3,7 @@
 use super::escape::href_target;
 use super::math;
 use super::writer::Writer;
+use super::Engine;
 use crate::doc::{Inline, Marks, Script};
 use crate::export::footnotes::{split_markers, Piece};
 
@@ -19,8 +20,21 @@ fn highlight_color(name: &str) -> &'static str {
 }
 
 fn hex_color(color: &str) -> Option<String> {
-    let hex = color.strip_prefix('#')?;
-    (hex.len() == 6 && hex.bytes().all(|b| b.is_ascii_hexdigit())).then(|| hex.to_ascii_uppercase())
+    crate::palette::color_hex(color)
+}
+
+/// The ulem command of an underline style: `\uline`, `\uuline` (double), `\uwave`, `\dashuline`, or `\dotuline`.
+fn underline_command(line: Option<&str>) -> &'static str {
+    match line {
+        Some("double") => "uuline",
+        Some("wave" | "wavyHeavy" | "wavyDouble") => "uwave",
+        Some("dotted" | "dottedHeavy") => "dotuline",
+        Some(
+            "dash" | "dashedHeavy" | "dashLong" | "dashLongHeavy" | "dotDash" | "dashDotHeavy" | "dotDotDash"
+            | "dashDotDotHeavy",
+        ) => "dashuline",
+        _ => "uline",
+    }
 }
 
 /// Whether the path is one that this export wrote for a picture.
@@ -144,24 +158,59 @@ impl Writer<'_> {
             Some(Script::Sup) => text = format!("\\textsuperscript{{{text}}}"),
             None => {}
         }
+        match marks.caps.as_deref() {
+            Some("small") => text = format!("\\textsc{{{text}}}"),
+            Some("all") => text = format!("\\MakeUppercase{{{text}}}"),
+            _ => {}
+        }
         match marks.size.as_deref() {
             Some("small") => text = format!("{{\\small {text}}}"),
             Some("large") => text = format!("{{\\large {text}}}"),
             Some("xlarge") => text = format!("{{\\Large {text}}}"),
-            _ => {}
+            Some(size) => {
+                if let Some(points) = crate::doc::size_points(size) {
+                    let leading = (points * 12.0).round() / 10.0;
+                    text = format!("{{\\fontsize{{{points}}}{{{leading}}}\\selectfont {text}}}");
+                }
+            }
+            None => {}
+        }
+        // `\opnfont` does nothing under pdfLaTeX and for a font the machine lacks (see the preamble).
+        if self.engine == Engine::Unicode && !self.simple {
+            if let Some(font) = marks.font.as_deref().filter(|f| !f.starts_with('+')) {
+                // The preamble passes the name through \detokenize, so only what would end the argument is dropped.
+                let name: String = font.chars().filter(|c| !"{}\\%#".contains(*c)).collect();
+                text = format!("{{\\opnfont{{{name}}}{text}}}");
+            }
+            if let Some(name) = marks.lang.as_deref().and_then(polyglossia_name) {
+                if !self.languages.contains(&name) {
+                    self.languages.push(name);
+                }
+                text = format!("\\opnlang{{{name}}}{{{text}}}");
+            }
         }
         if !self.simple {
             if let Some(hex) = marks.color.as_deref().and_then(hex_color) {
                 text = format!("\\textcolor[HTML]{{{hex}}}{{{text}}}");
             }
+            if let Some(hex) = marks.shade.as_deref().and_then(hex_color) {
+                text = format!("\\opnhlx{{{hex}}}{{{text}}}");
+            }
             if let Some(name) = &marks.highlight {
-                text = format!("\\opnhl{{{}}}{{{text}}}", highlight_color(name));
+                text = match name.starts_with('#').then(|| hex_color(name)).flatten() {
+                    Some(hex) => format!("\\opnhlx{{{hex}}}{{{text}}}"),
+                    None => format!("\\opnhl{{{}}}{{{text}}}", highlight_color(name)),
+                };
             }
             if marks.underline {
-                text = format!("\\uline{{{text}}}");
+                text = format!("\\{}{{{text}}}", underline_command(marks.underline_line.as_deref()));
             }
             if marks.strike {
-                text = format!("\\sout{{{text}}}");
+                text = if marks.strike_double {
+                    format!("\\xout{{{text}}}")
+                } else {
+                    format!("\\sout{{{text}}}")
+                };
             }
         }
         if marks.emphasis {
@@ -192,6 +241,28 @@ impl Writer<'_> {
             }
         }
     }
+}
+
+/// The polyglossia name of a language tag, for the languages it knows besides English (the main language).
+pub(super) fn polyglossia_name(tag: &str) -> Option<&'static str> {
+    Some(match tag.split('-').next()? {
+        "es" => "spanish",
+        "fr" => "french",
+        "de" => "german",
+        "it" => "italian",
+        "pt" => "portuguese",
+        "nl" => "dutch",
+        "ru" => "russian",
+        "pl" => "polish",
+        "sv" => "swedish",
+        "da" => "danish",
+        "fi" => "finnish",
+        "el" => "greek",
+        "tr" => "turkish",
+        "cs" => "czech",
+        "la" => "latin",
+        _ => return None,
+    })
 }
 
 #[cfg(test)]
@@ -225,6 +296,62 @@ mod tests {
             render(&[marked("hi & bye", marks)]),
             "\\href{https://example.org/a\\%5Fb}{\\textbf{\\emph{\\sout{\\uline{\\opnhl{yellow!60}{hi \\& bye}}}}}}"
         );
+    }
+
+    #[test]
+    fn version_two_marks_map_to_ulem_and_friends() {
+        let run = |marks: Marks| render(&[marked("x", marks)]);
+        let caps = Marks {
+            caps: Some("small".to_owned()),
+            ..Marks::default()
+        };
+        assert_eq!(run(caps), "\\textsc{x}");
+        let double = Marks {
+            underline: true,
+            underline_line: Some("double".to_owned()),
+            ..Marks::default()
+        };
+        assert_eq!(run(double), "\\uuline{x}");
+        let wave = Marks {
+            underline: true,
+            underline_line: Some("wave".to_owned()),
+            ..Marks::default()
+        };
+        assert_eq!(run(wave), "\\uwave{x}");
+        let strike = Marks {
+            strike: true,
+            strike_double: true,
+            ..Marks::default()
+        };
+        assert_eq!(run(strike), "\\xout{x}");
+        let sized = Marks {
+            size: Some("10.5".to_owned()),
+            font: Some("Georgia".to_owned()),
+            ..Marks::default()
+        };
+        assert_eq!(run(sized), "{\\opnfont{Georgia}{\\fontsize{10.5}{12.6}\\selectfont x}}");
+        let shaded = Marks {
+            shade: Some("#ffeecc".to_owned()),
+            ..Marks::default()
+        };
+        assert_eq!(run(shaded), "\\opnhlx{FFEECC}{x}");
+    }
+
+    #[test]
+    fn fonts_and_languages_go_through_the_helpers_with_an_escaped_name() {
+        let font = Marks {
+            font: Some("Fira_Sans".to_owned()),
+            lang: Some("fr-CA".to_owned()),
+            ..Marks::default()
+        };
+        let out = render(&[marked("x", font)]);
+        assert_eq!(out, "\\opnlang{french}{{\\opnfont{Fira_Sans}x}}");
+        assert!(!out.contains("fontspec"), "{out}");
+        let english = Marks {
+            lang: Some("en-US".to_owned()),
+            ..Marks::default()
+        };
+        assert_eq!(render(&[marked("x", english)]), "x");
     }
 
     #[test]
