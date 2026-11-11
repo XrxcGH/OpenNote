@@ -5,7 +5,7 @@
 
 import { htmlOptions, renderBlock, type BlockContext } from '../export/blocks';
 import { isFloating, type ExportBlock, type ExportPage, type TableBlock } from '../export/source';
-import { parseMarkdown, renderHtmlEach } from '../export/markdown';
+import { parseMarkdown, renderHtml, renderHtmlEach } from '../export/markdown';
 import type { FlowBlock } from '../pagination/types';
 import { escapeAttr, escapeHtml } from '../export/markdown';
 import { layoutStyle, type TextLayout } from './textLayout';
