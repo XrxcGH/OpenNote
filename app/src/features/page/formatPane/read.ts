@@ -46,3 +46,12 @@ export function paraValue(state: EditorState, pick: (format: ParaFormat) => stri
   if (seen.size > 1) return 'mixed';
   return [...seen][0] ?? '';
 }
+
+/** The token list of a mark on each text run of the selection (the caret's marks for a caret). */
+export function runTokens(state: EditorState, mark: string): string[][] {
+  return markLists(state).map((marks) =>
+    String(marks.find((candidate) => candidate.type.name === mark)?.attrs[mark] ?? '')
+      .split(' ')
+      .filter(Boolean),
+  );
+}

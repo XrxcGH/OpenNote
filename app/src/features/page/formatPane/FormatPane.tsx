@@ -131,6 +131,33 @@ function previewLook(read: (id: string) => string | boolean): CSSProperties {
   if (read('italic') === true) css.fontStyle = 'italic';
   const color = resolveColor(text('color'), currentScheme());
   if (color) css.color = color;
+  const lines = [text('underline') ? 'underline' : '', text('strike') ? 'line-through' : ''].filter(Boolean);
+  if (lines.length > 0) {
+    css.textDecorationLine = lines.join(' ');
+    const style = text('underline');
+    if (style === 'double' || style === 'dotted' || style === 'dashed' || style === 'wavy') {
+      css.textDecorationStyle = style;
+    }
+  }
+  const caps = text('caps');
+  if (caps === 'small') css.fontVariantCaps = 'small-caps';
+  if (caps === 'all') css.textTransform = 'uppercase';
+  const tracking = Number(text('tracking'));
+  if (tracking !== 0 && Number.isFinite(tracking)) css.letterSpacing = `${tracking}pt`;
+  if (read('superscript') === true) css.verticalAlign = 'super';
+  if (read('subscript') === true) css.verticalAlign = 'sub';
+  if (read('shadow') === true) css.textShadow = '1px 1px 2px currentColor';
+  if (read('outline') === true) css.WebkitTextStroke = '0.5px currentColor';
+  const features: string[] = [];
+  const ligatures = text('ligatures');
+  if (ligatures === 'liga-none') features.push('"liga" 0', '"clig" 0');
+  if (ligatures === 'dlig' || ligatures === 'hlig') features.push(`"${ligatures}" 1`);
+  const forms = text('numberForms');
+  if (forms) features.push(`"${forms}" 1`);
+  const spacing = text('numberSpacing');
+  if (spacing) features.push(`"${spacing}" 1`);
+  if (text('zero')) features.push('"zero" 1');
+  if (features.length > 0) css.fontFeatureSettings = features.join(', ');
   return css;
 }
 

@@ -11,7 +11,10 @@ import { styleOfNode } from '../styles/commands';
 import { styleLabel } from '../styles/model';
 import { resolveStyle } from '../styles/resolve';
 import type { StyleContext } from '../styles/resolve';
-import { optionLabel } from './labels';
+import { optionLabel as optionName } from './labels';
+
+/** An option's name inside a sentence: lowercase, as in "Aligned center". */
+const optionLabel = (field: string, value: string): string => optionName(field, value).toLowerCase();
 import { formatPoints } from './units';
 
 export type RevealSource = 'direct' | 'paragraph' | 'style';
@@ -95,9 +98,11 @@ function otfWord(token: string): string {
   return /^ssdd$/.test(token) ? optionLabel('stylisticSet', token) : optionLabel('otfToken', token);
 }
 
-/** A line spacing as words: "At least 12". */
+/** A line spacing as words: "at least 12 pt". */
 function lineWords(rule: string, value: number): string {
-  return t('textPane.reveal.what.lineValue', { rule: optionLabel('lineRule', rule), value: formatPoints(value) });
+  const args = { value: formatPoints(value) };
+  if (rule === 'atLeast') return t('textPane.reveal.what.lineAtLeast', args);
+  return rule === 'exact' ? t('textPane.reveal.what.lineExact', args) : t('textPane.reveal.what.lineMultiple', args);
 }
 
 /** The words for one run format: `Georgia`, `13 pt`, `Bold`. */

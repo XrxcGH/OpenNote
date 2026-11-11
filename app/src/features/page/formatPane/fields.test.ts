@@ -10,6 +10,7 @@ import { listLevelAt, setListLevel } from '../../../editor/commands/lists';
 import { mountEditor } from '../../../editor/commands/testing';
 import type { TestEditor } from '../../../editor/commands/testing';
 import { paraFormat } from '../../../editor/paragraph/attributes';
+import { setPageHyphenate } from '../../../editor/paragraph/defaultTab';
 import { t } from '../../../strings/t';
 import type { MessageKey } from '../../../strings/t';
 import {
@@ -259,8 +260,8 @@ describe('the Paragraph tab, switches', () => {
     type('outlineLevel', '3');
     type('dir', 'rtl');
     type('keepNext', true);
-    type('widows', true);
-    expect(para()).toMatchObject({ align: 'justify', outline: 3, dir: 'rtl', keepNext: true, widows: true });
+    type('widows', false);
+    expect(para()).toMatchObject({ align: 'justify', outline: 3, dir: 'rtl', keepNext: true, widows: false });
     type('keepNext', false);
     expect(para().keepNext).toBeUndefined();
   });
@@ -368,5 +369,127 @@ describe('values the command refuses are refused by the field with a message', (
     open('- [one]');
     expect(run(setListLevel({ font: 'x'.repeat(5000) }))).toBe(false);
     expect(run(setListLevel({ font: 'Georgia' }))).toBe(true);
+  });
+});
+
+// ---- Selections of several paragraphs and runs: each keeps what it has apart from the edit ----
+
+/** The paragraph attributes of the nth top-level element. */
+const paraOf = (index: number) => paraFormat(mounted!.editor.state.doc.child(index).attrs);
+
+/** Puts a paragraph key straight on the nth element, as an opened page would have it. */
+function seedPara(index: number, key: string, value: unknown) {
+  const { state, view } = mounted!.editor;
+  let pos = 0;
+  for (let i = 0; i < index; i += 1) pos += state.doc.child(i).nodeSize;
+  view.dispatch(state.tr.setNodeAttribute(pos, key, value));
+}
+
+describe('a selection of several paragraphs', () => {
+  const twoHanging = () => {
+    open('[one\n\ntwo]');
+    seedPara(0, 'indent', { start: 0, end: 0, first: -18 });
+    seedPara(1, 'indent', { start: 0, end: 9, first: -36 });
+  };
+
+  it('sets Left indent per paragraph and keeps each hanging indent', () => {
+    twoHanging();
+    expect(type('indentStart', '36')).toBeNull();
+    expect(paraOf(0).indent).toEqual({ start: 36, end: 0, first: -18 });
+    expect(paraOf(1).indent).toEqual({ start: 36, end: 9, first: -36 });
+  });
+
+  it('sets By per paragraph and keeps the sides', () => {
+    twoHanging();
+    expect(type('specialBy', '10')).toBeNull();
+    expect(paraOf(0).indent).toEqual({ start: 0, end: 0, first: -10 });
+    expect(paraOf(1).indent).toEqual({ start: 0, end: 9, first: -10 });
+  });
+
+  it('shows a Special that differs as mixed, not as none', () => {
+    open('[one\n\ntwo]');
+    seedPara(0, 'indent', { start: 0, end: 0, first: 18 });
+    seedPara(1, 'indent', { start: 0, end: 0, first: -18 });
+    expect(shown('special')).toBe('mixed');
+  });
+
+  it('adds a tab stop to each paragraph and keeps the stops it had', () => {
+    open('[one\n\ntwo]');
+    seedPara(1, 'tabs', [{ pos: 100, align: 'start', leader: 'none' }]);
+    run(setTabStop({ pos: 50, align: 'start', leader: 'none' }));
+    expect(paraOf(0).tabs?.map((stop) => stop.pos)).toEqual([50]);
+    expect(paraOf(1).tabs?.map((stop) => stop.pos)).toEqual([50, 100]);
+    run(clearTabStop(50));
+    expect(paraOf(0).tabs).toBeUndefined();
+    expect(paraOf(1).tabs?.map((stop) => stop.pos)).toEqual([100]);
+  });
+
+  it('sets a border side on each paragraph and keeps the other sides', () => {
+    open('[one\n\ntwo]');
+    seedPara(1, 'border', { bottom: { style: 'single', width: 1, space: 2 } });
+    run(setBorderSide('top', { style: 'single', width: 0.5, space: 1, color: null }));
+    expect(Object.keys(paraOf(0).border ?? {})).toEqual(['top']);
+    expect(Object.keys(paraOf(1).border ?? {}).sort()).toEqual(['bottom', 'top']);
+  });
+});
+
+describe('Pagination defaults', () => {
+  it('shows Widow control on for a plain paragraph and turns it off with widows:false', () => {
+    open('one [two] three');
+    expect(shown('widows')).toBe(true);
+    expect(type('widows', false)).toBeNull();
+    expect(para().widows).toBe(false);
+    expect(shown('widows')).toBe(false);
+    expect(type('widows', true)).toBeNull();
+    expect(para().widows).toBeUndefined();
+  });
+
+  it('turns Hyphenate off with an explicit false when the page hyphenates', () => {
+    open('one [two] three');
+    setPageHyphenate({ text: { hyphenate: true } });
+    try {
+      expect(shown('hyphenate')).toBe(true);
+      expect(type('hyphenate', false)).toBeNull();
+      expect(para().hyphenate).toBe(false);
+      expect(shown('hyphenate')).toBe(false);
+    } finally {
+      setPageHyphenate(null);
+    }
+  });
+
+  it('style mode reads widows as on and writes false for off', () => {
+    const style = fieldById('widows')!.style!;
+    expect(style.read({})).toBe(true);
+    expect(style.patch(false, {})).toEqual({ widows: false });
+    expect(style.patch(true, { widows: false })).toEqual({ widows: undefined });
+  });
+});
+
+describe('a range whose runs differ', () => {
+  it('turns Emboss on for every run and keeps the shadow of the first', () => {
+    open('[one two]');
+    mounted!.editor.commands.setTextSelection({ from: 1, to: 4 });
+    expect(type('shadow', true)).toBeNull();
+    mounted!.editor.commands.setTextSelection({ from: 1, to: 8 });
+    expect(shown('shadow')).toBe('mixed');
+    expect(type('emboss', true)).toBeNull();
+    const html = mounted!.markdown();
+    expect(html).toContain('data-effect="emboss shadow"');
+    expect(html).toContain('data-effect="emboss"');
+    expect(shown('emboss')).toBe(true);
+    expect(shown('shadow')).toBe('mixed');
+  });
+
+  it('sets ligatures on a range and keeps each run its number form', () => {
+    open('[one two]');
+    mounted!.editor.commands.setTextSelection({ from: 1, to: 4 });
+    expect(type('numberForms', 'onum')).toBeNull();
+    mounted!.editor.commands.setTextSelection({ from: 1, to: 8 });
+    expect(shown('numberForms')).toBe('mixed');
+    expect(type('ligatures', 'dlig')).toBeNull();
+    const html = mounted!.markdown();
+    expect(html).toContain('data-otf="dlig onum"');
+    expect(html).toContain('data-otf="dlig"');
+    expect(shown('ligatures')).toBe('dlig');
   });
 });

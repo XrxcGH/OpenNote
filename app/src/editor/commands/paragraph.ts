@@ -83,6 +83,26 @@ export function setPara(key: ParaKey, value: unknown): Command {
   return viaFormatTarget({ format: 'para', key, value }, fromChange(setParaChange(key, value)));
 }
 
+/** Sets one key on every selected element from that element's own format, so an edit to one part of a value (one
+ * side of an indent, one tab stop) leaves the rest of each element as it was. */
+export function setParaEach(key: ParaKey, edit: (format: ParaFormat) => unknown): Command {
+  const change = fromChange((tr) => {
+    let changed = false;
+    for (const { node, pos } of selectionParaTargets(tr.doc, tr.selection)) {
+      const value = edit(paraFormat(node.attrs));
+      if (!validParaValue(key, value)) return false;
+      const clean = cleanParaValue(key, value);
+      if (JSON.stringify(node.attrs[key] ?? null) === JSON.stringify(clean)) continue;
+      tr.setNodeAttribute(tr.mapping.map(pos), key, clean);
+      changed = true;
+    }
+    if (changed) tr.setMeta(META_ELEMENT_DATA, true);
+    return changed;
+  });
+  return (state, dispatch) =>
+    viaFormatTarget({ format: 'para', key, value: edit(paraAt(state)) }, change)(state, dispatch);
+}
+
 /** The paragraph formatting of the first element the selection touches, read through the spec's ranges. */
 export function paraAt(state: EditorState): ParaFormat {
   const first = selectionParaTargets(state.doc, state.selection)[0];

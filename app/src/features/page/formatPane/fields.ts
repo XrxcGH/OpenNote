@@ -4,8 +4,8 @@
 // gives a message. A field may also say how it reads and writes a style, for style mode (Modify style).
 import type { EditorState } from '@tiptap/pm/state';
 import type { Command } from '../../../editor/commands/command';
-import { setAlign, setPara } from '../../../editor/commands/paragraph';
-import { runMarkPressed, setRunMark, setRunValue, setWeight, weightAt } from '../../../editor/commands/runFormat';
+import { setAlign, setPara, setParaEach } from '../../../editor/commands/paragraph';
+import { editRunTokens, runMarkPressed, setRunMark, setRunValue, setWeight, weightAt } from '../../../editor/commands/runFormat';
 import { sizeText } from '../../../editor/commands/sizes';
 import type { Align, ParaFormat, ParaKey } from '../../../editor/paragraph/attributes';
 import {
@@ -19,8 +19,9 @@ import {
   isNumberText,
 } from '../../../editor/schema/constants';
 import { t } from '../../../strings/t';
+import { getPageHyphenate } from '../../../editor/paragraph/defaultTab';
 import { parseSize, validFontName } from '../../fonts';
-import { firstMark, paraValue, runValue } from './read';
+import { firstMark, paraValue, runTokens, runValue } from './read';
 import type { Shown } from './read';
 import { formatPoints, parseLength } from './units';
 
@@ -120,7 +121,6 @@ const UNDERLINES = ['', 'single', ...UNDERLINE_STYLES.filter((style) => style !=
 const WEIGHTS = ['100', '200', '300', '400', '500', '600', '700', '800', '900'];
 const CAPS = ['', 'small', 'all'];
 
-const tokensOf = (state: EditorState, mark: string) => runValue(state, mark, mark).split(' ').filter(Boolean);
 
 /** An effect toggled in the `effect` mark's list, with emboss and engrave excluding each other. */
 function effect(token: (typeof TEXT_EFFECTS)[number]): Field {
@@ -129,13 +129,16 @@ function effect(token: (typeof TEXT_EFFECTS)[number]): Field {
     id: token,
     tab: 'text',
     kind: 'toggle',
-    read: (state) => tokensOf(state, 'effect').includes(token),
-    parse: toggleParse,
-    apply: (on) => (state, dispatch) => {
-      const rest = tokensOf(state, 'effect').filter((have) => have !== token && !(on && have === opposite));
-      const next = (on ? [...rest, token] : rest).sort();
-      return setRunValue('effect', next.length > 0 ? next.join(' ') : null)(state, dispatch);
+    read: (state) => {
+      const runs = runTokens(state, 'effect').map((tokens) => tokens.includes(token));
+      return runs.every(Boolean) ? true : runs.some(Boolean) ? 'mixed' : false;
     },
+    parse: toggleParse,
+    apply: (on) =>
+      editRunTokens('effect', (tokens) => {
+        const rest = tokens.filter((have) => have !== token && !(on && have === opposite));
+        return on ? [...rest, token] : rest;
+      }),
   };
 }
 
@@ -147,13 +150,13 @@ function otf(id: string, group: readonly string[]): Field {
     tab: 'advanced',
     kind: 'choice',
     options,
-    read: (state) => tokensOf(state, 'otf').find((token) => group.includes(token)) ?? '',
-    parse: choiceParse(options),
-    apply: (value) => (state, dispatch) => {
-      const kept = tokensOf(state, 'otf').filter((token) => !group.includes(token));
-      const next = [...kept, ...(value ? [String(value)] : [])].sort();
-      return setRunValue('otf', next.length > 0 ? next.join(' ') : null)(state, dispatch);
+    read: (state) => {
+      const runs = new Set(runTokens(state, 'otf').map((tokens) => tokens.find((token) => group.includes(token)) ?? ''));
+      return runs.size > 1 ? 'mixed' : ([...runs][0] ?? '');
     },
+    parse: choiceParse(options),
+    apply: (value) =>
+      editRunTokens('otf', (tokens) => [...tokens.filter((token) => !group.includes(token)), ...(value ? [String(value)] : [])]),
   };
 }
 
@@ -350,11 +353,11 @@ const styleIndent = (values: StyleValues): IndentJson => ({
   ...(values.indent as Partial<IndentJson> | undefined),
 });
 
-/** The selection's indent; a side that differs between paragraphs reads as 0. */
-function indentOf(state: EditorState): IndentJson {
-  const side = (key: keyof IndentJson) => Number(para(state, (f) => String(f.indent?.[key] ?? 0))) || 0;
-  return { start: side('start'), end: side('end'), first: side('first') };
-}
+/** One paragraph's indent with one side changed; the other sides stay as that paragraph has them. */
+const withIndent = (format: ParaFormat, change: (own: IndentJson) => Partial<IndentJson>) => {
+  const own: IndentJson = { start: 0, end: 0, first: 0, ...format.indent };
+  return indentJson({ ...own, ...change(own) });
+};
 
 /** A paragraph key that is a length, or `auto` for the spacing keys. */
 function paraLength(id: 'before' | 'after'): Field {
@@ -382,8 +385,7 @@ function indentSide(id: string, side: 'start' | 'end'): Field {
     unit: 'pt',
     read: (state) => para(state, (f) => formatPoints(f.indent?.[side] ?? 0)),
     parse: (input) => lengthParse(-1584, 1584)(String(input).trim() === '' ? '0' : input),
-    apply: (value) => (state, dispatch) =>
-      setPara('indent', indentJson({ ...indentOf(state), [side]: Number(value) }))(state, dispatch),
+    apply: (value) => setParaEach('indent', (format) => withIndent(format, () => ({ [side]: Number(value) }))),
     style: {
       read: (v) => formatPoints(styleIndent(v)[side]),
       patch: (value, v) => ({ indent: indentJson({ ...styleIndent(v), [side]: Number(value) }) }),
@@ -397,6 +399,9 @@ const ALIGNS = ['start', 'center', 'end', 'justify', 'distribute'];
 const OUTLINES = ['', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 const BOOLEAN_KEYS = ['contextual', 'keepNext', 'keepLines', 'breakBefore', 'widows', 'hyphenate'] as const;
 const STYLE_BOOLEANS: ReadonlySet<string> = new Set(['contextual', 'keepNext', 'keepLines', 'widows']);
+/** What a boolean key means when a paragraph has none: widow control is on; hyphenation follows the page. */
+const booleanDefault = (key: (typeof BOOLEAN_KEYS)[number]): boolean =>
+  key === 'widows' ? true : key === 'hyphenate' ? getPageHyphenate() : false;
 
 /** The line spacing value parsed with the rule the selection has: a multiple, or a length in points. */
 function lineValueParse(input: string | boolean, state?: EditorState): Parsed {
@@ -443,30 +448,31 @@ const PARAGRAPH_FIELDS: readonly Field[] = [
     tab: 'paragraph',
     kind: 'choice',
     options: SPECIAL,
-    read: (state) => {
-      const { first } = indentOf(state);
-      return first > 0 ? 'first' : first < 0 ? 'hanging' : '';
-    },
+    read: (state) =>
+      para(state, (f) => {
+        const first = f.indent?.first ?? 0;
+        return first > 0 ? 'first' : first < 0 ? 'hanging' : '';
+      }),
     parse: choiceParse(SPECIAL),
-    apply: (kind) => (state, dispatch) => {
-      const now = indentOf(state);
-      const size = Math.abs(now.first) || 36;
-      const first = kind === 'first' ? size : kind === 'hanging' ? -size : 0;
-      return setPara('indent', indentJson({ ...now, first }))(state, dispatch);
-    },
+    apply: (kind) =>
+      setParaEach('indent', (format) =>
+        withIndent(format, (own) => {
+          const size = Math.abs(own.first) || 36;
+          return { first: kind === 'first' ? size : kind === 'hanging' ? -size : 0 };
+        }),
+      ),
   },
   {
     id: 'specialBy',
     tab: 'paragraph',
     kind: 'text',
     unit: 'pt',
-    read: (state) => formatPoints(Math.abs(indentOf(state).first)),
+    read: (state) => para(state, (f) => formatPoints(Math.abs(f.indent?.first ?? 0))),
     parse: lengthParse(0, 1584),
-    apply: (value) => (state, dispatch) => {
-      const now = indentOf(state);
-      const by = Number(value ?? 0);
-      return setPara('indent', indentJson({ ...now, first: now.first < 0 ? -by : by }))(state, dispatch);
-    },
+    apply: (value) =>
+      setParaEach('indent', (format) =>
+        withIndent(format, (own) => ({ first: own.first < 0 ? -Number(value ?? 0) : Number(value ?? 0) })),
+      ),
   },
   paraLength('before'),
   paraLength('after'),
@@ -503,16 +509,19 @@ const PARAGRAPH_FIELDS: readonly Field[] = [
     tab: 'paragraph',
     kind: 'toggle',
     read: (state) => {
-      const value = para(state, (f) => String(f[key] ?? false));
+      const value = para(state, (f) => String(f[key] ?? booleanDefault(key)));
       return value === 'mixed' ? 'mixed' : value === 'true';
     },
     parse: toggleParse,
-    apply: (on) => setPara(key, on ? true : null),
+    // The default is no key; the other choice is written out, so Off works where the default is On.
+    apply: (on) => (state, dispatch) => setPara(key, on === booleanDefault(key) ? null : on)(state, dispatch),
     ...(STYLE_BOOLEANS.has(key)
       ? {
           style: {
-            read: (v: StyleValues) => v[key] === true,
-            patch: (value: unknown) => ({ [key]: value === true ? true : undefined }),
+            read: (v: StyleValues) => (typeof v[key] === 'boolean' ? v[key] === true : booleanDefault(key)),
+            patch: (value: unknown) => ({
+              [key]: (value === true) === booleanDefault(key) ? undefined : value === true,
+            }),
           },
         }
       : {}),

@@ -2,8 +2,8 @@
 // Each is a command over the paragraph keys `tabs`, `border`, and `shade`, so the same checks as for a command apply.
 import type { EditorState } from '@tiptap/pm/state';
 import type { Command } from '../../../editor/commands/command';
-import { paraAt, setPara } from '../../../editor/commands/paragraph';
-import { BORDER_STYLES, MAX_TAB_STOPS } from '../../../editor/paragraph/attributes';
+import { paraAt, selectionParaTargets, setPara, setParaEach } from '../../../editor/commands/paragraph';
+import { BORDER_STYLES, MAX_TAB_STOPS, paraFormat } from '../../../editor/paragraph/attributes';
 import type {
   Border,
   BorderSide,
@@ -29,20 +29,24 @@ export const tabsAt = (state: EditorState): TabStop[] => paraAt(state).tabs ?? [
 
 /** Sets a stop at a position, replacing the one there. Refuses the 65th stop. */
 export function setTabStop(stop: TabStop): Command {
+  // Each paragraph keeps its own other stops. One that is full refuses the whole change.
   return (state, dispatch) => {
-    const others = tabsAt(state).filter((have) => have.pos !== stop.pos);
-    if (others.length >= MAX_TAB_STOPS) return false;
-    const next = [...others, stop].sort((a, b) => a.pos - b.pos);
-    return setPara('tabs', next)(state, dispatch);
+    const tooMany = selectionParaTargets(state.doc, state.selection).some(
+      ({ node }) => (paraFormat(node.attrs).tabs ?? []).filter((have) => have.pos !== stop.pos).length >= MAX_TAB_STOPS,
+    );
+    if (tooMany) return false;
+    return setParaEach('tabs', (format) =>
+      [...(format.tabs ?? []).filter((have) => have.pos !== stop.pos), stop].sort((a, b) => a.pos - b.pos),
+    )(state, dispatch);
   };
 }
 
 /** Clears the stop at a position. */
 export function clearTabStop(pos: number): Command {
-  return (state, dispatch) => {
-    const next = tabsAt(state).filter((have) => have.pos !== pos);
-    return setPara('tabs', next.length > 0 ? next : null)(state, dispatch);
-  };
+  return setParaEach('tabs', (format) => {
+    const next = (format.tabs ?? []).filter((have) => have.pos !== pos);
+    return next.length > 0 ? next : null;
+  });
 }
 
 /** Clears every stop of the selected paragraphs. */
@@ -85,12 +89,12 @@ const borderJson = (border: Border) => {
 
 /** Sets, or with null removes, one side of the border. */
 export function setBorderSide(side: BorderSideName, spec: BorderSide | null): Command {
-  return (state, dispatch) => {
-    const next: Border = { ...borderAt(state) };
+  return setParaEach('border', (format) => {
+    const next: Border = { ...format.border };
     if (spec) next[side] = spec;
     else delete next[side];
-    return setPara('border', borderJson(next))(state, dispatch);
-  };
+    return borderJson(next);
+  });
 }
 
 export type BorderPreset = 'none' | 'box' | 'lines';

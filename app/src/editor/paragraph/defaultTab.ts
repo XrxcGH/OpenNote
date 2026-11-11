@@ -31,3 +31,13 @@ export function onDefaultTab(listener: () => void): () => void {
   listeners.add(listener);
   return () => void listeners.delete(listener);
 }
+
+let pageHyphenate = false;
+
+/** Whether the page hyphenates paragraphs that say nothing (`view.text.hyphenate`). */
+export const getPageHyphenate = (): boolean => pageHyphenate;
+
+/** Sets the page's hyphenation default from its `view`. */
+export function setPageHyphenate(view: unknown): void {
+  pageHyphenate = (view as { text?: { hyphenate?: unknown } } | null | undefined)?.text?.hyphenate === true;
+}

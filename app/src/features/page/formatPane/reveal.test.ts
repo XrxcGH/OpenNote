@@ -41,7 +41,7 @@ describe('reveal formatting', () => {
     const lines = revealFormatting(mounted.editor.state, { app: APP_STYLES, notebook: {} });
     expect(lines.find((line) => line.key === 'align')).toMatchObject({
       source: 'paragraph',
-      text: 'Aligned Center (paragraph)',
+      text: 'Aligned center (paragraph)',
     });
   });
 
@@ -57,7 +57,7 @@ describe('reveal formatting', () => {
     toggleRunMark('italic')(mounted.editor.state, mounted.editor.view.dispatch);
     setAlign('end')(mounted.editor.state, mounted.editor.view.dispatch);
     const text = revealText(revealFormatting(mounted.editor.state, { app: APP_STYLES, notebook: {} }));
-    expect(text).toBe('Italic (direct). Aligned End (paragraph)');
+    expect(text).toBe('Italic (direct). Aligned end (paragraph)');
   });
 
   it('says at-least line spacing and small capitals in words, never as identifiers', () => {
@@ -66,8 +66,8 @@ describe('reveal formatting', () => {
     expect(setPara('line', { rule: 'atLeast', value: 12 })(state, dispatch)).toBe(true);
     setRunValue('caps', 'small')(mounted.editor.state, mounted.editor.view.dispatch);
     const lines = revealFormatting(mounted.editor.state, { app: APP_STYLES, notebook: {} }).map((l) => l.text);
-    expect(lines).toContain('Line spacing At least: 12 (paragraph)');
-    expect(lines).toContain('Capitals Small capitals (direct)');
+    expect(lines).toContain('Line spacing at least 12 pt (paragraph)');
+    expect(lines).toContain('Capitals small capitals (direct)');
   });
 
   it('says a style line spacing in words, not JSON', () => {
@@ -76,7 +76,7 @@ describe('reveal formatting', () => {
       app: APP_STYLES,
       notebook: { h2: { line: { rule: 'multiple', value: 1.15 } } },
     }).map((l) => l.text);
-    expect(lines).toContain('Line spacing Multiple: 1.15 (style Heading 2)');
+    expect(lines).toContain('Line spacing multiple 1.15 (style Heading 2)');
     expect(lines.join(' ')).not.toMatch(/[{}"]/);
   });
 });
