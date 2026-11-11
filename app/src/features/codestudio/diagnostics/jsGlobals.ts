@@ -14,7 +14,17 @@ const HOST =
   'console setTimeout clearTimeout setInterval clearInterval queueMicrotask structuredClone TextEncoder ' +
   'TextDecoder URL URLSearchParams atob btoa performance crypto prompt alert';
 
+/**
+ * The names the app's JavaScript runtimes set on the global object themselves. The code cell sandbox
+ * (features/codecells/sandbox/javascript.ts) sets `print` and `console`; a test reads its source to keep this list
+ * true. The studio runtime (code:L06) adds its input and file helpers here when it lands.
+ */
+export const RUNTIME_GLOBALS: readonly string[] = ['console', 'print'];
+
 /** The Jest-compatible test API the app injects into JavaScript and TypeScript programs (ADR 0075). */
 const TEST_API = 'describe it test expect beforeEach afterEach beforeAll afterAll';
 
-export const JS_GLOBALS: ReadonlySet<string> = new Set(`${ECMASCRIPT} ${HOST} ${TEST_API}`.split(' '));
+export const JS_GLOBALS: ReadonlySet<string> = new Set([
+  ...`${ECMASCRIPT} ${HOST} ${TEST_API}`.split(' '),
+  ...RUNTIME_GLOBALS,
+]);

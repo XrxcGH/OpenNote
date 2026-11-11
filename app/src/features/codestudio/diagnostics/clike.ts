@@ -50,6 +50,7 @@ const DECLARATORS = new Set([
   'ParenthesizedDeclarator',
   'FunctionDeclarator',
   'StructuredBindingDeclarator',
+  'VariadicDeclarator',
 ]);
 
 /** A macro-shaped name. The standard and POSIX headers define hundreds (ERANGE, SIG_IGN, UINT32_MAX, O_RDONLY). */
@@ -70,6 +71,8 @@ class CChecker {
   /** True when the file includes a system header, which may define any macro-shaped name. */
   private systemHeader = false;
   private member = 0;
+  /** Function-like macros the file defines: their arguments may be names the macro declares (`REP(i, n)`). */
+  private readonly macros = new Set<string>();
 
   constructor(private readonly text: string) {}
 
@@ -149,7 +152,6 @@ class CChecker {
       case 'StatementIdentifier':
       case 'Attribute':
       case 'AttributeSpecifier':
-      case 'UsingDeclaration':
       case 'NamespaceAliasDefinition':
       case 'FieldExpression':
         if (node.name === 'FieldExpression' && node.firstChild) this.visit(node.firstChild, scope, local);
@@ -158,14 +160,24 @@ class CChecker {
       case 'FieldDeclaration':
       case 'TypeDefinition':
       case 'ParameterDeclaration':
+      case 'VariadicParameterDeclaration':
         return this.declaration(node, scope, local);
+      case 'OptionalParameterDeclaration':
+        return this.optionalParameter(node, scope);
+      case 'UsingDeclaration':
+        return this.usingDeclaration(node, scope);
+      case 'LambdaCaptureSpecifier':
+        return this.captures(node, scope);
+      case 'Macro':
+      case 'CallExpression':
+        return this.macroCall(node, scope, local);
       case 'Enumerator': {
         const id = node.getChild('Identifier');
         if (id) this.declare(scope, id, false, false);
         return this.visitAll(kids(node).slice(1), scope, local);
       }
       case 'FunctionDefinition':
-        return this.functionDef(node, scope);
+        return this.functionDef(node, scope, local);
       case 'FieldDeclarationList':
         this.member += 1;
         this.visitAll(kids(node), { parent: scope, names: new Map() }, false);
@@ -173,15 +185,21 @@ class CChecker {
         return;
       case 'ForRangeLoop':
         return this.rangeLoop(node, scope);
+      case 'NamespaceDefinition': {
+        // `namespace util { ... }` declares `util` in the enclosing scope.
+        const id = node.getChild('Identifier');
+        if (id) this.declare(scope, id, false, false);
+        const inner: Scope = { parent: scope, names: new Map() };
+        return this.visitAll(
+          kids(node).filter((k) => k !== id && k.from !== id?.from),
+          inner,
+          local,
+        );
+      }
       case 'CompoundStatement':
       case 'ForStatement':
       case 'LambdaExpression':
-      case 'NamespaceDefinition':
-        return this.visitAll(
-          kids(node),
-          { parent: scope, names: new Map() },
-          local || node.name !== 'NamespaceDefinition',
-        );
+        return this.visitAll(kids(node), { parent: scope, names: new Map() }, true);
       default:
         return this.visitAll(kids(node), scope, local);
     }
@@ -200,6 +218,70 @@ class CChecker {
     if (parts[0] && /^#\s*define$/.test(this.slice(parts[0]))) {
       const id = parts.find((p) => p.name === 'Identifier');
       if (id) this.declare(scope, id, false, false);
+      // `#define REP(i, n) ...`: the parenthesis follows the name directly.
+      if (id && this.text[id.to] === '(') this.macros.add(this.slice(id));
+    }
+  }
+
+  private lookup(scope: Scope, name: string): Variable | undefined {
+    for (let s: Scope | null = scope; s; s = s.parent) {
+      const found = s.names.get(name);
+      if (found) return found;
+    }
+    return undefined;
+  }
+
+  /**
+   * A call of a function-like macro the file defines. Its body may declare a name from an argument
+   * (`#define REP(i, n) for (int i = 0; ...)`), so a bare name argument counts as a use when it resolves and is
+   * declared in the current scope when it does not.
+   */
+  private macroCall(node: SyntaxNode, scope: Scope, local: boolean): void {
+    const callee = node.firstChild;
+    const args = node.getChild('ArgumentList');
+    if (!callee || !args || !this.macros.has(this.slice(callee))) return this.visitAll(kids(node), scope, local);
+    for (const arg of kids(args)) {
+      if (arg.name !== 'Identifier') {
+        this.visit(arg, scope, local);
+        continue;
+      }
+      const name = this.slice(arg);
+      this.refs.push({ name, from: arg.from, to: arg.to, scope, quiet: true });
+      if (!this.lookup(scope, name)) this.declare(scope, arg, false, false);
+    }
+  }
+
+  /** `int f(int b = 2)` and `template <int N = 3>`: the name is declared, the default value is a read. */
+  private optionalParameter(node: SyntaxNode, scope: Scope): void {
+    let declared = false;
+    for (const p of kids(node)) {
+      if (!declared && (p.name === 'Identifier' || DECLARATORS.has(p.name))) {
+        this.declarator(p, scope, false, false);
+        declared = true;
+      } else this.visit(p, scope, false);
+    }
+  }
+
+  /** `using std::cout;` declares `cout`; `using namespace std;` declares nothing. */
+  private usingDeclaration(node: SyntaxNode, scope: Scope): void {
+    if (kids(node).some((k) => k.name === 'namespace')) return;
+    let last: SyntaxNode | null = node.lastChild;
+    while (last && (last.name === ';' || last.name === 'ScopedIdentifier')) {
+      last = last.name === 'ScopedIdentifier' ? last.lastChild : last.prevSibling;
+    }
+    if (last?.name === 'Identifier') this.declare(scope, last, false, false);
+  }
+
+  /** `[&, extra = 1]` declares `extra` in the lambda; `[x]` and the value of an init capture are reads. */
+  private captures(node: SyntaxNode, scope: Scope): void {
+    for (const c of kids(node)) {
+      const id = c.name === 'AssignmentExpression' ? c.firstChild : null;
+      if (id?.name !== 'Identifier') {
+        this.visit(c, scope, true);
+        continue;
+      }
+      this.declare(scope, id, false, false);
+      for (const r of kids(c).slice(1)) this.visit(r, scope, true);
     }
   }
 
@@ -255,9 +337,18 @@ class CChecker {
     }
   }
 
-  private functionDef(node: SyntaxNode, scope: Scope): void {
+  private functionDef(node: SyntaxNode, scope: Scope, local: boolean): void {
     const inner: Scope = { parent: scope, names: new Map() };
     const declarator = node.getChild('FunctionDeclarator');
+    if (!declarator) {
+      // The grammar reads `std::array<int, 2> b{};` as a function definition without a declarator: it is a
+      // variable `b` with a brace initializer.
+      for (const child of kids(node)) {
+        if (child.name === 'Identifier') this.declare(scope, child, local, false);
+        else this.visit(child, scope, local);
+      }
+      return;
+    }
     const name = declarator?.firstChild;
     const method = this.member > 0 || (name !== null && name !== undefined && name.name !== 'Identifier');
     if (name?.name === 'Identifier') this.declare(scope, name, false, false);

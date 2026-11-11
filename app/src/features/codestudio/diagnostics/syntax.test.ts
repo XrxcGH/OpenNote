@@ -42,6 +42,34 @@ describe('Lezer syntax errors', () => {
     ]);
   });
 
+  it("marks the real error line, not a one-line compound statement that has its ':'", async () => {
+    const lines = async (text: string) => (await syntax('python', text)).map((f) => f.line);
+    const colonFree = async (text: string) =>
+      (await syntax('python', text)).every((f) => !f.text.startsWith("Expected ':'"));
+    const cases: [string, number][] = [
+      ['def fib(n):\n    if n < 2: return n\n    return fib(n - 1) +\n', 3],
+      ['for i in range(3): print(i)\ny = 5 +\n', 2],
+      ['while True: break\nprint("a" "b" 3)\n', 2],
+      ['class E(Exception): pass\ntry: x = 1\nexcept E: pass\nz = 1 2\n', 4],
+      ['match(m)\nx = = 1\n', 2],
+    ];
+    for (const [text, line] of cases) {
+      expect(await lines(text), text).toEqual([line]);
+      expect(await colonFree(text), text).toBe(true);
+    }
+  });
+
+  it("says a match or case header lacks its ':' only inside a match statement", async () => {
+    expect(await syntax('python', 'match x\n    case 1:\n        pass\n')).toEqual([
+      { line: 1, text: "Expected ':' at the end of the 'match' line." },
+    ]);
+    expect(await syntax('python', 'match x:\n    case 1\n        pass\n')).toEqual([
+      { line: 2, text: "Expected ':' at the end of the 'case' line." },
+    ]);
+  });
+});
+
+describe('Lezer syntax errors: brackets and tokens', () => {
   it('names the line where an unclosed bracket opened', async () => {
     expect(await syntax('python', 'total = sum([1, 2, 3)\nprint(total)\n')).toEqual([
       { line: 1, text: "')' does not match '[' opened on line 1." },

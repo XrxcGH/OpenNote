@@ -38,6 +38,11 @@ interface Binding {
   block: number;
   decorators: string[];
   uses: number;
+  /** The full module of an import (`a.b` for `import a.b`), and whether it binds a submodule's top name. */
+  module?: string;
+  submodule?: boolean;
+  /** `import x as x` or `from m import x as x`: an explicit re-export, which F401 leaves alone. */
+  reexport?: boolean;
 }
 
 interface Ref {
@@ -100,7 +105,7 @@ class PythonChecker {
     node: SyntaxNode,
     kind: BindKind,
     at: number,
-    extra: Partial<Pick<Binding, 'shown' | 'simple' | 'decorators'>> = {},
+    extra: Partial<Pick<Binding, 'shown' | 'simple' | 'decorators' | 'module' | 'submodule' | 'reexport'>> = {},
   ): void {
     const name = this.slice(node);
     if (name === '_' && kind !== 'assign') return;
@@ -119,6 +124,9 @@ class PythonChecker {
       block: this.block(node),
       decorators: extra.decorators ?? [],
       uses: 0,
+      module: extra.module,
+      submodule: extra.submodule,
+      reexport: extra.reexport,
     };
     const list = target.bindings.get(name);
     if (list) list.push(binding);
@@ -235,13 +243,20 @@ class PythonChecker {
     let group: SyntaxNode[] = [];
     const flush = () => {
       const names = group.filter((p) => p.name === 'VariableName');
-      const hasAs = group.some((p) => p.name === 'as');
+      const as = group.find((p) => p.name === 'as');
       if (group.some((p) => p.name === '*')) scope.star = true;
       if (names.length) {
-        const target = hasAs || isFrom ? names[names.length - 1] : names[0];
+        const target = as || isFrom ? names[names.length - 1] : names[0];
         const kind: BindKind = module === '__future__' ? 'future' : 'import';
         const shown = this.text.slice(group[0].from, group[group.length - 1].to);
-        this.bind(scope, target, kind, at, { shown });
+        const imported = this.text.slice(group[0].from, as?.from ?? group[group.length - 1].to).trim();
+        this.bind(scope, target, kind, at, {
+          shown,
+          // pyflakes compares full names: `import a.b` and `import a.c` both bind `a` but neither redefines the other.
+          module: isFrom ? `${module}.${imported}` : imported,
+          submodule: !isFrom && !as && imported.includes('.'),
+          reexport: !!as && imported === this.slice(target),
+        });
       }
       group = [];
     };
@@ -389,8 +404,13 @@ class PythonChecker {
       else if (p.name !== 'AssignOp') this.target(p, scope, 'assign', node.to, simple);
     }
     if (scope.kind === 'module' && simple && this.slice(targets[0]) === '__all__') {
-      for (const m of this.slice(parts[last + 1] ?? node).matchAll(/['"]([A-Za-z_]\w*)['"]/g)) this.exported.add(m[1]);
+      this.readAll([parts[last + 1] ?? node]);
     }
+  }
+
+  /** The names in the strings of an `__all__ = [...]` or `__all__ += [...]` value. */
+  private readAll(nodes: SyntaxNode[]): void {
+    for (const n of nodes) for (const m of this.slice(n).matchAll(/['"]([A-Za-z_]\w*)['"]/g)) this.exported.add(m[1]);
   }
 
   private update(node: SyntaxNode, scope: Scope): void {
@@ -399,6 +419,7 @@ class PythonChecker {
     if (parts[0]?.name === 'VariableName') {
       this.ref(scope, parts[0]);
       this.bind(scope, parts[0], 'other', node.to);
+      if (scope.kind === 'module' && this.slice(parts[0]) === '__all__') this.readAll(parts.slice(1));
     } else if (parts[0]) this.visit(parts[0], scope);
   }
 
@@ -550,10 +571,24 @@ class PythonChecker {
     for (let s: Scope | null = from; s; s = s.parent) {
       const list = s.bindings.get(binding.name);
       if (!list?.includes(binding)) continue;
-      for (const other of list)
-        if (other !== binding && other.kind === 'import' && other.block !== binding.block) other.uses += 1;
+      for (const other of list) {
+        if (other === binding || other.kind !== 'import' || binding.kind !== 'import') continue;
+        // Imports in other blocks (try and except variants) and other submodules of one package share the name.
+        if (other.block !== binding.block || this.sharesPackage(other, binding)) other.uses += 1;
+      }
       return;
     }
+  }
+
+  /** `import a.b` next to `import a.c` or `import a`: one package name, two different imports. */
+  private sharesPackage(a: Binding, b: Binding): boolean {
+    return (!!a.submodule || !!b.submodule) && a.module !== b.module;
+  }
+
+  /** True when `b` redefines the import or definition `prev` of the same name (pyflakes `redefines`). */
+  private redefines(b: Binding, prev: Binding): boolean {
+    if (b.kind === 'import' && prev.kind === 'import' && this.sharesPackage(b, prev)) return false;
+    return true;
   }
 
   private resolve(): void {
@@ -583,6 +618,7 @@ class PythonChecker {
             (prev.kind === 'def' || prev.kind === 'class' || prev.kind === 'import') &&
             prev.uses === 0 &&
             prev.block === b.block &&
+            this.redefines(b, prev) &&
             !prev.decorators.some((d) => /(?:^|\.)overload$/.test(d))
           ) {
             this.add(b, 'warning', 'F811', 'redefined', { name, line: lineAt(starts, prev.from) });
@@ -590,7 +626,8 @@ class PythonChecker {
           }
         });
         for (const b of list)
-          if (b.kind === 'import' && b.uses === 0) this.add(b, 'warning', 'F401', 'unusedImport', { name: b.shown });
+          if (b.kind === 'import' && b.uses === 0 && !b.reexport)
+            this.add(b, 'warning', 'F401', 'unusedImport', { name: b.shown });
         const used = list.some((b) => b.uses !== 0);
         const local = scope.kind === 'function' && !scope.callsLocals;
         const candidate = list.find((b) => b.simple && (b.kind === 'except' || (local && b.kind === 'assign')));

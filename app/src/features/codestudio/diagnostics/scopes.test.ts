@@ -117,6 +117,70 @@ describe('C and C++ scope checker', () => {
   });
 });
 
+describe('C and C++ scope checker: declarations', () => {
+  it('declares default arguments, template parameters, and parameter packs', () => {
+    expect(c(join('int f(int a, int b = 2) { return a + b; }'))).toEqual([]);
+    expect(c(join('template <typename T, int N = 3> T twice(T v) { return v * N; }'))).toEqual([]);
+    expect(c(join('template <int N> int twice() { return N * 2; }'))).toEqual([]);
+    expect(c(join('template <typename... Ts> auto sum(Ts... xs) { return (xs + ...); }'))).toEqual([]);
+    // The default value is a read, not a declaration.
+    expect(c(join('int f(int b = limit) { return b; }'))).toEqual(['undeclared-identifier:1:limit']);
+  });
+
+  it('declares names from using declarations, namespaces, and lambda init captures', () => {
+    const text = join(
+      '#include <iostream>',
+      'using std::cout;',
+      'using std::endl;',
+      'namespace util { int twice(int x) { return x * 2; } }',
+      'int main() {',
+      '  int y = 1;',
+      '  auto h = [&, extra = 1](int z) { return y + z + extra; };',
+      '  cout << util::twice(h(1)) << endl;',
+      '  return 0;',
+      '}',
+    );
+    expect(c(text)).toEqual([]);
+    expect(c(join('namespace util { }', 'int f() { return 0; }'))).toEqual([]);
+  });
+
+  it('treats the arguments of a function-like macro of the file as declared', () => {
+    const cpp = join(
+      '#include <iostream>',
+      'using namespace std;',
+      '#define REP(i, n) for (int i = 0; i < (n); i++)',
+      'int a[5];',
+      'int main() {',
+      '  int n = 3;',
+      '  REP(i, n) cin >> a[i];',
+      '  return 0;',
+      '}',
+    );
+    expect(c(cpp)).toEqual([]);
+    const cText = join(
+      '#include <stdio.h>',
+      '#define FOR(i, n) for (int i = 0; i < (n); i++)',
+      'int main(void) {',
+      '  FOR(i, 3) printf("%d", i);',
+      '  return 0;',
+      '}',
+    );
+    expect(c(cText)).toEqual([]);
+  });
+
+  it('declares a variable the grammar reads as a function definition', () => {
+    const text = join(
+      '#include <array>',
+      'int len(std::array<int, 2> a);',
+      'int f() {',
+      '  std::array<int, 2> b{};',
+      '  return len(b);',
+      '}',
+    );
+    expect(c(text)).toEqual([]);
+  });
+});
+
 describe('Lua scope checker', () => {
   it('finds an undefined global and an unused local', () => {
     const text = join(
@@ -169,6 +233,55 @@ describe('Lua scope checker', () => {
     expect(lua(join('function init() state = 1 end', 'init()', 'print(state)'))).toEqual([]);
     expect(lua(join('for i = 1, 3 do local v = i * 2 print(v) end'))).toEqual([]);
     expect(lua(join('local x = 1 return x'))).toEqual([]);
+  });
+});
+
+describe('Lua scope checker: function values', () => {
+  it('declares a local whose value holds a function in the scope of the local statement', () => {
+    expect(lua(join('local f = function(x) return x end', 'print(f(1))'))).toEqual([]);
+    expect(lua(join('local f = function(x)', '  return x', 'end', 'print(f(1))'))).toEqual([]);
+    expect(lua(join("local ok, err = pcall(function() error('x') end)", 'print(ok, err)'))).toEqual([]);
+    expect(lua(join('local ok, err = pcall(function()', "  error('x')", 'end)', 'print(ok, err)'))).toEqual([]);
+    const meta = 'local obj = setmetatable({}, { __index = function(_, k) return k end })';
+    expect(lua(join(meta, 'print(obj.a)'))).toEqual([]);
+    expect(
+      lua(
+        join(
+          'local obj = setmetatable({}, {',
+          '  __index = function(_, k)',
+          '    return k',
+          '  end,',
+          '})',
+          'print(obj.a)',
+        ),
+      ),
+    ).toEqual([]);
+    expect(lua(join('local co = coroutine.wrap(function() coroutine.yield(1) end)', 'print(co())'))).toEqual([]);
+    expect(lua(join('local co = coroutine.wrap(function()', '  coroutine.yield(1)', 'end)', 'print(co())'))).toEqual(
+      [],
+    );
+    expect(
+      lua(
+        join(
+          'local counter = (function() local n = 0 return function() n = n + 1 return n end end)()',
+          'print(counter())',
+        ),
+      ),
+    ).toEqual([]);
+    expect(
+      lua(
+        join(
+          'local counter = (function()',
+          '  local n = 0',
+          '  return function()',
+          '    n = n + 1',
+          '    return n',
+          '  end',
+          'end)()',
+          'print(counter())',
+        ),
+      ),
+    ).toEqual([]);
   });
 
   it('keeps a repeat body visible to its until condition', () => {

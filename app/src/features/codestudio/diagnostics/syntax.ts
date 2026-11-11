@@ -3,7 +3,7 @@
 // a bracket that is never closed and the line it opened on, a closing bracket with no opener, a Python block header
 // without its colon, and the end of the file reached too early.
 
-import type { Tree } from '@lezer/common';
+import type { SyntaxNode, Tree } from '@lezer/common';
 import { lineAt, lineRange, lineStarts } from './text';
 import type { EditorLanguage, Finding } from './types';
 
@@ -86,21 +86,69 @@ export function bracketFindings(text: string, tree: Tree): Finding[] {
   return found;
 }
 
-/** A Python block header near `line` that lacks its colon, as the keyword and the line's end. */
-function missingColon(text: string, starts: readonly number[], line: number): { keyword: string; at: number } | null {
+/**
+ * Reads one line of Python code: the code before its comment, and whether it has a `:` outside brackets and strings.
+ * `if n < 2: return n` has one; `x = d[1:2]` and `f"{a:3}"` do not. A walrus `:=` is not a colon.
+ */
+function scanPythonLine(line: string): { code: string; colon: boolean } {
+  let depth = 0;
+  let quote = '';
+  let colon = false;
+  for (let i = 0; i < line.length; i += 1) {
+    const ch = line[i];
+    if (quote) {
+      if (ch === '\\') i += 1;
+      else if (ch === quote) quote = '';
+    } else if (ch === '"' || ch === "'") quote = ch;
+    else if (ch === '#') return { code: line.slice(0, i).trimEnd(), colon };
+    else if (ch === '(' || ch === '[' || ch === '{') depth += 1;
+    else if (ch === ')' || ch === ']' || ch === '}') depth = Math.max(0, depth - 1);
+    else if (ch === ':' && depth === 0 && line[i + 1] !== '=') colon = true;
+  }
+  return { code: line.trimEnd(), colon };
+}
+
+/** True when Lezer read the line starting at `at` as part of a match statement. */
+function inMatch(tree: Tree, at: number): boolean {
+  for (let node: SyntaxNode | null = tree.resolveInner(at, 1); node; node = node.parent) {
+    if (node.name === 'MatchStatement') return true;
+  }
+  return false;
+}
+
+/**
+ * A Python block header that lacks its colon, as the keyword and the line's end. The header is the error's line or
+ * the line before it. It counts only when it has no `:` of its own and the error sits at the end of its code, or
+ * after it but before the next token. A `match` or `case` line counts only when Lezer read a match statement.
+ */
+function missingColon(
+  text: string,
+  tree: Tree,
+  starts: readonly number[],
+  at: number,
+): { keyword: string; at: number } | null {
+  const line = lineAt(starts, at);
   for (const candidate of [line, line - 1]) {
     if (candidate < 1) continue;
     const { from, to } = lineRange(text, starts, candidate);
-    const code = text.slice(from, to).replace(/#.*$/, '').trimEnd();
+    const { code, colon } = scanPythonLine(text.slice(from, to));
     const match = PY_HEADER.exec(code.trimStart());
-    if (match && !code.endsWith(':') && !/[([{,\\]$/.test(code)) return { keyword: match[1], at: from + code.length };
+    if (!match || colon || /[([{,\\]$/.test(code)) continue;
+    const end = from + code.length;
+    const next = end + (/^\s*/.exec(text.slice(end))?.[0].length ?? 0);
+    if (at < end || at > next) continue;
+    const keyword = match[1];
+    if ((keyword === 'match' || keyword === 'case') && !inMatch(tree, from + code.length - code.trimStart().length)) {
+      continue;
+    }
+    return { keyword, at: end };
   }
   return null;
 }
 
-function describe(text: string, language: EditorLanguage, starts: readonly number[], at: number): Finding {
+function describe(text: string, tree: Tree, language: EditorLanguage, starts: readonly number[], at: number): Finding {
   if (language === 'python') {
-    const colon = missingColon(text, starts, lineAt(starts, at));
+    const colon = missingColon(text, tree, starts, at);
     if (colon) {
       const from = Math.max(0, colon.at - 1);
       return {
@@ -143,7 +191,7 @@ export function syntaxFindings(text: string, tree: Tree, language: EditorLanguag
     enter(node) {
       if (found.length >= MAX_SYNTAX_ERRORS) return false;
       if (!node.type.isError) return true;
-      const finding = describe(text, language, starts, node.from);
+      const finding = describe(text, tree, language, starts, node.from);
       const line = lineAt(starts, finding.from);
       if (!lines.has(line)) {
         lines.add(line);

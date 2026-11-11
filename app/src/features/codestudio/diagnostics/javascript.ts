@@ -211,7 +211,11 @@ class JsChecker {
     for (const child of kids(node)) {
       if (child.name === 'VariableDefinition' || child.name === 'TypeDefinition')
         this.declare(scope, child, 'quiet', true);
-      else if (child.name === 'VariableDeclaration') {
+      else if (child.name === 'AmbientFunctionDeclaration') {
+        // `declare function d(c: string): void;` declares `d`; its parameters are types only.
+        const name = child.getChild('VariableDefinition');
+        if (name) this.declare(scope, name, 'quiet', true);
+      } else if (child.name === 'VariableDeclaration') {
         for (const d of child.getChildren('VariableDefinition')) this.declare(scope, d, 'quiet', true);
       } else this.visit(child, scope);
     }
@@ -261,12 +265,13 @@ class JsChecker {
     }
   }
 
-  private paramList(list: SyntaxNode, inner: Scope): void {
+  /** A signature without a body (an overload, an abstract method) declares its parameters without using them. */
+  private paramList(list: SyntaxNode, inner: Scope, bodiless = false): void {
     const record: Params = { list: [] };
     this.params.push(record);
     for (const child of kids(list)) {
       if (child.name === 'VariableDefinition') {
-        const b = this.declare(inner, child, 'param', true);
+        const b = this.declare(inner, child, bodiless ? 'quiet' : 'param', true);
         if (child.prevSibling?.name === 'Privacy' || child.prevSibling?.name === 'readonly') b.exported = true;
         record.list.push(b);
       } else if (child.name === 'ArrayPattern' || child.name === 'ObjectPattern') {
@@ -284,13 +289,14 @@ class JsChecker {
 
   private functionNode(node: SyntaxNode, scope: Scope): void {
     const inner: Scope = { parent: scope, fn: true, names: new Map() };
+    const bodiless = node.name !== 'ArrowFunction' && !node.getChild('Block');
     for (const child of kids(node)) {
       if (child.name === 'VariableDefinition' && child.nextSibling?.name !== 'Arrow') {
         if (node.name === 'FunctionDeclaration') this.declare(scope, child, 'function', true, [node.from, node.to]);
         else this.declare(inner, child, 'quiet', true);
       } else if (child.name === 'VariableDefinition') {
         this.params.push({ list: [this.declare(inner, child, 'param', true)] });
-      } else if (child.name === 'ParamList') this.paramList(child, inner);
+      } else if (child.name === 'ParamList') this.paramList(child, inner, bodiless);
       else if (child.name === 'Block') this.visitAll(kids(child), inner);
       else this.visit(child, inner);
     }

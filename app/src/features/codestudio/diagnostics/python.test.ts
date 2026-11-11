@@ -67,10 +67,10 @@ describe('Python checker: Ruff documentation examples', () => {
   });
 });
 
-describe('Python checker: scope rules', () => {
-  const codes = (source: string) =>
-    checkPython(source, parser.parse(source)).map((f) => `${f.code}:${lineAt(lineStarts(source), f.from)}`);
+const codes = (source: string) =>
+  checkPython(source, parser.parse(source)).map((f) => `${f.code}:${lineAt(lineStarts(source), f.from)}`);
 
+describe('Python checker: scope rules', () => {
   it('lets a function use a module name bound after it', () => {
     expect(codes('def f():\n    return g()\n\ndef g():\n    return 1\n\nf()\n')).toEqual([]);
   });
@@ -111,6 +111,25 @@ describe('Python checker: scope rules', () => {
 
   it('counts a name in __all__ as a use of the import', () => {
     expect(codes("from os import path\n__all__ = ['path']\n")).toEqual([]);
+    expect(codes('import sys\nimport os\n__all__ = ["os"]\n__all__ += ["sys"]\n')).toEqual([]);
+  });
+});
+
+describe('Python checker: imports and valid programs', () => {
+  // pyflakes SubmoduleImportation.redefines: `import a.b` redefines only an import of the same full name.
+  it('does not take two submodule imports of one package for a redefinition', () => {
+    expect(
+      codes('import urllib.request\nimport urllib.parse\nurllib.request.urlopen(urllib.parse.quote("a"))\n'),
+    ).toEqual([]);
+    expect(codes('import os\nimport os.path\nprint(os.getcwd(), os.path.sep)\n')).toEqual([]);
+    expect(codes('import os.path\nimport os.path\nos.path.join("a")\n')).toEqual(['F811:2']);
+    expect(codes('import os\nimport os\nos.getcwd()\n')).toEqual(['F811:2']);
+  });
+
+  // pyflakes and Ruff read `x as x` as an explicit re-export (the PEP 484 convention).
+  it('leaves an explicit re-export alias alone', () => {
+    expect(codes('from os import sep as sep\nimport typing as typing\n')).toEqual([]);
+    expect(codes('import typing as t\n')).toEqual(['F401:1']);
   });
 
   it('does not report a redefinition in another branch or after a use', () => {

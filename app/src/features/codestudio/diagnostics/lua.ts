@@ -95,7 +95,7 @@ class LuaChecker {
   private readonly globals = new Set<string>();
   private readonly unresolved: Token[] = [];
   /** Locals waiting for the end of their `local` statement, so `local x = x` reads the outer `x`. */
-  private pending: { token: Token; report: boolean }[] = [];
+  private pending: { token: Token; report: boolean; scope: Map<string, Local> }[] = [];
   private pendingLine = 0;
   private braces = 0;
   /** Loops whose `do` is still to come: a `for` has its scope already, a `while` gets one at `do`. */
@@ -104,7 +104,7 @@ class LuaChecker {
 
   constructor(private readonly tokens: Token[]) {}
 
-  private declare(token: Token, report: boolean): void {
+  private declare(token: Token, report: boolean, scope = this.scopes[this.scopes.length - 1]): void {
     const local: Local = {
       name: token.text,
       from: token.from,
@@ -112,12 +112,14 @@ class LuaChecker {
       reads: 0,
       report: report && token.text !== '_',
     };
-    this.scopes[this.scopes.length - 1].set(token.text, local);
+    scope.set(token.text, local);
     this.locals.push(local);
   }
 
   private flushPending(): void {
-    for (const p of this.pending) this.declare(p.token, p.report);
+    // A value can open a function scope (`local f = function() ... end`), so the names go into the scope the
+    // `local` statement stood in, never into the scope on top when the statement ends.
+    for (const p of this.pending) this.declare(p.token, p.report, p.scope);
     this.pending = [];
   }
 
@@ -231,8 +233,9 @@ class LuaChecker {
           return this.params(i + 3);
         }
         let j = i + 1;
+        const scope = this.scopes[this.scopes.length - 1];
         while (t[j]?.kind === 'name') {
-          this.pending.push({ token: t[j], report: true });
+          this.pending.push({ token: t[j], report: true, scope });
           j += 1;
           if (t[j]?.text === '<') j += 3;
           if (t[j]?.text !== ',') break;

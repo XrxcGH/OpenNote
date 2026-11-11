@@ -4,7 +4,9 @@
 
 import { parser } from '@lezer/javascript';
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
 import { checkJavaScript } from './javascript';
+import { JS_GLOBALS, RUNTIME_GLOBALS } from './jsGlobals';
 import { lineAt, lineStarts } from './text';
 
 const ts = parser.configure({ dialect: 'ts' });
@@ -328,5 +330,31 @@ describe('JavaScript checker: scopes', () => {
     );
     expect(lines(source, 'no-undef')).toEqual([]);
     expect(lines(source, 'no-undef', true)).toEqual([]);
+  });
+
+  it('knows every global the JavaScript sandbox injects', () => {
+    // The test reads the sandbox's source as text: the names it sets with setProp(vm.global, ...).
+    const sandboxSource = readFileSync(new URL('../../codecells/sandbox/javascript.ts', import.meta.url), 'utf8');
+    const injected = [...sandboxSource.matchAll(/setProp\(vm\.global,\s*'(\w+)'/g)].map((m) => m[1]);
+    expect(injected.sort()).toEqual(['console', 'print']);
+    for (const name of injected) {
+      expect(RUNTIME_GLOBALS).toContain(name);
+      expect(JS_GLOBALS.has(name)).toBe(true);
+    }
+    expect(lines(join('print("hello");'), 'no-undef')).toEqual([]);
+    expect(lines(join('print("hello");'), 'no-undef', true)).toEqual([]);
+  });
+
+  // @typescript-eslint/no-unused-vars skips the parameters of a signature without a body; no-undef knows the name a
+  // `declare function` adds (typescript-eslint documentation).
+  it('leaves the parameters of overloads and abstract methods alone, and knows declared functions', () => {
+    const overload = join('function p(a: number): number;', 'function p(a: any) { return a; }', 'p(1);');
+    expect(lines(overload, 'no-unused-vars', true)).toEqual([]);
+    const abstract = join('abstract class A { abstract m(b: number): void; }', 'export { A };');
+    expect(lines(abstract, 'no-unused-vars', true)).toEqual([]);
+    const ambient = join('declare function d(c: string): void;', 'd("x");');
+    expect(lines(ambient, 'no-undef', true)).toEqual([]);
+    expect(lines(ambient, 'no-unused-vars', true)).toEqual([]);
+    expect(lines(join('class Q { m(s?: number): void {} }', 'new Q().m();'), 'no-unused-vars', true)).toEqual([1]);
   });
 });
