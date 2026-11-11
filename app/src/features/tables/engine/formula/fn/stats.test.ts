@@ -321,6 +321,8 @@ interface Case {
   tolerance?: number;
   source: string;
   note: string;
+  /** Marks a case that the fixture contract counts: a boundary, an error, or a wrong argument count. */
+  kind?: 'boundary' | 'error' | 'arity';
 }
 
 /** Cells such as {"A1": 3} as rows of text for calc. */
@@ -345,6 +347,20 @@ describe('the fixture of known answers', () => {
       expect(c.source, c.formula).toMatch(/^(hand|excel-doc|sheets-doc|nist|dlmf|table)/);
       expect(c.note.length, c.formula).toBeGreaterThan(3);
     }
+  });
+
+  it('gives every function five cases with a boundary, an error, and an argument count (lane test)', () => {
+    const lead = (c: Case) => /^=([A-Z][A-Z0-9.]*)\(/.exec(c.formula)?.[1];
+    const isError = (c: Case) => typeof c.expected === 'string' && c.expected.startsWith('#');
+    const short: string[] = [];
+    for (const name of [...STATISTICAL, ...COMPATIBILITY]) {
+      const own = cases.filter((c) => lead(c) === name);
+      const boundary = own.some((c) => c.kind === 'boundary');
+      const error = own.some((c) => c.kind === 'error' || (c.kind !== 'arity' && isError(c)));
+      const arity = own.some((c) => c.kind === 'arity' && c.expected === '#VALUE!');
+      if (own.length < 5 || !boundary || !error || !arity) short.push(`${name} (${own.length})`);
+    }
+    expect(short).toEqual([]);
   });
 
   it.each(cases.map((c) => [c.formula, c] as const))('%s', (_formula, c) => {

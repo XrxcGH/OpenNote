@@ -476,7 +476,8 @@
       "formula": "=NORM.S.INV(0.5)",
       "expected": 0,
       "source": "hand",
-      "note": "The median of the standard normal."
+      "note": "The median of the standard normal.",
+      "kind": "boundary"
     },
     {
       "formula": "=NORM.S.DIST(-1,TRUE)",
@@ -1414,6 +1415,4432 @@
       "tolerance": 1e-14,
       "source": "hand",
       "note": "With a = 1 the law is 1 - (1 - x)^b; at x = 1E-8 and b = 1E8 that is near 1 - 1/e."
+    },
+    {
+      "formula": "=AVEDEV()",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=AVEDEV(1,2,1/0)",
+      "expected": "#DIV/0!",
+      "source": "hand",
+      "note": "An error among the arguments passes through.",
+      "kind": "error"
+    },
+    {
+      "formula": "=AVEDEV(5)",
+      "expected": 0,
+      "source": "hand",
+      "note": "One value has no deviation.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=AVEDEV(1,2,3,4)",
+      "expected": 1,
+      "source": "hand",
+      "note": "Mean 2.5; deviations 1.5, 0.5, 0.5, 1.5."
+    },
+    {
+      "formula": "=AVERAGE()",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=AVERAGE({\"a\"})",
+      "expected": "#DIV/0!",
+      "source": "hand",
+      "note": "No numbers: nothing to divide by.",
+      "kind": "error"
+    },
+    {
+      "formula": "=AVERAGE(7)",
+      "expected": 7,
+      "source": "hand",
+      "note": "One value.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=AVERAGE({1,2;3,4},5)",
+      "expected": 3,
+      "source": "hand",
+      "note": "Fifteen over five."
+    },
+    {
+      "formula": "=AVERAGEA()",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=AVERAGEA(1,1/0)",
+      "expected": "#DIV/0!",
+      "source": "hand",
+      "note": "An error among the arguments passes through.",
+      "kind": "error"
+    },
+    {
+      "formula": "=AVERAGEA(FALSE)",
+      "expected": 0,
+      "source": "hand",
+      "note": "FALSE counts as 0.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=AVERAGEA(2,4)",
+      "expected": 3,
+      "source": "hand",
+      "note": "Six over two."
+    },
+    {
+      "formula": "=COUNT()",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=COUNT(1/0)",
+      "expected": 0,
+      "source": "hand",
+      "note": "An error value is not counted (it is not a number).",
+      "kind": "error"
+    },
+    {
+      "formula": "=COUNT({\"a\"})",
+      "expected": 0,
+      "source": "hand",
+      "note": "Text is not counted.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=COUNT(1,2,3)",
+      "expected": 3,
+      "source": "hand",
+      "note": "Three numbers."
+    },
+    {
+      "formula": "=COUNT({1,2;3,4})",
+      "expected": 4,
+      "source": "hand",
+      "note": "Four numbers in an array."
+    },
+    {
+      "formula": "=COUNTA()",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=COUNTA(1/0)",
+      "expected": 1,
+      "source": "hand",
+      "note": "An error value is a value, so COUNTA counts it.",
+      "kind": "error"
+    },
+    {
+      "formula": "=COUNTA(FALSE)",
+      "expected": 1,
+      "source": "hand",
+      "note": "A logical value counts.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=COUNTA(1,\"a\",TRUE)",
+      "expected": 3,
+      "source": "hand",
+      "note": "Number, text and logical value."
+    },
+    {
+      "formula": "=COUNTA({1,2;3,4})",
+      "expected": 4,
+      "source": "hand",
+      "note": "Four values."
+    },
+    {
+      "formula": "=COUNTUNIQUE()",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=COUNTUNIQUE(1,1/0)",
+      "expected": 2,
+      "source": "hand",
+      "note": "An error value is a value: it counts once, as COUNTA counts error values (COUNTA documentation).",
+      "kind": "error"
+    },
+    {
+      "formula": "=COUNTUNIQUE(5)",
+      "expected": 1,
+      "source": "hand",
+      "note": "One value.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=COUNTUNIQUE(1,1,1)",
+      "expected": 1,
+      "source": "hand",
+      "note": "One distinct value."
+    },
+    {
+      "formula": "=COUNTUNIQUE({1,2;2,3})",
+      "expected": 3,
+      "source": "hand",
+      "note": "Distinct 1, 2 and 3."
+    },
+    {
+      "formula": "=DEVSQ()",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=DEVSQ(1,1/0)",
+      "expected": "#DIV/0!",
+      "source": "hand",
+      "note": "An error among the arguments passes through.",
+      "kind": "error"
+    },
+    {
+      "formula": "=DEVSQ(3)",
+      "expected": 0,
+      "source": "hand",
+      "note": "One value.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=DEVSQ(1,2,3,4)",
+      "expected": 5,
+      "source": "hand",
+      "note": "Mean 2.5: 2.25 + 0.25 + 0.25 + 2.25."
+    },
+    {
+      "formula": "=GEOMEAN()",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=GEOMEAN(7)",
+      "expected": 7,
+      "source": "hand",
+      "note": "One value.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=GEOMEAN(2,8)",
+      "expected": 4,
+      "source": "hand",
+      "note": "The square root of 16."
+    },
+    {
+      "formula": "=HARMEAN()",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=HARMEAN(4)",
+      "expected": 4,
+      "source": "hand",
+      "note": "One value.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=HARMEAN(1,2,4)",
+      "expected": 1.7142857142857142,
+      "source": "hand",
+      "note": "Three over 1 + 1/2 + 1/4."
+    },
+    {
+      "formula": "=KURT()",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=KURT(1,2,3,4)",
+      "expected": -1.1999999999999975,
+      "source": "hand",
+      "note": "Four values, the fewest allowed: the sample excess kurtosis formula.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=KURT(1,2,2,3,10)",
+      "expected": 4.272146531742891,
+      "source": "hand",
+      "note": "n(n+1)/((n-1)(n-2)(n-3)) times the sum of z^4, less 3(n-1)^2/((n-2)(n-3))."
+    },
+    {
+      "formula": "=MAX()",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=MAX(1,1/0)",
+      "expected": "#DIV/0!",
+      "source": "hand",
+      "note": "An error among the arguments passes through.",
+      "kind": "error"
+    },
+    {
+      "formula": "=MAX({\"a\"})",
+      "expected": 0,
+      "source": "hand",
+      "note": "No numbers gives 0.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=MAX(4,-1,7)",
+      "expected": 7,
+      "source": "hand",
+      "note": "The largest."
+    },
+    {
+      "formula": "=MAX({1,2;3,9},5)",
+      "expected": 9,
+      "source": "hand",
+      "note": "The largest across both arguments."
+    },
+    {
+      "formula": "=MAXA()",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=MAXA(1,1/0)",
+      "expected": "#DIV/0!",
+      "source": "hand",
+      "note": "An error among the arguments passes through.",
+      "kind": "error"
+    },
+    {
+      "formula": "=MAXA(-1,FALSE)",
+      "expected": 0,
+      "source": "hand",
+      "note": "FALSE counts as 0.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=MAXA(-1,TRUE)",
+      "expected": 1,
+      "source": "hand",
+      "note": "TRUE counts as 1."
+    },
+    {
+      "formula": "=MAXA(3,5)",
+      "expected": 5,
+      "source": "hand",
+      "note": "The largest."
+    },
+    {
+      "formula": "=MEDIAN()",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=MEDIAN(1,1/0)",
+      "expected": "#DIV/0!",
+      "source": "hand",
+      "note": "An error among the arguments passes through.",
+      "kind": "error"
+    },
+    {
+      "formula": "=MEDIAN(4)",
+      "expected": 4,
+      "source": "hand",
+      "note": "One value.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=MEDIAN(1,2,3)",
+      "expected": 2,
+      "source": "hand",
+      "note": "The middle value."
+    },
+    {
+      "formula": "=MEDIAN({3,1;4,1},5)",
+      "expected": 3,
+      "source": "hand",
+      "note": "Sorted 1, 1, 3, 4, 5."
+    },
+    {
+      "formula": "=MIN()",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=MIN(1,1/0)",
+      "expected": "#DIV/0!",
+      "source": "hand",
+      "note": "An error among the arguments passes through.",
+      "kind": "error"
+    },
+    {
+      "formula": "=MIN({\"a\"})",
+      "expected": 0,
+      "source": "hand",
+      "note": "No numbers gives 0.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=MIN(4,-1,7)",
+      "expected": -1,
+      "source": "hand",
+      "note": "The smallest."
+    },
+    {
+      "formula": "=MIN({1,2;3,9},5)",
+      "expected": 1,
+      "source": "hand",
+      "note": "The smallest across both arguments."
+    },
+    {
+      "formula": "=MINA()",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=MINA(1,1/0)",
+      "expected": "#DIV/0!",
+      "source": "hand",
+      "note": "An error among the arguments passes through.",
+      "kind": "error"
+    },
+    {
+      "formula": "=MINA(3,FALSE)",
+      "expected": 0,
+      "source": "hand",
+      "note": "FALSE counts as 0.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=MINA(3,TRUE)",
+      "expected": 1,
+      "source": "hand",
+      "note": "TRUE counts as 1."
+    },
+    {
+      "formula": "=MINA(-2,5)",
+      "expected": -2,
+      "source": "hand",
+      "note": "The smallest."
+    },
+    {
+      "formula": "=MODE()",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=MODE(1,2,3)",
+      "expected": "#N/A",
+      "source": "hand",
+      "note": "No value repeats.",
+      "kind": "error"
+    },
+    {
+      "formula": "=MODE(5,5)",
+      "expected": 5,
+      "source": "hand",
+      "note": "Two equal values.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=MODE(1,2,2,3,3)",
+      "expected": 2,
+      "source": "hand",
+      "note": "Two modes: the first to appear."
+    },
+    {
+      "formula": "=MODE.MULT()",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=MODE.MULT(1,2)",
+      "expected": "#N/A",
+      "source": "hand",
+      "note": "No value repeats.",
+      "kind": "error"
+    },
+    {
+      "formula": "=MODE.MULT(7,7)",
+      "expected": [7],
+      "source": "hand",
+      "note": "Two equal values.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=MODE.MULT(1,1,2,2,3)",
+      "expected": [1, 2],
+      "source": "hand",
+      "note": "Both modes, in order of first appearance."
+    },
+    {
+      "formula": "=MODE.SNGL()",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=MODE.SNGL(4,4)",
+      "expected": 4,
+      "source": "hand",
+      "note": "Two equal values.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=MODE.SNGL(3,1,1,3,2)",
+      "expected": 3,
+      "source": "hand",
+      "note": "Two modes: the first to appear."
+    },
+    {
+      "formula": "=MODE.SNGL({1,2,2})",
+      "expected": 2,
+      "source": "hand",
+      "note": "Two appears twice."
+    },
+    {
+      "formula": "=SKEW()",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=SKEW(1,2)",
+      "expected": "#DIV/0!",
+      "source": "hand",
+      "note": "Fewer than three values.",
+      "kind": "error"
+    },
+    {
+      "formula": "=SKEW(1,2,3)",
+      "expected": 0,
+      "source": "hand",
+      "note": "A symmetric sample.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=SKEW(1,2,10)",
+      "expected": 1.652316740332991,
+      "source": "hand",
+      "note": "n/((n-1)(n-2)) times the sum of z^3, with the sample deviation."
+    },
+    {
+      "formula": "=SKEW.P()",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=SKEW.P(5,5)",
+      "expected": "#DIV/0!",
+      "source": "hand",
+      "note": "No spread.",
+      "kind": "error"
+    },
+    {
+      "formula": "=SKEW.P(1,2,3)",
+      "expected": 0,
+      "source": "hand",
+      "note": "A symmetric sample.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=SKEW.P(1,2,10)",
+      "expected": 0.674555484545766,
+      "source": "hand",
+      "note": "The mean of z^3, with the population deviation."
+    },
+    {
+      "formula": "=STDEV()",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=STDEV(5)",
+      "expected": "#DIV/0!",
+      "source": "hand",
+      "note": "One value has no sample deviation.",
+      "kind": "error"
+    },
+    {
+      "formula": "=STDEV(5,5)",
+      "expected": 0,
+      "source": "hand",
+      "note": "No spread.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=STDEV(2,4,4,4,5,5,7,9)",
+      "expected": 2.138089935299395,
+      "source": "hand",
+      "note": "Squares about the mean 5 add to 32; over 7."
+    },
+    {
+      "formula": "=STDEV(1,2,3,4)",
+      "expected": 1.2909944487358056,
+      "source": "hand",
+      "note": "Five over three."
+    },
+    {
+      "formula": "=STDEV.P()",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=STDEV.P({\"a\"})",
+      "expected": "#DIV/0!",
+      "source": "hand",
+      "note": "No numbers.",
+      "kind": "error"
+    },
+    {
+      "formula": "=STDEV.P(2,4,4,4,5,5,7,9)",
+      "expected": 2,
+      "source": "hand",
+      "note": "Squares add to 32; over 8 is 4."
+    },
+    {
+      "formula": "=STDEV.P(1,3)",
+      "expected": 1,
+      "source": "hand",
+      "note": "Deviations of one each."
+    },
+    {
+      "formula": "=STDEV.P(-1E3,1E3)",
+      "expected": 1000,
+      "source": "hand",
+      "note": "Symmetric about 0.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=STDEV.S()",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=STDEV.S(5)",
+      "expected": "#DIV/0!",
+      "source": "hand",
+      "note": "One value has no sample deviation.",
+      "kind": "error"
+    },
+    {
+      "formula": "=STDEV.S(5,5)",
+      "expected": 0,
+      "source": "hand",
+      "note": "No spread.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=STDEV.S(2,4,4,4,5,5,7,9)",
+      "expected": 2.138089935299395,
+      "source": "hand",
+      "note": "Squares add to 32; over 7."
+    },
+    {
+      "formula": "=STDEV.S(1,3)",
+      "expected": 1.4142135623730951,
+      "source": "hand",
+      "note": "Squares add to 2; over 1."
+    },
+    {
+      "formula": "=STDEVA()",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=STDEVA(5)",
+      "expected": "#DIV/0!",
+      "source": "hand",
+      "note": "One value has no sample deviation.",
+      "kind": "error"
+    },
+    {
+      "formula": "=STDEVA(TRUE,TRUE)",
+      "expected": 0,
+      "source": "hand",
+      "note": "Both count as 1.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=STDEVA(1,3)",
+      "expected": 1.4142135623730951,
+      "source": "hand",
+      "note": "Squares add to 2; over 1."
+    },
+    {
+      "formula": "=STDEVP()",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=STDEVP({\"a\"})",
+      "expected": "#DIV/0!",
+      "source": "hand",
+      "note": "No numbers.",
+      "kind": "error"
+    },
+    {
+      "formula": "=STDEVP(5)",
+      "expected": 0,
+      "source": "hand",
+      "note": "One value.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=STDEVP(1,3)",
+      "expected": 1,
+      "source": "hand",
+      "note": "Deviations of one each."
+    },
+    {
+      "formula": "=STDEVPA()",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=STDEVPA(1,1/0)",
+      "expected": "#DIV/0!",
+      "source": "hand",
+      "note": "An error among the arguments passes through.",
+      "kind": "error"
+    },
+    {
+      "formula": "=STDEVPA(FALSE)",
+      "expected": 0,
+      "source": "hand",
+      "note": "One value.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=STDEVPA(0,2)",
+      "expected": 1,
+      "source": "hand",
+      "note": "Deviations of one each."
+    },
+    {
+      "formula": "=STDEVPA(TRUE,3)",
+      "expected": 1,
+      "source": "hand",
+      "note": "TRUE counts as 1: values 1 and 3."
+    },
+    {
+      "formula": "=VAR()",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=VAR(5)",
+      "expected": "#DIV/0!",
+      "source": "hand",
+      "note": "One value has no sample variance.",
+      "kind": "error"
+    },
+    {
+      "formula": "=VAR(5,5)",
+      "expected": 0,
+      "source": "hand",
+      "note": "No spread.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=VAR(1,3)",
+      "expected": 2,
+      "source": "hand",
+      "note": "Squares add to 2; over 1."
+    },
+    {
+      "formula": "=VAR.P()",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=VAR.P({\"a\"})",
+      "expected": "#DIV/0!",
+      "source": "hand",
+      "note": "No numbers.",
+      "kind": "error"
+    },
+    {
+      "formula": "=VAR.P(5)",
+      "expected": 0,
+      "source": "hand",
+      "note": "One value.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=VAR.P(1,3)",
+      "expected": 1,
+      "source": "hand",
+      "note": "Squares add to 2; over 2."
+    },
+    {
+      "formula": "=VAR.P(2,4,4,4,5,5,7,9)",
+      "expected": 4,
+      "source": "hand",
+      "note": "Squares add to 32; over 8."
+    },
+    {
+      "formula": "=VAR.S()",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=VAR.S(5,5)",
+      "expected": 0,
+      "source": "hand",
+      "note": "No spread.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=VAR.S(1,2,3,4)",
+      "expected": 1.6666666666666667,
+      "source": "hand",
+      "note": "Squares add to 5; over 3."
+    },
+    {
+      "formula": "=VAR.S(2,4,4,4,5,5,7,9)",
+      "expected": 4.571428571428571,
+      "source": "hand",
+      "note": "Squares about the mean 5 add to 32; over 7."
+    },
+    {
+      "formula": "=VARA()",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=VARA(5)",
+      "expected": "#DIV/0!",
+      "source": "hand",
+      "note": "One value has no sample variance.",
+      "kind": "error"
+    },
+    {
+      "formula": "=VARA(TRUE,TRUE)",
+      "expected": 0,
+      "source": "hand",
+      "note": "Both count as 1.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=VARA(1,3)",
+      "expected": 2,
+      "source": "hand",
+      "note": "Squares add to 2; over 1."
+    },
+    {
+      "formula": "=VARA(FALSE,2)",
+      "expected": 2,
+      "source": "hand",
+      "note": "FALSE counts as 0: values 0 and 2."
+    },
+    {
+      "formula": "=VARP()",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=VARP({\"a\"})",
+      "expected": "#DIV/0!",
+      "source": "hand",
+      "note": "No numbers.",
+      "kind": "error"
+    },
+    {
+      "formula": "=VARP(5)",
+      "expected": 0,
+      "source": "hand",
+      "note": "One value.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=VARP(1,3)",
+      "expected": 1,
+      "source": "hand",
+      "note": "Squares add to 2; over 2."
+    },
+    {
+      "formula": "=VARP(1,2,3,4)",
+      "expected": 1.25,
+      "source": "hand",
+      "note": "Squares add to 5; over 4."
+    },
+    {
+      "formula": "=VARPA()",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=VARPA(1,1/0)",
+      "expected": "#DIV/0!",
+      "source": "hand",
+      "note": "An error among the arguments passes through.",
+      "kind": "error"
+    },
+    {
+      "formula": "=VARPA(TRUE)",
+      "expected": 0,
+      "source": "hand",
+      "note": "One value.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=VARPA(TRUE,3)",
+      "expected": 1,
+      "source": "hand",
+      "note": "Values 1 and 3."
+    },
+    {
+      "formula": "=AVERAGEIF(A1:A3)",
+      "expected": "#VALUE!",
+      "cells": {
+        "A1": 1,
+        "A2": 5,
+        "A3": 9,
+        "B1": "x",
+        "B2": "y",
+        "B3": "x"
+      },
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=AVERAGEIF(A1:A3,\">9\")",
+      "expected": "#DIV/0!",
+      "cells": {
+        "A1": 1,
+        "A2": 5,
+        "A3": 9,
+        "B1": "x",
+        "B2": "y",
+        "B3": "x"
+      },
+      "source": "hand",
+      "note": "No cell meets the criterion.",
+      "kind": "error"
+    },
+    {
+      "formula": "=AVERAGEIF(A1:A3,\">=9\")",
+      "expected": 9,
+      "cells": {
+        "A1": 1,
+        "A2": 5,
+        "A3": 9,
+        "B1": "x",
+        "B2": "y",
+        "B3": "x"
+      },
+      "source": "hand",
+      "note": "The criterion includes its edge.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=AVERAGEIF(A1:A3,\"<9\")",
+      "expected": 3,
+      "cells": {
+        "A1": 1,
+        "A2": 5,
+        "A3": 9,
+        "B1": "x",
+        "B2": "y",
+        "B3": "x"
+      },
+      "source": "hand",
+      "note": "One and five."
+    },
+    {
+      "formula": "=COUNTIF(A1:A3)",
+      "expected": "#VALUE!",
+      "cells": {
+        "A1": 1,
+        "A2": 5,
+        "A3": 9,
+        "B1": "x",
+        "B2": "y",
+        "B3": "x"
+      },
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=COUNTIF(A1:A3,1/0)",
+      "expected": "#DIV/0!",
+      "cells": {
+        "A1": 1,
+        "A2": 5,
+        "A3": 9,
+        "B1": "x",
+        "B2": "y",
+        "B3": "x"
+      },
+      "source": "hand",
+      "note": "An error criterion passes through.",
+      "kind": "error"
+    },
+    {
+      "formula": "=COUNTIF(A1:A3,\">=9\")",
+      "expected": 1,
+      "cells": {
+        "A1": 1,
+        "A2": 5,
+        "A3": 9,
+        "B1": "x",
+        "B2": "y",
+        "B3": "x"
+      },
+      "source": "hand",
+      "note": "The criterion includes its edge.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=COUNTIF(B1:B3,\"<>x\")",
+      "expected": 1,
+      "cells": {
+        "A1": 1,
+        "A2": 5,
+        "A3": 9,
+        "B1": "x",
+        "B2": "y",
+        "B3": "x"
+      },
+      "source": "hand",
+      "note": "Only y."
+    },
+    {
+      "formula": "=MAXIFS(A1:A3,B1:B3)",
+      "expected": "#VALUE!",
+      "cells": {
+        "A1": 1,
+        "A2": 5,
+        "A3": 9,
+        "B1": "x",
+        "B2": "y",
+        "B3": "x"
+      },
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=MAXIFS(A1:A3,B1:B2,\"x\")",
+      "expected": "#VALUE!",
+      "cells": {
+        "A1": 1,
+        "A2": 5,
+        "A3": 9,
+        "B1": "x",
+        "B2": "y",
+        "B3": "x"
+      },
+      "source": "hand",
+      "note": "The ranges differ in size.",
+      "kind": "error"
+    },
+    {
+      "formula": "=MAXIFS(A1:A3,A1:A3,\"<=5\")",
+      "expected": 5,
+      "cells": {
+        "A1": 1,
+        "A2": 5,
+        "A3": 9,
+        "B1": "x",
+        "B2": "y",
+        "B3": "x"
+      },
+      "source": "hand",
+      "note": "The criterion includes its edge.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=MAXIFS(A1:A3,B1:B3,\"y\")",
+      "expected": 5,
+      "cells": {
+        "A1": 1,
+        "A2": 5,
+        "A3": 9,
+        "B1": "x",
+        "B2": "y",
+        "B3": "x"
+      },
+      "source": "hand",
+      "note": "Only row 2."
+    },
+    {
+      "formula": "=MINIFS(A1:A3,B1:B3)",
+      "expected": "#VALUE!",
+      "cells": {
+        "A1": 1,
+        "A2": 5,
+        "A3": 9,
+        "B1": "x",
+        "B2": "y",
+        "B3": "x"
+      },
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=MINIFS(A1:A3,B1:B2,\"x\")",
+      "expected": "#VALUE!",
+      "cells": {
+        "A1": 1,
+        "A2": 5,
+        "A3": 9,
+        "B1": "x",
+        "B2": "y",
+        "B3": "x"
+      },
+      "source": "hand",
+      "note": "The ranges differ in size.",
+      "kind": "error"
+    },
+    {
+      "formula": "=MINIFS(A1:A3,A1:A3,\">=5\")",
+      "expected": 5,
+      "cells": {
+        "A1": 1,
+        "A2": 5,
+        "A3": 9,
+        "B1": "x",
+        "B2": "y",
+        "B3": "x"
+      },
+      "source": "hand",
+      "note": "The criterion includes its edge.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=MINIFS(A1:A3,B1:B3,\"z\")",
+      "expected": 0,
+      "cells": {
+        "A1": 1,
+        "A2": 5,
+        "A3": 9,
+        "B1": "x",
+        "B2": "y",
+        "B3": "x"
+      },
+      "source": "hand",
+      "note": "No match gives 0."
+    },
+    {
+      "formula": "=AVERAGEIFS(A1:A4,B1:B4)",
+      "expected": "#VALUE!",
+      "cells": {
+        "A1": 10,
+        "A2": 20,
+        "A3": 30,
+        "A4": 40,
+        "B1": 1,
+        "B2": 2,
+        "B3": 3,
+        "B4": 4,
+        "C1": "x",
+        "C2": "y",
+        "C3": "x",
+        "C4": "y"
+      },
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=AVERAGEIFS(A1:A4,B1:B4,\">9\")",
+      "expected": "#DIV/0!",
+      "cells": {
+        "A1": 10,
+        "A2": 20,
+        "A3": 30,
+        "A4": 40,
+        "B1": 1,
+        "B2": 2,
+        "B3": 3,
+        "B4": 4,
+        "C1": "x",
+        "C2": "y",
+        "C3": "x",
+        "C4": "y"
+      },
+      "source": "hand",
+      "note": "No row meets the criteria.",
+      "kind": "error"
+    },
+    {
+      "formula": "=AVERAGEIFS(A1:A4,B1:B4,\">=2\")",
+      "expected": 30,
+      "cells": {
+        "A1": 10,
+        "A2": 20,
+        "A3": 30,
+        "A4": 40,
+        "B1": 1,
+        "B2": 2,
+        "B3": 3,
+        "B4": 4,
+        "C1": "x",
+        "C2": "y",
+        "C3": "x",
+        "C4": "y"
+      },
+      "source": "hand",
+      "note": "The criterion includes its edge: 20, 30, 40.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=AVERAGEIFS(A1:A4,B1:B4,\">1\",C1:C4,\"x\")",
+      "expected": 30,
+      "cells": {
+        "A1": 10,
+        "A2": 20,
+        "A3": 30,
+        "A4": 40,
+        "B1": 1,
+        "B2": 2,
+        "B3": 3,
+        "B4": 4,
+        "C1": "x",
+        "C2": "y",
+        "C3": "x",
+        "C4": "y"
+      },
+      "source": "hand",
+      "note": "Only row 3."
+    },
+    {
+      "formula": "=AVERAGEIFS(A1:A4,C1:C4,\"x\")",
+      "expected": 20,
+      "cells": {
+        "A1": 10,
+        "A2": 20,
+        "A3": 30,
+        "A4": 40,
+        "B1": 1,
+        "B2": 2,
+        "B3": 3,
+        "B4": 4,
+        "C1": "x",
+        "C2": "y",
+        "C3": "x",
+        "C4": "y"
+      },
+      "source": "hand",
+      "note": "Rows 1 and 3."
+    },
+    {
+      "formula": "=COUNTIFS(A1:A4)",
+      "expected": "#VALUE!",
+      "cells": {
+        "A1": 10,
+        "A2": 20,
+        "A3": 30,
+        "A4": 40,
+        "B1": 1,
+        "B2": 2,
+        "B3": 3,
+        "B4": 4,
+        "C1": "x",
+        "C2": "y",
+        "C3": "x",
+        "C4": "y"
+      },
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=COUNTIFS(A1:A4,\">1\",B1:B3,\"x\")",
+      "expected": "#VALUE!",
+      "cells": {
+        "A1": 10,
+        "A2": 20,
+        "A3": 30,
+        "A4": 40,
+        "B1": 1,
+        "B2": 2,
+        "B3": 3,
+        "B4": 4,
+        "C1": "x",
+        "C2": "y",
+        "C3": "x",
+        "C4": "y"
+      },
+      "source": "hand",
+      "note": "The ranges differ in size.",
+      "kind": "error"
+    },
+    {
+      "formula": "=COUNTIFS(B1:B4,\">=2\")",
+      "expected": 3,
+      "cells": {
+        "A1": 10,
+        "A2": 20,
+        "A3": 30,
+        "A4": 40,
+        "B1": 1,
+        "B2": 2,
+        "B3": 3,
+        "B4": 4,
+        "C1": "x",
+        "C2": "y",
+        "C3": "x",
+        "C4": "y"
+      },
+      "source": "hand",
+      "note": "The criterion includes its edge.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=COUNTIFS(B1:B4,\">1\",C1:C4,\"x\")",
+      "expected": 1,
+      "cells": {
+        "A1": 10,
+        "A2": 20,
+        "A3": 30,
+        "A4": 40,
+        "B1": 1,
+        "B2": 2,
+        "B3": 3,
+        "B4": 4,
+        "C1": "x",
+        "C2": "y",
+        "C3": "x",
+        "C4": "y"
+      },
+      "source": "hand",
+      "note": "Only row 3."
+    },
+    {
+      "formula": "=COUNTIFS(C1:C4,\"y\")",
+      "expected": 2,
+      "cells": {
+        "A1": 10,
+        "A2": 20,
+        "A3": 30,
+        "A4": 40,
+        "B1": 1,
+        "B2": 2,
+        "B3": 3,
+        "B4": 4,
+        "C1": "x",
+        "C2": "y",
+        "C3": "x",
+        "C4": "y"
+      },
+      "source": "hand",
+      "note": "Rows 2 and 4."
+    },
+    {
+      "formula": "=COUNTBLANK()",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=COUNTBLANK(A1:A4)",
+      "expected": 1,
+      "cells": {
+        "A1": 1,
+        "A2": "x",
+        "A3": 0,
+        "B1": 2,
+        "B2": 3,
+        "B3": "y"
+      },
+      "source": "hand",
+      "note": "A4 is empty; text and numbers are not blank.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=COUNTBLANK(C1:C5)",
+      "expected": 5,
+      "cells": {
+        "A1": 1,
+        "A2": "x",
+        "A3": 0,
+        "B1": 2,
+        "B2": 3,
+        "B3": "y"
+      },
+      "source": "hand",
+      "note": "An empty range."
+    },
+    {
+      "formula": "=COUNTBLANK(A1:B4)",
+      "expected": 2,
+      "cells": {
+        "A1": 1,
+        "A2": "x",
+        "A3": 0,
+        "B1": 2,
+        "B2": 3,
+        "B3": "y"
+      },
+      "source": "hand",
+      "note": "A4 and B4."
+    },
+    {
+      "formula": "=COUNTBLANK(A1:A2)",
+      "expected": 1,
+      "source": "hand",
+      "note": "A cell holding an error is not blank; A2 is.",
+      "kind": "error",
+      "cells": {
+        "A1": "=1/0"
+      }
+    },
+    {
+      "formula": "=CORREL({1,2})",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=CORREL({1,2,3},{2,4,6})",
+      "expected": 1,
+      "source": "hand",
+      "note": "An exact rising line.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=CORREL({1,2,3},{3,2,1})",
+      "expected": -1,
+      "source": "hand",
+      "note": "An exact falling line."
+    },
+    {
+      "formula": "=CORREL({1,2},{3,3})",
+      "expected": "#DIV/0!",
+      "source": "hand",
+      "note": "No spread in the second array.",
+      "kind": "error"
+    },
+    {
+      "formula": "=PEARSON({1,2})",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=PEARSON({1,2,3},{2,4,6})",
+      "expected": 1,
+      "source": "hand",
+      "note": "An exact rising line.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=PEARSON({1,2,3},{3,2,1})",
+      "expected": -1,
+      "source": "hand",
+      "note": "An exact falling line."
+    },
+    {
+      "formula": "=PEARSON({1,2},{3,3})",
+      "expected": "#DIV/0!",
+      "source": "hand",
+      "note": "No spread in the second array.",
+      "kind": "error"
+    },
+    {
+      "formula": "=COVAR({1,2})",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=COVAR({1,2},{1,2,3})",
+      "expected": "#N/A",
+      "source": "hand",
+      "note": "The arrays differ in length.",
+      "kind": "error"
+    },
+    {
+      "formula": "=COVAR({5},{7})",
+      "expected": 0,
+      "source": "hand",
+      "note": "One pair: no spread.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=COVAR({1,2,3},{1,2,3})",
+      "expected": 0.6666666666666666,
+      "source": "hand",
+      "note": "Squares about 2 add to 2; over n or n - 1."
+    },
+    {
+      "formula": "=COVAR({3,2,4,5,6},{9,7,12,15,17})",
+      "expected": 5.2,
+      "source": "hand",
+      "note": "Cross products add to 26; over 5 or 4."
+    },
+    {
+      "formula": "=COVARIANCE.P({1,2})",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=COVARIANCE.P({1,2},{1,2,3})",
+      "expected": "#N/A",
+      "source": "hand",
+      "note": "The arrays differ in length.",
+      "kind": "error"
+    },
+    {
+      "formula": "=COVARIANCE.P({5},{7})",
+      "expected": 0,
+      "source": "hand",
+      "note": "One pair: no spread.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=COVARIANCE.P({1,2,3},{1,2,3})",
+      "expected": 0.6666666666666666,
+      "source": "hand",
+      "note": "Squares about 2 add to 2; over n or n - 1."
+    },
+    {
+      "formula": "=COVARIANCE.S({1,2})",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=COVARIANCE.S({1,2},{1,2,3})",
+      "expected": "#N/A",
+      "source": "hand",
+      "note": "The arrays differ in length.",
+      "kind": "error"
+    },
+    {
+      "formula": "=COVARIANCE.S({5},{7})",
+      "expected": "#DIV/0!",
+      "source": "hand",
+      "note": "One pair has no sample covariance.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=COVARIANCE.S({1,2,3},{1,2,3})",
+      "expected": 1,
+      "source": "hand",
+      "note": "Squares about 2 add to 2; over n or n - 1."
+    },
+    {
+      "formula": "=COVARIANCE.S({3,2,4,5,6},{9,7,12,15,17})",
+      "expected": 6.5,
+      "source": "hand",
+      "note": "Cross products add to 26; over 5 or 4."
+    },
+    {
+      "formula": "=FORECAST(30,{6,7})",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=FORECAST(30,{1,2},{3,3})",
+      "expected": "#DIV/0!",
+      "source": "hand",
+      "note": "No spread in x.",
+      "kind": "error"
+    },
+    {
+      "formula": "=FORECAST(1,{1,2},{1,2,3})",
+      "expected": "#N/A",
+      "source": "hand",
+      "note": "The arrays differ in length.",
+      "kind": "error"
+    },
+    {
+      "formula": "=FORECAST(4,{2,4,6},{1,2,3})",
+      "expected": 8,
+      "source": "hand",
+      "note": "An exact line y = 2x.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=FORECAST(0,{3,5,7},{1,2,3})",
+      "expected": 1,
+      "source": "hand",
+      "note": "y = 2x + 1 at 0."
+    },
+    {
+      "formula": "=FORECAST.LINEAR(30,{6,7})",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=FORECAST.LINEAR(30,{1,2},{3,3})",
+      "expected": "#DIV/0!",
+      "source": "hand",
+      "note": "No spread in x.",
+      "kind": "error"
+    },
+    {
+      "formula": "=FORECAST.LINEAR(1,{1,2},{1,2,3})",
+      "expected": "#N/A",
+      "source": "hand",
+      "note": "The arrays differ in length.",
+      "kind": "error"
+    },
+    {
+      "formula": "=FORECAST.LINEAR(4,{2,4,6},{1,2,3})",
+      "expected": 8,
+      "source": "hand",
+      "note": "An exact line y = 2x.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=FORECAST.LINEAR(0,{3,5,7},{1,2,3})",
+      "expected": 1,
+      "source": "hand",
+      "note": "y = 2x + 1 at 0."
+    },
+    {
+      "formula": "=INTERCEPT({1,2})",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=INTERCEPT({1,2},{3,3})",
+      "expected": "#DIV/0!",
+      "source": "hand",
+      "note": "No spread in x.",
+      "kind": "error"
+    },
+    {
+      "formula": "=INTERCEPT({3,5,7},{1,2,3})",
+      "expected": 1,
+      "source": "hand",
+      "note": "y = 2x + 1.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=INTERCEPT({1,2},{1,2,3})",
+      "expected": "#N/A",
+      "source": "hand",
+      "note": "The arrays differ in length.",
+      "kind": "error"
+    },
+    {
+      "formula": "=SLOPE({1,2})",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=SLOPE({1,2},{3,3})",
+      "expected": "#DIV/0!",
+      "source": "hand",
+      "note": "No spread in x.",
+      "kind": "error"
+    },
+    {
+      "formula": "=SLOPE({3,5,7},{1,2,3})",
+      "expected": 2,
+      "source": "hand",
+      "note": "y = 2x + 1.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=SLOPE({1,2},{1,2,3})",
+      "expected": "#N/A",
+      "source": "hand",
+      "note": "The arrays differ in length.",
+      "kind": "error"
+    },
+    {
+      "formula": "=RSQ({1,2})",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=RSQ({1,2},{3,3})",
+      "expected": "#DIV/0!",
+      "source": "hand",
+      "note": "No spread in x.",
+      "kind": "error"
+    },
+    {
+      "formula": "=RSQ({3,5,7},{1,2,3})",
+      "expected": 1,
+      "source": "hand",
+      "note": "An exact line.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=RSQ({1,2},{1,2,3})",
+      "expected": "#N/A",
+      "source": "hand",
+      "note": "The arrays differ in length.",
+      "kind": "error"
+    },
+    {
+      "formula": "=STEYX({1,2})",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=STEYX({1,2},{3,4})",
+      "expected": "#DIV/0!",
+      "source": "hand",
+      "note": "Fewer than three points.",
+      "kind": "error"
+    },
+    {
+      "formula": "=STEYX({3,5,7},{1,2,3})",
+      "expected": 0,
+      "source": "hand",
+      "note": "An exact line.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=STEYX({1,2},{1,2,3})",
+      "expected": "#N/A",
+      "source": "hand",
+      "note": "The arrays differ in length.",
+      "kind": "error"
+    },
+    {
+      "formula": "=LINEST()",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=LINEST({3,5,7},{1,2,3})",
+      "expected": [2, 1],
+      "source": "hand",
+      "note": "An exact line y = 2x + 1: slope, then intercept.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=LINEST({2,4,6},{1,2,3},FALSE)",
+      "expected": [2, 0],
+      "source": "hand",
+      "note": "Through the origin."
+    },
+    {
+      "formula": "=LINEST({1,2,3})",
+      "expected": [1, 0],
+      "source": "hand",
+      "note": "x defaults to 1, 2, 3."
+    },
+    {
+      "formula": "=LINEST({1,2,3},{1,2})",
+      "expected": "#REF!",
+      "source": "hand",
+      "note": "The arrays differ in size.",
+      "kind": "error"
+    },
+    {
+      "formula": "=LOGEST()",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=LOGEST({1,-2,4})",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "A value at or below zero has no logarithm.",
+      "kind": "error"
+    },
+    {
+      "formula": "=LOGEST({2,4,8},{1,2,3})",
+      "expected": [2, 1],
+      "source": "hand",
+      "note": "Exactly y = 1 times 2^x.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=LOGEST({3,6,12})",
+      "expected": [2, 1.5],
+      "source": "hand",
+      "note": "y = 1.5 times 2^x at x = 1, 2, 3."
+    },
+    {
+      "formula": "=LOGEST({2,4,8},{1,2,3},FALSE)",
+      "expected": [2, 1],
+      "source": "hand",
+      "note": "b = 1: ln m is the sum of x ln y over the sum of x^2, 14 ln 2 / 14."
+    },
+    {
+      "formula": "=GROWTH()",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=GROWTH({1,-2,4})",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "A value at or below zero has no logarithm.",
+      "kind": "error"
+    },
+    {
+      "formula": "=GROWTH({2,4,8},{1,2,3},{4})",
+      "expected": 16,
+      "source": "hand",
+      "note": "Exactly y = 2^x.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=GROWTH({2,4,8},{1,2,3},{0})",
+      "expected": 1,
+      "source": "hand",
+      "note": "2^0."
+    },
+    {
+      "formula": "=GROWTH({1,10,100},{0,1,2},{3})",
+      "expected": 1000,
+      "tolerance": 1e-11,
+      "source": "hand",
+      "note": "10^3."
+    },
+    {
+      "formula": "=TREND()",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=TREND({1,2,3},{1,2})",
+      "expected": "#REF!",
+      "source": "hand",
+      "note": "The arrays differ in size.",
+      "kind": "error"
+    },
+    {
+      "formula": "=TREND({3,5,7},{1,2,3},{4})",
+      "expected": 9,
+      "source": "hand",
+      "note": "y = 2x + 1 at 4.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=TREND({3,5,7},{1,2,3},{0})",
+      "expected": 1,
+      "source": "hand",
+      "note": "y = 2x + 1 at 0."
+    },
+    {
+      "formula": "=TREND({2,4,6},{1,2,3},{4},FALSE)",
+      "expected": 8,
+      "source": "hand",
+      "note": "Through the origin: y = 2x."
+    },
+    {
+      "formula": "=LARGE({1,2})",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=LARGE({1,2},3)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "k past the count.",
+      "kind": "error"
+    },
+    {
+      "formula": "=LARGE({3,5,4},1)",
+      "expected": 5,
+      "source": "hand",
+      "note": "k = 1 is the largest.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=LARGE({1,2},0)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "k below 1.",
+      "kind": "error"
+    },
+    {
+      "formula": "=SMALL({1,2})",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=SMALL({1,2},0)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "k below 1.",
+      "kind": "error"
+    },
+    {
+      "formula": "=SMALL({3,5,4},1)",
+      "expected": 3,
+      "source": "hand",
+      "note": "k = 1 is the smallest.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=SMALL({3,5,4},3)",
+      "expected": 5,
+      "source": "hand",
+      "note": "k = n is the largest."
+    },
+    {
+      "formula": "=PERCENTILE({1,2})",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=PERCENTILE({1,2,3},1.5)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "k above 1.",
+      "kind": "error"
+    },
+    {
+      "formula": "=PERCENTILE({1,2,3,4},0)",
+      "expected": 1,
+      "source": "hand",
+      "note": "k = 0 is the smallest.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=PERCENTILE({1,2,3,4},1)",
+      "expected": 4,
+      "source": "hand",
+      "note": "k = 1 is the largest."
+    },
+    {
+      "formula": "=PERCENTILE.EXC({1,2})",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=PERCENTILE.EXC({1,2,3,4},0.2)",
+      "expected": 1,
+      "source": "hand",
+      "note": "Rank 0.2 times 5 = 1: the smallest, the lowest k allowed.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=PERCENTILE.EXC({1,2,3,4},0.5)",
+      "expected": 2.5,
+      "source": "hand",
+      "note": "Rank 2.5."
+    },
+    {
+      "formula": "=PERCENTILE.INC({1,2})",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=PERCENTILE.INC({1,2,3,4},0)",
+      "expected": 1,
+      "source": "hand",
+      "note": "k = 0 is the smallest.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=PERCENTILE.INC({1,2,3,4},0.5)",
+      "expected": 2.5,
+      "source": "hand",
+      "note": "Rank 1 + 0.5 times 3."
+    },
+    {
+      "formula": "=PERCENTILE.INC({1,2,3,4},1)",
+      "expected": 4,
+      "source": "hand",
+      "note": "k = 1 is the largest."
+    },
+    {
+      "formula": "=PERCENTRANK({1,2})",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=PERCENTRANK({1,2,3},4)",
+      "expected": "#N/A",
+      "source": "hand",
+      "note": "x past the largest.",
+      "kind": "error"
+    },
+    {
+      "formula": "=PERCENTRANK({1,2,3},2,0)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Significance below 1.",
+      "kind": "error"
+    },
+    {
+      "formula": "=PERCENTRANK({1,2,3,4,5},1)",
+      "expected": 0,
+      "source": "hand",
+      "note": "The smallest ranks 0.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=PERCENTRANK({1,2,3,4,5},5)",
+      "expected": 1,
+      "source": "hand",
+      "note": "The largest ranks 1."
+    },
+    {
+      "formula": "=PERCENTRANK({1,2,3,4,5},2)",
+      "expected": 0.25,
+      "source": "hand",
+      "note": "One value below, over n - 1 = 4."
+    },
+    {
+      "formula": "=PERCENTRANK.EXC({1,2})",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=PERCENTRANK.EXC({1,2,3},4)",
+      "expected": "#N/A",
+      "source": "hand",
+      "note": "x past the largest.",
+      "kind": "error"
+    },
+    {
+      "formula": "=PERCENTRANK.EXC({1,2,3},1)",
+      "expected": 0.25,
+      "source": "hand",
+      "note": "The smallest: rank 1 over n + 1 = 4.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=PERCENTRANK.INC({1,2})",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=PERCENTRANK.INC({1,2,3},1)",
+      "expected": 0,
+      "source": "hand",
+      "note": "The smallest ranks 0.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=QUARTILE({1,2})",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=QUARTILE({1,2,3},5)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Quart above 4.",
+      "kind": "error"
+    },
+    {
+      "formula": "=QUARTILE({1,2,3,4},0)",
+      "expected": 1,
+      "source": "hand",
+      "note": "Quart 0 is the smallest.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=QUARTILE({1,2,4,7,8,9,10,12},1)",
+      "expected": 3.5,
+      "source": "hand",
+      "note": "Rank 1 + 0.25 times 7 = 2.75: between 2 and 4."
+    },
+    {
+      "formula": "=QUARTILE({1,2,3,4},2)",
+      "expected": 2.5,
+      "source": "hand",
+      "note": "The median."
+    },
+    {
+      "formula": "=QUARTILE.EXC({1,2})",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=QUARTILE.EXC({1,2,3},0)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Quart 0 is out of range.",
+      "kind": "error"
+    },
+    {
+      "formula": "=QUARTILE.EXC({1,2,3,4,5,6,7},3)",
+      "expected": 6,
+      "source": "hand",
+      "note": "Rank 0.75 times 8 = 6.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=QUARTILE.EXC({6,7,15,36,39,40,41,42,43,47,49},1)",
+      "expected": 15,
+      "source": "hand",
+      "note": "Rank 0.25 times 12 = 3."
+    },
+    {
+      "formula": "=QUARTILE.INC({1,2})",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=QUARTILE.INC({1,2,3,4},0)",
+      "expected": 1,
+      "source": "hand",
+      "note": "Quart 0 is the smallest.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=QUARTILE.INC({1,2,4,7,8,9,10,12},1)",
+      "expected": 3.5,
+      "source": "hand",
+      "note": "Rank 2.75: between 2 and 4."
+    },
+    {
+      "formula": "=RANK(7)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=RANK(9,{7,3.5,3.5,1,2})",
+      "expected": "#N/A",
+      "source": "hand",
+      "note": "The number is not in the list.",
+      "kind": "error"
+    },
+    {
+      "formula": "=RANK(7,{7,3.5,3.5,1,2})",
+      "expected": 1,
+      "source": "hand",
+      "note": "The largest ranks 1.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=RANK(3.5,{7,3.5,3.5,1,2})",
+      "expected": 2,
+      "source": "hand",
+      "note": "Ties share the top rank."
+    },
+    {
+      "formula": "=RANK(7,{7,3.5,3.5,1,2},1)",
+      "expected": 5,
+      "source": "hand",
+      "note": "Ascending: the largest ranks last."
+    },
+    {
+      "formula": "=RANK.AVG(7)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=RANK.AVG(9,{7,3.5,3.5,1,2})",
+      "expected": "#N/A",
+      "source": "hand",
+      "note": "The number is not in the list.",
+      "kind": "error"
+    },
+    {
+      "formula": "=RANK.AVG(7,{7,3.5,3.5,1,2})",
+      "expected": 1,
+      "source": "hand",
+      "note": "The largest ranks 1.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=RANK.AVG(3.5,{7,3.5,3.5,1,2},1)",
+      "expected": 3.5,
+      "source": "hand",
+      "note": "Ascending ranks 3 and 4, averaged."
+    },
+    {
+      "formula": "=RANK.EQ(7)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=RANK.EQ(7,{7,3.5,3.5,1,2})",
+      "expected": 1,
+      "source": "hand",
+      "note": "The largest ranks 1.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=TRIMMEAN({1,2})",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=TRIMMEAN({1,2,3,4},0)",
+      "expected": 2.5,
+      "source": "hand",
+      "note": "Nothing trimmed.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=TRIMMEAN({1,2,3,4,100},0.4)",
+      "expected": 3,
+      "source": "hand",
+      "note": "0.4 times 5 = 2: one from each end."
+    },
+    {
+      "formula": "=TRIMMEAN({1,2},-0.1)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Percent below 0.",
+      "kind": "error"
+    },
+    {
+      "formula": "=FREQUENCY({1,2})",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=FREQUENCY(1/0,{1})",
+      "expected": "#DIV/0!",
+      "source": "hand",
+      "note": "An error among the arguments passes through.",
+      "kind": "error"
+    },
+    {
+      "formula": "=FREQUENCY({5},{5})",
+      "expected": [1, 0],
+      "source": "hand",
+      "note": "A value on an edge falls in its bin.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=FREQUENCY({1,2,2,3,5,9},{2,5,2,0})",
+      "expected": [3, 2, 0, 0, 1],
+      "source": "hand",
+      "note": "A repeated edge counts once, at its first place."
+    },
+    {
+      "formula": "=FREQUENCY({1,2,3},{\"a\"})",
+      "expected": [3],
+      "source": "hand",
+      "note": "No bins: one count of every value."
+    },
+    {
+      "formula": "=PROB({0,1},{0.5,0.5})",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=PROB({0,1},{0.5,0.5},5)",
+      "expected": 0,
+      "source": "hand",
+      "note": "The lower limit is not among the values.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=STANDARDIZE(1,2)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=STANDARDIZE(40,40,1.5)",
+      "expected": 0,
+      "source": "hand",
+      "note": "At the mean.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=STANDARDIZE(37,40,1.5)",
+      "expected": -2,
+      "source": "hand",
+      "note": "Two deviations below."
+    },
+    {
+      "formula": "=STANDARDIZE(1,0,-1)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "A negative deviation.",
+      "kind": "error"
+    },
+    {
+      "formula": "=FISHER()",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=FISHER(0)",
+      "expected": 0,
+      "source": "hand",
+      "note": "atanh 0.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=FISHER(-0.75)",
+      "expected": -0.9729550745276566,
+      "source": "hand",
+      "note": "atanh(-0.75) = -ln(7) / 2."
+    },
+    {
+      "formula": "=FISHER(-1)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "At -1.",
+      "kind": "error"
+    },
+    {
+      "formula": "=FISHERINV()",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=FISHERINV(\"a\")",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Text that is not a number.",
+      "kind": "error"
+    },
+    {
+      "formula": "=FISHERINV(0)",
+      "expected": 0,
+      "source": "hand",
+      "note": "tanh 0.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=FISHERINV(-0.5*LN(7))",
+      "expected": -0.75,
+      "source": "hand",
+      "note": "tanh(-ln(7) / 2) = -6/8."
+    },
+    {
+      "formula": "=FISHERINV(1E3)",
+      "expected": 1,
+      "source": "hand",
+      "note": "tanh of a large value."
+    },
+    {
+      "formula": "=GAMMA()",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=GAMMA(1)",
+      "expected": 1,
+      "source": "hand",
+      "note": "0! = 1.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=GAMMALN()",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=GAMMALN(1)",
+      "expected": 0,
+      "source": "hand",
+      "note": "ln 0!.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=GAMMALN(10)",
+      "expected": 12.801827480081469,
+      "source": "hand",
+      "note": "ln 9!."
+    },
+    {
+      "formula": "=GAMMALN(0.5)",
+      "expected": 0.5723649429247001,
+      "source": "hand",
+      "note": "Gamma(1/2) = sqrt(pi)."
+    },
+    {
+      "formula": "=GAMMALN.PRECISE()",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=GAMMALN.PRECISE(-1)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Below zero.",
+      "kind": "error"
+    },
+    {
+      "formula": "=GAMMALN.PRECISE(2)",
+      "expected": 0,
+      "source": "hand",
+      "note": "ln 1!.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=GAMMALN.PRECISE(0.5)",
+      "expected": 0.5723649429247001,
+      "source": "hand",
+      "note": "Gamma(1/2) = sqrt(pi)."
+    },
+    {
+      "formula": "=PERMUT(5)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=PERMUT(5,0)",
+      "expected": 1,
+      "source": "hand",
+      "note": "Choosing none.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=PERMUT(5,5)",
+      "expected": 120,
+      "source": "hand",
+      "note": "5! = 120."
+    },
+    {
+      "formula": "=PERMUTATIONA(3)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=PERMUTATIONA(-1,2)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "A negative count.",
+      "kind": "error"
+    },
+    {
+      "formula": "=PERMUTATIONA(3,0)",
+      "expected": 1,
+      "source": "hand",
+      "note": "3^0.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=PERMUTATIONA(2,10)",
+      "expected": 1024,
+      "source": "hand",
+      "note": "2^10."
+    },
+    {
+      "formula": "=PHI()",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=PHI(\"a\")",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Text that is not a number.",
+      "kind": "error"
+    },
+    {
+      "formula": "=PHI(0)",
+      "expected": 0.3989422804014327,
+      "source": "hand",
+      "note": "The peak 1 / sqrt(2 pi).",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=PHI(-0.75)",
+      "expected": 0.30113743215480443,
+      "source": "hand",
+      "note": "The density is even."
+    },
+    {
+      "formula": "=GAUSS()",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=GAUSS(\"a\")",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Text that is not a number.",
+      "kind": "error"
+    },
+    {
+      "formula": "=GAUSS(0)",
+      "expected": 0,
+      "source": "hand",
+      "note": "Phi(0) - 1/2.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=GAUSS(-1)",
+      "expected": -0.3413447460685429,
+      "source": "hand",
+      "note": "Phi(-1) - 1/2 from erfc."
+    },
+    {
+      "formula": "=NORM.DIST(42,40,1.5)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=NORM.DIST(40,40,1.5,TRUE)",
+      "expected": 0.5,
+      "source": "hand",
+      "note": "At the mean.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=NORM.INV(0.5,40)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=NORM.INV(0,0,1)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Probability 0.",
+      "kind": "error"
+    },
+    {
+      "formula": "=NORM.INV(0.5,40,1.5)",
+      "expected": 40,
+      "source": "hand",
+      "note": "The median is the mean.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=NORM.INV(0.8413447460685429,0,1)",
+      "expected": 1,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "Phi(1) from the table."
+    },
+    {
+      "formula": "=NORM.S.DIST(1)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=NORM.S.DIST(\"a\",TRUE)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Text that is not a number.",
+      "kind": "error"
+    },
+    {
+      "formula": "=NORM.S.DIST(0,TRUE)",
+      "expected": 0.5,
+      "source": "hand",
+      "note": "At the mean.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=NORM.S.INV()",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=NORM.S.INV(0)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Probability 0.",
+      "kind": "error"
+    },
+    {
+      "formula": "=NORM.S.INV(0.977249868051821)",
+      "expected": 2,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "Phi(2) from the table."
+    },
+    {
+      "formula": "=NORMDIST(42,40,1.5)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=NORMDIST(1,0,-1,TRUE)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "A negative deviation.",
+      "kind": "error"
+    },
+    {
+      "formula": "=NORMDIST(0,0,1,FALSE)",
+      "expected": 0.3989422804014327,
+      "source": "hand",
+      "note": "The peak.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=NORMDIST(1,0,1,TRUE)",
+      "expected": 0.8413447460685429,
+      "source": "hand",
+      "note": "Phi(1) from the table."
+    },
+    {
+      "formula": "=NORMINV(0.5,0)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=NORMINV(1,0,1)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Probability 1.",
+      "kind": "error"
+    },
+    {
+      "formula": "=NORMINV(0.5,3,2)",
+      "expected": 3,
+      "source": "hand",
+      "note": "The median is the mean.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=NORMINV(0.15865525393145707,0,1)",
+      "expected": -1,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "Phi(-1) from the table."
+    },
+    {
+      "formula": "=NORMINV(0.8413447460685429,5,2)",
+      "expected": 7,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "One deviation up."
+    },
+    {
+      "formula": "=NORMSDIST()",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=NORMSDIST(\"a\")",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Text that is not a number.",
+      "kind": "error"
+    },
+    {
+      "formula": "=NORMSDIST(0)",
+      "expected": 0.5,
+      "source": "hand",
+      "note": "At the mean.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=NORMSDIST(1)",
+      "expected": 0.8413447460685429,
+      "source": "hand",
+      "note": "Phi(1) from the table."
+    },
+    {
+      "formula": "=NORMSDIST(-2)",
+      "expected": 0.022750131948179195,
+      "source": "hand",
+      "note": "Phi(-2) from the table."
+    },
+    {
+      "formula": "=NORMSINV()",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=NORMSINV(1)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Probability 1.",
+      "kind": "error"
+    },
+    {
+      "formula": "=NORMSINV(0.5)",
+      "expected": 0,
+      "source": "hand",
+      "note": "The median.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=NORMSINV(0.8413447460685429)",
+      "expected": 1,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "Phi(1) from the table."
+    },
+    {
+      "formula": "=NORMSINV(0.022750131948179195)",
+      "expected": -2,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "Phi(-2) from the table."
+    },
+    {
+      "formula": "=LOGNORM.DIST(1,0,1)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=LOGNORM.DIST(1,0,1,TRUE)",
+      "expected": 0.5,
+      "source": "hand",
+      "note": "ln 1 = 0 is the median.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=LOGNORM.INV(0.5,0)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=LOGNORM.INV(0.5,0,0)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Deviation 0.",
+      "kind": "error"
+    },
+    {
+      "formula": "=LOGNORM.INV(0.5,0,1)",
+      "expected": 1,
+      "source": "hand",
+      "note": "The median e^0.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=LOGNORM.INV(0.5,2,3)",
+      "expected": 7.38905609893065,
+      "source": "hand",
+      "note": "The median e^mean."
+    },
+    {
+      "formula": "=LOGINV(0.5,0)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=LOGINV(0,0,1)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Probability 0.",
+      "kind": "error"
+    },
+    {
+      "formula": "=LOGINV(0.5,0,1)",
+      "expected": 1,
+      "source": "hand",
+      "note": "The median e^0.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=LOGINV(0.5,LN(5),2)",
+      "expected": 5,
+      "source": "hand",
+      "note": "The median e^mean."
+    },
+    {
+      "formula": "=LOGINV(0.8413447460685429,0,1)",
+      "expected": 2.718281828459045,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "Phi(1) from the table: e^1."
+    },
+    {
+      "formula": "=LOGNORMDIST(1,0)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=LOGNORMDIST(0,0,1)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "x at zero.",
+      "kind": "error"
+    },
+    {
+      "formula": "=LOGNORMDIST(1,0,1)",
+      "expected": 0.5,
+      "source": "hand",
+      "note": "ln 1 = 0 is the median.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=LOGNORMDIST(EXP(1),0,1)",
+      "expected": 0.8413447460685429,
+      "source": "hand",
+      "note": "Phi(1) from the table."
+    },
+    {
+      "formula": "=LOGNORMDIST(EXP(-2),0,2)",
+      "expected": 0.15865525393145707,
+      "source": "hand",
+      "note": "Phi(-1) from the table."
+    },
+    {
+      "formula": "=CONFIDENCE(0.05,2.5)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=CONFIDENCE(0,2.5,50)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Alpha 0.",
+      "kind": "error"
+    },
+    {
+      "formula": "=CONFIDENCE(0.05,2.5,1)",
+      "expected": 4.899909961350135,
+      "source": "hand",
+      "note": "n = 1: z(0.975) times the deviation.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=CONFIDENCE(0.05,2.5,50)",
+      "expected": 0.6929519121748389,
+      "source": "hand",
+      "note": "z(0.975) = 1.959963984540054 from the table, times 2.5 over sqrt(50)."
+    },
+    {
+      "formula": "=CONFIDENCE(0.05,0,50)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Deviation 0.",
+      "kind": "error"
+    },
+    {
+      "formula": "=CONFIDENCE.NORM(0.05,2.5)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=CONFIDENCE.NORM(1,2.5,50)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Alpha 1.",
+      "kind": "error"
+    },
+    {
+      "formula": "=CONFIDENCE.NORM(0.05,2.5,1)",
+      "expected": 4.899909961350135,
+      "source": "hand",
+      "note": "n = 1.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=CONFIDENCE.NORM(0.31731050786291415,1,4)",
+      "expected": 0.5,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "Alpha = 2(1 - Phi(1)): z = 1, over sqrt(4)."
+    },
+    {
+      "formula": "=CONFIDENCE.T(0.05,1)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=CONFIDENCE.T(1,1,50)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Alpha 1.",
+      "kind": "error"
+    },
+    {
+      "formula": "=CONFIDENCE.T(0.05,1,2)",
+      "expected": 8.984643532093754,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "n = 2, one degree of freedom: the t quantile is tan(0.475 pi).",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=CONFIDENCE.T(0.5,1,2)",
+      "expected": 0.7071067811865475,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "One degree of freedom: t(0.75) = tan(pi/4) = 1."
+    },
+    {
+      "formula": "=EXPON.DIST(1,2)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=EXPON.DIST(1,0,TRUE)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Rate 0.",
+      "kind": "error"
+    },
+    {
+      "formula": "=EXPON.DIST(0,2,TRUE)",
+      "expected": 0,
+      "source": "hand",
+      "note": "At zero.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=EXPON.DIST(0,2,FALSE)",
+      "expected": 2,
+      "source": "hand",
+      "note": "The density at zero is the rate."
+    },
+    {
+      "formula": "=EXPONDIST(1,2)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=EXPONDIST(-1,2,TRUE)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Below zero.",
+      "kind": "error"
+    },
+    {
+      "formula": "=EXPONDIST(0,2,FALSE)",
+      "expected": 2,
+      "source": "hand",
+      "note": "The density at zero is the rate.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=EXPONDIST(LN(2),1,TRUE)",
+      "expected": 0.5,
+      "source": "hand",
+      "note": "The median ln 2."
+    },
+    {
+      "formula": "=WEIBULL(1,2,1)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=WEIBULL(-1,2,1,TRUE)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Below zero.",
+      "kind": "error"
+    },
+    {
+      "formula": "=WEIBULL(0,2,1,TRUE)",
+      "expected": 0,
+      "source": "hand",
+      "note": "At zero.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=WEIBULL(1,1,2,TRUE)",
+      "expected": 0.3934693402873666,
+      "source": "hand",
+      "note": "1 - e^-(x/b)^a."
+    },
+    {
+      "formula": "=WEIBULL.DIST(1,2,1)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=WEIBULL.DIST(1,0,1,TRUE)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Shape 0.",
+      "kind": "error"
+    },
+    {
+      "formula": "=WEIBULL.DIST(0,1,2,FALSE)",
+      "expected": 0.5,
+      "source": "hand",
+      "note": "Shape 1 is the exponential law: density 1/b at zero.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=WEIBULL.DIST(2,2,1,TRUE)",
+      "expected": 0.9816843611112658,
+      "source": "hand",
+      "note": "1 - e^-(x/b)^a."
+    },
+    {
+      "formula": "=GAMMA.DIST(2,1,2)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=GAMMA.DIST(0,1,2,TRUE)",
+      "expected": 0,
+      "source": "hand",
+      "note": "At zero.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=GAMMA.INV(0.5,1)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=GAMMA.INV(1.5,1,2)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Probability above 1.",
+      "kind": "error"
+    },
+    {
+      "formula": "=GAMMA.INV(0,2,1)",
+      "expected": 0,
+      "source": "hand",
+      "note": "Probability 0.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=GAMMA.INV(0.5,1,1)",
+      "expected": 0.6931471805599453,
+      "source": "hand",
+      "note": "Shape 1: the median ln 2."
+    },
+    {
+      "formula": "=GAMMADIST(1,1,1)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=GAMMADIST(-1,1,1,TRUE)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Below zero.",
+      "kind": "error"
+    },
+    {
+      "formula": "=GAMMADIST(0,1,1,FALSE)",
+      "expected": 1,
+      "source": "hand",
+      "note": "Shape 1: density 1/b at zero.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=GAMMADIST(1,1,1,TRUE)",
+      "expected": 0.6321205588285577,
+      "source": "hand",
+      "note": "Shape 1: 1 - e^-x."
+    },
+    {
+      "formula": "=GAMMAINV(0.5,1)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=GAMMAINV(0.5,0,1)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Shape 0.",
+      "kind": "error"
+    },
+    {
+      "formula": "=GAMMAINV(0,1,1)",
+      "expected": 0,
+      "source": "hand",
+      "note": "Probability 0.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=GAMMAINV(0.5,1,2)",
+      "expected": 1.3862943611198906,
+      "source": "hand",
+      "note": "Shape 1, scale 2: the median 2 ln 2."
+    },
+    {
+      "formula": "=GAMMAINV(1-EXP(-1),1,1)",
+      "expected": 1,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "Shape 1: 1 - e^-x = 1 - e^-1."
+    },
+    {
+      "formula": "=BETA.DIST(0.3,2,1)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=BETA.DIST(0,2,1,TRUE)",
+      "expected": 0,
+      "source": "hand",
+      "note": "The lower end.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=BETA.DIST(1,2,1,TRUE)",
+      "expected": 1,
+      "source": "hand",
+      "note": "The upper end."
+    },
+    {
+      "formula": "=BETA.INV(0.5,2)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=BETA.INV(0,2,1)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Probability 0.",
+      "kind": "error"
+    },
+    {
+      "formula": "=BETA.INV(1,2,1)",
+      "expected": 1,
+      "source": "hand",
+      "note": "Probability 1 is the upper end.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=BETA.INV(0.25,2,1)",
+      "expected": 0.5,
+      "source": "hand",
+      "note": "With b = 1 the law is x^a: x = sqrt(0.25)."
+    },
+    {
+      "formula": "=BETADIST(0.3,2)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=BETADIST(0.3,0,1)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "alpha 0.",
+      "kind": "error"
+    },
+    {
+      "formula": "=BETADIST(1,2,1)",
+      "expected": 1,
+      "source": "hand",
+      "note": "The upper end.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=BETADIST(0.3,2,1)",
+      "expected": 0.09,
+      "source": "hand",
+      "note": "x^2."
+    },
+    {
+      "formula": "=BETADIST(3,2,1,2,4)",
+      "expected": 0.25,
+      "source": "hand",
+      "note": "Scaled to [2, 4]: (1/2)^2."
+    },
+    {
+      "formula": "=BETAINV(0.5,2)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=BETAINV(1.5,2,1)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Probability above 1.",
+      "kind": "error"
+    },
+    {
+      "formula": "=BETAINV(1,2,1,2,4)",
+      "expected": 4,
+      "source": "hand",
+      "note": "Probability 1 is the upper end.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=BETAINV(0.25,2,1)",
+      "expected": 0.5,
+      "source": "hand",
+      "note": "x^2 = 0.25."
+    },
+    {
+      "formula": "=CHIDIST(2)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=CHIDIST(-1,2)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Below zero.",
+      "kind": "error"
+    },
+    {
+      "formula": "=CHIDIST(0,2)",
+      "expected": 1,
+      "source": "hand",
+      "note": "At zero.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=CHIDIST(4,4)",
+      "expected": 0.4060058497098381,
+      "source": "hand",
+      "note": "Four degrees: e^-x/2 (1 + x/2)."
+    },
+    {
+      "formula": "=CHIINV(0.5)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=CHIINV(1.5,2)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Probability above 1.",
+      "kind": "error"
+    },
+    {
+      "formula": "=CHIINV(1,2)",
+      "expected": 0,
+      "source": "hand",
+      "note": "Probability 1.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=CHIINV(EXP(-1),2)",
+      "expected": 2,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "Two degrees: e^-x/2 = e^-1."
+    },
+    {
+      "formula": "=CHIINV(0.05,1)",
+      "expected": 3.8414588206941254,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "One degree: the square of z(0.975) from the table."
+    },
+    {
+      "formula": "=CHISQ.DIST(2,2)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=CHISQ.DIST(0,2,TRUE)",
+      "expected": 0,
+      "source": "hand",
+      "note": "At zero.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=CHISQ.DIST.RT(2)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=CHISQ.DIST.RT(2,0)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Zero degrees.",
+      "kind": "error"
+    },
+    {
+      "formula": "=CHISQ.DIST.RT(0,5)",
+      "expected": 1,
+      "source": "hand",
+      "note": "At zero.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=CHISQ.DIST.RT(1,1)",
+      "expected": 0.31731050786291415,
+      "source": "hand",
+      "note": "One degree: 2(1 - Phi(1))."
+    },
+    {
+      "formula": "=CHISQ.INV(0.5)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=CHISQ.INV(1,2)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Probability 1.",
+      "kind": "error"
+    },
+    {
+      "formula": "=CHISQ.INV(0,2)",
+      "expected": 0,
+      "source": "hand",
+      "note": "Probability 0.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=CHISQ.INV.RT(0.5)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=CHISQ.INV.RT(0,2)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Probability 0.",
+      "kind": "error"
+    },
+    {
+      "formula": "=CHISQ.INV.RT(1,2)",
+      "expected": 0,
+      "source": "hand",
+      "note": "Probability 1.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=CHISQ.INV.RT(EXP(-1),2)",
+      "expected": 2,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "Two degrees: e^-x/2 = e^-1."
+    },
+    {
+      "formula": "=F.DIST(3,2,2)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=F.DIST(-1,2,2,TRUE)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Below zero.",
+      "kind": "error"
+    },
+    {
+      "formula": "=F.DIST(0,2,2,TRUE)",
+      "expected": 0,
+      "source": "hand",
+      "note": "At zero.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=F.DIST.RT(3,2)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=F.DIST.RT(3,0,2)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Zero degrees.",
+      "kind": "error"
+    },
+    {
+      "formula": "=F.DIST.RT(0,2,2)",
+      "expected": 1,
+      "source": "hand",
+      "note": "At zero.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=F.DIST.RT(1,2,2)",
+      "expected": 0.5,
+      "source": "hand",
+      "note": "Two and two degrees: 1 / (1 + x)."
+    },
+    {
+      "formula": "=F.DIST.RT(2,2,4)",
+      "expected": 0.25,
+      "source": "hand",
+      "note": "d1 = 2: (d2 / (d2 + 2x))^(d2/2) = (1/2)^2."
+    },
+    {
+      "formula": "=F.INV(0.5,2)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=F.INV(1.5,2,2)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Probability above 1.",
+      "kind": "error"
+    },
+    {
+      "formula": "=F.INV(0,2,2)",
+      "expected": 0,
+      "source": "hand",
+      "note": "Probability 0.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=F.INV(0.5,2,2)",
+      "expected": 1,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "x / (1 + x) = 1/2."
+    },
+    {
+      "formula": "=F.INV(0.75,2,4)",
+      "expected": 2,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "d1 = 2: upper tail (1/2)^2 = 0.25."
+    },
+    {
+      "formula": "=F.INV.RT(0.5,2)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=F.INV.RT(0,2,2)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Probability 0.",
+      "kind": "error"
+    },
+    {
+      "formula": "=F.INV.RT(1,2,2)",
+      "expected": 0,
+      "source": "hand",
+      "note": "Probability 1.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=F.INV.RT(0.25,2,4)",
+      "expected": 2,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "d1 = 2: (4 / (4 + 2x))^2 = 0.25."
+    },
+    {
+      "formula": "=F.INV.RT(0.5,2,2)",
+      "expected": 1,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "1 / (1 + x) = 1/2."
+    },
+    {
+      "formula": "=FDIST(3,2)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=FDIST(-1,2,2)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Below zero.",
+      "kind": "error"
+    },
+    {
+      "formula": "=FDIST(0,2,2)",
+      "expected": 1,
+      "source": "hand",
+      "note": "At zero.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=FDIST(3,2,2)",
+      "expected": 0.25,
+      "source": "hand",
+      "note": "1 / (1 + 3)."
+    },
+    {
+      "formula": "=FDIST(2,2,4)",
+      "expected": 0.25,
+      "source": "hand",
+      "note": "d1 = 2: (4 / 8)^2."
+    },
+    {
+      "formula": "=FINV(0.5,2)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=FINV(0,2,2)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Probability 0.",
+      "kind": "error"
+    },
+    {
+      "formula": "=FINV(1,2,2)",
+      "expected": 0,
+      "source": "hand",
+      "note": "Probability 1.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=FINV(0.25,2,2)",
+      "expected": 3,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "1 / (1 + x) = 1/4."
+    },
+    {
+      "formula": "=FINV(0.25,2,4)",
+      "expected": 2,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "d1 = 2: (4 / (4 + 2x))^2 = 1/4."
+    },
+    {
+      "formula": "=T.DIST(1,1)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=T.DIST(1,0,TRUE)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Zero degrees.",
+      "kind": "error"
+    },
+    {
+      "formula": "=T.DIST(0,5,TRUE)",
+      "expected": 0.5,
+      "source": "hand",
+      "note": "At zero.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=T.DIST.2T(1)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=T.DIST.2T(0,3)",
+      "expected": 1,
+      "source": "hand",
+      "note": "At zero both tails are everything.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=T.DIST.2T(1,1)",
+      "expected": 0.5,
+      "source": "hand",
+      "note": "Cauchy: 1 - 2 atan(1) / pi."
+    },
+    {
+      "formula": "=T.DIST.RT(1)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=T.DIST.RT(1,0)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Zero degrees.",
+      "kind": "error"
+    },
+    {
+      "formula": "=T.DIST.RT(0,4)",
+      "expected": 0.5,
+      "source": "hand",
+      "note": "At zero.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=T.DIST.RT(1,1)",
+      "expected": 0.25,
+      "source": "hand",
+      "note": "Cauchy: 1/2 - atan(1) / pi."
+    },
+    {
+      "formula": "=T.INV(0.5)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=T.INV(0.5,7)",
+      "expected": 0,
+      "source": "hand",
+      "note": "The median.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=T.INV.2T(0.5)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=T.INV.2T(0,2)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Probability 0.",
+      "kind": "error"
+    },
+    {
+      "formula": "=T.INV.2T(1,5)",
+      "expected": 0,
+      "source": "hand",
+      "note": "Probability 1.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=T.INV.2T(0.5,1)",
+      "expected": 1,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "Cauchy: tan(pi/4)."
+    },
+    {
+      "formula": "=TDIST(1,1)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=TDIST(0,3,1)",
+      "expected": 0.5,
+      "source": "hand",
+      "note": "At zero, one tail.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=TDIST(1,1,1)",
+      "expected": 0.25,
+      "source": "hand",
+      "note": "Cauchy, one tail."
+    },
+    {
+      "formula": "=TINV(0.5)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=TINV(0,1)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Probability 0.",
+      "kind": "error"
+    },
+    {
+      "formula": "=TINV(1,4)",
+      "expected": 0,
+      "source": "hand",
+      "note": "Probability 1.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=TINV(1-1/SQRT(3),2)",
+      "expected": 1,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "Two degrees: two tails 1 - t / sqrt(2 + t^2)."
+    },
+    {
+      "formula": "=BINOM.DIST(6,10,0.5)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=BINOM.DIST(10,10,0.5,TRUE)",
+      "expected": 1,
+      "source": "hand",
+      "note": "Every outcome.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=BINOM.DIST(0,10,0.5,FALSE)",
+      "expected": 0.0009765625,
+      "source": "hand",
+      "note": "2^-10."
+    },
+    {
+      "formula": "=BINOM.DIST(6,10,0.5,FALSE)",
+      "expected": 0.205078125,
+      "source": "hand",
+      "note": "C(10,6) / 2^10."
+    },
+    {
+      "formula": "=BINOM.DIST(1,10,1.5,TRUE)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Probability above 1.",
+      "kind": "error"
+    },
+    {
+      "formula": "=BINOM.DIST.RANGE(10,0.5)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=BINOM.DIST.RANGE(10,0.5,0,10)",
+      "expected": 1,
+      "source": "hand",
+      "note": "Every outcome.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=BINOM.DIST.RANGE(4,0.5,0)",
+      "expected": 0.0625,
+      "source": "hand",
+      "note": "2^-4."
+    },
+    {
+      "formula": "=BINOM.INV(6,0.5)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=BINOM.INV(6,0.5,0)",
+      "expected": 0,
+      "source": "hand",
+      "note": "Alpha 0.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=BINOM.INV(10,0.5,0.5)",
+      "expected": 5,
+      "source": "hand",
+      "note": "P(X <= 4) = 386/1024, P(X <= 5) = 638/1024."
+    },
+    {
+      "formula": "=BINOM.INV(6,0.5,1)",
+      "expected": 6,
+      "source": "hand",
+      "note": "Alpha 1 needs every outcome."
+    },
+    {
+      "formula": "=BINOMDIST(6,10,0.5)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=BINOMDIST(-1,10,0.5,TRUE)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Negative successes.",
+      "kind": "error"
+    },
+    {
+      "formula": "=BINOMDIST(0,10,0.5,FALSE)",
+      "expected": 0.0009765625,
+      "source": "hand",
+      "note": "2^-10.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=BINOMDIST(6,10,0.5,TRUE)",
+      "expected": 0.828125,
+      "source": "hand",
+      "note": "1 - (C(10,7) + C(10,8) + C(10,9) + 1) / 1024."
+    },
+    {
+      "formula": "=CRITBINOM(6,0.5)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=CRITBINOM(6,0.5,1.5)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Alpha above 1.",
+      "kind": "error"
+    },
+    {
+      "formula": "=CRITBINOM(6,0.5,0)",
+      "expected": 0,
+      "source": "hand",
+      "note": "Alpha 0.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=CRITBINOM(6,0.5,0.75)",
+      "expected": 4,
+      "source": "hand",
+      "note": "P(X <= 3) = 42/64, P(X <= 4) = 57/64."
+    },
+    {
+      "formula": "=CRITBINOM(10,0.5,0.5)",
+      "expected": 5,
+      "source": "hand",
+      "note": "P(X <= 5) = 638/1024."
+    },
+    {
+      "formula": "=NEGBINOM.DIST(10,5,0.25)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=NEGBINOM.DIST(0,1,0.5,FALSE)",
+      "expected": 0.5,
+      "source": "hand",
+      "note": "Success at once.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=NEGBINOMDIST(10,5)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=NEGBINOMDIST(1,0,0.5)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Zero successes.",
+      "kind": "error"
+    },
+    {
+      "formula": "=NEGBINOMDIST(0,3,0.5)",
+      "expected": 0.125,
+      "source": "hand",
+      "note": "Three successes at once.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=NEGBINOMDIST(10,5,0.25)",
+      "expected": 0.05504866037517786,
+      "source": "hand",
+      "note": "C(14,4) 0.25^5 0.75^10."
+    },
+    {
+      "formula": "=HYPGEOM.DIST(1,4,8,20)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=HYPGEOM.DIST(4,4,8,20,TRUE)",
+      "expected": 1,
+      "source": "hand",
+      "note": "Every outcome.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=HYPGEOMDIST(1,4,8)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=HYPGEOMDIST(5,4,8,20)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "More successes than draws.",
+      "kind": "error"
+    },
+    {
+      "formula": "=HYPGEOMDIST(0,4,8,20)",
+      "expected": 0.1021671826625387,
+      "source": "hand",
+      "note": "C(12,4) / C(20,4).",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=HYPGEOMDIST(1,4,8,20)",
+      "expected": 0.3632610939112487,
+      "source": "hand",
+      "note": "C(8,1) C(12,3) / C(20,4)."
+    },
+    {
+      "formula": "=POISSON(2,5)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=POISSON(2,-1,TRUE)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "A negative mean.",
+      "kind": "error"
+    },
+    {
+      "formula": "=POISSON(0,5,FALSE)",
+      "expected": 0.006737946999085467,
+      "source": "hand",
+      "note": "e^-5.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=POISSON.DIST(2,5)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=POISSON.DIST(0,0,TRUE)",
+      "expected": 1,
+      "source": "hand",
+      "note": "Mean 0.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=PROB({0,1,2},{0.5,0.25,0.25},0,2)",
+      "expected": 1,
+      "source": "hand",
+      "note": "Every value."
+    },
+    {
+      "formula": "=CHISQ.TEST({1,2})",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=CHISQ.TEST({10,10},{10,10})",
+      "expected": 1,
+      "source": "hand",
+      "note": "Observed equals expected.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=CHISQ.TEST({12,8},{10,10})",
+      "expected": 0.3710933695226979,
+      "source": "hand",
+      "note": "Chi-squared 0.8 on one degree: 2(1 - Phi(sqrt(0.8)))."
+    },
+    {
+      "formula": "=CHISQ.TEST({1,2},{1,2,3})",
+      "expected": "#N/A",
+      "source": "hand",
+      "note": "The arrays differ in size.",
+      "kind": "error"
+    },
+    {
+      "formula": "=CHITEST({1,2})",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=CHITEST({1,2},{1,0})",
+      "expected": "#DIV/0!",
+      "source": "hand",
+      "note": "An expected count of 0.",
+      "kind": "error"
+    },
+    {
+      "formula": "=CHITEST({10,10},{10,10})",
+      "expected": 1,
+      "source": "hand",
+      "note": "Observed equals expected.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=CHITEST({12,8,10},{10,10,10})",
+      "expected": 0.6703200460356393,
+      "source": "hand",
+      "note": "Chi-squared 0.8 on two degrees: e^-0.4."
+    },
+    {
+      "formula": "=CHITEST({1,2},{1,2,3})",
+      "expected": "#N/A",
+      "source": "hand",
+      "note": "The arrays differ in size.",
+      "kind": "error"
+    },
+    {
+      "formula": "=F.TEST({1,2})",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=F.TEST({1,2,3},{4,5,6})",
+      "expected": 1,
+      "source": "hand",
+      "note": "Equal variances.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=F.TEST({1,3},{1,2})",
+      "expected": 0.590334470601733,
+      "source": "hand",
+      "note": "F = 4 on (1, 1) degrees: the law is (2/pi) atan(sqrt(F))."
+    },
+    {
+      "formula": "=FTEST({1,2})",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=FTEST({1},{2,3})",
+      "expected": "#DIV/0!",
+      "source": "hand",
+      "note": "One value has no variance.",
+      "kind": "error"
+    },
+    {
+      "formula": "=FTEST({1,2,3},{4,5,6})",
+      "expected": 1,
+      "source": "hand",
+      "note": "Equal variances.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=FTEST({1,2,3},{2,4,6})",
+      "expected": 0.4,
+      "source": "hand",
+      "note": "F = 1/4 on (2, 2) degrees: 2 times x / (1 + x) = 0.4."
+    },
+    {
+      "formula": "=FTEST({1,3},{1,2})",
+      "expected": 0.590334470601733,
+      "source": "hand",
+      "note": "F = 4 on (1, 1) degrees."
+    },
+    {
+      "formula": "=T.TEST({1,2},{3,4},2)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=T.TEST({1,3},{1,3},2,2)",
+      "expected": 1,
+      "source": "hand",
+      "note": "Equal means: t = 0.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=TTEST({1,2},{3,4},2)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=TTEST({1,3},{3,5},3,2)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Three tails.",
+      "kind": "error"
+    },
+    {
+      "formula": "=TTEST({1,3},{1,3},2,2)",
+      "expected": 1,
+      "source": "hand",
+      "note": "Equal means: t = 0.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=TTEST({1,3},{3,5},2,2)",
+      "expected": 0.29289321881345254,
+      "source": "hand",
+      "note": "t = -sqrt(2) on two degrees: 1 - t / sqrt(2 + t^2) with |t|."
+    },
+    {
+      "formula": "=TTEST({2,4},{1,1},1,1)",
+      "expected": 0.14758361765043326,
+      "source": "hand",
+      "note": "Paired differences 1 and 3: t = 2 on one degree, one tail."
+    },
+    {
+      "formula": "=Z.TEST({1,2})",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=Z.TEST({1},1)",
+      "expected": "#DIV/0!",
+      "source": "hand",
+      "note": "One value has no sample deviation.",
+      "kind": "error"
+    },
+    {
+      "formula": "=Z.TEST({1,2,3},2)",
+      "expected": 0.5,
+      "source": "hand",
+      "note": "x at the mean.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=Z.TEST({1,2,3},1,1)",
+      "expected": 0.041632258331775196,
+      "source": "hand",
+      "note": "1 - Phi((2 - 1) / (1 / sqrt(3)))."
+    },
+    {
+      "formula": "=ZTEST({1,2})",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=ZTEST({1},1)",
+      "expected": "#DIV/0!",
+      "source": "hand",
+      "note": "One value has no sample deviation.",
+      "kind": "error"
+    },
+    {
+      "formula": "=ZTEST({1,2,3},2)",
+      "expected": 0.5,
+      "source": "hand",
+      "note": "x at the mean.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=ZTEST({1,2,3},1,1)",
+      "expected": 0.041632258331775196,
+      "source": "hand",
+      "note": "1 - Phi(sqrt(3))."
+    },
+    {
+      "formula": "=ZTEST({3,6,7,8,6,5,4,2,1,9},4)",
+      "expected": 0.090574,
+      "tolerance": 1e-6,
+      "source": "hand",
+      "note": "The documented example."
+    },
+    {
+      "formula": "=FORECAST.ETS(4,{1,2,3})",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=FORECAST.ETS(4,{1,2,3},{1,2,3},-1)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "A negative season length.",
+      "kind": "error"
+    },
+    {
+      "formula": "=FORECAST.ETS(5,{1,2,3,4},{1,2,3,4})",
+      "expected": 5,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "An exact line continues.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=FORECAST.ETS(6,{2,4,6,8,10},{1,2,3,4,5},1)",
+      "expected": 12,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "An exact line with no season."
+    },
+    {
+      "formula": "=FORECAST.ETS.CONFINT(4,{1,2,3})",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=FORECAST.ETS.CONFINT(4,{1,2,3},{1,2,3},1.5)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "A confidence level above 1.",
+      "kind": "error"
+    },
+    {
+      "formula": "=FORECAST.ETS.CONFINT(5,{1,2,3,4},{1,2,3,4})",
+      "expected": 0,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "An exact line has no error.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=FORECAST.ETS.CONFINT(10,{2,4,6,8,10,12},{1,2,3,4,5,6},0.9)",
+      "expected": 0,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "An exact line has no error at any level."
+    },
+    {
+      "formula": "=FORECAST.ETS.CONFINT(5,{1,2,3},{1,2,1E9})",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "A timeline past ten thousand steps.",
+      "kind": "error"
+    },
+    {
+      "formula": "=FORECAST.ETS.SEASONALITY({1,2,3})",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=FORECAST.ETS.SEASONALITY({1,2,3},{1,2,1E9})",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "A timeline past ten thousand steps.",
+      "kind": "error"
+    },
+    {
+      "formula": "=FORECAST.ETS.SEASONALITY({1,2,3,4,5,6},{1,2,3,4,5,6})",
+      "expected": 1,
+      "source": "hand",
+      "note": "A line has no season.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=FORECAST.ETS.SEASONALITY({1,5,9,1,5,9,1,5,9,1,5,9},{1,2,3,4,5,6,7,8,9,10,11,12})",
+      "expected": 3,
+      "source": "hand",
+      "note": "The pattern 1, 5, 9 repeats."
+    },
+    {
+      "formula": "=FORECAST.ETS.SEASONALITY({1,3,7,2,1,3,7,2,1,3,7,2,1,3,7,2},{1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16})",
+      "expected": 4,
+      "source": "hand",
+      "note": "The pattern 1, 3, 7, 2 repeats."
+    },
+    {
+      "formula": "=FORECAST.ETS.STAT({1,2},{1,2})",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "note": "Too few arguments: the call does not compile, so it gives #VALUE!.",
+      "kind": "arity"
+    },
+    {
+      "formula": "=FORECAST.ETS.STAT({1,2,3},{1,2,3},9)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Statistic 9 does not exist.",
+      "kind": "error"
+    },
+    {
+      "formula": "=FORECAST.ETS.STAT({1,2,3},{1,2,3},0)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "note": "Statistic 0 does not exist.",
+      "kind": "boundary"
+    },
+    {
+      "formula": "=FORECAST.ETS.STAT({2,4,6,8},{1,2,3,4},8)",
+      "expected": 1,
+      "source": "hand",
+      "note": "Statistic 8 is the step of the timeline."
+    },
+    {
+      "formula": "=FORECAST.ETS.STAT({2,4,6,8},{0,5,10,15},8)",
+      "expected": 5,
+      "source": "hand",
+      "note": "Statistic 8 is the step of the timeline."
     }
   ]
 }
