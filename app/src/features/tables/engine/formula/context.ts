@@ -84,6 +84,8 @@ export interface Compiled {
   volatile: boolean;
   /** Calls a function that returns a reference, whose target is known only when it runs. */
   dynamic: boolean;
+  /** Calls a function that reads row states (SUBTOTAL, AGGREGATE), so a total over this cell skips it. */
+  subtotal: boolean;
 }
 
 /** A reference found while running: one block, several (a union), or an error. */
@@ -105,6 +107,7 @@ export interface Host {
   sheet: number;
   volatile: boolean;
   dynamic: boolean;
+  subtotal: boolean;
   read(box: Box): void;
   columnIndex(s: number, by: 'name' | 'id', key: string): number;
   sheetNamed(name: string): number;

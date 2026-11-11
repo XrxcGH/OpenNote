@@ -73,7 +73,8 @@ describe('default shortcuts', () => {
     // The line tag commands (search.tag.*) are the ones Phase 8 reserved these chords for, in the OneNote set.
     const others = commands
       .list()
-      .filter((def) => !def.id.startsWith('search.tag.'))
+      // The default set gives Ctrl+1, Ctrl+2, and Ctrl+5 to line spacing, as Word does (ADR 0085).
+      .filter((def) => !def.id.startsWith('search.tag.') && !def.id.startsWith('para.line'))
       .flatMap((def) => [...(def.keys ?? []), ...Object.values(def.presetKeys ?? {}).flat()]);
     expect(others.filter((chord) => RESERVED_FOR_LATER.includes(chord))).toEqual([]);
   });
@@ -82,7 +83,7 @@ describe('default shortcuts', () => {
     const changeable = commands.list().filter((def) => def.customizable !== false);
     const bad = changeable.flatMap((def) =>
       [...setKeys(def, 'default'), ...setKeys(def, 'onenote')]
-        .filter((chord) => chordProblem(chord))
+        .filter((chord) => chordProblem(chord, def.scope))
         .map((chord) => `${def.id}: ${chord}`),
     );
     expect(bad).toEqual([]);
@@ -93,10 +94,10 @@ describe('default shortcuts', () => {
     expect(defaultConflicts('onenote')).toEqual([]);
   });
 
-  it('refines only less specific commands', () => {
+  it('refines only commands that are no more specific (the dispatcher orders equal scopes by refinement)', () => {
     const wrong = commands.list().filter((def) => {
       const refined = def.refines && commands.get(def.refines);
-      return refined && scopeDepth(def.scope) <= scopeDepth(refined.scope);
+      return refined && scopeDepth(def.scope) < scopeDepth(refined.scope);
     });
     expect(wrong.map((def) => def.id)).toEqual([]);
   });

@@ -213,6 +213,16 @@ class TableView implements InnerView {
     this.renderToolbar();
   }
 
+  /** `extra` with what the extras add to an edit that leaves the table as `data` (tables/extras.ts). */
+  private withExtras(data: TableData, extra: Record<string, unknown> = {}): Record<string, unknown> {
+    let out = extra;
+    for (const handle of this.extras) {
+      const more = handle.withEdit?.(data, out);
+      if (more) out = { ...out, ...more };
+    }
+    return out;
+  }
+
   private send(
     next: TableData,
     coalesce?: 'resize',
@@ -223,7 +233,7 @@ class TableView implements InnerView {
     const block = this.current.id;
     return this.ctx.sync.send({
       edits: [
-        { edit: 'patchBlock', block, data: { header, columns, rows, ...extra } },
+        { edit: 'patchBlock', block, data: { header, columns, rows, ...this.withExtras(next, extra) } },
         // The other tables whose formulas read this one follow in the same batch, so one undo brings both back.
         ...also.map((one) => ({ edit: 'patchBlock' as const, block: one.block, data: one.data })),
       ],
@@ -400,10 +410,19 @@ class TableView implements InnerView {
     editor.registerPlugin(this.edgeKeys());
     handles.set(editor, this.handle);
     this.pool.adopt?.(block, editor);
-    this.sync = attachTableSync(editor, block, this.ctx.sync, (doc) => {
-      this.data = docToTableData(doc, this.data, this.ctx.cache);
-      return this.data;
-    });
+    this.sync = attachTableSync(
+      editor,
+      block,
+      this.ctx.sync,
+      (doc) => {
+        this.data = docToTableData(doc, this.data, this.ctx.cache);
+        return this.data;
+      },
+      (data) => {
+        const extra = this.withExtras(data);
+        return Object.keys(extra).length > 0 ? extra : null;
+      },
+    );
     this.stopActive = this.ctx.pool.onActiveChange((active) => {
       // Focus visiting the palette or a menu keeps this the current table.
       if (active === null) return;
@@ -434,6 +453,7 @@ class TableView implements InnerView {
     const block = this.current.id;
     const host: TableExtraHost = {
       block,
+      page: `${this.ctx.page.id}:${this.ctx.page.client}`,
       element: this.element,
       editor,
       cache: this.ctx.cache,
@@ -447,7 +467,11 @@ class TableView implements InnerView {
         await this.send(next, undefined, extra);
         return true;
       },
-      patch: (data) => this.ctx.sync.send({ edits: [{ edit: 'patchBlock', block, data }] }),
+      patch: async (data) => {
+        if (this.sync) await this.sync.flush('command');
+        const all = this.withExtras(this.latest(), data);
+        return this.ctx.sync.send({ edits: [{ edit: 'patchBlock', block, data: all }] });
+      },
       announce: (text) => this.ctx.host.announce(text),
       flag: (id) => this.ctx.host.flag(id),
       insertTable: async (data) => (await import('../tables/insert')).insertTable(data as unknown as TableData),

@@ -1,0 +1,53 @@
+{
+  "about": "Known answers for the code project path rules (DESIGN 3.2). The TypeScript validator (paths.ts) and the Rust one of the tier-2 runner (code:L16) both test against this table. problem is null when the path is allowed. A long case is a path of that many letters a. Each set is checked in order, and the first problem wins at the path named by at.",
+  "single": [
+    { "path": "src/main.py", "problem": null },
+    { "path": "main.py", "problem": null },
+    { "path": "data/input.txt", "problem": null },
+    { "path": "a b/c d.txt", "problem": null },
+    { "path": ".gitignore", "problem": null },
+    { "path": "café.py", "problem": null },
+    { "path": "CONSOLE.py", "problem": null },
+    { "path": "COM10.py", "problem": null },
+    { "path": "", "problem": "empty" },
+    { "path": "../a", "problem": "dotSegment" },
+    { "path": "a/../b", "problem": "dotSegment" },
+    { "path": "a/./b", "problem": "dotSegment" },
+    { "path": ".", "problem": "dotSegment" },
+    { "path": "/a", "problem": "absolute" },
+    { "path": "a\\b", "problem": "backslash" },
+    { "path": "C:/a.py", "problem": "colon" },
+    { "path": "a:b", "problem": "colon" },
+    { "path": "a\u0000b", "problem": "control" },
+    { "path": "a\tb", "problem": "control" },
+    { "path": "a\u007fb", "problem": "control" },
+    { "path": "a\u0085b", "problem": "control" },
+    { "path": "a?.py", "problem": "reservedChar" },
+    { "path": "a*.py", "problem": "reservedChar" },
+    { "path": "a<b", "problem": "reservedChar" },
+    { "path": "cafe\u0301.py", "problem": "notNfc" },
+    { "path": "a//b", "problem": "emptySegment" },
+    { "path": "a/", "problem": "emptySegment" },
+    { "path": "x ", "problem": "trailingDotOrSpace" },
+    { "path": "x.", "problem": "trailingDotOrSpace" },
+    { "path": "dir./a.py", "problem": "trailingDotOrSpace" },
+    { "path": "CON.py", "problem": "reserved" },
+    { "path": "con", "problem": "reserved" },
+    { "path": "Aux.tar.gz", "problem": "reserved" },
+    { "path": "nul/a.py", "problem": "reserved" },
+    { "path": "src/COM1.c", "problem": "reserved" },
+    { "path": "LPT9", "problem": "reserved" },
+    { "path": "PRN.txt", "problem": "reserved" }
+  ],
+  "long": [
+    { "chars": 255, "problem": null },
+    { "chars": 256, "problem": "tooLong" }
+  ],
+  "sets": [
+    { "paths": ["Main.py", "main.py"], "problem": "duplicate", "at": "main.py" },
+    { "paths": ["src/A.py", "SRC/a.py"], "problem": "duplicate", "at": "SRC/a.py" },
+    { "paths": ["a", "a/b.py"], "problem": "folderClash", "at": "a/b.py" },
+    { "paths": ["lib/x.py", "LIB"], "problem": "folderClash", "at": "LIB" },
+    { "paths": ["src/main.py", "src/util.py", "README.md"], "problem": null }
+  ]
+}

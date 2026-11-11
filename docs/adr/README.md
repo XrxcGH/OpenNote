@@ -98,9 +98,9 @@ Accepted records aren't rewritten when plans change. Instead, write a new ADR fo
 | [0065](0065-incremental-recalculation.md) | Incremental recalculation, iterative calculation, and the worker | Proposed | 2026-11-01 |
 | [0066](0066-table-merge-on-sync.md) | Three-way merge of table blocks when two devices edit one page | Proposed | 2026-11-01 |
 | [0067](0067-spreadsheet-interchange.md) | Excel, Sheets, and clipboard interchange of formulas, formats, and styles | Proposed | 2026-11-01 |
-| [0068](0068-code-editor.md) | CodeMirror 6 for the Code studio and code cells | Proposed | 2026-11-01 |
+| [0068](0068-code-editor.md) | CodeMirror 6 for the Code studio and code cells | Accepted | 2026-11-01 |
 | [0069](0069-code-project-block.md) | Code projects as a page block, and code cell data version 2 | Proposed | 2026-11-01 |
-| [0070](0070-runtime-packs.md) | In-app language runtimes, bundled, or downloaded as packs | Proposed | 2026-11-01 |
+| [0070](0070-runtime-packs.md) | In-app language runtimes, bundled, or downloaded as packs | Accepted | 2026-11-01 |
 | [0071](0071-local-toolchain-runner.md) | Running code with the person's installed toolchains | Proposed | 2026-11-01 |
 | [0072](0072-code-intelligence-on-device.md) | Code completion and fixes with on-device code models only | Proposed | 2026-11-01 |
 | [0073](0073-trace-replay-debugger.md) | Step debugging by recording and replaying, behind one Debug Adapter Protocol contract | Proposed | 2026-11-01 |
@@ -113,12 +113,12 @@ Accepted records aren't rewritten when plans change. Instead, write a new ADR fo
 | [0080](0080-font-discovery.md) | The Rust side lists the device's fonts with fontdb, and the list never leaves the device | Proposed | 2026-11-01 |
 | [0081](0081-bundled-fonts.md) | Bundle Carlito and Caladea as metric stand-ins, loaded on demand | Accepted | 2026-11-01 |
 | [0082](0082-named-styles-v2.md) | Named styles move to notebook.json, gain inheritance and user styles, and pages can carry their own sheet | Proposed | 2026-11-01 |
-| [0083](0083-docx-writer-and-reader.md) | Keep the hand-written DOCX writer and reader, and extend them to full formatting fidelity | Proposed | 2026-11-01 |
-| [0084](0084-clipboard-fidelity.md) | Copy writes formatting other apps read, and paste keeps source formatting with Paste Options | Proposed | 2026-11-01 |
-| [0085](0085-text-shortcut-policy.md) | The default shortcut set follows Word, with a Google Docs preset beside the OneNote set | Proposed | 2026-11-01 |
+| [0083](0083-docx-writer-and-reader.md) | Keep the hand-written DOCX writer and reader, and extend them to full formatting fidelity | Accepted for the writer | 2026-11-01 |
+| [0084](0084-clipboard-fidelity.md) | Copy writes formatting other apps read, and paste keeps source formatting with Paste Options | Accepted | 2026-11-01 |
+| [0085](0085-text-shortcut-policy.md) | The default shortcut set follows Word, with a Google Docs preset beside the OneNote set | Accepted | 2026-11-01 |
 | [0086](0086-comments-and-suggestions.md) | Comments and suggestions are stored in the page, anchored by inline tags, with local author names | Proposed | 2026-11-01 |
 | [0087](0087-footnotes-and-breaks.md) | Footnotes use `[^id]` with their text in data.notes, and page breaks are `break` blocks | Proposed | 2026-11-01 |
-| [0088](0088-symbol-data.md) | The symbol dialog searches a subset of Unicode names generated at build time | Proposed | 2026-11-01 |
+| [0088](0088-symbol-data.md) | The symbol dialog searches a subset of Unicode names generated at build time | Accepted | 2026-11-01 |
 
 The numbers 0009, 0018, 0019, 0028, 0029, and 0031 to 0034 have no record. A number is never reused.
 

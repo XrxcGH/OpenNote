@@ -28,6 +28,7 @@ export type { PageRaster, RasterStroke } from './host/videoRaster';
 export const rasterShownPage = (...args: Parameters<typeof import('./host/videoRaster').rasterShownPage>) =>
   import('./host/videoRaster').then((module) => module.rasterShownPage(...args));
 /** Puts engineering paper (computation, three views, title block) on the shown page. */
+export { shownPagesView } from './live/shown';
 export { applyDraftingPaper } from './ui/draftingPaper';
 export { exportPictureAsPdf } from './host/pictureToPdf';
 export type { ExportBlock, ExportPage, TextBlock } from './export';
