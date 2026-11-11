@@ -7,7 +7,7 @@ import type { ExportsClient } from '../../../platform/types';
 import { inspectPdf } from '../pdf';
 import { pageOf, textBlock } from '../testing/build';
 import { exportHtmlFile, exportMarkdownFile, exportPdfFile, PdfCheckError, prepareInput } from './exporter';
-import { saveStyles } from '../../page';
+import { configureStyleStorage, loadStyles, localStylesClient, saveStyles } from '../../page/styles/store';
 import type { PageSource } from './source';
 
 const PARAGRAPH =
@@ -43,6 +43,7 @@ function recording(overrides: Partial<ExportsClient> = {}): Recorded {
 
 afterEach(() => {
   document.querySelectorAll('iframe').forEach((frame) => frame.remove());
+  configureStyleStorage(null);
 });
 
 describe('exportPdfFile', () => {
@@ -192,7 +193,9 @@ describe('the fonts of an exported web page', () => {
 
 describe('the notebook styles of an export', () => {
   it('reach the print input and the web page, by the notebook of the page', async () => {
-    saveStyles('nb-1', { h2: { size: 40 } });
+    configureStyleStorage({ client: localStylesClient(localStorage), persistent: false, storage: localStorage });
+    await loadStyles('nb-1');
+    await saveStyles('nb-1', { h2: { size: 40 } }, { undo: false });
     const source = { ...formattedSource('## Head'), notebookId: 'nb-1' };
     expect(prepareInput(source, {}).styles).toMatchObject({ h2: { size: 40 } });
     const { client, writes } = recording();
