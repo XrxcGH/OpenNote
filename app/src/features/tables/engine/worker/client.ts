@@ -51,7 +51,18 @@ export function cellCount(tables: readonly Table[]): number {
 /** True when a page should recalculate in the worker: it is large, or a table iterates many passes. */
 export function needsWorker(tables: readonly Table[], threshold: number): boolean {
   if (cellCount(tables) > threshold) return true;
-  return tables.some((t) => t.iterate !== undefined && iterateLimits(t.iterate).max > WORKER_PASSES);
+  if (tables.some((t) => t.iterate !== undefined && iterateLimits(t.iterate).max > WORKER_PASSES)) return true;
+  // A short pattern can backtrack for hours, so a page that calls any REGEX function gets the busy budget.
+  return tables.some(usesRegex);
+}
+
+const REGEX_CALL = /REGEX(?:TEST|MATCH|EXTRACT|REPLACE)\s*\(/i;
+
+/** True when a formula of the table (a column, a cell, or a defined name) calls any REGEX function. */
+function usesRegex(t: Table): boolean {
+  if (t.columns.some((c) => c.formula !== undefined && REGEX_CALL.test(c.formula))) return true;
+  if (t.names?.some((n) => REGEX_CALL.test(n.ref))) return true;
+  return t.rows.some((r) => r.cells.some((c) => c.formula !== undefined && REGEX_CALL.test(c.formula)));
 }
 
 function spawnDefault(): WorkerLike {

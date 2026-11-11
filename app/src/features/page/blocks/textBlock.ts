@@ -2,12 +2,17 @@
 // its parsed Markdown, inside the element its editor will edit. The pool mounts the editor in place on pointer
 // down, focus, a target, or in idle time, and demotes it back to static DOM when it is far away and idle. The
 // editing root keeps its role, name, and focus through both, so assistive technology sees one node throughout.
+import { applyTextLayout } from '../textLayout/apply';
 import type { Editor } from '@tiptap/core';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import { createBlockEditor } from '../../../editor/extensions/kit';
 import { highlightStatic } from '../../../editor/highlight';
 import { parseTextBlock, serializeTextBlock } from '../../../editor/markdown';
+import { applyElementData } from '../../../editor/markdown/elements';
+import { readLists } from '../../../editor/paragraph/numbering';
 import { renderStatic } from '../../../editor/schema/dom';
+// eslint-disable-next-line opennote/feature-boundaries -- The search index pulls the whole feature into start-up; this model file is small.
+import { hasLineData, lineDataOf } from '../../search/elements/model';
 import type { BlockId, BlockJson } from '../../../services/pages/types';
 import { t } from '../../../strings/t';
 import type { PagePool } from '../pool/pool';
@@ -83,7 +88,8 @@ const markdownOf = (block: BlockJson) => (typeof block.data.markdown === 'string
 
 /** Whether a block sits at its own frame rather than in the flow. */
 export function isFloating(block: BlockJson): boolean {
-  return block.frame?.x !== undefined && block.frame?.y !== undefined;
+  // A break has no frame (R-BRK-1): a reader ignores one.
+  return block.type !== 'break' && block.frame?.x !== undefined && block.frame?.y !== undefined;
 }
 
 /** Whether a block is a text box or a panel (study tape, flashcards, a mind map...): the kinds that have a grip. */
@@ -107,6 +113,7 @@ export function placeBlock(element: HTMLElement, block: BlockJson): void {
   // A floating text box without a width is as wide as its content (ARCHITECTURE.md section 6.3).
   element.classList.toggle(layoutStyles.autoWidth, text && frame?.w === undefined);
   element.classList.toggle(layoutStyles.setWidth, text && frame?.w !== undefined);
+  applyTextLayout(element, block);
 }
 
 /** The height an unrendered block holds: the one remembered on this device, or a guess from its Markdown. */
@@ -216,7 +223,13 @@ class TextBlockView implements LazyBlockView, LiveText {
 
   /** Draws the static text. Its code is colored in idle time, so it looks the same before an editor mounts. */
   private drawStatic(doc: PMNode): void {
-    renderStatic(doc, this.editRoot);
+    // The same line data and list definitions the mounted editor is given, so mounting changes nothing on the page.
+    const lines = lineDataOf(this.block.data);
+    renderStatic(
+      hasLineData(lines) ? applyElementData(doc, lines) : doc,
+      this.editRoot,
+      readLists(this.block.data.lists),
+    );
     if (this.ctx.host.flag('page.codeHighlight')) void highlightStatic(this.editRoot, doc).catch(() => undefined);
   }
 

@@ -113,6 +113,19 @@ describe('recalculation worker', () => {
     expect(late![0].rows.map((r) => r.cells[1].value)).toEqual([0, 2, 4]);
   });
 
+  it('gives a small page with a REGEX formula the busy time, and stops a worker that never answers (gap G1)', async () => {
+    const hung: WorkerLike = { onmessage: null, postMessage: () => undefined, terminate: () => undefined };
+    const client = createRecalcClient({ spawn: () => hung, busyMs: 10 });
+    const table = createTable([{ name: 'A', type: 'text' }], [['']], EN_US);
+    const page = {
+      ...table,
+      rows: [{ ...table.rows[0], cells: [{ raw: '=REGEXTEST("a","a")', value: null, formula: 'REGEXTEST("a","a")' }] }],
+    };
+    const [busy] = await client.recalc([page]);
+    expect(busy.rows[0].cells[0].value).toEqual(err('BUSY'));
+    client.dispose();
+  });
+
   it('turns error copies back into the engine errors', () => {
     const [table] = applyChanges([stale(1)], [{ table: 0, row: 0, col: 1, value: { error: 'DIV0' } }]);
     expect(table.rows[0].cells[1].value).toBe(err('DIV0'));

@@ -1,7 +1,8 @@
 // The Models part of Settings, then On-device intelligence: the speech models with their sizes, and a button to
 // download, cancel, resume, remove, or choose each. Nothing downloads until a person presses Download and confirms.
-import { useEffect, useId, useState } from 'react';
+import { lazy, Suspense, useEffect, useId, useState } from 'react';
 import type { ModelInfo } from '../../../services/intel';
+import { loadCodeDownloads } from '../../codestudio';
 import { useStore } from '../../../state/store';
 import { t } from '../../../strings/t';
 import { announce, Button } from '../../../ui';
@@ -21,6 +22,9 @@ import {
   selectedLanguageModel,
   selectedSpeechModel,
 } from './store';
+
+/** The Code group: the code studio's runtime packs, and the code models (code:L18). It loads with the panel. */
+const CodeDownloads = lazy(loadCodeDownloads);
 
 function stateLine(model: ModelInfo): string {
   const size = formatSize(model.sizeBytes);
@@ -211,6 +215,13 @@ export default function ModelsPanel() {
           />
         ))}
       </ModelGroup>
+      <Suspense fallback={null}>
+        <CodeDownloads styles={styles}>
+          {of('code').map((model) => (
+            <ModelRow key={model.id} offline={list?.offline === true} model={model} />
+          ))}
+        </CodeDownloads>
+      </Suspense>
       <ModelGroup heading={t('intelPlus.models.meaningHeading')} help={t('intelPlus.models.meaningHelp')}>
         {of('meaning').map((model) => (
           <ModelRow key={model.id} offline={list?.offline === true} model={model} />

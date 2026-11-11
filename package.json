@@ -100,6 +100,7 @@
     "@codemirror/search": "6.7.2",
     "@codemirror/state": "6.7.6",
     "@codemirror/view": "6.43.15",
+    "@lezer/highlight": "1.2.5",
     "@fontsource-variable/atkinson-hyperlegible-next": "^5.3.0",
     "@fontsource-variable/literata": "^5.3.0",
     "@fontsource/atkinson-hyperlegible-mono": "^5.3.0",

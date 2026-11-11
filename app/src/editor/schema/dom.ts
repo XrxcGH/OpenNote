@@ -3,12 +3,16 @@
 // no task runs past its budget and the viewport's blocks come first.
 import { DOMSerializer } from '@tiptap/pm/model';
 import type { Node as PMNode } from '@tiptap/pm/model';
+import type { ListDefinitions } from '../paragraph/numbering';
+import { applyBlockMarks } from '../render/blocks';
 
 /** Replaces the children of `into` with the document's static DOM. */
-export function renderStatic(doc: PMNode, into: HTMLElement): void {
+export function renderStatic(doc: PMNode, into: HTMLElement, lists?: ListDefinitions): void {
   const serializer = DOMSerializer.fromSchema(doc.type.schema);
   const fragment = serializer.serializeFragment(doc.content, { document: into.ownerDocument });
   into.replaceChildren(fragment);
+  // Border groups, list labels, and scaled words need the whole document, so they come after the serializer.
+  applyBlockMarks(doc, into, lists);
   // The editor keeps an empty line below a last equation (extensions/math.ts), so the static view has it too, and the
   // page reads the same and keeps its height when the editor mounts.
   if (doc.lastChild?.type.name === 'mathBlock') {

@@ -5,7 +5,7 @@ import { isEnabled } from '../../../app/flags';
 import { firstRuleBelow } from '../../../core/ruled';
 import { announce } from '../../../ui';
 import { t } from '../../../strings/t';
-import { shownPaper } from '../../page';
+import { shownPaginated, shownPaper } from '../../page';
 import type { MountedPage } from '../../page';
 import {
   pageLayout,
@@ -393,6 +393,7 @@ class PagesView {
       this.drawInfinitePaper();
     }
     this.lastMode = paginated ? 'paginated' : 'infinite';
+    shownPaginated.set(paginated);
     // On ruled paper the text lays out in the rules (features/page/layout/rules.ts), in either mode.
     this.mounted.flow.setRules(paperRules(this.layout.background, this.layout.sheet, paginated));
     this.refreshHeader();
@@ -543,7 +544,10 @@ export function attachPagesView(mounted: MountedPage): () => void {
   view.start();
   shownPagesView.set(view.api);
   return () => {
-    if (shownPagesView.get() === view.api) shownPagesView.set(null);
+    if (shownPagesView.get() === view.api) {
+      shownPagesView.set(null);
+      shownPaginated.set(false);
+    }
     view.stop();
   };
 }
