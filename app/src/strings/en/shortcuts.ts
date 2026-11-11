@@ -118,11 +118,22 @@ export const shortcuts = {
   set: {
     label: 'Shortcut set',
     default: 'OpenNote',
-    defaultHelp: 'The shortcuts OpenNote is designed around.',
+    defaultHelp: 'Formatting keys follow Word, such as Ctrl+E to center text.',
     onenote: 'OneNote',
     onenoteHelp: 'Keys keep the meaning they have in OneNote, such as Ctrl+E for search.',
     docs: 'Google Docs',
     docsHelp: 'Formatting keys follow Google Docs, such as Alt+Shift+5 for strikethrough.',
     changed: 'Using the {set} shortcut set.',
+  },
+  // Names and search words of the text keys that have no name in textCommands (ADR 0085).
+  textKeys: {
+    keywords: 'format text paragraph key shortcut',
+    lineSingle: 'Single line spacing',
+    lineDouble: 'Double line spacing',
+    line15: 'One and a half line spacing',
+    pageBreak: 'Insert page break',
+    pageBreakKeywords: 'break page paginated new page',
+    applyStyle: 'Apply style',
+    applyStyleKeywords: 'style paragraph heading gallery',
   },
 } as const;

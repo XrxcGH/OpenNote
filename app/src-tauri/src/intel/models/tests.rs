@@ -56,7 +56,7 @@ struct Memory {
 }
 
 impl Source for Memory {
-    fn open(&self, _url: &str, from: u64) -> Result<Opened, String> {
+    fn open(&self, _url: &str, from: u64, _size: u64) -> Result<Opened, String> {
         self.asked.lock().unwrap().push(from);
         let start = if self.ignore_range { 0 } else { from as usize };
         Ok(Opened {
@@ -362,4 +362,50 @@ fn a_pack_is_installed_only_when_every_file_is_there_and_remove_takes_its_folder
     assert!(models.installed_path(spec.id).is_none());
     models.remove(spec.id).unwrap();
     assert!(!dir.path().join("translate-en-es").exists());
+}
+
+#[test]
+fn a_range_the_server_counts_in_other_bytes_restarts_the_file() {
+    use super::source::range_answer;
+    assert_eq!(range_answer(206, Some("bytes 5-10/11"), 5, 11), Ok(Some(true)));
+    assert_eq!(range_answer(200, None, 5, 11), Ok(Some(false)));
+    // jsDelivr counts a range in compressed bytes: these answers are not the bytes asked for.
+    assert_eq!(
+        range_answer(206, Some("bytes 0-99/3438516"), 5_000_000, 13_531_207),
+        Ok(None)
+    );
+    assert_eq!(range_answer(206, None, 5, 11), Ok(None));
+    assert_eq!(
+        range_answer(416, Some("bytes */3438516"), 5_000_000, 13_531_207),
+        Ok(None)
+    );
+    assert!(range_answer(404, None, 0, 11).is_err());
+    assert!(range_answer(416, None, 0, 11).is_err());
+}
+
+#[test]
+fn a_range_from_the_right_byte_of_another_total_restarts_the_file() {
+    use super::source::range_answer;
+    // The start matches, but the total is the compressed length, not the 13,531,207 published bytes.
+    assert_eq!(range_answer(206, Some("bytes 5-10/3438516"), 5, 13_531_207), Ok(None));
+    // An unknown total is not trusted either.
+    assert_eq!(range_answer(206, Some("bytes 5-10/*"), 5, 13_531_207), Ok(None));
+    assert_eq!(
+        range_answer(206, Some("bytes 5-13531206/13531207"), 5, 13_531_207),
+        Ok(Some(true))
+    );
+}
+
+#[test]
+fn the_code_models_follow_the_language_models() {
+    let kinds: Vec<_> = catalog().map(|spec| spec.kind).collect();
+    let last_language = kinds.iter().rposition(|kind| *kind == "language").unwrap();
+    let first_meaning = kinds.iter().position(|kind| *kind == "meaning").unwrap();
+    assert!(kinds[last_language + 1..first_meaning]
+        .iter()
+        .all(|kind| *kind == "code"));
+    assert_eq!(
+        super::catalog::CODE.len(),
+        kinds.iter().filter(|kind| **kind == "code").count()
+    );
 }

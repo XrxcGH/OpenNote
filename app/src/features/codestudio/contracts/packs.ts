@@ -4,9 +4,10 @@
 /** Packs downloaded on request. A Pyodide package is a pack of its own, named `pyodide:<package>`. */
 export type PackId = 'pyodide' | 'clang' | 'ruby' | 'webr' | 'code-tools' | `pyodide:${string}`;
 
-/** Where a pack stands on this device. `blocked` is Work offline or safe mode. */
+/** Where a pack stands on this device. `partial` resumes. `blocked` is Work offline or safe mode. */
 export type PackState =
   | { kind: 'absent' }
+  | { kind: 'partial'; receivedBytes: number; totalBytes: number }
   | { kind: 'downloading'; receivedBytes: number; totalBytes: number }
   | { kind: 'ready'; bytes: number }
   | { kind: 'failed'; reason: string }
@@ -15,10 +16,22 @@ export type PackState =
 /** A catalog entry as the download dialog shows it: the exact size and license before any byte moves. */
 export interface PackInfo {
   id: PackId;
+  /** The name the list shows, such as "Python (full)", or a Python package's own name. */
+  name: string;
+  detail: string;
   version: string;
   bytes: number;
+  /** SPDX words; empty for a Python package, whose license travels inside it. */
   license: string;
+  /** The packs it needs: a Python package's dependencies. */
+  depends: PackId[];
   state: PackState;
+}
+
+/** What `packs_list` answers: the core packs, each Python package with bytes on disk, and why none may download. */
+export interface PackList {
+  packs: PackInfo[];
+  blocked: 'offline' | 'safe-mode' | null;
 }
 
 /**

@@ -1,7 +1,7 @@
 # ADR 0068: CodeMirror 6 for the Code studio and code cells
 
-- Status: Proposed
-- Date: 2026-11-01
+- Status: Accepted
+- Date: 2026-11-01 (accepted 2026-11-07, Beta 11)
 
 ## Context
 
@@ -28,3 +28,11 @@ We will use CodeMirror 6 (MIT) for the Code studio's editor and for code cells, 
 - Harder: two editing models in the app (ProseMirror for pages, CodeMirror for code). Code cells are panel blocks with their own React root already, so focus and undo were separate before; the Escape-then-Tab exit stays. By the owner decision of 2026-11-01, Tab and Shift+Tab only indent and outdent in both surfaces, and Ctrl+Tab accepts a suggestion, which takes Ctrl+Tab from Next page tab while a code editor has focus (DESIGN 5.3.1).
 - Follow-up: the `codeEditor` key scope and the keymap test (DESIGN.md section 5.3), themes from the `code.*` tokens with forced colors, NVDA tests, the typing benchmark in a 1,000-line file.
 - Revisit if CodeMirror's accessibility fails NVDA tests the app cannot fix, or if the chunk passes 190 KB gzip.
+
+## Implementation notes (Beta 11, lane code:L01)
+
+- `createCodeEditor` lives in `app/src/features/codestudio/editor/` and loads through `loadCodeEditor()` in `features/codestudio/index.ts`. Only the `code.*` command definitions load at start-up.
+- Every editor command is a registry command in the `codeEditor` scope. Where the app already uses the chord, the command refines that command (Ctrl+Tab refines Next tab; F8, Ctrl+F, Ctrl+H, Ctrl+/, Ctrl+=, Ctrl+-, and the Shift+Alt arrows refine the page, outline, and editor commands), so `defaultConflicts` stays empty in every shortcut set.
+- CodeMirror ignores a bubbling event whose default is prevented, handlers, and observers alike. So the editor stops a key the app's dispatcher already ran with a plain `keydown` listener on its root, and runs a key the dispatcher did not run (no dispatcher, or Ctrl+Right in a text field) from a `Prec.highest` handler built from `keysFor`.
+- F10 steps over only in the `codeDebug` scope (owner decision D7): `chordProblem` takes the scope.
+- `@lezer/highlight` is a direct dependency, pinned, for the syntax color tags.
