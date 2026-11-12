@@ -184,21 +184,33 @@ function textRow(input: DrawInput, v: Pick<View, 'visCols' | 'styles'>, r: numbe
   });
 }
 
-function viewOf(input: DrawInput): View {
-  const { sheet, table, scheme } = input;
-  const settings = ownObject(sheet, 'table');
-  const freeze = ownObject(settings, 'freeze');
-  const rowHidden = table.rows.map((r) => hiddenOf(sheet, 'rows', r.id, input.hiddenRows));
+/**
+ * The table as the model resolves styles against it: hidden rows and columns taken out, with the real header flag and
+ * cells. Looks, banding, and the first, last, and total elements count by position in this view (R-SHT-10). Sort and
+ * filter by color use it too, so they agree with what the grid draws.
+ */
+export function styleView(
+  sheet: Sheet,
+  table: TableLike,
+  hiddenRows?: ReadonlySet<string>,
+): { view: TableLike; rowHidden: boolean[]; colHidden: boolean[]; visRows: number[]; visCols: number[] } {
+  const rowHidden = table.rows.map((r) => hiddenOf(sheet, 'rows', r.id, hiddenRows));
   const colHidden = table.columns.map((c) => hiddenOf(sheet, 'cols', c.id));
   const visRows = table.rows.map((_, i) => i).filter((i) => !rowHidden[i]);
   const visCols = table.columns.map((_, i) => i).filter((i) => !colHidden[i]);
-  // Looks, banding, and the first, last, and total elements count by position in the view (R-SHT-10), so a table
-  // with the hidden rows and columns taken out is what the model resolves.
   const view: TableLike = {
     header: table.header === true && visRows[0] === 0,
     columns: visCols.map((i) => table.columns[i]),
     rows: visRows.map((i) => table.rows[i]),
   };
+  return { view, rowHidden, colHidden, visRows, visCols };
+}
+
+function viewOf(input: DrawInput): View {
+  const { sheet, table, scheme } = input;
+  const settings = ownObject(sheet, 'table');
+  const freeze = ownObject(settings, 'freeze');
+  const { view, rowHidden, colHidden, visRows, visCols } = styleView(sheet, table, input.hiddenRows);
   const hooks: ResolveHooks = { namedLook: namedLookFor(scheme), ...input.hooks };
   const styles = visRows.map((r) =>
     visCols.map((c) => resolve(sheet, view, table.rows[r].id, table.columns[c].id, hooks).style),

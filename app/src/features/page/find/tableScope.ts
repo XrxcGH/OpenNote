@@ -2,8 +2,8 @@
 // A search looks at values (what the cell holds) or at formulas (the text of formulas only), in whole cells or parts,
 // and lists matches by rows or by columns.
 
-import { EN_US, setCellInput, type EngineEnv, type Locale, type Table } from '../../tables';
-import { findInText } from './match';
+import { EN_US, makeCell, recalculateCells, type Cell, type EngineEnv, type Locale, type Table } from '../../tables';
+import { findInTexts } from './match';
 import type { FindOptions, TextRange } from './match';
 
 export interface TableScope {
@@ -44,25 +44,34 @@ export function searchTable(table: Table, query: string, scope: TableScope): Tab
     regex: scope.regex,
     wildcards: scope.wildcards,
   };
-  const found: TableMatch[] = [];
+  // Collect the searchable cells in match order, then compile the pattern once for all of them.
+  const spots: { row: number; column: number; text: string }[] = [];
   const visit = (row: number, column: number): void => {
     const text = cellText(table, row, column, scope.within);
-    if (text === null || text === '') return;
-    let ranges = findInText(text, query, options);
-    if (scope.entireCell) ranges = ranges.filter((r) => r.start === 0 && r.end === text.length);
-    if (ranges.length > 0) found.push({ row, column, text, ranges });
+    if (text !== null && text !== '') spots.push({ row, column, text });
   };
   if (scope.order === 'columns') {
     for (let c = 0; c < table.columns.length; c++) for (let r = 0; r < table.rows.length; r++) visit(r, c);
   } else {
     for (let r = 0; r < table.rows.length; r++) for (let c = 0; c < table.columns.length; c++) visit(r, c);
   }
+  const all = findInTexts(
+    spots.map((x) => x.text),
+    query,
+    options,
+  );
+  const found: TableMatch[] = [];
+  spots.forEach((spot, k) => {
+    const ranges = scope.entireCell ? all[k].filter((r) => r.start === 0 && r.end === spot.text.length) : all[k];
+    if (ranges.length > 0) found.push({ ...spot, ranges });
+  });
   return found;
 }
 
 /**
  * Replaces every match in the table, each through the same input path as typing, so formulas are read again and the
- * table recalculates. Returns one new table, so the host stores one undo step. Calculated columns are skipped.
+ * table recalculates. Returns one new table, so the host stores one undo step. Calculated columns are skipped. The
+ * cells change together and the table recalculates once.
  */
 export function replaceInTable(
   table: Table,
@@ -72,11 +81,12 @@ export function replaceInTable(
   locale: Locale = EN_US,
   env?: EngineEnv,
 ): { table: Table; replaced: number } {
-  let next = table;
   let replaced = 0;
+  const edits = new Map<number, Map<number, Cell>>();
   for (const match of searchTable(table, query, scope)) {
     const cell = table.rows[match.row].cells[match.column];
-    if (table.columns[match.column].formula !== undefined) continue;
+    const column = table.columns[match.column];
+    if (column.formula !== undefined) continue;
     if (scope.within === 'values' && cell.formula !== undefined) continue;
     let text = '';
     let from = 0;
@@ -86,7 +96,18 @@ export function replaceInTable(
       replaced++;
     }
     text += match.text.slice(from);
-    next = setCellInput(next, { row: match.row, col: match.column, raw: text }, locale, env);
+    const row = edits.get(match.row) ?? new Map<number, Cell>();
+    row.set(match.column, makeCell(column, text, locale, true, table));
+    edits.set(match.row, row);
   }
-  return { table: next, replaced };
+  if (replaced === 0) return { table, replaced };
+  const rows = table.rows.map((r, i) => {
+    const row = edits.get(i);
+    if (!row) return r;
+    const cells = [...r.cells];
+    for (const [c, cell] of row) cells[c] = cell;
+    return { ...r, cells };
+  });
+  const refs = [...edits].flatMap(([row, cols]) => [...cols.keys()].map((col) => ({ row, col })));
+  return { table: recalculateCells(table, { ...table, rows }, refs, env), replaced };
 }

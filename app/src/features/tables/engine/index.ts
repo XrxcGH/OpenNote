@@ -20,6 +20,7 @@ export {
   createTable,
   deleteRow,
   deleteRows,
+  deleteRowSet,
   insertRows,
   makeCell,
   moveRows,

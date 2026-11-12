@@ -117,6 +117,19 @@ export function deleteRows(table: Table, at: number, count: number, env?: Env): 
   return rowChangeFits(table, change) ? recalculate(applyRowChange(adjustTable(table, change), change), env) : table;
 }
 
+/**
+ * Deletes every row in `indices` at once. References are rewritten in one pass and the table recalculates once, so
+ * the cost does not grow with the number of separate runs. Indices out of range or repeated are ignored.
+ */
+export function deleteRowSet(table: Table, indices: readonly number[], env?: Env): Table {
+  const rows = [...new Set(indices)].filter((i) => Number.isInteger(i) && i >= 0 && i < table.rows.length);
+  if (rows.length === 0) return table;
+  rows.sort((x, y) => x - y);
+  const gone = new Set(rows);
+  const adjusted = adjustTable(table, { kind: 'deleteRowSet', rows });
+  return recalculate({ ...adjusted, rows: adjusted.rows.filter((_, i) => !gone.has(i)) }, env);
+}
+
 /** Inserts `count` empty rows before row `at`, rewriting references as Excel does. */
 export function insertRows(table: Table, at: number, count = 1, env?: Env): Table {
   const change: RowChange = { kind: 'insertRows', at, count };

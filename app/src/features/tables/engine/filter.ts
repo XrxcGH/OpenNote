@@ -142,8 +142,12 @@ function build(column: Column, cond: FilterCondition, ctx: Context): Test | null
     }
     case 'fill':
     case 'fontColor': {
+      // Without a LookOf there is no color to test, so the condition puts no limit on the rows. Otherwise totals and
+      // charts, which have no sheet, would hide every row the grid shows.
+      const look = ctx.look;
+      if (!look) return () => true;
       const want = (cond.value ?? '').toLowerCase();
-      return (_v, row) => (ctx.look?.(row, ctx.column, cond.op as 'fill')?.toLowerCase() ?? '') === want;
+      return (_v, row) => (look(row, ctx.column, cond.op as 'fill')?.toLowerCase() ?? '') === want;
     }
     case 'checked':
       return (v) => v === true;

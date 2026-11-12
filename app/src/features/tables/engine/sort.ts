@@ -17,7 +17,10 @@ export interface SortKey {
   by?: SortBy;
   /** For a color or icon level: the color (or icon name) that goes first, or last when `desc` is set. */
   color?: string;
-  /** Orders text by this list, in this order, before any text not on it. Matching ignores case unless set. */
+  /**
+   * Orders text by this list, in this order, before any text not on it. Matching ignores case unless `caseSensitive`
+   * is set. Descending reverses the listed items, but text not on the list still comes after them.
+   */
   customList?: readonly string[];
   /** Capital letters sort before lowercase ones of the same letters. */
   caseSensitive?: boolean;
@@ -91,12 +94,13 @@ export function sortedIndices(
       const want = (k.color ?? '').toLowerCase();
       return table.rows.map((_, r) => ((lookOf?.(r, k.column, k.by as 'fill') ?? '').toLowerCase() === want ? 0 : 1));
     }
-    const list = k.customList?.map((name) => name.toLowerCase());
+    const fold = (text: string): string => (k.caseSensitive ? text : text.toLowerCase());
+    const list = k.customList?.map((name) => fold(name));
     return table.rows.map((row) => {
       const v = row.cells[k.column].value;
       // A custom list puts the names it has first, in its order, then the other values by the usual rules.
       if (list && typeof v === 'string') {
-        const at = list.indexOf(v.trim().toLowerCase());
+        const at = list.indexOf(fold(v.trim()));
         if (at >= 0) return { listed: at };
       }
       // A choice sorts by the order of its options, the way the person set them, not by its letters.

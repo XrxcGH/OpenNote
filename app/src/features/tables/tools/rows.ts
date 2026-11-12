@@ -1,7 +1,7 @@
 // Row tools: remove duplicates and trim spaces. Both return a new table and a count, so the caller can say what changed
 // and apply the result as one undo step.
 
-import { deleteRows, makeCell } from '../engine/edit';
+import { deleteRowSet, makeCell } from '../engine/edit';
 import { formatValue } from '../engine/format';
 import { EN_US, type Locale } from '../engine/locale';
 import type { Cell, Column, Table } from '../engine/model';
@@ -52,12 +52,13 @@ export function removeDuplicates(
     kept.push(i);
   });
   if (removedIds.length === 0) return { table, removed: 0, kept: table.rows.length, removedIds };
-  // Delete from the bottom up through the engine, so references to the rows below shift or become #REF!.
+  // One engine delete for every removed row, so references shift once and the table recalculates once.
   const gone = new Set(removedIds);
-  let next = table;
-  for (let i = table.rows.length - 1; i >= 0; i--) {
-    if (gone.has(table.rows[i].id)) next = deleteRows(next, i, 1, options.env);
-  }
+  const next = deleteRowSet(
+    table,
+    table.rows.flatMap((row, i) => (gone.has(row.id) ? [i] : [])),
+    options.env,
+  );
   return { table: next, removed: removedIds.length, kept: next.rows.length, removedIds };
 }
 

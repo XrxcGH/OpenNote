@@ -65,3 +65,14 @@ describe('replaceInTable', () => {
     expect(out.table.rows[0].cells[1].value).toBe(13);
   });
 });
+
+describe('replaceInTable in one batch', () => {
+  it('replaces many cells and recalculates once', () => {
+    const rows = Array.from({ length: 300 }, (_, i) => [`item ${i}`, i % 2 === 0 ? 'foo' : 'bar']);
+    const t = createTable([{ name: 'A' }, { name: 'B' }], rows, EN_US);
+    const out = replaceInTable(t, 'item', 'part', { within: 'values' });
+    expect(out.replaced).toBe(300);
+    expect(out.table.rows[299].cells[0].raw).toBe('part 299');
+    expect(out.table.rows[0].cells[1].raw).toBe('foo');
+  });
+});
