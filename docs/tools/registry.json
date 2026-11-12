@@ -6877,6 +6877,13 @@
       "flag": "tables.sheetWrites"
     },
     {
+      "id": "table.cell.conditionalRules",
+      "title": "Cell: Conditional formatting rules",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
       "id": "table.sheet.extendUp",
       "title": "Extend the selection up",
       "category": "table",

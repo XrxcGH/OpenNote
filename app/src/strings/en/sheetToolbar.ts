@@ -112,6 +112,7 @@ export const sheetToolbar = {
     moreDecimals: 'Cell: More decimals',
     fewerDecimals: 'Cell: Fewer decimals',
     clearFormats: 'Cell: Clear formats',
+    conditionalRules: 'Cell: Conditional formatting rules',
     borderThickOutside: 'Cell: Thick outside borders',
     borderTop: 'Cell: Top border',
     borderBottom: 'Cell: Bottom border',

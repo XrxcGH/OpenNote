@@ -76,6 +76,9 @@ export const hostsVersion = (): number => version;
 
 export const hostOfBlock = (block: string): TableExtraHost | undefined => hosts.get(block);
 
+/** The hosts of the tables on one open page, in the order they attached. */
+export const hostsOfPage = (page: string): TableExtraHost[] => [...hosts.values()].filter((h) => h.page === page);
+
 /** The host whose editor holds this state's document. */
 export function hostOfState(state: EditorState): TableExtraHost | undefined {
   for (const host of hosts.values()) if (host.editor.state.doc === state.doc) return host;

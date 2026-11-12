@@ -89,6 +89,12 @@ const SPECS: readonly Spec[] = [
   { id: 'moreDecimals', run: (a, host) => a.changeDecimals(host, 1) },
   { id: 'fewerDecimals', run: (a, host) => a.changeDecimals(host, -1) },
   { id: 'clearFormats', run: (a, host) => a.clearFormats(host), menu: ['format', 1] },
+  // The conditional formatting rule manager loads with its React tree on first use.
+  {
+    id: 'conditionalRules',
+    run: (_a, host) => import('../conditional/open').then((m) => m.openRuleManager(host)),
+    menu: ['format', 8],
+  },
 ];
 
 /** The ids of the commands, for the tests. */

@@ -63,4 +63,6 @@ export const CELL_COMMAND_TEXT: Readonly<Record<string, string>> = {
   'table.cell.underlineSingleAccounting': 'Sets the single accounting underline on the selected cells or text.',
   'table.cell.underlineDoubleAccounting': 'Sets the double accounting underline on the selected cells or text.',
   'table.cell.clearFormats': 'Takes every format off the selected cells and leaves their text.',
+  'table.cell.conditionalRules':
+    'Opens the conditional formatting rules of the selection, the table, or the page, to reorder, stop, or delete them.',
 };

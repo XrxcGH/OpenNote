@@ -95,4 +95,4 @@ Choose Use document keys in this table to get the old keys back, where Enter sta
 
 A rule can color a cell by its value, its text, a date, blanks, errors, top or bottom values, values above or below the average, duplicates, or a formula. Color scales, data bars, and icon sets show a range at a glance. Rules run in priority order, and Stop if true keeps lower rules from applying.
 
-Format, then Conditional formatting, or the table's context menu, has the rule manager command. The manager lists the rules of the selection, the table, or the page, and moves, stops, or deletes them. Its window and the new-rule editor are not yet wired into the table editor.
+To manage rules, run Cell: Conditional formatting rules from the command palette (Ctrl+K) or the table's context menu. A window lists the rules of the selection, the table, or the page. You can raise or lower a rule, turn Stop if true on or off, or delete it. Undo takes each change back. Making a new rule from a window is not built yet.
