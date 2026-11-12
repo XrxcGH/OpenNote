@@ -12,6 +12,8 @@ export interface TableHandle {
   deleteTable(): Promise<void>;
   selectAll(): void;
   openColumnWidth(): void;
+  /** Opens the row height field for the rows the selection covers. */
+  openRowHeight(): void;
 }
 
 export const currentTable = createStore<TableHandle | null>(null, 'current table');
