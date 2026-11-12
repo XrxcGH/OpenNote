@@ -10,7 +10,7 @@ mod server;
 
 use std::{
     fs,
-    path::{Path, PathBuf},
+    path::PathBuf,
     process::{Child, Command},
     sync::OnceLock,
     thread,
@@ -28,9 +28,10 @@ fn fake_app() -> &'static [u8] {
     static BYTES: OnceLock<Vec<u8>> = OnceLock::new();
     BYTES.get_or_init(|| {
         let test_exe = std::env::current_exe().expect("the test exe");
+        // Newer Cargo keeps test exes in build/<crate>/<hash>/out, so walk up to the profile folder by name.
         let profile = test_exe
-            .parent()
-            .and_then(Path::parent)
+            .ancestors()
+            .find(|dir| dir.file_name().is_some_and(|name| name == "debug" || name == "release"))
             .expect("the target profile folder");
         let exe = profile.join("examples").join("fake_app.exe");
         if !exe.exists() {
