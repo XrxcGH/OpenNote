@@ -62,6 +62,10 @@ export interface CommandBarItem {
    */
   overflow?: readonly CommandId[];
   flag?: FlagId;
+  /** The item hides while this flag is on, so a newer control can take its place without a second bar item. */
+  offWith?: FlagId;
+  /** With presentation 'toggle': true when only part of the selection has the state (aria-pressed mixed). */
+  mixed?: () => boolean;
 }
 
 export interface ContextMenuItem {

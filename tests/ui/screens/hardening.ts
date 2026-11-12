@@ -17,7 +17,7 @@ async function openSection(page: Page, name: string): Promise<void> {
 async function runCommand(page: Page, search: string, name: RegExp): Promise<void> {
   await page.locator('[data-workspace]').waitFor();
   await page.keyboard.press('Control+KeyK');
-  await page.getByRole('combobox').fill(search);
+  await page.locator('[data-scope="palette"]').getByRole('combobox').fill(search);
   await page.getByRole('option', { name }).click();
 }
 
