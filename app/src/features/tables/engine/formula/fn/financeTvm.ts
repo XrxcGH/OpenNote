@@ -14,25 +14,54 @@ function balance(rate: number, nper: number, pmt: number, pv: number, fv: number
   return pv * (1 + grown) + (pmt * (1 + rate * type) * grown) / rate + fv;
 }
 
+/**
+ * q = (1 + rate)^nper and the annuity factor a = (q - 1) / rate. Both come from log1p and expm1, so a rate near zero,
+ * even one smaller than the smallest normal number, keeps its digits. A rate of -1 or less has no logarithm, so it
+ * takes the plain power.
+ */
+function growth(rate: number, nper: number): { q: number; a: number } {
+  if (rate <= -1) {
+    const q = Math.pow(1 + rate, nper);
+    return { q, a: (q - 1) / rate };
+  }
+  const l = Math.log1p(rate);
+  const y = nper * l;
+  const e = Math.expm1(y);
+  // a = (e / y) * nper * (l / rate): each ratio is near 1 for a tiny rate, where e, y, l, and rate lose digits alike.
+  return { q: 1 + e, a: y === 0 ? nper : (e / y) * nper * (l / rate) };
+}
+
 export function fv(rate: number, nper: number, pmt: number, pv: number, type: 0 | 1): number {
   if (rate === 0) return -(pv + pmt * nper);
-  const q = Math.pow(1 + rate, nper);
-  return -(pv * q + (pmt * (1 + rate * type) * (q - 1)) / rate);
+  const { q, a } = growth(rate, nper);
+  return -(pv * q + pmt * (1 + rate * type) * a);
 }
 
 export function pmt(rate: number, nper: number, pv: number, fvalue: number, type: 0 | 1): number {
   if (rate === 0) return -(pv + fvalue) / nper;
-  const q = Math.pow(1 + rate, nper);
+  const { q, a } = growth(rate, nper);
   // So many periods that q is past the largest number: the payment is the interest on pv alone (the limit).
   if (q === Infinity) return -(rate * pv) / (1 + rate * type);
-  return -(rate * (fvalue + pv * q)) / ((1 + rate * type) * (q - 1));
+  return -(fvalue + pv * q) / ((1 + rate * type) * a);
+}
+
+/**
+ * The balance after k of n payments, with the payment that clears the loan. It is
+ *   pv (q_k - q_n) / (q_n - 1) + fv (q_k - 1) / (q_n - 1),
+ * the same with payments at the start or at the end. For a positive rate it is worked with negative powers, so it
+ * stays finite when q_n is too large for a number.
+ */
+function balanceAfter(rate: number, k: number, n: number, pv: number, fvalue: number, type: 0 | 1): number {
+  if (!(rate > 0)) return fv(rate, k, pmt(rate, n, pv, fvalue, type), pv, type);
+  const l = Math.log1p(rate);
+  const d = -Math.expm1(-n * l);
+  return (pv * Math.expm1((k - n) * l) + fvalue * Math.exp((k - n) * l) * -Math.expm1(-k * l)) / d;
 }
 
 /** The interest part of payment `per`. A payment at the start of period 1 holds no interest. */
 export function ipmt(rate: number, per: number, nper: number, pv: number, fvalue: number, type: 0 | 1): number {
   if (type === 1 && per === 1) return 0;
-  const payment = pmt(rate, nper, pv, fvalue, type);
-  const before = fv(rate, per - 1, payment, pv, type);
+  const before = balanceAfter(rate, per - 1, nper, pv, fvalue, type);
   // With payments at the start, the interest paid in period `per` is the interest earned during the period before.
   return type === 1 ? (before * rate) / (1 + rate) : before * rate;
 }
@@ -43,8 +72,8 @@ const PV: Run = (args) => {
   const [rate, nper, payment, fvalue, t] = n;
   const type = due(t);
   if (rate === 0) return done(-(fvalue + payment * nper));
-  const q = Math.pow(1 + rate, nper);
-  return done(-(fvalue + (payment * (1 + rate * type) * (q - 1)) / rate) / q);
+  const { q, a } = growth(rate, nper);
+  return done(-(fvalue + payment * (1 + rate * type) * a) / q);
 };
 
 const FV: Run = (args) => {
@@ -67,9 +96,11 @@ const NPER: Run = (args) => {
   if (rate === 0) return payment === 0 ? err('NUM') : done(-(pv + fvalue) / payment);
   if (rate <= -1) return err('NUM');
   const lead = payment * (1 + rate * due(t));
-  const ratio = (lead - fvalue * rate) / (lead + pv * rate);
-  if (!(ratio > 0)) return err('NUM');
-  return done(Math.log(ratio) / Math.log1p(rate));
+  // nper = log(ratio) / log(1 + rate), with ratio = (lead - fv rate) / (lead + pv rate). The ratio less 1 is worked
+  // out directly and taken through log1p, so a tiny rate does not round the ratio to 1.
+  const less = (-rate * (fvalue + pv)) / (lead + pv * rate);
+  if (!(less > -1)) return err('NUM');
+  return done(Math.log1p(less) / Math.log1p(rate));
 };
 
 const RATE: Run = (args) => {
@@ -224,7 +255,8 @@ const EFFECT: Run = (args) => {
   if (!Array.isArray(n)) return n;
   const periods = Math.trunc(n[1]);
   if (n[0] <= 0 || periods < 1) return err('NUM');
-  return done(Math.pow(1 + n[0] / periods, periods) - 1);
+  // (1 + r/n)^n - 1 through expm1 and log1p, so a huge n does not round 1 + r/n to 1.
+  return done(Math.expm1(periods * Math.log1p(n[0] / periods)));
 };
 
 const NOMINAL: Run = (args) => {
@@ -232,7 +264,8 @@ const NOMINAL: Run = (args) => {
   if (!Array.isArray(n)) return n;
   const periods = Math.trunc(n[1]);
   if (n[0] <= 0 || periods < 1) return err('NUM');
-  return done(periods * (Math.pow(1 + n[0], 1 / periods) - 1));
+  // n ((1 + r)^(1/n) - 1) through expm1 and log1p, so a huge n does not round the root to 1.
+  return done(periods * Math.expm1(Math.log1p(n[0]) / periods));
 };
 
 const FVSCHEDULE: Run = (args) => {

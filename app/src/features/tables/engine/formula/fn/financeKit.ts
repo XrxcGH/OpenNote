@@ -94,13 +94,22 @@ export function strictNumbers(value: Value): number[] | FormulaError {
   return out;
 }
 
+/**
+ * The sum of v^-k for k = 1 to n, with v = 1 + u (u > -1): a geometric sum, so its cost does not grow with n. It is
+ * (1 - v^-n) / (v - 1), worked through expm1 and log1p so that it stays exact when u is tiny. It is n when u is 0.
+ */
+export function discountSum(u: number, n: number): number {
+  if (u === 0) return n;
+  return -Math.expm1(-n * Math.log1p(u)) / u;
+}
+
 /** A result: a number, or #NUM! when it is not finite. */
 export const done = (n: number): Value => finish(n === 0 ? 0 : n);
 
 /**
- * A root of f near `guess`, for a rate above `lo`. Newton's method from the guess first, as the reference apps do; when
- * it fails, a scan of the rates from just above `lo` to `hi` for a change of sign, refined by Brent's method (core/num),
- * and the root nearest the guess. Null when there is none.
+ * A root of f near `guess`, for a rate above `lo`. Newton's method from the guess comes first, as the reference apps do.
+ * When it fails, the rates from just above `lo` to `hi` are scanned for a change of sign, refined by Brent's method.
+ * The scan also looks next to the rates where f overflows. The root nearest the guess wins. Null when there is none.
  */
 export function solveRate(f: (x: number) => number, guess: number, lo = -1, hi = 10): number | null {
   const newton = newtonFrom(f, guess, lo);
@@ -109,12 +118,56 @@ export function solveRate(f: (x: number) => number, guess: number, lo = -1, hi =
   if (!(hi > from)) return null;
   let roots: number[];
   try {
-    roots = bracketScan(f, from, hi, 2000, 1e-15);
+    roots = [...bracketScan(f, from, hi, 2000, 1e-15), ...overflowRoots(f, from, hi, 2000)];
   } catch {
     return null;
   }
   if (roots.length === 0) return null;
   return roots.reduce((best, r) => (Math.abs(r - guess) < Math.abs(best - guess) ? r : best));
+}
+
+/**
+ * Roots that sit next to the rates where f overflows. A bond's price at a deep negative yield can pass the largest
+ * number between two scan points, while the price the yield must give lies just short of it. The scan skips a step
+ * with an infinite end, so here the edge of the finite part is found by bisection. When f changes sign between that
+ * edge and the step's finite end, Brent's method finds the root between them. A pole, where f is infinite on one side
+ * and of the other sign right next to it, gives no change of sign on the finite part, so it gives no root.
+ */
+function overflowRoots(f: (x: number) => number, lo: number, hi: number, samples: number): number[] {
+  const roots: number[] = [];
+  const finite = (x: number): boolean => Number.isFinite(f(x));
+  let x0 = lo;
+  let f0 = f(x0);
+  for (let i = 1; i <= samples; i++) {
+    const x1 = lo + ((hi - lo) * i) / samples;
+    const f1 = f(x1);
+    const ok0 = Number.isFinite(f0);
+    const ok1 = Number.isFinite(f1);
+    // An infinite end, not a NaN one: f grows past the largest number there.
+    if (ok0 !== ok1 && !Number.isNaN(ok0 ? f1 : f0)) {
+      // Bisect for the finite point nearest the edge, keeping `inside` finite and `outside` not.
+      let inside = ok0 ? x0 : x1;
+      let outside = ok0 ? x1 : x0;
+      for (let k = 0; k < 80; k++) {
+        const mid = (inside + outside) / 2;
+        if (mid === inside || mid === outside) break;
+        if (finite(mid)) inside = mid;
+        else outside = mid;
+      }
+      const far = ok0 ? x0 : x1;
+      const fe = f(inside);
+      const ff = ok0 ? f0 : f1;
+      if (fe !== 0 && ff !== 0 && fe > 0 !== ff > 0) {
+        const a = Math.min(inside, far);
+        const b = Math.max(inside, far);
+        const root = brent(f, a, b, 1e-15);
+        if (Math.abs(root.fx) <= 1e-6 * (Math.abs(fe) + Math.abs(ff)) + 1e-12) roots.push(root.x);
+      }
+    }
+    x0 = x1;
+    f0 = f1;
+  }
+  return roots;
 }
 
 function newtonFrom(f: (x: number) => number, guess: number, lo: number): number | null {

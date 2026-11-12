@@ -16,6 +16,8 @@ interface Case {
   expected: number | string;
   tolerance?: number;
   kind?: 'boundary' | 'error' | 'arity';
+  /** A case the timing test also runs: a span of dates wide enough to hold tens of thousands of coupons. */
+  hostile?: boolean;
 }
 
 const COLUMNS = ['A', 'B', 'C', 'D', 'E', 'F'].map((name) => ({ name, type: 'number' as const }));
@@ -117,6 +119,20 @@ describe('hostile input', () => {
     const start = performance.now();
     for (const c of huge) run(c.formula, c.cells);
     expect(performance.now() - start).toBeLessThan(2000);
+  });
+
+  it('solves a bond yield over the widest date spans quickly: no solver step walks every coupon', () => {
+    // Issue on day 1 and dates up to the year 9999 mean tens of thousands of coupons. The answers are fixture cases;
+    // the last formula is the widest span on actual/actual, timed only. Each case is one cell, and a cell must not
+    // hold up the page for long.
+    const wide = (fixture.cases as Case[]).filter((c) => c.hostile).map((c) => c.formula);
+    expect(wide.length).toBeGreaterThanOrEqual(8);
+    wide.push('=YIELD(1,2958465,0.05,1E300,100,4,1)');
+    for (const formula of wide) {
+      const start = performance.now();
+      run(formula);
+      expect(performance.now() - start, formula).toBeLessThan(2000);
+    }
   });
 });
 

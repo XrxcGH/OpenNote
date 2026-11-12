@@ -10,7 +10,7 @@
 import { daysToYmd, ymdToSerial } from '../../dates';
 import { err, type FormulaError, type Value } from '../../values';
 import { coupons, dayCount, daysInMonth, periodDays, shiftMonths, splitPeriod, yearFrac, type Basis } from './daycount';
-import { basisArg, day, done, flag, frequencyArg, nums, solveRate, type Run } from './financeKit';
+import { basisArg, day, discountSum, done, flag, frequencyArg, nums, solveRate, type Run } from './financeKit';
 
 /** Settlement and maturity as whole days, settlement first. */
 function span(s: number, m: number): { settle: number; maturity: number } | FormulaError {
@@ -64,8 +64,8 @@ export function priceOf(
   if (c.count === 1) return (red + cpn) / (1 + (((e - a) / e) * yld) / f) - (cpn * a) / e;
   const v = 1 + yld / f;
   const x = dsc / e;
-  let sum = red / Math.pow(v, c.count - 1 + x);
-  for (let k = 1; k <= c.count; k++) sum += cpn / Math.pow(v, k - 1 + x);
+  // The coupons, k = 1 to N, discounted by v^(k-1+x), are cpn v^(1-x) times a geometric sum: one step per solver call.
+  const sum = red / Math.pow(v, c.count - 1 + x) + cpn * Math.pow(v, 1 - x) * discountSum(yld / f, c.count);
   return sum - (cpn * a) / e;
 }
 
@@ -84,6 +84,8 @@ function bondArgs(
   const basis = basisArg(n[6]);
   if (typeof basis !== 'number') return basis;
   if (n[2] < 0 || n[3] < 0 || n[4] <= 0) return err('NUM');
+  // As in the coupon functions: a coupon date before day 0 is not a date the sheet can hold.
+  if (coupons(s.settle, s.maturity, f).pcd < 0) return err('NUM');
   return { ...s, rate: n[2], x: n[3], red: n[4], f, basis };
 }
 
@@ -123,6 +125,7 @@ function durationOf(args: Value[]): { years: number; yld: number; f: number } | 
   const [, , rate, yld] = n;
   if (rate < 0 || yld < 0) return err('NUM');
   const c = coupons(s.settle, s.maturity, f);
+  if (c.pcd < 0) return err('NUM');
   const { dsc, e } = splitPeriod(s.settle, c, basis, f);
   const v = 1 + yld / f;
   const cpn = (100 * rate) / f;

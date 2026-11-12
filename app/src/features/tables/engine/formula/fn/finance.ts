@@ -13,6 +13,9 @@ let pending: Promise<void> | null = null;
 let asked = false;
 /** The last load failed. */
 let failed = false;
+/** When the last load failed, in ms: a formula tries the load again only after RETRY_MS. */
+let failedAt = 0;
+const RETRY_MS = 30_000;
 const listeners = new Set<() => void>();
 
 /** Loads the financial chunk once. Later calls give the same promise. A failed load may be tried again. */
@@ -26,6 +29,10 @@ export function loadFinance(): Promise<void> {
     (cause: unknown) => {
       pending = null;
       failed = true;
+      failedAt = Date.now();
+      // Pages calculate again, so cells that showed #BUSY! show #CALC! now. A formula does not try the load again at
+      // once (see lazyRun), so this does not loop.
+      for (const listener of [...listeners]) listener();
       throw cause;
     },
   );
@@ -37,11 +44,15 @@ export const financeLoaded = (): boolean => runs !== null;
 
 /**
  * True while a formula has called a financial function and the chunk has not landed. Results calculated then hold
- * stand-ins (#BUSY!, or #CALC! after a failed load, or what IFERROR gives for them), so nothing should store them.
+ * #BUSY! stand-ins (or what IFERROR gives for them), so nothing should store them. After a failed load the cells give
+ * #CALC!, a real answer, so it is false: other tables still store their values.
  */
-export const financePending = (): boolean => asked && runs === null;
+export const financePending = (): boolean => asked && runs === null && !failed;
 
-/** Calls `listener` when the chunk lands, so a page can recalculate. Returns a function that stops listening. */
+/**
+ * Calls `listener` when the chunk lands, or when loading it fails, so a page can calculate again. Returns a function
+ * that stops listening.
+ */
 export function onFinanceLoaded(listener: () => void): () => void {
   listeners.add(listener);
   return () => listeners.delete(listener);
@@ -52,7 +63,7 @@ function lazyRun(name: string): Run {
   return (args, env) => {
     if (runs === null) {
       asked = true;
-      loadFinance().catch(() => undefined);
+      if (!failed || Date.now() - failedAt >= RETRY_MS) loadFinance().catch(() => undefined);
       // #BUSY! says the page will calculate again when the chunk lands. Once a load has failed that may never happen,
       // so the cell gives a real error; a later load that works still calculates the page again.
       return err(failed ? 'CALC' : 'BUSY');

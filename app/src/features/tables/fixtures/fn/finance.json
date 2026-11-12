@@ -2385,6 +2385,183 @@
       "source": "hand",
       "kind": "arity",
       "note": "Too few arguments."
+    },
+    {
+      "formula": "=ODDFPRICE(DATE(9000,1,2),DATE(9999,7,1),1,DATE(9000,7,1),0.05,0.01,100,4,0)",
+      "expected": 324.121725239543,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "kind": "boundary",
+      "hostile": true,
+      "note": "Worked by hand from the documented formula: 30/360, every date but issue on the 1st, so each whole quasi-coupon period counts 90 of 90 days. Day 1 is 31 December 1899, so the earliest quasi-coupon period counts 1 day of 90: 28,402 and 1/90 periods to the first coupon, 28,400 and 2/90 of them accrued, then 3,996 regular coupons; x = 1 + 89/90."
+    },
+    {
+      "formula": "=ODDFYIELD(DATE(9000,1,2),DATE(9999,7,1),1,DATE(9000,7,1),0.05,324.121725239543,100,4,0)",
+      "expected": 0.01,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "kind": "boundary",
+      "hostile": true,
+      "note": "The price the case above gives at 1%, so the yield is 1%."
+    },
+    {
+      "formula": "=ODDFYIELD(DATE(9000,1,2),DATE(9999,7,1),1,DATE(9000,7,1),0.05,1E300,100,4,0)",
+      "expected": -0.630768890432827,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "hostile": true,
+      "note": "Worked by hand from the documented formula: 30/360, every date but issue on the 1st, so each whole quasi-coupon period counts 90 of 90 days. The price reaches 1E300 where 100/v^(3996+x) dominates; the root was found by bisection on the documented formula at 50 digits."
+    },
+    {
+      "formula": "=ODDFYIELD(DATE(9000,1,2),DATE(9000,10,1),1,DATE(9000,7,1),0.05,1E300,100,4,0)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "hostile": true,
+      "note": "The price falls as the yield rises, and at the lowest yield the solver tries (-4 + 1E-9) it is about 5E30, far below 1E300: no root."
+    },
+    {
+      "formula": "=ODDFYIELD(DATE(9000,1,2),DATE(9000,10,1),1,DATE(9000,7,1),0.05,1E300,100,4,1)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "hostile": true,
+      "note": "As above on actual/actual: the price at the lowest yield is near 5E30, far below 1E300."
+    },
+    {
+      "formula": "=ODDFYIELD(DATE(2100,1,2),DATE(2100,10,1),1,DATE(2100,7,1),0.05,1E300,100,4,0)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "hostile": true,
+      "note": "Issue on day 1, about 800 quasi-coupon periods: the price at the lowest yield is near 5E30, far below 1E300."
+    },
+    {
+      "formula": "=PRICE(DATE(1900,1,1),DATE(9999,10,1),0.05,0.05,100,4,0)",
+      "expected": 100,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "kind": "boundary",
+      "hostile": true,
+      "note": "Settlement on a coupon date and the yield equal to the coupon rate: the price is par, over all 32,399 coupons."
+    },
+    {
+      "formula": "=YIELD(DATE(1900,1,1),DATE(9999,10,1),0.05,100,100,4,0)",
+      "expected": 0.05,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "kind": "boundary",
+      "hostile": true,
+      "note": "Bought at par on a coupon date: the yield is the coupon rate."
+    },
+    {
+      "formula": "=YIELD(DATE(1900,1,1),DATE(9999,10,1),0.05,1E300,100,4,0)",
+      "expected": -0.0837676490356066,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "hostile": true,
+      "note": "Price 100 v^-N + 1.25 (1 - v^-N) / (v - 1) with N = 32,399 and v = 1 + y/4, set to 1E300; root by bisection at 50 digits."
+    },
+    {
+      "formula": "=PRICE(1,40000,0.05,0.05,100,1,0)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "The coupon date before settlement falls before day 0, as in the COUP functions."
+    },
+    {
+      "formula": "=YIELD(1,40000,0.05,100,100,1,0)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "The coupon date before settlement falls before day 0."
+    },
+    {
+      "formula": "=DURATION(1,40000,0.05,0.05,1,0)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "The coupon date before settlement falls before day 0."
+    },
+    {
+      "formula": "=PMT(1E-12,10,1000)",
+      "expected": -100.00000000055,
+      "tolerance": 1e-13,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "A tiny rate: -1000 r q / (q - 1) with q = (1 + r)^10, about -100 (1 + 5.5 r)."
+    },
+    {
+      "formula": "=FV(1E-12,10,-100)",
+      "expected": 1000.0000000045,
+      "tolerance": 1e-13,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "A tiny rate: 100 (q - 1) / r, about 1000 + 4500 r."
+    },
+    {
+      "formula": "=PV(1E-12,10,-100)",
+      "expected": 999.9999999945,
+      "tolerance": 1e-13,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "A tiny rate: 100 (1 - q^-1) / r, about 1000 - 5500 r."
+    },
+    {
+      "formula": "=PMT(1E-320,10,1000)",
+      "expected": -100,
+      "tolerance": 1e-13,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "A rate below the smallest normal number acts as zero: 1000 over 10 payments."
+    },
+    {
+      "formula": "=NPER(1E-320,-1,1000)",
+      "expected": 1000,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "A rate below the smallest normal number acts as zero: 1000 paid back at 1 a period."
+    },
+    {
+      "formula": "=EFFECT(0.1,1E9)",
+      "expected": 0.105170918070122,
+      "tolerance": 1e-14,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "(1 + 0.1/1E9)^1E9 - 1, worked at 60 digits."
+    },
+    {
+      "formula": "=EFFECT(0.1,1E300)",
+      "expected": 0.105170918075648,
+      "tolerance": 1e-14,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "Continuous compounding in the limit: e^0.1 - 1."
+    },
+    {
+      "formula": "=NOMINAL(0.1,1E300)",
+      "expected": 0.0953101798043249,
+      "tolerance": 1e-14,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "Continuous compounding in the limit: ln 1.1."
+    },
+    {
+      "formula": "=PPMT(0.1,1E12,1E12,1000)",
+      "expected": -90.9090909090909,
+      "tolerance": 1e-13,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "The payment tends to the interest, 100; the last payment repays the balance left, 100 / 1.1."
+    },
+    {
+      "formula": "=IPMT(0.1,1E12,1E12,1000)",
+      "expected": -9.09090909090909,
+      "tolerance": 1e-13,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "The interest on the balance left before the last payment: 0.1 times 100 / 1.1."
     }
   ]
 }

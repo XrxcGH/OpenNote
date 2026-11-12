@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { TableData } from '../../../editor/schema/specs';
 import type { RecalcReply, RecalcRequest } from '../engine/worker/protocol';
 import type { Table } from '../engine';
+import type { BookMember } from './book';
 import type { SmartModel } from './model';
 
 // The chart export is checked through the model it hands the chart spec: the drawing itself is not under test.
@@ -74,6 +75,17 @@ async function startWorker(): Promise<{
   };
 }
 
+/** A page member that records the value of the first financial cell each time the page calculates. */
+function recorder(raw: Table): { got: unknown[]; member: BookMember } {
+  const got: unknown[] = [];
+  const member: BookMember = {
+    element: { compareDocumentPosition: () => 0 } as unknown as Element,
+    raw: () => raw,
+    calculated: (table: Table) => got.push(valueAt(table, 0)),
+  };
+  return { got, member };
+}
+
 describe('while the financial chunk loads', () => {
   it('shows #BUSY!, caches nothing, and calculates the page again when the chunk lands', async () => {
     const { finance, book, raw, results } = await fresh();
@@ -85,12 +97,7 @@ describe('while the financial chunk loads', () => {
     expect(book.valuesPatch(stored, data, undefined, before)).toBeNull();
 
     const page = new book.PageBook();
-    const got: unknown[] = [];
-    const member = {
-      element: { compareDocumentPosition: () => 0 } as unknown as Element,
-      raw: () => raw,
-      calculated: (table: Table) => got.push(valueAt(table, 0)),
-    };
+    const { got, member } = recorder(raw);
     page.join(member);
     page.refresh();
     expect(got).toHaveLength(1);
@@ -146,5 +153,30 @@ describe('while the financial chunk loads', () => {
     });
     expect(seen.models).toHaveLength(1);
     expect(valueAt(seen.models[0].table, 0)).toBe(10);
+  }, 60_000);
+});
+
+describe('after the page thread fails to load the financial chunk', () => {
+  it('calculates the page again and caches values once the page thread cannot load the chunk', async () => {
+    const { finance, book, raw, results } = await fresh();
+    vi.doMock('../engine/formula/fn/lazy/financial', () => {
+      throw new Error('the chunk is missing');
+    });
+    try {
+      const page = new book.PageBook();
+      const { got, member } = recorder(raw);
+      page.join(member);
+      page.refresh();
+      expect(isBusy(got[0])).toBe(true);
+      await vi.waitFor(() => expect(got).toHaveLength(2), { timeout: 30_000 });
+      // No edit came: the failed load itself calculated the page again, and the cell now gives a real error.
+      expect(got[1]).toEqual({ error: 'CALC' });
+      page.leave(member);
+      // Nothing is still loading, so values are cached again (the load does not start over on every calculation).
+      expect(finance.financePending()).toBe(false);
+      expect(book.valuesPatch(stored, data, undefined, results())).not.toBeNull();
+    } finally {
+      vi.doUnmock('../engine/formula/fn/lazy/financial');
+    }
   }, 60_000);
 });

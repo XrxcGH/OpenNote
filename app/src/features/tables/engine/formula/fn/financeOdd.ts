@@ -16,7 +16,7 @@
 
 import { err, type FormulaError, type Value } from '../../values';
 import { coupons, dayCount, periodDays, shiftMonths, type Basis } from './daycount';
-import { basisArg, day, done, frequencyArg, nums, solveRate, type Run } from './financeKit';
+import { basisArg, day, discountSum, done, frequencyArg, nums, solveRate, type Run } from './financeKit';
 
 const isError = (v: unknown): v is FormulaError => typeof v === 'object' && v !== null && 'error' in v;
 
@@ -115,7 +115,12 @@ const ODDLYIELD: Run = (args) => {
   return done(((o.red + cpn * s.dc - paid) / paid) * (o.f / s.left));
 };
 
-function oddFirstPrice(o: Odd, yld: number): number {
+/**
+ * The price of a bond with an odd first period, as a function of the yield. Nothing in the schedule depends on the
+ * yield, so the periods and their sums are worked out once here, and each call of the function is a few steps. The
+ * yield solver calls it many times.
+ */
+function oddFirstPricer(o: Odd): (yld: number) => number {
   const step = 12 / o.f;
   // Quasi-coupon periods back from the first coupon until one holds the issue date; the last in time comes first.
   const periods: [number, number][] = [];
@@ -133,23 +138,27 @@ function oddFirstPrice(o: Odd, yld: number): number {
   const nq = at;
   const regular = o.maturity > o.first ? coupons(o.first, o.maturity, o.f).count : 0;
   const cpn = (100 * o.rate) / o.f;
-  const v = 1 + yld / o.f;
   const x = nq + dsc / e;
-  let price = o.red / Math.pow(v, regular + x) + (cpn * s.dc) / Math.pow(v, x);
-  for (let k = 1; k <= regular; k++) price += cpn / Math.pow(v, k + x);
-  return price - cpn * s.accrued;
+  return (yld) => {
+    const v = 1 + yld / o.f;
+    const ahead = Math.pow(v, -x);
+    // The regular coupons, k = 1 to N, discounted by v^(k+x), are cpn v^-x times a geometric sum.
+    const price = o.red / Math.pow(v, regular + x) + cpn * s.dc * ahead + cpn * ahead * discountSum(yld / o.f, regular);
+    return price - cpn * s.accrued;
+  };
 }
 
 const ODDFPRICE: Run = (args) => {
   const o = oddArgs(args, true);
-  return isError(o) ? o : done(oddFirstPrice(o, o.x));
+  return isError(o) ? o : done(oddFirstPricer(o)(o.x));
 };
 
 const ODDFYIELD: Run = (args) => {
   const o = oddArgs(args, true);
   if (isError(o)) return o;
   if (o.x <= 0) return err('NUM');
-  const y = solveRate((r) => oddFirstPrice(o, r) - o.x, 0.1, -o.f);
+  const price = oddFirstPricer(o);
+  const y = solveRate((r) => price(r) - o.x, 0.1, -o.f);
   return y === null ? err('NUM') : done(y);
 };
 
