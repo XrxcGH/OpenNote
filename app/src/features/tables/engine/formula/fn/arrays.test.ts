@@ -375,7 +375,7 @@ describe('the size cap', () => {
     const over = spec.run([MAX_ELEMENTS + 1], { today: () => 0 });
     expect(over).toMatchObject({ error: 'NUM' });
     expect(reasonOf(over)).toBe('tooMany');
-    expect(reasonOf(calc('VSTACK(SEQUENCE(1000,1000),1)'))).toBe('tooMany');
+    expect(reasonOf(calc('VSTACK(SEQUENCE(1000,1000),1)') as Value)).toBe('tooMany');
   });
 });
 
