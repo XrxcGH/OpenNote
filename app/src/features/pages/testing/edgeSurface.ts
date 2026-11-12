@@ -29,6 +29,11 @@ const DRAWERS: Readonly<Record<string, string>> = {
   '../../tables': fileURLToPath(new URL('../../tables/smart/exportCharts.ts', import.meta.url)),
 };
 
+/** The table export reads the sheet model through the tables index too, so it gets the light module instead. */
+const TABLE_VIEW: Readonly<Record<string, string>> = {
+  '../../tables': fileURLToPath(new URL('../../tables/exportView.ts', import.meta.url)),
+};
+
 /** The print entry as one script, built once per test run. */
 export function printBundle(): Promise<string> {
   bundle ??= build({
@@ -39,7 +44,9 @@ export function printBundle(): Promise<string> {
         name: 'print-drawers',
         enforce: 'pre',
         resolveId(source, importer) {
-          return importer !== undefined && importer.endsWith('export/renderers.ts') ? DRAWERS[source] : undefined;
+          if (importer === undefined) return undefined;
+          if (importer.endsWith('export/renderers.ts')) return DRAWERS[source];
+          return importer.endsWith('export/tableHtml.ts') ? TABLE_VIEW[source] : undefined;
         },
       },
     ],

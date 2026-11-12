@@ -5,7 +5,7 @@
 import { MAX_HEIGHT, MIN_HEIGHT, renderNumberFormat, sheetModel } from '../../tables';
 import { isObject, own as ownKey } from '../layout/json';
 import type { JsonObject } from '../layout/json';
-import { resolveColor } from '../../../ui/color';
+import { resolveColor } from '../../../ui/color/parse';
 import { escapeAttr, escapeHtml, parseInline, renderInlineHtml, voidEnd, type HtmlOptions } from './markdown';
 import type { TableBlock } from './source';
 

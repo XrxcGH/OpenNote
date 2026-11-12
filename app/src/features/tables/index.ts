@@ -8,14 +8,10 @@ export { exportTableCharts } from './smart/exportCharts';
 /** The cell format bar loads on demand, so the tables chunk stays small. */
 export const loadCellFormatBar = () => import('./ui/toolbar/CellFormatBar');
 export type { CellFormatBarProps } from './ui/toolbar';
-// The sheet model of a table block, which the page's exports read (cell styles, merges, and cached results).
-export * as sheetModel from './sheet/model';
+// What the page's exports read of a table block: the sheet model, the row height limits, and number text.
+export { MAX_HEIGHT, MIN_HEIGHT, renderNumberFormat, sheetModel } from './exportView';
 // The structure commands and the reference adjustment register themselves with the table commands of the editor.
 import './sheet/structure/hooks';
 export { readSheet, tableName } from './sheet/model';
 export { canvasMeasure } from './sheet/structure/fit';
-export { MAX_HEIGHT, MIN_HEIGHT, rowHeight } from './sheet/structure/lines';
-// The shown text of a number under a number format code, which the page exports use for formula results.
-import { render } from './engine/numfmt';
-import { EN_US } from './engine/locale';
-export const renderNumberFormat = (value: number, code: string): string => render(value, code, EN_US).text;
+export { rowHeight } from './sheet/structure/lines';
