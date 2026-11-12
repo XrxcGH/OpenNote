@@ -7,7 +7,9 @@
 // gesture ends. While anything holds the camera (Phase 5 does while a pen is down), nothing here moves the page.
 import { prefersReducedMotion } from '../../../shell/layout/motion';
 import type { Point } from './camera';
+import { pageSelection } from '../seams/selectionStore';
 import { requestContextMenu } from './menuRequests';
+import { activeTool } from './router';
 import type { PointerToolDef, RouterContext } from './router';
 import type { PageViewport } from './viewport';
 
@@ -34,6 +36,17 @@ interface Contact {
 }
 
 type Mode = 'none' | 'pan' | 'pinch';
+
+/**
+ * Whether a press is on the drag body of a block that is already selected (an image). With the Select tool a finger
+ * there moves the block, as a mouse does; on any other block, or on empty page, a finger pans the page, and a tap
+ * selects. The router asks before the block's own press handler selects it, so a first drag still pans.
+ */
+function onSelectedBody(target: Element | null): boolean {
+  if (activeTool.get() !== 'select') return false;
+  const id = target?.closest('[data-block-drag]')?.closest<HTMLElement>('[data-block-id]')?.dataset.blockId;
+  return !!id && pageSelection.get().blocks.includes(id);
+}
 
 function distance(a: Point, b: Point): number {
   return Math.hypot(a.x - b.x, a.y - b.y);
@@ -84,7 +97,7 @@ class Gestures implements GestureTool {
     // drag (images/drag.ts).
     const target = event.target instanceof Element ? event.target : null;
     if (this.viewport.held() || target?.closest('[data-handle], [data-own-drag]')) return false;
-    if (event.pointerType === 'touch') return true;
+    if (event.pointerType === 'touch') return !onSelectedBody(target);
     if (event.pointerType === 'pen') return event.button === BARREL || (event.buttons & 2) !== 0;
     return event.pointerType === 'mouse' && event.button === MIDDLE;
   }
