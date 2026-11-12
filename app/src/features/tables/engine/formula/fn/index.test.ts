@@ -43,12 +43,15 @@ const LAZY = new Set(['IF', 'IFERROR', 'LET', 'LAMBDA', 'ISOMITTED']);
 
 describe('the function registry', () => {
   it('holds the 48 names of before, each in its family', () => {
-    // Family lanes add functions, so each family holds at least the names it always had.
     expect(REGISTRY.size).toBeGreaterThanOrEqual(48);
     expect([...REGISTRY.values()].filter((spec) => spec.family === 'datetime')).toHaveLength(26);
     for (const [family, names] of Object.entries(BY_FAMILY)) {
-      const found = [...REGISTRY.values()].filter((spec) => spec.family === family).map((spec) => spec.name);
-      expect(found.sort(), family).toEqual(expect.arrayContaining(names));
+      const found = new Set([...REGISTRY.values()].filter((spec) => spec.family === family).map((spec) => spec.name));
+      // Family lanes add names; every name of before stays, in its family.
+      expect(
+        names.filter((name) => !found.has(name)),
+        family,
+      ).toEqual([]);
     }
   });
 

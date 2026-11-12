@@ -55,3 +55,4 @@ own lines here. "Not yet checked" means no fixture pins that app's answer yet.
 - A pattern runs on the JavaScript engine, which backtracks and cannot be interrupted, and formulas run on the page thread. So a static guard (regexGuard.ts) refuses, with #VALUE!, a back-reference, a repeated group that holds a repeat or overlapping choices, and a long text with several repeating parts. Excel's engine has no such refusals, so a few safe patterns give #VALUE! here.
 - TEXTSPLIT, TEXTBEFORE, TEXTAFTER, and SPLIT accept at most 4,096 delimiter characters in all.
 - FIXED and DOLLAR give #VALUE! for more than 127 decimals.
+  | A `FORECAST.ETS` timeline of more than 10,000 steps | Not yet checked | Not yet checked | `#NUM!`, so a far-apart timeline cannot freeze the app |

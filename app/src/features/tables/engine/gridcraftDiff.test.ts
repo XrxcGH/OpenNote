@@ -186,6 +186,12 @@ function normalize(value: Value | Other): string {
   return `${typeof value} ${String(value)}`;
 }
 
+// The statistical families are checked by fn/stats.test.ts and fixtures/fn/stats.json, with hand-worked answers.
+for (const spec of REGISTRY.values()) {
+  const statistical = spec.family === 'stats' || spec.family === 'statsCompat';
+  if (statistical && CASES[spec.name] === undefined) NOT_COMPARABLE.add(spec.name);
+}
+
 const tool = findTool('gridcraft-cli');
 
 describe('the formula function set', () => {
