@@ -9,6 +9,8 @@ import { announcements, expectFocus, pressChord, renderApp } from '../../test';
 import type { NodeId } from '../../services/notes';
 import { act } from '@testing-library/react';
 import { multiStore } from './multi';
+import { getSettings, updateSettings } from '../../state/settings';
+import { setViewport } from '../../test';
 
 const notebooksTree = () => screen.getByRole('tree', { name: 'Notebooks' });
 const pagesTree = () => screen.getByRole('tree', { name: 'Pages' });
@@ -213,6 +215,22 @@ describe('moving', () => {
     await pressChord('Escape');
     await expect.poll(() => screen.queryByRole('dialog')).toBeNull();
     await expectFocus(row(notebooksTree(), 'Labs'));
+  });
+});
+
+describe('menus in a small window at a large interface size', () => {
+  it('keeps every item of a context menu inside the window (walk bug VA-4, not reproduced for menus)', async () => {
+    await setViewport(450, 400);
+    await renderTree();
+    await updateSettings({ appearance: { ...getSettings().appearance, uiScale: 150 } });
+    await openMenuOn(notebooksTree, 'Biology 101');
+    const menu = screen.getByRole('menu');
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    const out = [menu, ...menu.querySelectorAll('*')]
+      .filter((element) => element.getBoundingClientRect().right > window.innerWidth + 1)
+      .map((element) => `${element.tagName} ${Math.round(element.getBoundingClientRect().right)}`);
+    expect(out).toEqual([]);
+    await setViewport(1280, 800);
   });
 });
 
