@@ -84,4 +84,26 @@
     font-family: var(--font-ui);
     white-space: nowrap;
   }
+
+  /* In a window under 30rem the two columns cannot both fit beside the key caps, so each row stacks: the name, then
+     the keys. */
+  @media (max-width: 30rem) {
+    .table tbody,
+    .table tr,
+    .table th,
+    .table td {
+      display: block;
+    }
+
+    .table tr {
+      padding-block: var(--space-2);
+      border-block-end: 1px solid var(--color-border-subtle);
+    }
+
+    .table th,
+    .table td {
+      padding: var(--space-1) 0;
+      border-block-end: 0;
+    }
+  }
 }
