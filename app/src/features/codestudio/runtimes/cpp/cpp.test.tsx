@@ -3,7 +3,8 @@
 // - A run: the compile phase's lines come before `started`, then the program runs. It reads its input to the end,
 //   exits with code 3, and opens no path outside the project mount.
 // - A compile error: the run stops before `started`, and clang's message marks the line.
-// - Interactive input through JSPI: the program pauses on fgets until the page answers.
+// - Interactive input through JSPI: the program pauses on fgets until the page answers, and fread keeps reading
+//   when a line fills its first buffer exactly.
 // - The live check: the check worker loads clang, locks down, and reports clang's note for printf.
 
 // checks-disable-file modifiability: one describe block per feature
@@ -124,6 +125,32 @@ int main(void) { char name[32]; printf("name? "); fflush(stdout); while (fgets(n
     );
     expect(result).toMatchObject({ status: 'ok', out: 'name? hi Ada\n' });
     expect(prompts).toEqual(['asked', 'asked']);
+    expect(result.notes).toEqual([]);
+  });
+
+  it('keeps fread going when a typed line fills its first buffer exactly', async (context) => {
+    if (!jspiAvailable()) context.skip('This engine has no JSPI, so interactive input falls back.');
+    // musl's fread reads with two buffers: count - 1 bytes, then its own. "abc\n" fills the first one.
+    const replies = ['abc', 'de'];
+    let asked = 0;
+    const callbacks: RunCallbacks & { handle?: { input(text: string): void; eof(): void } } = {
+      onInputWanted: () => {
+        asked += 1;
+        const reply = replies.shift();
+        if (reply === undefined) callbacks.handle?.eof();
+        else callbacks.handle?.input(reply);
+      },
+    };
+    const program = String.raw`#include <stdio.h>
+int main(void) { char b[6] = {0}; size_t n = fread(b, 1, 5, stdin); printf("%zu %d [%s]\n", n, feof(stdin), b); return 0; }
+`;
+    const result = await run(
+      [{ path: 'main.c', text: program }],
+      { stdin: { mode: 'interactive', text: '' } },
+      callbacks,
+    );
+    expect(result).toMatchObject({ status: 'ok', out: '5 0 [abc\nd]\n' });
+    expect(asked).toBe(2);
     expect(result.notes).toEqual([]);
   });
 });

@@ -31,6 +31,13 @@ export const RUN_LIMITS: RunLimits = {
   sourceChars: 200_000,
 };
 
+/**
+ * The time a compile step (RuntimeAdapter.prepare) may take, from the worker's `compiling` message. A cold C++
+ * compile with the standard library takes several seconds on a fast machine, so it gets its own limit, apart from
+ * loadMs.
+ */
+export const COMPILE_MS = 60_000;
+
 /** Caps on one message, so no single message can flood the page. */
 export const MESSAGE_LIMITS = {
   /** Characters in one `out` message; the worker sends output in 4,096-character pieces. */
@@ -185,6 +192,8 @@ export function readMessage(data: unknown): WorkerMessage | null {
       return typeof data.percent === 'number' && data.percent >= 0 && data.percent <= 100
         ? { kind: 'loading', percent: data.percent }
         : null;
+    case 'compiling':
+      return { kind: 'compiling' };
     case 'started': {
       const version = isText(data.version, MESSAGE_LIMITS.shortChars) ? { version: data.version } : {};
       return { kind: 'started', ...version, ...(data.interactive === true ? { interactive: true } : {}) };

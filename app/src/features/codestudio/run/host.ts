@@ -19,7 +19,7 @@ import type {
 } from '../contracts/run';
 import type { TraceEvent } from '../contracts/debug';
 import type { TestResult } from '../contracts/testing';
-import { RUN_LIMITS, limitsWithin, readMessage } from './protocol';
+import { COMPILE_MS, RUN_LIMITS, limitsWithin, readMessage } from './protocol';
 import type { HostMessage } from './protocol';
 
 /** The part of a worker the host uses, so tests can stand in for one. */
@@ -98,6 +98,8 @@ export interface RunHostOptions {
   limits?: RunLimits;
   /** How long a warm worker waits for a run before it is ended. */
   idleMs?: number;
+  /** How long a compile step may take (COMPILE_MS). */
+  compileMs?: number;
   maxRuns?: number;
   /** Runs a task when the page is idle. */
   whenIdle?: (task: () => void) => void;
@@ -136,6 +138,7 @@ export class RunHost {
   private create: CreateWorker;
   private limits: RunLimits;
   private idleMs: number;
+  private compileMs: number;
   private maxRuns: number;
   private whenIdle: (task: () => void) => void;
   private warmWorkers = new Map<RuntimeId, Warm>();
@@ -148,6 +151,7 @@ export class RunHost {
     this.create = options.createWorker ?? createRunWorker;
     this.limits = options.limits ?? RUN_LIMITS;
     this.idleMs = options.idleMs ?? IDLE_RELEASE_MS;
+    this.compileMs = options.compileMs ?? COMPILE_MS;
     this.maxRuns = options.maxRuns ?? MAX_RUNS;
     this.whenIdle = options.whenIdle ?? defaultIdle;
   }
@@ -300,6 +304,7 @@ export class RunHost {
 
     /** When the program started, as a performance.now() time; null before. */
     let started: number | null = null;
+    let compiling = false;
     let kept = 0;
     let cut = false;
     let version: string | undefined;
@@ -333,6 +338,13 @@ export class RunHost {
         return;
       }
       this.deliver(message, callbacks, {
+        // The compile step has its own limit. Past it the run fails with "compile-time", not "load".
+        compiling: () => {
+          if (started !== null || compiling) return;
+          compiling = true;
+          clearTimeout(timer);
+          timer = setTimeout(() => finish('failed', 'compile-time'), this.compileMs);
+        },
         started: () => {
           started = performance.now();
           version = message.kind === 'started' ? message.version : undefined;
@@ -359,6 +371,7 @@ export class RunHost {
     message: WorkerMessage,
     callbacks: RunCallbacks,
     run: {
+      compiling: () => void;
       started: () => void;
       out: (stream: Stream, text: string) => void;
       done: (end: Extract<WorkerMessage, { kind: 'done' }>) => void;
@@ -367,6 +380,8 @@ export class RunHost {
     switch (message.kind) {
       case 'loading':
         return callbacks.onLoading?.(message.percent);
+      case 'compiling':
+        return run.compiling();
       case 'started':
         return run.started();
       case 'out':

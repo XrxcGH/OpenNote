@@ -1,11 +1,12 @@
 // The run host with stand-in workers and fake timers (DESIGN 4.2). It covers:
 // - one fresh worker per run, and a warm worker per active runtime, so the next run starts without loading;
 // - release after two minutes idle, and at most two runs at once;
-// - the time and load limits, Stop, and the output cap.
+// - the time and load limits, Stop, and the output cap. A compile step has its own limit.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { RuntimeId } from '../contracts/run';
 import { IDLE_RELEASE_MS, RunHost } from './host';
+import { statusLine } from './summary';
 import type { RunOrder, WorkerLike } from './host';
 import type { HostMessage } from './protocol';
 import { RUN_LIMITS } from './protocol';
@@ -54,7 +55,7 @@ const order: RunOrder = {
 let workers: FakeWorker[];
 let idle: (() => void)[];
 
-function host(options: { maxRuns?: number } = {}) {
+function host(options: { maxRuns?: number; compileMs?: number } = {}) {
   return new RunHost({
     createWorker: (runtime) => {
       const worker = new FakeWorker(runtime);
@@ -204,6 +205,31 @@ describe('limits', () => {
     const handle = runs.run({ ...order, limits: { ...RUN_LIMITS, loadMs: 100 } });
     vi.advanceTimersByTime(100);
     expect(await handle.done).toMatchObject({ status: 'failed', message: 'load' });
+  });
+
+  it('times a compile step with the compile limit, not the load limit, and names it', async () => {
+    const runs = host({ compileMs: 1000 });
+    const handle = runs.run({ ...order, limits: { ...RUN_LIMITS, loadMs: 100 } });
+    vi.advanceTimersByTime(50);
+    workers[0]!.say({ kind: 'compiling' });
+    vi.advanceTimersByTime(999);
+    workers[0]!.say({ kind: 'compiling' });
+    vi.advanceTimersByTime(1);
+    const result = await handle.done;
+    expect(result).toMatchObject({ status: 'failed', message: 'compile-time' });
+    expect(statusLine(result, RUN_LIMITS)).toBe(
+      'The compile step took longer than 60 seconds, so the program did not run.',
+    );
+  });
+
+  it('starts the time limit when a compiled program starts', async () => {
+    const runs = host({ compileMs: 1000 });
+    const handle = runs.run({ ...order, limits: { ...RUN_LIMITS, loadMs: 100, timeMs: 500 } });
+    workers[0]!.say({ kind: 'compiling' });
+    vi.advanceTimersByTime(900);
+    workers[0]!.say({ kind: 'started' });
+    vi.advanceTimersByTime(500);
+    expect(await handle.done).toMatchObject({ status: 'time' });
   });
 
   it('stops when Stop is pressed and ends the worker', async () => {

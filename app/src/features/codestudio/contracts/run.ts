@@ -99,6 +99,8 @@ export interface RuntimeDiagnostic {
 /** Every message a worker may send. The page checks each one before it reads it. */
 export type WorkerMessage =
   | { kind: 'loading'; percent: number }
+  /** The compile step (prepare) starts: the page times it with COMPILE_MS, not loadMs. */
+  | { kind: 'compiling' }
   | { kind: 'started'; version?: string; interactive?: boolean }
   | { kind: 'out'; stream: Stream; text: string }
   | { kind: 'input-wanted'; prompt: string }
@@ -180,8 +182,9 @@ export interface RuntimeAdapter {
   version?: string;
   load(onProgress: (percent: number) => void): Promise<void>;
   /**
-   * A step before the program starts, such as a compile (DESIGN 4.1). It runs under the load limit, not the time
-   * limit, and its output reaches the console before `started`. A RunEnd ends the run there; null goes on to `run`.
+   * A step before the program starts, such as a compile (DESIGN 4.1). The worker sends `compiling` first, so it runs
+   * under the compile limit, not the load limit. Its output reaches the console as it comes, before `started`.
+   * A RunEnd ends the run there; null goes on to `run`.
    */
   prepare?(request: RunRequest, emit: Emit, context: RunContext): Promise<RunEnd | null>;
   /** Runs one request and sends everything but `started` and `done`; the worker sends those. */

@@ -20,6 +20,8 @@ export const codeStudioCpp = {
   foreignImport: 'The program asks for {name}, which a program here cannot use.',
   /** The run's message when the program stopped at a trap, such as abort() or a failed assert. */
   trap: 'The program stopped: {reason}.',
+  /** The run's status line when the compile step took longer than its limit, so the program did not run. */
+  compileTime: 'The compile step took longer than {seconds} seconds, so the program did not run.',
   /** The run's message when the compiler itself stopped, not the program. */
   compilerStopped: 'The compiler stopped unexpectedly.',
 } as const;

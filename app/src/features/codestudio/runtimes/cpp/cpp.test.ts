@@ -19,6 +19,9 @@ import type { CheckRequest, CheckWorker } from './checker';
 import { checkArgs, compileArgs, sourcesOf } from './flags';
 import { HEADER_HINTS, headerFor, includeHint } from './headers';
 import { programName } from './adapter';
+import { clangMapper, projectName } from './diagnostics';
+import { Input } from './wasi';
+import { Stdin } from '../../run/stdin';
 
 const c = String.raw;
 
@@ -496,6 +499,26 @@ describe('clang known answers', () => {
       ['inc/shape.h', 1, 'note'],
     ]);
   });
+
+  it('reads a header that clang names through ".." as its project file', async () => {
+    const header = { path: 'inc/shape.h', text: 'int area(int w, int h)\n' };
+    const file = { path: 'src/main.c', text: '#include "../inc/shape.h"\nint main(void) { return 0; }\n' };
+    const items = await adapters.c.check(file, [file, header]);
+    expect(items.map((item) => [item.file, item.line, item.kind])).toContainEqual(['inc/shape.h', 1, 'error']);
+  });
+
+  it('resolves "." and ".." in the file names of clang lines and assert lines', () => {
+    expect(projectName('src/../inc/shape.h')).toBe('inc/shape.h');
+    expect(projectName('/project/../inc/shape.h')).toBe('inc/shape.h');
+    expect(projectName('./a/./b.c')).toBe('a/b.c');
+    expect(projectName('/usr/include/stdio.h')).toBe('/usr/include/stdio.h');
+    const files = [{ path: 'inc/shape.h', text: 'a\nb\n' }];
+    const text = 'src/../inc/shape.h:2:1: error: e\nAssertion failed: x (src/../inc/shape.h: f: 1)\n';
+    expect(clangMapper.map(text, files)).toEqual([
+      { file: 'inc/shape.h', line: 2, column: 1, kind: 'error', message: 'e' },
+      { file: 'inc/shape.h', line: 1, kind: 'assert', message: 'x' },
+    ]);
+  });
 });
 
 describe('the program sandbox', () => {
@@ -622,6 +645,56 @@ int main(void) {
       { limits: { memoryBytes: 8 * 1024 * 1024 } },
     );
     expect(ran).toMatchObject({ status: 'ok', out: '1\n' });
+  });
+
+  it('stops every way of growing a file at the memory limit with ENOSPC', async () => {
+    const ran = await run(
+      'c',
+      main(
+        'c',
+        c`#include <errno.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <unistd.h>
+static char block[65536];
+int main(void) {
+  int fd = open("big.bin", O_CREAT | O_RDWR, 0644);
+  off_t far = (off_t)300 << 20;
+  errno = 0; lseek(fd, far, SEEK_SET);
+  printf("seek write %ld %d\n", (long)write(fd, "x", 1), errno == ENOSPC);
+  errno = 0; printf("pwrite %ld %d\n", (long)pwrite(fd, "x", 1, far), errno == ENOSPC);
+  printf("fallocate %d\n", posix_fallocate(fd, 0, (off_t)400 << 20) == ENOSPC);
+  errno = 0; printf("ftruncate %d %d\n", ftruncate(fd, (off_t)500 << 20), errno == ENOSPC);
+  close(fd);
+  int out = open("loop.bin", O_CREAT | O_WRONLY, 0644);
+  long total = 0, n;
+  errno = 0;
+  while ((n = write(out, block, sizeof block)) > 0) total += n;
+  printf("loop %d %d\n", total > 0 && total <= (8L << 20), errno == ENOSPC);
+  close(out);
+  return 0;
+}
+`,
+      ),
+      { limits: { memoryBytes: 8 * 1024 * 1024 } },
+    );
+    expect(ran).toMatchObject({ status: 'ok', exitCode: 0 });
+    expect(ran.out).toBe('seek write -1 1\npwrite -1 1\nfallocate 1\nftruncate -1 1\nloop 1 1\n');
+    // big.bin stayed empty. loop.bin is over the overlay's 1 MB file limit, so it is left out, not decoded.
+    expect(ran.written).toEqual([{ path: 'big.bin', text: '' }]);
+  });
+});
+
+describe('standard input with JSPI', () => {
+  it('gives 0 bytes for an empty queue and leaves the input open, so the next read asks the page', () => {
+    const stdin = new Stdin('', true, async () => 'x');
+    const read = vi.spyOn(stdin, 'read');
+    const input = new Input({ stdin } as unknown as ConstructorParameters<typeof Input>[0]);
+    input.suspends = true;
+    expect(input.fd_read(1024).data.length).toBe(0);
+    expect(read).not.toHaveBeenCalled();
+    expect(input.empty).toBe(true);
+    expect(stdin.askedPastEnd).toBe(false);
   });
 });
 

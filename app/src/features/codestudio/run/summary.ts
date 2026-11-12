@@ -3,6 +3,7 @@
 import type { RunLimits } from '../contracts/run';
 import { t } from '../../../strings/t';
 import type { RunNote, RunResult } from './host';
+import { COMPILE_MS } from './protocol';
 
 const seconds = (ms: number) => (ms / 1000).toFixed(2);
 
@@ -23,7 +24,9 @@ export function statusLine(result: RunResult, limits: RunLimits): string {
     case 'stopped':
       return t('codeStudio.run.status.stopped');
     case 'failed':
-      return t('codeStudio.run.status.failed');
+      return result.message === 'compile-time'
+        ? t('codeStudio.cpp.compileTime', { seconds: Math.round(COMPILE_MS / 1000) })
+        : t('codeStudio.run.status.failed');
   }
 }
 

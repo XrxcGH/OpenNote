@@ -1,7 +1,8 @@
 // The C and C++ runtimes (DESIGN 2.1, runtimes `c` and `cpp`). A run has two phases with their own console lines.
 //
 // The compile phase is prepare(). It compiles and links the sources with clang for wasm32-wasip1. The flags are
-// -std=c17 or -std=c++20, -Wall -Wextra, -O1 -g. It runs before `started`, under the load limit.
+// -std=c17 or -std=c++20, -Wall -Wextra, -O1 -g. It runs before `started`, under its own compile limit (COMPILE_MS),
+// and its lines reach the console as they are printed.
 //
 // The run phase is run(). It runs the program with the WASI shim (wasi.ts), under the time limit.
 //

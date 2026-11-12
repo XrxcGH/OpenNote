@@ -141,7 +141,7 @@ describe('the run, diagnostics and test contracts', () => {
 
   it('names every worker message kind of protocol version 2', () => {
     expectTypeOf<WorkerMessage['kind']>().toEqualTypeOf<
-      'loading' | 'started' | 'out' | 'input-wanted' | 'rich' | 'diagnostic' | 'trace' | 'test' | 'done'
+      'loading' | 'compiling' | 'started' | 'out' | 'input-wanted' | 'rich' | 'diagnostic' | 'trace' | 'test' | 'done'
     >();
   });
 });

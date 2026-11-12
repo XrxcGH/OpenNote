@@ -15,11 +15,13 @@ import {
   Fd,
   File,
   type Inode,
+  OpenFile,
   PreopenDirectory,
   WASI,
   WASIProcExit,
   wasi as defs,
 } from '@bjorn3/browser_wasi_shim';
+import { PROJECT_LIMITS } from '../../contracts/project';
 import type { Emit, RunContext, RunEnd } from '../../contracts/run';
 import { codeStudioCpp } from '../../../../strings/en/codeStudio/cpp';
 import { say } from './say';
@@ -28,9 +30,15 @@ const WASI_MODULE = 'wasi_snapshot_preview1';
 const encoder = new TextEncoder();
 
 /** Standard input as a character device that reads the run's input. */
-class Input extends Fd {
+export class Input extends Fd {
   private queue = new Uint8Array(0);
   private ended = false;
+  /**
+   * Set when fd_read is a JSPI Suspending import that asks the page for a line before the read. Then a read of an
+   * empty queue gives 0 bytes and leaves the input open. A read with several buffers (musl's fread uses two) may
+   * fill the first one exactly, and the second one must not end the input.
+   */
+  suspends = false;
 
   constructor(private readonly context: RunContext) {
     super();
@@ -54,7 +62,7 @@ class Input extends Fd {
   }
 
   override fd_read(size: number): { ret: number; data: Uint8Array } {
-    if (this.empty) this.push(this.context.stdin.read());
+    if (this.empty && !this.suspends) this.push(this.context.stdin.read());
     const data = this.queue.slice(0, size);
     this.queue = this.queue.slice(data.length);
     return { ret: defs.ERRNO_SUCCESS, data };
@@ -109,6 +117,42 @@ function bytesIn(folder: Map<string, Inode>): number {
   return total;
 }
 
+/** The bytes the iovec list at `pointer` asks to write. */
+function iovecBytes(memory: WebAssembly.Memory, pointer: number, count: number): bigint {
+  const view = new DataView(memory.buffer);
+  let total = 0n;
+  for (let i = 0; i < count; i++) total += BigInt(view.getUint32(pointer + 8 * i + 4, true));
+  return total;
+}
+
+/**
+ * Holds the files the program writes inside the run's memory limit. A call that would make an open file `end` bytes
+ * long is refused when all files together would pass the limit. The size is checked before the shim grows the file,
+ * because the shim allocates the whole new size at once (a write past a far seek, pwrite, fallocate, ftruncate).
+ */
+function budgetFiles(shim: WASI, root: Map<string, Inode>, limit: number, imports: Imports): void {
+  const memory = () => shim.inst.exports.memory as WebAssembly.Memory;
+  const tooBig = (fd: number, end: bigint): boolean => {
+    const open = shim.fds[fd];
+    if (!(open instanceof OpenFile)) return false;
+    const size = BigInt(open.file.data.byteLength);
+    return end > size && BigInt(bytesIn(root)) - size + end > BigInt(limit);
+  };
+  const guard = (name: string, end: (fd: number, ...rest: (number | bigint)[]) => bigint) => {
+    const call = imports[name] as (...args: (number | bigint)[]) => number;
+    imports[name] = ((fd: number, ...rest: (number | bigint)[]) =>
+      tooBig(fd, end(fd, ...rest)) ? defs.ERRNO_NOSPC : call(fd, ...rest)) as Imports[string];
+  };
+  const position = (fd: number) => {
+    const open = shim.fds[fd];
+    return open instanceof OpenFile ? open.file_pos : 0n;
+  };
+  guard('fd_write', (fd, iovs, count) => position(fd) + iovecBytes(memory(), Number(iovs), Number(count)));
+  guard('fd_pwrite', (_, iovs, count, offset) => BigInt(offset) + iovecBytes(memory(), Number(iovs), Number(count)));
+  guard('fd_allocate', (_, offset, length) => BigInt(offset) + BigInt(length));
+  guard('fd_filestat_set_size', (_, size) => BigInt(size));
+}
+
 /** The imports a program may have: WASI preview 1 functions the shim provides. Returns the first other one. */
 export function foreignImport(module: WebAssembly.Module, provided: object): string | null {
   for (const entry of WebAssembly.Module.imports(module)) {
@@ -142,13 +186,11 @@ function wire(shim: WASI, root: Map<string, Inode>, input: Input, options: Progr
     context.randomBytes(new Uint8Array(memory, pointer, length));
     return defs.ERRNO_SUCCESS;
   };
-  // Files the program writes stay inside the run's memory limit.
-  const fdWrite = imports.fd_write!;
-  imports.fd_write = (fd: number, ...rest: number[]) =>
-    fd > 3 && bytesIn(root) > options.memoryBytes ? defs.ERRNO_NOSPC : fdWrite(fd, ...rest);
+  budgetFiles(shim, root, options.memoryBytes, imports);
   const jspi = WebAssembly as unknown as Partial<Jspi>;
   const suspend = options.interactive && jspi.Suspending && jspi.promising ? (jspi as Jspi) : null;
   if (suspend) {
+    input.suspends = true;
     const fdRead = imports.fd_read!;
     (imports as Record<string, unknown>).fd_read = new suspend.Suspending(async (fd: number, ...rest: number[]) => {
       if (fd === 0 && input.empty) input.push(await nextLine(context));
@@ -192,11 +234,21 @@ export async function runProgram(
     const rest = decoders[stream].decode();
     if (rest !== '') emit({ kind: 'out', stream, text: rest });
   }
-  for (const [path, file] of filesIn(root)) {
-    const text = new TextDecoder().decode(file.data);
-    if (texts.get(path) !== text) context.files.write(path, text);
-  }
+  keepWritten(root, texts, context);
   return end;
+}
+
+/** Hands the files the program changed to the overlay. A file over the overlay's file limit is not kept. */
+function keepWritten(root: Map<string, Inode>, texts: Map<string, string>, context: RunContext): void {
+  for (const [path, file] of filesIn(root)) {
+    if (file.data.byteLength > PROJECT_LIMITS.fileBytes) continue;
+    try {
+      const text = new TextDecoder().decode(file.data);
+      if (texts.get(path) !== text) context.files.write(path, text);
+    } catch {
+      // A file the engine cannot turn into text is not kept; the run's own end stands.
+    }
+  }
 }
 
 async function nextLine(context: RunContext): Promise<string | null> {
