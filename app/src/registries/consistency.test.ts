@@ -83,7 +83,7 @@ describe('default shortcuts', () => {
     const changeable = commands.list().filter((def) => def.customizable !== false);
     const bad = changeable.flatMap((def) =>
       [...setKeys(def, 'default'), ...setKeys(def, 'onenote')]
-        .filter((chord) => chordProblem(chord))
+        .filter((chord) => chordProblem(chord, def.scope))
         .map((chord) => `${def.id}: ${chord}`),
     );
     expect(bad).toEqual([]);

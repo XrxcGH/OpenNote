@@ -2,7 +2,7 @@
 
 Every tool, action, and feature in OpenNote, grouped by category, with one sentence each. `npm run docs:features` makes this page. The commands, tool windows, title bar items, settings sections, and setup steps come from what the app registers, so a new one shows up here or fails the tests. The feature sentences come from [FEATURES.md](FEATURES.md), which also says what has been tested by hand and which flag turns each one on. The [help pages](help/README.md) explain how to use them. [docs/screens](screens/README.md) has every picture in light and dark.
 
-The app registers 965 commands and 48 tool windows. 24 of the windows are subject and engineering kits. The count includes the ink commands, which register when a page first shows its ink, and the commands that register once start-up is done or with the first page: on-device intelligence, the second pass of page commands, and the code block and table commands. The command palette (Ctrl+K) runs every command not marked as left out of it. Some commands need a feature flag, which FEATURES.md names. The keys shown are the defaults of the standard shortcut set.
+The app registers 974 commands and 48 tool windows. 24 of the windows are subject and engineering kits. The count includes the ink commands, which register when a page first shows its ink, and the commands that register once start-up is done or with the first page: on-device intelligence, the second pass of page commands, and the code block and table commands. The command palette (Ctrl+K) runs every command not marked as left out of it. Some commands need a feature flag, which FEATURES.md names. The keys shown are the defaults of the standard shortcut set.
 
 ## Contents
 
@@ -52,6 +52,24 @@ The app registers 965 commands and 48 tool windows. 24 of the windows are subjec
 - **Equation numbers and references.** A display equation with a label gets a number at its right edge, and an inline reference shows the number of the equation it names.
 - **Problem-set templates.** Problem set (Given, Find, Solution, Answer), Cornell notes, and Lab report in the new-page chooser, before the person's own templates.
 
+#### Text, table, and code program foundations
+
+- **Format version 2.** Notebooks and pages that hold version 2 data are stamped 2, with minWriterVersion, so an older OpenNote refuses a file it cannot keep intact.
+- **Run and paragraph formats.** Font, size, weight, footnote reference, and foreign marks are read and written as inline tags.
+- **Editor commands for formats.** Set and toggle commands cover every run and paragraph format.
+- **Footnotes and endnotes.** Insert, number in reading order, restart per document or at each Heading 1, edit in a notes area under the page, and jump between the reference and the note.
+- **Symbols and formatting marks.** The Symbol dialog searches by name or code.
+- **Copy and paste with formatting.** Copy writes inline CSS that Word and Google Docs keep.
+- **Bundled fonts and device fonts.** Carlito and Caladea stand in for Calibri and Cambria, and load only when a page uses them.
+- **Word import and export.** Import reads styles, themes, lists, notes, comments, and tracked changes into version 2 data.
+- **Shared color palette.** One palette for text and tables: theme colors with tints and shades, standard colors, recent colors per notebook, Automatic, No color, and More colors.
+- **Sheet cell styles in tables.** A table keeps cell styles, merges, rules, names, and cached results in data.sheet.
+- **Number format codes.** Format codes with sections, colors, and conditions, regional display, and currency, percent, and date column presets, all computed on the device.
+- **Excel-style formulas.** Formulas follow Excel's rules for text, numbers, errors, and dates, with a registry of functions, names, LET and LAMBDA, dynamic arrays that spill, and references across tables.
+- **Code studio foundations.** The contracts, settings, flags, and strings for the code studio: projects as a page block, runs, diagnostics, completion, a replay debugger, tests, and runtime packs.
+- **Code editor keys.** Tab indents in the code editor, and Ctrl+Page Down and Ctrl+Page Up change tabs, so the tab bar stays reachable.
+- **Calm shell polish.** Phosphor icons in the command bar, pens back on the bar at 1,280 px, calm pressed and selected states, notebook accent roles, and group dividers.
+
 ### Tool windows
 
 #### Code studio
@@ -64,6 +82,35 @@ Open it with the command "Open the code studio".
 
 | Command | What it does | Default keys |
 | --- | --- | --- |
+| Accept suggestion (not in the palette) | Accepts the whole suggestion shown in gray in the code editor. | Ctrl+Tab |
+| Show a suggestion (not in the palette) | Asks for a suggestion at the caret in the code editor. | Alt+\ |
+| Show completions (not in the palette) | Opens the list of completions at the caret in the code editor. | Ctrl+Space |
+| Accept the next word of the suggestion (not in the palette) | Accepts the next word of the suggestion. | Ctrl+Right |
+| Accept the next line of the suggestion (not in the palette) | Accepts the next line of the suggestion. |  |
+| Dismiss suggestion (not in the palette) | Dismisses the suggestion without inserting it. |  |
+| Next suggestion (not in the palette) | Shows the next suggestion. | Alt+] |
+| Previous suggestion (not in the palette) | Shows the previous suggestion. | Alt+[ |
+| Add the next occurrence (not in the palette) | Adds a caret at the next match of the selected text. | Ctrl+D |
+| Toggle line comment (not in the palette) | Comments or uncomments the selected lines. | Ctrl+/ |
+| Toggle block comment (not in the palette) | Wraps the selection in a block comment, or removes it. | Alt+Shift+A |
+| Move line up (not in the palette) | Moves the selected lines up one line. | Alt+Up |
+| Move line down (not in the palette) | Moves the selected lines down one line. | Alt+Down |
+| Copy line up (not in the palette) | Copies the selected lines above themselves. | Alt+Shift+Up |
+| Copy line down (not in the palette) | Copies the selected lines below themselves. | Alt+Shift+Down |
+| Delete line (not in the palette) | Deletes the lines that hold a caret or selection. | Ctrl+Shift+K |
+| Add a caret above (not in the palette) | Adds a caret on the line above. | Ctrl+Alt+Up |
+| Add a caret below (not in the palette) | Adds a caret on the line below. | Ctrl+Alt+Down |
+| Find in code (not in the palette) | Opens find in the code editor. | Ctrl+F |
+| Replace in code (not in the palette) | Opens find and replace in the code editor. | Ctrl+H |
+| Go to line (not in the palette) | Jumps to a line number you type. | Ctrl+G |
+| Expand selection (not in the palette) | Grows the selection to the next larger syntax block. | Alt+Shift+Right |
+| Shrink selection (not in the palette) | Shrinks the selection back to the previous size. | Alt+Shift+Left |
+| Toggle word wrap (not in the palette) | Turns word wrap in the code editor on or off. | Alt+Z |
+| Zoom in on code (not in the palette) | Makes the code text larger. | Ctrl+= |
+| Zoom out of code (not in the palette) | Makes the code text smaller. | Ctrl+- |
+| Go to the next problem (not in the palette) | Jumps to the next problem found in the code. | F8 |
+| Go to the previous problem (not in the palette) | Jumps to the previous problem found in the code. | Shift+F8 |
+| Toggle Tab moves focus (not in the palette) | Makes Tab move focus out of the editor instead of indenting, for keyboard users. | Ctrl+M |
 | Insert mind map | Inserts a mind map to brainstorm ideas as branches. |  |
 | Insert diagram from text | Inserts a diagram drawn from text, such as a Mermaid flowchart or timeline. |  |
 | Insert code cell | Inserts a code cell that runs Python or JavaScript in a sandbox. | Ctrl+Alt+Shift+K |
@@ -922,7 +969,7 @@ Open it with the command "Open the code studio".
 - **Daily notes calendar.** A small month calendar opens the daily note for any day.
 - **Series pages.** A series groups pages that repeat, such as a weekly meeting or a lab log.
 - **Page properties.** Fields on a page, such as status, due date, course, author, rating, and a link to another page.
-- **Collections.** A collection is a saved view of pages chosen by a search, a tag, a section, or property values, such as "open assignments for Bio 201, grouped by due week".
+- **Collections.** A collection is a saved view of pages chosen by a search, a tag, a section, or property values, such as "open assignments for one class, grouped by due week".
 - **Page embeds.** Typing `![[` and choosing a page, a heading, or a paragraph shows it live inside another page.
 - **Graph view.** Shows pages as dots and links as lines, for a whole notebook or for the pages within 1 to 3 links of the open one.
 - **Canvas of cards.** A canvas is an open board of cards: pages, typed notes, images, PDFs, web addresses, and groups, joined by labeled arrows.
