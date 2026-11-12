@@ -45,6 +45,9 @@ export function sinkingDeposit(target: number, rate: number, n: number): number 
   return rate === 0 ? target / n : (target * rate) / ((1 + rate) ** n - 1);
 }
 
+/** The longest loan the tool lays out, in payments; a longer term would freeze the page. */
+export const MAX_LOAN_PAYMENTS = 100_000;
+
 export interface LoanRow {
   period: number;
   payment: number;
