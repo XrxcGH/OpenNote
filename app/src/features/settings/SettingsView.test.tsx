@@ -195,3 +195,37 @@ describe('the Settings sections and screens', () => {
     expect(used - main.getBoundingClientRect().left).toBeGreaterThan(main.clientWidth / 2);
   });
 });
+
+describe('the Settings page in a narrow window', () => {
+  it('keeps every section inside a 300 px window with no sideways scrolling (walk bug A2-A14-1, not reproduced)', async () => {
+    await setViewport(300, 800);
+    await renderApp({ sizeClass: 'compact' });
+    await pressChord('Ctrl+,');
+    await screen.findByRole('heading', { level: 1, name: 'Settings' });
+    const names = within(screen.getByRole('navigation', { name: 'Settings sections' }))
+      .getAllByRole('link')
+      .map((link) => link.textContent ?? '');
+    const wide: string[] = [];
+    for (const name of names) {
+      within(screen.getByRole('navigation', { name: 'Settings sections' }))
+        .getByRole('link', { name })
+        .click();
+      await screen.findByRole('heading', { level: 1, name });
+      await new Promise((resolve) => setTimeout(resolve, 150));
+      const main = screen.getByRole('main');
+      const room = document.documentElement.clientWidth;
+      const culprit = [...main.querySelectorAll<HTMLElement>('*')].find((element) => {
+        const box = element.getBoundingClientRect();
+        return box.width > 0 && box.right > room + 1;
+      });
+      if (culprit || main.scrollWidth > main.clientWidth) {
+        wide.push(
+          `${name}: ${culprit?.tagName}.${String(culprit?.className).slice(0, 40)} ${main.scrollWidth} ${main.clientWidth}`,
+        );
+      }
+      screen.getByRole('button', { name: 'Back to settings' }).click();
+      await screen.findByRole('navigation', { name: 'Settings sections' });
+    }
+    expect(wide).toEqual([]);
+  });
+});

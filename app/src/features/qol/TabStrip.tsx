@@ -4,7 +4,7 @@
 // key open the tab menu, as does a long press. A tab can be dragged to a new place.
 
 import { XIcon } from '@phosphor-icons/react/dist/csr/X';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { DragEvent, KeyboardEvent, MouseEvent } from 'react';
 import { useFlag } from '../../app/flags';
 import { qolStore } from '../../state/qol';
@@ -68,6 +68,10 @@ function TabItem({ tab, index, count, active }: { tab: Tab; index: number; count
     items: tabMenuItems(tab, index, count),
   }));
   const [dropSide, setDropSide] = useState<'before' | 'after' | null>(null);
+  // With many tabs the strip scrolls, so the tab that opens or becomes active comes into view.
+  useEffect(() => {
+    if (active) wrapper.current?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+  }, [active]);
 
   const onAuxClick = (event: MouseEvent) => {
     if (event.button !== 1) return;

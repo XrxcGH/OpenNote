@@ -55,6 +55,8 @@ export const tree = {
       newPage: 'Add page create',
       indent: 'Indent subpage level',
       outdent: 'Outdent promote level',
+      moveUp: 'Move page section up reorder earlier',
+      moveDown: 'Move page section down reorder later',
     },
   },
   menu: {

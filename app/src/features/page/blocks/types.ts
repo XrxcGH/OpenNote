@@ -29,6 +29,8 @@ export interface BlockView {
   /** The focusable editing root, if any. */
   readonly editRoot: HTMLElement | null;
   update(block: BlockJson): void;
+  /** The block's data as it is now, with typing the layer's copy has not seen. Only a view that holds typing has it. */
+  liveData?(): Record<string, unknown> | null;
   /** Page units, from the last layout. */
   measure(): PageRect;
   destroy(): void;

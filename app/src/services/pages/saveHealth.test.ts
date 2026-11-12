@@ -6,7 +6,6 @@ import {
   combinedStatus,
   coreBusy,
   coreStalled,
-  pageClosed,
   pageOpened,
   pageSaveFailed,
   pageSaved,
@@ -47,12 +46,12 @@ describe('save health', () => {
     expect(anySaveFailing(saveHealthStore.get())).toBe(false);
   });
 
-  it('forgets a page that closed, since no save will be reported for it', () => {
+  it('keeps failing pages, whichever page is shown, until a save reports each (walk bug N1-N03-5)', () => {
     pageSaveFailed('p1');
     pageSaveFailed('p2');
-    pageClosed('p1');
-    expect([...saveHealthStore.get().failing]).toEqual(['p2']);
-    pageClosed('p3');
+    pageSaved('p3');
+    expect([...saveHealthStore.get().failing]).toEqual(['p1', 'p2']);
+    pageSaved('p1');
     expect([...saveHealthStore.get().failing]).toEqual(['p2']);
   });
 
@@ -99,7 +98,7 @@ describe('save health', () => {
     expect(saveHealthStore.get().failures.get('p2')).toEqual({ kind: 'io', retrying: false });
     client.emit('core:saved', { page: 'p1', revision: 'r2' });
     expect([...saveHealthStore.get().failures.keys()]).toEqual(['p2']);
-    pageClosed('p2');
+    client.emit('core:saved', { page: 'p2', revision: 'r3' });
     expect(saveHealthStore.get().failures.size).toBe(0);
     stop();
   });
@@ -149,7 +148,6 @@ describe('save health of unwritten edits', () => {
     const client = fakeClient();
     const stop = watchSaveHealth(client);
     pageUnwritten('p2', 3);
-    pageClosed('p2');
     expect(pageWaiting(saveHealthStore.get())).toBe(true);
     expect(waitingDetail(saveHealthStore.get())).toBe('unwritten p2@3');
     client.emit('core:saved', { page: 'p2', through: 3 });

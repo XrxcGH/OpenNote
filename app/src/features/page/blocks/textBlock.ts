@@ -65,8 +65,13 @@ export function liveText(view: BlockView | null): LiveText | null {
 /**
  * A block as it is now. The block layer's copy of a text block keeps the Markdown it was opened or last replaced with,
  * not what was typed since, so anything that reads a shown text block's Markdown takes its editor's live Markdown.
+ * A table's cells are the same: its view gives the data with the typing it has not saved yet.
  */
 export function liveBlock(layer: { view(id: BlockId): BlockView | null }, block: BlockJson): BlockJson {
+  if (block.type === 'table') {
+    const data = layer.view(block.id)?.liveData?.();
+    return data ? { ...block, data } : block;
+  }
   if (block.type !== 'text') return block;
   const live = liveText(layer.view(block.id));
   if (!live) return block;
