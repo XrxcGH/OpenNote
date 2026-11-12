@@ -10,6 +10,7 @@ import type { Table } from '../../model';
 import { DEFAULT_ENV, recalculate, type EngineEnv } from '../../recalc';
 import { ERROR_TOKENS, err, type ErrorCode, type Value } from '../../values';
 import { recalculateBook, setBookCellInput } from '../../workbook';
+import { fnArrays, type FnText } from '../../../../../strings/en/fnArrays';
 import { fnLogicInfo } from '../../../../../strings/en/fnLogicInfo';
 import { fnKey } from '../../../../../strings/fnKey';
 import { REGISTRY, paramsOf } from '.';
@@ -131,8 +132,11 @@ describe('functions that ask about cells', () => {
 
 describe('the registry', () => {
   it('holds every function the design lists for these two families', () => {
+    // The lambda helpers (BYCOL to SCAN) are logical in the design table too; fn/lambda.ts holds them.
     const logical = [
       'AND',
+      'BYCOL',
+      'BYROW',
       'FALSE',
       'IF',
       'IFERROR',
@@ -140,8 +144,12 @@ describe('the registry', () => {
       'IFS',
       'LAMBDA',
       'LET',
+      'MAKEARRAY',
+      'MAP',
       'NOT',
       'OR',
+      'REDUCE',
+      'SCAN',
       'SWITCH',
       'TRUE',
       'XOR',
@@ -161,7 +169,14 @@ describe('the registry', () => {
   });
 
   it('describes every function and every argument in the strings', () => {
-    const strings = fnLogicInfo as unknown as Record<string, { about: string; args: Record<string, string> }>;
+    type Text = { about: string; args: Record<string, string> };
+    const strings: Record<string, Text> = { ...(fnLogicInfo as unknown as Record<string, Text>) };
+    // The lambda helpers' text lives with the array functions (strings/en/fnArrays.ts), as a description and params.
+    const arrays = fnArrays as Readonly<Record<string, FnText | undefined>>;
+    for (const [key, value] of Object.entries(arrays)) {
+      if (value !== undefined && 'description' in value)
+        strings[key] ??= { about: value.description, args: value.params };
+    }
     for (const spec of REGISTRY.values()) {
       if (spec.family !== 'logical' && spec.family !== 'info') continue;
       const text = strings[fnKey(spec.name)];
