@@ -30,6 +30,8 @@ export interface PythonEngine {
   exec(source: string): void;
   /** Where the runtime's output bytes go; set for each run. */
   sink: (stream: Stream, bytes: Uint8Array) => void;
+  /** Lets the program's heap grow by at most `bytes` past its size after load. Absent: the heap is fixed at load. */
+  limitMemory?(bytes: number): void;
 }
 
 /** Files read back after a run, at most. The overlay has its own, smaller limit. */
@@ -71,7 +73,8 @@ function walk(fs: EmscriptenFS, root: string): string[] {
 
 function readText(fs: EmscriptenFS, path: string): string | null {
   try {
-    return new TextDecoder('utf-8', { fatal: true }).decode(fs.readFile(path));
+    // A byte order mark is kept, so a project file that starts with one reads back as it was mounted.
+    return new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(fs.readFile(path));
   } catch {
     return null;
   }
@@ -149,6 +152,7 @@ export function runPython(engine: PythonEngine, request: RunRequest, emit: Emit,
     stdin: request.stdin.text.replace(/\r\n?/g, '\n'),
   };
   fs.writeFile(RUN_FILE, JSON.stringify(settings));
+  engine.limitMemory?.(request.limits.memoryBytes);
   const output = outputTo(emit);
   engine.sink = output.write;
   let failure: RunEnd | null = null;
@@ -171,7 +175,20 @@ export function runPython(engine: PythonEngine, request: RunRequest, emit: Emit,
   if (failure) return failure;
   if (!state) return { status: 'error', exitCode: 1, message: '' };
   if (state.kind === 'MemoryError') return { status: 'memory', exitCode: 1, message: 'MemoryError' };
-  return { status: state.status, exitCode: state.exit, message: state.kind };
+  return readState(state);
+}
+
+/**
+ * How the state the Python side wrote ends the run. The page refuses an exit code that is not an integer within
+ * 2^31, and a refused `done` would leave the run waiting for its time limit, so such a code becomes 1.
+ */
+function readState(state: PythonState): RunEnd {
+  const message = typeof state.kind === 'string' ? state.kind : '';
+  const exit: unknown = state.exit;
+  if (typeof exit !== 'number' || !Number.isInteger(exit) || Math.abs(exit) > 2 ** 31) {
+    return { status: 'error', exitCode: 1, message };
+  }
+  return { status: state.status === 'ok' && exit === 0 ? 'ok' : 'error', exitCode: exit, message };
 }
 
 /** Compiles one file without running it: the syntax error it has, if any, as diagnostics (DESIGN 6.1, L-c). */

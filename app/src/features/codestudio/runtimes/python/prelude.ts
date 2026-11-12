@@ -35,7 +35,8 @@ export interface PythonChecked {
 
 // Shared helpers: frames of this file are "<exec>" (Pyodide's runPython) or "<stdin>" (MicroPython's).
 // MicroPython's `import sys` gives the stand-in a run puts in sys.modules, so the real module is kept once.
-const HELPERS = String.raw`
+const HELPERS =
+  String.raw`
 try:
     _ON_SYS
 except NameError:
@@ -54,18 +55,42 @@ def _on_flush():
 def _on_format(e, home):
     real = _on_sys
     if real.implementation.name == 'micropython':
-        import io
+        io, = _on_import('io')
         buf = io.StringIO()
         real.print_exception(e, buf)
         lines = [l for l in buf.getvalue().split('\n') if not any(('File "' + w + '"') in l for w in _ON_WRAP)]
         text = '\n'.join(lines)
     else:
-        import traceback
+        traceback, = _on_import('traceback')
         tb = e.__traceback__
         while tb is not None and tb.tb_frame.f_code.co_filename in _ON_WRAP:
             tb = tb.tb_next
         text = ''.join(traceback.format_exception(type(e), e, tb))
     return text.replace('File "' + home + '/', 'File "')
+
+def _on_import(*names):
+    # Imports the runtime's own modules, never a project file of the same name. MicroPython lets a file override most
+    # of its built-in modules, and the working folder and sys.path point at the project during and after a run, so
+    # the project's folders leave the path for the import, and a project module of that name is forgotten.
+    real = _on_sys
+    home = '` +
+  HOME +
+  String.raw`'
+    kept = list(real.path)
+    real.path.clear()
+    real.path.extend([p for p in kept if p not in ('', '.') and p != home and not p.startswith(home + '/')])
+    try:
+        found = []
+        for name in names:
+            mod = real.modules.get(name)
+            f = getattr(mod, '__file__', None)
+            if isinstance(f, str) and f.startswith(home + '/'):
+                del real.modules[name]
+            found.append(__import__(name))
+        return found
+    finally:
+        real.path.clear()
+        real.path.extend(kept)
 
 def _on_read(path):
     f = open(path, 'rb')
@@ -87,7 +112,7 @@ export const RUN_SOURCE =
   HELPERS +
   String.raw`
 def _on_run():
-    import json, os, builtins
+    json, os, builtins, random = _on_import('json', 'os', 'builtins', 'random')
     real = _on_sys
     micro = real.implementation.name == 'micropython'
     cfg = json.loads(_on_read('` +
@@ -104,7 +129,7 @@ def _on_run():
         if isinstance(f, str) and f.startswith(home + '/'):
             del real.modules[name]
     if not micro:
-        import importlib, linecache
+        importlib, linecache = _on_import('importlib', 'linecache')
         importlib.invalidate_caches()
         linecache.clearcache()
 
@@ -163,6 +188,13 @@ def _on_run():
     for entry in [p for p in real.path if p == home or p.startswith(home + '/')]:
         real.path.remove(entry)
     real.path.insert(0, folder)
+    # The runner loaded these; a fresh "python main.py" would not have, so the program's own file of that name wins.
+    for name in ('random', 'json'):
+        try:
+            os.stat(folder + '/' + name + '.py')
+            real.modules.pop(name, None)
+        except OSError:
+            pass
     if micro:
         real.argv.clear()
         real.argv.extend(argv)
@@ -180,13 +212,16 @@ def _on_run():
         except Exception:
             pass
     os.chdir(home)
-    import random
-    random.seed(cfg['seed'])
+    # A failed seed leaves the module's own seed; the run goes on.
+    try:
+        random.seed(cfg['seed'])
+    except Exception:
+        pass
 
     path = home + '/' + main
     scope = {'__name__': '__main__', '__file__': path, '__builtins__': builtins}
     if not micro:
-        import types
+        types, = _on_import('types')
         module = types.ModuleType('__main__')
         module.__file__ = path
         scope = module.__dict__
@@ -198,10 +233,12 @@ def _on_run():
         exec(compile(text, main, 'exec'), scope)
     except SystemExit as e:
         code = e.args[0] if len(e.args) > 0 else None
+        # A bool is an int in CPython but not in MicroPython: test it first. A code past 32 bits is clamped, so the
+        # page gets a number it accepts and a code that is not 0 stays not 0.
         if code is None:
             state['exit'] = 0
-        elif isinstance(code, int):
-            state['exit'] = code
+        elif code is True or code is False or isinstance(code, int):
+            state['exit'] = max(-2147483648, min(2147483647, int(code)))
         else:
             _on_flush()
             real.stderr.write(str(code) + '\n')
@@ -228,13 +265,17 @@ export const CHECK_SOURCE =
   HELPERS +
   String.raw`
 def _on_check():
-    import json
+    json, = _on_import('json')
     cfg = json.loads(_on_read('` +
   CHECK_FILE +
   String.raw`'))
     found = {'ok': True}
+    text = cfg['text']
+    # A byte order mark is not part of the program: a run strips it, so the check does too.
+    if text.startswith('\ufeff'):
+        text = text[1:]
     try:
-        compile(cfg['text'], cfg['path'], 'exec')
+        compile(text, cfg['path'], 'exec')
     except SyntaxError as e:
         found = {
             'ok': False,

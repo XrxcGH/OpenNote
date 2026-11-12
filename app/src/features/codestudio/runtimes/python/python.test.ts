@@ -56,7 +56,7 @@ interface Ran {
 async function run(
   kind: Kind,
   files: Record<string, string>,
-  more: { main?: string; stdin?: string; args?: string[]; seed?: number } = {},
+  more: { main?: string; stdin?: string; args?: string[]; seed?: number; limits?: RunRequest['limits'] } = {},
 ): Promise<Ran> {
   const list: RunFile[] = Object.entries(files).map(([path, text]) => ({ path, text }));
   const request: RunRequest = {
@@ -66,7 +66,7 @@ async function run(
     main: more.main ?? list[0]!.path,
     args: more.args ?? [],
     stdin: { mode: 'prefilled', text: more.stdin ?? '' },
-    limits: RUN_LIMITS,
+    limits: more.limits ?? RUN_LIMITS,
     seed: more.seed ?? 1,
   };
   const messages: WorkerMessage[] = [];
@@ -366,6 +366,31 @@ describe.each(['quick', 'full'] as const)('errors and diagnostics in Python (%s)
     expect([bye.status, bye.exitCode, bye.err]).toEqual(['error', 1, 'bye\n']);
   });
 
+  // CPython's sys.exit: a bool is an int, so False is 0 and True is 1, and neither prints anything.
+  it('gives exit codes for a bool and for a number past 32 bits', async () => {
+    const no = await run(kind, { 'main.py': 'import sys\nsys.exit(False)\n' });
+    expect([no.status, no.exitCode, no.err]).toEqual(['ok', 0, '']);
+    const yes = await run(kind, { 'main.py': 'import sys\nsys.exit(True)\n' });
+    expect([yes.status, yes.exitCode, yes.err]).toEqual(['error', 1, '']);
+    const not = await run(kind, { 'main.py': 'import sys\nok = True\nsys.exit(not ok)\n' });
+    expect([not.status, not.exitCode, not.err]).toEqual(['ok', 0, '']);
+    // 2**40 does not fit the page's 32-bit exit code: it is clamped to 2**31 - 1, and the files are kept.
+    const big = await run(kind, { 'main.py': 'import sys\nopen("o.txt", "w").write("x")\nsys.exit(2**40)\n' });
+    expect([big.status, big.exitCode, big.err]).toEqual(['error', 2 ** 31 - 1, '']);
+    expect(big.written).toEqual([{ path: 'o.txt', text: 'x' }]);
+    const minus = await run(kind, { 'main.py': 'import sys\nsys.exit(-1)\n' });
+    expect([minus.status, minus.exitCode, minus.err]).toEqual(['error', -1, '']);
+  });
+
+  it('treats a byte order mark the same way in a run, a check, and the written files', async () => {
+    const text = '\ufeffprint("hi")\n';
+    const ran = await run(kind, { 'main.py': text });
+    expect([ran.status, ran.out, ran.err]).toEqual(['ok', 'hi\n', '']);
+    expect(ran.written).toEqual([]);
+    const file = { path: 'main.py', text };
+    expect(checkPython(await engineFor(kind), file, [file])).toEqual([]);
+  });
+
   it('checks a file with compile() without running it', async () => {
     const engine = await engineFor(kind);
     const bad = { path: 'main.py', text: 'print("ran")\nif x\n    pass\n' };
@@ -384,6 +409,52 @@ describe('a reused full Python', () => {
     await run('full', { 'main.py': 'import util\nprint(util.A)\n', 'util.py': 'A = 1\n' });
     const second = await run('full', { 'main.py': 'import util\nprint(util.A)\n', 'util.py': 'A = 2\n' });
     expect(second.out).toBe('2\n');
+  });
+
+  it('turns an exit code the page would refuse into 1', async () => {
+    // The program replaces json.dumps, which the runner uses for its state: the state's exit becomes JSON true.
+    // It puts the real one back on that call, since this Pyodide is reused by the next test.
+    const forged = lines(
+      'import json',
+      'real = json.dumps',
+      'def forged(state):',
+      '    json.dumps = real',
+      `    return '{"status": "ok", "exit": true, "kind": "", "wantedInput": false}'`,
+      'json.dumps = forged',
+    );
+    const ran = await run('full', { 'main.py': forged });
+    expect([ran.status, ran.exitCode]).toEqual(['error', 1]);
+    const back = await run('full', { 'main.py': 'import json\nprint(json.dumps(1))\n' });
+    expect(back.out).toBe('1\n');
+  });
+});
+
+describe('full Python asyncio and memory', () => {
+  // asyncio.gather returns the results in the order of its arguments; the shorter sleep finishes first.
+  it('runs asyncio.run with sleep and gather after the cut-off', async () => {
+    const program = lines(
+      'import asyncio',
+      'async def job(name, delay):',
+      '    await asyncio.sleep(delay)',
+      '    print(name, "done")',
+      '    return name',
+      'async def main():',
+      '    return await asyncio.gather(job("a", 0.05), job("b", 0.01))',
+      'print(asyncio.run(main()))',
+    );
+    const ran = await run('full', { 'main.py': program });
+    expect([ran.status, ran.err]).toEqual(['ok', '']);
+    expect(ran.out).toBe(lines('b done', 'a done', "['a', 'b']"));
+  });
+
+  it('ends with "memory" when the heap would grow past the memory limit', async () => {
+    // Eight blocks of 16 MB need 128 MB; the limit lets the heap grow by 32 MB.
+    const program = 'blocks = []\nfor _ in range(8):\n    blocks.append(bytearray(16 * 1024 * 1024))\nprint("all")\n';
+    const limits = { ...RUN_LIMITS, memoryBytes: 32 * 1024 * 1024 };
+    const ran = await run('full', { 'main.py': program }, { limits });
+    expect([ran.status, ran.out]).toEqual(['memory', '']);
+    // The heap is still usable afterward.
+    expect((await run('full', { 'main.py': 'print(sum(range(10)))\n' })).out).toBe('45\n');
   });
 });
 
@@ -449,29 +520,79 @@ describe('the sandbox of full Python, without lockdown (python.test.tsx repeats 
   });
 });
 
-describe('quick Python limits', () => {
-  it('ends with "memory" when the program fills the fixed heap', async () => {
-    const engine = await loadMicroPythonEngine(MICROPYTHON_WASM, 2 * 1024 * 1024);
-    const files: RunFile[] = [{ path: 'main.py', text: 'a = []\nwhile True:\n    a.append("x" * 10000)\n' }];
-    const random = seeded(1);
-    const request: RunRequest = {
-      kind: 'run',
-      runtime: 'python-quick',
-      files,
-      main: 'main.py',
-      args: [],
-      stdin: { mode: 'prefilled', text: '' },
-      limits: RUN_LIMITS,
-      seed: 1,
-    };
-    const context = {
-      stdin: new Stdin('', false),
-      files: new Mount(files),
-      random: random.random,
-      randomBytes: random.fill,
-      deadline: 0,
-    };
-    expect(runPython(engine, request, () => undefined, context).status).toBe('memory');
+// A program that takes 1 MiB blocks until MemoryError. With the limit at L MiB it gets fewer than L + 2 blocks: the
+// starting heap and the runtime's own data come on top of the limit. With a limit 4 times as high it gets more.
+const BLOCKS = lines(
+  'blocks = []',
+  'try:',
+  '    for _ in range(1000):',
+  '        blocks.append(bytearray(1024 * 1024))',
+  'except MemoryError:',
+  '    pass',
+  'n = len(blocks)',
+  'blocks = None',
+  'print(n)',
+);
+
+describe('the memory limit in quick Python', () => {
+  const MiB = 1024 * 1024;
+  const blocks = async (limitMiB: number) => {
+    const began = performance.now();
+    const ran = await run('quick', { 'main.py': BLOCKS }, { limits: { ...RUN_LIMITS, memoryBytes: limitMiB * MiB } });
+    expect([ran.status, ran.err]).toEqual(['ok', '']);
+    // A heap that grew without a cap took about 2 GB and many seconds here.
+    expect(performance.now() - began).toBeLessThan(10_000);
+    return Number(ran.out);
+  };
+
+  it('stops the heap near the limit the request gives', async () => {
+    const low = await blocks(8);
+    const high = await blocks(32);
+    expect(low).toBeGreaterThan(0);
+    expect(low).toBeLessThan(8 + 2);
+    expect(high).toBeGreaterThan(low);
+    expect(high).toBeLessThan(32 + 2);
+  });
+
+  it('ends with "memory" when the program does not catch MemoryError', async () => {
+    const program = 'a = []\nwhile True:\n    a.append(bytearray(1024 * 1024))\n';
+    const ran = await run('quick', { 'main.py': program }, { limits: { ...RUN_LIMITS, memoryBytes: 8 * MiB } });
+    expect([ran.status, ran.out]).toEqual(['memory', '']);
+  });
+});
+
+// A project file named like a module the runner uses must not replace the runner's module. The program's own
+// imports still find the project file first, as in CPython, since sys.path[0] is the main file's folder.
+const SHADOWS: Record<string, string> = {
+  'random.py': 'print("project random")\n',
+  'io.py': 'print("project io")\n',
+  'json.py': 'print("project json")\n',
+  'os.py': 'print("project os")\n',
+};
+
+describe.each(['quick', 'full'] as const)('project files named like standard modules (%s)', (kind) => {
+  it('runs main.py, not an unused random.py, io.py, json.py, or os.py', async () => {
+    const ran = await run(kind, { 'main.py': 'print("main")\n', ...SHADOWS });
+    expect([ran.status, ran.out, ran.err]).toEqual(['ok', 'main\n', '']);
+  });
+
+  it('keeps the traceback of an error next to an io.py', async () => {
+    const ran = await run(kind, { 'main.py': 'print("main")\nraise ValueError("bad")\n', ...SHADOWS });
+    expect([ran.status, ran.out, ran.message]).toEqual(['error', 'main\n', 'ValueError']);
+    expect(ran.err).toContain('Traceback (most recent call last):\n');
+    expect(ran.err).toContain('File "main.py", line 2');
+    expect(lastLine(ran.err)).toBe('ValueError: bad');
+  });
+
+  it('runs a main file named random.py', async () => {
+    const program = lines('import sys', 'print(sys.argv[0])', 'print("main random")');
+    const ran = await run(kind, { 'random.py': program, 'util.py': 'A = 1\n' });
+    expect([ran.status, ran.out, ran.err]).toEqual(['ok', 'random.py\nmain random\n', '']);
+  });
+
+  it('lets the program import its own random.py', async () => {
+    const ran = await run(kind, { 'main.py': 'import random\nprint(random.NAME)\n', 'random.py': 'NAME = "mine"\n' });
+    expect([ran.status, ran.out, ran.err]).toEqual(['ok', 'mine\n', '']);
   });
 });
 
