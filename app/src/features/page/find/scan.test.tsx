@@ -8,6 +8,8 @@ const wildcards = { caseSensitive: false, wholeWord: false, wildcards: true };
 const LONG = 'a'.repeat(10_000);
 
 it('stops a catastrophic regular expression at the time limit', async () => {
+  // Warm the worker first so the timing below measures the stop, not the cold start.
+  await scanTexts(['warm'], 'warm', regex, 20_000);
   const started = performance.now();
   expect(await scanTexts([LONG], 'a*a*a*a*c', regex, 400)).toBe('slow');
   expect(performance.now() - started).toBeLessThan(3000);
