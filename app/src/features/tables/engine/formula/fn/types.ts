@@ -28,6 +28,17 @@ export interface Env {
    * formula calls SUBTOTAL or AGGREGATE. Row-major flags, or undefined when none is. Unset: none is.
    */
   subtotalsIn?: (sheet: number, r1: number, c1: number, r2: number, c2: number) => readonly boolean[] | undefined;
+  /** The cell the formula runs in. Set only for a function with `wantsCaller`. */
+  caller?: Caller;
+}
+
+/** The calling cell, for ROW() and COLUMN() without an argument, INDIRECT's R1C1 text, and FORMULATEXT. */
+export interface Caller {
+  /** Zero-based row and column of the cell being calculated. */
+  readonly row: number;
+  readonly col: number;
+  /** The formula of a reference's top-left cell in stored form, without "=". Null when it holds none. */
+  formulaAt(ref: RefValue): string | null;
 }
 
 /** One cell as functions about cells see it (CELL, ISFORMULA). */
@@ -63,10 +74,11 @@ export interface Probe {
  * - number, text, bool: one value the function reads as that kind.
  * - range: every cell of a reference, or a value typed directly (see `direct`).
  * - array: an array. A single value comes as a one-by-one array.
+ * - ref: a reference as a RefValue, unions included. Other values come as they are.
  * - lambda: a function value, made by LAMBDA.
  * - lazy: not evaluated until the function asks, as IF's branches are.
  */
-export type ParamKind = 'value' | 'number' | 'text' | 'bool' | 'range' | 'array' | 'lambda' | 'lazy';
+export type ParamKind = 'value' | 'number' | 'text' | 'bool' | 'range' | 'array' | 'ref' | 'lambda' | 'lazy';
 
 export interface Param {
   /** The argument's name in the signature, such as "number" or "digits". */
@@ -140,6 +152,8 @@ export interface FnSpec2 {
    * functions that ask about a cell rather than its content, as ISREF and CELL do.
    */
   readonly refArgs?: boolean;
+  /** Gets the calling cell in `env.caller`. */
+  readonly wantsCaller?: boolean;
   /** An error argument reaches the function instead of becoming its result. */
   readonly handlesErrors?: boolean;
   /** Computes the result. A function with lazy parameters is evaluated by the compiler itself and never runs this. */

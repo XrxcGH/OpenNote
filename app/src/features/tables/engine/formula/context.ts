@@ -39,6 +39,8 @@ export interface Scope {
 export interface Runtime {
   /** The block a formula cell spills into, the cell itself when it does not spill, or its error. */
   spillBox(s: number, col: number, row: number): Box | FormulaError;
+  /** The stored formula of a cell or of its calculated column, without "=". Null when it has none. */
+  formulaAt?(s: number, col: number, row: number): string | null;
   /** What CELL and ISFORMULA ask about a cell, read from the table as it is now. Unset: nothing is known. */
   cellFacts?(s: number, col: number, row: number): CellFacts | undefined;
   /** The table's calculation mode. */

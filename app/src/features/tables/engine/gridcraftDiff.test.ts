@@ -66,6 +66,22 @@ const CASES: Record<string, string[]> = {
   MONTH: ['MONTH(DATE(2024,1,15))', 'MONTH(DATE(2024,12,31))'],
   DAY: ['DAY(DATE(2024,1,15))', 'DAY(DATE(2024,2,29))'],
   DAYS: ['DAYS(DATE(2024,3,1),DATE(2024,2,1))', 'DAYS(DATE(2024,1,1),DATE(2024,12,31))'],
+  VLOOKUP: [
+    'VLOOKUP(2.5,{1,"a";2,"b";3,"c"},2,TRUE)',
+    'VLOOKUP(2,{1,"a";2,"b"},2,FALSE)',
+    'VLOOKUP(9,{1,"a"},2,FALSE)',
+  ],
+  HLOOKUP: ['HLOOKUP("b",{"a","b";1,2},2,FALSE)', 'HLOOKUP(2.5,{1,2,3;"x","y","z"},2)'],
+  LOOKUP: ['LOOKUP(4.19,{4.14,4.19,5.17},{"red","orange","yellow"})', 'LOOKUP(0,{1,2},{"a","b"})'],
+  MATCH: ['MATCH(25,{10,20,30},1)', 'MATCH(25,{30,20,10},-1)', 'MATCH("b*",{"apple","banana"},0)'],
+  XLOOKUP: ['XLOOKUP(5,{1,3,7},{"a","b","c"},"none",-1)', 'XLOOKUP(2,{2,1,2},{"x","y","z"},"none",0,-1)'],
+  XMATCH: ['XMATCH(5,{1,3,5})', 'XMATCH(4,{1,3,5},1)'],
+  INDEX: ['INDEX({1,2;3,4},2,1)', 'INDEX({1,2,3},2)', 'INDEX({1,2;3,4},3,1)'],
+  CHOOSE: ['CHOOSE(2,"a","b","c")', 'CHOOSE(4,"a","b","c")'],
+  ROWS: ['ROWS({1,2;3,4;5,6})', 'ROWS(7)'],
+  COLUMNS: ['COLUMNS({1,2;3,4;5,6})', 'COLUMNS(7)'],
+  ADDRESS: ['ADDRESS(2,3)', 'ADDRESS(2,3,4)', 'ADDRESS(2,3,1,FALSE)', 'ADDRESS(1,28)'],
+  HYPERLINK: ['HYPERLINK("https://example.com","Site")', 'HYPERLINK("https://example.com")'],
   OPERATORS: [
     '2+3*4',
     '(2+3)*4',
@@ -105,12 +121,21 @@ const HAND_WORKED = new Set([
   ...'NETWORKDAYS NETWORKDAYS.INTL WORKDAY WORKDAY.INTL DATEDIF YEARFRAC EPOCHTODATE'.split(' '),
 ]);
 
-/** Functions that cannot be compared with a fixed answer: their result depends on the day it runs. */
-// The text and regular expression families have their own hand-worked fixtures (fixtures/fn/text.json), and the math
-// family has fn/math.test.ts and fixtures/fn/math.json, so only the functions that were here before need a case.
+// The text, regular expression, and math families have their own hand-worked fixtures (fixtures/fn/text.json and
+// math.json), so only the functions that were here before need a case here.
+/**
+ * Functions that cannot be compared with a fixed answer. TODAY and NOW depend on the day they run. The lookup functions
+ * read the cells or the position of the formula's table, which the other engine does not have.
+ */
 const NOT_COMPARABLE = new Set([
   'TODAY',
   'NOW',
+  'ROW',
+  'COLUMN',
+  'OFFSET',
+  'INDIRECT',
+  'AREAS',
+  'FORMULATEXT',
   ...HAND_WORKED,
   ...[...REGISTRY.values()]
     .filter((spec) => ['text', 'regex', 'math'].includes(spec.family) && !(spec.name in CASES))
