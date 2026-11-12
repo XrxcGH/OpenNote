@@ -1035,6 +1035,7 @@ A cell of a choice column stores the name of its choice as plain Markdown text, 
 | `pad` | As the style key `pad` | `R-SHT-8` | Default padding of every cell |
 | `grid` | boolean | `true` | Gridlines where a cell has no border |
 | `name` | A name (`R-SHT-13`), unique among the page's tables without regard to case | `Table1`, `Table2`, and so on, by the table's place in the page's reading order | The name formulas use for this table |
+| `keys` | `spreadsheet` or `document` | `spreadsheet` when a cell holds a number or a formula, else `document` | The table's keys: a spreadsheet's Grid and Edit modes, or a text editor's, where Enter starts a new line in the cell. Writers store the setting "New tables use spreadsheet keys" in each new table. A reader that has no spreadsheet keys ignores it |
 
 `R-SHT-11`. A column's settings are `style` (style ID), `hidden` (boolean, default `false`), `level` (outline depth, an integer from 0 to 7, default 0), and `collapsed` (boolean, default `false`). A row's settings add `height` and `exact`. `height` is in page units, from 1 to 10,000, rounded as a geometry value; absent means the row fits its content. `exact` is `true` when the height is exact, and `false` (the default) when it is a minimum. Column widths stay in the `width` of `data.columns`, in page units (`R-NUM-2`).
 

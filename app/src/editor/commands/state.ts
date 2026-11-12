@@ -57,6 +57,8 @@ export function caretInLink(state: EditorState): boolean {
 
 /** Whether the selection has text in it, or the caret is in a link: when Ctrl+K edits a link. */
 export function linkApplies(state: EditorState): boolean {
+  // Selected cells are not selected text: in a table's Grid mode Ctrl+K stays the palette (ADR 0063).
+  if ('$anchorCell' in state.selection) return caretInLink(state);
   return !state.selection.empty || caretInLink(state);
 }
 

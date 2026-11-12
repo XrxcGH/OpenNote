@@ -2,6 +2,7 @@
 // paragraph with the caret. Text after that paragraph moves into a new text block below the table, so the page
 // reads in the same order. The text edit and both new blocks go to the core as one step, which one undo removes.
 import type { Editor } from '@tiptap/core';
+import { isEnabled } from '../../../app/flags';
 import type { EditorState } from '@tiptap/pm/state';
 import { newId } from '../../../editor/ids';
 import { createMarkdownCache, serializeTextBlock } from '../../../editor/markdown';
@@ -9,6 +10,7 @@ import { META_REMOTE } from '../../../editor/meta';
 import type { TableData } from '../../../editor/schema/specs';
 import { newTableData, tableOf } from '../../../editor/table/mapping';
 import type { BlockId, BlockJson, Edit, Frame } from '../../../services/pages/types';
+import { getSettings } from '../../../state/settings';
 import { t } from '../../../strings/t';
 import { announce } from '../../../ui';
 import { syncOf } from '../blocks/textBlock';
@@ -33,6 +35,19 @@ export function splitAtCaret(editor: Editor): { head: string; tail: string; head
     tail: serializeTextBlock(doc.cut(end), cache),
     headEnd,
   };
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+/** A new table stores the setting "New tables use spreadsheet keys" as data.sheet.table.keys (ADR 0063). */
+function withKeys(data: TableData): Record<string, unknown> {
+  const own = data as unknown as Record<string, unknown>;
+  if (!isEnabled('tables.sheetWrites')) return own;
+  const sheet = isRecord(own.sheet) ? own.sheet : {};
+  const table = isRecord(sheet.table) ? sheet.table : {};
+  if (table.keys !== undefined) return own;
+  return { ...own, sheet: { ...sheet, table: { ...table, keys: getSettings().tables.newTableKeys } } };
 }
 
 /**
@@ -62,12 +77,12 @@ export function splitAtPosition(state: EditorState): { head: string; tail: strin
 }
 
 export async function insertTable(data: TableData = newTableData(3, 3, true)): Promise<boolean> {
-  return insertBlocks([{ type: 'table', data: data as unknown as Record<string, unknown> }]);
+  return insertBlocks([{ type: 'table', data: withKeys(data) }]);
 }
 
 /** Several tables, one below the other after the block with focus, as one step: one undo removes them all. */
 export async function insertTables(list: readonly TableData[]): Promise<boolean> {
-  return insertBlocks(list.map((data) => ({ type: 'table', data: data as unknown as Record<string, unknown> })));
+  return insertBlocks(list.map((data) => ({ type: 'table', data: withKeys(data) })));
 }
 
 /** A display equation, as a text block of its own after the block with focus. */

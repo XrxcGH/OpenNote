@@ -462,6 +462,43 @@ Open it with the command "Open the code studio".
 | Cell: More decimals | Shows one more decimal place in the selected cells. |  |
 | Cell: Fewer decimals | Shows one fewer decimal place in the selected cells. |  |
 | Cell: Clear formats | Takes every format off the selected cells and leaves their text. |  |
+| Extend the selection up (not in the palette) | In Grid mode, extends the selected cells one row up. | Shift+Up |
+| Extend the selection down (not in the palette) | In Grid mode, extends the selected cells one row down. | Shift+Down |
+| Extend the selection left (not in the palette) | In Grid mode, extends the selected cells one column left. | Shift+Left |
+| Extend the selection right (not in the palette) | In Grid mode, extends the selected cells one column right. | Shift+Right |
+| Go to the top edge of the data (not in the palette) | In Grid mode, goes to the top edge of the data in the column. | Ctrl+Up |
+| Go to the bottom edge of the data (not in the palette) | In Grid mode, goes to the bottom edge of the data in the column. | Ctrl+Down |
+| Go to the left edge of the data (not in the palette) | In Grid mode, goes to the left edge of the data in the row. | Ctrl+Left |
+| Go to the right edge of the data (not in the palette) | In Grid mode, goes to the right edge of the data in the row. | Ctrl+Right |
+| Extend the selection to the top edge of the data (not in the palette) | In Grid mode, extends the selected cells to the top edge of the data. | Ctrl+Shift+Up |
+| Extend the selection to the bottom edge of the data (not in the palette) | In Grid mode, extends the selected cells to the bottom edge of the data. | Ctrl+Shift+Down |
+| Extend the selection to the left edge of the data (not in the palette) | In Grid mode, extends the selected cells to the left edge of the data. | Ctrl+Shift+Left |
+| Extend the selection to the right edge of the data (not in the palette) | In Grid mode, extends the selected cells to the right edge of the data. | Ctrl+Shift+Right |
+| Go to the first cell (not in the palette) | In Grid mode, goes to the table's first cell. | Ctrl+Home |
+| Go to the last used cell (not in the palette) | In Grid mode, goes to the last cell that holds data. | Ctrl+End |
+| Extend the selection to the first cell (not in the palette) | In Grid mode, extends the selected cells to the table's first cell. | Ctrl+Shift+Home |
+| Extend the selection to the last used cell (not in the palette) | In Grid mode, extends the selected cells to the last cell that holds data. | Ctrl+Shift+End |
+| Extend the selection to the start of the row (not in the palette) | In Grid mode, extends the selected cells to the start of the row. | Shift+Home |
+| Move one screen left (not in the palette) | In Grid mode, moves one screen of columns left. | Alt+PageUp |
+| Move one screen right (not in the palette) | In Grid mode, moves one screen of columns right. | Alt+PageDown |
+| Move up a cell (not in the palette) | In Grid mode, moves up a cell, or back through the selected cells. | Shift+Enter |
+| Fill the selected cells with the active cell (not in the palette) | In Grid mode, fills every selected cell with the active cell, moving formula references. | Ctrl+Enter |
+| Edit the active cell (not in the palette) | In Grid mode, starts editing the active cell with the caret at the end. | F2 |
+| Clear the selected cells (not in the palette) | In Grid mode, clears the text of every selected cell. | Delete |
+| Clear the active cell and edit it (not in the palette) | In Grid mode, clears the active cell and starts editing it. | Backspace |
+| Select the column (not in the palette) | In Grid mode, selects the whole column. | Ctrl+Space |
+| Select the data around the cell, then the table (not in the palette) | In Grid mode, selects the data around the active cell, then the whole table. | Ctrl+A |
+| Fill down | In Grid mode, copies the top cell of the selection down, moving formula references. | Ctrl+D |
+| Fill right | In Grid mode, copies the left cell of the selection right, moving formula references. | Ctrl+R |
+| Copy the formula from the cell above (not in the palette) | In Grid mode, copies the formula of the cell above into the active cell. | Ctrl+' |
+| Copy the value from the cell above (not in the palette) | In Grid mode, copies the value of the cell above into the active cell. | Ctrl+" |
+| Enter today’s date | Enters today's date in the cell, as a date the formulas read. | Ctrl+; |
+| Enter the current time | Enters the current time in the cell. | Ctrl+: |
+| Finish the entry and move up (not in the palette) | In Edit mode, finishes the cell's entry and moves up. | Shift+Enter |
+| Finish the entry and stay in the cell (not in the palette) | In Edit mode, finishes the cell's entry and stays in the cell. | Ctrl+Enter |
+| Start a new line in the cell (not in the palette) | In Edit mode, starts a new line in the cell. | Alt+Enter |
+| Switch between Enter and Edit modes (not in the palette) | In Edit mode, switches between Enter mode, where arrows move to the next cell, and Edit mode. | F2 |
+| Use document keys in this table | Switches a table between spreadsheet keys and document keys, where Enter starts a new line. |  |
 | Add row above | Adds a row above the current one. |  |
 | Add row below | Adds a row below the current one. | Ctrl+Enter |
 | Move row up | Moves the current row up one place. | Alt+Shift+Up |
@@ -2501,6 +2538,7 @@ Open it with the command "Open upcoming".
 - **Appearance.** Sets the theme, the page color in dark mode, the text and interface size, and reduced motion.
 - **Language.** Sets the app language and the spelling dialect, with American English as the default.
 - **Editing.** Turns Markdown shortcuts, the slash menu, and AutoCorrect on or off.
+- **Tables.** Chooses whether new tables use spreadsheet keys or document keys.
 - **Recording.** Sets live captions, transcripts of recordings, audio formats, and the consent reminder.
 - **Pen and touch.** Sets the writing hand, finger drawing, the steady pen, and the pressure curve.
 - **My handwriting.** Calibrates the app to your handwriting and the symbols you write by hand.

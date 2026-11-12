@@ -3,6 +3,7 @@
 // The generator stops when a listed command, section, or step has no sentence, so a new one must get a line here.
 
 import { CELL_COMMAND_TEXT } from './featureCommandsCells.ts';
+import { SHEET_COMMAND_TEXT } from './featureCommandsSheet.ts';
 
 /** Each settings section, by its registry id. */
 export const SETTINGS_TEXT: Readonly<Record<string, string>> = {
@@ -10,6 +11,7 @@ export const SETTINGS_TEXT: Readonly<Record<string, string>> = {
   appearance: 'Sets the theme, the page color in dark mode, the text and interface size, and reduced motion.',
   language: 'Sets the app language and the spelling dialect, with American English as the default.',
   editing: 'Turns Markdown shortcuts, the slash menu, and AutoCorrect on or off.',
+  tables: 'Chooses whether new tables use spreadsheet keys or document keys.',
   recording: 'Sets live captions, transcripts of recordings, audio formats, and the consent reminder.',
   penAndTouch: 'Sets the writing hand, finger drawing, the steady pen, and the pressure curve.',
   myHandwriting: 'Calibrates the app to your handwriting and the symbols you write by hand.',
@@ -389,6 +391,7 @@ export const COMMAND_TEXT: Readonly<Record<string, string>> = {
   'table.editChoices': 'Edits the list of choices of the column.',
   'table.totalSum': 'Adds a total row with the sum of the column.',
   'table.totalNone': "Removes the column's total.",
+  ...SHEET_COMMAND_TEXT,
   'insert.chartBar': 'Inserts a bar chart of the table.',
   'insert.chartLine': 'Inserts a line chart of the table.',
   'insert.chartArea': 'Inserts an area chart of the table.',

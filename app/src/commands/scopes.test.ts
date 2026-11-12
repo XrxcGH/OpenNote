@@ -54,6 +54,12 @@ const KEYS: Readonly<Record<string, { key: string; code: string }>> = {
   Space: { key: ' ', code: 'Space' },
   Tab: { key: 'Tab', code: 'Tab' },
   '`': { key: '`', code: 'Backquote' },
+  Delete: { key: 'Delete', code: 'Delete' },
+  Backspace: { key: 'Backspace', code: 'Backspace' },
+  Home: { key: 'Home', code: 'Home' },
+  End: { key: 'End', code: 'End' },
+  PageUp: { key: 'PageUp', code: 'PageUp' },
+  PageDown: { key: 'PageDown', code: 'PageDown' },
 };
 
 /** A key press as the browser reports it for a chord such as 'Ctrl+Shift+Tab', on a US layout. */
