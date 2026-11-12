@@ -99,11 +99,19 @@ const KNOWN: Record<string, string> = {
     'Decided to keep: a table cell with empty text is an empty cell, and COUNTA over a column must not count those.',
 };
 
+/** Date and time functions with hand-worked cases in fixtures/fn/datetime.json (lane fn-datetime) instead of a diff. */
+const HAND_WORKED = new Set([
+  ...'HOUR MINUTE SECOND TIME TIMEVALUE DATEVALUE DAYS360 EDATE EOMONTH WEEKDAY WEEKNUM ISOWEEKNUM'.split(' '),
+  ...'NETWORKDAYS NETWORKDAYS.INTL WORKDAY WORKDAY.INTL DATEDIF YEARFRAC EPOCHTODATE'.split(' '),
+]);
+
 /** Functions that cannot be compared with a fixed answer: their result depends on the day it runs. */
 // The text and regular expression families have their own hand-worked fixtures (fixtures/fn/text.json), and the math
 // family has fn/math.test.ts and fixtures/fn/math.json, so only the functions that were here before need a case.
 const NOT_COMPARABLE = new Set([
   'TODAY',
+  'NOW',
+  ...HAND_WORKED,
   ...[...REGISTRY.values()]
     .filter((spec) => ['text', 'regex', 'math'].includes(spec.family) && !(spec.name in CASES))
     .map((spec) => spec.name),
@@ -148,7 +156,9 @@ const tool = findTool('gridcraft-cli');
 describe('the formula function set', () => {
   it('has a differential case for every function', () => {
     const covered = new Set(Object.keys(CASES));
-    const missing = Object.keys(FUNCTIONS).filter((name) => !covered.has(name) && !NOT_COMPARABLE.has(name));
+    const missing = Object.keys(FUNCTIONS).filter(
+      (name) => !covered.has(name) && !NOT_COMPARABLE.has(name) && !HAND_WORKED.has(name),
+    );
     expect(missing, 'add cases for these functions to CASES').toEqual([]);
   });
 });
