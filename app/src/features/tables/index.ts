@@ -5,3 +5,5 @@ export { attachSmart } from './smart/attach';
 export { runSmartCommand } from './smart/commands';
 export type { SmartCommand } from './smart/commands';
 export { exportTableCharts } from './smart/exportCharts';
+// The sheet model of a table block, which the page's exports read (cell styles, merges, and cached results).
+export * as sheetModel from './sheet/model';

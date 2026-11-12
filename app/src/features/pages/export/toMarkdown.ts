@@ -7,6 +7,7 @@ import { escapeText, oneLine, rewriteLinks, writeDestination } from './escape';
 import { readingOrder } from './order';
 import type { ExportBlock, ExportPage, TableBlock } from './source';
 import { removeFormatting } from './markdown/strip';
+import { tableMarkdown } from './tableMarkdown';
 import { propertyFrontMatter } from './propertyFrontMatter';
 
 /** The line for a block of a type this version doesn't know, and for a block that couldn't be read. */
@@ -35,6 +36,8 @@ export interface MarkdownOptions {
    * version 1. Default `keep`.
    */
   readonly formatting?: 'keep' | 'remove';
+  /** Hears of a table whose formula results are out of date, so its formulas export as text (the report names it). */
+  readonly onStaleTable?: (blockId: string) => void;
 }
 
 export interface BodyPart {
@@ -121,14 +124,14 @@ class Exporter {
 
   /** A GFM table, with an empty header row when the table has none. Null for a table without columns. */
   private table(table: TableBlock): string | null {
-    if (table.columns.length === 0) return null;
-    const line = (cells: readonly string[]) => `| ${cells.join(' | ')} |`;
-    const cellsOf = (row: TableBlock['rows'][number]) =>
-      table.columns.map((c) => tableCell(this.rewrite(own(row.cells, c.id) ?? '')));
-    const [first, ...rest] = table.rows;
-    const header = table.header && first ? cellsOf(first) : table.columns.map(() => '');
-    const body = table.header && first ? rest : table.rows;
-    return [line(header), line(table.columns.map(() => '---')), ...body.map((r) => line(cellsOf(r)))].join('\n');
+    return tableMarkdown(
+      table,
+      {
+        markdown: (md) => tableCell(this.rewrite(md)),
+        text: (text) => tableCell(escapeText(text, false)),
+      },
+      this.o.onStaleTable,
+    );
   }
 }
 

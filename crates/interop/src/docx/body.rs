@@ -9,8 +9,6 @@ use crate::doc::data::{Element, Para};
 use crate::doc::{push_text, Block, Inline, Item, Marks};
 
 const RULE: &str = "<w:pBdr><w:bottom w:val=\"single\" w:sz=\"6\" w:space=\"1\" w:color=\"C9C2B8\"/></w:pBdr>";
-/// The width of the text area of a Letter page, in twentieths of a point.
-const TEXT_WIDTH: usize = 9_360;
 /// How far each list level moves in, in twentieths of a point.
 const LEVEL_INDENT: u32 = 720;
 
@@ -78,7 +76,13 @@ impl State<'_> {
             } => self.callout(kind, title, blocks, frame),
             Block::Code { text, .. } => self.code(text),
             Block::Break => format!("<w:p><w:pPr>{RULE}</w:pPr></w:p>"),
-            Block::Table { header, rows, .. } => self.table(*header, rows),
+            Block::Table {
+                header,
+                rows,
+                cell_styles,
+                merges,
+                widths,
+            } => self.table(*header, rows, cell_styles, merges, widths),
         }
     }
 
@@ -236,40 +240,6 @@ impl State<'_> {
                 }
             }
         }
-        out
-    }
-
-    fn table(&mut self, header: bool, rows: &[Vec<Vec<Inline>>]) -> String {
-        let columns = rows.iter().map(Vec::len).max().unwrap_or(1).max(1);
-        let width = TEXT_WIDTH / columns;
-        let border = |side: &str| format!("<w:{side} w:val=\"single\" w:sz=\"4\" w:space=\"0\" w:color=\"C9C2B8\"/>");
-        let borders: String = ["top", "left", "bottom", "right", "insideH", "insideV"]
-            .iter()
-            .map(|s| border(s))
-            .collect();
-        let mut out = format!(
-            "<w:tbl><w:tblPr><w:tblW w:w=\"0\" w:type=\"auto\"/><w:tblBorders>{borders}</w:tblBorders></w:tblPr>\
-             <w:tblGrid>"
-        );
-        out.push_str(&format!("<w:gridCol w:w=\"{width}\"/>").repeat(columns));
-        out.push_str("</w:tblGrid>");
-        for (r, row) in rows.iter().enumerate() {
-            let head = header && r == 0;
-            out.push_str(if head {
-                "<w:tr><w:trPr><w:tblHeader/></w:trPr>"
-            } else {
-                "<w:tr>"
-            });
-            for c in 0..columns {
-                let cell = row.get(c).map_or(&[][..], Vec::as_slice);
-                let paragraph = format!("<w:p>{}</w:p>", self.runs(cell, head));
-                out.push_str(&format!(
-                    "<w:tc><w:tcPr><w:tcW w:w=\"{width}\" w:type=\"dxa\"/></w:tcPr>{paragraph}</w:tc>"
-                ));
-            }
-            out.push_str("</w:tr>");
-        }
-        out.push_str("</w:tbl><w:p/>");
         out
     }
 }
