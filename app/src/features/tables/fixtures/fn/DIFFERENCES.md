@@ -30,6 +30,12 @@ own lines here. "Not yet checked" means no fixture pins that app's answer yet.
 | `SUBTOTAL` and `AGGREGATE` over cells that hold other subtotals | The inner results are skipped                                            | Not yet checked                              | Skipped too: a cell whose formula calls SUBTOTAL or AGGREGATE is left out (AGGREGATE options 0 to 3)                    |
 | `SUMIF` with a sum range of another size                        | Resizes it to the tested range from its top-left corner                  | Not yet checked                              | Resized the same way                                                                                                    |
 | `AGGREGATE` 1 to 13 with an array argument                      | Takes only references                                                    | Not yet checked                              | Accepts array constants and computed arrays too, as `AGGREGATE(9,6,{1,2})` gives 3                                      |
+| `DATEDIF` unit `"MD"` when the end day is before the start day | Borrows days in a way that can give odd results | Not yet checked | Borrows the days of the month before the end month: `DATEDIF(2001-06-20, 2002-08-15, "MD")` is 26 |
+| `NETWORKDAYS` and `WORKDAY` before 1900-03-01 or after 9999-12-31 | Not dates | Work on negative serials | `WORKDAY` gives `#NUM!` outside serial 0 to 2958465. Counting refuses a start, end, or holiday serial beyond 100,000,000 with `#NUM!`. More than 3,000,000 working days is `#NUM!` |
+| `NOW()` | Date and time to the second | Same | Today's date from the engine plus the device clock to the second |
+| Weekend mask `"1111111"` or code 0 | `#VALUE!` and `#NUM!` | Not yet checked | `#VALUE!` and `#NUM!` |
+| `DATEVALUE` and `TIMEVALUE` date order | The region's date order | The region's date order | Always month, day, year, because functions get no locale. `DATEVALUE("24.07.2008")` is `#VALUE!` in de-DE. Later, pass the table's date order in `Env` |
+| `NOW()` after midnight with a cached date | Always the current moment | Always the current moment | Date from `env.today()` plus the device clock, so a stale `today` mixes dates. Later, add `env.now()` to `Env` |
 
 ## REGEX guard (B10 gap fixes)
 

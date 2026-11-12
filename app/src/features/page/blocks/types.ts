@@ -19,6 +19,8 @@ export interface BlockRenderContext {
   readonly reading: boolean;
   /** Shows a block changed here at once, before the core answers. The block layer sets it. */
   readonly local?: (block: BlockJson) => void;
+  /** The page's blocks in reading order (the block layer sets it): a table reads the others for references between tables. */
+  readonly blocks?: () => readonly BlockJson[];
 }
 
 export interface BlockView {
@@ -27,6 +29,8 @@ export interface BlockView {
   /** The focusable editing root, if any. */
   readonly editRoot: HTMLElement | null;
   update(block: BlockJson): void;
+  /** The block's data as it is now, with typing the layer's copy has not seen. Only a view that holds typing has it. */
+  liveData?(): Record<string, unknown> | null;
   /** Page units, from the last layout. */
   measure(): PageRect;
   destroy(): void;

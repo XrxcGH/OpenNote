@@ -11,6 +11,8 @@
 // thread is slower than the core's wait, or the journal can't be written, the answer says `written: false`. The
 // page then counts as unwritten until a `core:saved` whose `through` covers that change, even after the page closes:
 // the close's own save may fail, or another window may keep the page open, so only that save says it is safe.
+// A page that closes keeps failing until a `core:saved` for it: the close's own save is skipped for a read-only
+// page and reports nothing, and its edits are still unsaved (walk bug N1-N03-5).
 // So "Saved" never shows over a stroke that only this process's memory holds, which a crash would lose.
 
 import { createStore } from '../../state/store';
@@ -185,15 +187,6 @@ export function setSaveRecovery(next: SaveRecovery | null): void {
 
 /** The save notice's way to act on a failing page, or null before any page view has registered. */
 export const saveRecovery = (): SaveRecovery | null => recovery;
-
-/**
- * A page closed: it stops counting as failing, and a page that still can't save counts again at the close's try,
- * which the core reports as before. An unwritten edit keeps the page waiting: only the `core:saved` through it
- * (from the close's save, or from another window that still has the page open) says a crash can't lose it.
- */
-export function pageClosed(page: string): void {
-  pageSaved(page);
-}
 
 const pageOf = (payload: unknown): string | null => {
   const page = (payload as { page?: unknown } | null)?.page;

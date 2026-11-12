@@ -3,25 +3,28 @@ import { createMarkdownCache, parseTextBlock, serializeTextBlock } from '../../.
 import { findInText, matchesInDoc, replaceInDoc } from './match';
 
 const loose = { caseSensitive: false, wholeWord: false };
+const ranges = (found: { start: number; end: number }[]) => found.map(({ start, end }) => ({ start, end }));
 
 describe('finding text', () => {
   it('finds every match, ignoring case unless asked', () => {
     expect(findInText('Cell cell CELL', 'cell', loose)).toHaveLength(3);
-    expect(findInText('Cell cell CELL', 'cell', { ...loose, caseSensitive: true })).toEqual([{ start: 5, end: 9 }]);
+    expect(ranges(findInText('Cell cell CELL', 'cell', { ...loose, caseSensitive: true }))).toEqual([
+      { start: 5, end: 9 },
+    ]);
   });
 
   it('matches whole words only when asked', () => {
     const text = 'cat concatenate cat.';
     expect(findInText(text, 'cat', loose)).toHaveLength(3);
-    expect(findInText(text, 'cat', { ...loose, wholeWord: true })).toEqual([
+    expect(ranges(findInText(text, 'cat', { ...loose, wholeWord: true }))).toEqual([
       { start: 0, end: 3 },
       { start: 16, end: 19 },
     ]);
   });
 
   it('treats the query as text, not a pattern', () => {
-    expect(findInText('1+1=2 and a.b', '1+1', loose)).toEqual([{ start: 0, end: 3 }]);
-    expect(findInText('a.b axb', 'a.b', loose)).toEqual([{ start: 0, end: 3 }]);
+    expect(ranges(findInText('1+1=2 and a.b', '1+1', loose))).toEqual([{ start: 0, end: 3 }]);
+    expect(ranges(findInText('a.b axb', 'a.b', loose))).toEqual([{ start: 0, end: 3 }]);
     expect(findInText('anything', '', loose)).toEqual([]);
   });
 });

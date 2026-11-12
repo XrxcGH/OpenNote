@@ -13,7 +13,7 @@ import { useDismiss } from './dismiss';
 import { useLayer } from './hooks';
 import styles from './Popover.module.css';
 import { placeBelow, placeBeside } from './position';
-import { anchorTo, hideFromTopLayer, playExit, showInTopLayer, supportsAnchors } from './topLayer';
+import { anchorTo, fitToZoom, hideFromTopLayer, playExit, showInTopLayer, supportsAnchors } from './topLayer';
 
 export interface PopoverProps {
   anchor: RefObject<HTMLElement | null>;
@@ -40,13 +40,14 @@ function usePlacement(
     const [element, control] = [surface.current, anchor.current];
     if (!element) return;
     showInTopLayer(element);
+    const zoom = fitToZoom(element);
     let release = () => {};
     if (control && supportsAnchors()) release = anchorTo(element, control);
     else if (control) {
       const place = placement === 'inline-end' ? placeBeside : placeBelow;
       const point = place(control.getBoundingClientRect(), element.getBoundingClientRect());
-      element.style.setProperty('--point-x', `${point.x}px`);
-      element.style.setProperty('--point-y', `${point.y}px`);
+      element.style.setProperty('--point-x', `${point.x / zoom}px`);
+      element.style.setProperty('--point-y', `${point.y / zoom}px`);
     }
     return () => {
       release();
