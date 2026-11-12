@@ -15,6 +15,12 @@ export type AdapterRegistry = Partial<Record<RuntimeId, AdapterLoader>>;
 
 /** Output goes to the page in pieces of this many characters. */
 const PIECE = 4096;
+/**
+ * Messages sent as soon as the program writes. A runtime that runs synchronously keeps the worker busy until the run
+ * ends, so output held back would be lost when the time limit or Stop ends the worker. Past this many messages,
+ * output goes in pieces, so a program that prints in a loop does not flood the page.
+ */
+const PROMPT_MESSAGES = 1000;
 /** Error output kept for the diagnostic mapper. */
 const ERROR_TEXT = 64 * 1024;
 
@@ -28,6 +34,7 @@ class OutputGate {
   private pending = '';
   private stream: Stream = 'out';
   private sent = 0;
+  private messages = 0;
   errorText = '';
   truncated = false;
 
@@ -49,7 +56,7 @@ class OutputGate {
       this.pending += text;
     }
     while (this.pending.length >= PIECE) this.flush(PIECE);
-    if (this.truncated) this.flush();
+    if (this.truncated || this.messages < PROMPT_MESSAGES) this.flush();
   }
 
   flush(size = this.pending.length): void {
@@ -57,6 +64,7 @@ class OutputGate {
     const piece = this.pending.slice(0, size);
     this.pending = this.pending.slice(size);
     this.sent += piece.length;
+    this.messages += 1;
     this.send({ kind: 'out', stream: this.stream, text: piece });
   }
 }
@@ -103,7 +111,7 @@ export function serve(registry: AdapterRegistry, scope: WorkerScope = globalThis
       output.flush();
       send(message);
     };
-    const interactive = request.stdin.mode === 'interactive' && jspiAvailable();
+    const interactive = request.stdin.mode === 'interactive' && jspiAvailable() && adapter.prefilledOnly !== true;
     const ask = (prompt: string) =>
       new Promise<string | null>((resolve) => {
         answer = resolve;
