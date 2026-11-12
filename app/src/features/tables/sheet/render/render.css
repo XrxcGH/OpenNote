@@ -27,7 +27,7 @@
     padding-inline: calc(var(--cell-pad-l, 4pt) + var(--cell-indent-l, 0px))
       calc(var(--cell-pad-r, 4pt) + var(--cell-indent-r, 0px));
     background-color: var(--cell-fill, transparent);
-    background-image: var(--cell-diag, none), var(--cell-fill-image, none);
+    background-image: var(--cell-bar, none), var(--cell-diag, none), var(--cell-fill-image, none);
     color: var(--cell-color, inherit);
     font-family: var(--cell-font, inherit);
     font-size: var(--cell-size, inherit);
@@ -43,6 +43,22 @@
   /* Header cells stay bold unless the look says otherwise. */
   table[data-sheet] th[data-cell] {
     font-weight: var(--cell-weight, 700);
+  }
+
+  /* Conditional icon sets: the glyph comes first, and its text after the slash is what a screen reader says. */
+  table[data-sheet] :is(td, th)[data-cell][data-icon-glyph] > p:first-child::before {
+    content: var(--cell-icon-glyph) / var(--cell-icon-text);
+    color: var(--cell-icon-color, var(--cell-color, var(--sheet-ink, CanvasText)));
+    margin-inline-end: 0.35em;
+  }
+
+  /* Icon only and bar only keep the value for assistive technology and hide it from the eye. */
+  table[data-sheet] :is(td, th)[data-cell]:is([data-icon-only], [data-bar-only]) > p {
+    color: transparent;
+  }
+
+  table[data-sheet] :is(td, th)[data-cell][data-icon-only] > p:first-child::before {
+    margin-inline-end: 0;
   }
 
   table[data-sheet] :is(td, th)[data-cell][data-distributed] {
@@ -227,6 +243,24 @@
 
     table[data-sheet] :is(td, th)[data-cell]:is([data-frozen-row], [data-frozen-col]) {
       background-color: Canvas;
+    }
+
+    /* A data bar stays: forced colors keep it as a gradient, with an outline so it shows without its color, and the
+       value of a bar-only cell stays readable. Icon sets differ by shape, not by color alone (R-SHT-15). */
+    table[data-sheet] :is(td, th)[data-cell][data-bar] {
+      background-image: var(--cell-bar);
+      forced-color-adjust: none;
+      color: CanvasText;
+      outline: 1px solid CanvasText;
+      outline-offset: -2px;
+    }
+
+    table[data-sheet] :is(td, th)[data-cell]:is([data-icon-only], [data-bar-only]) > p {
+      color: CanvasText;
+    }
+
+    table[data-sheet] :is(td, th)[data-cell][data-icon-glyph] > p:first-child::before {
+      color: CanvasText;
     }
 
     table[data-sheet] :is(td, th)[data-cell][data-filled] {
