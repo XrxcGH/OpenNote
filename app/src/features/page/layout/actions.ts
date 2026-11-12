@@ -104,7 +104,7 @@ function newTextBoxPoint(parts: LayoutParts, lastFocused: BlockId | null): Point
 }
 
 export function createPageLayout(parts: LayoutParts): PageLayout {
-  const { page, sync, layer, pool, flow, viewport } = parts;
+  const { page, sync, layer, pool, flow } = parts;
   const channel = viewChannel({ ...page.initial.view }, flow);
   let reading = parts.reading;
   let lastFocused: BlockId | null = null;

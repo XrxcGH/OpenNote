@@ -101,7 +101,7 @@ describe('image blocks', () => {
     for (const button of buttons) {
       const box = button.getBoundingClientRect();
       const hit = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
-      expect(hit, button.getAttribute('aria-label')).toBe(button);
+      expect(hit === button, button.getAttribute('aria-label') ?? '').toBe(true);
     }
   });
 
