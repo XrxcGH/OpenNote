@@ -66,6 +66,14 @@ The app registers 1117 commands and 48 tool windows. 24 of the windows are subje
 - **Sheet cell styles in tables.** A table keeps cell styles, merges, rules, names, and cached results in data.sheet.
 - **Number format codes.** Format codes with sections, colors, and conditions, regional display, and currency, percent, and date column presets, all computed on the device.
 - **Excel-style formulas.** Formulas follow Excel's rules for text, numbers, errors, and dates, with a registry of functions, names, LET and LAMBDA, dynamic arrays that spill, and references across tables.
+- **Logic and information functions.** IFS, SWITCH, XOR, IFNA, the IS functions, CELL, INFO, SHEET, SHEETS, TYPE, and ERROR.TYPE.
+- **Lookup and reference functions.** XLOOKUP and XMATCH with every match and search mode, INDEX, MATCH, and the older lookups.
+- **Array and matrix functions.** FILTER, SORT, SORTBY, UNIQUE, SEQUENCE, RANDARRAY, TAKE, DROP, the stack and wrap functions, TRIMRANGE, MMULT, MINVERSE, and MDETERM.
+- **Statistical functions.** Averages, deviations, ranks, percentiles, the IFS family, distributions with their inverses, tests, regression, and FORECAST.ETS.
+- **Cell format bar.** A second row under the table tools sets the font, size, text styles, and colors.
+- **Spreadsheet keys in tables.** Grid, Edit, and Enter modes use Excel's keys.
+- **Conditional formatting.** Rules color cells by value, text, date, blank, error, top and bottom, average, duplicate, or formula.
+- **Table styles in page exports.** Word, HTML, and Markdown exports write each table's last results.
 - **Code studio foundations.** The contracts, settings, flags, and strings for the code studio: projects as a page block, runs, diagnostics, completion, a replay debugger, tests, and runtime packs.
 - **Code editor keys.** Tab indents in the code editor, and Ctrl+Page Down and Ctrl+Page Up change tabs, so the tab bar stays reachable.
 - **Calm shell polish.** Phosphor icons in the command bar, pens back on the bar at 1,280 px, calm pressed and selected states, notebook accent roles, and group dividers.
