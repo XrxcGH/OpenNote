@@ -66,9 +66,9 @@ test('starts a new line with Alt+Enter, and with Enter once the table uses docum
   await page.keyboard.press('End');
   await page.keyboard.press('Alt+Enter');
   await expect(breaks(cell(page, 1, 0))).toHaveCount(1);
-  // The smart table's View list is a combobox too, so open the palette by its key and wait for its field.
+  // The smart table's View list and the Home tab's font boxes are comboboxes too, so wait for the palette's own field.
   await page.keyboard.press('Control+k');
-  await expect(page.getByRole('combobox').first()).toBeFocused();
+  await expect(page.getByPlaceholder('Type a command or a page name')).toBeFocused();
   await page.keyboard.type('Use document keys');
   await page.getByRole('option', { name: 'Use document keys in this table' }).first().click();
   await inText(page, 3, 0).click();
@@ -108,5 +108,5 @@ test('keeps Ctrl+K as the command palette in Grid mode', async ({ page }) => {
   await gridAt(page, 1, 0);
   await page.keyboard.press('Shift+ArrowRight');
   await page.keyboard.press('Control+k');
-  await expect(page.getByRole('combobox').first()).toBeFocused();
+  await expect(page.getByPlaceholder('Type a command or a page name')).toBeFocused();
 });
