@@ -30,7 +30,12 @@ describe('the sheet contribution registry', () => {
     undo.push(take);
     expect(commands.get('sheetTest.bold')).toBeDefined();
     expect(sheetMenu('format').map((item) => item.id)).toEqual(['a', 'b']);
-    expect(sheetMenu('data').map((item) => item.id)).toEqual(['c']);
+    // Other lanes contribute to the Data menu from their own contribute.ts, so look only at this test's own item.
+    expect(
+      sheetMenu('data')
+        .filter((item) => item.id === 'c')
+        .map((item) => item.id),
+    ).toEqual(['c']);
     expect(sheetToolbar().map((group) => group.id)).toEqual(['font']);
     expect(contextMenus.get('sheetTest.merge')?.menu).toBe(SHEET_CONTEXT_MENU);
     take();
