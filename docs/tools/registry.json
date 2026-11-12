@@ -6702,6 +6702,11 @@
     {
       "id": "table.cell.clearFormats",
       "title": "Cell: Clear formats",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
       "id": "table.sheet.extendUp",
       "title": "Extend the selection up",
       "category": "table",
