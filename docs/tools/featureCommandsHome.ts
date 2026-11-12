@@ -18,6 +18,8 @@ export const HOME_TAB_TEXT: Readonly<Record<string, string>> = {
   'para.lineSpacing': 'Sets the line spacing of the paragraph.',
   'para.shade': 'Shades the paragraph.',
   'para.border': 'Puts a border on the paragraph.',
+  'format.selectSimilar': 'Selects all text on the page that has the same formatting as the current selection.',
+  'text.select': 'Opens the Select menu to select all text or text with similar formatting.',
   'text.compactSheet': 'Opens the Aa sheet with the text formatting controls for a small screen.',
   'text.contextFont': 'Opens the Font menu at the selection.',
   'text.contextParagraph': 'Opens the Paragraph menu at the selection.',

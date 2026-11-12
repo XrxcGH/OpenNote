@@ -2,7 +2,7 @@
 
 Every tool, action, and feature in OpenNote, grouped by category, with one sentence each. `npm run docs:features` makes this page. The commands, tool windows, title bar items, settings sections, and setup steps come from what the app registers, so a new one shows up here or fails the tests. The feature sentences come from [FEATURES.md](FEATURES.md), which also says what has been tested by hand and which flag turns each one on. The [help pages](help/README.md) explain how to use them. [docs/screens](screens/README.md) has every picture in light and dark.
 
-The app registers 974 commands and 48 tool windows. 24 of the windows are subject and engineering kits. The count includes the ink commands, which register when a page first shows its ink, and the commands that register once start-up is done or with the first page: on-device intelligence, the second pass of page commands, and the code block and table commands. The command palette (Ctrl+K) runs every command not marked as left out of it. Some commands need a feature flag, which FEATURES.md names. The keys shown are the defaults of the standard shortcut set.
+The app registers 996 commands and 48 tool windows. 24 of the windows are subject and engineering kits. The count includes the ink commands, which register when a page first shows its ink, and the commands that register once start-up is done or with the first page: on-device intelligence, the second pass of page commands, and the code block and table commands. The command palette (Ctrl+K) runs every command not marked as left out of it. Some commands need a feature flag, which FEATURES.md names. The keys shown are the defaults of the standard shortcut set.
 
 ## Contents
 
@@ -131,8 +131,10 @@ Open it with the command "Open the code studio".
 | Grow font | Steps the size of the selected text up on the size list. |  |
 | Shrink font | Steps the size of the selected text down on the size list. |  |
 | Double strikethrough | Draws two lines through the selected text. |  |
+| Select text with similar formatting | Selects all text on the page that has the same formatting as the current selection. |  |
 | Paragraph formatting (not in the palette) | Shades the paragraph. |  |
 | Paragraph formatting (not in the palette) | Puts a border on the paragraph. |  |
+| Paragraph formatting (not in the palette) | Opens the Select menu to select all text or text with similar formatting. |  |
 | Format painter | Copies the formatting of the selection and applies it to the next text you select. |  |
 | Format painter, locked | Keeps the format painter on until you press Escape. |  |
 | Text formatting (not in the palette) | Opens the Aa sheet with the text formatting controls for a small screen. |  |
