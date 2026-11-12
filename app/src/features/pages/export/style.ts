@@ -7,8 +7,12 @@
 // rule 1).
 
 import { ruleLift, type RuleGrid } from '../../../core/ruled';
+import { fontStack } from '../../../editor/render/fallbacks';
+import { colorValue } from '../../../editor/render/runStyle';
 import { tokens } from '../../../theme/tokens';
+import { THEME_FONTS } from '../../../editor/schema/constants';
 import { own } from '../layout/json';
+import { classOf, declarationText, extraDeclarations, mergeSheets, readV2Keys, resolveChain } from './styleSheet';
 
 export interface StyleSpec {
   readonly font?: string;
@@ -19,6 +23,19 @@ export interface StyleSpec {
   readonly spaceAfter?: number;
   /** A multiple of the size, from 0.5 to 10. */
   readonly lineHeight?: number;
+  // The keys of version 2 (spec R-STY-1). `paras` holds the paragraph keys of a style, such as `align` and `border`.
+  readonly type?: 'paragraph' | 'character';
+  readonly basedOn?: string;
+  readonly sizePt?: number;
+  readonly weight?: number;
+  readonly italic?: boolean;
+  readonly underline?: string;
+  readonly strike?: 'single' | 'double' | 'none';
+  readonly caps?: 'small' | 'all' | 'none';
+  readonly tracking?: number;
+  readonly textColor?: string;
+  readonly highlight?: string;
+  readonly paras?: Readonly<Record<string, unknown>>;
 }
 
 /** How a notebook shows each named style. Names of version 1 are `normal`, `h1` to `h6`, `title`, `quote`, and `code`. */
@@ -86,7 +103,9 @@ export function readStyles(raw: unknown): NotebookStyles {
     if (typeof value !== 'object' || value === null) continue;
     const v = value as Record<string, unknown>;
     const spec: Record<string, string | number> = {};
-    if (typeof v.font === 'string' && FONT.test(v.font)) spec.font = v.font;
+    if (typeof v.font === 'string' && (FONT.test(v.font) || (THEME_FONTS as readonly string[]).includes(v.font))) {
+      spec.font = v.font;
+    }
     if (typeof v.color === 'string' && (HEX.test(v.color) || PEN.test(v.color))) spec.color = v.color;
     for (const [key, lo, hi] of [
       ['size', 1, 1000],
@@ -97,7 +116,7 @@ export function readStyles(raw: unknown): NotebookStyles {
       const number = inRange(v[key], lo, hi);
       if (number !== undefined) spec[key] = number;
     }
-    out[name] = spec;
+    out[name] = { ...spec, ...readV2Keys(v) };
   }
   return out;
 }
@@ -124,11 +143,11 @@ class Styler {
 
   /** A style with the notebook's values over the defaults. */
   resolve(name: string, base: Resolved): Resolved {
-    const s = this.styles[name] ?? {};
+    const s = resolveChain(name, this.styles);
     return {
       font: s.font ? `${s.font}, ${base.font}` : base.font,
-      size: s.size ?? base.size,
-      color: this.color(s.color, base.color),
+      size: s.sizePt !== undefined ? Math.round(s.sizePt * (4 / 3) * 1000) / 1000 : (s.size ?? base.size),
+      color: s.textColor !== undefined ? colorValue(s.textColor) : this.color(s.color, base.color),
       before: s.spaceBefore ?? base.before,
       after: s.spaceAfter ?? base.after,
       line: s.lineHeight ?? base.line,
@@ -186,10 +205,88 @@ function ruledCss({ grid }: Ruled): string[] {
   ];
 }
 
+/** The names whose rules above select elements, so they need no class of their own. */
+const SELECTED = new Set(['normal', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'title', 'quote', 'code']);
+
+/** What an unstyled `subtitle`, `citation`, `h7` to `h9`, and `quote2` look like, before the notebook's keys. */
+const BUILT_IN: Readonly<Record<string, string>> = {
+  subtitle: 'font-size:20px;line-height:1.4;',
+  citation: 'font-style:italic;',
+  h7: 'font-size:16px;font-weight:600;',
+  h8: 'font-size:16px;font-weight:600;',
+  h9: 'font-size:16px;font-weight:600;',
+  quote2: 'font-style:italic;padding-inline-start:16px;box-shadow:inset 3px 0 0 var(--accent);',
+};
+
+/**
+ * The rules for the styles that no element selects: a paragraph style is `.style-NAME`, which an element takes from
+ * `data.styles`, and a character style is `.cs-NAME`, which the `charStyle` mark names (R-STY-8: run keys only).
+ */
+function namedStyleRules(styles: NotebookStyles, styler: Styler, normal: Resolved): string[] {
+  const out: string[] = [];
+  for (const [name, spec] of Object.entries(styles)) {
+    const chain = resolveChain(name, styles);
+    if (spec.type === 'character') {
+      const size = chain.sizePt !== undefined ? chain.sizePt * (4 / 3) : chain.size;
+      const color = chain.textColor !== undefined ? colorValue(chain.textColor) : undefined;
+      const own: Record<string, string> = {
+        ...(chain.font ? { 'font-family': fontStack(chain.font) } : {}),
+        ...(size !== undefined ? { 'font-size': `${Math.round(size * 1000) / 1000}px` } : {}),
+        ...(color === undefined ? {} : { color }),
+        ...extraDeclarations({ ...chain, paras: undefined, textColor: undefined }),
+      };
+      out.push(`.cs-${classOf(name)}{${declarationText(own)}}`);
+    } else if (!SELECTED.has(name)) {
+      const resolved = styler.resolve(name, normal);
+      const base = BUILT_IN[name] ?? '';
+      out.push(rule(`.style-${classOf(name)}`, resolved, `${base}${declarationText(extraDeclarations(chain))}`));
+    }
+  }
+  return out;
+}
+
+/**
+ * The rule that draws a paragraph's borders from the custom properties `paraStyle` writes. Its value is a whole CSS
+ * border (width, style, and color: Word's line styles map to them), so this is the one place a border is drawn.
+ * `documentCss` leaves it out (ADR 0006, rule 1), and a document adds it only when a paragraph has a border.
+ */
+export function paragraphBorderCss(): string {
+  return (
+    `[data-border]{border-block-start:var(--bd-top,0 none);border-block-end:var(--bd-bottom,0 none);` +
+    `border-inline-start:var(--bd-start,0 none);border-inline-end:var(--bd-end,0 none);` +
+    `padding-block:var(--bd-top-space,0) var(--bd-bottom-space,0);` +
+    `padding-inline:var(--bd-start-space,0) var(--bd-end-space,0)}\n`
+  );
+}
+
+/** The rules for what an inline style can't hold: custom highlights, borders, drop caps, scaled words, floats. */
+function v2Rules(theme: DocTheme): string[] {
+  const pens = Object.entries(theme.pens).map(([name, value]) => `--ink-${name}:${value}`);
+  return [
+    // The names that runStyle and paraStyle write, defined from the light theme so a styled run draws as on screen.
+    `:root{${pens.join(';')};--color-selection-highlight:${theme.highlighters.honey ?? 'transparent'};` +
+      `--color-text-primary:${theme.colors.text};--color-surface-page:${theme.colors.page};` +
+      `--color-accent-clay:${theme.colors.accent}}`,
+    `mark.hl-custom{background:var(--run-fill)}mark [data-shade]{background-color:transparent!important}`,
+    `[data-drop-cap]::first-letter{-webkit-initial-letter:var(--drop-lines,3);initial-letter:var(--drop-lines,3);` +
+      `margin-inline-end:var(--drop-distance,0)}[data-drop-cap='margin']::first-letter{margin-inline-start:-1.1em}`,
+    `.scaled{display:inline-block;transform:scaleX(var(--scale));transform-origin:0 50%}`,
+    `.float-start{float:inline-start}.float-end{float:inline-end}`,
+  ];
+}
+
 /** The stylesheet for the markup of `renderHtml` and the blocks around it. */
-export function documentCss(theme: DocTheme, notebookStyles: NotebookStyles = {}, ruled: Ruled | null = null): string {
+export function documentCss(
+  theme: DocTheme,
+  notebookStyles: NotebookStyles = {},
+  ruled: Ruled | null = null,
+  pageStyles: NotebookStyles = {},
+): string {
   const { colors: c, fonts: f } = theme;
-  const styler = new Styler(theme, notebookStyles);
+  const styles = mergeSheets(notebookStyles, pageStyles);
+  const styler = new Styler(theme, styles);
+  /** The declarations of a style's version 2 keys, which come after its version 1 ones. */
+  const extra = (name: string): string => declarationText(extraDeclarations(resolveChain(name, styles)));
   const normal = styler.resolve('normal', {
     font: f.reading,
     size: 16,
@@ -202,7 +299,7 @@ export function documentCss(theme: DocTheme, notebookStyles: NotebookStyles = {}
     rule(
       name,
       styler.resolve(name, { ...normal, size, line, before: 18, after: 6 }),
-      `font-weight:${weight};break-after:avoid;`,
+      `font-weight:${weight};break-after:avoid;${extra(name)}`,
     );
   const quote = styler.resolve('quote', { ...normal, color: c.muted, after: 8 });
   const code = styler.resolve('code', { ...normal, font: f.mono, size: 14, line: 1.57 });
@@ -214,8 +311,8 @@ export function documentCss(theme: DocTheme, notebookStyles: NotebookStyles = {}
     `*{box-sizing:border-box}`,
     `.answer-key{break-before:page}`,
     `body{margin:0;${type(normal)}}`,
-    rule('p,ul,ol,figure,table,.callout,details', normal),
-    rule('.page-title', title, 'font-weight:700;'),
+    rule('p,ul,ol,figure,table,.callout,details', normal, extra('normal')),
+    rule('.page-title', title, `font-weight:700;${extra('title')}`),
     ...HEADINGS.map(([name, size, line]) => heading(name, size, line, name === 'h6' ? 600 : 700)),
     `.page-date{margin:0 0 16px;color:var(--muted);font-family:${f.ui};font-size:14px;line-height:1.5}`,
     `.tags{margin:0 0 16px;color:var(--muted);font-family:${f.ui};font-size:14px;line-height:1.5}`,
@@ -228,12 +325,12 @@ export function documentCss(theme: DocTheme, notebookStyles: NotebookStyles = {}
     `.box-done::after{content:"";position:absolute;left:4px;top:1px;width:4px;height:8px;transform:rotate(45deg);` +
       `box-shadow:inset -2px -2px 0 var(--page)}`,
     `.task-done{color:var(--muted)}`,
-    rule('blockquote', quote, 'padding-inline-start:16px;box-shadow:inset 3px 0 0 var(--rule);'),
+    rule('blockquote', quote, `padding-inline-start:16px;box-shadow:inset 3px 0 0 var(--rule);${extra('quote')}`),
     `blockquote>:last-child{margin-bottom:0}`,
     rule(
       'pre',
       code,
-      `padding:12px 14px;background:var(--tint);border-radius:6px;white-space:pre-wrap;overflow-wrap:anywhere;`,
+      `padding:12px 14px;background:var(--tint);border-radius:6px;white-space:pre-wrap;overflow-wrap:anywhere;${extra('code')}`,
     ),
     `code{font-family:${f.mono};font-size:0.9em}pre code{font-size:inherit}`,
     `a,.link{color:var(--link);text-decoration:underline}`,
@@ -255,6 +352,7 @@ export function documentCss(theme: DocTheme, notebookStyles: NotebookStyles = {}
     `.ink{display:block;max-width:100%;height:auto}`,
     `img{display:block}p img{display:inline-block}`,
   ];
+  rules.push(...v2Rules(theme), ...namedStyleRules(styles, styler, normal));
   if (ruled) rules.push(...ruledCss(ruled));
   return `${theme.fontFaces}\n${rules.join('\n')}\n`;
 }

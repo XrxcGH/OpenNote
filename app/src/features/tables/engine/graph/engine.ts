@@ -3,6 +3,7 @@
 // that read those, in an order where every unit runs after the units it reads. Tarjan's algorithm gives that order
 // and finds cycles in one walk. Every edit forks the state, and a fork shares what it does not change.
 
+import { legacyFunctions } from '../formula/fn/legacyText';
 import { newCtx, type Ctx, type Scope, type SheetInfo } from '../formula/compile';
 import type { ErrorOrigin } from '../formula/explain';
 import { releaseSpill, spillBox } from '../arrays/spill';
@@ -30,11 +31,28 @@ import {
 } from './units';
 import { colKey } from '../formula/compile';
 import type { Table } from '../model';
-import { isError, type Scalar } from '../values';
+import { filterIndices } from '../filter';
+import { isError, type RowState, type Scalar } from '../values';
 
 const LATE_ROUNDS = 8;
 const DONE = 2;
 let EPOCH = 0;
+
+/** The state of each data row of a table: hidden by hand is 1, filtered out is 2 (and wins when both hold). */
+function rowStatesOf(table: Table): Uint8Array {
+  const states = new Uint8Array(table.rows.length);
+  if (table.hidden !== undefined && table.hidden.length > 0) {
+    const ids = new Set(table.hidden);
+    table.rows.forEach((row, i) => {
+      if (ids.has(row.id)) states[i] = 1;
+    });
+  }
+  if (table.filter !== undefined && table.filter.length > 0) {
+    const shown = new Set(filterIndices(table, table.filter));
+    for (let i = 0; i < states.length; i++) if (!shown.has(i)) states[i] = 2;
+  }
+  return states;
+}
 
 /** The recalculation state of one page: every table's values, formulas, graph, spills, and error origins. */
 export class Engine {
@@ -54,6 +72,8 @@ export class Engine {
   origins = new Cow<number, ErrorOrigin>();
   cycles = new Cow<number, true>();
   volatile = new Cow<number, true>();
+  /** The units whose formula calls SUBTOTAL or AGGREGATE. */
+  subtotals = new Cow<number, true>();
   pending = new Cow<number, true>();
   nextId = 0;
   changed = new Set<number>();
@@ -64,9 +84,23 @@ export class Engine {
   anyManual = false;
   force = false;
   ctx: Ctx;
+  /** Per table, per data row: 0 shown, 1 hidden by hand, 2 filtered out. Built from `hidden` and `filter`. */
+  rowStates: Uint8Array[] = [];
+  /** What formulas see as their environment: the host's, plus the row states and nested subtotals the engine knows. */
+  readonly scopeEnv: EngineEnv;
 
-  private constructor(env: EngineEnv) {
+  /** The engine whose state the shared scope environment answers from: the one running. A fork shares the scope. */
+  private live: { engine: Engine };
+
+  private constructor(env: EngineEnv, from?: Engine) {
     this.env = env;
+    this.live = from?.live ?? { engine: this };
+    const live = this.live;
+    this.scopeEnv = from?.scopeEnv ?? {
+      ...env,
+      rowState: env.rowState ?? ((s, r) => (live.engine.rowStates[s]?.[r] ?? 0) as RowState),
+      subtotalsIn: env.subtotalsIn ?? ((s, r1, c1, r2, c2) => live.engine.subtotalsIn(s, r1, c1, r2, c2)),
+    };
     this.ctx = this.makeCtx();
   }
 
@@ -82,6 +116,7 @@ export class Engine {
   static build(tables: readonly Table[], env: EngineEnv): Engine {
     const engine = new Engine(env);
     engine.tables = [...tables];
+    engine.rowStates = tables.map(rowStatesOf);
     engine.infos = tables.map(sheetInfo);
     engine.sheets = tables.map((table, s) =>
       table.columns.map((_, c) =>
@@ -115,8 +150,9 @@ export class Engine {
 
   /** A copy to change for the next edit. This state stays as it was. */
   fork(): Engine {
-    const next = new Engine(this.env);
+    const next = new Engine(this.env, this);
     next.tables = [...this.tables];
+    next.rowStates = this.rowStates;
     next.infos = this.infos;
     next.sheets = this.sheets.map((cols) => cols.slice());
     next.ctx.sheets = next.sheets;
@@ -132,6 +168,7 @@ export class Engine {
     next.origins = this.origins.fork();
     next.cycles = this.cycles.fork();
     next.volatile = this.volatile.fork();
+    next.subtotals = this.subtotals.fork();
     next.pending = this.pending.fork();
     next.nextId = this.nextId;
     return next;
@@ -150,24 +187,48 @@ export class Engine {
           t.name === old.name &&
           t.sheetVersion === old.sheetVersion &&
           t.calc === old.calc &&
-          t.iterate === old.iterate
+          t.iterate === old.iterate &&
+          t.hidden === old.hidden &&
+          t.filter === old.filter
         );
       })
     );
+  }
+
+  /** Row-major flags for the cells of a block that are nested subtotals, or undefined when none is. */
+  subtotalsIn(s: number, r1: number, c1: number, r2: number, c2: number): boolean[] | undefined {
+    let flags: boolean[] | undefined;
+    const cols = c2 - c1 + 1;
+    for (const id of this.subtotals.keys()) {
+      const unit = this.units.get(id);
+      if (unit === undefined || unit.s !== s || unit.col < c1 || unit.col > c2) continue;
+      const from = unit.row === null ? r1 : Math.max(r1, unit.row);
+      const to = unit.row === null ? r2 : Math.min(r2, unit.row);
+      for (let r = from; r <= to; r++) {
+        // A cell with a formula of its own replaces the column's.
+        if (unit.row === null && this.cellUnit.has(cellKey(s, unit.col, r))) continue;
+        flags ??= new Array<boolean>((r2 - r1 + 1) * cols).fill(false);
+        flags[(r - r1) * cols + (unit.col - c1)] = true;
+      }
+    }
+    return flags;
   }
 
   // Units.
 
   addUnit(s: number, col: number, row: number | null, formula: string, array?: Unit['array']): number {
     const table = this.tables[s];
-    const result = parseCached(formula, table.sheetVersion === undefined);
+    const legacy = table.sheetVersion === undefined;
+    const result = parseCached(formula, legacy);
+    // A table written before data.sheet.v keeps the old TRIM and CONCAT (formula/fn/legacyText.ts).
+    const functions = legacy ? legacyFunctions(this.env.functions) : this.env.functions;
     const scope: Scope = {
       columns: table.columns,
       rowCount: table.rows.length,
-      env: this.env,
+      env: this.scopeEnv,
       sheet: s,
       book: this.infos,
-      ...(this.env.functions ? { functions: this.env.functions } : {}),
+      ...(functions ? { functions } : {}),
       parse: parseName,
     };
     // A legacy array block must be whole rows and columns that fit in the table from its corner; else #REF!.
@@ -183,6 +244,7 @@ export class Engine {
     if (row === null) this.colUnit.set(colKey(s, col), id);
     else this.cellUnit.set(cellKey(s, col, row), id);
     if (compiled.volatile) this.volatile.set(id, true);
+    if (compiled.subtotal) this.subtotals.set(id, true);
     this.graph.setReads(id, compiled.reads);
     return id;
   }
@@ -196,7 +258,7 @@ export class Engine {
     this.units.delete(id);
     if (unit.row === null) this.colUnit.delete(colKey(unit.s, unit.col));
     else this.cellUnit.delete(cellKey(unit.s, unit.col, unit.row));
-    for (const map of [this.volatile, this.cycles, this.pending] as Cow<number, true>[]) map.delete(id);
+    for (const map of [this.volatile, this.subtotals, this.cycles, this.pending] as Cow<number, true>[]) map.delete(id);
     this.attempted.delete(id);
     this.dynamicReads.delete(id);
     this.graph.removeUnit(id);
@@ -265,6 +327,7 @@ export class Engine {
 
   /** Recalculates `roots` and every unit that reads them, directly or through others. */
   run(roots: Iterable<number>): void {
+    this.live.engine = this;
     const ctx = this.ctx;
     ctx.epoch = ++EPOCH;
     ctx.memo = new Map();
@@ -361,6 +424,7 @@ export class Engine {
 
   /** Marks where this edit's new units start, so a manual table still calculates a formula typed now. */
   beginEdit(): void {
+    this.live.engine = this;
     this.firstNew = this.nextId;
   }
 

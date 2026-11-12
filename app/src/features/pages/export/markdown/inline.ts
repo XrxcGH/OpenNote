@@ -3,6 +3,10 @@
 // the allowed HTML tags of spec 7.4. Any other raw HTML stays plain text. Reference-style links and footnotes are
 // not supported and stay as typed.
 
+import { MARK_ORDER, REPEATABLE_MARKS, isElementId } from '../../../../editor/schema/constants';
+import { compareCodePoints } from '../../../../editor/markdown/markOrder';
+import { readOpenTag } from '../../../../editor/markdown/tags';
+import type { TagMark } from '../../../../editor/markdown/tags';
 import type { Inline, Mark } from './tree';
 
 type Wrapper = { readonly t: 'mark'; readonly mark: Mark; readonly children: Node[] };
@@ -12,10 +16,11 @@ type Node =
   | { t: 'code'; s: string }
   | { t: 'math'; s: string }
   | { t: 'image'; dest: string; alt: string }
+  | { t: 'footnote'; id: string }
   | Wrapper
   | { t: 'delim'; ch: string; count: number; canOpen: boolean; canClose: boolean }
   | { t: 'bracket'; image: boolean; active: boolean }
-  | { t: 'tag'; name: string; mark: Mark; raw: string };
+  | { t: 'tag'; name: string; mark: Mark; raw: string; capped?: true };
 
 const ESCAPABLE = '!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~';
 const PUNCT = /[\p{P}\p{S}]/u;
@@ -74,34 +79,51 @@ export function unescapeText(raw: string): string {
   return out;
 }
 
-const COLOR = /^(?:#[0-9a-fA-F]{6}|[A-Za-z][A-Za-z0-9-]{0,31})$/;
-const HIGHLIGHTERS = ['honey', 'mint', 'rose', 'apricot', 'lilac'];
-const SIZES = ['small', 'large', 'xlarge'];
-const PLAIN_TAGS: Readonly<Record<string, Mark>> = {
-  u: 'underline',
-  sub: 'sub',
-  sup: 'sup',
-  em: 'emphasis',
-  strong: 'strong',
-  del: 'strike',
-  mark: 'highlight',
+/** The longest opening tag of the grammar: 8 attributes of at most 230 characters each, and the name. */
+const MAX_TAG = 1900;
+/** R-INL-6: the deepest nesting of tags that reads as marks. A deeper tag stays text. */
+const MAX_DEPTH = 32;
+
+const PLAIN: Readonly<Record<string, Mark>> = {
+  bold: 'strong',
+  italic: 'emphasis',
+  subscript: 'sub',
+  superscript: 'sup',
 };
+
+/** A tag's mark in the neutral form of the inline-v2 fixtures (documents README), which the HTML renderer reads. */
+function neutralMark(tag: TagMark): Mark {
+  const attrs = tag.attrs;
+  switch (tag.type) {
+    case 'underline': {
+      const line = attrs.line && attrs.line !== 'single' ? { line: attrs.line } : {};
+      const color = attrs.color ? { color: attrs.color } : {};
+      return 'line' in line || 'color' in color ? { underline: { ...line, ...color } } : 'underline';
+    }
+    case 'strike':
+      return attrs.line === 'double' ? { strike: 'double' } : 'strike';
+    case 'highlight':
+      return attrs.color ? { highlight: attrs.color } : 'highlight';
+    case 'box':
+      return { box: { style: attrs.style ?? 'single', ...(attrs.color ? { color: attrs.color } : {}) } };
+    case 'foreign':
+      return { foreign: attrs.tag ?? '' };
+    default: {
+      const plain = PLAIN[tag.type];
+      if (plain) return plain;
+      const [key, value] = Object.entries(attrs)[0] ?? ['', ''];
+      return { [key]: value ?? '' } as unknown as Mark;
+    }
+  }
+}
 
 /** The mark and name of an allowed opening tag at the start of `text`, with its length, or null. */
 function openTag(text: string): { name: string; mark: Mark; length: number } | null {
-  const plain = /^<(u|sub|sup|em|strong|del|mark)>/.exec(text);
-  if (plain) return { name: plain[1], mark: PLAIN_TAGS[plain[1]], length: plain[0].length };
-  const attr = /^<(mark|span) data-(color|size)="([^"<>]*)">/.exec(text);
-  if (!attr) return null;
-  const [raw, name, kind, value] = attr;
-  if (kind === 'size' && name === 'span' && SIZES.includes(value))
-    return { name, mark: { size: value }, length: raw.length };
-  if (kind === 'color' && name === 'span' && COLOR.test(value))
-    return { name, mark: { color: value }, length: raw.length };
-  if (kind === 'color' && name === 'mark' && HIGHLIGHTERS.includes(value)) {
-    return { name, mark: value === 'honey' ? 'highlight' : { highlight: value }, length: raw.length };
-  }
-  return null;
+  const end = text.slice(0, MAX_TAG).indexOf('>');
+  if (end < 0) return null;
+  const raw = text.slice(0, end + 1);
+  const read = readOpenTag(raw);
+  return read ? { name: read.name, mark: neutralMark(read.mark), length: raw.length } : null;
 }
 
 /** The text a node stands for if it is not used: delimiters, brackets, and tags come back as typed. */
@@ -125,77 +147,141 @@ function markOf(ch: string, use: number): Mark {
   return use === 2 ? 'strong' : 'emphasis';
 }
 
-/** The nearest delimiter before `at` that can open a mark closed by `closer`, or -1. */
-function findOpener(nodes: readonly Node[], at: number, closer: Delim): number {
-  const doubled = closer.ch === '~' || closer.ch === '=';
-  for (let j = at - 1; j >= 0; j -= 1) {
-    const o = nodes[j];
-    if (o.t !== 'delim' || o.ch !== closer.ch || !o.canOpen || o.count <= 0) continue;
-    if (doubled ? o.count >= 2 && closer.count >= 2 : !multipleOfThree(o, closer)) return j;
-  }
-  return -1;
+/** An item of the doubly linked list that `resolveDelims` works on, so a match costs only the nodes it takes in. */
+interface Link {
+  node: Node;
+  prev: Link | null;
+  next: Link | null;
+  dead: boolean;
 }
 
-/** Matches openers with closers, innermost first, as CommonMark's emphasis rules say. */
+/**
+ * The kind of a closer for the openers_bottom table of CommonMark: closers of one kind accept the same openers, so
+ * when one finds none, no later closer of that kind needs to look below it.
+ */
+function bottomKey(closer: Delim): string {
+  if (closer.ch === '~' || closer.ch === '=') return `${closer.ch}${closer.count >= 2 ? 2 : 1}`;
+  return `${closer.ch}${closer.canOpen ? 1 : 0}${closer.count % 3}`;
+}
+
+/** The nearest item before `closer` that can open a mark closed by it, stopping at `bottom`, or null. */
+function findOpener(closer: Link, bottom: Link | null): Link | null {
+  const c = closer.node as Delim;
+  const doubled = c.ch === '~' || c.ch === '=';
+  for (let o = closer.prev; o !== null && o !== bottom; o = o.prev) {
+    const n = o.node;
+    if (n.t !== 'delim' || n.ch !== c.ch || !n.canOpen || n.count <= 0) continue;
+    if (doubled ? n.count >= 2 && c.count >= 2 : !multipleOfThree(n, c)) return o;
+  }
+  return null;
+}
+
+function unlink(item: Link): void {
+  if (item.prev) item.prev.next = item.next;
+  if (item.next) item.next.prev = item.prev;
+  item.dead = true;
+}
+
+/**
+ * Matches openers with closers, innermost first, as CommonMark's emphasis rules say. The list and the
+ * openers_bottom table keep the work linear: a closer that finds no opener tells every later closer of its kind where
+ * not to look, and a match changes only the links it touches.
+ */
 function resolveDelims(input: Node[]): Node[] {
-  const nodes = [...input];
-  let i = 0;
-  while (i < nodes.length) {
-    const closer = nodes[i];
-    if (closer.t !== 'delim' || !closer.canClose) {
-      i += 1;
-      continue;
-    }
-    const found = findOpener(nodes, i, closer);
-    if (found < 0) {
-      i += 1;
-      continue;
-    }
-    const opener = nodes[found] as Delim;
-    const use = closer.ch === '*' || closer.ch === '_' ? (opener.count >= 2 && closer.count >= 2 ? 2 : 1) : 2;
-    const children = nodes.slice(found + 1, i).map(nodeToText);
-    const wrapper: Wrapper = { t: 'mark', mark: markOf(closer.ch, use), children };
-    opener.count -= use;
-    closer.count -= use;
-    const keepOpener = opener.count > 0;
-    const keepCloser = closer.count > 0;
-    nodes.splice(found + 1, i - found - 1, wrapper);
-    i = found + 2;
-    if (!keepCloser) {
-      nodes.splice(i, 1);
-    }
-    if (!keepOpener) {
-      nodes.splice(found, 1);
-      i -= 1;
-    }
+  if (!input.some((n) => n.t === 'delim')) return input.map(nodeToText);
+  const head: Link = { node: { t: 'text', s: '' }, prev: null, next: null, dead: false };
+  let tail = head;
+  for (const node of input) {
+    const item: Link = { node, prev: tail, next: null, dead: false };
+    tail.next = item;
+    tail = item;
   }
-  return nodes.map(nodeToText);
+  const bottoms = new Map<string, Link>();
+  let closer: Link | null = head.next;
+  while (closer !== null) {
+    const cn: Node = closer.node;
+    if (cn.t !== 'delim' || !cn.canClose || cn.count <= 0) {
+      closer = closer.next;
+      continue;
+    }
+    const key = bottomKey(cn);
+    const opener = findOpener(closer, bottoms.get(key) ?? null);
+    if (opener === null) {
+      bottoms.set(key, closer.prev as Link);
+      closer = closer.next;
+      continue;
+    }
+    const on = opener.node as Delim;
+    const use = cn.ch === '*' || cn.ch === '_' ? (on.count >= 2 && cn.count >= 2 ? 2 : 1) : 2;
+    const children: Node[] = [];
+    for (let o = opener.next as Link; o !== closer; o = o.next as Link) {
+      children.push(nodeToText(o.node));
+      o.dead = true;
+    }
+    const wrapper: Link = {
+      node: { t: 'mark', mark: markOf(cn.ch, use), children } satisfies Wrapper,
+      prev: opener,
+      next: closer,
+      dead: false,
+    };
+    opener.next = wrapper;
+    closer.prev = wrapper;
+    on.count -= use;
+    cn.count -= use;
+    const resume = cn.count > 0 ? closer : closer.next;
+    if (cn.count <= 0) unlink(closer);
+    // A bottom inside the nodes just taken in moves down to the opener, which is no better a place to start from.
+    const below = on.count > 0 ? opener : (opener.prev as Link);
+    if (on.count <= 0) unlink(opener);
+    for (const [k, b] of bottoms) if (b.dead) bottoms.set(k, below);
+    closer = resume;
+  }
+  const out: Node[] = [];
+  for (let o = head.next; o !== null; o = o.next) out.push(nodeToText(o.node));
+  return out;
 }
 
-const RANK = ['link', 'strong', 'emphasis', 'strike', 'underline', 'highlight', 'color', 'size', 'sub', 'sup', 'code'];
-
-function rankOf(mark: Mark): number {
-  return RANK.indexOf(
-    typeof mark === 'string'
-      ? mark
-      : 'link' in mark
-        ? 'link'
-        : 'highlight' in mark
-          ? 'highlight'
-          : 'color' in mark
-            ? 'color'
-            : 'size',
-  );
+/** The neutral key of a mark, which is also its kind: a text can hold one mark of each kind (R-MRK-28). */
+function kindOf(mark: Mark): string {
+  return typeof mark === 'string' ? mark : (Object.keys(mark)[0] ?? '');
 }
 
-/** Marks in the nesting order of spec 7.7, outermost first, each once. */
+const valueOf = (mark: Mark): string => (typeof mark === 'string' ? mark : String(Object.values(mark)[0]));
+
+/** The schema's name for a kind of mark, which MARK_ORDER ranks (R-MRK-24). */
+const SCHEMA_NAME: Readonly<Record<string, string>> = {
+  strong: 'bold',
+  emphasis: 'italic',
+  color: 'textColor',
+  size: 'textSize',
+  ins: 'insertion',
+  del: 'deletion',
+  fmt: 'formatChange',
+  style: 'charStyle',
+  sub: 'subscript',
+  sup: 'superscript',
+};
+const ORDER = new Map<string, number>(MARK_ORDER.map((name, i) => [name, i]));
+const rankOf = (mark: Mark): number => {
+  const kind = kindOf(mark);
+  return ORDER.get(SCHEMA_NAME[kind] ?? kind) ?? MARK_ORDER.length;
+};
+const repeatable = (mark: Mark): boolean => REPEATABLE_MARKS.has(SCHEMA_NAME[kindOf(mark)] ?? kindOf(mark));
+
+/**
+ * Marks in the nesting order of spec 7.10, outermost first. Of one kind the innermost value wins (R-MRK-28), except
+ * comments and foreign marks, which all stay and sort by code point.
+ */
 function ordered(marks: readonly Mark[]): Mark[] {
-  const seen = new Set<string>();
-  const unique = marks.filter((m) => !seen.has(JSON.stringify(m)) && seen.add(JSON.stringify(m)));
-  return unique
-    .map((m, i) => ({ m, i }))
-    .sort((a, b) => rankOf(a.m) - rankOf(b.m) || a.i - b.i)
-    .map((x) => x.m);
+  const kept = new Map<string, Mark>();
+  for (const mark of marks) {
+    const key = repeatable(mark) ? JSON.stringify(mark) : kindOf(mark);
+    kept.delete(key);
+    kept.set(key, mark);
+  }
+  return [...kept.values()].sort(
+    (a, b) => rankOf(a) - rankOf(b) || (repeatable(a) ? compareCodePoints(valueOf(a), valueOf(b)) : 0),
+  );
 }
 
 function plain(nodes: readonly Node[]): string {
@@ -207,7 +293,9 @@ function plain(nodes: readonly Node[]): string {
           ? plain(n.children)
           : n.t === 'image'
             ? n.alt
-            : ' ',
+            : n.t === 'footnote'
+              ? ''
+              : ' ',
     )
     .join('');
 }
@@ -219,6 +307,7 @@ function flatten(nodes: readonly Node[], marks: readonly Mark[], out: Inline[]):
     else if (node.t === 'math') out.push({ math: node.s });
     else if (node.t === 'br') out.push({ hardBreak: true });
     else if (node.t === 'image') out.push({ image: node.dest, alt: node.alt });
+    else if (node.t === 'footnote') out.push({ footnote: node.id, marks: ordered(marks) });
     else if (node.t === 'mark') flatten(node.children, [...marks, node.mark], out);
   }
 }
@@ -279,6 +368,10 @@ class InlineParser {
   private out: Node[] = [];
   private pos = 0;
   private brackets: number[] = [];
+  /** How many tags are open now. */
+  private depth = 0;
+  /** The tag nodes still open, innermost last, so a closing tag finds its partner at once. */
+  private tags: { node: Node; index: number }[] = [];
 
   constructor(private readonly src: string) {}
 
@@ -301,6 +394,7 @@ class InlineParser {
     else if (c === '&') this.entity();
     else if (c === '<') this.angle();
     else if (c === '*' || c === '_' || c === '~' || c === '=') this.delimiter(c);
+    else if (c === '[' && this.footnote()) return;
     else if (c === '[') this.openBracket(false, 1);
     else if (c === '!' && this.src[this.pos + 1] === '[') this.openBracket(true, 2);
     else if (c === ']') this.closeBracket();
@@ -309,6 +403,18 @@ class InlineParser {
       this.text(c);
       this.pos += 1;
     }
+  }
+
+  /** `[^ID]`, a reference to a footnote. It reads as one only when the ID is one, and nothing is added to the text. */
+  private footnote(): boolean {
+    const found = /^\[\^([^\]\s[]{1,64})\]/.exec(this.src.slice(this.pos, this.pos + 70));
+    if (!found || !isElementId(found[1])) return false;
+    // A reference with a link destination after it is a link whose text starts with a caret.
+    const after = this.pos + found[0].length;
+    if (this.src[after] === '(' && linkTail(this.src, after + 1)) return false;
+    this.out.push({ t: 'footnote', id: found[1] });
+    this.pos += found[0].length;
+    return true;
   }
 
   private backslash(): void {
@@ -382,11 +488,22 @@ class InlineParser {
     const rest = this.src.slice(this.pos);
     const open = openTag(rest);
     if (open) {
-      this.out.push({ t: 'tag', name: open.name, mark: open.mark, raw: rest.slice(0, open.length) });
+      // R-INL-6: past the cap a tag is text, and so is the closing tag that would have paired with it.
+      const capped = this.depth >= MAX_DEPTH;
+      if (!capped) this.depth += 1;
+      const node: Node = {
+        t: 'tag',
+        name: open.name,
+        mark: open.mark,
+        raw: rest.slice(0, open.length),
+        ...(capped ? { capped: true as const } : {}),
+      };
+      this.tags.push({ node, index: this.out.length });
+      this.out.push(node);
       this.pos += open.length;
       return;
     }
-    const close = /^<\/(u|sub|sup|em|strong|del|mark|span)>/.exec(rest);
+    const close = /^<\/(u|sub|sup|em|strong|del|mark|span|ins|s)>/.exec(rest);
     if (close && this.closeTag(close[1])) {
       this.pos += close[0].length;
       return;
@@ -404,16 +521,28 @@ class InlineParser {
   }
 
   private closeTag(name: string): boolean {
-    for (let k = this.out.length - 1; k >= 0; k -= 1) {
-      const node = this.out[k];
-      if (node.t === 'tag' && node.name === name) {
-        const children = resolveDelims(this.out.splice(k + 1));
-        this.out.pop();
-        this.out.push({ t: 'mark', mark: node.mark, children });
-        return true;
-      }
+    // A link's text can swallow tags that were still open, so a tag whose node is gone no longer counts.
+    while (this.tags.length > 0) {
+      const last = this.tags[this.tags.length - 1];
+      if (this.out[last.index] === last.node) break;
+      this.tags.pop();
     }
-    return false;
+    const top = this.tags[this.tags.length - 1];
+    const k = top ? top.index : -1;
+    const node = this.out[k];
+    if (node?.t !== 'tag' || node.name !== name) return false;
+    if (node.capped) {
+      this.out[k] = { t: 'text', s: node.raw };
+      this.tags.pop();
+      return false;
+    }
+    this.tags.pop();
+    const inside = this.out.splice(k + 1);
+    this.depth -= 1;
+    const children = resolveDelims(inside);
+    this.out.pop();
+    this.out.push({ t: 'mark', mark: node.mark, children });
+    return true;
   }
 
   private delimiter(c: string): void {
@@ -487,5 +616,8 @@ class InlineParser {
 export function parseInline(src: string): Inline[] {
   const runs: Inline[] = [];
   flatten(new InlineParser(src).run(), [], runs);
+  // R-WS-2: a hard break at the start or end of a paragraph shows nothing, so it is not kept.
+  while ('hardBreak' in (runs[0] ?? {})) runs.shift();
+  while ('hardBreak' in (runs.at(-1) ?? {})) runs.pop();
   return merge(runs);
 }

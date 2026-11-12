@@ -6,6 +6,7 @@ import { own } from '../layout/json';
 import { escapeText, oneLine, rewriteLinks, writeDestination } from './escape';
 import { readingOrder } from './order';
 import type { ExportBlock, ExportPage, TableBlock } from './source';
+import { removeFormatting } from './markdown/strip';
 import { propertyFrontMatter } from './propertyFrontMatter';
 
 /** The line for a block of a type this version doesn't know, and for a block that couldn't be read. */
@@ -27,6 +28,13 @@ export interface MarkdownOptions {
   readonly handwriting?: string | null;
   /** The line for a block this version can't show. */
   readonly newerVersion?: string;
+  /**
+   * What to do with formatting that Markdown cannot hold, such as fonts and sizes in points. They are written as
+   * `<span data-...>` tags. `keep` writes the tags as the page stores them. Another copy of OpenNote shows them, and a
+   * Markdown tool shows the text between them. `remove` takes them out and keeps the text and the formatting of
+   * version 1. Default `keep`.
+   */
+  readonly formatting?: 'keep' | 'remove';
 }
 
 export interface BodyPart {
@@ -67,7 +75,7 @@ class Exporter {
   }
 
   rewrite(markdown: string): string {
-    return rewriteLinks(markdown, {
+    return rewriteLinks(this.o.formatting === 'remove' ? removeFormatting(markdown) : markdown, {
       page: (id) => this.o.pagePath?.(id) ?? null,
       asset: (id) => {
         const file = own(this.page.assets, id)?.file;

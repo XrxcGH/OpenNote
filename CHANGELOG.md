@@ -4,12 +4,35 @@ All notable changes to OpenNote are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Contents
+
+- [Unreleased](#unreleased)
+- [0.1.0-beta.4](#010-beta4---2026-10-03)
+- [0.1.0-beta.3](#010-beta3---2026-10-03)
+- [0.1.0-beta.2](#010-beta2---2026-10-03)
+- [0.1.0-beta.1](#010-beta1---2026-10-03)
+
 ## [Unreleased]
 
-The current build is beta 8. The version files still say 0.1.0-beta.7. Betas 5 to 7 have no section of their own here; the wiki's development updates say what they added.
+The current build is beta 8. The block below lists Beta 9 to 12 work on the beta branch. The version files still say 0.1.0-beta.7. Betas 5 to 7 have no section of their own here; the wiki's development updates say what they added.
+
+### Added
+
+- Format version 2 for text, tables, and code. A file is stamped 2 only when it holds version 2 data, and an older OpenNote refuses a file it cannot keep intact.
+- Text formatting at Word and Google Docs level, behind the `text.v2Controls` flag. It covers font, size, weight, paragraph and list formats, footnotes and endnotes, the Symbol dialog, Alt+X, and formatting marks. Commands for each format are in the command catalog. The format painter, change case, repeat, and select similar are in the catalog too, and keys and buttons for them wait for the controls lane.
+- Copy writes formatting that Word and Google Docs keep, and paste keeps the source formatting, with Paste Options.
+- Word import reads styles, themes, lists, notes, comments, and tracked changes. Word export writes every version 2 format, can embed bundled fonts, and can remove personal information.
+- Carlito and Caladea load on demand as stand-ins for Calibri and Cambria, and the app lists the device's fonts with their metrics.
+- A shared color palette for text and tables.
+- Tables at Excel and Google Sheets level, behind the `tables.sheetWrites` flag: cell styles in `data.sheet`, number format codes, Excel-style formulas, names, LET and LAMBDA, dynamic arrays, and references across tables. The drawing layer is not wired into the table editor yet.
+- The code studio's contracts, settings, flags, and strings. The code studio is off until the `code.studio` flag is on.
+- Tab indents in the code editor, and Ctrl+Page Down and Ctrl+Page Up change tabs. Ctrl+Tab will accept a suggestion when code lane L01 lands.
+- Calmer shell polish: Phosphor icons in the command bar, pens back on the bar at 1,280 px, and calm pressed and selected states.
+- ADRs 0056 to 0088 record these designs. Records 0081, 0084, and 0088 are Accepted. Record 0083 is Accepted for the writer.
 
 ### Changed
 
+- Text keys follow Word, and Settings, Shortcuts offers a Google Docs set (Beta 10, ADR 0085). Some keys moved. Inline code is Ctrl+` and Ctrl+E now centers. Strikethrough is Ctrl+Shift+X, or Alt+Shift+5 in the Docs set. Ctrl+Shift+S applies a style once the styles gallery lands. Ctrl+Enter breaks the page on a paginated page, or toggles a task's check. Subscript is Ctrl+= and superscript is Ctrl++. The old keys stay until the new text controls are on.
 - The dark theme's neutral colors are a charcoal gray, not brown.
 - The save status in the title bar says Saving until an edit is written, and Saved only once it is. A closed page stays Saving until its last edit is saved.
 - The custom title bar is recomputed, so the Windows title bar no longer stays above OpenNote's own.

@@ -9,6 +9,7 @@ import { spawnSync } from 'node:child_process';
 import { describe, expect, it } from 'vitest';
 import { findTool } from '../../../../../tests/crosscheck/tools';
 import { createTable, setColumnFormula } from './edit';
+import { REGISTRY } from './formula/fn';
 import { FUNCTIONS } from './formula/functions';
 import { EN_US } from './locale';
 import { ERROR_TOKENS, type Value } from './values';
@@ -105,6 +106,7 @@ const CASES: Record<string, string[]> = {
 
 /** Differences that are understood. The key is the formula; the value says why the two engines part. */
 const KNOWN: Record<string, string> = {
+  'UPPER("straße")': 'OpenNote keeps the sharp s (STRAßE), as Excel does. GridCraft expands it to SS.',
   '2^3^2': 'OpenNote chains powers to the right, as in mathematics (512). Excel chains to the left (64).',
   '-2^2': 'OpenNote binds the power tighter than the minus sign (-4), as in mathematics. Excel negates first (4).',
   'ROUND(7)':
@@ -113,11 +115,24 @@ const KNOWN: Record<string, string> = {
     'Decided to keep: a table cell with empty text is an empty cell, and COUNTA over a column must not count those.',
 };
 
+// The text, regular expression, and math families have their own hand-worked fixtures (fixtures/fn/text.json and
+// math.json), so only the functions that were here before need a case here.
 /**
- * Functions that cannot be compared with a fixed answer. TODAY depends on the day it runs. The others read the cells
- * or the position of the formula's table, which the other engine does not have.
+ * Functions that cannot be compared with a fixed answer. TODAY depends on the day it runs. The lookup functions read the
+ * cells or the position of the formula's table, which the other engine does not have.
  */
-const NOT_COMPARABLE = new Set(['TODAY', 'ROW', 'COLUMN', 'OFFSET', 'INDIRECT', 'AREAS', 'FORMULATEXT']);
+const NOT_COMPARABLE = new Set([
+  'TODAY',
+  'ROW',
+  'COLUMN',
+  'OFFSET',
+  'INDIRECT',
+  'AREAS',
+  'FORMULATEXT',
+  ...[...REGISTRY.values()]
+    .filter((spec) => ['text', 'regex', 'math'].includes(spec.family) && !(spec.name in CASES))
+    .map((spec) => spec.name),
+]);
 
 const DATE_RESULTS = new Set(['DATE']);
 

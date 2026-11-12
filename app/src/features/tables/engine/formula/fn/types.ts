@@ -3,12 +3,19 @@
 // never touch the same file. The descriptions people read (one line per function, one per argument) live in
 // app/src/strings/en/fn<Family>.ts under the function's name, written fresh in our own words.
 
-import { isError, isNumber, type FormulaError, type RefValue, type Value } from '../../values';
+import { isError, isNumber, type FormulaError, type RefValue, type RowState, type Value } from '../../values';
 
 /** What the formula engine gives every function. */
 export interface Env {
   /** Today as a serial, read when a formula is calculated. */
   today: () => number;
+  /** Whether a row of a table (by its index on the page) shows. Unset: every row shows. */
+  rowState?: (sheet: number, row: number) => RowState;
+  /**
+   * Which cells of a block (table index, first row, first column, last row, last column) are nested subtotals: their
+   * formula calls SUBTOTAL or AGGREGATE. Row-major flags, or undefined when none is. Unset: none is.
+   */
+  subtotalsIn?: (sheet: number, r1: number, c1: number, r2: number, c2: number) => readonly boolean[] | undefined;
   /** The cell the formula runs in. Set only for a function with `wantsCaller`. */
   caller?: Caller;
 }
@@ -47,6 +54,13 @@ export interface Param {
    * TRUE as 1, as SUM("3",TRUE) is 4; 'raw' keeps the value as it is, as COUNTA counts it.
    */
   readonly direct?: 'number' | 'raw';
+  /** For a range: a reference arrives with the state of each row (`ArrayValue.rowState`), as SUBTOTAL reads it. */
+  readonly rowState?: boolean;
+  /**
+   * For a range or array: a reference is resized to the shape of the reference given to the parameter at this index,
+   * from its top-left corner, as SUMIF reads a sum range smaller or larger than the tested range.
+   */
+  readonly resizeTo?: number;
 }
 
 /** Parameters that repeat together: value1, value2, and on, or criteria range and criteria pairs. */
