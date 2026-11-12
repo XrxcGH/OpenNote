@@ -1,7 +1,7 @@
 {
   "startup": {
-    "jsKb": 578,
-    "cssKb": 28
+    "jsKb": 591,
+    "cssKb": 29
   },
   "after": [
     {
@@ -81,9 +81,9 @@
     "features/accounts/sendto/commands.ts": 89,
     "features/accounts/share/commands.ts": 84,
     "features/accounts/tasks/auto.ts": 208,
-    "features/accounts/tasks/commands.ts": 206,
+    "features/accounts/tasks/commands.ts": 207,
     "features/ink/index.ts": 67,
-    "features/math/index.ts": 293,
+    "features/math/index.ts": 294,
     "features/math/solvers/ui/SolversTool.tsx": 61,
     "features/page/audio/exportVideo.ts": 93,
     "features/pages/host/shareRender.ts": 69,
@@ -94,7 +94,7 @@
     "features/pages/ui/imageCommands.tsx": 74,
     "features/pages/ui/presentCommands.tsx": 74,
     "features/pdf/importPdf.ts": 69,
-    "features/tables/index.ts": 131,
+    "features/tables/index.ts": 132,
     "features/tools/index.ts": 392,
     "features/engineering/control/ui/ControlKit.tsx": 326,
     "features/engineering/index.ts": 220,
