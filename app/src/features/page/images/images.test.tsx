@@ -93,6 +93,18 @@ describe('image blocks', () => {
     expect(move.edit).toBe('moveBlock');
   });
 
+  it('crop handles take a real pointer press at their center, so a mouse or pen drag crops (A1-A07-2)', async () => {
+    const { handle } = await pageWithImage();
+    startCrop(handle);
+    const buttons = [...handle.element.querySelectorAll<HTMLButtonElement>('button[aria-label^="Crop from"]')];
+    expect(buttons).toHaveLength(8);
+    for (const button of buttons) {
+      const box = button.getBoundingClientRect();
+      const hit = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
+      expect(hit, button.getAttribute('aria-label')).toBe(button);
+    }
+  });
+
   it('crop mode cancels with Escape', async () => {
     const { page, handle } = await pageWithImage();
     const before = page.sent().length;

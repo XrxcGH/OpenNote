@@ -76,7 +76,11 @@ class CropSession {
     this.region.className = styles.cropWindow;
     this.region.setAttribute('role', 'group');
     this.region.setAttribute('aria-label', t('images.cropMode.label'));
-    this.bright = this.region.appendChild(picture.cloneNode() as HTMLImageElement);
+    // The bright picture is clipped to the window, but the handles, centered on its edge, are not: a clipped handle
+    // loses the half of its hit area outside the window, and its center falls on the clip edge (A1-A07-2).
+    const clip = this.region.appendChild(document.createElement('div'));
+    clip.className = styles.cropClip;
+    this.bright = clip.appendChild(picture.cloneNode() as HTMLImageElement);
     this.bright.alt = '';
     frame.append(this.region);
     const buttons = HANDLES.map((edge) => this.addHandle(edge));
