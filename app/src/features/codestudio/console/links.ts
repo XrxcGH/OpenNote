@@ -4,6 +4,9 @@
 // - GCC, Clang, Lua, and most compilers: `main.cpp:12:5: error` (the GNU Coding Standards' "file:line:column");
 // - JavaScript stack frames: `at f (main.js:7)` or `at main.js:7:3`.
 // A link is made only when the path names a file of the project, so a URL or a library path stays plain text.
+//
+// The search reads only the start of a long line (LINK_SEARCH_CHARS). A program can print a line of 100,000
+// characters, and in each of these shapes a link sits near the start of its line.
 
 export interface FileLink {
   /** Where the link starts and ends in the line (end exclusive). */
@@ -18,7 +21,12 @@ export interface FileLink {
 
 const PYTHON = /File "([^"\n]+)", line (\d+)/g;
 // A path with an extension, then :line and an optional :column. The path may hold folders and a drive letter.
-const COLON = /((?:[A-Za-z]:)?[\w.\-/\\]*[\w-]\.[A-Za-z0-9+]+):(\d+)(?::(\d+))?/g;
+// The lookbehind starts a path only where a run of path characters starts, so each run is read once, not once
+// from each of its characters.
+const COLON = /(?<![\w.\-/\\])((?:[A-Za-z]:)?[\w.\-/\\]*[\w-]\.[A-Za-z0-9+]+):(\d+)(?::(\d+))?/g;
+
+/** How much of a line the link search reads. */
+export const LINK_SEARCH_CHARS = 2000;
 
 /** The project path that a printed path names, or null. */
 export function resolvePath(printed: string, files: readonly string[]): string | null {
@@ -34,7 +42,8 @@ export function resolvePath(printed: string, files: readonly string[]): string |
 }
 
 /** The links in one line of output, in order, none overlapping. */
-export function findLinks(text: string, files: readonly string[]): FileLink[] {
+export function findLinks(whole: string, files: readonly string[]): FileLink[] {
+  const text = whole.length > LINK_SEARCH_CHARS ? whole.slice(0, LINK_SEARCH_CHARS) : whole;
   const links: FileLink[] = [];
   const free = (start: number, end: number) => links.every((link) => end <= link.start || start >= link.end);
   for (const match of text.matchAll(PYTHON)) {

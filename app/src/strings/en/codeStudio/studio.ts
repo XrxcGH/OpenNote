@@ -10,6 +10,8 @@ export const codeStudioStudio = {
   plainText: 'Plain text',
   editorLabel: 'Code editor, {name}',
   noFileOpen: 'No file is open. Pick one from the files.',
+  projectRemoved: 'This project was removed from the page, so it is read-only. Undo on the page brings it back.',
+  pageClosed: 'The page with this project is not shown, so the project is read-only. Go back to the page to edit it.',
   debugLater: 'Debugging comes in a later release.',
   runtimes: {
     pythonQuick: 'Python (quick)',
@@ -67,6 +69,8 @@ export const codeStudioStudio = {
     noPage: 'Open a page to put the output on it.',
     openAt: 'Open {file} at line {line}',
     inputLabel: 'Input',
+    endInput: 'End input',
+    endInputHelp: 'Press Enter to send the line. Ctrl+D or End input ends the input.',
     stdin: 'Input at start',
     stdinLabel: 'Input the program reads at start',
     stdinHelp: 'Leave it empty to type input in the console while the program runs.',
@@ -189,6 +193,15 @@ export const codeStudioStudio = {
     sqlJoin: 'Join two tables',
     sqlGroup: 'Group and count',
     inserted: 'Added the example {name}. Run tests checks it.',
+    insertedMain: 'Added the example {name}. {path} is now the main file. Run tests checks it.',
+    replaceTitle: 'Replace files with the example?',
+    replaceBody: 'The example replaces these files, and your changes to them: {paths}.',
+    replace: 'Replace',
+  },
+  scratchReplace: {
+    title: 'Replace the scratch project?',
+    body: 'A new project takes the place of the scratch project on this device. Its files cannot be brought back.',
+    confirm: 'Replace',
   },
   commands: {
     newProject: 'New code project',

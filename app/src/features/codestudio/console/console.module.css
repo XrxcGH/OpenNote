@@ -46,10 +46,18 @@
     font-size: var(--type-small-size);
     white-space: pre-wrap;
     overflow-wrap: anywhere;
+    /*
+     * The log's size comes from the panel, never from its lines. So a keystroke that lays out the editor or the
+     * status bar stops here and does not lay out or paint 5,000 lines again.
+     */
+    contain: strict;
   }
 
   .line {
     min-block-size: 1.2em;
+    /* A long log lays out only the lines on screen. */
+    content-visibility: auto;
+    contain-intrinsic-block-size: auto 1.2em;
   }
 
   .line[data-kind='note'] {
@@ -148,5 +156,14 @@
   .prompt {
     color: var(--color-text-secondary);
     font-family: var(--font-mono);
+  }
+
+  .visuallyHidden {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 }

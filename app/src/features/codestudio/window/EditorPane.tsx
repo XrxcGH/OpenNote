@@ -32,6 +32,12 @@ function EditorSlot({ controller, id, shown }: { controller: StudioController; i
           controller.edited(id, text);
           cursor();
         },
+        // Escape in the editor stops a run and arms "Tab leaves" (DESIGN 5.3.1); it never reaches the tool window,
+        // which would close the studio. Escape from outside the editor still closes it.
+        onEscape: () => {
+          if (controller.running) controller.stop();
+          return true;
+        },
       });
       for (const type of ['keyup', 'pointerup', 'focusin'] as const) editor.view.dom.addEventListener(type, cursor);
       controller.attachEditor(id, editor);

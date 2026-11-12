@@ -60,3 +60,35 @@ test('creates a Python project, runs it with input, follows an error link, and c
   await page.keyboard.press('Tab');
   await expect(editor.locator('.cm-line').first()).toHaveText('  name = input()');
 });
+
+test('keeps text typed just before a page switch, and sends it to the page', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await openSmart(page);
+  await newLine(page);
+  await runCommand(page, 'New code project');
+  const studio = page.getByRole('dialog', { name: 'Code studio' });
+  const editor = studio.getByRole('textbox', { name: 'Code editor, main.py' });
+  await editor.click();
+  await page.keyboard.press('Control+a');
+  await page.keyboard.insertText('kept = 42\n');
+
+  // Another page at once, well inside the studio's typing delay, then back.
+  const pages = page.getByRole('tree', { name: 'Pages' });
+  await pages.getByRole('treeitem').filter({ hasNotText: 'Membranes' }).first().click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Membranes' })).toBeHidden();
+  await pages.getByRole('treeitem', { name: 'Membranes' }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Membranes' })).toBeVisible();
+  await expect(editor).toContainText('kept = 42');
+  await expect(studio.getByText('Not on the page yet')).toHaveCount(0);
+
+  // The page holds it: the studio opened again from the card shows it.
+  await studio.getByRole('button', { name: 'Close Code studio' }).click();
+  await expect(studio).toBeHidden();
+  await page
+    .getByRole('region', { name: 'Untitled project' })
+    .getByRole('button', { name: 'Open in Code studio' })
+    .click();
+  await expect(editor).toContainText('kept = 42');
+  expect(errors).toEqual([]);
+});

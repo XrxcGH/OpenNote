@@ -4,6 +4,7 @@
 // the page registers that answer at start-up (features/page/registrations/codeStudio.ts), so it works while the
 // docked studio is closed. Both windows are the same app, so the channel never leaves this device.
 
+import { windowKind } from '../../../app/windowKind';
 import type { ProjectSource } from './source';
 
 export const RELAY_CHANNEL = 'opennote.codestudio';
@@ -67,38 +68,59 @@ export function currentBlock(): string | null {
 }
 
 /**
- * The main window's side: answers each popped studio from the shown page. `open` sends the data and then every
- * newer version; `patch` goes to the page as the docked studio's would.
+ * The main window's side: it answers each popped studio from the shown page.
+ * - `open` sends the data, then every newer version.
+ * - `patch` goes to the page as the docked studio's would. The answer is the data, so the popped studio knows what
+ *   the page has.
+ * - A block whose page closed reads as read-only. `changes` (the shown page changed) finds it again.
  */
-export function serveRelay(channel: Channel, find: (block: string) => ProjectSource | null): () => void {
+export function serveRelay(
+  channel: Channel,
+  find: (block: string) => ProjectSource | null,
+  changes?: (listener: () => void) => () => void,
+): () => void {
   const watched = new Map<string, ProjectSource>();
   const send = (block: string, source: ProjectSource) =>
     channel.postMessage({ kind: 'data', block, data: source.data(), readOnly: source.readOnly() });
+  /** The block's source that can still reach its page, found again when the one held let go. */
+  const live = (block: string): ProjectSource | null => {
+    const held = watched.get(block);
+    if (held?.live()) return held;
+    const found = find(block);
+    if (!found) return held ?? null;
+    held?.dispose();
+    found.subscribe(() => send(block, found));
+    watched.set(block, found);
+    return found;
+  };
   const listener = (event: MessageEvent) => {
     const message = readRelay(event.data);
     if (!message) return;
     if (message.kind === 'open') {
-      let source = watched.get(message.block);
-      if (!source) {
-        source = find(message.block) ?? undefined;
-        if (!source) return channel.postMessage({ kind: 'missing', block: message.block });
-        const held = source;
-        held.subscribe(() => send(message.block, held));
-        watched.set(message.block, held);
-      }
+      const source = live(message.block);
+      if (!source) return channel.postMessage({ kind: 'missing', block: message.block });
       send(message.block, source);
     } else if (message.kind === 'patch') {
-      const source = watched.get(message.block) ?? find(message.block);
-      if (!source || source.readOnly()) return;
-      source.patch(message.data, message.fallback);
+      const source = live(message.block);
+      if (!source) return;
+      if (source.live() && !source.readOnly()) source.patch(message.data, message.fallback);
+      send(message.block, source);
     } else if (message.kind === 'close') {
       watched.get(message.block)?.dispose();
       watched.delete(message.block);
     }
   };
   channel.addEventListener('message', listener);
+  const stopChanges = changes?.(() => {
+    for (const [block, held] of [...watched]) {
+      if (held.live()) continue;
+      const source = live(block);
+      if (source && source !== held) send(block, source);
+    }
+  });
   return () => {
     channel.removeEventListener('message', listener);
+    stopChanges?.();
     for (const source of watched.values()) source.dispose();
     watched.clear();
   };
@@ -125,6 +147,9 @@ export function remoteSource(block: string, channel: Channel, waitMs = RELAY_WAI
         listeners.add(listener);
         return () => listeners.delete(listener);
       },
+      // The main window answers each patch with its data, so the page's state is never guessed here.
+      live: () => true,
+      onLeave: () => () => {},
       dispose() {
         channel.removeEventListener('message', listener);
         channel.postMessage({ kind: 'close', block });
@@ -156,6 +181,15 @@ export function remoteSource(block: string, channel: Channel, waitMs = RELAY_WAI
   });
 }
 
+/** The tool this window shows alone, as main.tsx reads it: `?tool=`, or `__OPENNOTE_TOOL__` from the desktop shell. */
+export function poppedTool(): string | null {
+  if (typeof window === 'undefined' || windowKind() !== 'tool') return null;
+  return (
+    new URLSearchParams(window.location.search).get('tool') ??
+    (window as { __OPENNOTE_TOOL__?: string }).__OPENNOTE_TOOL__ ??
+    null
+  );
+}
+
 /** True in the window the app opens for the studio alone. */
-export const inPoppedWindow = (): boolean =>
-  typeof location !== 'undefined' && new URLSearchParams(location.search).get('tool') === 'code';
+export const inPoppedWindow = (): boolean => poppedTool() === 'code';

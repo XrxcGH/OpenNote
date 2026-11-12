@@ -48,3 +48,23 @@ describe('console links', () => {
     ]);
   });
 });
+
+describe('console links on very long lines', () => {
+  // A program can print a line of 100,000 characters (the run's output cap). Each search must stay quick.
+  const LONG = 100_000;
+  it.each([
+    ['letters', 'a'.repeat(LONG)],
+    ['letters and dots', 'a.'.repeat(LONG / 2)],
+    ['path characters', 'a/b-c.d'.repeat(LONG / 7)],
+    ['open quotes', 'File "'.repeat(LONG / 6)],
+  ])('searches a line of %s in a bounded time', (_name, text) => {
+    const started = performance.now();
+    expect(findLinks(text, FILES)).toEqual([]);
+    expect(performance.now() - started).toBeLessThan(250);
+  });
+
+  it('still links a place at the start of a long line', () => {
+    const text = `main.py:4: ${'x'.repeat(LONG)}`;
+    expect(findLinks(text, FILES)).toEqual([{ start: 0, end: 9, file: 'main.py', line: 4 }]);
+  });
+});

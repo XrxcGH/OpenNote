@@ -315,6 +315,8 @@
 
   .panelBody {
     overflow: auto;
+    /* Its height is set by the grip, so the panel lays out and paints apart from the editor above it. */
+    contain: strict;
   }
 
   .testsPanel,

@@ -194,6 +194,35 @@ async function zoomTo(page: Page, target: number): Promise<void> {
 
 const inNote = (caret: Caret) => async (page: Page) => placeCaret(page, await longestBox(page), caret);
 
+/** A 3,000-line program in a new Code studio project, the caret at its end; the console filled with lines. */
+const inStudio = (consoleLines: number) => async (page: Page) => {
+  await atEndOfNote(page);
+  const palette = page.getByRole('combobox').first();
+  await expect(async () => {
+    if (!(await palette.isVisible())) await page.keyboard.press('Control+k');
+    await expect(palette).toBeFocused({ timeout: 2000 });
+  }).toPass({ timeout: 20_000 });
+  await page.keyboard.type('New code project');
+  await page.getByRole('option', { name: 'New code project' }).first().click();
+  const editor = page.getByRole('dialog', { name: 'Code studio' }).getByRole('textbox', { name: /^Code editor/ });
+  await editor.click();
+  await page.keyboard.press('Control+a');
+  await page.keyboard.insertText(Array.from({ length: 3000 }, (_, at) => `value_${at} = ${at} * 2`).join('\n'));
+  if (consoleLines > 0) {
+    await page.evaluate(
+      (count) =>
+        (
+          window as unknown as { __OPENNOTE_TEST__: { codeStudioFillConsole(count: number): void } }
+        ).__OPENNOTE_TEST__.codeStudioFillConsole(count),
+      consoleLines,
+    );
+    await expect(page.getByRole('log', { name: 'Console output' })).toContainText(`output line ${consoleLines - 1}`);
+  }
+  await editor.click();
+  await page.keyboard.press('Control+End');
+  await page.keyboard.press('Enter');
+};
+
 export const CONDITIONS: readonly Condition[] = [
   { id: 'short', description: 'A short note (control)', fixture: 'short', prepare: inNote('end') },
   {
@@ -324,5 +353,17 @@ export const CONDITIONS: readonly Condition[] = [
       await placeCaret(page, await longestBox(page), 'middle');
       await zoomTo(page, 2);
     },
+  },
+  {
+    id: 'studio',
+    description: 'Code studio, a 3,000-line file, empty console (control)',
+    fixture: 'short',
+    prepare: inStudio(0),
+  },
+  {
+    id: 'studio.console',
+    description: 'Code studio, a 3,000-line file, 5,000 console lines',
+    fixture: 'short',
+    prepare: inStudio(5000),
   },
 ];

@@ -1,5 +1,6 @@
 // The status bar (DESIGN 5.1): problem counts (a button to the Problems panel), line and column, the language,
 // the runtime's version, the suggestion engine, and the run state.
+import { useSyncExternalStore } from 'react';
 import { useSettings } from '../../../state/settings';
 import { t } from '../../../strings/t';
 import { countProblems } from '../problems/group';
@@ -8,6 +9,12 @@ import { engineKey } from '../settings/model';
 import type { StudioController } from './controller';
 import { fileLanguage, languageName, runtimeName } from './languages';
 import styles from './studio.module.css';
+
+/** Line and column, redrawn on its own as the caret moves. */
+function Position({ controller }: { controller: StudioController }) {
+  const cursor = useSyncExternalStore(controller.subscribeCursor, controller.cursorSnapshot);
+  return <span>{t('codeStudio.studio.status.position', { line: cursor.line, column: cursor.column })}</span>;
+}
 
 export function StatusBar({ controller }: { controller: StudioController }) {
   const code = useSettings((settings) => settings.code);
@@ -20,11 +27,7 @@ export function StatusBar({ controller }: { controller: StudioController }) {
       <button type="button" className={styles.statusButton} onClick={() => controller.showPanel('problems')}>
         {countsText(counts)}
       </button>
-      {active && (
-        <span>
-          {t('codeStudio.studio.status.position', { line: controller.cursor.line, column: controller.cursor.column })}
-        </span>
-      )}
+      {active && <Position controller={controller} />}
       {active && <span>{languageName(fileLanguage(active))}</span>}
       <span title={t('codeStudio.studio.status.runtime')}>{version}</span>
       <span title={t('codeStudio.studio.status.engine')}>{t(engineKey(code))}</span>

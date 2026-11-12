@@ -3,6 +3,7 @@
 // "Hello, <line>!", and a main file with `raise` on a line ends with a Python-style traceback that names that line.
 import type { RunResult } from '../run/host';
 import type { Runner } from './runner';
+import { activeStudio } from './controller';
 import { setStudioRunner } from './runner';
 
 export const FAKE_VERSION = 'Test runtime 1.0';
@@ -32,4 +33,7 @@ export function installStudioTestHooks(): void {
   if (import.meta.env.MODE !== 'test' || typeof window === 'undefined') return;
   const hooks = (window.__OPENNOTE_TEST__ ??= {});
   hooks.codeStudioFakeRunner = () => setStudioRunner(fakeRunner);
+  // The typing benchmark's full console: lines of output in the shown studio.
+  hooks.codeStudioFillConsole = (count: number) =>
+    activeStudio()?.console.write('out', Array.from({ length: count }, (_, at) => `output line ${at}\n`).join(''));
 }

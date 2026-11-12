@@ -55,16 +55,21 @@ export class ConsoleBuffer {
     for (const span of this.parsers[stream].push(text)) {
       const parts = span.text.split('\n');
       parts.forEach((part, index) => {
-        if (index > 0) this.open = null;
-        if (!part) return;
-        this.open ??= this.newLine('output');
-        const last = this.open.spans[this.open.spans.length - 1];
-        if (last && last.err === err && last.fg === span.fg && last.bold === span.bold) last.text += part;
-        else this.open.spans.push({ ...span, text: part, err });
-        // A changed span means a changed line object for React.
-        this.open.spans = [...this.open.spans];
+        const ended = index < parts.length - 1;
+        if (part) {
+          this.open ??= this.newLine('output');
+          const last = this.open.spans[this.open.spans.length - 1];
+          if (last && last.err === err && last.fg === span.fg && last.bold === span.bold) last.text += part;
+          else this.open.spans.push({ ...span, text: part, err });
+          // A changed span means a changed spans array for React.
+          this.open.spans = [...this.open.spans];
+        }
+        // Every line feed ends a line, an empty one too (a bare print()). The text after the last one stays open.
+        if (ended) {
+          this.open ??= this.newLine('output');
+          this.open = null;
+        }
       });
-      if (span.text.endsWith('\n')) this.open = null;
     }
     this.changed();
   }

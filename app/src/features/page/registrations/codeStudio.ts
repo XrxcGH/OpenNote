@@ -3,6 +3,7 @@
 // studio in a window of its own edit a project block of this window's page. This file loads at start-up, so it
 // holds only definitions; the studio window and its helpers load on first use.
 import { isEnabled } from '../../../app/flags';
+import { windowKind } from '../../../app/windowKind';
 import { chord, defineCommand } from '../../../commands/registry';
 import type { CommandDef, CommandId } from '../../../commands/types';
 import { codeBlockAt } from '../../../editor/commands/code';
@@ -11,7 +12,7 @@ import { t } from '../../../strings/t';
 import { announce } from '../../../ui';
 import { targetEditor } from '../formattingBar/target';
 import { PANEL_TYPES } from '../panels/kinds';
-import { shownMounted } from '../pagesApi';
+import { mountedPageHooks, shownMounted } from '../pagesApi';
 import { addCommand } from './qolStudy';
 
 const studio = async () => (await import('../../codestudio')).loadCodeStudioWindow();
@@ -40,7 +41,7 @@ async function openNewProject(data: Record<string, unknown>): Promise<void> {
   if (block) {
     loaded.setStudioTarget({ block, run: false });
     announce(t('codeStudio.project.inserted'));
-  } else loaded.openScratchProject(data);
+  } else if (!(await loaded.replaceScratchProject(data))) return;
   await openStudio();
 }
 
@@ -52,6 +53,8 @@ commands.register(
     category: 'code',
     icon: 'FilePlus',
     flag: 'code.studio',
+    // With no page shown, the project starts as a scratch project, so the command works anywhere.
+    when: () => true,
     run: async (_ctx, args) => {
       const loaded = await studio();
       await openNewProject(loaded.newProjectData(loaded.projectLanguageOf(args?.language)));
@@ -130,10 +133,20 @@ settingsSections.register({
   load: async () => ({ default: (await studio()).CodeSettingsSection }),
 });
 
+// A page view that starts to close tells the studio first, before it sends its last changes. So the text the studio
+// still holds for a project block on it goes with them (features/codestudio/window/source.ts, PAGE_LEAVING_EVENT).
+mountedPageHooks.register({
+  id: 'code.studio.pageLeaving',
+  attach: (mounted) => () => {
+    window.dispatchEvent(new CustomEvent('opennote:codestudio-page-leaving', { detail: mounted }));
+  },
+});
+
 // The pop-out relay: the main window answers a studio in a window of its own (features/codestudio/window/relay.ts).
-// The studio's code loads with the first message, which is then handed to it again.
+// The studio's code loads with the first message, which is then handed to it again. A popped tool window never
+// serves: it is the one that asks.
 function installRelay(): void {
-  if (typeof BroadcastChannel !== 'function' || new URLSearchParams(location.search).has('tool')) return;
+  if (typeof BroadcastChannel !== 'function' || windowKind() === 'tool') return;
   const channel = new BroadcastChannel('opennote.codestudio');
   let serving = false;
   channel.onmessage = (event) => {
@@ -141,7 +154,7 @@ function installRelay(): void {
     serving = true;
     channel.onmessage = null;
     void studio().then((loaded) => {
-      loaded.serveRelay(channel, loaded.blockSource);
+      loaded.serveRelay(channel, loaded.blockSource, (listener) => shownMounted.subscribe(listener));
       channel.dispatchEvent(new MessageEvent('message', { data: event.data }));
     });
   };

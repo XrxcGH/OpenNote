@@ -3,6 +3,7 @@
 // not have the file's latest text yet. New file and Rename take the name in a field in place.
 import { DotsThreeVertical, FilePlus, Files as FilesIcon, X } from '@phosphor-icons/react';
 import { useId, useRef, useState } from 'react';
+import type { KeyboardEvent } from 'react';
 import { t } from '../../../strings/t';
 import { IconButton, openMenu } from '../../../ui';
 import type { MenuItemSpec } from '../../../ui';
@@ -84,6 +85,43 @@ function fileItems(controller: StudioController, id: string, edit: (next: Editin
   ];
 }
 
+/** Opens a file's actions menu at an anchor. */
+function openFileMenu(controller: StudioController, id: string, edit: (next: Editing) => void, anchor: HTMLElement) {
+  void openMenu({
+    label: t('codeStudio.studio.files.actions', { name: controller.pathOf(id) }),
+    anchor,
+    items: fileItems(controller, id, edit),
+  });
+}
+
+/** The keys a file row or tab is given: Shift+F10 or the menu key for its actions, F2 to rename, Delete. */
+const FILE_KEYS = 'Shift+F10 F2 Delete';
+const TAB_KEYS = 'Shift+F10 F2 Control+F4';
+
+function fileKeys(
+  event: KeyboardEvent<HTMLElement>,
+  controller: StudioController,
+  id: string,
+  edit: (next: Editing) => void,
+  allowDelete: boolean,
+): void {
+  const editable = controller.store?.editable ?? false;
+  if ((event.key === 'F10' && event.shiftKey) || event.key === 'ContextMenu') {
+    event.preventDefault();
+    openFileMenu(controller, id, edit, event.currentTarget);
+  } else if (event.key === 'F2' && !event.shiftKey && editable) {
+    event.preventDefault();
+    edit({ mode: 'rename', id });
+  } else if (event.key === 'Delete' && allowDelete && editable && controller.project()?.main !== id) {
+    event.preventDefault();
+    controller.deleteFile(id);
+  } else if (event.key === 'F4' && event.ctrlKey && !allowDelete) {
+    // Ctrl+F4 closes the tab, as in other editors.
+    event.preventDefault();
+    controller.closeTab(id);
+  }
+}
+
 function useEditing(controller: StudioController) {
   const [editing, setEditing] = useState<Editing>(null);
   const done = (name: string | null) => {
@@ -136,7 +174,9 @@ export function FileTree({ controller }: { controller: StudioController }) {
                 type="button"
                 className={styles.treeFile}
                 aria-current={controller.activeFile === id ? 'true' : undefined}
+                aria-keyshortcuts={FILE_KEYS}
                 onClick={() => controller.openFile(id)}
+                onKeyDown={(event) => fileKeys(event, controller, id, setEditing, true)}
               >
                 <Badge path={path} />
                 <span className={styles.fileName}>{path}</span>
@@ -166,14 +206,7 @@ function FileMenuButton(props: { controller: StudioController; id: string; edit:
         label={t('codeStudio.studio.files.actions', { name })}
         icon={DotsThreeVertical}
         hasPopup="menu"
-        tabIndex={-1}
-        onPress={() =>
-          void openMenu({
-            label: t('codeStudio.studio.files.actions', { name }),
-            anchor: anchor.current!,
-            items: fileItems(props.controller, props.id, props.edit),
-          })
-        }
+        onPress={() => openFileMenu(props.controller, props.id, props.edit, anchor.current!)}
       />
     </span>
   );
@@ -230,7 +263,9 @@ export function TabStrip({ controller, withFilesMenu }: { controller: StudioCont
                 aria-current={selected ? 'true' : undefined}
                 title={path}
                 className={styles.tabButton}
+                aria-keyshortcuts={TAB_KEYS}
                 onClick={() => controller.openFile(id)}
+                onKeyDown={(event) => fileKeys(event, controller, id, setEditing, false)}
               >
                 <Badge path={path} />
                 <span className={styles.fileName}>{baseName(path)}</span>
@@ -243,7 +278,6 @@ export function TabStrip({ controller, withFilesMenu }: { controller: StudioCont
               <IconButton
                 label={t('codeStudio.studio.files.close', { name: baseName(path) })}
                 icon={X}
-                tabIndex={-1}
                 onPress={() => controller.closeTab(id)}
               />
             </div>

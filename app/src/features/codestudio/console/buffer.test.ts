@@ -45,3 +45,19 @@ describe('the console buffer', () => {
     expect(buffer.lines).toHaveLength(MAX_LINES);
   });
 });
+
+describe('the console buffer and blank lines', () => {
+  it('keeps a blank line for each line feed with nothing before it', () => {
+    const buffer = new ConsoleBuffer();
+    buffer.write('out', 'a\n\nb\n');
+    expect(buffer.lines.map(lineText)).toEqual(['a', '', 'b']);
+    expect(buffer.text()).toBe('a\n\nb');
+    // A bare print() writes one line feed: one blank line.
+    buffer.write('out', '\n');
+    expect(buffer.lines.map(lineText)).toEqual(['a', '', 'b', '']);
+    // Text split across writes still makes one line.
+    buffer.write('out', 'c');
+    buffer.write('out', 'd\n');
+    expect(buffer.lines.map(lineText)).toEqual(['a', '', 'b', '', 'cd']);
+  });
+});

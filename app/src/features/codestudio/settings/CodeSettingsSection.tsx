@@ -69,6 +69,15 @@ function NumberField(props: {
 }) {
   const id = useId();
   const [low, high] = RANGES[props.range];
+  // What is typed stays as typed until the field is left or Enter is pressed; only then is it clamped and saved.
+  // Clamping each keystroke fought typing: a partly typed number is often below the minimum.
+  const [draft, setDraft] = useState<string | null>(null);
+  const commit = () => {
+    if (draft === null) return;
+    const value = Number(draft);
+    if (draft.trim() !== '' && Number.isFinite(value)) props.onChange(clamp(props.range, value));
+    setDraft(null);
+  };
   return (
     <div className={styles.field}>
       <label htmlFor={id}>{props.label}</label>
@@ -78,9 +87,11 @@ function NumberField(props: {
         inputMode="numeric"
         min={low}
         max={high}
-        value={props.value}
-        onChange={(event) => {
-          if (event.target.value !== '') props.onChange(clamp(props.range, Number(event.target.value)));
+        value={draft ?? String(props.value)}
+        onChange={(event) => setDraft(event.target.value)}
+        onBlur={commit}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') commit();
         }}
       />
     </div>

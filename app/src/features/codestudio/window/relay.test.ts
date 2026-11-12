@@ -1,7 +1,7 @@
 // The popped studio edits the main window's project block through the relay.
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Channel, RelayMessage } from './relay';
-import { readRelay, remoteSource, serveRelay } from './relay';
+import { inPoppedWindow, readRelay, remoteSource, serveRelay } from './relay';
 import type { ProjectSource } from './source';
 
 /** Two ends of one channel, delivering on a later turn as BroadcastChannel does. */
@@ -29,26 +29,40 @@ function pair(): [Channel, Channel] {
   return [a, b];
 }
 
+/** A block source as the main window's is: a patch changes its data without telling its own listeners. */
 function memorySource(block: string, data: Record<string, unknown>) {
   const listeners = new Set<() => void>();
   const patches: Record<string, unknown>[] = [];
+  let gone = false;
   const source: ProjectSource = {
     key: block,
     kind: 'block',
     data: () => data,
-    readOnly: () => false,
+    readOnly: () => gone,
     patch(patch) {
+      if (gone) return;
       patches.push(patch);
       data = { ...data, ...patch };
     },
+    live: () => !gone,
+    onLeave: () => () => {},
     subscribe(listener) {
       listeners.add(listener);
       return () => listeners.delete(listener);
     },
     dispose: vi.fn(),
   };
-  return { source, patches, change: (next: Record<string, unknown>) => ((data = next), listeners.forEach((l) => l())) };
+  return {
+    source,
+    patches,
+    change: (next: Record<string, unknown>) => ((data = next), listeners.forEach((l) => l())),
+    leave: () => ((gone = true), listeners.forEach((l) => l())),
+  };
 }
+
+const turn = () => new Promise((resolve) => setTimeout(resolve, 5));
+
+afterEach(() => vi.unstubAllGlobals());
 
 describe('the pop-out relay', () => {
   it('opens a block, sends patches to the page, and hears newer data', async () => {
@@ -78,6 +92,59 @@ describe('the pop-out relay', () => {
     expect(await remoteSource('nope', popped)).toBeNull();
     const [, alone] = pair();
     expect(await remoteSource('b1', alone, 20)).toBeNull();
+  });
+
+  it('answers each patch with the data the page has, so the popped studio sees its text as sent', async () => {
+    const [main, popped] = pair();
+    const held = memorySource('b1', { name: 'One' });
+    serveRelay(main, () => held.source);
+    const remote = (await remoteSource('b1', popped))!;
+    const heard = vi.fn();
+    remote.subscribe(heard);
+    remote.patch({ name: 'Two' }, 'fallback');
+    await turn();
+    await turn();
+    expect(remote.data()).toEqual({ name: 'Two' });
+    expect(heard).toHaveBeenCalled();
+  });
+
+  it('refuses a patch once the page closed, and finds the block again when it comes back', async () => {
+    const [main, popped] = pair();
+    let held = memorySource('b1', { name: 'One' });
+    const shown = new Set<() => void>();
+    serveRelay(
+      main,
+      () => (held.source.live() ? held.source : null),
+      (listener) => (shown.add(listener), () => shown.delete(listener)),
+    );
+    const remote = (await remoteSource('b1', popped))!;
+    held.leave();
+    await turn();
+    expect(remote.readOnly()).toBe(true);
+    remote.patch({ name: 'Lost' }, 'fallback');
+    await turn();
+    await turn();
+    expect(held.patches).toEqual([]);
+    expect(remote.data()).toEqual({ name: 'One' });
+
+    held = memorySource('b1', { name: 'One' });
+    shown.forEach((listener) => listener());
+    await turn();
+    expect(remote.readOnly()).toBe(false);
+    remote.patch({ name: 'Two' }, 'fallback');
+    await turn();
+    expect(held.patches).toEqual([{ name: 'Two' }]);
+  });
+
+  it('knows the window the desktop shell opens for the studio, which has no ?tool= in its address', () => {
+    vi.stubGlobal('window', { __OPENNOTE_TOOL__: 'code', location: { search: '' } });
+    expect(inPoppedWindow()).toBe(true);
+    vi.stubGlobal('window', { __OPENNOTE_TOOL__: 'timers', location: { search: '' } });
+    expect(inPoppedWindow()).toBe(false);
+    vi.stubGlobal('window', { location: { search: '?tool=code' } });
+    expect(inPoppedWindow()).toBe(true);
+    vi.stubGlobal('window', { location: { search: '' } });
+    expect(inPoppedWindow()).toBe(false);
   });
 
   it('drops malformed messages', () => {

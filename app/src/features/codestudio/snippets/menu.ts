@@ -12,6 +12,13 @@ import type { Example } from './examples';
 export const exampleTitle = (example: Example): string => t(`codeStudio.studio.examples.${example.name}` as MessageKey);
 
 /** The merge patch that adds an example, and the ID of its entry file. */
+/** The example's paths that the project already holds with other text: inserting it would replace them. */
+export function exampleCollisions(project: CodeProject, example: Example): string[] {
+  return Object.entries(example.files)
+    .filter(([path, text]) => Object.values(project.files).some((file) => file.path === path && file.text !== text))
+    .map(([path]) => path);
+}
+
 export function examplePatch(
   project: CodeProject,
   example: Example,

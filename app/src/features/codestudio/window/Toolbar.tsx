@@ -62,7 +62,7 @@ async function chooseExample(controller: StudioController, anchor: HTMLElement):
       id: example.id,
       label: exampleTitle(example),
       separatorBefore: index > 0 && example.kind !== examples[index - 1]!.kind,
-      onSelect: () => controller.insertExample(example),
+      onSelect: () => void controller.insertExample(example),
     })),
   });
 }

@@ -4,7 +4,7 @@
 
 import { getSettings } from '../../../state/settings';
 import { t } from '../../../strings/t';
-import { announce } from '../../../ui';
+import { announce, confirm } from '../../../ui';
 import { INSERT_EVENT } from '../../tools/flags';
 import type {
   CodeProject,
@@ -28,11 +28,13 @@ import { stripAnsi } from '../console/ansi';
 import { fromDiagnostic, fromRuntime } from '../problems/group';
 import type { Problem } from '../problems/group';
 import type { Example } from '../snippets/examples';
-import { examplePatch, exampleTitle } from '../snippets/menu';
+import { exampleCollisions, examplePatch, exampleTitle } from '../snippets/menu';
 import { MAIN_FILES, RUNTIMES } from './languages';
 import { rememberCurrent } from './relay';
 import { orderFor, studioRunner } from './runner';
+import { blockSource } from './source';
 import type { ProjectSource } from './source';
+import type { MountedPage } from '../../page';
 
 export type PanelTab = 'console' | 'problems' | 'tests' | 'debug' | 'files';
 export type RunState = 'idle' | 'loading' | 'running' | 'waiting';
@@ -46,6 +48,15 @@ const shown: { studio: StudioController | null } = { studio: null };
 
 /** The studio window that is open, for the studio's commands. */
 export const activeStudio = (): StudioController | null => shown.studio;
+
+/** Asks before an example replaces files of the same name. */
+const askReplace = (paths: string[]): Promise<boolean> =>
+  confirm({
+    title: t('codeStudio.studio.examples.replaceTitle'),
+    body: t('codeStudio.studio.examples.replaceBody', { paths: paths.join(', ') }),
+    confirmLabel: t('codeStudio.studio.examples.replace'),
+    danger: true,
+  });
 
 export class StudioController {
   source: ProjectSource | null = null;
@@ -65,6 +76,8 @@ export class StudioController {
   testResults: TestResult[] = [];
   /** Files whose text the page does not have yet. */
   readonly dirty = new Set<string>();
+  /** True while the project block is gone from its page. */
+  private removed = false;
   inputPrompt: string | null = null;
   /** A message the files strip shows, such as a refused name. */
   notice = '';
@@ -73,13 +86,14 @@ export class StudioController {
   private readonly editors = new Map<string, CodeEditor>();
   private readonly reveals = new Map<string, Cursor>();
   private readonly listeners = new Set<() => void>();
+  /** The caret has listeners of its own, so a keystroke redraws the status bar and not the whole window. */
+  private readonly cursorListeners = new Set<() => void>();
   private handle: RunHandle | null = null;
   private stopSource: (() => void) | null = null;
-  private stopConsole: (() => void) | null = null;
+  private stopLeave: (() => void) | null = null;
 
-  /** The window is on screen: the commands reach it, and the console redraws it. Returns the undo. */
+  /** The window is on screen: the commands reach it. Returns the undo. The console redraws from its own buffer. */
   mount(): () => void {
-    this.stopConsole = this.console.subscribe(() => this.changed());
     shown.studio = this;
     return () => this.dispose();
   }
@@ -92,6 +106,13 @@ export class StudioController {
   };
 
   snapshot = (): number => this.version;
+
+  subscribeCursor = (listener: () => void): (() => void) => {
+    this.cursorListeners.add(listener);
+    return () => this.cursorListeners.delete(listener);
+  };
+
+  cursorSnapshot = (): Cursor => this.cursor;
 
   changed(): void {
     this.version += 1;
@@ -122,16 +143,7 @@ export class StudioController {
 
   open(source: ProjectSource): void {
     this.close();
-    this.source = source;
-    this.store = createProjectStore({
-      data: source.data(),
-      readOnly: source.readOnly(),
-      patch: (data, fallback) => {
-        source.patch(data, fallback);
-        this.recheckDirty();
-      },
-    });
-    this.stopSource = source.subscribe(() => this.fromSource());
+    this.bind(source);
     const session = source.kind === 'block' || source.kind === 'remote' ? loadSession(source.key) : null;
     const ids = this.fileIds();
     const project = this.project()!;
@@ -147,34 +159,92 @@ export class StudioController {
     this.changed();
   }
 
-  close(): void {
-    this.handle?.stop();
+  /** Takes the source as the project's, with a fresh store that sends to it. */
+  private bind(source: ProjectSource): void {
+    this.source = source;
+    this.removed = source.removed?.() ?? false;
+    this.store = createProjectStore({
+      data: source.data(),
+      readOnly: source.readOnly(),
+      patch: (data, fallback) => {
+        source.patch(data, fallback);
+        this.recheckDirty();
+      },
+    });
+    this.stopSource = source.subscribe(() => this.fromSource());
+    // The text still waiting goes to the page before the source lets go of it.
+    this.stopLeave = source.onLeave(() => this.store?.flush());
+  }
+
+  /** Lets go of the source, sending the text still waiting while it can. */
+  private unbind(): void {
     this.store?.dispose();
     this.stopSource?.();
+    this.stopLeave?.();
     this.source?.dispose();
     this.source = null;
     this.store = null;
     this.stopSource = null;
+    this.stopLeave = null;
+  }
+
+  close(): void {
+    this.handle?.stop();
+    this.unbind();
     this.dirty.clear();
   }
 
   dispose(): void {
     this.close();
-    this.stopConsole?.();
-    this.stopConsole = null;
     if (shown.studio === this) shown.studio = null;
   }
 
-  /** Newer data from the page (undo, another device, the other window). */
+  /**
+   * The shown page changed. A project whose page closed binds to its block again when that page is shown once more.
+   * Text typed and not sent before then goes to the page.
+   */
+  follow(mounted: MountedPage | null): void {
+    const before = this.source;
+    if (!before || before.kind !== 'block' || before.live() || !mounted) return;
+    const source = blockSource(before.key, mounted);
+    if (!source) return;
+    this.unbind();
+    this.bind(source);
+    const project = this.project();
+    for (const [id, editor] of this.editors) {
+      const file = project?.files[id];
+      if (!file) continue;
+      if (this.dirty.has(id) && editor.getText() !== file.text) this.store?.editFile(id, editor.getText());
+      else if (editor.getText() !== file.text) editor.setText(file.text);
+      editor.setReadOnly(!(this.store?.editable ?? false));
+    }
+    if (this.notice === t('codeStudio.studio.pageClosed')) this.notice = '';
+    this.recheckDirty();
+  }
+
+  /** Newer data from the page (undo, another device, the other window), or the page closed. */
   private fromSource(): void {
     const source = this.source;
     const store = this.store;
     if (!source || !store) return;
+    const wasRemoved = this.removed;
+    this.removed = source.removed?.() ?? false;
     store.update(source.data(), source.readOnly());
+    const closed = t('codeStudio.studio.pageClosed');
+    const gone = t('codeStudio.studio.projectRemoved');
+    // The page closed or the block left it: what the editors hold stays, marked as not sent.
+    const lost = !source.live() || this.removed;
+    if (!source.live() && this.notice !== closed) this.say(closed);
+    else if (this.removed && this.notice !== gone) this.say(gone);
+    else if (wasRemoved && !this.removed && this.notice === gone) this.notice = '';
     const project = store.project();
     for (const [id, editor] of this.editors) {
       const file = project.files[id];
-      if (file && !this.dirty.has(id) && editor.getText() !== file.text) editor.setText(file.text);
+      if (file && editor.getText() !== file.text) {
+        if (lost) this.dirty.add(id);
+        else if (this.dirty.has(id) && wasRemoved) store.editFile(id, editor.getText());
+        else if (!this.dirty.has(id)) editor.setText(file.text);
+      }
       editor.setReadOnly(!store.editable);
     }
     this.tabs = this.tabs.filter((id) => project.files[id]);
@@ -259,15 +329,16 @@ export class StudioController {
   setCursor(cursor: Cursor): void {
     if (cursor.line === this.cursor.line && cursor.column === this.cursor.column) return;
     this.cursor = cursor;
-    this.changed();
+    for (const listener of this.cursorListeners) listener();
   }
 
-  /** The editor's text changed by typing. */
+  /** The editor's text changed by typing. Only a file newly marked as not sent redraws the window. */
   edited(id: string, text: string): void {
     // A change from the page (setText) is already the store's text.
     if (this.project()?.files[id]?.text === text) return;
     const outcome = this.store?.editFile(id, text);
     if (outcome && !outcome.ok) this.say(outcome.message);
+    if (this.dirty.has(id)) return;
     this.dirty.add(id);
     this.changed();
   }
@@ -342,10 +413,16 @@ export class StudioController {
   }
 
   /** Adds an example (Snippets and examples): its files, its tests, and its entry as the main file. */
-  insertExample(example: Example): boolean {
+  async insertExample(example: Example, ask: (paths: string[]) => Promise<boolean> = askReplace): Promise<boolean> {
+    const before = this.project();
+    if (!this.store || !before) return false;
+    // Files of the same name with other text would be replaced. A scratch project has no page undo, so ask first.
+    const taken = exampleCollisions(before, example);
+    if (taken.length > 0 && !(await ask(taken))) return false;
     const store = this.store;
     const project = this.project();
     if (!store || !project) return false;
+    const mainBefore = project.main;
     const { patch, entry } = examplePatch(project, example);
     const ok = this.after(store.apply(patch));
     if (!ok) return false;
@@ -355,7 +432,12 @@ export class StudioController {
       if (editor && editor.getText() !== now.files[id]?.text) editor.setText(now.files[id]!.text);
     }
     this.openFile(entry);
-    this.say(t('codeStudio.studio.examples.inserted', { name: exampleTitle(example) }));
+    const name = exampleTitle(example);
+    this.say(
+      mainBefore === entry
+        ? t('codeStudio.studio.examples.inserted', { name })
+        : t('codeStudio.studio.examples.insertedMain', { name, path: this.pathOf(entry) }),
+    );
     return true;
   }
 
