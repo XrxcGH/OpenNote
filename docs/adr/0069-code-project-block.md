@@ -20,6 +20,18 @@ We will store a project as a block of type `ext:org.opennote/codeproject` whose 
 | Files as page assets | Binary-friendly | Assets are immutable, so each save would add an asset and grow history |
 | One big text with file markers | Simple | Every edit rewrites everything; no per-file merge |
 
+## Implementation notes (code:L02, Beta 11)
+
+- Test cases follow DESIGN 9.1 and the `TestCase` contract: a `call` case keeps its argument array in `callArgs`, not in `args`.
+- The limits count the UTF-8 bytes of the file texts. A change over a limit is refused with the reason, and nothing is sent.
+- The path rules add two refusals to DESIGN 3.2. The characters `< > " | ? *` are refused, because Windows refuses them on disk. A file where another path needs a folder (`a` and `a/b.py`) is refused too. The known answers are in `app/src/features/codestudio/project/pathCases.json`, which the Rust validator of the tier-2 runner reads as well.
+- `opennote-project.json` and `opennote-tests.json` are kept for the export at the project's root, so a project file cannot take those names.
+- Typing sends a merge patch of `data.files.<id>.text` 400 ms after it stops. New file, rename, move, delete, and import are one patch each, so one undo takes each back.
+- The page's panel view now merges a patch at every level, as the core does. Before, it merged only the top level, so a one-file patch drew a project with that file alone.
+- The session state (breakpoints, watches, open tabs, scroll positions, console history) is kept in the browser storage of the device, keyed by block ID. It moves to the Rust device-state file of ADR 0013 when that file gains a free-form part.
+- The `.zip` export holds each file at its path, a generated `README.md` (the project's own README wins), `opennote-project.json` with each file's ID and order, and `opennote-tests.json`. Files are stored without compression and with a fixed date, so the same project gives the same bytes. Import takes stored and deflated entries, drops one folder shared by every entry, and lists binary files and refused paths as skipped.
+- The in-memory search of the web build reads the fallback of block types it does not read, as the desktop search does, so search finds project code in both.
+
 ## Consequences
 
 - Easier: projects travel with the notebook, sync, restore from history, export as `.zip`, Markdown and PDF, and are found by search through the fallback.

@@ -168,6 +168,7 @@ fn with_services(
         .manage(export_replace::ReplaceUndo::default())
         .manage(audio::AudioState::new(paths))
         .manage(intel::IntelState::new(paths))
+        .manage(packs::Packs::new(paths))
         .manage(dictionary::DictionaryState::new(paths))
         .manage(connectors::Connectors::new(paths))
         .manage(api::ApiState::new(paths))
@@ -422,6 +423,7 @@ fn commands() -> impl Fn(Invoke) -> bool + Send + Sync + 'static {
         notebook_styles::notebook_styles_set,
         packs::packs_list,
         packs::packs_download,
+        packs::packs_cancel,
         packs::packs_remove,
         coderun::coderun_detect,
         coderun::coderun_start,

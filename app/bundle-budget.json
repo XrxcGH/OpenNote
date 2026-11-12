@@ -1,7 +1,7 @@
 {
   "startup": {
-    "jsKb": 546,
-    "cssKb": 27.5
+    "jsKb": 576,
+    "cssKb": 28
   },
   "after": [
     {
@@ -52,12 +52,17 @@
     {
       "within": ["features/engineering/", "features/math/solvers/ui/SolversTool"],
       "entry": "features/tools/ui/host"
+    },
+    {
+      "within": ["@codemirror/lang-", "@codemirror/legacy-modes", "@codemirror/language"],
+      "entry": "features/codestudio/editor/index.ts"
     }
   ],
   "lazyKb": {
     "features/codestudio/window": 190,
+    "features/codestudio/editor": 190,
     "features/page/symbols": 80,
-    "@codemirror/lang-": 40,
+    "@codemirror/lang-": 44,
     "@codemirror/legacy-modes": 40,
     "features/tables/engine/formula/fn/lazy/statistics": 40,
     "features/tables/engine/formula/fn/lazy/financial": 30,
@@ -67,31 +72,31 @@
     "node_modules/mathlive/mathlive.min.mjs": 226,
     "node_modules/pdfjs-dist/build/pdf.mjs": 131,
     "core/audio/index.ts": 117,
-    "features/accounts/googleOffice/commands.ts": 82,
-    "features/accounts/lms/commands.ts": 282,
-    "features/accounts/meetings/commands.ts": 207,
+    "features/accounts/googleOffice/commands.ts": 90,
+    "features/accounts/lms/commands.ts": 291,
+    "features/accounts/meetings/commands.ts": 208,
     "features/accounts/onenote/commands.ts": 71,
     "features/accounts/penSync/auto.ts": 66,
     "features/accounts/penSync/commands.ts": 66,
-    "features/accounts/sendto/commands.ts": 81,
-    "features/accounts/share/commands.ts": 76,
+    "features/accounts/sendto/commands.ts": 89,
+    "features/accounts/share/commands.ts": 84,
     "features/accounts/tasks/auto.ts": 206,
     "features/accounts/tasks/commands.ts": 206,
     "features/ink/index.ts": 67,
-    "features/math/index.ts": 248,
+    "features/math/index.ts": 292,
     "features/math/solvers/ui/SolversTool.tsx": 61,
-    "features/page/audio/exportVideo.ts": 85,
-    "features/pages/host/shareRender.ts": 62,
-    "features/pages/host/videoRaster.ts": 62,
-    "features/pages/index.ts": 80,
-    "features/pages/ui/elementCommands.tsx": 73,
-    "features/pages/ui/exportCommands.tsx": 67,
-    "features/pages/ui/imageCommands.tsx": 67,
-    "features/pages/ui/presentCommands.tsx": 67,
+    "features/page/audio/exportVideo.ts": 93,
+    "features/pages/host/shareRender.ts": 69,
+    "features/pages/host/videoRaster.ts": 69,
+    "features/pages/index.ts": 88,
+    "features/pages/ui/elementCommands.tsx": 80,
+    "features/pages/ui/exportCommands.tsx": 74,
+    "features/pages/ui/imageCommands.tsx": 74,
+    "features/pages/ui/presentCommands.tsx": 74,
     "features/pdf/importPdf.ts": 69,
-    "features/tables/index.ts": 96,
-    "features/tools/index.ts": 384,
-    "features/engineering/control/ui/ControlKit.tsx": 325,
+    "features/tables/index.ts": 129,
+    "features/tools/index.ts": 392,
+    "features/engineering/control/ui/ControlKit.tsx": 326,
     "features/engineering/index.ts": 220,
     "mermaid/node_modules/katex": 80,
     "node_modules/mermaid": 600,
@@ -120,18 +125,21 @@
     "features/shortcuts": 40,
     "features/trash": 40,
     "features/updates": 40,
-    "features/tools/statinfer": 287,
-    "features/tools": 274,
-    "features/engineering/fluidheat/ui/FluidHeatKit.tsx": 315,
+    "features/tools/statinfer": 328,
+    "features/tools": 317,
+    "features/engineering/fluidheat/ui/FluidHeatKit.tsx": 316,
     "features/engineering/mechdyn/ui/MechDynKit.tsx": 124,
     "features/engineering/electrical/KitElectricalTool.tsx": 30,
     "features/engineering/mechdyn": 12,
-    "features/engineering/aero/ui/KitAeroTool.tsx": 227,
+    "features/engineering/aero/ui/KitAeroTool.tsx": 228,
     "features/engineering/solids/ui/SolidsKit.tsx": 119,
-    "features/engineering/thermo/ui/ThermoKit.tsx": 424,
+    "features/engineering/thermo/ui/ThermoKit.tsx": 467,
     "features/study/ui/exam/ExamResults.tsx": 43
   },
   "lazyDefaultKb": 40,
-  "bundledFontsKb": { "carlito": 460, "caladea": 150 },
+  "bundledFontsKb": {
+    "carlito": 460,
+    "caladea": 150
+  },
   "wordEmbedFontsKb": 1000
 }

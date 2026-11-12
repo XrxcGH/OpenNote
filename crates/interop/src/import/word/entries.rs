@@ -117,10 +117,10 @@ pub(super) fn loss_entries<R: Read + Seek>(
         ),
         "Their ranges show as plain text.",
     );
-    report.skipped_count(
+    report.simplified_count(
         stats.hidden_runs,
         ("piece of hidden text", "pieces of hidden text"),
-        "Hidden text stays hidden by staying out.",
+        "Hidden text shows as visible text, so nothing is lost.",
     );
     for part in &package.unread_parts {
         report.skipped(

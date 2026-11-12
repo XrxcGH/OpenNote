@@ -10,6 +10,7 @@ import {
   dataUri,
   exportHtml,
   exportMarkdown,
+  readStyles,
   hasInk,
   inkExtent,
   inkShapes,
@@ -21,7 +22,8 @@ import { exportFileName, exportPdf } from '../pdf';
 import type { PdfExportResult, PdfProblem, PdfProgress, PrintSurface } from '../pdf';
 import type { PrepareInput, PrepareResult, PrintOptions } from '../print';
 import { preparePlayer } from '../../page';
-import { bundledFontFaces } from './fonts';
+import { bundledFontFaces, bundledFontSource } from './fonts';
+import { stylesFor } from '../../page';
 import type { PageSource } from './source';
 
 /** The words an export writes itself, from the app's strings. */
@@ -69,12 +71,18 @@ export interface PdfExportOptions {
   readonly replacePath?: string;
 }
 
+/** The notebook's text styles for a page, read and checked. The page's own style sheet is read where it is drawn. */
+export function notebookStylesOf(source: PageSource) {
+  return readStyles(stylesFor(source.notebookId ?? null));
+}
+
 /** The input the print window prepares: the page, its assets, the light theme with the app's fonts, and the options. */
 export function prepareInput(source: PageSource, print: PrintOptions): PrepareInput {
   return {
     page: source.page,
     assetUrls: source.assetUrls,
     theme: lightTheme(bundledFontFaces()),
+    styles: notebookStylesOf(source),
     labels: exportLabels(),
     print: {
       ...print,
@@ -189,7 +197,11 @@ function stemOf(path: string): string {
 }
 
 /** Exports the page as a Markdown file, with its pictures in a folder beside it. */
-export async function exportMarkdownFile(client: ExportsClient, source: PageSource): Promise<TextOutcome> {
+export async function exportMarkdownFile(
+  client: ExportsClient,
+  source: PageSource,
+  formatting: 'keep' | 'remove' = 'keep',
+): Promise<TextOutcome> {
   const suggested = exportFileName(source.title || t('pageViews.print.untitled'), 'md');
   const path = await client.pickSave({ suggested, label: t('pageViews.files.markdownLabel'), extension: 'md' });
   if (path === null) return { status: 'canceled' };
@@ -197,6 +209,7 @@ export async function exportMarkdownFile(client: ExportsClient, source: PageSour
   const ink = hasInk(source.page) ? pageInkSvg(source) : null;
   const made = exportMarkdown(source.page, {
     frontMatter: 'basic',
+    formatting,
     assetPath: (_id, file) => `${folder}/${file}`,
     handwriting: ink ? `![${t('pageViews.print.handwriting')}](${encodeURIComponent(folder)}/ink.svg)` : null,
   });
@@ -228,13 +241,25 @@ export async function exportHtmlFile(client: ExportsClient, source: PageSource):
   );
   // A recording goes beside the web page as an audio file, and the page plays it and follows the notes.
   const player = isEnabled('pages.exportPlayer') ? await preparePlayer(source.pageId, path).catch(() => null) : null;
-  // A web page file carries its own pictures, and reads in the reader's fonts: the app's font files aren't beside it.
-  const made = exportHtml(source.page, {
+  // A web page file carries its own pictures and the bundled fonts it uses. Any other font is named with a fallback stack.
+  const options = {
     ...(player ? { player } : {}),
-    assetUrl: (asset) => uris.get(asset.id) ?? null,
+    assetUrl: (asset: { id: string }) => uris.get(asset.id) ?? null,
     theme: lightTheme(),
+    styles: notebookStylesOf(source),
     labels: exportLabels(),
+  };
+  // The bundled fonts the page uses travel inside the file. A first pass finds which, the second embeds them.
+  const wanted = new Set<string>();
+  const first = exportHtml(source.page, {
+    ...options,
+    fonts: (family) => {
+      wanted.add(family);
+      return [];
+    },
   });
+  const made =
+    wanted.size === 0 ? first : exportHtml(source.page, { ...options, fonts: await bundledFontSource(wanted) });
   await client.write(path, [{ path: '', bytes: new TextEncoder().encode(made.html) }]);
   return { status: 'saved', path, name: baseName(path) };
 }

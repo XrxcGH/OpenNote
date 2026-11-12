@@ -17,13 +17,18 @@ use super::theme::{Script as TextScript, Theme};
 use super::TrackedChanges;
 use crate::doc::{push_text, Block, Inline, Marks};
 use crate::import::xmltree::{Element, Node};
+use drop_cap::join_drop_cap;
 use opennote_core::{Clock, ElementId};
 
+mod drop_cap;
 mod records;
 mod tables;
 
 /// The character that stands for a page break inside a paragraph, until the paragraph is split.
 const BREAK_MARK: char = '\u{c}';
+
+/// The shading of OpenNote's callouts in a Word file, as the writer draws it (`docx::ppr::CALLOUT_FILL`).
+const CALLOUT_FILL: &str = "F4F0EA";
 
 /// What a paragraph is.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -150,6 +155,9 @@ pub(super) struct Reader<'a> {
     now: String,
     /// Paragraphs of text boxes, to add after the paragraph that holds them.
     pending: Vec<Item>,
+    /// When the paragraph just read is a drop cap frame: the number of items after it was added, and how many
+    /// of those came after it (the paragraphs of its text boxes).
+    cap: Option<(usize, usize)>,
     /// The comments whose ranges are open, by their IDs in the file, with the IDs they get.
     open_comments: Vec<(String, String)>,
     comment_ids: HashMap<String, String>,
@@ -183,6 +191,7 @@ impl<'a> Reader<'a> {
             changes: TrackedChanges::Suggest,
             now: String::new(),
             pending: Vec::new(),
+            cap: None,
             open_comments: Vec::new(),
             comment_ids: HashMap::new(),
             change: Vec::new(),
@@ -268,6 +277,8 @@ impl<'a> Reader<'a> {
     }
 
     fn paragraph(&mut self, p: &Element, items: &mut Vec<Item>) {
+        // Taken first, so that the paragraphs of a text box in this one do not see it.
+        let cap = self.cap.take();
         let props = child(p, "w:ppr");
         let style_id = self
             .styles
@@ -301,10 +312,12 @@ impl<'a> Reader<'a> {
         let mut link = None;
         self.inline_content(p, &Marks::none(), &mut link, &mut inlines);
         let kind = props.map_or(Kind::Styled(StyleKind::Normal), |props| self.kind(props));
+        // Only the shading OpenNote gives its callouts makes a callout. Other shading is the paragraph's own
+        // formatting (DESIGN 9.1 `shade`), which the paragraph keeps.
         let shaded = props
             .and_then(|props| child(props, "w:shd"))
             .and_then(|shd| shd.attr("w:fill"))
-            .is_some_and(|fill| !fill.eq_ignore_ascii_case("auto") && !fill.eq_ignore_ascii_case("FFFFFF"));
+            .is_some_and(|fill| fill.eq_ignore_ascii_case(CALLOUT_FILL));
         let page_break_before = props.is_some_and(|props| child(props, "w:pagebreakbefore").is_some());
         if page_break_before {
             items.push(Item::PageBreak);
@@ -314,12 +327,17 @@ impl<'a> Reader<'a> {
             .map(str::to_owned)
             .collect();
         let fmt = if self.in_table > 0 || self.nested {
-            Fmt::default()
+            drop_cap::only(props, &self.theme)
         } else {
             self.fmt(&kind, props, style_id.as_deref())
         };
+        let frame = fmt.para.contains_key("dropCap");
+        let (inlines, fmt, bookmarks, trailing) = join_drop_cap(items, cap, inlines, fmt, bookmarks);
         self.emit(kind, shaded, bookmarks, inlines, fmt, items);
+        items.extend(trailing);
+        let after = self.pending.len();
         items.append(&mut self.pending);
+        self.cap = frame.then_some((items.len(), after));
     }
 
     /// The formatting of a paragraph: its style when its kind does not imply it, and its direct paragraph
@@ -446,17 +464,14 @@ impl<'a> Reader<'a> {
                 };
             }
         }
-        if style == StyleKind::Normal {
-            let outline = val(props, "w:outlinelvl").and_then(|v| v.parse::<u8>().ok());
-            if let Some(level) = outline.filter(|l| *l < 6) {
-                return Kind::Styled(StyleKind::Heading(level + 1));
-            }
-        }
+        // A paragraph with its own outline level stays a paragraph: Word shows it in the outline and the
+        // navigation pane, but it keeps its style, so it keeps the `outline` attribute (DESIGN 9.1).
         Kind::Styled(style)
     }
 
     /// Counts a list item and returns the number it shows. Lists that share a definition count on, deeper levels
-    /// start again after a shallower item, and a `w:num` that overrides a level starts again at its first item.
+    /// start again after a shallower item as their `w:lvlRestart` says, and a `w:num` that overrides a level starts
+    /// again at its first item.
     fn count(&mut self, num_id: u32, level: u32, start: u64) -> u64 {
         let key = self.numbering.list_id(num_id).unwrap_or_else(|| format!("x{num_id}"));
         let fresh = self.numbering.restarts(num_id, level) && !self.restarted.contains(&(num_id, level));
@@ -467,8 +482,10 @@ impl<'a> Reader<'a> {
             _ => start,
         };
         counters[level] = Some(shown);
-        for deeper in counters.iter_mut().skip(level + 1) {
-            *deeper = None;
+        for (n, deeper) in counters.iter_mut().enumerate().skip(level + 1) {
+            if self.numbering.restarts_after(num_id, n as u32, level as u32) {
+                *deeper = None;
+            }
         }
         shown
     }
@@ -569,10 +586,9 @@ impl<'a> Reader<'a> {
         };
         let script = TextScript::of(&run_text(r));
         let (mut marks, hidden) = self.marks_for(direct.as_ref(), script);
-        if hidden {
-            self.stats.hidden_runs += 1;
-            return;
-        }
+        // Hidden text comes in as visible text and is counted (DESIGN 9.2): a note app has no "print without
+        // hidden text", and leaving it out would lose it.
+        self.stats.hidden_runs += usize::from(hidden);
         // A format change: kept as a suggestion with the marks before it, or settled.
         let before = props.and_then(|p| child(p, "w:rprchange")).map(|change| {
             let old = child(change, "w:rpr").map(RunProps::read).unwrap_or_default();
