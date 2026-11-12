@@ -16,6 +16,7 @@ import { sessionStore } from '../../state/session';
 import { settingsStore } from '../../state/settings';
 import { useStore } from '../../state/store';
 import { inBarOrder } from './barOrder';
+import { barTick } from './barTick';
 
 export type BarTab = CommandBarItem['tab'];
 
@@ -24,6 +25,8 @@ export interface BarEntry {
   readonly def: AnyCommand;
   readonly disabled: boolean;
   readonly checked: boolean | undefined;
+  /** A toggle whose state holds for part of the selection only. */
+  readonly mixed: boolean;
   /** The first item of its group, after another group. */
   readonly groupStart: boolean;
 }
@@ -37,6 +40,7 @@ function useCommandInputs(): void {
   useStore(osStore, whole);
   useStore(layerStore, whole);
   useRegistry(commands);
+  useStore(barTick, whole);
 }
 
 function contextOrNull(): CommandContext | null {
@@ -79,8 +83,10 @@ function barEntries(items: readonly CommandBarItem[]): BarEntry[] {
   const shown = inBarOrder(items).flatMap((item) => {
     const def = commands.get(item.command);
     const flagsOn = [item.flag, def?.flag].every((flag) => !flag || isEnabled(flag));
-    if (!def || !flagsOn || (def.when && !def.when(ctx))) return [];
-    return [{ item, def, disabled: def.enabled ? !def.enabled(ctx) : false, checked: def.checked?.(ctx) }];
+    if (!def || !flagsOn || (item.offWith && isEnabled(item.offWith)) || (def.when && !def.when(ctx))) return [];
+    const checked = def.checked?.(ctx);
+    const mixed = checked !== true && item.mixed?.() === true;
+    return [{ item, def, disabled: def.enabled ? !def.enabled(ctx) : false, checked, mixed }];
   });
   return shown.map((entry, i) => ({
     ...entry,

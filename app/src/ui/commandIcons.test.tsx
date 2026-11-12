@@ -66,18 +66,22 @@ describe('the command icon table', () => {
   it('never repeats an icon within a group', async () => {
     const items = await prepare();
     const byGroup = new Map<string, string[]>();
+    const seen = new Set<string>();
     for (const item of items) {
       const icon = groupHasIcons(item.tab, item.group) ? iconFor(item.command) : undefined;
       if (!icon) continue;
       const key = `${item.tab}/${item.group}`;
+      // A Home control of version 2 replaces the version 1 tool of the same command (offWith), so the command counts once.
+      if (seen.has(`${key} ${item.command}`)) continue;
+      seen.add(`${key} ${item.command}`);
       byGroup.set(key, [...(byGroup.get(key) ?? []), icon.displayName ?? '']);
     }
     for (const [group, names] of byGroup) expect(new Set(names).size, group).toBe(names.length);
   });
 
-  it('has an icon for each of the 13 formatting glyphs', async () => {
+  it('has an icon for each of the 15 formatting glyphs', async () => {
     await prepare();
-    expect(GLYPH_COMMANDS.size).toBe(13);
+    expect(GLYPH_COMMANDS.size).toBe(15);
     for (const id of GLYPH_COMMANDS) expect(iconFor(id), id).toBeDefined();
   });
 
