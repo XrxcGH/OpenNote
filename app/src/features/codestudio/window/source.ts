@@ -33,6 +33,8 @@ export interface ProjectSource {
    * read-only and sends nothing, and binds again if the block comes back through undo.
    */
   removed?(): boolean;
+  /** The notice for a source that is not live, when it is not "the page is not shown". */
+  lostNotice?(): string | null;
   /** Runs just before the source lets go of its page, while a patch still reaches the page. */
   onLeave(listener: () => void): () => void;
   dispose(): void;

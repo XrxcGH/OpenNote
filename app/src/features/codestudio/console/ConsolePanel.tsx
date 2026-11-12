@@ -58,7 +58,16 @@ const Line = memo(function Line({ kind, spans, files, open }: LineProps) {
     [kind, spans, files],
   );
   const parts = pieces(spans, links);
-  const rows: React.ReactNode[] = [];
+  // Standard error is told apart by more than color (gap V2-8): a mark at the line's start that forced colors keep,
+  // and a label a screen reader reads.
+  const err = kind === 'output' && spans.some((span) => span.err);
+  const rows: React.ReactNode[] = err
+    ? [
+        <span key="err" className={styles.visuallyHidden}>
+          {`${t('codeStudio.studio.console.stderr')} `}
+        </span>,
+      ]
+    : [];
   for (let index = 0; index < parts.length; index += 1) {
     const part = parts[index]!;
     if (!part.link) {
@@ -90,7 +99,7 @@ const Line = memo(function Line({ kind, spans, files, open }: LineProps) {
     );
   }
   return (
-    <div className={styles.line} data-kind={kind}>
+    <div className={styles.line} data-kind={kind} data-stream={err ? 'err' : undefined}>
       {rows}
     </div>
   );

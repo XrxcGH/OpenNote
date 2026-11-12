@@ -81,6 +81,43 @@ describe('files and tabs by keyboard', () => {
     await waitFor(() => expect(controller.fileIds()).not.toContain(extra));
   });
 
+  it('keeps focus on the file after F2 rename and Escape, and on the new file after New file (gap V2-4)', async () => {
+    const { controller, extra } = setup();
+    const tree = () => screen.getByRole('navigation');
+    const row = (name: RegExp) =>
+      within(tree())
+        .getAllByRole('button', { name })
+        .find((b) => b.dataset.file)!;
+
+    row(/extra\.py/).focus();
+    await userEvent.keyboard('{F2}');
+    const field = (await screen.findByRole('textbox')) as HTMLInputElement;
+    await userEvent.clear(field);
+    await userEvent.keyboard('renamed.py{Enter}');
+    await waitFor(() => expect(controller.pathOf(extra)).toBe('renamed.py'));
+    await waitFor(() => expect(document.activeElement).toBe(row(/renamed\.py/)));
+
+    await userEvent.keyboard('{F2}');
+    await screen.findByRole('textbox');
+    await userEvent.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryByRole('textbox')).toBeNull());
+    expect(document.activeElement).toBe(row(/renamed\.py/));
+
+    const newFile = within(tree()).getByRole('button', { name: 'New file' });
+    newFile.focus();
+    await userEvent.keyboard('{Enter}');
+    await screen.findByRole('textbox');
+    await userEvent.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryByRole('textbox')).toBeNull());
+    expect(document.activeElement).toBe(newFile);
+
+    await userEvent.keyboard('{Enter}');
+    await screen.findByRole('textbox');
+    await userEvent.keyboard('fresh.py{Enter}');
+    await waitFor(() => expect(document.activeElement).toBe(row(/fresh\.py/)));
+    expect(document.activeElement).not.toBe(document.body);
+  });
+
   it('closes a tab with Ctrl+F4', async () => {
     const { controller, extra } = setup();
     expect(controller.tabs).toContain(extra);

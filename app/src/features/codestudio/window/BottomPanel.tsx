@@ -133,7 +133,8 @@ export function BottomPanel({ controller }: { controller: StudioController }) {
               role="tab"
               id={`${base}-${tab.id}`}
               aria-selected={controller.panel === tab.id}
-              aria-controls={`${base}-body`}
+              // No panel while it is collapsed, so nothing to point at then.
+              aria-controls={open ? `${base}-body` : undefined}
               tabIndex={controller.panel === tab.id ? 0 : -1}
               className={styles.panelTab}
               onClick={() => {

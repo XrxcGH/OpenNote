@@ -47,4 +47,36 @@ describe('the console with a full log', () => {
     // Only the new line is searched: dropping the oldest line redraws no other line.
     expect(search).toHaveBeenCalledTimes(1);
   });
+
+  it('keeps the lines out of the per-frame visibility checks (gap V2-1)', async () => {
+    controller = new StudioController();
+    controller.mount();
+    controller.open(scratchSource());
+    const studio = controller;
+    act(() => studio.console.write('out', Array.from({ length: 50 }, (_, at) => `row ${at}\n`).join('')));
+    renderUi(<Harness controller={studio} />);
+    const line = (await screen.findByText('row 49')).closest('[data-kind]')!;
+    // `content-visibility: auto` on 5,000 lines doubled the editor's time per key in the built app.
+    expect(getComputedStyle(line).contentVisibility).not.toBe('auto');
+    // The log alone holds the lines' layout.
+    expect(getComputedStyle(screen.getByRole('log')).contain).toBe('strict');
+  });
+
+  it('marks standard error by more than color: a border at the line start and a label (gap V2-8)', async () => {
+    controller = new StudioController();
+    controller.mount();
+    controller.open(scratchSource());
+    const studio = controller;
+    act(() => {
+      studio.console.write('out', 'fine\n');
+      studio.console.write('err', 'broken\n');
+    });
+    renderUi(<Harness controller={studio} />);
+    const err = (await screen.findByText('broken')).closest('[data-kind]') as HTMLElement;
+    const out = screen.getByText('fine').closest('[data-kind]') as HTMLElement;
+    expect(getComputedStyle(err).borderInlineStartStyle).toBe('solid');
+    expect(getComputedStyle(out).borderInlineStartStyle).toBe('none');
+    expect(err.textContent).toBe('Error output: broken');
+    expect(out.textContent).toBe('fine');
+  });
 });

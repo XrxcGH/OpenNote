@@ -5,22 +5,25 @@
 // docked studio is closed. Both windows are the same app, so the channel never leaves this device.
 
 import { windowKind } from '../../../app/windowKind';
+import { t } from '../../../strings/t';
 import type { ProjectSource } from './source';
 
 export const RELAY_CHANNEL = 'opennote.codestudio';
 /** The block the studio showed last, for a window that opens later. Device state, never synced. */
 export const CURRENT_KEY = 'opennote.codestudio.current';
-/** How long the popped studio waits for the main window. */
-export const RELAY_WAIT_MS = 2000;
 /**
- * How long the popped window still waits for the block's data after a window says it has no such block. Every
- * window serves the relay, so a page window or the quick capture window without the block may answer first.
+ * How long the popped studio waits for the main window: for the block's data at start, and for the answer to a
+ * patch. A `missing` answer does not cut it short. Every window serves the relay, so a page window without the block
+ * may answer first, while the main window still loads the studio's chunk (gap V2-5).
  */
-export const MISSING_GRACE_MS = 250;
+export const RELAY_WAIT_MS = 2000;
+
+/** Why the main window's block reads as read-only: its page is not shown, or the block left the page. */
+export type RelayReason = 'pageClosed' | 'projectRemoved';
 
 export type RelayMessage =
   | { kind: 'open'; block: string }
-  | { kind: 'data'; block: string; data: Record<string, unknown>; readOnly: boolean }
+  | { kind: 'data'; block: string; data: Record<string, unknown>; readOnly: boolean; reason?: RelayReason }
   | { kind: 'missing'; block: string }
   | { kind: 'patch'; block: string; data: Record<string, unknown>; fallback: string }
   | { kind: 'close'; block: string };
@@ -44,8 +47,11 @@ export function readRelay(value: unknown): RelayMessage | null {
     case 'missing':
     case 'close':
       return { kind: value.kind, block };
-    case 'data':
-      return isRecord(value.data) ? { kind: 'data', block, data: value.data, readOnly: value.readOnly === true } : null;
+    case 'data': {
+      if (!isRecord(value.data)) return null;
+      const reason = value.reason === 'pageClosed' || value.reason === 'projectRemoved' ? value.reason : undefined;
+      return { kind: 'data', block, data: value.data, readOnly: value.readOnly === true, ...(reason && { reason }) };
+    }
     case 'patch':
       return isRecord(value.data) && typeof value.fallback === 'string'
         ? { kind: 'patch', block, data: value.data, fallback: value.fallback }
@@ -85,8 +91,15 @@ export function serveRelay(
   changes?: (listener: () => void) => () => void,
 ): () => void {
   const watched = new Map<string, ProjectSource>();
-  const send = (block: string, source: ProjectSource) =>
-    channel.postMessage({ kind: 'data', block, data: source.data(), readOnly: source.readOnly() });
+  const send = (block: string, source: ProjectSource) => {
+    const reason: RelayReason | undefined = !source.live()
+      ? 'pageClosed'
+      : source.removed?.()
+        ? 'projectRemoved'
+        : undefined;
+    const readOnly = source.readOnly();
+    channel.postMessage({ kind: 'data', block, data: source.data(), readOnly, ...(reason && { reason }) });
+  };
   /** The block's source that can still reach its page, found again when the one held let go. */
   const live = (block: string): ProjectSource | null => {
     const held = watched.get(block);
@@ -132,30 +145,43 @@ export function serveRelay(
 }
 
 /**
- * The popped window's side: the block through the main window. Resolves null when the main window does not
- * answer in time or has no such block.
+ * The popped window's side: the block through the main window. Resolves null when no window has the block's data
+ * in time. The main window answers each patch with its data and says why the block is read-only, so the popped
+ * studio shows the same notice as the docked one. A patch with no answer in time means the main window is gone.
  */
 export function remoteSource(block: string, channel: Channel, waitMs = RELAY_WAIT_MS): Promise<ProjectSource | null> {
   return new Promise((resolve) => {
     let data: Record<string, unknown> | null = null;
     let readOnly = false;
+    let reason: RelayReason | 'noAnswer' | null = null;
+    let answer: ReturnType<typeof setTimeout> | null = null;
     const listeners = new Set<() => void>();
+    const notify = () => {
+      for (const one of [...listeners]) one();
+    };
     const source: ProjectSource = {
       key: block,
       kind: 'remote',
       data: () => data ?? {},
-      readOnly: () => readOnly,
+      readOnly: () => readOnly || reason !== null,
       patch(patch, fallback) {
         channel.postMessage({ kind: 'patch', block, data: patch, fallback });
+        answer ??= setTimeout(() => {
+          answer = null;
+          reason = 'noAnswer';
+          notify();
+        }, waitMs);
       },
       subscribe(listener) {
         listeners.add(listener);
         return () => listeners.delete(listener);
       },
-      // The main window answers each patch with its data, so the page's state is never guessed here.
-      live: () => true,
+      live: () => reason !== 'pageClosed' && reason !== 'noAnswer',
+      removed: () => reason === 'projectRemoved',
+      lostNotice: () => (reason === 'noAnswer' ? t('codeStudio.studio.noAnswer') : null),
       onLeave: () => () => {},
       dispose() {
+        if (answer !== null) clearTimeout(answer);
         channel.removeEventListener('message', listener);
         channel.postMessage({ kind: 'close', block });
       },
@@ -164,25 +190,22 @@ export function remoteSource(block: string, channel: Channel, waitMs = RELAY_WAI
       channel.removeEventListener('message', listener);
       resolve(null);
     };
-    let timer = setTimeout(giveUp, waitMs);
+    const timer = setTimeout(giveUp, waitMs);
     function listener(event: MessageEvent) {
       const message = readRelay(event.data);
       if (!message || message.block !== block) return;
-      if (message.kind === 'missing') {
-        // Another window without the block. Once the data came, that is no news; before it, the window that has
-        // the block may still answer.
-        if (data !== null) return;
+      // A `missing` answer is from a window without the block; the main window may still answer, so it is no news.
+      if (message.kind !== 'data') return;
+      const first = data === null;
+      data = message.data;
+      readOnly = message.readOnly;
+      reason = message.reason ?? null;
+      if (answer !== null) clearTimeout(answer);
+      answer = null;
+      if (first) {
         clearTimeout(timer);
-        timer = setTimeout(giveUp, Math.min(MISSING_GRACE_MS, waitMs));
-      } else if (message.kind === 'data') {
-        const first = data === null;
-        data = message.data;
-        readOnly = message.readOnly;
-        if (first) {
-          clearTimeout(timer);
-          resolve(source);
-        } else for (const one of listeners) one();
-      }
+        resolve(source);
+      } else notify();
     }
     channel.addEventListener('message', listener);
     channel.postMessage({ kind: 'open', block });

@@ -48,6 +48,16 @@ describe('unknown sequences', () => {
     expect(stripAnsi(`a${E}[2Kb${E}[10;5Hc${E}]0;title${'\u0007'}d${E}]8;;x${E}\\e${E}cf`)).toBe('abcdef');
   });
 
+  it('strips escapes with intermediate bytes whole, such as ESC ( B (gap V2-7)', () => {
+    // ECMA-35 13.2: ESC, intermediate bytes 0x20 to 0x2F, one final byte 0x30 to 0x7E. `ESC ( B` designates ASCII
+    // as G0; `ESC # 8` is the screen alignment test; `ESC % G` selects UTF-8.
+    expect(stripAnsi(`${E}[0m${E}(Bplain`)).toBe('plain');
+    expect(stripAnsi(`a${E}#8b${E}%Gc`)).toBe('abc');
+    const parser = new AnsiParser();
+    expect(parser.push(`x${E}(`)).toEqual([{ text: 'x', fg: null, bold: false }]);
+    expect(parser.push('By', true)).toEqual([{ text: 'y', fg: null, bold: false }]);
+  });
+
   it('drops carriage returns and other control characters but keeps tabs and line feeds', () => {
     expect(stripAnsi('a\r\nb\tc\u0000\u0008d')).toBe('a\nb\tcd');
   });

@@ -78,6 +78,8 @@ export class StudioController {
   readonly dirty = new Set<string>();
   /** True while the project block is gone from its page. */
   private removed = false;
+  /** True while the source cannot reach its page: the page is not shown, or the main window does not answer. */
+  private unreachable = false;
   inputPrompt: string | null = null;
   /** A message the files strip shows, such as a refused name. */
   notice = '';
@@ -100,7 +102,21 @@ export class StudioController {
   /** The window is on screen: the commands reach it. Returns the undo. The console redraws from its own buffer. */
   mount(): () => void {
     shown.studio = this;
-    return () => this.dispose();
+    const hide = () => this.windowHidden();
+    if (typeof window !== 'undefined') window.addEventListener('pagehide', hide);
+    return () => {
+      if (typeof window !== 'undefined') window.removeEventListener('pagehide', hide);
+      this.dispose();
+    };
+  }
+
+  /**
+   * The window closes or reloads (gap V2-3). The text typed in its last moments goes out now, before the typing
+   * delay ends. A popped studio also lets go of the main window's block, so the main window stops watching it.
+   */
+  private windowHidden(): void {
+    this.store?.flush();
+    if (this.source?.kind === 'remote') this.unbind();
   }
 
   // --- React's view of the state.
@@ -169,6 +185,7 @@ export class StudioController {
   private bind(source: ProjectSource): void {
     this.source = source;
     this.removed = source.removed?.() ?? false;
+    this.unreachable = !source.live();
     this.store = createProjectStore({
       data: source.data(),
       readOnly: source.readOnly(),
@@ -238,22 +255,25 @@ export class StudioController {
     const source = this.source;
     const store = this.store;
     if (!source || !store) return;
-    const wasRemoved = this.removed;
+    const wasLost = this.removed || this.unreachable;
     this.removed = source.removed?.() ?? false;
+    this.unreachable = !source.live();
     store.update(source.data(), source.readOnly());
-    const closed = t('codeStudio.studio.pageClosed');
+    const closed = source.lostNotice?.() ?? t('codeStudio.studio.pageClosed');
     const gone = t('codeStudio.studio.projectRemoved');
-    // The page closed or the block left it: what the editors hold stays, marked as not sent.
-    const lost = !source.live() || this.removed;
-    if (!source.live() && this.notice !== closed) this.say(closed);
+    const notices = [gone, t('codeStudio.studio.pageClosed'), t('codeStudio.studio.noAnswer')];
+    // The page closed, the block left it, or the main window is gone: what the editors hold stays, marked as not
+    // sent. The popped studio hears of each through the relay (gap V2-5).
+    const lost = this.unreachable || this.removed;
+    if (this.unreachable && this.notice !== closed) this.say(closed);
     else if (this.removed && this.notice !== gone) this.say(gone);
-    else if (wasRemoved && !this.removed && this.notice === gone) this.notice = '';
+    else if (wasLost && !lost && notices.includes(this.notice)) this.notice = '';
     const project = store.project();
     for (const [id, editor] of this.editors) {
       const file = project.files[id];
       if (file && editor.getText() !== file.text) {
         if (lost) this.dirty.add(id);
-        else if (this.dirty.has(id) && wasRemoved) store.editFile(id, editor.getText());
+        else if (this.dirty.has(id) && wasLost) store.editFile(id, editor.getText());
         else if (!this.dirty.has(id)) editor.setText(file.text);
       }
       editor.setReadOnly(!store.editable);

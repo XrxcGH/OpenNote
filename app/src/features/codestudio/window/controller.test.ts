@@ -9,7 +9,10 @@ import { CODE_PROJECT_TYPE } from '../contracts';
 import type { CodeEditor } from '../editor/create';
 import { starterProject } from '../project/model';
 import { StudioController } from './controller';
-import { blockSource, PAGE_LEAVING_EVENT } from './source';
+import type { Channel, RelayMessage } from './relay';
+import { remoteSource, serveRelay } from './relay';
+import { blockSource, PAGE_LEAVING_EVENT, scratchSource } from './source';
+import type { ProjectSource } from './source';
 
 const BLOCK = 'p1';
 
@@ -208,5 +211,102 @@ describe('what a keystroke redraws', () => {
     studio.type('abc');
     expect(window_).toHaveBeenCalledTimes(1);
     studio.stop();
+  });
+});
+
+describe('the window closing or reloading (gap V2-3)', () => {
+  it('sends the text typed just before the window hides, without waiting for the typing delay', () => {
+    const first = fakeMount(starterProject('One', 'print(0)') as unknown as Record<string, unknown>);
+    const studio = studioOn(first.mounted);
+    const unmount = studio.controller.mount();
+    studio.type('late = 1');
+    expect(first.texts(studio.id)).toEqual([]);
+    window.dispatchEvent(new Event('pagehide'));
+    expect(first.texts(studio.id)).toEqual(['late = 1']);
+    unmount();
+    studio.stop();
+  });
+
+  it('keeps scratch text typed just before a reload', () => {
+    localStorage.removeItem('opennote.codestudio.scratch');
+    const controller = new StudioController();
+    const unmount = controller.mount();
+    controller.open(scratchSource());
+    const id = controller.project()!.main;
+    controller.edited(id, 'kept = 2');
+    window.dispatchEvent(new Event('pagehide'));
+    expect(localStorage.getItem('opennote.codestudio.scratch')).toContain('kept = 2');
+    unmount();
+  });
+
+  it('lets a popped studio post close to the main window as its window hides', () => {
+    const posted: RelayMessage[] = [];
+    const channel: Channel = {
+      postMessage: (message) => posted.push(message),
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      close: () => {},
+    };
+    let data: Record<string, unknown> = starterProject('One', 'print(0)') as unknown as Record<string, unknown>;
+    const source: ProjectSource = {
+      key: BLOCK,
+      kind: 'remote',
+      data: () => data,
+      readOnly: () => false,
+      patch: (patch, fallback) => {
+        data = { ...data };
+        channel.postMessage({ kind: 'patch', block: BLOCK, data: patch, fallback });
+      },
+      subscribe: () => () => {},
+      live: () => true,
+      onLeave: () => () => {},
+      dispose: () => channel.postMessage({ kind: 'close', block: BLOCK }),
+    };
+    const controller = new StudioController();
+    const unmount = controller.mount();
+    controller.open(source);
+    controller.edited(controller.project()!.main, 'popped = 3');
+    window.dispatchEvent(new Event('pagehide'));
+    expect(posted.map((message) => message.kind)).toEqual(['patch', 'close']);
+    unmount();
+  });
+});
+
+describe('the popped studio told why its block is read-only (gap V2-5)', () => {
+  /** Two ends of one channel, delivering on a later turn as BroadcastChannel does. */
+  function pair(): [Channel, Channel] {
+    const targets = [new EventTarget(), new EventTarget()];
+    return targets.map((target, at) => ({
+      postMessage: (message: RelayMessage) =>
+        setTimeout(() => targets[1 - at]!.dispatchEvent(new MessageEvent('message', { data: message })), 0),
+      addEventListener: (type: 'message', listener: (event: MessageEvent) => void) =>
+        target.addEventListener(type, listener as EventListener),
+      removeEventListener: (type: 'message', listener: (event: MessageEvent) => void) =>
+        target.removeEventListener(type, listener as EventListener),
+      close: () => {},
+    })) as unknown as [Channel, Channel];
+  }
+  const turn = () => new Promise((resolve) => setTimeout(resolve, 5));
+
+  it('shows the page-closed notice when the main window leaves the page, and clears it when the page is back', async () => {
+    const first = fakeMount(starterProject('One', 'print(0)') as unknown as Record<string, unknown>);
+    shownMounted.set(first.mounted);
+    const [main, popped] = pair();
+    const stop = serveRelay(main, (block) => blockSource(block), shownMounted.subscribe);
+    const remote = (await remoteSource(BLOCK, popped))!;
+    const controller = new StudioController();
+    controller.open(remote);
+    shownMounted.set(otherMount());
+    await turn();
+    expect(controller.store?.editable).toBe(false);
+    expect(controller.notice).toBe(
+      'The page with this project is not shown, so the project is read-only. Go back to the page to edit it.',
+    );
+    shownMounted.set(first.mounted);
+    await turn();
+    expect(controller.store?.editable).toBe(true);
+    expect(controller.notice).toBe('');
+    controller.dispose();
+    stop();
   });
 });

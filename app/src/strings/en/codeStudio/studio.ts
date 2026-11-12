@@ -12,6 +12,7 @@ export const codeStudioStudio = {
   noFileOpen: 'No file is open. Pick one from the files.',
   projectRemoved: 'This project was removed from the page, so it is read-only. Undo on the page brings it back.',
   pageClosed: 'The page with this project is not shown, so the project is read-only. Go back to the page to edit it.',
+  noAnswer: 'The main window does not answer, so the project is read-only here. Your text is kept as not sent.',
   debugLater: 'Debugging comes in a later release.',
   runtimes: {
     pythonQuick: 'Python (quick)',
@@ -70,6 +71,7 @@ export const codeStudioStudio = {
     inserted: 'Output put on the page.',
     noPage: 'Open a page to put the output on it.',
     openAt: 'Open {file} at line {line}',
+    stderr: 'Error output:',
     inputLabel: 'Input',
     endInput: 'End input',
     endInputHelp: 'Press Enter to send the line. Ctrl+D or End input ends the input.',

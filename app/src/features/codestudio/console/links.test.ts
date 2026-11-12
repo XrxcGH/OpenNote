@@ -40,6 +40,21 @@ describe('console links', () => {
     expect(findLinks('main.js:0', FILES)).toEqual([]);
   });
 
+  it('makes no link for a URL or an outside path that only shares a base name (gap V2-6)', () => {
+    expect(findLinks('GET https://example.com/main.py:80 failed', FILES)).toEqual([]);
+    expect(findLinks('at http://localhost:5173/src/util.py:4', FILES)).toEqual([]);
+    expect(findLinks('C:/x/main.py:9', FILES)).toEqual([]);
+    expect(findLinks('  File "/usr/lib/python3.12/site-packages/pkg/main.py", line 7', FILES)).toEqual([]);
+    expect(resolvePath('/opt/lib/util.js', ['util.js'])).toBeNull();
+    // Inside a runtime's project folder, or by a tail with a folder, the path still links.
+    expect(resolvePath('/project/main.py', FILES)).toBe('main.py');
+    expect(resolvePath('/home/pyodide/main.py', FILES)).toBe('main.py');
+    expect(findLinks('C:/x/src/util.py:9', FILES)[0]).toMatchObject({ file: 'src/util.py', line: 9 });
+    expect(findLinks('at file:///project/main.js:7:3', FILES)[0]).toMatchObject({ file: 'main.js', line: 7 });
+    // A relative path still finds a file by its base name.
+    expect(resolvePath('util.js', ['lib/util.js'])).toBe('lib/util.js');
+  });
+
   it('links each of several places on one line', () => {
     const links = findLinks('main.py:2 and main.js:4:1', FILES);
     expect(links.map((link) => [link.file, link.line])).toEqual([

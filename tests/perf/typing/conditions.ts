@@ -194,7 +194,10 @@ async function zoomTo(page: Page, target: number): Promise<void> {
 
 const inNote = (caret: Caret) => async (page: Page) => placeCaret(page, await longestBox(page), caret);
 
-/** A 3,000-line program in a new Code studio project, the caret at its end; the console filled with lines. */
+/**
+ * A 1,000-line program (the plan's typing gate G-U2) in a new Code studio project, the caret at its end; the console
+ * filled with lines.
+ */
 const inStudio = (consoleLines: number) => async (page: Page) => {
   await atEndOfNote(page);
   const palette = page.getByRole('combobox').first();
@@ -207,7 +210,7 @@ const inStudio = (consoleLines: number) => async (page: Page) => {
   const editor = page.getByRole('dialog', { name: 'Code studio' }).getByRole('textbox', { name: /^Code editor/ });
   await editor.focus();
   await page.keyboard.press('Control+a');
-  await page.keyboard.insertText(Array.from({ length: 3000 }, (_, at) => `value_${at} = ${at} * 2`).join('\n'));
+  await page.keyboard.insertText(Array.from({ length: 1000 }, (_, at) => `value_${at} = ${at} * 2`).join('\n'));
   if (consoleLines > 0) {
     await page.evaluate(
       (count) =>
@@ -356,13 +359,13 @@ export const CONDITIONS: readonly Condition[] = [
   },
   {
     id: 'studio',
-    description: 'Code studio, a 3,000-line file, empty console (control)',
+    description: 'Code studio, a 1,000-line file, empty console (control)',
     fixture: 'short',
     prepare: inStudio(0),
   },
   {
     id: 'studio.console',
-    description: 'Code studio, a 3,000-line file, 5,000 console lines',
+    description: 'Code studio, a 1,000-line file, 5,000 console lines',
     fixture: 'short',
     prepare: inStudio(5000),
   },

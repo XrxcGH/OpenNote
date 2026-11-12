@@ -53,11 +53,19 @@
     contain: strict;
   }
 
+  /*
+   * No `content-visibility: auto` on the lines. With 5,000 of them it made each keystroke in the editor about twice
+   * as slow (gap V2-1): the browser tracks every line's visibility on each frame. `contain: strict`
+   * on the log already keeps the lines out of the editor's layout.
+   */
   .line {
     min-block-size: 1.2em;
-    /* A long log lays out only the lines on screen. */
-    content-visibility: auto;
-    contain-intrinsic-block-size: auto 1.2em;
+  }
+
+  /* Standard error: a mark at the start that is not color alone, and stays in forced colors. */
+  .line[data-stream='err'] {
+    padding-inline-start: var(--space-1);
+    border-inline-start: 2px solid var(--color-status-danger);
   }
 
   .line[data-kind='note'] {

@@ -202,3 +202,65 @@ describe('the pop-out relay with several windows', () => {
     },
   );
 });
+
+describe('the popped studio and a main window that cannot take its text (gap V2-5)', () => {
+  it('says why the block is read-only: its page closed, or the block left the page (gap V2-5)', async () => {
+    const [main, popped] = pair();
+    const held = memorySource('b1', { name: 'One' });
+    let removed = false;
+    held.source.removed = () => removed;
+    serveRelay(main, () => held.source);
+    const remote = (await remoteSource('b1', popped))!;
+    expect(remote.live()).toBe(true);
+    removed = true;
+    held.change({ name: 'One' });
+    await turn();
+    expect(remote.removed?.()).toBe(true);
+    expect(remote.readOnly()).toBe(true);
+    removed = false;
+    held.leave();
+    await turn();
+    expect(remote.live()).toBe(false);
+    expect(remote.removed?.()).toBe(false);
+    expect(remote.lostNotice?.()).toBeNull();
+  });
+
+  it('turns read-only with a notice when no answer follows a patch, and back when one comes', async () => {
+    const [main, popped] = pair();
+    const held = memorySource('b1', { name: 'One' });
+    const stop = serveRelay(main, () => held.source);
+    const remote = (await remoteSource('b1', popped, 30))!;
+    const heard = vi.fn();
+    remote.subscribe(heard);
+    stop();
+    remote.patch({ name: 'Two' }, 'fallback');
+    await new Promise((resolve) => setTimeout(resolve, 60));
+    expect(heard).toHaveBeenCalled();
+    expect(remote.live()).toBe(false);
+    expect(remote.readOnly()).toBe(true);
+    expect(remote.lostNotice?.()).toBe(
+      'The main window does not answer, so the project is read-only here. Your text is kept as not sent.',
+    );
+    serveRelay(main, () => held.source);
+    remote.patch({ name: 'Two' }, 'fallback');
+    await turn();
+    await turn();
+    expect(remote.live()).toBe(true);
+    expect(remote.readOnly()).toBe(false);
+  });
+
+  it('keeps waiting for the main window after another window says it has no such block', async () => {
+    const [main, other, popped] = hub(3);
+    serveRelay(other!, () => null);
+    const held = memorySource('b1', { name: 'One' });
+    // The main window answers late, as it does while it still loads the studio's chunk.
+    const slow: Channel = {
+      ...main!,
+      addEventListener: (type, listener) =>
+        main!.addEventListener(type, (event) => setTimeout(() => listener(event), 300)),
+    };
+    serveRelay(slow, () => held.source);
+    const remote = await remoteSource('b1', popped!, 2000);
+    expect(remote?.data()).toEqual({ name: 'One' });
+  });
+});

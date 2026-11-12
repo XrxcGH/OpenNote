@@ -128,8 +128,15 @@ export class AnsiParser {
       }
       return null;
     }
-    // Any other escape is ESC and one byte.
-    return start + 2;
+    // Any other escape (ECMA-35 section 13.2): intermediate bytes 0x20 to 0x2F, then one final byte 0x30 to 0x7E. So
+    // `ESC ( B`, which `tput sgr0` prints, goes whole.
+    for (let index = start + 1; index < text.length; index += 1) {
+      const code = text.charCodeAt(index);
+      if (code >= 0x20 && code <= 0x2f) continue;
+      // A byte that is not a final byte ends the sequence before it, as a CSI does.
+      return code >= 0x30 && code <= 0x7e ? index + 1 : index;
+    }
+    return null;
   }
 }
 

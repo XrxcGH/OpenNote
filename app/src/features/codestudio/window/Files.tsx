@@ -2,8 +2,8 @@
 // Files menu in a narrow one. Tabs and rows show the language badge, the main file, and a dot while the page does
 // not have the file's latest text yet. New file and Rename take the name in a field in place.
 import { DotsThreeVertical, FilePlus, Files as FilesIcon, X } from '@phosphor-icons/react';
-import { useId, useRef, useState } from 'react';
-import type { KeyboardEvent } from 'react';
+import { useId, useLayoutEffect, useRef, useState } from 'react';
+import type { KeyboardEvent, RefObject } from 'react';
 import { t } from '../../../strings/t';
 import { IconButton, openMenu } from '../../../ui';
 import type { MenuItemSpec } from '../../../ui';
@@ -24,7 +24,11 @@ function Badge({ path }: { path: string }) {
 
 const baseName = (path: string) => path.slice(path.lastIndexOf('/') + 1);
 
-function NameForm(props: { initial: string; onDone(name: string | null): void; label: string }) {
+/**
+ * The name field in place. `onDone` gets the name, or null on Escape or when focus leaves; `blurred` is true when
+ * focus left, so the studio does not take it back.
+ */
+function NameForm(props: { initial: string; onDone(name: string | null, blurred?: boolean): void; label: string }) {
   const [name, setName] = useState(props.initial);
   const id = useId();
   return (
@@ -50,7 +54,7 @@ function NameForm(props: { initial: string; onDone(name: string | null): void; l
             props.onDone(null);
           }
         }}
-        onBlur={() => props.onDone(null)}
+        onBlur={() => props.onDone(null, true)}
       />
     </form>
   );
@@ -122,14 +126,49 @@ function fileKeys(
   }
 }
 
-function useEditing(controller: StudioController) {
-  const [editing, setEditing] = useState<Editing>(null);
-  const done = (name: string | null) => {
+/** The row or tab of a file inside a strip, by its `data-file`. */
+function fileControl(scope: HTMLElement | null, id: string): HTMLElement | null {
+  for (const element of scope?.querySelectorAll<HTMLElement>('[data-file]') ?? []) {
+    if (element.dataset.file === id) return element;
+  }
+  return null;
+}
+
+/**
+ * New file and Rename in place. When the name field closes by Enter or Escape, focus goes on: to the renamed or new
+ * file's row or tab, or back to the control that opened the field. So a keyboard user keeps their place.
+ */
+function useEditing(controller: StudioController, scope: RefObject<HTMLElement | null>) {
+  const [editing, setEditingState] = useState<Editing>(null);
+  const opener = useRef<HTMLElement | null>(null);
+  const focusNext = useRef<(() => void) | null>(null);
+  useLayoutEffect(() => {
+    const run = focusNext.current;
+    focusNext.current = null;
+    run?.();
+  });
+  const setEditing = (next: Editing) => {
+    const active = document.activeElement;
+    opener.current = active instanceof HTMLElement && active !== document.body ? active : null;
+    setEditingState(next);
+  };
+  const done = (name: string | null, blurred = false) => {
     const now = editing;
-    setEditing(null);
-    if (!name || !now) return;
-    if (now.mode === 'new') controller.newFile(name);
-    else if (name !== controller.pathOf(now.id)) controller.renameFile(now.id, name);
+    setEditingState(null);
+    if (!now) return;
+    let target: string | null = null;
+    if (name && now.mode === 'new') target = controller.newFile(name) ? controller.activeFile : null;
+    else if (name && now.mode === 'rename') {
+      target = name === controller.pathOf(now.id) || controller.renameFile(now.id, name) ? now.id : null;
+    }
+    if (blurred) return;
+    const back = opener.current;
+    focusNext.current = () => {
+      const file = target ? fileControl(scope.current, target) : null;
+      if (file) file.focus();
+      else if (back?.isConnected) back.focus();
+      else if (now.mode === 'rename') fileControl(scope.current, now.id)?.focus();
+    };
   };
   return { editing, setEditing, done };
 }
@@ -144,10 +183,11 @@ function Notice({ controller }: { controller: StudioController }) {
 
 export function FileTree({ controller }: { controller: StudioController }) {
   const project = controller.project()!;
-  const { editing, setEditing, done } = useEditing(controller);
+  const tree = useRef<HTMLElement>(null);
+  const { editing, setEditing, done } = useEditing(controller, tree);
   const editable = controller.store?.editable ?? false;
   return (
-    <nav className={styles.tree} aria-label={t('codeStudio.studio.files.label')}>
+    <nav ref={tree} className={styles.tree} aria-label={t('codeStudio.studio.files.label')}>
       <div className={styles.treeHead}>
         <span>{t('codeStudio.studio.files.label')}</span>
         <IconButton
@@ -173,6 +213,7 @@ export function FileTree({ controller }: { controller: StudioController }) {
               <button
                 type="button"
                 className={styles.treeFile}
+                data-file={id}
                 aria-current={controller.activeFile === id ? 'true' : undefined}
                 aria-keyshortcuts={FILE_KEYS}
                 onClick={() => controller.openFile(id)}
@@ -214,7 +255,8 @@ function FileMenuButton(props: { controller: StudioController; id: string; edit:
 
 export function TabStrip({ controller, withFilesMenu }: { controller: StudioController; withFilesMenu: boolean }) {
   const project = controller.project()!;
-  const { editing, setEditing, done } = useEditing(controller);
+  const strip = useRef<HTMLDivElement>(null);
+  const { editing, setEditing, done } = useEditing(controller, strip);
   const menuAnchor = useRef<HTMLSpanElement>(null);
   const filesMenu = () =>
     void openMenu({
@@ -239,7 +281,7 @@ export function TabStrip({ controller, withFilesMenu }: { controller: StudioCont
       ],
     });
   return (
-    <div className={styles.tabsRow}>
+    <div ref={strip} className={styles.tabsRow}>
       {withFilesMenu && (
         <span ref={menuAnchor}>
           <IconButton label={t('codeStudio.studio.files.label')} icon={FilesIcon} hasPopup="menu" onPress={filesMenu} />
@@ -263,6 +305,7 @@ export function TabStrip({ controller, withFilesMenu }: { controller: StudioCont
                 aria-current={selected ? 'true' : undefined}
                 title={path}
                 className={styles.tabButton}
+                data-file={id}
                 aria-keyshortcuts={TAB_KEYS}
                 onClick={() => controller.openFile(id)}
                 onKeyDown={(event) => fileKeys(event, controller, id, setEditing, false)}
