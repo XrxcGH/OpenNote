@@ -178,7 +178,8 @@ export const accounting = {
     pool: '{name}: {rate} per driver unit × {used} = {amount}.',
   },
   bonds: {
-    invalid: 'The face value and a whole number of periods must be positive, and the rates cannot be below zero.',
+    invalid:
+      'The face value and a whole number of periods must be positive, and the rates cannot be below zero. Use at most 100,000 periods.',
     headline: 'Issue price {issue}',
     discount: 'Issued at a discount of {amount}.',
     premium: 'Issued at a premium of {amount}.',
@@ -186,7 +187,7 @@ export const accounting = {
     row: 'Period {n}: expense {expense} − cash {cash} = amortization {amort}; carrying amount {carrying}.',
   },
   audit: {
-    invalid: 'Confidence and the tolerable rate must be between 0 and 100, and deviations a whole number.',
+    invalid: 'Confidence and the tolerable rate must be between 0 and 100, and deviations a whole number up to 1,000.',
     amounts: 'Enter amounts separated by commas, with at least one that is not zero.',
     headline: 'Sample size: {n}',
     sampleStep:

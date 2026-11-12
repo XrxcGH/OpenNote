@@ -273,3 +273,15 @@ describe('the phylogenetics tool', () => {
     expect(failed(runTool(spec, { mode: 'matrix', matrix: 'a\nb 1\nc 2 3' }))).toBe('ok');
   });
 });
+
+describe('a tree of one taxon (B2-B09-8)', () => {
+  it('reads as a message, not a crash', () => {
+    for (const newick of ['0', 'A', '(A);', 'A:1;']) {
+      for (const outgroup of ['', newick.replace(/W/g, '').charAt(0)]) {
+        const values = { mode: 'newick', newick, query: '', outgroup };
+        expect(() => runTool(spec, values), newick + outgroup).not.toThrow();
+        expect(failed(runTool(spec, values)), newick + outgroup).not.toBe('ok');
+      }
+    }
+  });
+});
