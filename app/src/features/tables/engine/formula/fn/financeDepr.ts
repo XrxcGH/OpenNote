@@ -33,16 +33,20 @@ const DB: Run = (args) => {
   if (period > (month === 12 ? life : life + 1)) return err('NUM');
   if (cost === 0) return 0;
   const rate = Math.round((1 - Math.pow(salvage / cost, 1 / life)) * 1000) / 1000;
-  let total = (cost * rate * month) / 12;
-  if (period === 1) return done(total);
-  let dep = 0;
-  for (let p = 2; p <= period; p++) {
-    dep = (cost - total) * rate;
-    if (p > life) dep = (dep * (12 - month)) / 12;
-    total += dep;
-  }
-  return done(dep);
+  const first = (cost * rate * month) / 12;
+  if (period === 1) return done(first);
+  // Each later full year takes `rate` of the value left, so the value left before year p is a power, and a huge
+  // period costs no more than a small one. Only the stub year past the life (p > life) takes a part of a year.
+  const before = (cost - first) * Math.pow(1 - rate, period - 2);
+  const dep = before * rate;
+  return done(period > life ? (dep * (12 - month)) / 12 : dep);
 };
+
+/**
+ * VDB and AMORDEGRC work period by period. Past this many periods with value still moving they give #NUM! rather than
+ * hold the page: a formula in a note must never freeze the app. Real assets have lives far shorter than this.
+ */
+const PERIOD_CAP = 1_000_000;
 
 /** Book value left after `periods` periods of declining balance at `rate` a period (a closed form, so periods may be fractional). */
 const bookAfter = (cost: number, rate: number, periods: number): number => cost * Math.pow(1 - rate, periods);
@@ -78,6 +82,9 @@ const VDB: Run = (args) => {
   const last = Math.ceil(end);
   for (let k = 1; k <= last; k++) {
     const left = Math.max(0, book - salvage);
+    // Nothing left above salvage: every later period takes nothing.
+    if (left === 0) break;
+    if (k > PERIOD_CAP) return err('NUM');
     let amount = Math.min(book * rate, left);
     const remaining = life - (k - 1);
     if (!noSwitch) {
@@ -143,7 +150,10 @@ const AMORDEGRC: Run = (args) => {
   let value = a.cost - firstPart;
   let rest = value - a.salvage;
   for (let k = 1; k <= a.period; k++) {
+    if (k > PERIOD_CAP) return err('NUM');
     const amount = Math.round(rate * value);
+    // An amount that rounds to nothing leaves the value as it was, so every later period takes nothing too.
+    if (amount === 0 && rest >= 0) return 0;
     rest -= amount;
     if (rest < 0) return k === a.period ? Math.round(value * 0.5) : 0;
     if (k === a.period) return amount;

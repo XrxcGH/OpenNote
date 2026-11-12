@@ -9,6 +9,10 @@ import type { FnSpec2, Param, ParamGroup } from './types';
 
 let runs: Readonly<Record<string, Run>> | null = null;
 let pending: Promise<void> | null = null;
+/** A formula called a financial function before the chunk landed. */
+let asked = false;
+/** The last load failed. */
+let failed = false;
 const listeners = new Set<() => void>();
 
 /** Loads the financial chunk once. Later calls give the same promise. A failed load may be tried again. */
@@ -16,10 +20,12 @@ export function loadFinance(): Promise<void> {
   pending ??= import('./lazy/financial').then(
     (chunk) => {
       runs = chunk.runs;
+      failed = false;
       for (const listener of [...listeners]) listener();
     },
     (cause: unknown) => {
       pending = null;
+      failed = true;
       throw cause;
     },
   );
@@ -28,6 +34,12 @@ export function loadFinance(): Promise<void> {
 
 /** True once the financial chunk has loaded. */
 export const financeLoaded = (): boolean => runs !== null;
+
+/**
+ * True while a formula has called a financial function and the chunk has not landed. Results calculated then hold
+ * stand-ins (#BUSY!, or #CALC! after a failed load, or what IFERROR gives for them), so nothing should store them.
+ */
+export const financePending = (): boolean => asked && runs === null;
 
 /** Calls `listener` when the chunk lands, so a page can recalculate. Returns a function that stops listening. */
 export function onFinanceLoaded(listener: () => void): () => void {
@@ -39,8 +51,11 @@ export function onFinanceLoaded(listener: () => void): () => void {
 function lazyRun(name: string): Run {
   return (args, env) => {
     if (runs === null) {
+      asked = true;
       loadFinance().catch(() => undefined);
-      return err('BUSY');
+      // #BUSY! says the page will calculate again when the chunk lands. Once a load has failed that may never happen,
+      // so the cell gives a real error; a later load that works still calculates the page again.
+      return err(failed ? 'CALC' : 'BUSY');
     }
     const run = runs[name];
     return run === undefined ? err('NAME') : run(args, env);

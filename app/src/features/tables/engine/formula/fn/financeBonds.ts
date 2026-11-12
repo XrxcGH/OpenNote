@@ -40,6 +40,8 @@ function coupon(pick: (c: ReturnType<typeof coupons>, part: ReturnType<typeof sp
     const a = couponArgs(args);
     if (isError(a)) return a;
     const c = coupons(a.settle, a.maturity, a.f);
+    // A coupon date before day 0 is not a date the sheet can hold.
+    if (c.pcd < 0) return err('NUM');
     return done(pick(c, splitPeriod(a.settle, c, a.basis, a.f)));
   };
 }
@@ -57,7 +59,9 @@ export function priceOf(
   const c = coupons(settle, maturity, f);
   const { a, dsc, e } = splitPeriod(settle, c, basis, f);
   const cpn = (100 * rate) / f;
-  if (c.count === 1) return (red + cpn) / (1 + ((dsc / e) * yld) / f) - (cpn * a) / e;
+  // One coupon left: the documented formula discounts by simple interest over DSR = E - A, the days from settlement to
+  // the end of the period. That is DSC on bases 0, 1 and 4, but not on bases 2 and 3, where E is a fixed share of a year.
+  if (c.count === 1) return (red + cpn) / (1 + (((e - a) / e) * yld) / f) - (cpn * a) / e;
   const v = 1 + yld / f;
   const x = dsc / e;
   let sum = red / Math.pow(v, c.count - 1 + x);
@@ -96,10 +100,11 @@ const YIELD: Run = (args) => {
   const c = coupons(b.settle, b.maturity, b.f);
   if (c.count === 1) {
     // One coupon left: the yield is simple interest on the money paid, so it has a closed form.
-    const { a, dsc, e } = splitPeriod(b.settle, c, b.basis, b.f);
+    // DSR = E - A, as in PRICE above.
+    const { a, e } = splitPeriod(b.settle, c, b.basis, b.f);
     const paid = b.x / 100 + ((a / e) * b.rate) / b.f;
     const got = b.red / 100 + b.rate / b.f;
-    return done((((got - paid) / paid) * b.f * e) / dsc);
+    return done((((got - paid) / paid) * b.f * e) / (e - a));
   }
   const y = solveRate((r) => priceOf(b.settle, b.maturity, b.rate, r, b.red, b.f, b.basis) - b.x, 0.1, -b.f);
   return y === null ? err('NUM') : done(y);

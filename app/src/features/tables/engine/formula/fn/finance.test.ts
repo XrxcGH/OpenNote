@@ -108,6 +108,18 @@ describe('root finding', () => {
   });
 });
 
+describe('hostile input', () => {
+  beforeAll(() => loadFinance(), 60_000);
+  it('answers a trillion periods at once: no function works once per period without a bound', () => {
+    // The answers are fixture cases. Here only the time counts: looping once per period would take hours.
+    const huge = (fixture.cases as Case[]).filter((c) => c.formula.includes('1E12'));
+    expect(huge.length).toBeGreaterThanOrEqual(8);
+    const start = performance.now();
+    for (const c of huge) run(c.formula, c.cells);
+    expect(performance.now() - start).toBeLessThan(2000);
+  });
+});
+
 describe('the financial family', () => {
   beforeAll(() => loadFinance(), 60_000);
   it('registers the 55 functions', () => {

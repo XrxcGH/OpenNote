@@ -23,6 +23,8 @@ export function fv(rate: number, nper: number, pmt: number, pv: number, type: 0 
 export function pmt(rate: number, nper: number, pv: number, fvalue: number, type: 0 | 1): number {
   if (rate === 0) return -(pv + fvalue) / nper;
   const q = Math.pow(1 + rate, nper);
+  // So many periods that q is past the largest number: the payment is the interest on pv alone (the limit).
+  if (q === Infinity) return -(rate * pv) / (1 + rate * type);
   return -(rate * (fvalue + pv * q)) / ((1 + rate * type) * (q - 1));
 }
 
@@ -103,12 +105,15 @@ function cumulative(args: Value[], part: 'interest' | 'principal'): Value {
   if (start < 1 || end < 1 || start > end || end > nper || (t !== 0 && t !== 1)) return err('NUM');
   const type = t as 0 | 1;
   const payment = pmt(rate, nper, pv, 0, type);
-  let sum = 0;
-  for (let per = start; per <= end; per++) {
-    const interest = ipmt(rate, per, nper, pv, 0, type);
-    sum += part === 'interest' ? interest : payment - interest;
-  }
-  return done(sum);
+  // A closed form, so a huge span costs no more than a short one. The principal paid in period k is the fall of the
+  // balance over that period: F(k-1) - F(k), where F(k) = fv(k). With payments at the start, the balance also earns a
+  // period of interest, so the fall is (1 + rate) times the principal, and payment 1 is all principal.
+  // After the last payment the balance is 0 by definition, which also holds when q^nper is too large for a number.
+  const balanceAt = (k: number): number => (k >= nper ? 0 : fv(rate, k, payment, pv, type));
+  const from = type === 1 ? Math.max(start, 2) : start;
+  let principal = from > end ? 0 : (balanceAt(from - 1) - balanceAt(end)) / (type === 1 ? 1 + rate : 1);
+  if (type === 1 && start === 1) principal += payment;
+  return done(part === 'principal' ? principal : (end - start + 1) * payment - principal);
 }
 
 const ISPMT: Run = (args) => {

@@ -53,9 +53,12 @@ function oddArgs(args: Value[], firstPeriod: boolean): Odd | FormulaError {
   if (typeof basis !== 'number') return basis;
   if (settle === null || maturity === null || edge === null || first === null) return err('NUM');
   if (rate < 0 || x < 0 || red <= 0) return err('NUM');
-  if (firstPeriod ? !(maturity >= first && first > settle && settle > edge) : !(maturity > settle && settle > edge)) {
+  if (firstPeriod ? !(maturity > first && first > settle && settle > edge) : !(maturity > settle && settle > edge)) {
     return err('NUM');
   }
+  // With an odd first period, the regular coupons run from the first coupon to maturity, so maturity must fall on
+  // that schedule: whole coupon periods after the first coupon.
+  if (firstPeriod && coupons(first, maturity, f).pcd !== first) return err('NUM');
   return { settle, maturity, edge, first, rate, x, red, f, basis };
 }
 

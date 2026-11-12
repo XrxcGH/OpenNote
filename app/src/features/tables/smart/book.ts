@@ -4,7 +4,7 @@
 // results (ADR 0061, data.sheet.values) is worked out here too, so it goes in the same patch as the edit.
 import type { TableData } from '../../../editor/schema/specs';
 import { ERROR_TOKENS, isError, recalculateBook, todayDays } from '../engine';
-import { onFinanceLoaded } from '../engine/formula/fn/finance';
+import { financePending, onFinanceLoaded } from '../engine/formula/fn/finance';
 import { toScalar } from '../engine/values';
 import type { EngineEnv, Table } from '../engine';
 import { cellCount, createRecalcClient, needsWorker, WORKER_CELLS } from '../engine/worker/client';
@@ -297,6 +297,9 @@ export function valuesPatch(
 ): JsonObject | null {
   const after = sheetAfter(stored, extra);
   if (!after) return null;
+  // Results worked while a lazy family was still loading hold stand-ins, even in a formula that hides the error
+  // (IFERROR). Writing none leaves the cache marked stale, and the next edit after the family lands writes it.
+  if (financePending()) return null;
   const smart = extra?.smart === undefined ? stored.smart : applyPatch(stored.smart as Json, extra.smart as Json);
   const table = { header: data.header, columns: data.columns, rows: data.rows, smart: smart ?? undefined };
   const offset = data.header ? 1 : 0;
