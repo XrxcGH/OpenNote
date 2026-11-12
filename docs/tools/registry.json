@@ -1316,6 +1316,13 @@
       "flag": "text.v2Controls"
     },
     {
+      "id": "format.selectSimilar",
+      "title": "Select text with similar formatting",
+      "category": "format",
+      "keys": [],
+      "flag": "text.v2Controls"
+    },
+    {
       "id": "para.shade",
       "title": "Paragraph formatting",
       "category": "format",
@@ -1325,6 +1332,14 @@
     },
     {
       "id": "para.border",
+      "title": "Paragraph formatting",
+      "category": "format",
+      "keys": [],
+      "flag": "text.v2Controls",
+      "palette": false
+    },
+    {
+      "id": "text.select",
       "title": "Paragraph formatting",
       "category": "format",
       "keys": [],
