@@ -7,7 +7,7 @@ use super::units::{eighths, page_twips, twips};
 use crate::doc::cell_style::{CellBorder, CellStyle, Fill};
 use crate::doc::{Inline, Marks};
 use crate::palette::color_hex;
-use crate::sheet::Merge;
+use crate::sheet::{Merge, MergeIndex, Slot};
 
 /// The width of the text area of a Letter page, in twentieths of a point.
 pub(super) const TEXT_WIDTH: usize = 9_360;
@@ -200,6 +200,7 @@ impl State<'_> {
             out.push_str(&format!("<w:gridCol w:w=\"{w}\"/>"));
         }
         out.push_str("</w:tblGrid>");
+        let index = MergeIndex::new(merges, rows.len(), columns);
         for (r, row) in rows.iter().enumerate() {
             let head = header && r == 0;
             out.push_str(if head {
@@ -208,21 +209,24 @@ impl State<'_> {
                 "<w:tr>"
             });
             for c in 0..columns {
-                let covered = merges.iter().find(|m| m.covers(r, c));
+                let slot = index.slot(r, c);
                 // A cell below an anchor continues its vertical merge; one beside it is inside the grid span.
-                if let Some(m) = covered {
+                if let Some(Slot::Covered(m)) = slot {
                     if c != m.left {
                         continue;
                     }
-                    let span = span_of(m, &grid);
+                    let span = span_of(&m, &grid);
                     out.push_str(&format!(
                         "<w:tc><w:tcPr><w:tcW w:w=\"{}\" w:type=\"dxa\"/>{}<w:vMerge/></w:tcPr><w:p/></w:tc>",
                         span.0, span.1
                     ));
                     continue;
                 }
-                let anchor = merges.iter().find(|m| m.top == r && m.left == c);
-                let (width, grid_span) = anchor.map_or((grid[c], String::new()), |m| span_of(m, &grid));
+                let anchor = match slot {
+                    Some(Slot::Anchor(m)) => Some(m),
+                    _ => None,
+                };
+                let (width, grid_span) = anchor.map_or((grid[c], String::new()), |m| span_of(&m, &grid));
                 let restart = anchor
                     .filter(|m| m.bottom > m.top)
                     .map_or("", |_| "<w:vMerge w:val=\"restart\"/>");

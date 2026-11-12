@@ -474,3 +474,6 @@ impl Convert<'_> {
 fn asset_id(dest: &str) -> Option<AssetId> {
     AssetId::parse(dest.strip_prefix("asset:")?).ok()
 }
+
+#[cfg(test)]
+mod sheet_tests;

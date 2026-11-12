@@ -80,7 +80,7 @@ export function tableView(block: TableBlock): TableView {
       if (formula) {
         const text = fresh ? resultText(stored === undefined ? null : stored) : null;
         if (text !== null) return { markdown: null, result: text };
-        if (!fresh) view.stale = true;
+        if (!fresh && sheet !== undefined) view.stale = true;
       } else if (markdown === '' && fresh && stored !== undefined) {
         const text = resultText(stored);
         if (text !== null) return { markdown: null, result: text };
@@ -137,7 +137,8 @@ export function cellCss(style: sheetModel.CellStyle): string {
   const css: string[] = [];
   const font = style.font ?? {};
   if (font.family && !font.family.startsWith('+') && !font.family.startsWith('theme:')) {
-    css.push(`font-family:${font.family.replace(/[;"'<>{}]/g, '')}`);
+    // Only letters, digits, spaces, and a few marks stay, so no escape, function, or quote reaches the style.
+    css.push(`font-family:${font.family.replace(/[^\p{L}\p{N} ,._-]/gu, '')}`);
   }
   if (font.size !== undefined) css.push(`font-size:${px(font.size)}pt`);
   const weight = font.weight ?? (font.bold === true ? 700 : font.bold === false ? 400 : undefined);

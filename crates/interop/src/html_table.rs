@@ -2,11 +2,11 @@
 //! alignment, padding, and font), merged cells carry `colspan` and `rowspan`, and the cells a merge covers are left
 //! out. A table without sheet data is written as it always was.
 
-use crate::doc::cell_style::{CellBorder, CellStyle, Fill};
+use crate::doc::cell_style::{CellBorder, CellFont, CellStyle, Fill};
 use crate::doc::Inline;
 use crate::html::{escape, inlines_html};
 use crate::palette::color_hex;
-use crate::sheet::Merge;
+use crate::sheet::{Merge, MergeIndex, Slot};
 
 /// A color value as `#rrggbb`, or `None` outside the grammar.
 fn color(value: &str) -> Option<String> {
@@ -49,16 +49,18 @@ fn border(name: &str, side: &Option<CellBorder>, css: &mut Vec<String>) {
     css.push(format!("border-{name}:{size} {kind} {paint}"));
 }
 
-/// The CSS of a cell's resolved style, leaving out what the defaults already give.
-pub fn cell_css(style: &CellStyle) -> String {
-    let mut css = Vec::new();
-    let font = &style.font;
+/// The CSS of a cell's font: family, size, weight, slant, lines, color, and script.
+fn font_css(font: &CellFont, css: &mut Vec<String>) {
     if let Some(family) = font
         .family
         .as_deref()
         .filter(|f| !f.starts_with('+') && !f.starts_with("theme:"))
     {
-        let clean: String = family.chars().filter(|c| !";\"'<>{}".contains(*c)).collect();
+        // Only letters, digits, spaces, and a few marks stay, so no escape, function, or quote reaches the style.
+        let clean: String = family
+            .chars()
+            .filter(|c| c.is_alphanumeric() || " ,._-".contains(*c))
+            .collect();
         css.push(format!("font-family:{clean}"));
     }
     if let Some(size) = font.size {
@@ -90,6 +92,12 @@ pub fn cell_css(style: &CellStyle) -> String {
         Some("sub") => css.push("vertical-align:sub;font-size:smaller".to_owned()),
         _ => {}
     }
+}
+
+/// The CSS of a cell's resolved style, leaving out what the defaults already give.
+pub fn cell_css(style: &CellStyle) -> String {
+    let mut css = Vec::new();
+    font_css(&style.font, &mut css);
     match &style.fill {
         Some(Fill::Color(value)) => {
             if let Some(c) = color(value) {
@@ -167,16 +175,18 @@ pub fn table_html(
         }
         out.push_str("</colgroup>\n");
     }
+    let index = MergeIndex::new(merges, rows.len(), rows.iter().map(Vec::len).max().unwrap_or(0));
     for (r, row) in rows.iter().enumerate() {
         let head = header && r == 0;
         let tag = if head { "th" } else { "td" };
         out.push_str("<tr>");
         for (c, cell) in row.iter().enumerate() {
-            if merges.iter().any(|m| m.covers(r, c)) {
+            let slot = index.slot(r, c);
+            if matches!(slot, Some(Slot::Covered(_))) {
                 continue;
             }
             let mut attrs = String::new();
-            if let Some(m) = merges.iter().find(|m| m.top == r && m.left == c) {
+            if let Some(Slot::Anchor(m)) = slot {
                 if m.right > m.left {
                     attrs.push_str(&format!(" colspan=\"{}\"", m.right - m.left + 1));
                 }

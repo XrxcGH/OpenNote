@@ -3,9 +3,13 @@
 
 use super::{Merge, TableSheet};
 use crate::doc::cell_style::{CellAlign, CellBorder, CellBorders, CellFont, CellStyle, Fill, Pad};
+use opennote_core::format::page_json::inline::readable_text;
 use opennote_core::model::TableData;
 use serde_json::{Map, Value};
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
+
+/// The most merges a reader looks at (format spec 6.3). Entries past it are ignored.
+pub const MERGE_LIMIT: usize = 10_000;
 
 type Obj = Map<String, Value>;
 
@@ -61,14 +65,16 @@ pub fn read(table: &TableData) -> Option<TableSheet> {
             let stored = values
                 .and_then(|v| v.get(row_id.as_str()))
                 .and_then(|v| v.get(column_id));
-            if markdown.starts_with('=') {
+            // The readable text decides what a formula is (R-SHT-5), so a bold `=A1*2` is one.
+            if readable_text(markdown).starts_with('=') {
                 if fresh {
-                    out.results[r][c] = Some(stored.map_or_else(String::new, result_text));
+                    // An entry a reader cannot use is ignored (R-SHT-17): the cell keeps its formula text.
+                    out.results[r][c] = stored.map_or(Some(String::new()), result_text);
                 } else {
                     out.stale = true;
                 }
             } else if fresh && markdown.is_empty() {
-                out.results[r][c] = stored.map(result_text);
+                out.results[r][c] = stored.and_then(result_text);
             }
         }
     }
@@ -217,8 +223,9 @@ fn merges(sheet: &Obj, table: &TableData) -> Vec<Merge> {
             .iter()
             .position(|c| Some(c.id.to_string().as_str()) == id.as_str())
     };
-    let sorted: BTreeMap<&String, &Value> = list.iter().collect();
-    let mut taken = BTreeSet::new();
+    let sorted: BTreeMap<&String, &Value> = list.iter().take(MERGE_LIMIT).collect();
+    let mut taken = vec![false; table.rows.len() * table.columns.len()];
+    let width = table.columns.len();
     let mut out = Vec::new();
     for value in sorted.values() {
         let corner = |key: &str| {
@@ -237,27 +244,31 @@ fn merges(sheet: &Obj, table: &TableData) -> Vec<Merge> {
         if merge.top == merge.bottom && merge.left == merge.right {
             continue;
         }
-        let cells: Vec<(usize, usize)> = (merge.top..=merge.bottom)
-            .flat_map(|r| (merge.left..=merge.right).map(move |c| (r, c)))
-            .collect();
-        if cells.iter().any(|cell| taken.contains(cell)) {
+        // The first taken cell ends the check, so many overlapping merges cost little.
+        let overlaps = (merge.top..=merge.bottom).any(|r| (merge.left..=merge.right).any(|c| taken[r * width + c]));
+        if overlaps {
             continue;
         }
-        taken.extend(cells);
+        for r in merge.top..=merge.bottom {
+            taken[r * width + merge.left..=r * width + merge.right].fill(true);
+        }
         out.push(merge);
     }
     out
 }
 
-fn result_text(value: &Value) -> String {
-    match value {
-        Value::Null | Value::Array(_) => String::new(),
+/// The text of a cached value, or `None` for an entry a reader ignores: an array, or an object that is not a lone error code.
+fn result_text(value: &Value) -> Option<String> {
+    Some(match value {
+        Value::Null => String::new(),
+        Value::Array(_) => return None,
         Value::Bool(true) => "TRUE".to_owned(),
         Value::Bool(false) => "FALSE".to_owned(),
         Value::Number(n) => number_text(n.as_f64().unwrap_or(0.0)),
         Value::String(s) => s.clone(),
-        Value::Object(o) => o.get("e").and_then(Value::as_str).unwrap_or_default().to_owned(),
-    }
+        Value::Object(o) if o.len() == 1 => o.get("e").and_then(Value::as_str)?.to_owned(),
+        Value::Object(_) => return None,
+    })
 }
 
 /// A number the way JavaScript writes it: no exponent from 1e-6 up to 1e21.

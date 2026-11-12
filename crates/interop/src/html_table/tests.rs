@@ -71,3 +71,17 @@ fn a_table_without_a_sheet_is_written_as_it_was() {
     let html = table_html(true, &[vec![cell("h")], vec![cell("b")]], &[], &[], &[]);
     assert_eq!(html, "<table>\n<tr><th>h</th></tr>\n<tr><td>b</td></tr>\n</table>\n");
 }
+
+#[test]
+fn a_font_family_keeps_only_names_and_separators() {
+    use crate::doc::cell_style::{CellFont, CellStyle};
+    let style = CellStyle {
+        font: CellFont {
+            family: Some(r"Segoe UI, \22 x url(//e.example/a) {};<b>".to_owned()),
+            ..CellFont::default()
+        },
+        ..CellStyle::default()
+    };
+    // No backslash, parenthesis, slash, brace, quote, semicolon, or angle bracket survives.
+    assert_eq!(super::cell_css(&style), "font-family:Segoe UI, 22 x urle.examplea b");
+}

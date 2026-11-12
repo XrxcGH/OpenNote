@@ -8,12 +8,12 @@ import { exportMarkdown } from './toMarkdown';
 
 const cell = (markdown: string) => ({ markdown });
 
-function page(sheet: Record<string, unknown>, stale = false): ExportPage {
+function page(sheet: Record<string, unknown>, stale = false, covered = ''): ExportPage {
   const columns = ['k1', 'k2', 'k3'].map((id) => ({ id, width: 100 }));
   const rows = [
     { id: 'r1', cells: { k1: cell('A'), k2: cell('B'), k3: cell('C') } },
-    { id: 'r2', cells: { k1: cell('x'), k2: cell('=2*3'), k3: cell('') } },
-    { id: 'r3', cells: { k1: cell('y'), k2: cell(''), k3: cell('') } },
+    { id: 'r2', cells: { k1: cell('x'), k2: cell('=2*3'), k3: cell(covered) } },
+    { id: 'r3', cells: { k1: cell('y'), k2: cell(covered), k3: cell(covered) } },
   ];
   const valuesOf = stale ? 'fnv1a:0000000000000000' : sheetModel.fingerprint({ header: true, columns, rows });
   return readExportPage({
@@ -45,8 +45,12 @@ describe('table Markdown with a sheet', () => {
   });
 
   it('leaves the cells a merge covers empty', () => {
-    const text = md(page({ merges: { m1: { from: ['r2', 'k2'], to: ['r3', 'k3'] } } }));
+    // The covered cells r2/k3, r3/k2, and r3/k3 hold text, so only the merge can keep it out of the table.
+    const merges = { m1: { from: ['r2', 'k2'], to: ['r3', 'k3'] } };
+    const text = md(page({ merges }, false, 'zzz'));
     expect(text).toContain('| x | 6 |  |\n| y |  |  |');
+    expect(text).not.toContain('zzz');
+    expect(md(page({}, false, 'zzz'))).toContain('zzz');
   });
 
   it('writes bold, italic, and strike of a cell style, and nothing else', () => {

@@ -161,7 +161,25 @@ export async function exportPdfFile(
 }
 
 export type TextOutcome =
-  { readonly status: 'canceled' } | { readonly status: 'saved'; readonly path: string; readonly name: string };
+  | { readonly status: 'canceled' }
+  | {
+      readonly status: 'saved';
+      readonly path: string;
+      readonly name: string;
+      /** The names of tables whose formulas were written as text, because their cached results are out of date. */
+      readonly staleTables: readonly string[];
+    };
+
+/** The names of the tables with these block IDs: the table's own name, or its place among the page's tables. */
+export function staleTableNames(page: PageSource['page'], ids: readonly string[]): string[] {
+  const tables = page.blocks.filter((block) => block.type === 'table');
+  return ids.map((id) => {
+    const at = tables.findIndex((block) => block.id === id);
+    const found = tables[at];
+    const name = found?.type === 'table' ? (found.sheet?.table as { name?: unknown } | undefined)?.name : undefined;
+    return typeof name === 'string' && name !== '' ? name : t('pageViews.files.tableNumber', { number: at + 1 });
+  });
+}
 
 /** An asset's bytes, or null when it can't be read. */
 async function assetBytes(url: string): Promise<Uint8Array | null> {
@@ -207,7 +225,9 @@ export async function exportMarkdownFile(
   if (path === null) return { status: 'canceled' };
   const folder = `${stemOf(path)}_files`;
   const ink = hasInk(source.page) ? pageInkSvg(source) : null;
+  const stale = new Set<string>();
   const made = exportMarkdown(source.page, {
+    onStaleTable: (id) => stale.add(id),
     frontMatter: 'basic',
     formatting,
     assetPath: (_id, file) => `${folder}/${file}`,
@@ -223,7 +243,7 @@ export async function exportMarkdownFile(
   }
   if (ink) files.push({ path: `${folder}/ink.svg`, bytes: encoder.encode(ink) });
   await client.write(path, files);
-  return { status: 'saved', path, name: baseName(path) };
+  return { status: 'saved', path, name: baseName(path), staleTables: staleTableNames(source.page, [...stale]) };
 }
 
 /** Exports the page as one web page file that holds its pictures inside it. */
@@ -242,7 +262,9 @@ export async function exportHtmlFile(client: ExportsClient, source: PageSource):
   // A recording goes beside the web page as an audio file, and the page plays it and follows the notes.
   const player = isEnabled('pages.exportPlayer') ? await preparePlayer(source.pageId, path).catch(() => null) : null;
   // A web page file carries its own pictures and the bundled fonts it uses. Any other font is named with a fallback stack.
+  const stale = new Set<string>();
   const options = {
+    onStaleTable: (id: string) => stale.add(id),
     ...(player ? { player } : {}),
     assetUrl: (asset: { id: string }) => uris.get(asset.id) ?? null,
     theme: lightTheme(),
@@ -261,5 +283,5 @@ export async function exportHtmlFile(client: ExportsClient, source: PageSource):
   const made =
     wanted.size === 0 ? first : exportHtml(source.page, { ...options, fonts: await bundledFontSource(wanted) });
   await client.write(path, [{ path: '', bytes: new TextEncoder().encode(made.html) }]);
-  return { status: 'saved', path, name: baseName(path) };
+  return { status: 'saved', path, name: baseName(path), staleTables: staleTableNames(source.page, [...stale]) };
 }

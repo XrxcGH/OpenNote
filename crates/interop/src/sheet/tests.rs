@@ -145,3 +145,106 @@ fn a_cell_style_layers_the_table_column_row_and_cell_styles() {
     let other = styles[1][1].as_ref().unwrap();
     assert_eq!(other.font.bold, None);
 }
+
+fn with_values(cell: &str, stored: Value) -> TableData {
+    let mut t = table(2, &[&["A", "B"], &["x", cell]], json!({}));
+    let of = fingerprint(&t);
+    t.extra.insert(
+        "sheet".to_owned(),
+        json!({"values": {R[1]: {K[1]: stored}}, "valuesOf": of}),
+    );
+    t
+}
+
+#[test]
+fn a_formula_cell_is_found_by_its_readable_text() {
+    // R-SHT-5: marks do not hide a formula. A bold `=2*3` shows its result when fresh and flags the table when stale.
+    let sheet = read(&with_values("**=2*3**", json!(6))).unwrap();
+    assert_eq!(sheet.results[1][1].as_deref(), Some("6"));
+    assert!(!sheet.stale);
+    let mut stale = with_values("**=2*3**", json!(6));
+    stale.extra.get_mut("sheet").unwrap()["valuesOf"] = json!("fnv1a:0000000000000000");
+    let sheet = read(&stale).unwrap();
+    assert_eq!(sheet.results[1][1], None);
+    assert!(sheet.stale);
+    // A cell whose readable text does not start with `=` is plain text.
+    assert_eq!(read(&with_values("a =2*3", json!(6))).unwrap().results[1][1], None);
+}
+
+#[test]
+fn an_invalid_cached_entry_is_ignored_and_the_formula_text_stays() {
+    // R-SHT-17: an array, or an object that is not a lone error code, is not a cached value.
+    for bad in [
+        json!([1, 2]),
+        json!({"x": 1}),
+        json!({"e": "#N/A", "x": 1}),
+        json!({"e": 5}),
+    ] {
+        let sheet = read(&with_values("=2*3", bad.clone())).unwrap();
+        assert_eq!(sheet.results[1][1], None, "{bad}");
+        assert!(!sheet.stale, "{bad}");
+    }
+    assert_eq!(
+        read(&with_values("=1/0", json!({"e": "#DIV/0!"}))).unwrap().results[1][1].as_deref(),
+        Some("#DIV/0!")
+    );
+    assert_eq!(
+        read(&with_values("=A1", json!(null))).unwrap().results[1][1].as_deref(),
+        Some("")
+    );
+}
+
+#[test]
+fn only_the_first_ten_thousand_merges_are_read() {
+    let rows: &[&[&str]] = &[&["a", "b", "c"], &["d", "e", "f"], &["g", "h", "i"]];
+    let mut merges = Map::new();
+    // IDs sort as text. The first 10,000 are the same whole-table merge, so one is active. The 10,001st would be
+    // valid, but is past the limit.
+    for i in 0..MERGE_LIMIT {
+        merges.insert(format!("a{i:05}"), json!({"from": [R[0], K[0]], "to": [R[2], K[2]]}));
+    }
+    merges.insert("b".to_owned(), json!({"from": [R[0], K[0]], "to": [R[0], K[1]]}));
+    let t = table(3, rows, json!({"sheet": {"merges": Value::Object(merges)}}));
+    assert_eq!(read(&t).unwrap().merges.len(), 1);
+    // With room left, a merge that does not overlap is read: drop all but 9,999 of the first group.
+    let mut few = Map::new();
+    for i in 0..MERGE_LIMIT - 1 {
+        few.insert(format!("a{i:05}"), json!({"from": [R[2], K[0]], "to": [R[2], K[2]]}));
+    }
+    few.insert("b".to_owned(), json!({"from": [R[0], K[0]], "to": [R[0], K[1]]}));
+    few.insert("c".to_owned(), json!({"from": [R[1], K[0]], "to": [R[1], K[1]]}));
+    let t = table(3, rows, json!({"sheet": {"merges": Value::Object(few)}}));
+    // Entry 10,000 is `b` and is read. `c` is the 10,001st and is not.
+    assert_eq!(read(&t).unwrap().merges.len(), 2);
+}
+
+#[test]
+fn the_merge_index_names_each_cell_once() {
+    let m = Merge {
+        top: 0,
+        left: 0,
+        bottom: 1,
+        right: 1,
+    };
+    let index = MergeIndex::new(&[m], 3, 3);
+    assert_eq!(index.slot(0, 0), Some(Slot::Anchor(m)));
+    assert_eq!(index.slot(0, 1), Some(Slot::Covered(m)));
+    assert_eq!(index.slot(1, 0), Some(Slot::Covered(m)));
+    assert_eq!(index.slot(2, 2), None);
+    // A merge past the grid is cut to it, and one that starts outside is left out.
+    let wide = Merge {
+        top: 2,
+        left: 2,
+        bottom: 9,
+        right: 9,
+    };
+    let far = Merge {
+        top: 5,
+        left: 0,
+        bottom: 6,
+        right: 0,
+    };
+    let cut = MergeIndex::new(&[wide, far], 3, 3);
+    assert_eq!(cut.slot(2, 2), Some(Slot::Anchor(wide)));
+    assert_eq!(cut.slot(5, 0), None);
+}

@@ -4,6 +4,7 @@
 import { describe, expect, it } from 'vitest';
 import { sheetModel } from '../../tables';
 import { readExportPage, type ExportPage } from './source';
+import { cellCss } from './tableHtml';
 import { exportHtml } from './toHtml';
 
 const cols = ['k1', 'k2', 'k3'];
@@ -100,5 +101,43 @@ describe('table HTML with a sheet', () => {
       ],
     });
     expect(exportHtml(plain).html).toContain('<tbody>\n<tr><td>a</td></tr>\n</tbody>');
+  });
+});
+
+describe('table HTML edge cases', () => {
+  it('does not flag a table without a sheet, as the Rust reader does not', () => {
+    const plain = readExportPage({
+      id: 'P',
+      title: 'T',
+      blocks: [
+        {
+          id: 'tb',
+          order: 'a',
+          type: 'table',
+          data: {
+            header: false,
+            columns: [{ id: 'k1', width: 100 }],
+            rows: [{ id: 'r1', cells: { k1: cell('=1+1') } }],
+          },
+        },
+      ],
+    });
+    const stale: string[] = [];
+    const html = exportHtml(plain, { onStaleTable: (id) => stale.push(id) }).html;
+    expect(html).toContain('<td>=1+1</td>');
+    expect(stale).toEqual([]);
+  });
+
+  it('keeps the formula text for a cached entry that is not a valid value', () => {
+    // R-SHT-17: an array, or an object that is not a lone error code, is ignored. The Rust reader does the same.
+    const a = page({ values: { r2: { k2: [1, 2] } } });
+    expect(exportHtml(a).html).toContain('<td>=2*3</td>');
+    const b = page({ values: { r2: { k2: { e: '#N/A', x: 1 } } } });
+    expect(exportHtml(b).html).toContain('<td>=2*3</td>');
+  });
+
+  it('keeps only names and separators in a font family', () => {
+    const css = cellCss({ font: { family: 'Segoe UI, \\22 x url(//e.example/a) {};<b>' } } as never);
+    expect(css).toBe('font-family:Segoe UI, 22 x urle.examplea b');
   });
 });
