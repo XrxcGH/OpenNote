@@ -19,6 +19,8 @@ export interface BlockRenderContext {
   readonly reading: boolean;
   /** Shows a block changed here at once, before the core answers. The block layer sets it. */
   readonly local?: (block: BlockJson) => void;
+  /** The page's blocks in reading order (the block layer sets it): a table reads the others for references between tables. */
+  readonly blocks?: () => readonly BlockJson[];
 }
 
 export interface BlockView {

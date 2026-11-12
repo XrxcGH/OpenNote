@@ -6889,6 +6889,311 @@
       "flag": "page.tables"
     },
     {
+      "id": "table.structure.fitRows",
+      "title": "Fit row height to content",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.structureUi"
+    },
+    {
+      "id": "table.structure.fitColumns",
+      "title": "Fit column width to content",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.structureUi"
+    },
+    {
+      "id": "table.structure.distributeRows",
+      "title": "Distribute rows evenly",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.structureUi"
+    },
+    {
+      "id": "table.structure.distributeColumns",
+      "title": "Distribute columns evenly",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.structureUi"
+    },
+    {
+      "id": "table.structure.hideRows",
+      "title": "Hide rows",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.structureUi"
+    },
+    {
+      "id": "table.structure.unhideRows",
+      "title": "Unhide rows",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.structureUi"
+    },
+    {
+      "id": "table.structure.hideColumns",
+      "title": "Hide columns",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.structureUi"
+    },
+    {
+      "id": "table.structure.unhideColumns",
+      "title": "Unhide columns",
+      "category": "table",
+      "keys": [
+        "Ctrl+Shift+0"
+      ],
+      "flag": "tables.structureUi"
+    },
+    {
+      "id": "table.structure.freezeTopRow",
+      "title": "Freeze top row",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.structureUi"
+    },
+    {
+      "id": "table.structure.freezeFirstColumn",
+      "title": "Freeze first column",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.structureUi"
+    },
+    {
+      "id": "table.structure.freezeAtCaret",
+      "title": "Freeze panes at this cell",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.structureUi"
+    },
+    {
+      "id": "table.structure.unfreeze",
+      "title": "Unfreeze panes",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.structureUi"
+    },
+    {
+      "id": "table.structure.groupRows",
+      "title": "Group rows",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.structureUi"
+    },
+    {
+      "id": "table.structure.ungroupRows",
+      "title": "Ungroup rows",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.structureUi"
+    },
+    {
+      "id": "table.structure.groupColumns",
+      "title": "Group columns",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.structureUi"
+    },
+    {
+      "id": "table.structure.ungroupColumns",
+      "title": "Ungroup columns",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.structureUi"
+    },
+    {
+      "id": "table.structure.collapseRows",
+      "title": "Collapse row group",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.structureUi"
+    },
+    {
+      "id": "table.structure.expandRows",
+      "title": "Expand row group",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.structureUi"
+    },
+    {
+      "id": "table.structure.collapseColumns",
+      "title": "Collapse column group",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.structureUi"
+    },
+    {
+      "id": "table.structure.expandColumns",
+      "title": "Expand column group",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.structureUi"
+    },
+    {
+      "id": "table.structure.showLevelRows1",
+      "title": "Show row outline level 1",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.structureUi"
+    },
+    {
+      "id": "table.structure.showLevelColumns1",
+      "title": "Show column outline level 1",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.structureUi"
+    },
+    {
+      "id": "table.structure.showLevelRows2",
+      "title": "Show row outline level 2",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.structureUi"
+    },
+    {
+      "id": "table.structure.showLevelColumns2",
+      "title": "Show column outline level 2",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.structureUi"
+    },
+    {
+      "id": "table.structure.showLevelRows3",
+      "title": "Show row outline level 3",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.structureUi"
+    },
+    {
+      "id": "table.structure.showLevelColumns3",
+      "title": "Show column outline level 3",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.structureUi"
+    },
+    {
+      "id": "table.structure.showLevelRows4",
+      "title": "Show row outline level 4",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.structureUi"
+    },
+    {
+      "id": "table.structure.showLevelColumns4",
+      "title": "Show column outline level 4",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.structureUi"
+    },
+    {
+      "id": "table.structure.showLevelRows5",
+      "title": "Show row outline level 5",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.structureUi"
+    },
+    {
+      "id": "table.structure.showLevelColumns5",
+      "title": "Show column outline level 5",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.structureUi"
+    },
+    {
+      "id": "table.structure.showLevelRows6",
+      "title": "Show row outline level 6",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.structureUi"
+    },
+    {
+      "id": "table.structure.showLevelColumns6",
+      "title": "Show column outline level 6",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.structureUi"
+    },
+    {
+      "id": "table.structure.showLevelRows7",
+      "title": "Show row outline level 7",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.structureUi"
+    },
+    {
+      "id": "table.structure.showLevelColumns7",
+      "title": "Show column outline level 7",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.structureUi"
+    },
+    {
+      "id": "table.structure.showLevelRows8",
+      "title": "Show row outline level 8",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.structureUi"
+    },
+    {
+      "id": "table.structure.showLevelColumns8",
+      "title": "Show column outline level 8",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.structureUi"
+    },
+    {
+      "id": "table.structure.clearOutlineRows",
+      "title": "Clear row groups",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.structureUi"
+    },
+    {
+      "id": "table.structure.clearOutlineColumns",
+      "title": "Clear column groups",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.structureUi"
+    },
+    {
+      "id": "table.structure.insertCellsDown",
+      "title": "Insert cells, shift down",
+      "category": "table",
+      "keys": [
+        "Ctrl+Shift+="
+      ],
+      "flag": "tables.structureUi"
+    },
+    {
+      "id": "table.structure.insertCellsRight",
+      "title": "Insert cells, shift right",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.structureUi"
+    },
+    {
+      "id": "table.structure.deleteCellsUp",
+      "title": "Delete cells, shift up",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.structureUi"
+    },
+    {
+      "id": "table.structure.deleteCellsLeft",
+      "title": "Delete cells, shift left",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.structureUi"
+    },
+    {
+      "id": "table.structure.rowHeight",
+      "title": "Row height…",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.structureUi"
+    },
+    {
       "id": "ink.myHandwriting.write",
       "title": "Write in my handwriting",
       "category": "editing",

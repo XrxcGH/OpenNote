@@ -132,6 +132,8 @@ export type FlagId =
   | 'text.v2Controls'
   /** Writing cell formats and formulas to a table's data.sheet. Beta 9 reads it; Beta 10 turns it on up to Beta. */
   | 'tables.sheetWrites'
+  /** The structure commands (row height, hide, freeze, group, fit). Off for users until the live table draws data.sheet. */
+  | 'tables.structureUi'
   /** The code studio: the editor, projects, and the sandboxed runtimes (Beta 11 onward, on up to Beta). */
   | 'code.studio'
   /** Running code with the person's installed toolchains (tier 2). Development and nightly builds only. */
@@ -403,6 +405,11 @@ export const FLAGS: readonly FlagDef[] = [
     betaBuilds,
   ),
   flag('tables.sheetWrites', 'Cell, row, column, and table formatting and formulas saved in a table.', betaBuilds),
+  flag(
+    'tables.structureUi',
+    'Row height, hide, freeze, group, fit, and shift-cell commands for a table, which the table draws.',
+    testBuilds,
+  ),
   flag('code.studio', 'The code studio: write, run, and test programs in a sandbox on this device.', betaBuilds),
   flag('code.tier2', 'Run code with the compilers and interpreters installed on this device.', testBuilds),
   flag('code.models', 'On-device code models for completion, fixes, and explanations.', betaBuilds),
