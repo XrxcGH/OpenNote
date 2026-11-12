@@ -80,7 +80,7 @@
     "features/accounts/penSync/commands.ts": 66,
     "features/accounts/sendto/commands.ts": 89,
     "features/accounts/share/commands.ts": 84,
-    "features/accounts/tasks/auto.ts": 206,
+    "features/accounts/tasks/auto.ts": 208,
     "features/accounts/tasks/commands.ts": 206,
     "features/ink/index.ts": 67,
     "features/math/index.ts": 293,
