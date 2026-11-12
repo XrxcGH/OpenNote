@@ -6,17 +6,9 @@ import { own } from '../layout/json';
 import { ENGLISH_PLAYER_LABELS, momentHtml, playerHtml } from './recording';
 import type { PlayerPlan } from './recording';
 import { inkShapes, inkExtent, inkSvg } from './ink';
-import {
-  escapeAttr,
-  escapeHtml,
-  parseInline,
-  parseMarkdown,
-  renderHtml,
-  renderInlineHtml,
-  voidEnd,
-  type HtmlOptions,
-} from './markdown';
+import { escapeAttr, escapeHtml, parseMarkdown, renderHtml, voidEnd, type HtmlOptions } from './markdown';
 import type { ExportRenderers } from './renderers';
+import { tableHtml } from './tableHtml';
 import type { ExportAsset, ExportBlock, ExportPage, ExportStroke, TableBlock } from './source';
 
 /** Words the export writes itself. The caller supplies translations. */
@@ -60,6 +52,8 @@ export interface BlockContext {
   readonly strokes: ReadonlyMap<string, readonly ExportStroke[]>;
   /** Drawers for math and graphs, when the host has loaded them. Without them both show as text. */
   readonly renderers?: Pick<ExportRenderers, 'math' | 'graph'>;
+  /** Hears of a table whose formula results are out of date, so its formulas export as text (the report names it). */
+  readonly onStaleTable?: (blockId: string) => void;
 }
 
 /** The options the Markdown renderer needs for a page: how links and images resolve. */
@@ -125,16 +119,7 @@ function file(block: ExportBlock & { type: 'file' }, cx: BlockContext): string {
 }
 
 function table(block: TableBlock, cx: BlockContext): string {
-  const options = htmlOptions(cx);
-  const cell = (tag: 'th' | 'td', markdown: string) =>
-    `<${tag}${tag === 'th' ? ' scope="col"' : ''}>${renderInlineHtml(parseInline(markdown), options)}</${tag}>`;
-  const row = (r: TableBlock['rows'][number], tag: 'th' | 'td') =>
-    `<tr>${block.columns.map((c) => cell(tag, own(r.cells, c.id) ?? '')).join('')}</tr>`;
-  const [first, ...rest] = block.rows;
-  const head = block.header && first ? `<thead>${row(first, 'th')}</thead>\n` : '';
-  const body = (block.header && first ? rest : block.rows).map((r) => row(r, 'td')).join('\n');
-  const cols = block.columns.map((c) => `<col style="width:${px(c.width)}px"${voidEnd(cx.xml)}`).join('');
-  return `<table><colgroup>${cols}</colgroup>\n${head}<tbody>\n${body}\n</tbody></table>`;
+  return tableHtml(block, htmlOptions(cx), cx.xml, cx.onStaleTable);
 }
 
 /** The strokes of each ink block, so a block finds its own. */

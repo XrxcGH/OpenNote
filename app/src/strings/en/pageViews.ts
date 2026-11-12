@@ -166,6 +166,8 @@ export const pageViews = {
   },
   files: {
     saved: 'Saved {name}.',
+    tableNumber: 'Table {number}',
+    staleTables: 'The formulas in {tables} are text, because their results are out of date. Reopen the page to refresh.',
     failed: "The file couldn't be saved.",
     markdownLabel: 'Markdown',
     htmlLabel: 'Web page',

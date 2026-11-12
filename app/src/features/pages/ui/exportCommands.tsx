@@ -76,6 +76,9 @@ export async function exportText(ctx: CommandContext, kind: 'markdown' | 'html')
       ? exportMarkdownFile(client, source, await markdownFormatting(source))
       : exportHtmlFile(client, source));
     if (outcome.status === 'canceled') return;
+    if (outcome.staleTables.length > 0) {
+      showToast({ message: t('pageViews.files.staleTables', { tables: outcome.staleTables.join(', ') }) });
+    }
     showToast({
       message: t('pageViews.files.saved', { name: outcome.name }),
       action: { label: t('pageViews.print.openFile'), run: () => client.open(outcome.path, true) },

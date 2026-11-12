@@ -6,9 +6,11 @@ import { createWebExports, standInPdf } from '../../../platform/web/exports';
 import type { ExportsClient } from '../../../platform/types';
 import { inspectPdf } from '../pdf';
 import { pageOf, textBlock } from '../testing/build';
+import { sheetModel } from '../../tables';
 import { exportHtmlFile, exportMarkdownFile, exportPdfFile, PdfCheckError, prepareInput } from './exporter';
 import { configureStyleStorage, loadStyles, localStylesClient, saveStyles } from '../../page';
 import type { PageSource } from './source';
+import { readExportPage } from '../export';
 
 const PARAGRAPH =
   'The reading room was quiet. A lamp on the desk threw a warm circle over the page, and the pencil moved slowly ' +
@@ -217,5 +219,45 @@ describe('the Markdown export option for formatting', () => {
     const text = decode(removed.writes[0].files[0].bytes);
     expect(text).toContain('a b c');
     expect(text).not.toContain('data-font');
+  });
+});
+
+/** A page with one table: B2 is `=2*3` with the cached result 6. */
+function tableSource(stale: boolean, name?: string): PageSource {
+  const columns = [
+    { id: 'k1', width: 100 },
+    { id: 'k2', width: 100 },
+  ];
+  const rows = [
+    { id: 'r1', cells: { k1: { markdown: 'A' }, k2: { markdown: 'B' } } },
+    { id: 'r2', cells: { k1: { markdown: 'x' }, k2: { markdown: '=2*3' } } },
+  ];
+  const valuesOf = stale ? 'fnv1a:0000000000000000' : sheetModel.fingerprint({ header: true, columns, rows });
+  const sheet = { values: { r2: { k2: 6 } }, valuesOf, ...(name ? { table: { name } } : {}) };
+  const page = readExportPage({
+    id: 'P',
+    title: 'Sheet',
+    blocks: [{ id: 'tb', order: 'a', type: 'table', data: { header: true, columns, rows, sheet } }],
+  });
+  return { pageId: 'p3', title: 'Sheet', notebook: 'Work', section: 'Notes', page, assetUrls: {} };
+}
+
+describe('the stale tables of a text export', () => {
+  it('names a table whose formulas were written as text, in Markdown and in the web page', async () => {
+    const md = recording();
+    const outcome = await exportMarkdownFile(md.client, tableSource(true, 'Totals'));
+    expect(decode(md.writes[0].files[0].bytes)).toContain('| x | =2*3 |');
+    expect(outcome).toMatchObject({ status: 'saved', staleTables: ['Totals'] });
+    const web = recording();
+    const html = await exportHtmlFile(web.client, tableSource(true));
+    expect(decode(web.writes[0].files[0].bytes)).toContain('<td>=2*3</td>');
+    expect(html).toMatchObject({ status: 'saved', staleTables: ['Table 1'] });
+  });
+
+  it('reports nothing when the results are fresh', async () => {
+    const md = recording();
+    const outcome = await exportMarkdownFile(md.client, tableSource(false));
+    expect(decode(md.writes[0].files[0].bytes)).toContain('| x | 6 |');
+    expect(outcome).toMatchObject({ status: 'saved', staleTables: [] });
   });
 });

@@ -152,7 +152,13 @@ fn block_html(block: &Block) -> String {
             format!("<pre><code{class}>{}</code></pre>\n", escape(text))
         }
         Block::Break => "<hr>\n".to_owned(),
-        Block::Table { header, rows, .. } => table_html(*header, rows),
+        Block::Table {
+            header,
+            rows,
+            cell_styles,
+            merges,
+            widths,
+        } => crate::html_table::table_html(*header, rows, cell_styles, merges, widths),
     }
 }
 
@@ -201,20 +207,6 @@ fn callout_html(kind: &str, fold: Option<Fold>, title: &[Inline], blocks: &[Bloc
             "<aside class=\"callout\" data-kind=\"{kind}\">\n<p class=\"callout-title\">{title}</p>\n{body}</aside>\n"
         ),
     }
-}
-
-fn table_html(header: bool, rows: &[Vec<Vec<Inline>>]) -> String {
-    let mut out = String::from("<table>\n");
-    for (i, row) in rows.iter().enumerate() {
-        let tag = if header && i == 0 { "th" } else { "td" };
-        out.push_str("<tr>");
-        for cell in row {
-            out.push_str(&format!("<{tag}>{}</{tag}>", inlines_html(cell)));
-        }
-        out.push_str("</tr>\n");
-    }
-    out.push_str("</table>\n");
-    out
 }
 
 /// Writes inlines as HTML. Each run carries its own tags, so runs with different marks never overlap.

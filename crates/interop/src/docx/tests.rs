@@ -7,6 +7,7 @@ mod readback;
 mod roundtrip;
 mod schema;
 mod sections;
+mod tables;
 
 use std::collections::{BTreeMap, HashMap};
 

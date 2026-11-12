@@ -33,6 +33,8 @@ export interface HtmlExportOptions {
    * shows the same on a device without it. Other fonts are named with fallback stacks only. Without it nothing embeds.
    */
   readonly fonts?: FontSource;
+  /** Hears of a table whose formula results are out of date, so its formulas export as text (the report names it). */
+  readonly onStaleTable?: (blockId: string) => void;
 }
 
 export interface HtmlExport {
@@ -64,6 +66,7 @@ export function exportHtml(page: ExportPage, options: HtmlExportOptions = {}): H
     link: options.link ?? safeHref,
     labels,
     strokes: strokesByBlock(page.strokes),
+    ...(options.onStaleTable ? { onStaleTable: options.onStaleTable } : {}),
     ...(player ? { player } : {}),
   };
   const body = readingOrder(page.blocks, page.view.readingOrder)
