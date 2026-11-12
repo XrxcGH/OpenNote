@@ -1,6 +1,6 @@
+/* eslint-disable opennote/feature-boundaries -- This test uses the page feature harness. */
 // @vitest-environment jsdom
-// An element from the library goes onto the shown page where the person sees it, with its picture loaded (full walk
-// A2-A13-3: the toast said "Inserted" and nothing showed, or an image said it was still syncing).
+// An element from the library shows on the shown page. Its picture loads. Bug A2-A13-3.
 import { afterEach, expect, it, vi } from 'vitest';
 import { assetTable } from '../../page';
 import { textPageFixture } from '../../page/test/fixtures';
@@ -11,8 +11,7 @@ import { insertEntry } from './elementActions';
 afterEach(cleanupPages);
 
 // A 1 by 1 pixel PNG.
-const PNG =
-  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+const PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
 
 const entry: ElementEntry = {
   id: '01k6f0000000000000000e0001',

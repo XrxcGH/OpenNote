@@ -1,18 +1,19 @@
 // @vitest-environment jsdom
-// The whole text selected with Ctrl+A is an AllSelection, whose range starts and ends outside every textblock. Every
-// character format must still reach the text in it (full walk A1-A04-2).
+// Ctrl+A makes an AllSelection. Its range starts and ends outside every textblock. Every character format must still
+// reach the text in it (full walk A1-A04-2).
 import { AllSelection, EditorState } from '@tiptap/pm/state';
 import { describe, expect, it } from 'vitest';
 import { clearFormatting, setHighlight, setTextSize, toggleMark } from './marks';
 import { runEditorCommand } from './catalog';
+import type { Command } from './command';
 import { marksAllowed } from './state';
 import { mountEditor, marked, markdownOf, stubLayout } from './testing';
 
-function afterAll(command: (state: EditorState, dispatch: (tr: never) => void) => boolean, source = 'one\n\ntwo') {
+function afterAll(command: Command, source = 'one\n\ntwo') {
   const base = EditorState.create({ doc: marked(source).state.doc });
   const state = base.apply(base.tr.setSelection(new AllSelection(base.doc)));
   let after: EditorState | null = null;
-  const ran = command(state, ((tr: Parameters<typeof state.apply>[0]) => (after = state.apply(tr))) as never);
+  const ran = command(state, (tr) => (after = state.apply(tr)));
   return ran && after ? markdownOf(after) : null;
 }
 
