@@ -131,7 +131,27 @@ describe('page layout', () => {
     expect(service.sent(page.id)).toEqual([]);
   });
 
-  it('puts a new text box under the title, not on it (A1-A07-5)', async () => {
+  it('shows floating blocks in reading order in one column in the compact Reading view', async () => {
+    const fixture = floatingPage([
+      { markdown: 'Right', x: 400, y: 40 },
+      { markdown: 'Left', x: 40, y: 44 },
+    ]);
+    const { mounted } = await open(fixture, 400, { compact: true });
+    expect(mounted.layout.reading()).toBe(true);
+    const [first, second] = mounted.layer.blocks().map((block) => mounted.layer.view(block.id)!.element);
+    expect(first!.textContent).toBe('Left');
+    expect(first!.getBoundingClientRect().bottom).toBeLessThanOrEqual(second!.getBoundingClientRect().top);
+    const canvas = mounted.viewport.world.querySelector('button')!;
+    expect(canvas.textContent).toBe('Canvas');
+    canvas.click();
+    expect(mounted.layout.reading()).toBe(false);
+    expect(canvas.textContent).toBe('Reading view');
+    expect(second!.getBoundingClientRect().left).toBeGreaterThan(first!.getBoundingClientRect().right);
+  });
+});
+
+describe('a new text box', () => {
+  it('goes under the title, not on it (A1-A07-5)', async () => {
     const { mounted } = await open(textPageFixture('First'), 800, {
       title: { text: 'A long page title', changed: null },
     });
@@ -155,24 +175,6 @@ describe('page layout', () => {
     }
     mounted.layout.newTextBox();
     expect(mounted.layer.blocks()).toHaveLength(before + 1);
-  });
-
-  it('shows floating blocks in reading order in one column in the compact Reading view', async () => {
-    const fixture = floatingPage([
-      { markdown: 'Right', x: 400, y: 40 },
-      { markdown: 'Left', x: 40, y: 44 },
-    ]);
-    const { mounted } = await open(fixture, 400, { compact: true });
-    expect(mounted.layout.reading()).toBe(true);
-    const [first, second] = mounted.layer.blocks().map((block) => mounted.layer.view(block.id)!.element);
-    expect(first!.textContent).toBe('Left');
-    expect(first!.getBoundingClientRect().bottom).toBeLessThanOrEqual(second!.getBoundingClientRect().top);
-    const canvas = mounted.viewport.world.querySelector('button')!;
-    expect(canvas.textContent).toBe('Canvas');
-    canvas.click();
-    expect(mounted.layout.reading()).toBe(false);
-    expect(canvas.textContent).toBe('Reading view');
-    expect(second!.getBoundingClientRect().left).toBeGreaterThan(first!.getBoundingClientRect().right);
   });
 });
 

@@ -89,6 +89,20 @@ export interface PageLayout extends Omit<PageActions, 'objectCommand' | 'objectE
   stop(): void;
 }
 
+/** Where a new text box goes: 16 units below the last focused block, or in the view's top left, clear of the title. */
+function newTextBoxPoint(parts: LayoutParts, lastFocused: BlockId | null): Point {
+  const { layer, viewport } = parts;
+  const last = lastFocused ? layer.block(lastFocused) : null;
+  const element = lastFocused ? layer.view(lastFocused)?.element : null;
+  if (last?.frame?.x !== undefined && last.frame.y !== undefined && element) {
+    return { x: last.frame.x, y: last.frame.y + element.offsetHeight + BELOW_GAP };
+  }
+  const camera = viewport.camera();
+  const x = camera.scrollX / camera.zoom + 48;
+  const at = { layer, viewport, title: parts.title ?? null };
+  return { x, y: clearOfBlocks(at, x, Math.max(camera.scrollY / camera.zoom + 24, belowTitle(at)), TEXT_BOX) };
+}
+
 export function createPageLayout(parts: LayoutParts): PageLayout {
   const { page, sync, layer, pool, flow, viewport } = parts;
   const channel = viewChannel({ ...page.initial.view }, flow);
@@ -131,23 +145,10 @@ export function createPageLayout(parts: LayoutParts): PageLayout {
     pool.mount(id, { kind: 'start' }, 'target');
   };
 
-  /** 16 units below the last focused block, or the view's top left. */
-  const newTextBoxPoint = (): Point => {
-    const last = lastFocused ? layer.block(lastFocused) : null;
-    const element = lastFocused ? layer.view(lastFocused)?.element : null;
-    if (last?.frame?.x !== undefined && last.frame.y !== undefined && element) {
-      return { x: last.frame.x, y: last.frame.y + element.offsetHeight + BELOW_GAP };
-    }
-    const camera = viewport.camera();
-    const x = camera.scrollX / camera.zoom + 48;
-    const at = { layer, viewport, title: parts.title ?? null };
-    return { x, y: clearOfBlocks(at, x, Math.max(camera.scrollY / camera.zoom + 24, belowTitle(at)), TEXT_BOX) };
-  };
-
   const self: PageLayout = {
     newTextBox() {
       if (readingLock.get()) return announce(t('pageExtras.lock.blocked'));
-      caretAt(newTextBoxPoint(), true);
+      caretAt(newTextBoxPoint(parts, lastFocused), true);
     },
     pressEmpty(point) {
       if (page.readOnly || readingLock.get()) return;

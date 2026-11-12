@@ -38,9 +38,9 @@ interface Contact {
 type Mode = 'none' | 'pan' | 'pinch';
 
 /**
- * Whether a press is on the drag body of a block that is already selected (an image). With the Select tool a finger
- * there moves the block, as a mouse does; on any other block, or on empty page, a finger pans the page, and a tap
- * selects. The router asks before the block's own press handler selects it, so a first drag still pans.
+ * Whether a press is on the drag body of a block that is already selected (an image). With the Select tool a
+ * finger there moves the block, as a mouse does. On any other block, or on empty page, a finger pans the page, and a
+ * tap selects. The router asks before the block's own press handler selects it, so a first drag still pans.
  */
 function onSelectedBody(target: Element | null): boolean {
   if (activeTool.get() !== 'select') return false;
