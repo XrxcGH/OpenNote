@@ -12,3 +12,7 @@ import './sheet/structure/hooks';
 export { readSheet, tableName } from './sheet/model';
 export { canvasMeasure } from './sheet/structure/fit';
 export { MAX_HEIGHT, MIN_HEIGHT, rowHeight } from './sheet/structure/lines';
+// The shown text of a number under a number format code, which the page exports use for formula results.
+import { render } from './engine/numfmt';
+import { EN_US } from './engine/locale';
+export const renderNumberFormat = (value: number, code: string): string => render(value, code, EN_US).text;

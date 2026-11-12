@@ -1,7 +1,7 @@
 //! Reads `data.sheet` of a table block: layers the styles (spec R-SHT-9, without looks and conditional formats),
 //! finds merges (R-SHT-12), and checks the value cache against the fingerprint of the cells (R-SHT-17, R-SHT-18).
 
-use super::{Merge, TableSheet};
+use super::{numfmt, Merge, TableSheet};
 use crate::doc::cell_style::{CellAlign, CellBorder, CellBorders, CellFont, CellStyle, Fill, Pad};
 use opennote_core::format::page_json::inline::readable_text;
 use opennote_core::model::TableData;
@@ -61,6 +61,10 @@ pub fn read(table: &TableData) -> Option<TableSheet> {
             if any {
                 out.styles[r][c] = Some(style_of(&merged));
             }
+            let fmt = merged
+                .get("fmt")
+                .and_then(Value::as_str)
+                .filter(|f| (1..=255).contains(&f.len()));
             let markdown = row.cells.get(&column.id).map_or("", |cell| cell.markdown.as_str());
             let stored = values
                 .and_then(|v| v.get(row_id.as_str()))
@@ -69,12 +73,12 @@ pub fn read(table: &TableData) -> Option<TableSheet> {
             if readable_text(markdown).starts_with('=') {
                 if fresh {
                     // An entry a reader cannot use is ignored (R-SHT-17): the cell keeps its formula text.
-                    out.results[r][c] = stored.map_or(Some(String::new()), result_text);
+                    out.results[r][c] = stored.map_or(Some(String::new()), |v| result_text(v, fmt));
                 } else {
                     out.stale = true;
                 }
             } else if fresh && markdown.is_empty() {
-                out.results[r][c] = stored.and_then(result_text);
+                out.results[r][c] = stored.and_then(|v| result_text(v, fmt));
             }
         }
     }
@@ -112,12 +116,17 @@ fn number(value: Option<&Value>) -> Option<f64> {
     value?.as_f64().filter(|n| n.is_finite())
 }
 
+/// A number inside `low..=high`; one outside is dropped, as the sheet schema refuses it.
+fn ranged(value: Option<&Value>, low: f64, high: f64) -> Option<f64> {
+    number(value).filter(|n| (low..=high).contains(n))
+}
+
 fn side(value: Option<&Value>) -> Option<CellBorder> {
     let side = value?.as_object()?;
     Some(CellBorder {
         style: text(side.get("style"))?,
         color: text(side.get("color")),
-        width: number(side.get("width")),
+        width: ranged(side.get("width"), 0.25, 6.0),
     })
 }
 
@@ -133,8 +142,8 @@ fn style_of(style: &Obj) -> CellStyle {
     CellStyle {
         font: CellFont {
             family: text(get(font, "family")),
-            size: number(get(font, "size")),
-            weight: number(get(font, "weight")).map(|w| w as u16),
+            size: ranged(get(font, "size"), 1.0, 1638.0),
+            weight: ranged(get(font, "weight"), 100.0, 900.0).map(|w| w as u16),
             bold: get(font, "bold").and_then(Value::as_bool),
             italic: get(font, "italic").and_then(Value::as_bool),
             underline: text(get(font, "underline")),
@@ -161,18 +170,23 @@ fn style_of(style: &Obj) -> CellStyle {
             wrap: text(get(align, "wrap")),
             shrink: get(align, "shrink").and_then(Value::as_bool),
             rotate: match get(align, "rotate") {
-                Some(Value::Number(n)) => n.as_f64().map(|n| n as i16),
+                Some(Value::Number(n)) => n
+                    .as_f64()
+                    .filter(|n| n.fract() == 0.0 && (-90.0..=90.0).contains(n))
+                    .map(|n| n as i16),
                 _ => None,
             },
             stacked: get(align, "rotate").and_then(Value::as_str) == Some("stacked"),
-            indent: number(get(align, "indent")).map(|n| n as u8),
+            indent: ranged(get(align, "indent"), 0.0, 15.0)
+                .filter(|n| n.fract() == 0.0)
+                .map(|n| n as u8),
             dir: text(get(align, "dir")),
         },
         pad: Pad {
-            top: number(get(pad, "t")),
-            right: number(get(pad, "r")),
-            bottom: number(get(pad, "b")),
-            left: number(get(pad, "l")),
+            top: ranged(get(pad, "t"), 0.0, 1584.0),
+            right: ranged(get(pad, "r"), 0.0, 1584.0),
+            bottom: ranged(get(pad, "b"), 0.0, 1584.0),
+            left: ranged(get(pad, "l"), 0.0, 1584.0),
         },
     }
 }
@@ -211,18 +225,21 @@ fn merges(sheet: &Obj, table: &TableData) -> Vec<Merge> {
     let Some(list) = obj(sheet.get("merges")) else {
         return Vec::new();
     };
-    let row_at = |id: &Value| {
-        table
-            .rows
-            .iter()
-            .position(|r| Some(r.id.to_string().as_str()) == id.as_str())
-    };
-    let col_at = |id: &Value| {
-        table
-            .columns
-            .iter()
-            .position(|c| Some(c.id.to_string().as_str()) == id.as_str())
-    };
+    // One lookup table per axis, so a corner costs a hash and not a scan of the rows.
+    let row_index: std::collections::HashMap<String, usize> = table
+        .rows
+        .iter()
+        .enumerate()
+        .map(|(i, r)| (r.id.to_string(), i))
+        .collect();
+    let col_index: std::collections::HashMap<String, usize> = table
+        .columns
+        .iter()
+        .enumerate()
+        .map(|(i, c)| (c.id.to_string(), i))
+        .collect();
+    let row_at = |id: &Value| row_index.get(id.as_str()?).copied();
+    let col_at = |id: &Value| col_index.get(id.as_str()?).copied();
     let sorted: BTreeMap<&String, &Value> = list.iter().take(MERGE_LIMIT).collect();
     let mut taken = vec![false; table.rows.len() * table.columns.len()];
     let width = table.columns.len();
@@ -258,13 +275,17 @@ fn merges(sheet: &Obj, table: &TableData) -> Vec<Merge> {
 }
 
 /// The text of a cached value, or `None` for an entry a reader ignores: an array, or an object that is not a lone error code.
-fn result_text(value: &Value) -> Option<String> {
+fn result_text(value: &Value, fmt: Option<&str>) -> Option<String> {
     Some(match value {
         Value::Null => String::new(),
         Value::Array(_) => return None,
         Value::Bool(true) => "TRUE".to_owned(),
         Value::Bool(false) => "FALSE".to_owned(),
-        Value::Number(n) => number_text(n.as_f64().unwrap_or(0.0)),
+        Value::Number(n) => {
+            let n = n.as_f64().unwrap_or(0.0);
+            fmt.and_then(|code| numfmt::shown(n, code))
+                .unwrap_or_else(|| number_text(n))
+        }
         Value::String(s) => s.clone(),
         Value::Object(o) if o.len() == 1 => o.get("e").and_then(Value::as_str)?.to_owned(),
         Value::Object(_) => return None,

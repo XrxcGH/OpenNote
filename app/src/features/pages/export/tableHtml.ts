@@ -2,7 +2,7 @@
 // fonts, and merged cells (format spec 6.3, ADR 0067). Without `data.sheet` the table is the plain one it always was.
 // The Markdown export reads the same view, so both agree on what a cell shows.
 
-import { sheetModel } from '../../tables';
+import { MAX_HEIGHT, MIN_HEIGHT, renderNumberFormat, sheetModel } from '../../tables';
 import { isObject, own as ownKey } from '../layout/json';
 import type { JsonObject } from '../layout/json';
 import { resolveColor } from '../../../ui/color';
@@ -40,11 +40,13 @@ export interface TableView {
   height(row: number): number | null;
 }
 
-function resultText(value: unknown): string | null {
+function resultText(value: unknown, fmt?: string): string | null {
   const v = sheetModel.cachedValue(value as never);
   if (v === undefined || v === null) return v === null ? '' : null;
   if (typeof v === 'boolean') return v ? 'TRUE' : 'FALSE';
   if (typeof v === 'object') return v.e;
+  // A number shows the way its cell's number format writes it, so 0.25 under `0%` is 25%.
+  if (typeof v === 'number' && fmt !== undefined && fmt !== '') return renderNumberFormat(v, fmt);
   return String(v);
 }
 
@@ -78,11 +80,11 @@ export function tableView(block: TableBlock): TableView {
       const stored = r && c ? ownKey(sub(values, r.id), c.id) : undefined;
       const formula = sheetModel.readableText(markdown).startsWith('=');
       if (formula) {
-        const text = fresh ? resultText(stored === undefined ? null : stored) : null;
+        const text = fresh ? resultText(stored === undefined ? null : stored, view.style(row, col)?.fmt) : null;
         if (text !== null) return { markdown: null, result: text };
         if (!fresh && sheet !== undefined) view.stale = true;
       } else if (markdown === '' && fresh && stored !== undefined) {
-        const text = resultText(stored);
+        const text = resultText(stored, view.style(row, col)?.fmt);
         if (text !== null) return { markdown: null, result: text };
       }
       return { markdown, result: null };
@@ -96,7 +98,8 @@ export function tableView(block: TableBlock): TableView {
     height(row) {
       const r = like.rows[row];
       const h = r ? ownKey(sub(sub(sheet, 'rows'), r.id), 'height') : undefined;
-      return typeof h === 'number' && h > 0 ? h : null;
+      // The same bounds the structure commands keep (MIN_HEIGHT to MAX_HEIGHT).
+      return typeof h === 'number' && Number.isFinite(h) && h > 0 ? Math.min(MAX_HEIGHT, Math.max(MIN_HEIGHT, h)) : null;
     },
   };
   if (sheet) {
@@ -221,8 +224,14 @@ export function tableHtml(
     return `${open}${block.columns.map((_, c) => cell(tag, r, c)).join('')}</tr>`;
   };
   const indexes = block.rows.map((_, i) => i);
-  const head = block.header && indexes.length > 0 ? `<thead>${row(0, 'th')}</thead>\n` : '';
-  const body = (block.header ? indexes.slice(1) : indexes).map((r) => row(r, 'td')).join('\n');
+  // A merge from the header row into the body would be cut at the end of <thead>, which shifts the body cells. So the
+  // header row stays a row of header cells in <tbody>, where the span can reach the rows below it.
+  const crosses = [...view.anchors.values()].some((box) => box.top === 0 && box.bottom > 0);
+  const inHead = block.header && indexes.length > 0 && !crosses;
+  const head = inHead ? `<thead>${row(0, 'th')}</thead>\n` : '';
+  const body = (inHead ? indexes.slice(1) : indexes)
+    .map((r) => row(r, block.header && r === 0 ? 'th' : 'td'))
+    .join('\n');
   const cols = block.columns.map((c) => `<col style="width:${px(c.width)}px"${voidEnd(xml)}`).join('');
   const html = `<table><colgroup>${cols}</colgroup>\n${head}<tbody>\n${body}\n</tbody></table>`;
   if (view.stale) onStale?.(block.id);

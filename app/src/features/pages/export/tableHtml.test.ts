@@ -140,4 +140,32 @@ describe('table HTML edge cases', () => {
     const css = cellCss({ font: { family: 'Segoe UI, \\22 x url(//e.example/a) {};<b>' } } as never);
     expect(css).toBe('font-family:Segoe UI, 22 x urle.examplea b');
   });
+
+  it('writes a formula result under the number format of its cell', () => {
+    // 6 under `0.0%` is 600.0%; the format-code rules multiply by 100 for each percent sign.
+    const styles = { f: { fmt: '0.0%' } };
+    const html = exportHtml(page({ styles, cells: { r2: { k2: 'f' } } })).html;
+    expect(html).toContain('<td>600.0%</td>');
+  });
+
+  it('writes a date result as the date and not the serial number', () => {
+    // Serial 45000 is 2023-03-15 in the 1900 date system (ECMA-376 18.17.4.1).
+    const styles = { d: { fmt: 'yyyy-mm-dd' } };
+    const html = exportHtml(page({ styles, cells: { r2: { k2: 'd' } }, values: { r2: { k2: 45000 } } })).html;
+    expect(html).toContain('<td>2023-03-15</td>');
+  });
+
+  it('keeps the header row in the body when a merge reaches from it into the body', () => {
+    // A1:A2 starts in the header. A <thead> would cut the span, so the body row would shift one column left.
+    const html = exportHtml(page({ merges: { m1: { from: ['r1', 'k1'], to: ['r2', 'k1'] } } })).html;
+    expect(html).not.toContain('<thead>');
+    expect(html).toContain('<tr><th scope="col" rowspan="2">A</th><th scope="col">B</th><th scope="col">C</th></tr>');
+    // The covered cell A2 is left out, so the row starts with B2.
+    expect(html).toContain('<tr><td>6</td><td></td></tr>');
+  });
+
+  it('bounds a row height to the range the structure commands keep', () => {
+    const html = exportHtml(page({ rows: { r2: { height: 1e9 } } })).html;
+    expect(html).toContain('<tr style="height:10000px">');
+  });
 });

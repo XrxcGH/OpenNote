@@ -248,3 +248,121 @@ fn the_merge_index_names_each_cell_once() {
     assert_eq!(cut.slot(2, 2), Some(Slot::Anchor(wide)));
     assert_eq!(cut.slot(5, 0), None);
 }
+
+/// A table of `rows` by `columns` empty cells with generated IDs.
+fn grid(rows: usize, columns: usize, extra: Value) -> TableData {
+    let col_ids: Vec<String> = (0..columns).map(|i| format!("01m3sbcmt2{i:016}")).collect();
+    let row_ids: Vec<String> = (0..rows).map(|i| format!("01m3sbcmt1{i:016}")).collect();
+    TableData {
+        header: true,
+        columns: col_ids
+            .iter()
+            .map(|id| TableColumn {
+                id: ColumnId::parse(id).unwrap(),
+                width: None,
+                extra: Map::new(),
+            })
+            .collect(),
+        rows: row_ids
+            .iter()
+            .map(|id| TableRow {
+                id: RowId::parse(id).unwrap(),
+                cells: col_ids
+                    .iter()
+                    .map(|c| {
+                        (
+                            ColumnId::parse(c).unwrap(),
+                            TableCell {
+                                markdown: String::new(),
+                                extra: Map::new(),
+                            },
+                        )
+                    })
+                    .collect(),
+                extra: Map::new(),
+            })
+            .collect(),
+        extra: extra.as_object().cloned().unwrap_or_default(),
+    }
+}
+
+#[test]
+fn ten_thousand_merges_in_a_large_table_read_fast() {
+    // The limits of the format: 1,000 rows, 100 columns, 10,000 merges. Each merge spans two columns of one row, so
+    // none overlaps. The check against taken cells must not grow with the table (it took a minute in debug before).
+    let (rows, columns) = (1_000, 100);
+    let mut merges = Map::new();
+    for i in 0..MERGE_LIMIT {
+        let (r, c) = (i / 10, (i % 10) * 2);
+        merges.insert(
+            format!("m{i:05}"),
+            json!({"from": [format!("01m3sbcmt1{r:016}"), format!("01m3sbcmt2{c:016}")],
+                   "to": [format!("01m3sbcmt1{r:016}"), format!("01m3sbcmt2{:016}", c + 1)]}),
+        );
+    }
+    let t = grid(rows, columns, json!({"sheet": {"merges": Value::Object(merges)}}));
+    let start = std::time::Instant::now();
+    let sheet = read(&t).unwrap();
+    assert_eq!(sheet.merges.len(), MERGE_LIMIT);
+    assert!(start.elapsed().as_secs() < 5, "reading took {:?}", start.elapsed());
+    let start = std::time::Instant::now();
+    let index = MergeIndex::new(&sheet.merges, rows, columns);
+    assert!(index.slot(999, 19).is_some());
+    assert!(start.elapsed().as_secs() < 5);
+}
+
+#[test]
+fn a_style_value_outside_the_schema_range_is_dropped() {
+    // R-SHT ranges: padding 0 to 1584 points, indent 0 to 15, border width 0.25 to 6, rotation -90 to 90, size 1 to 1638.
+    let style = json!({
+        "pad": {"t": 1e300, "r": -50, "b": 10, "l": 1584},
+        "align": {"indent": 255, "rotate": 91},
+        "border": {"t": {"style": "single", "width": 99}},
+        "font": {"size": 0, "weight": 1000}
+    });
+    let t = table(
+        1,
+        &[&["a"], &["b"]],
+        json!({"sheet": {"styles": {"h": style}, "table": {"style": "h"}}}),
+    );
+    let cell = read(&t).unwrap().styles[0][0].clone().unwrap();
+    assert_eq!(cell.pad.top, None);
+    assert_eq!(cell.pad.right, None);
+    assert_eq!(cell.pad.bottom, Some(10.0));
+    assert_eq!(cell.pad.left, Some(1584.0));
+    assert_eq!(cell.align.indent, None);
+    assert_eq!(cell.align.rotate, None);
+    assert_eq!(cell.border.top.and_then(|b| b.width), None);
+    assert_eq!(cell.font.size, None);
+    assert_eq!(cell.font.weight, None);
+}
+
+fn shown_result(value: Value, fmt: &str) -> Option<String> {
+    let mut t = table(2, &[&["A", "B"], &["x", "=1/4"]], json!({}));
+    let of = fingerprint(&t);
+    t.extra.insert(
+        "sheet".to_owned(),
+        json!({"values": {R[1]: {K[1]: value}}, "valuesOf": of, "styles": {"f": {"fmt": fmt}}, "cols": {K[1]: {"style": "f"}}}),
+    );
+    read(&t).unwrap().results[1][1].clone()
+}
+
+#[test]
+fn a_result_shows_under_the_number_format_of_its_cell() {
+    // Hand-worked: 0.25 as a percent is 25%. Serial 45000 is 2023-03-15 (ECMA-376 18.17.4.1, 1900 date system).
+    assert_eq!(shown_result(json!(0.25), "0%").as_deref(), Some("25%"));
+    assert_eq!(shown_result(json!(0.256), "0.0%").as_deref(), Some("25.6%"));
+    assert_eq!(shown_result(json!(1234.5), "#,##0.00").as_deref(), Some("1,234.50"));
+    assert_eq!(shown_result(json!(7), "0.00").as_deref(), Some("7.00"));
+    assert_eq!(shown_result(json!(1234.5), "\"$\"#,##0").as_deref(), Some("$1,235"));
+    assert_eq!(shown_result(json!(45000), "yyyy-mm-dd").as_deref(), Some("2023-03-15"));
+    assert_eq!(
+        shown_result(json!(45000.5), "d mmm yyyy h:mm").as_deref(),
+        Some("15 Mar 2023 12:00")
+    );
+    assert_eq!(shown_result(json!(45000), "dddd").as_deref(), Some("Wednesday"));
+    // General, an unsupported code, and a value that is not a number keep the plain text.
+    assert_eq!(shown_result(json!(0.25), "General").as_deref(), Some("0.25"));
+    assert_eq!(shown_result(json!(0.25), "[Red]0.0E+0").as_deref(), Some("0.25"));
+    assert_eq!(shown_result(json!("hi"), "0%").as_deref(), Some("hi"));
+}
