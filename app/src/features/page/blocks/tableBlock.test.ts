@@ -18,7 +18,12 @@ import { currentTable } from '../tables/current';
 import { whenViewReady } from '../tables/lazyView';
 import '../register';
 
-afterEach(cleanupPages);
+// React schedules its last renders on the next turn of the event loop. Let them run while jsdom is still there, so
+// none lands after the environment is gone and throws in the next file that runs in the same worker.
+afterEach(async () => {
+  await cleanupPages();
+  for (let turn = 0; turn < 3; turn++) await new Promise((done) => setImmediate(done));
+});
 
 // jsdom has no layout, and ProseMirror measures a Range when it scrolls the caret into view.
 Range.prototype.getClientRects ??= () => [] as unknown as DOMRectList;
