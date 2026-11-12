@@ -1,0 +1,2259 @@
+{
+  "cases": [
+    {
+      "formula": "=PV(0.08/12,240,500)",
+      "expected": -59777.1458511878,
+      "tolerance": 1e-9,
+      "source": "lane",
+      "note": "Published known answer."
+    },
+    {
+      "formula": "=PV(0,10,-100)",
+      "expected": 1000,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "At no interest, ten payments of 100 are worth 1,000."
+    },
+    {
+      "formula": "=PV(0.1,2,0,-121)",
+      "expected": 100,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "121 in two years at 10% is worth 121/1.21 now."
+    },
+    {
+      "formula": "=PV(0.1,1,-110,0,1)",
+      "expected": 110,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "One payment due now is worth itself."
+    },
+    {
+      "formula": "=PV(\"x\",1,1)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "error",
+      "note": "Text that is not a number."
+    },
+    {
+      "formula": "=PV(0.1,2)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "arity",
+      "note": "Too few arguments."
+    },
+    {
+      "formula": "=FV(0.06/12,10,-200,-500,1)",
+      "expected": 2581.40337406012,
+      "tolerance": 1e-9,
+      "source": "lane",
+      "note": "Published known answer."
+    },
+    {
+      "formula": "=FV(0,5,-100,-1000)",
+      "expected": 1500,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "No interest: 1,000 plus five payments of 100."
+    },
+    {
+      "formula": "=FV(0.1,2,-100)",
+      "expected": 210,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "100 grows to 110, plus the second 100."
+    },
+    {
+      "formula": "=FV(0.1,2,0,-100)",
+      "expected": 121,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "100 compounded twice at 10%."
+    },
+    {
+      "formula": "=FV(0.1,\"a\",1)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "error",
+      "note": "Text that is not a number."
+    },
+    {
+      "formula": "=FV(0.1)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "arity",
+      "note": "Too few arguments."
+    },
+    {
+      "formula": "=PMT(0.08/12,10,10000)",
+      "expected": -1037.03208935915,
+      "tolerance": 1e-9,
+      "source": "lane",
+      "note": "Published known answer."
+    },
+    {
+      "formula": "=PMT(0,10,1000)",
+      "expected": -100,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "No interest: 1,000 in ten equal parts."
+    },
+    {
+      "formula": "=PMT(0.1,2,-121)",
+      "expected": 69.71904761904763,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "rate (pv q) / (q - 1) with q = 1.21."
+    },
+    {
+      "formula": "=PMT(0.1,2,0,210)",
+      "expected": -100,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "Saving 100 a year reaches 210 in two years at 10%."
+    },
+    {
+      "formula": "=PMT(0.1,0,1000)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "No periods."
+    },
+    {
+      "formula": "=PMT(0.1,2)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "arity",
+      "note": "Too few arguments."
+    },
+    {
+      "formula": "=NPER(0.12/12,-100,-1000,10000,1)",
+      "expected": 59.67386567429457,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "ln((pmt(1+r)-fv r)/(pmt(1+r)+pv r)) / ln(1+r)."
+    },
+    {
+      "formula": "=NPER(0,-100,1000)",
+      "expected": 10,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "No interest: 1,000 over 100 a period."
+    },
+    {
+      "formula": "=NPER(0.1,0,-100,121)",
+      "expected": 2,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "100 grows to 121 in two periods at 10%."
+    },
+    {
+      "formula": "=NPER(0.01,-100,1000)",
+      "expected": 10.58864445942323,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "ln(100/90) / ln(1.01)."
+    },
+    {
+      "formula": "=NPER(0.1,-10,1000)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "A payment smaller than the interest never repays the loan."
+    },
+    {
+      "formula": "=NPER(0.1,-10)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "arity",
+      "note": "Too few arguments."
+    },
+    {
+      "formula": "=RATE(48,-200,8000)",
+      "expected": 0.0077014724882,
+      "tolerance": 1e-12,
+      "source": "lane",
+      "note": "Published known answer."
+    },
+    {
+      "formula": "=RATE(2,0,-100,121)",
+      "expected": 0.1,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "100 grows to 121 in two periods."
+    },
+    {
+      "formula": "=RATE(10,-100,1000)",
+      "expected": 0,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "Ten payments of 100 repay 1,000 exactly at no interest."
+    },
+    {
+      "formula": "=RATE(1,0,-100,110,0,0.5)",
+      "expected": 0.1,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "A guess far from the answer still finds it."
+    },
+    {
+      "formula": "=RATE(2,0,100,100)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "Money only received: no rate balances it."
+    },
+    {
+      "formula": "=RATE(0,-100,1000)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "No periods."
+    },
+    {
+      "formula": "=RATE(10,-100)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "arity",
+      "note": "Too few arguments."
+    },
+    {
+      "formula": "=IPMT(0.1/12,1,3*12,8000)",
+      "expected": -66.66666666666667,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "The first month is interest on the whole 8,000."
+    },
+    {
+      "formula": "=IPMT(0.1,3,3,8000)",
+      "expected": -292.4471299093658,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "Interest on the balance left after two payments."
+    },
+    {
+      "formula": "=IPMT(0.1,1,3,8000,0,1)",
+      "expected": 0,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "A payment at the start of period 1 holds no interest."
+    },
+    {
+      "formula": "=IPMT(0.1,2,3,8000,0,1)",
+      "expected": -507.5528700906345,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "Payments at the start: interest earned in the period before."
+    },
+    {
+      "formula": "=IPMT(0.1,4,3,8000)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "Period past the last one."
+    },
+    {
+      "formula": "=IPMT(0.1,1,3)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "arity",
+      "note": "Too few arguments."
+    },
+    {
+      "formula": "=PPMT(0.1/12,1,24,2000)",
+      "expected": -75.62318600836664,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "The payment less the first month of interest."
+    },
+    {
+      "formula": "=PPMT(0,1,10,1000)",
+      "expected": -100,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "No interest: the whole payment is principal."
+    },
+    {
+      "formula": "=PPMT(0.1,3,3,8000)",
+      "expected": -2924.4712990936528,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "Payment less interest."
+    },
+    {
+      "formula": "=PPMT(0.1,0,3,8000)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "Period 0 does not exist."
+    },
+    {
+      "formula": "=PPMT(0.1,1,3)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "arity",
+      "note": "Too few arguments."
+    },
+    {
+      "formula": "=CUMIPMT(0.09/12,30*12,125000,13,24,0)",
+      "expected": -11135.23213,
+      "tolerance": 1e-5,
+      "source": "excel-doc",
+      "note": "Published example."
+    },
+    {
+      "formula": "=CUMIPMT(0.09/12,30*12,125000,1,1,0)",
+      "expected": -937.5,
+      "tolerance": 1e-9,
+      "source": "excel-doc",
+      "note": "Published example: one month of 0.75% on 125,000."
+    },
+    {
+      "formula": "=CUMIPMT(0.1,3,8000,1,3,0)",
+      "expected": -1650.7552870090549,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "All interest: the payments less the principal."
+    },
+    {
+      "formula": "=CUMIPMT(0.1,3,8000,2,3,1)",
+      "expected": -773.413897280967,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "Sum of the period interest, payments at the start."
+    },
+    {
+      "formula": "=CUMIPMT(0,12,1000,1,1,0)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "Rate must be above 0."
+    },
+    {
+      "formula": "=CUMIPMT(0.1,3,8000,2,1,0)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "Start after end."
+    },
+    {
+      "formula": "=CUMIPMT(0.1,3,8000,1,3)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "arity",
+      "note": "Too few arguments."
+    },
+    {
+      "formula": "=CUMPRINC(0.09/12,30*12,125000,13,24,0)",
+      "expected": -934.1071234,
+      "tolerance": 1e-6,
+      "source": "excel-doc",
+      "note": "Published example."
+    },
+    {
+      "formula": "=CUMPRINC(0.09/12,30*12,125000,1,1,0)",
+      "expected": -68.27827118,
+      "tolerance": 1e-7,
+      "source": "excel-doc",
+      "note": "Published example."
+    },
+    {
+      "formula": "=CUMPRINC(0.1,3,8000,1,3,0)",
+      "expected": -8000,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "Every payment together repays the whole loan."
+    },
+    {
+      "formula": "=CUMPRINC(0.1,3,8000,1,2,1)",
+      "expected": -5341.389728096671,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "Payment less interest, payments at the start."
+    },
+    {
+      "formula": "=CUMPRINC(0.1,3,8000,1,3,2)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "Type must be 0 or 1."
+    },
+    {
+      "formula": "=CUMPRINC(0.1,3,8000,1,3)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "arity",
+      "note": "Too few arguments."
+    },
+    {
+      "formula": "=ISPMT(0.1/12,1,3*12,8000000)",
+      "expected": -64814.81481481482,
+      "tolerance": 1e-7,
+      "source": "hand",
+      "note": "pv rate (per/nper - 1)."
+    },
+    {
+      "formula": "=ISPMT(0.1,0,4,1000)",
+      "expected": -100,
+      "source": "hand",
+      "note": "Period 0: interest on the whole loan."
+    },
+    {
+      "formula": "=ISPMT(0.1,4,4,1000)",
+      "expected": 0,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "After the last part, nothing is owed."
+    },
+    {
+      "formula": "=ISPMT(0.1,1,0,1000)",
+      "expected": "#DIV/0!",
+      "source": "hand",
+      "kind": "error",
+      "note": "No periods."
+    },
+    {
+      "formula": "=ISPMT(0.1,1,4)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "arity",
+      "note": "Too few arguments."
+    },
+    {
+      "formula": "=NPV(0.1,-10000,3000,4200,6800)",
+      "expected": 1188.44341233522,
+      "tolerance": 1e-9,
+      "source": "lane",
+      "note": "Published known answer."
+    },
+    {
+      "formula": "=NPV(0.1,110,121)",
+      "expected": 200,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "Each flow is worth 100 now."
+    },
+    {
+      "formula": "=NPV(0,1,2,3)",
+      "expected": 6,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "At no interest the flows add up."
+    },
+    {
+      "formula": "=NPV(0.1,A1:A2)",
+      "cells": {
+        "A1": 110,
+        "A2": 121
+      },
+      "expected": 200,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "Flows from a range."
+    },
+    {
+      "formula": "=NPV(-1,1)",
+      "expected": "#DIV/0!",
+      "source": "hand",
+      "kind": "error",
+      "note": "A rate of -1 divides by zero."
+    },
+    {
+      "formula": "=NPV(0.1)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "arity",
+      "note": "Too few arguments."
+    },
+    {
+      "formula": "=IRR({-70000,12000,15000,18000,21000,26000})",
+      "expected": 0.0866309480365316,
+      "tolerance": 1e-12,
+      "source": "lane",
+      "note": "Published known answer."
+    },
+    {
+      "formula": "=IRR({-70000,12000,15000,18000,21000})",
+      "expected": -0.0212448482,
+      "tolerance": 1e-10,
+      "source": "lane",
+      "note": "Published known answer."
+    },
+    {
+      "formula": "=IRR(A1:A3)",
+      "cells": {
+        "A1": -100,
+        "A2": 60,
+        "A3": 60
+      },
+      "expected": 0.1306623862918075,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "60u^2 + 60u - 100 = 0 with u = 1/(1+r)."
+    },
+    {
+      "formula": "=IRR({-100,230,-132})",
+      "expected": 0.1,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "Roots 0.1 and 0.2 (132u^2 - 230u + 100 = 0); the default guess 0.1 finds 0.1."
+    },
+    {
+      "formula": "=IRR({-100,230,-132},0.25)",
+      "expected": 0.2,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "The same flows from the guess 0.25 find 0.2."
+    },
+    {
+      "formula": "=IRR({-100,110})",
+      "expected": 0.1,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "One period, 10% gain."
+    },
+    {
+      "formula": "=IRR({100,200})",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "No payment, so no rate of return."
+    },
+    {
+      "formula": "=IRR()",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "arity",
+      "note": "Too few arguments."
+    },
+    {
+      "formula": "=MIRR({-120000,39000,30000,21000,37000,46000},0.1,0.12)",
+      "expected": 0.1260941303659051,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "Receipts grown at 12% to year 5 over the payment, to the power 1/5."
+    },
+    {
+      "formula": "=MIRR({-100,60,60},0.1,0.1)",
+      "expected": 0.12249721603218244,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "(60 1.1 + 60)/100 to the power 1/2."
+    },
+    {
+      "formula": "=MIRR({-100,0,121},0.1,0.1)",
+      "expected": 0.1,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "One payment and one receipt: the plain rate."
+    },
+    {
+      "formula": "=MIRR({100,200},0.1,0.1)",
+      "expected": "#DIV/0!",
+      "source": "hand",
+      "kind": "error",
+      "note": "No payment."
+    },
+    {
+      "formula": "=MIRR({-100,60},0.1)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "arity",
+      "note": "Too few arguments."
+    },
+    {
+      "formula": "=XNPV(0.09,A1:A5,B1:B5)",
+      "cells": {
+        "A1": -10000,
+        "A2": 2750,
+        "A3": 4250,
+        "A4": 3250,
+        "A5": 2750,
+        "B1": 39448,
+        "B2": 39508,
+        "B3": 39751,
+        "B4": 39859,
+        "B5": 39904
+      },
+      "expected": 2086.647602,
+      "tolerance": 1e-6,
+      "source": "lane",
+      "note": "Published known answer."
+    },
+    {
+      "formula": "=XNPV(0.1,{-100,110},{0,365})",
+      "expected": 0,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "110 a year later is worth 100."
+    },
+    {
+      "formula": "=XNPV(0,{-100,50,60},{1,2,3})",
+      "expected": 10,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "At no interest the flows add up."
+    },
+    {
+      "formula": "=XNPV(0.1,{-100,110},{365,0})",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "A date before the first one."
+    },
+    {
+      "formula": "=XNPV(0.1,{-100,110},{0})",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "More flows than dates."
+    },
+    {
+      "formula": "=XNPV(0.1,{-100,110})",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "arity",
+      "note": "Too few arguments."
+    },
+    {
+      "formula": "=XIRR(A1:A5,B1:B5)",
+      "cells": {
+        "A1": -10000,
+        "A2": 2750,
+        "A3": 4250,
+        "A4": 3250,
+        "A5": 2750,
+        "B1": 39448,
+        "B2": 39508,
+        "B3": 39751,
+        "B4": 39859,
+        "B5": 39904
+      },
+      "expected": 0.373362535,
+      "tolerance": 2e-9,
+      "source": "lane",
+      "note": "Published known answer, given to 9 digits by an app that stops iterating early; the exact root, by bisection, is 0.37336253352."
+    },
+    {
+      "formula": "=XIRR({-100,110},{0,365})",
+      "expected": 0.1,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "10% over 365 days."
+    },
+    {
+      "formula": "=XIRR({-100,121},{0,730})",
+      "expected": 0.1,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "21% over two years of 365 days."
+    },
+    {
+      "formula": "=XIRR({100,110},{0,365})",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "No payment."
+    },
+    {
+      "formula": "=XIRR({-100,110})",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "arity",
+      "note": "Too few arguments."
+    },
+    {
+      "formula": "=EFFECT(0.0525,4)",
+      "expected": 0.0535426674,
+      "tolerance": 1e-10,
+      "source": "lane",
+      "note": "Published known answer."
+    },
+    {
+      "formula": "=EFFECT(0.12,12)",
+      "expected": 0.12682503013196977,
+      "tolerance": 1e-14,
+      "source": "hand",
+      "note": "(1 + 0.01)^12 - 1."
+    },
+    {
+      "formula": "=EFFECT(0.1,1)",
+      "expected": 0.1,
+      "tolerance": 1e-14,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "Compounded once a year, nothing changes."
+    },
+    {
+      "formula": "=EFFECT(0.1,0.5)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "Fewer than one period a year."
+    },
+    {
+      "formula": "=EFFECT(0,4)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "Rate must be above 0."
+    },
+    {
+      "formula": "=EFFECT(0.1)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "arity",
+      "note": "Too few arguments."
+    },
+    {
+      "formula": "=NOMINAL(0.053543,4)",
+      "expected": 0.0525003,
+      "tolerance": 1e-7,
+      "source": "lane",
+      "note": "Published known answer."
+    },
+    {
+      "formula": "=NOMINAL(0.1,1)",
+      "expected": 0.1,
+      "tolerance": 1e-14,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "Once a year, nothing changes."
+    },
+    {
+      "formula": "=NOMINAL(1.01^12-1,12)",
+      "expected": 0.12,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "Undoes EFFECT(0.12,12)."
+    },
+    {
+      "formula": "=NOMINAL(-0.1,4)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "Rate must be above 0."
+    },
+    {
+      "formula": "=NOMINAL(0.1)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "arity",
+      "note": "Too few arguments."
+    },
+    {
+      "formula": "=FVSCHEDULE(1,{0.09,0.11,0.1})",
+      "expected": 1.3308900000000004,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "1.09 times 1.11 times 1.1."
+    },
+    {
+      "formula": "=FVSCHEDULE(100,{0})",
+      "expected": 100,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "A zero rate leaves the amount."
+    },
+    {
+      "formula": "=FVSCHEDULE(100,A1:A3)",
+      "cells": {
+        "A1": 0.1,
+        "A3": 0.2
+      },
+      "expected": 132,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "An empty cell counts as 0%."
+    },
+    {
+      "formula": "=FVSCHEDULE(100,{\"a\"})",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "error",
+      "note": "Text in the schedule."
+    },
+    {
+      "formula": "=FVSCHEDULE(100)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "arity",
+      "note": "Too few arguments."
+    },
+    {
+      "formula": "=PDURATION(0.025,2000,2200)",
+      "expected": 3.859866162622662,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "ln(2200/2000) / ln(1.025)."
+    },
+    {
+      "formula": "=PDURATION(0.025/12,1000,1200)",
+      "expected": 87.60547641937126,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "ln(1.2) / ln(1 + 0.025/12)."
+    },
+    {
+      "formula": "=PDURATION(0.1,100,100)",
+      "expected": 0,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "Already there."
+    },
+    {
+      "formula": "=PDURATION(0,100,121)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "Rate must be above 0."
+    },
+    {
+      "formula": "=PDURATION(0.1,100)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "arity",
+      "note": "Too few arguments."
+    },
+    {
+      "formula": "=RRI(96,10000,11000)",
+      "expected": 0.0009933073762913303,
+      "tolerance": 1e-14,
+      "source": "hand",
+      "note": "1.1 to the power 1/96, less 1."
+    },
+    {
+      "formula": "=RRI(2,100,121)",
+      "expected": 0.1,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "Square root of 1.21, less 1."
+    },
+    {
+      "formula": "=RRI(1,100,100)",
+      "expected": 0,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "No growth."
+    },
+    {
+      "formula": "=RRI(0,100,121)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "No periods."
+    },
+    {
+      "formula": "=RRI(2,100)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "arity",
+      "note": "Too few arguments."
+    },
+    {
+      "formula": "=DOLLARDE(1.02,16)",
+      "expected": 1.125,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "1 and 2/16."
+    },
+    {
+      "formula": "=DOLLARDE(1.1,32)",
+      "expected": 1.3125,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "1 and 10/32."
+    },
+    {
+      "formula": "=DOLLARDE(-1.02,16)",
+      "expected": -1.125,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "The sign is kept."
+    },
+    {
+      "formula": "=DOLLARDE(1.5,10)",
+      "expected": 1.5,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "Tenths are already decimal."
+    },
+    {
+      "formula": "=DOLLARDE(1.02,0)",
+      "expected": "#DIV/0!",
+      "source": "hand",
+      "kind": "error",
+      "note": "A fraction below 1."
+    },
+    {
+      "formula": "=DOLLARDE(1.02,-1)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "A negative fraction."
+    },
+    {
+      "formula": "=DOLLARDE(1.02)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "arity",
+      "note": "Too few arguments."
+    },
+    {
+      "formula": "=DOLLARFR(1.125,16)",
+      "expected": 1.02,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "0.125 is 2/16."
+    },
+    {
+      "formula": "=DOLLARFR(1.125,32)",
+      "expected": 1.04,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "0.125 is 4/32."
+    },
+    {
+      "formula": "=DOLLARFR(-1.125,16)",
+      "expected": -1.02,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "The sign is kept."
+    },
+    {
+      "formula": "=DOLLARFR(2,16)",
+      "expected": 2,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "No fraction."
+    },
+    {
+      "formula": "=DOLLARFR(1.125,0)",
+      "expected": "#DIV/0!",
+      "source": "hand",
+      "kind": "error",
+      "note": "A fraction below 1."
+    },
+    {
+      "formula": "=DOLLARFR(1.125)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "arity",
+      "note": "Too few arguments."
+    },
+    {
+      "formula": "=SLN(30000,7500,10)",
+      "expected": 2250,
+      "source": "lane",
+      "note": "Published known answer."
+    },
+    {
+      "formula": "=SLN(1000,100,5)",
+      "expected": 180,
+      "source": "hand",
+      "note": "900 over 5 periods."
+    },
+    {
+      "formula": "=SLN(100,100,5)",
+      "expected": 0,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "Nothing to depreciate."
+    },
+    {
+      "formula": "=SLN(1000,100,0)",
+      "expected": "#DIV/0!",
+      "source": "hand",
+      "kind": "error",
+      "note": "No life."
+    },
+    {
+      "formula": "=SLN(1000,100)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "arity",
+      "note": "Too few arguments."
+    },
+    {
+      "formula": "=SYD(30000,7500,10,1)",
+      "expected": 4090.90909090909,
+      "tolerance": 1e-9,
+      "source": "lane",
+      "note": "Published known answer."
+    },
+    {
+      "formula": "=SYD(30000,7500,10,10)",
+      "expected": 409.09090909090907,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "The last year: one part of 55."
+    },
+    {
+      "formula": "=SYD(1000,100,5,5)",
+      "expected": 60,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "900 times 1/15."
+    },
+    {
+      "formula": "=SYD(1000,100,5,6)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "Past the life."
+    },
+    {
+      "formula": "=SYD(1000,100,5)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "arity",
+      "note": "Too few arguments."
+    },
+    {
+      "formula": "=DB(1000000,100000,6,1,7)",
+      "expected": 186083.333333333,
+      "tolerance": 1e-6,
+      "source": "lane",
+      "note": "Published known answer."
+    },
+    {
+      "formula": "=DB(1000000,100000,6,2,7)",
+      "expected": 259639.41666666666,
+      "tolerance": 1e-6,
+      "source": "hand",
+      "note": "Rate 0.319 on the value left after the first 7 months."
+    },
+    {
+      "formula": "=DB(1000000,100000,6,7,7)",
+      "expected": 15845.098473848071,
+      "tolerance": 1e-6,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "The stub year: 5 months of the rate on the value left."
+    },
+    {
+      "formula": "=DB(1000,100,5,1)",
+      "expected": 369,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "Rate 1 - 0.1^(1/5) rounds to 0.369."
+    },
+    {
+      "formula": "=DB(1000,100,5,6)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "Past the life with a full first year."
+    },
+    {
+      "formula": "=DB(1000,100,5,1,13)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "More than 12 months."
+    },
+    {
+      "formula": "=DB(1000,100,5)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "arity",
+      "note": "Too few arguments."
+    },
+    {
+      "formula": "=DDB(2400,300,10*365,1)",
+      "expected": 1.3150684931506849,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "The first day at twice the straight-line rate."
+    },
+    {
+      "formula": "=DDB(2400,300,10*12,1,2)",
+      "expected": 40,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "2400 times 2/120."
+    },
+    {
+      "formula": "=DDB(2400,300,10,1,1.5)",
+      "expected": 360,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "2400 times 0.15."
+    },
+    {
+      "formula": "=DDB(2400,300,10,10)",
+      "expected": 22.122547200000156,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "Year 10 stops at the salvage value."
+    },
+    {
+      "formula": "=DDB(2400,300,10,11)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "Past the life."
+    },
+    {
+      "formula": "=DDB(2400,300,10)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "arity",
+      "note": "Too few arguments."
+    },
+    {
+      "formula": "=VDB(2400,300,10*365,0,1)",
+      "expected": 1.3150684931506849,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "The first day."
+    },
+    {
+      "formula": "=VDB(2400,300,10*12,6,18)",
+      "expected": 396.30605326475194,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "Months 7 to 18 of a declining balance at 1/60 a month."
+    },
+    {
+      "formula": "=VDB(2400,300,10,0,0.875,1.5)",
+      "expected": 315,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "0.875 of the first year at 15%."
+    },
+    {
+      "formula": "=VDB(1000,100,5,0,5)",
+      "expected": 900,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "The whole life ends at the salvage value."
+    },
+    {
+      "formula": "=VDB(1000,0,5,0,5)",
+      "expected": 1000,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "Switches to straight line in year 4: 400, 240, 144, 108, 108."
+    },
+    {
+      "formula": "=VDB(1000,0,5,0,5,2,TRUE)",
+      "expected": 922.24,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "No switch: 1000 (1 - 0.6^5)."
+    },
+    {
+      "formula": "=VDB(1000,100,5,3,2)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "End before start."
+    },
+    {
+      "formula": "=VDB(1000,100,5,0)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "arity",
+      "note": "Too few arguments."
+    },
+    {
+      "formula": "=AMORLINC(2400,DATE(2008,8,19),DATE(2008,12,31),300,1,0.15,1)",
+      "expected": 360,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "2400 times 15%."
+    },
+    {
+      "formula": "=AMORLINC(2400,DATE(2008,8,19),DATE(2008,12,31),300,0,0.15,1)",
+      "expected": 131.80327868852459,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "134/366 of a year at 360."
+    },
+    {
+      "formula": "=AMORLINC(2400,DATE(2008,8,19),DATE(2008,12,31),300,6,0.15,1)",
+      "expected": 168.19672131147536,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "Five full years, then what is left above salvage."
+    },
+    {
+      "formula": "=AMORLINC(2400,DATE(2008,8,19),DATE(2008,12,31),300,7,0.15,1)",
+      "expected": 0,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "Fully depreciated."
+    },
+    {
+      "formula": "=AMORLINC(2400,DATE(2008,8,19),DATE(2008,12,31),300,1,0.15,2)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "Basis 2 is not allowed."
+    },
+    {
+      "formula": "=AMORLINC(2400,DATE(2008,8,19),DATE(2008,12,31),300,1)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "arity",
+      "note": "Too few arguments."
+    },
+    {
+      "formula": "=AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,1,0.15,1)",
+      "expected": 776,
+      "source": "hand",
+      "note": "Rate 15% times 2.5; 37.5% of (2400 - 330), rounded."
+    },
+    {
+      "formula": "=AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,0,0.15,1)",
+      "expected": 330,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "134/366 of a year at 37.5% of 2400, rounded."
+    },
+    {
+      "formula": "=AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,2,0.15,1)",
+      "expected": 485,
+      "source": "hand",
+      "note": "37.5% of 1294, rounded."
+    },
+    {
+      "formula": "=AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,1,0.22,1)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "A life of 4.5 years has no coefficient."
+    },
+    {
+      "formula": "=AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,1,0.15,2)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "Basis 2 is not allowed."
+    },
+    {
+      "formula": "=AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,1)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "arity",
+      "note": "Too few arguments."
+    },
+    {
+      "formula": "=ACCRINT(DATE(2008,3,1),DATE(2008,8,31),DATE(2008,5,1),0.1,1000,2,0)",
+      "expected": 16.666666666666668,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "60 days of a 180-day period at 50."
+    },
+    {
+      "formula": "=ACCRINT(DATE(2008,3,5),DATE(2008,8,31),DATE(2008,5,1),0.1,1000,2,0,FALSE)",
+      "expected": 15.555555555555555,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "56 days on 30/360; settlement is before the first coupon."
+    },
+    {
+      "formula": "=ACCRINT(DATE(2008,4,5),DATE(2008,8,31),DATE(2008,5,1),0.1,1000,2,0,TRUE)",
+      "expected": 7.222222222222222,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "26 days on 30/360."
+    },
+    {
+      "formula": "=ACCRINT(DATE(2024,1,1),DATE(2024,7,1),DATE(2024,4,1),0.06,1000,2,1)",
+      "expected": 15,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "91 of the 182 actual days."
+    },
+    {
+      "formula": "=ACCRINT(DATE(2024,1,1),DATE(2024,7,1),DATE(2024,10,1),0.06,1000,2,0,FALSE)",
+      "expected": 15,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "From the first coupon: 90 days."
+    },
+    {
+      "formula": "=ACCRINT(DATE(2024,1,1),DATE(2024,7,1),DATE(2024,10,1),0.06,1000,2,0)",
+      "expected": 45,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "From issue: 270 days."
+    },
+    {
+      "formula": "=ACCRINT(DATE(2024,4,1),DATE(2024,7,1),DATE(2024,4,1),0.06,1000,2)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "Issue on settlement."
+    },
+    {
+      "formula": "=ACCRINT(DATE(2024,1,1),DATE(2024,7,1),DATE(2024,4,1),0.06,1000,3)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "Frequency 3."
+    },
+    {
+      "formula": "=ACCRINT(DATE(2024,1,1),DATE(2024,7,1),DATE(2024,4,1),0.06,1000)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "arity",
+      "note": "Too few arguments."
+    },
+    {
+      "formula": "=ACCRINTM(DATE(2008,4,1),DATE(2008,6,15),0.1,1000,3)",
+      "expected": 20.54794520547945,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "75 days of 365 at 100 a year."
+    },
+    {
+      "formula": "=ACCRINTM(DATE(2024,1,1),DATE(2024,7,1),0.06,1000,0)",
+      "expected": 30,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "180 of 360 days."
+    },
+    {
+      "formula": "=ACCRINTM(DATE(2024,1,1),DATE(2024,7,1),0.06,1000,1)",
+      "expected": 29.83606557377049,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "182 of the 366 days of 2024."
+    },
+    {
+      "formula": "=ACCRINTM(DATE(2024,1,1),DATE(2024,1,1),0.06,1000)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "Issue on settlement."
+    },
+    {
+      "formula": "=ACCRINTM(DATE(2024,1,1),DATE(2024,7,1),0.06,1000,5)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "Basis 5."
+    },
+    {
+      "formula": "=ACCRINTM(DATE(2024,1,1),DATE(2024,7,1),0.06)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "arity",
+      "note": "Too few arguments."
+    },
+    {
+      "formula": "=COUPDAYBS(DATE(2011,1,25),DATE(2011,11,15),2,1)",
+      "expected": 71,
+      "source": "hand",
+      "note": "From November 15, 2010, to January 25, 2011."
+    },
+    {
+      "formula": "=COUPDAYBS(DATE(2024,3,1),DATE(2030,1,15),2,0)",
+      "expected": 46,
+      "source": "hand",
+      "note": "Days360 from January 15 to March 1."
+    },
+    {
+      "formula": "=COUPDAYBS(DATE(2024,1,15),DATE(2030,1,15),2,1)",
+      "expected": 0,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "Settlement on a coupon date."
+    },
+    {
+      "formula": "=COUPDAYBS(DATE(2030,1,15),DATE(2030,1,15),2,1)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "Settlement on maturity."
+    },
+    {
+      "formula": "=COUPDAYBS(DATE(2024,3,1),DATE(2030,1,15),3,1)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "Frequency 3."
+    },
+    {
+      "formula": "=COUPDAYBS(DATE(2024,3,1),DATE(2030,1,15))",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "arity",
+      "note": "Too few arguments."
+    },
+    {
+      "formula": "=COUPDAYS(DATE(2011,1,25),DATE(2011,11,15),2,1)",
+      "expected": 181,
+      "source": "hand",
+      "note": "November 15, 2010, to May 15, 2011."
+    },
+    {
+      "formula": "=COUPDAYS(DATE(2024,3,1),DATE(2030,1,15),2,0)",
+      "expected": 180,
+      "source": "hand",
+      "note": "360 over 2."
+    },
+    {
+      "formula": "=COUPDAYS(DATE(2024,3,1),DATE(2030,1,15),2,3)",
+      "expected": 182.5,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "365 over 2."
+    },
+    {
+      "formula": "=COUPDAYS(DATE(2024,3,1),DATE(2030,1,15),4,2)",
+      "expected": 90,
+      "source": "hand",
+      "note": "360 over 4."
+    },
+    {
+      "formula": "=COUPDAYS(DATE(2024,3,1),DATE(2030,1,15),2,5)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "Basis 5."
+    },
+    {
+      "formula": "=COUPDAYS(DATE(2024,3,1))",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "arity",
+      "note": "Too few arguments."
+    },
+    {
+      "formula": "=COUPDAYSNC(DATE(2011,1,25),DATE(2011,11,15),2,1)",
+      "expected": 110,
+      "source": "hand",
+      "note": "January 25 to May 15, 2011."
+    },
+    {
+      "formula": "=COUPDAYSNC(DATE(2024,3,1),DATE(2030,1,15),2,0)",
+      "expected": 134,
+      "source": "hand",
+      "note": "180 less the 46 days gone."
+    },
+    {
+      "formula": "=COUPDAYSNC(DATE(2024,1,15),DATE(2030,1,15),2,1)",
+      "expected": 182,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "Settlement on a coupon date: the whole period."
+    },
+    {
+      "formula": "=COUPDAYSNC(DATE(2031,1,15),DATE(2030,1,15),2,1)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "Settlement after maturity."
+    },
+    {
+      "formula": "=COUPDAYSNC(DATE(2024,3,1),DATE(2030,1,15))",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "arity",
+      "note": "Too few arguments."
+    },
+    {
+      "formula": "=COUPNCD(DATE(2011,1,25),DATE(2011,11,15),2,1)",
+      "expected": 40678,
+      "source": "hand",
+      "note": "May 15, 2011."
+    },
+    {
+      "formula": "=COUPNCD(DATE(2024,3,1),DATE(2030,2,28),2,0)",
+      "expected": 45535,
+      "source": "hand",
+      "note": "Maturity on a month end: coupons on month ends, so August 31."
+    },
+    {
+      "formula": "=COUPNCD(DATE(2030,1,14),DATE(2030,1,15),2,1)",
+      "expected": 47498,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "The next coupon is maturity."
+    },
+    {
+      "formula": "=COUPNCD(DATE(2024,3,1),DATE(2030,1,15),2,-1)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "Basis -1."
+    },
+    {
+      "formula": "=COUPNCD(DATE(2024,3,1),DATE(2030,1,15))",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "arity",
+      "note": "Too few arguments."
+    },
+    {
+      "formula": "=COUPPCD(DATE(2011,1,25),DATE(2011,11,15),2,1)",
+      "expected": 40497,
+      "source": "hand",
+      "note": "November 15, 2010."
+    },
+    {
+      "formula": "=COUPPCD(DATE(2024,3,1),DATE(2030,2,28),2,0)",
+      "expected": 45351,
+      "source": "hand",
+      "note": "Month-end coupons: February 29, 2024."
+    },
+    {
+      "formula": "=COUPPCD(DATE(2024,1,15),DATE(2030,1,15),2,1)",
+      "expected": 45306,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "Settlement on a coupon date is that date."
+    },
+    {
+      "formula": "=COUPPCD(DATE(2024,3,1),DATE(2030,1,15),0,1)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "Frequency 0."
+    },
+    {
+      "formula": "=COUPPCD(DATE(2024,3,1),DATE(2030,1,15))",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "arity",
+      "note": "Too few arguments."
+    },
+    {
+      "formula": "=COUPNUM(DATE(2011,1,25),DATE(2011,11,15),2,1)",
+      "expected": 2,
+      "source": "hand",
+      "note": "May 15 and November 15, 2011."
+    },
+    {
+      "formula": "=COUPNUM(DATE(2024,3,1),DATE(2030,1,15),2,1)",
+      "expected": 12,
+      "source": "hand",
+      "note": "Every half year from July 2024 to January 2030."
+    },
+    {
+      "formula": "=COUPNUM(DATE(2030,1,14),DATE(2030,1,15),4,0)",
+      "expected": 1,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "Only maturity is left."
+    },
+    {
+      "formula": "=COUPNUM(DATE(2030,1,15),DATE(2030,1,15),4,0)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "Settlement on maturity."
+    },
+    {
+      "formula": "=COUPNUM(DATE(2024,3,1),DATE(2030,1,15))",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "arity",
+      "note": "Too few arguments."
+    },
+    {
+      "formula": "=DISC(DATE(2008,2,16),DATE(2008,3,1),99.795,100,2)",
+      "expected": 0.05271428571428571,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "0.205% over 14/360 of a year."
+    },
+    {
+      "formula": "=DISC(DATE(2024,1,1),DATE(2024,7,1),98,100)",
+      "expected": 0.04,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "2% over half a year; basis 0 when left out."
+    },
+    {
+      "formula": "=DISC(DATE(2024,1,1),DATE(2025,1,1),95,100,3)",
+      "expected": 0.049863387978142076,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "366 days on a 365-day year."
+    },
+    {
+      "formula": "=DISC(DATE(2024,1,1),DATE(2024,7,1),0,100)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "Price 0."
+    },
+    {
+      "formula": "=DISC(DATE(2024,1,1),DATE(2024,7,1),98)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "arity",
+      "note": "Too few arguments."
+    },
+    {
+      "formula": "=INTRATE(DATE(2008,2,15),DATE(2008,5,15),1000000,1014420,2)",
+      "expected": 0.05768,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "1.442% over 90/360 of a year."
+    },
+    {
+      "formula": "=INTRATE(DATE(2024,1,1),DATE(2024,7,1),980,1000,0)",
+      "expected": 0.04081632653061224,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "20/980 over half a year."
+    },
+    {
+      "formula": "=INTRATE(DATE(2024,1,1),DATE(2025,1,1),1000,1050,3)",
+      "expected": 0.049863387978142076,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "366 days on a 365-day year."
+    },
+    {
+      "formula": "=INTRATE(DATE(2024,1,1),DATE(2024,7,1),0,1000)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "Investment 0."
+    },
+    {
+      "formula": "=INTRATE(DATE(2024,1,1),DATE(2024,7,1),980)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "arity",
+      "note": "Too few arguments."
+    },
+    {
+      "formula": "=RECEIVED(DATE(2008,2,15),DATE(2008,5,15),1000000,0.0575,2)",
+      "expected": 1014584.6544071021,
+      "tolerance": 1e-6,
+      "source": "hand",
+      "note": "1,000,000 over 1 - 0.0575 90/360."
+    },
+    {
+      "formula": "=RECEIVED(DATE(2024,1,1),DATE(2024,7,1),980,0.04,0)",
+      "expected": 1000,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "980 over 0.98."
+    },
+    {
+      "formula": "=RECEIVED(DATE(2024,1,1),DATE(2024,7,1),1000,2,0)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "The discount takes the whole value."
+    },
+    {
+      "formula": "=RECEIVED(DATE(2024,1,1),DATE(2024,7,1),1000,0,0)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "Discount 0."
+    },
+    {
+      "formula": "=RECEIVED(DATE(2024,1,1),DATE(2024,1,2),1000,0.036,2)",
+      "expected": 1000.1000100010001,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "One day."
+    },
+    {
+      "formula": "=RECEIVED(DATE(2024,1,1),DATE(2024,7,1),980)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "arity",
+      "note": "Too few arguments."
+    },
+    {
+      "formula": "=PRICEDISC(DATE(2008,2,16),DATE(2008,3,1),0.0525,100,2)",
+      "expected": 99.79583333333333,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "100 less 5.25 times 14/360."
+    },
+    {
+      "formula": "=PRICEDISC(DATE(2024,1,1),DATE(2024,7,1),0.04,100,0)",
+      "expected": 98,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "Half a year at 4%."
+    },
+    {
+      "formula": "=PRICEDISC(DATE(2024,1,1),DATE(2024,7,1),0.04,100,1)",
+      "expected": 98.01092896174863,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "182 of 366 days."
+    },
+    {
+      "formula": "=PRICEDISC(DATE(2024,1,1),DATE(2024,7,1),0,100)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "Discount 0."
+    },
+    {
+      "formula": "=PRICEDISC(DATE(2024,1,1),DATE(2024,7,1),0.04)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "arity",
+      "note": "Too few arguments."
+    },
+    {
+      "formula": "=YIELDDISC(DATE(2008,2,16),DATE(2008,3,1),99.795,100,2)",
+      "expected": 0.05282257198685877,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "0.205/99.795 over 14/360."
+    },
+    {
+      "formula": "=YIELDDISC(DATE(2024,1,1),DATE(2024,7,1),98,100,0)",
+      "expected": 0.04081632653061224,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "2/98 over half a year."
+    },
+    {
+      "formula": "=YIELDDISC(DATE(2024,1,1),DATE(2025,1,1),100,100,3)",
+      "expected": 0,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "Bought at the redemption value."
+    },
+    {
+      "formula": "=YIELDDISC(DATE(2024,1,1),DATE(2024,7,1),0,100)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "Price 0."
+    },
+    {
+      "formula": "=YIELDDISC(DATE(2024,1,1),DATE(2024,7,1),98)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "arity",
+      "note": "Too few arguments."
+    },
+    {
+      "formula": "=PRICEMAT(DATE(2008,2,15),DATE(2008,4,13),DATE(2007,11,11),0.061,0.061,0)",
+      "expected": 99.98449887555694,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "Days360: issue to maturity 152, settlement to maturity 58, issue to settlement 94."
+    },
+    {
+      "formula": "=PRICEMAT(DATE(2024,1,1),DATE(2025,1,1),DATE(2024,1,1),0.05,0.05,0)",
+      "expected": 100,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "Issued today at its own yield."
+    },
+    {
+      "formula": "=PRICEMAT(DATE(2024,4,1),DATE(2025,1,1),DATE(2024,1,1),0.06,0.05,2)",
+      "expected": 100.67998885172798,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "Actual days on a 360-day year."
+    },
+    {
+      "formula": "=PRICEMAT(DATE(2024,4,1),DATE(2025,1,1),DATE(2024,1,1),0.06,-0.05)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "Negative yield."
+    },
+    {
+      "formula": "=PRICEMAT(DATE(2024,4,1),DATE(2025,1,1),DATE(2024,1,1),0.06)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "arity",
+      "note": "Too few arguments."
+    },
+    {
+      "formula": "=YIELDMAT(DATE(2008,3,15),DATE(2008,11,3),DATE(2007,11,8),0.0625,100.0123,0)",
+      "expected": 0.06095433369153868,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "Days360: issue to maturity 355, settlement to maturity 228, issue to settlement 127."
+    },
+    {
+      "formula": "=YIELDMAT(DATE(2024,1,1),DATE(2025,1,1),DATE(2024,1,1),0.05,100,0)",
+      "expected": 0.05,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "Bought at 100 on issue: its own rate."
+    },
+    {
+      "formula": "=YIELDMAT(DATE(2024,4,1),DATE(2025,1,1),DATE(2024,1,1),0.06,99,2)",
+      "expected": 0.07271521381950809,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "Actual days on a 360-day year."
+    },
+    {
+      "formula": "=YIELDMAT(DATE(2024,4,1),DATE(2025,1,1),DATE(2024,1,1),0.06,0)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "Price 0."
+    },
+    {
+      "formula": "=YIELDMAT(DATE(2024,4,1),DATE(2025,1,1),DATE(2024,1,1),0.06)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "arity",
+      "note": "Too few arguments."
+    },
+    {
+      "formula": "=TBILLPRICE(DATE(2008,3,31),DATE(2008,6,1),0.09)",
+      "expected": 98.45,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "62 days at 9% on a 360-day year."
+    },
+    {
+      "formula": "=TBILLPRICE(DATE(2024,1,1),DATE(2024,4,1),0.04)",
+      "expected": 98.9888888888889,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "91 days."
+    },
+    {
+      "formula": "=TBILLPRICE(DATE(2024,1,1),DATE(2025,1,1),0.04)",
+      "expected": 95.93333333333334,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "Exactly one year is allowed."
+    },
+    {
+      "formula": "=TBILLPRICE(DATE(2024,1,1),DATE(2025,1,2),0.04)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "More than a year."
+    },
+    {
+      "formula": "=TBILLPRICE(DATE(2024,1,1),DATE(2024,4,1),0)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "Discount 0."
+    },
+    {
+      "formula": "=TBILLPRICE(DATE(2024,1,1),DATE(2024,4,1))",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "arity",
+      "note": "Too few arguments."
+    },
+    {
+      "formula": "=TBILLYIELD(DATE(2008,3,31),DATE(2008,6,1),98.45)",
+      "expected": 0.09141696292534282,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "1.55/98.45 over 62/360."
+    },
+    {
+      "formula": "=TBILLYIELD(DATE(2024,1,1),DATE(2024,4,1),98.99)",
+      "expected": 0.040363717502822465,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "1.01/98.99 over 91/360."
+    },
+    {
+      "formula": "=TBILLYIELD(DATE(2024,1,1),DATE(2024,4,1),100)",
+      "expected": 0,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "Bought at 100."
+    },
+    {
+      "formula": "=TBILLYIELD(DATE(2024,1,1),DATE(2024,4,1),0)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "Price 0."
+    },
+    {
+      "formula": "=TBILLYIELD(DATE(2024,1,1),DATE(2024,4,1))",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "arity",
+      "note": "Too few arguments."
+    },
+    {
+      "formula": "=TBILLEQ(DATE(2008,3,31),DATE(2008,6,1),0.0914)",
+      "expected": 0.09415149356594302,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "365 r / (360 - r 62)."
+    },
+    {
+      "formula": "=TBILLEQ(DATE(2024,1,1),DATE(2024,4,1),0.04)",
+      "expected": 0.04096980581434504,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "91 days."
+    },
+    {
+      "formula": "=TBILLEQ(DATE(2024,1,1),DATE(2024,1,2),0.036)",
+      "expected": 0.0365036503650365,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "One day."
+    },
+    {
+      "formula": "=TBILLEQ(DATE(2024,4,1),DATE(2024,1,1),0.04)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "Maturity before settlement."
+    },
+    {
+      "formula": "=TBILLEQ(DATE(2024,1,1),DATE(2024,4,1))",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "arity",
+      "note": "Too few arguments."
+    },
+    {
+      "formula": "=PRICE(DATE(2008,2,15),DATE(2017,11,15),0.0575,0.065,100,2,0)",
+      "expected": 94.63436,
+      "tolerance": 1e-5,
+      "source": "excel-doc",
+      "note": "Published example, to its 5 decimals."
+    },
+    {
+      "formula": "=PRICE(DATE(2024,1,1),DATE(2030,1,1),0.05,0.05,100,2,0)",
+      "expected": 100,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "On a coupon date at a yield equal to the coupon rate."
+    },
+    {
+      "formula": "=PRICE(DATE(2024,1,1),DATE(2026,1,1),0,0.1,100,1,0)",
+      "expected": 82.64462809917356,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "A zero coupon two years out at 10%."
+    },
+    {
+      "formula": "=PRICE(DATE(2024,4,1),DATE(2024,7,1),0.06,0.06,100,2,0)",
+      "expected": 99.97783251231527,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "One coupon left: (100 + 3)/(1 + 90/180 0.03) - 3 90/180."
+    },
+    {
+      "formula": "=PRICE(DATE(2024,1,1),DATE(2030,1,1),0.05,-0.05,100,2,0)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "Negative yield."
+    },
+    {
+      "formula": "=PRICE(DATE(2024,1,1),DATE(2030,1,1),0.05,0.05,0,2,0)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "Redemption 0."
+    },
+    {
+      "formula": "=PRICE(DATE(2024,1,1),DATE(2030,1,1),0.05,0.05,100)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "arity",
+      "note": "Too few arguments."
+    },
+    {
+      "formula": "=YIELD(DATE(2008,2,15),DATE(2016,11,15),0.0575,95.04287,100,2,0)",
+      "expected": 0.065,
+      "tolerance": 1e-6,
+      "source": "excel-doc",
+      "note": "Published example; its price has 5 decimals."
+    },
+    {
+      "formula": "=YIELD(DATE(2024,1,1),DATE(2030,1,1),0.05,100,100,2,0)",
+      "expected": 0.05,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "At par on a coupon date."
+    },
+    {
+      "formula": "=YIELD(DATE(2024,1,1),DATE(2026,1,1),0,100/1.21,100,1,0)",
+      "expected": 0.1,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "A zero coupon: 1.21 over two years."
+    },
+    {
+      "formula": "=YIELD(DATE(2024,4,1),DATE(2024,7,1),0.06,103/1.015-1.5,100,2,0)",
+      "expected": 0.06,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "One coupon left: the closed form."
+    },
+    {
+      "formula": "=YIELD(DATE(2024,1,1),DATE(2030,1,1),0.05,0,100,2,0)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "Price 0."
+    },
+    {
+      "formula": "=YIELD(DATE(2024,1,1),DATE(2030,1,1),0.05,100,100)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "arity",
+      "note": "Too few arguments."
+    },
+    {
+      "formula": "=DURATION(DATE(2018,7,1),DATE(2048,1,1),0.08,0.09,2,1)",
+      "expected": 10.9191453,
+      "tolerance": 1e-7,
+      "source": "excel-doc",
+      "note": "Published example, to its 7 decimals."
+    },
+    {
+      "formula": "=DURATION(DATE(2024,1,1),DATE(2026,1,1),0,0.05,1,0)",
+      "expected": 2,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "A zero coupon lasts until it pays."
+    },
+    {
+      "formula": "=DURATION(DATE(2024,4,1),DATE(2025,1,1),0,0.05,1,0)",
+      "expected": 0.75,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "A zero coupon 270/360 of a year out."
+    },
+    {
+      "formula": "=DURATION(DATE(2024,1,1),DATE(2025,1,1),0.05,0.05,2,0)",
+      "expected": 0.9878048780487805,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "Two half-year flows weighted by present value."
+    },
+    {
+      "formula": "=DURATION(DATE(2024,1,1),DATE(2026,1,1),-0.1,0.05,1,0)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "Negative coupon."
+    },
+    {
+      "formula": "=DURATION(DATE(2024,1,1),DATE(2026,1,1),0,0.05)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "arity",
+      "note": "Too few arguments."
+    },
+    {
+      "formula": "=MDURATION(DATE(2008,1,1),DATE(2016,1,1),0.08,0.09,2,1)",
+      "expected": 5.73567,
+      "tolerance": 1e-5,
+      "source": "excel-doc",
+      "note": "Published example, to its 5 decimals."
+    },
+    {
+      "formula": "=MDURATION(DATE(2024,1,1),DATE(2026,1,1),0,0.05,1,0)",
+      "expected": 1.9047619047619047,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "Duration 2 over 1.05."
+    },
+    {
+      "formula": "=MDURATION(DATE(2024,1,1),DATE(2025,1,1),0,0.1,2,0)",
+      "expected": 0.9523809523809523,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "Duration 1 over 1 + 0.1/2."
+    },
+    {
+      "formula": "=MDURATION(DATE(2024,1,1),DATE(2026,1,1),0,-0.05,1,0)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "Negative yield."
+    },
+    {
+      "formula": "=MDURATION(DATE(2024,1,1),DATE(2026,1,1),0,0.05)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "arity",
+      "note": "Too few arguments."
+    },
+    {
+      "formula": "=ODDFPRICE(DATE(2008,11,11),DATE(2021,3,1),DATE(2008,10,15),DATE(2009,3,1),0.0785,0.0625,100,2,1)",
+      "expected": 113.597717,
+      "tolerance": 1e-6,
+      "source": "excel-doc",
+      "note": "Published example, to its 6 decimals."
+    },
+    {
+      "formula": "=ODDFPRICE(DATE(2024,2,1),DATE(2025,7,1),DATE(2023,10,1),DATE(2024,7,1),0.06,0.06,100,2,0)",
+      "expected": 99.95736505073793,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "Long first period: 1.5 quasi-coupon periods, 0.5 + 1/6 accrued, settlement 150/180 before the first coupon."
+    },
+    {
+      "formula": "=ODDFPRICE(DATE(2024,4,1),DATE(2025,7,1),DATE(2024,1,1),DATE(2024,7,1),0.06,0.06,100,2,0)",
+      "expected": 99.98891565092218,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "A first period of exactly one period: the regular sum."
+    },
+    {
+      "formula": "=ODDFPRICE(DATE(2024,8,1),DATE(2025,7,1),DATE(2024,1,1),DATE(2024,7,1),0.06,0.06,100,2,0)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "Settlement after the first coupon."
+    },
+    {
+      "formula": "=ODDFPRICE(DATE(2024,4,1),DATE(2025,7,1),DATE(2024,1,1),DATE(2024,7,1),0.06,0.06,100)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "arity",
+      "note": "Too few arguments."
+    },
+    {
+      "formula": "=ODDFYIELD(DATE(2008,11,11),DATE(2021,3,1),DATE(2008,10,15),DATE(2009,3,1),0.0575,84.5,100,2,0)",
+      "expected": 0.0772455,
+      "tolerance": 1e-7,
+      "source": "excel-doc",
+      "note": "Published example, to its 7 decimals."
+    },
+    {
+      "formula": "=ODDFYIELD(DATE(2024,2,1),DATE(2025,7,1),DATE(2023,10,1),DATE(2024,7,1),0.06,99.95736505073793,100,2,0)",
+      "expected": 0.06,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "Undoes the long first period price above."
+    },
+    {
+      "formula": "=ODDFYIELD(DATE(2024,4,1),DATE(2025,7,1),DATE(2024,1,1),DATE(2024,7,1),0.06,99.98891565092218,100,2,0)",
+      "expected": 0.06,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "Undoes the one-period price above."
+    },
+    {
+      "formula": "=ODDFYIELD(DATE(2024,4,1),DATE(2025,7,1),DATE(2024,1,1),DATE(2024,7,1),-0.06,99,100,2,0)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "Negative rate."
+    },
+    {
+      "formula": "=ODDFYIELD(DATE(2024,4,1),DATE(2025,7,1),DATE(2024,1,1),DATE(2024,7,1),0.06,99,100)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "arity",
+      "note": "Too few arguments."
+    },
+    {
+      "formula": "=ODDLPRICE(DATE(2008,2,7),DATE(2008,6,15),DATE(2007,10,15),0.0375,0.0405,100,2,0)",
+      "expected": 99.87828601472134,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "DC 180 and 60, A 112, DSC 68 and 60 of 180 (days360). The reference app prints 99.87829834, 1.2E-5 higher."
+    },
+    {
+      "formula": "=ODDLPRICE(DATE(2024,2,1),DATE(2024,4,1),DATE(2024,1,1),0.06,0.06,100,2,0)",
+      "expected": 99.9950495049505,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "note": "DC 90, A 30, DSC 60 of 180."
+    },
+    {
+      "formula": "=ODDLPRICE(DATE(2024,6,30),DATE(2024,7,1),DATE(2024,1,1),0.06,0.06,100,2,0)",
+      "expected": 99.99950286063434,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "One day before maturity."
+    },
+    {
+      "formula": "=ODDLPRICE(DATE(2024,1,1),DATE(2024,4,1),DATE(2024,1,1),0.06,0.06,100,2,0)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "Settlement on the last coupon date."
+    },
+    {
+      "formula": "=ODDLPRICE(DATE(2024,2,1),DATE(2024,4,1),DATE(2024,1,1),0.06,0.06,100)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "arity",
+      "note": "Too few arguments."
+    },
+    {
+      "formula": "=ODDLYIELD(DATE(2008,4,20),DATE(2008,6,15),DATE(2007,12,24),0.0375,99.875,100,2,0)",
+      "expected": 0.04519223562916916,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "DC 171, A 116, DSC 55 of 180 (days360), closed form."
+    },
+    {
+      "formula": "=ODDLYIELD(DATE(2024,2,1),DATE(2024,4,1),DATE(2024,1,1),0.06,101.5/1.01-0.5,100,2,0)",
+      "expected": 0.06,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "Undoes the price above."
+    },
+    {
+      "formula": "=ODDLYIELD(DATE(2024,6,30),DATE(2024,7,1),DATE(2024,1,1),0.06,103/(1+1/180*0.03)-3*179/180,100,2,0)",
+      "expected": 0.06,
+      "tolerance": 1e-9,
+      "source": "hand",
+      "kind": "boundary",
+      "note": "One day before maturity."
+    },
+    {
+      "formula": "=ODDLYIELD(DATE(2024,2,1),DATE(2024,4,1),DATE(2024,1,1),0.06,0,100,2,0)",
+      "expected": "#NUM!",
+      "source": "hand",
+      "kind": "error",
+      "note": "Price 0."
+    },
+    {
+      "formula": "=ODDLYIELD(DATE(2024,2,1),DATE(2024,4,1),DATE(2024,1,1),0.06,99,100)",
+      "expected": "#VALUE!",
+      "source": "hand",
+      "kind": "arity",
+      "note": "Too few arguments."
+    }
+  ]
+}

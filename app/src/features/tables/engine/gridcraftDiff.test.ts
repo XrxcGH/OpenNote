@@ -119,6 +119,10 @@ const NOT_COMPARABLE = new Set([
 
 const DATE_RESULTS = new Set(['DATE']);
 
+// The financial family is checked by fn/finance.test.ts and fixtures/fn/finance.json, with published and hand-worked
+// answers. Its code loads lazily, so a diff run here would see #BUSY!.
+for (const spec of REGISTRY.values()) if (spec.family === 'finance') NOT_COMPARABLE.add(spec.name);
+
 function opennote(formula: string): Value {
   const base = createTable([{ name: 'A', type: 'number' }, { name: 'Out' }], [['1']], EN_US);
   const result = setColumnFormula(base, 1, formula);
