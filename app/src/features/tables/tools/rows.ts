@@ -1,10 +1,11 @@
 // Row tools: remove duplicates and trim spaces. Both return a new table and a count, so the caller can say what changed
 // and apply the result as one undo step.
 
-import { makeCell } from '../engine/edit';
-import type { Locale } from '../engine/locale';
-import type { Cell, Table } from '../engine/model';
-import { recalculate } from '../engine/recalc';
+import { deleteRows, makeCell } from '../engine/edit';
+import { formatValue } from '../engine/format';
+import { EN_US, type Locale } from '../engine/locale';
+import type { Cell, Column, Table } from '../engine/model';
+import { recalculate, type EngineEnv } from '../engine/recalc';
 
 export interface DuplicatesResult {
   table: Table;
@@ -14,9 +15,12 @@ export interface DuplicatesResult {
   removedIds: string[];
 }
 
-/** The text a duplicate check compares: what the cell holds as typed, without the spaces around it. */
-const keyText = (cell: Cell): string =>
-  (cell.raw !== '' ? cell.raw : cell.value === null ? '' : String(cell.value)).trim();
+/**
+ * The text a duplicate check compares: what the cell shows, formatted as its column shows it, without the spaces
+ * around it. A formula cell compares by its result, never by its formula text. A cell with no value compares as typed.
+ */
+const keyText = (cell: Cell, column: Column, locale: Locale): string =>
+  (cell.value === null ? cell.raw : formatValue(cell.value, column, locale)).trim();
 
 /**
  * Removes the rows that repeat an earlier row in every one of `columns` (all columns when none are given). The first
@@ -25,16 +29,20 @@ const keyText = (cell: Cell): string =>
 export function removeDuplicates(
   table: Table,
   columns: readonly number[] = table.columns.map((_, i) => i),
-  options: { caseSensitive?: boolean } = {},
+  options: { caseSensitive?: boolean; locale?: Locale; env?: EngineEnv } = {},
 ): DuplicatesResult {
   const caseSensitive = options.caseSensitive ?? false;
+  const locale = options.locale ?? EN_US;
   const picked = columns.filter((c) => table.columns[c]);
   const seen = new Set<string>();
   const kept: number[] = [];
   const removedIds: string[] = [];
   table.rows.forEach((row, i) => {
     const key = JSON.stringify(
-      picked.map((c) => (caseSensitive ? keyText(row.cells[c]) : keyText(row.cells[c]).toLowerCase())),
+      picked.map((c) => {
+        const text = keyText(row.cells[c], table.columns[c], locale);
+        return caseSensitive ? text : text.toLowerCase();
+      }),
     );
     if (seen.has(key)) {
       removedIds.push(row.id);
@@ -44,8 +52,13 @@ export function removeDuplicates(
     kept.push(i);
   });
   if (removedIds.length === 0) return { table, removed: 0, kept: table.rows.length, removedIds };
-  const rows = kept.map((i) => table.rows[i]);
-  return { table: recalculate({ ...table, rows }), removed: removedIds.length, kept: rows.length, removedIds };
+  // Delete from the bottom up through the engine, so references to the rows below shift or become #REF!.
+  const gone = new Set(removedIds);
+  let next = table;
+  for (let i = table.rows.length - 1; i >= 0; i--) {
+    if (gone.has(table.rows[i].id)) next = deleteRows(next, i, 1, options.env);
+  }
+  return { table: next, removed: removedIds.length, kept: next.rows.length, removedIds };
 }
 
 /**

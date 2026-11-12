@@ -4,6 +4,8 @@ import { filterIndices } from '../engine/filter';
 import { EN_US } from '../engine/locale';
 import { builtInLists, sortedIndices, type LookOf } from '../engine/sort';
 import { removeDuplicates, trimSpaces } from './rows';
+import { applyTextToColumns, sheetLookOf } from './apply';
+import { applyToRange } from '../sheet/model';
 import { splitText } from './textToColumns';
 import { lookCounts, valueCounts } from './filterMenu';
 
@@ -136,5 +138,83 @@ describe('text to columns', () => {
   it('keeps quoted delimiters together and splits at fixed widths', () => {
     expect(splitText('a,"b,c",d', { mode: 'delimited', delimiters: [','] })).toEqual(['a', 'b,c', 'd']);
     expect(splitText('2026Mar12', { mode: 'fixed', breaks: [4, 7] })).toEqual(['2026', 'Mar', '12']);
+  });
+});
+
+describe('gap fixes', () => {
+  it('keeps formulas below a removed row pointing at the same data', () => {
+    // A holds 1, 1, 5, 7, and B4 is A3 (value 5). Removing duplicate row 2 moves A3 to A2, as the engine delete does.
+    const t = createTable(
+      [
+        { name: 'A', type: 'number' },
+        { name: 'B', type: 'number' },
+      ],
+      [
+        ['1', ''],
+        ['1', ''],
+        ['5', ''],
+        ['7', '=A3'],
+      ],
+      EN_US,
+    );
+    expect(t.rows[3].cells[1].value).toBe(5);
+    const out = removeDuplicates(t, [0]).table;
+    expect(out.rows.map((r) => r.cells[0].value)).toEqual([1, 5, 7]);
+    expect(out.rows[2].cells[1].value).toBe(5);
+  });
+  it('compares formulas by result, not by formula text', () => {
+    const t = createTable([{ name: 'A', type: 'number' }], [['2'], ['=1+1'], ['=1+2'], ['=1+2']], EN_US);
+    const out = removeDuplicates(t, [0]);
+    expect(out.removed).toBe(2);
+    expect(out.table.rows.map((r) => r.cells[0].value)).toEqual([2, 3]);
+  });
+  it('shows at least one row for a top percent that rounds to 0', () => {
+    const t = createTable([{ name: 'N', type: 'number' }], [['1'], ['2'], ['3'], ['4'], ['5']], EN_US);
+    expect(filterIndices(t, [{ column: 0, op: 'top', value: '10', to: 'percent' }])).toEqual([4]);
+  });
+  it('drops fixed breaks at or past the end of the text', () => {
+    expect(splitText('abc', { mode: 'fixed', breaks: [1, 10, 20] })).toEqual(['a', 'bc']);
+    expect(splitText('abc', { mode: 'fixed', breaks: [3] })).toEqual(['abc']);
+  });
+  it('splits a column into new columns to its right in one step', () => {
+    const t = createTable(
+      [{ name: 'Full' }, { name: 'Note' }, { name: 'Len', type: 'number' }],
+      [
+        ['a;b;c', 'x', '=COUNTA([@Full])'],
+        ['d;e', 'y', ''],
+      ],
+      EN_US,
+    );
+    const out = applyTextToColumns(t, 0, { mode: 'delimited', delimiters: [';'] }, EN_US);
+    expect(out.added).toBe(2);
+    expect(out.split).toBe(2);
+    expect(out.table.columns.map((c) => c.name)).toEqual(['Full', 'Full 2', 'Full 3', 'Note', 'Len']);
+    expect(out.table.rows.map((r) => r.cells.map((c) => c.raw).slice(0, 4))).toEqual([
+      ['a', 'b', 'c', 'x'],
+      ['d', 'e', '', 'y'],
+    ]);
+    expect(t.columns).toHaveLength(3);
+  });
+  it('refuses to split a calculated column', () => {
+    const t = createTable([{ name: 'A' }, { name: 'B', formula: '[@A]' }], [['a;b', '']], EN_US);
+    expect(applyTextToColumns(t, 1, { mode: 'fixed', breaks: [1] }, EN_US).refused).toBe('calculated');
+  });
+  it('builds a LookOf from real sheet styles that drives the color sort and filter', () => {
+    const t = createTable([{ name: 'N' }], [['a'], ['b'], ['c'], ['d']], EN_US);
+    const like = {
+      columns: t.columns.map((c) => ({ id: c.id })),
+      rows: t.rows.map((r) => ({ id: r.id, cells: {} })),
+    };
+    const tint = applyToRange({}, like, [t.rows[1].id, t.columns[0].id], [t.rows[1].id, t.columns[0].id], {
+      fill: 'amber',
+    });
+    const both = applyToRange(tint.sheet, like, [t.rows[3].id, t.columns[0].id], [t.rows[3].id, t.columns[0].id], {
+      fill: 'amber',
+    });
+    const look = sheetLookOf(both.sheet, t);
+    expect(look(1, 0, 'fill')).toBe('amber');
+    expect(look(0, 0, 'fill')).toBeUndefined();
+    expect(sortedIndices(t, [{ column: 0, by: 'fill', color: 'amber' }], EN_US, undefined, look)).toEqual([1, 3, 0, 2]);
+    expect(filterIndices(t, [{ column: 0, op: 'fill', value: 'amber' }], look)).toEqual([1, 3]);
   });
 });

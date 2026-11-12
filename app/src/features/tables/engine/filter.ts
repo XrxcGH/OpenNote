@@ -72,7 +72,13 @@ function cutoff(values: readonly Value[], cond: FilterCondition, largest: boolea
   const sorted = numbers(values).sort((a, b) => (largest ? b - a : a - b));
   if (sorted.length === 0) return null;
   const asked = Math.max(0, Math.floor(Number(cond.value ?? '10')) || 0);
-  const count = cond.to === 'percent' ? Math.floor((sorted.length * Math.min(asked, 100)) / 100) : asked;
+  // A percent above 0 shows at least one item, as the menus of Excel and Sheets do.
+  const count =
+    cond.to === 'percent'
+      ? asked > 0
+        ? Math.max(1, Math.floor((sorted.length * Math.min(asked, 100)) / 100))
+        : 0
+      : asked;
   return count < 1 ? null : sorted[Math.min(count, sorted.length) - 1];
 }
 

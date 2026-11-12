@@ -55,7 +55,9 @@ function splitDelimited(text: string, rule: DelimitedSplit): string[] {
 }
 
 function splitFixed(text: string, rule: FixedSplit): string[] {
-  const cuts = [...new Set(rule.breaks.filter((b) => Number.isInteger(b) && b > 0))].sort((a, b) => a - b);
+  const cuts = [...new Set(rule.breaks.filter((b) => Number.isInteger(b) && b > 0 && b < text.length))].sort(
+    (a, b) => a - b,
+  );
   const parts: string[] = [];
   let from = 0;
   for (const cut of cuts) {

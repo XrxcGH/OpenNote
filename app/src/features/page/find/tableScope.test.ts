@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createTable, EN_US } from '../../tables';
-import { searchTable } from './tableScope';
+import { replaceInTable, searchTable } from './tableScope';
 
 describe('find in a table', () => {
   const t = createTable(
@@ -31,5 +31,37 @@ describe('find in a table', () => {
       [0, 0],
       [1, 0],
     ]);
+  });
+});
+
+describe('replaceInTable', () => {
+  it('replaces through typed input and recalculates formulas', () => {
+    const t = createTable(
+      [
+        { name: 'A', type: 'number' },
+        { name: 'B', type: 'number' },
+      ],
+      [
+        ['1', '=A1*2'],
+        ['2', '=A2*2'],
+      ],
+      EN_US,
+    );
+    const out = replaceInTable(t, '1', '5', { within: 'values', entireCell: true }, EN_US);
+    expect(out.replaced).toBe(1);
+    expect(out.table.rows[0].cells[0].value).toBe(5);
+    expect(out.table.rows[0].cells[1].value).toBe(10);
+  });
+  it('replaces inside formulas when looking in formulas', () => {
+    const t = createTable(
+      [
+        { name: 'A', type: 'number' },
+        { name: 'B', type: 'number' },
+      ],
+      [['3', '=A1+1']],
+      EN_US,
+    );
+    const out = replaceInTable(t, '+1', '+10', { within: 'formulas' }, EN_US);
+    expect(out.table.rows[0].cells[1].value).toBe(13);
   });
 });

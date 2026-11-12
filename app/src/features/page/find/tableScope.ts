@@ -2,7 +2,7 @@
 // A search looks at values (what the cell holds) or at formulas (the text of formulas only), in whole cells or parts,
 // and lists matches by rows or by columns.
 
-import type { Table } from '../../tables';
+import { EN_US, setCellInput, type EngineEnv, type Locale, type Table } from '../../tables';
 import { findInText } from './match';
 import type { FindOptions, TextRange } from './match';
 
@@ -58,4 +58,35 @@ export function searchTable(table: Table, query: string, scope: TableScope): Tab
     for (let r = 0; r < table.rows.length; r++) for (let c = 0; c < table.columns.length; c++) visit(r, c);
   }
   return found;
+}
+
+/**
+ * Replaces every match in the table, each through the same input path as typing, so formulas are read again and the
+ * table recalculates. Returns one new table, so the host stores one undo step. Calculated columns are skipped.
+ */
+export function replaceInTable(
+  table: Table,
+  query: string,
+  replacement: string,
+  scope: TableScope,
+  locale: Locale = EN_US,
+  env?: EngineEnv,
+): { table: Table; replaced: number } {
+  let next = table;
+  let replaced = 0;
+  for (const match of searchTable(table, query, scope)) {
+    const cell = table.rows[match.row].cells[match.column];
+    if (table.columns[match.column].formula !== undefined) continue;
+    if (scope.within === 'values' && cell.formula !== undefined) continue;
+    let text = '';
+    let from = 0;
+    for (const range of match.ranges) {
+      text += match.text.slice(from, range.start) + replacement;
+      from = range.end;
+      replaced++;
+    }
+    text += match.text.slice(from);
+    next = setCellInput(next, { row: match.row, col: match.column, raw: text }, locale, env);
+  }
+  return { table: next, replaced };
 }
