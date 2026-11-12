@@ -42,9 +42,10 @@ describe('the function registry', () => {
   it('holds the 48 names of before, each in its family', () => {
     // Family lanes add functions, so each family holds at least the names it always had.
     expect(REGISTRY.size).toBeGreaterThanOrEqual(48);
+    expect([...REGISTRY.values()].filter((spec) => spec.family === 'datetime')).toHaveLength(26);
     for (const [family, names] of Object.entries(BY_FAMILY)) {
       const found = [...REGISTRY.values()].filter((spec) => spec.family === family).map((spec) => spec.name);
-      expect(found, family).toEqual(expect.arrayContaining(names));
+      expect(found.sort(), family).toEqual(expect.arrayContaining(names));
     }
   });
 

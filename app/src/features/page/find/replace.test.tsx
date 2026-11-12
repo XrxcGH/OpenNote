@@ -22,7 +22,7 @@ it('shows the replaced text in the focused text box', async () => {
   await page.type(TEXT, ' alpha');
   const options = { caseSensitive: false, wholeWord: false };
   const matches = collectMatches(page.mounted, 'alpha', options);
-  expect(await replaceMatches(page.mounted, matches, 'alpha', 'omega')).toBe(1);
+  expect(await replaceMatches(page.mounted, matches, { text: 'omega' })).toBe(1);
   expect(page.markdown(TEXT)).toBe('First line. omega');
   expect(page.editRoot(TEXT).textContent).toContain('omega');
   expect(page.editRoot(TEXT).textContent).not.toContain('alpha');
@@ -40,4 +40,19 @@ it('gives the editor the focus back when Escape closes the Find bar with no matc
   await userEvent.keyboard('zzz{Escape}');
   expect(screen.queryByRole('search')).toBeNull();
   expect(page.editRoot(TEXT).contains(document.activeElement)).toBe(true);
+});
+
+it('replaces bold cell with red cell in one step and changes only the color', async () => {
+  const page = await renderPage({ fixture: textPageFixture('cell **cell** cell') });
+  const options = { caseSensitive: false, wholeWord: false };
+  const matches = collectMatches(page.mounted, 'cell', options, [{ mark: 'bold' }]);
+  expect(matches).toHaveLength(1);
+  const before = page.sent().length;
+  const formats = [{ mark: 'textColor', attrs: { color: 'brick' } }];
+  expect(await replaceMatches(page.mounted, matches, { text: 'cell', formats })).toBe(1);
+  expect(page.sent().length).toBe(before + 1);
+  const markdown = page.markdown(TEXT);
+  expect(markdown).toContain('data-color="brick"');
+  expect(markdown).toContain('**');
+  expect(markdown.replace(/<[^>]+>|\*\*/g, '')).toBe('cell cell cell');
 });
