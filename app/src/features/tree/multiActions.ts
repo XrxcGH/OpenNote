@@ -8,10 +8,11 @@ import { shellCall } from '../../platform/shellqol';
 import type { ChipColor, NodeId, NodeSummary, NotesService } from '../../services/notes';
 import { t } from '../../strings/t';
 import { announce, showToast } from '../../ui';
-import { colorNode, moveNodes, titleOf, trashNodes } from './actions';
+import { blockOf, colorNode, moveNodes, titleOf, trashNodes } from './actions';
 import { destinationsFor, loadDestinations } from './destinations';
 import type { Destination } from './destinations';
 import { toastError, toastMoveError } from './errors';
+import { focusTargetAfterRemovals } from './focus';
 import { relist } from './load';
 import { clearMulti } from './multi';
 import { chooseDestination } from './MoveToDialog';
@@ -55,6 +56,11 @@ function opensAny(nodes: readonly NodeSummary[]): boolean {
 export async function trashSelection(notes: NotesService, nodes: readonly NodeSummary[]): Promise<boolean> {
   const label = describeSelection(nodes);
   const closes = opensAny(nodes);
+  const state = treeStore.get();
+  const removed = new Set(nodes.flatMap((node) => blockOf(state, node.id)));
+  // The rows are about to go, and with them the focus. Without this the next Ctrl+Z goes to the page, not the tree.
+  const target = focusTargetAfterRemovals(state, nodes, removed);
+  if (target) requestFocus(target.tree, target.id);
   try {
     await trashNodes(
       notes,
@@ -62,6 +68,7 @@ export async function trashSelection(notes: NotesService, nodes: readonly NodeSu
     );
   } catch (error) {
     toastError(error, label);
+    requestFocus(treeOf(nodes[0]), nodes[0].id);
     return false;
   }
   clearMulti();

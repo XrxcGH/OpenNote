@@ -42,6 +42,7 @@ export const qol = {
     sections: '{count, plural, one {# section} other {# sections}}',
     trashed: '{count, plural, one {Moved # item to Trash.} other {Moved # items to Trash.}}',
     moved: '{count, plural, one {Moved # item to {target}.} other {Moved # items to {target}.}}',
+    reordered: '{count, plural, one {Moved # item.} other {Moved # items.}}',
     colored: '{count, plural, one {Colored # section.} other {Colored # sections.}}',
     undoColor: 'Restored the colors of {items}',
     redoColor: 'Colored {items} again',
