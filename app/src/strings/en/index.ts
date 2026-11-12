@@ -118,6 +118,7 @@ import { sheetFormat } from './sheetFormat';
 import { sheetMerge } from './sheetMerge';
 import { sheetValidation } from './sheetValidation';
 import { sheetTools } from './sheetTools';
+import { sheetStructure } from './sheetStructure';
 import { textFind } from './textFind';
 import { textPane } from './textPane';
 import { textLanguage } from './textLanguage';
@@ -258,6 +259,7 @@ export const en = {
   sheetMerge,
   sheetValidation,
   sheetTools,
+  sheetStructure,
   textFind,
   textPane,
   textLanguage,
