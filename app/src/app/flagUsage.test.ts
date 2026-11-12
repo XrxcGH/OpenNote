@@ -22,6 +22,7 @@ const WAITING: Readonly<Record<string, string>> = {
   'text.language': 'Beta 10 to 12: the lane that builds it reads it.',
   'text.findFormat': 'Beta 10 to 12: the lane that builds it reads it.',
   'tables.sheetWrites': 'Beta 10: the table bar and the formula bar read it.',
+  'tables.structureUi': 'Beta 10: tables:sheet-integration turns it on when the live table draws data.sheet.',
   'code.tier2': 'Beta 14: code:L16 and code:L17 run installed toolchains behind it.',
   'code.models': 'Beta 13: code:L13a and code:L13b read it for the code models.',
 };

@@ -17,7 +17,7 @@ import type { TableOp } from '../../../editor/commands/tables';
 import { MAX_COLUMN_WIDTH, MIN_COLUMN_WIDTH } from '../../../editor/table/mapping';
 import { t } from '../../../strings/t';
 import type { MessageKey } from '../../../strings/t';
-import { IconButton, TextField } from '../../../ui';
+import { IconButton, Switch, TextField } from '../../../ui';
 import type { IconProps } from '../../../ui';
 import styles from './tables.module.css';
 
@@ -40,6 +40,11 @@ export interface TableToolbarProps {
   openWidth(): void;
   /** Applies a width, or cancels with null; focus goes back to the cell either way. */
   closeWidth(width: number | null): void;
+  /** The row height field (the Row height command opens it). Optional: tables without structure commands omit it. */
+  heightOpen?: boolean;
+  /** The height set on the caret's row, or null for none. */
+  rowHeight?: { height: number | null; exact: boolean };
+  closeHeight?(result: { height: number; exact: boolean } | null): void;
 }
 
 interface Tool {
@@ -122,6 +127,39 @@ function WidthField({ width, close }: { width: number; close(width: number | nul
   );
 }
 
+const MIN_ROW_HEIGHT = 1;
+const MAX_ROW_HEIGHT = 10_000;
+
+function HeightField(props: {
+  current: { height: number | null; exact: boolean };
+  close(result: { height: number; exact: boolean } | null): void;
+}) {
+  const { current, close } = props;
+  const [value, setValue] = useState(current.height === null ? '' : String(current.height));
+  const [exact, setExact] = useState(current.exact);
+  const parsed = Number(value.trim());
+  const valid = /^\d+(\.\d+)?$/.test(value.trim()) && parsed >= MIN_ROW_HEIGHT && parsed <= MAX_ROW_HEIGHT;
+  const hint = t('sheetStructure.height.hint');
+  const field = useRef<HTMLDivElement>(null);
+  useEffect(() => field.current?.querySelector('input')?.focus(), []);
+  return (
+    <div ref={field} className={styles.widthField} role="group" aria-label={t('sheetStructure.height.label')}>
+      <TextField
+        label={t('sheetStructure.height.label')}
+        value={value}
+        onChange={setValue}
+        autoSelect
+        help={valid ? hint : undefined}
+        error={valid ? undefined : hint}
+        // An invalid height keeps the field open, with the range as its error.
+        onCommit={() => valid && close({ height: parsed, exact })}
+        onCancel={() => close(null)}
+      />
+      <Switch label={t('sheetStructure.height.exact')} checked={exact} onChange={setExact} />
+    </div>
+  );
+}
+
 export function TableToolbar(props: TableToolbarProps) {
   const { block, can, header, run, more, width, widthOpen, openWidth, closeWidth } = props;
   const moreButton = useRef<HTMLSpanElement>(null);
@@ -190,6 +228,9 @@ export function TableToolbar(props: TableToolbarProps) {
         </Suspense>
       ) : null}
       {widthOpen ? <WidthField width={width} close={closeWidth} /> : null}
+      {props.heightOpen && props.closeHeight ? (
+        <HeightField current={props.rowHeight ?? { height: null, exact: false }} close={props.closeHeight} />
+      ) : null}
     </div>
   );
 }

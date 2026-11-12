@@ -13,8 +13,16 @@ import { createRoot } from 'react-dom/client';
 import type { Root } from 'react-dom/client';
 import { commandContext } from '../../../commands/registry';
 import { menuItemsFor } from '../../../commands/menus';
-import { applyTableOp, cellAt, cellTextPos, fitAddedColumn } from '../../../editor/commands/tables';
-import type { CellAt, TableChange, TableOp } from '../../../editor/commands/tables';
+import {
+  applyTableOp,
+  canApply,
+  cellAt,
+  cellTextPos,
+  fitAddedColumn,
+  isStructureOp,
+  withSelectionBox,
+} from '../../../editor/commands/tables';
+import type { CellAt, TableBook, TableChange, TableOp } from '../../../editor/commands/tables';
 import { createBlockEditor } from '../../../editor/extensions/kit';
 import { META_REMOTE } from '../../../editor/meta';
 import { renderStatic } from '../../../editor/schema/dom';
@@ -31,6 +39,8 @@ import { blockLaidOut } from '../seams/geometry';
 import { acceptRemoteText, attachTableSync } from '../sync';
 import type { TableSyncHandle } from '../sync';
 import { applyMergePatch } from '../../../platform/mergePatch';
+import { domFitInputs } from '../tables/fitInputs';
+import { loadSheetApi, sheetApi } from '../tables/lazySheet';
 import { tableExtras } from '../tables/extras';
 import type { TableExtraHandle, TableExtraHost } from '../tables/extras';
 import { currentTable } from '../tables/current';
@@ -55,6 +65,7 @@ const ANNOUNCE: Partial<Record<TableOp['op'], MessageKey>> = {
 
 /** What a screen reader hears after a table command. */
 function announcement(op: TableOp, change: TableChange): string {
+  if (isStructureOp(op)) return t(`sheetStructure.announce.${op.op}` as MessageKey);
   const key = ANNOUNCE[op.op];
   if (key) return t(key);
   if (op.op === 'headerRow') return t(change.data.header ? 'tables.announce.headerOn' : 'tables.announce.headerOff');
@@ -111,6 +122,7 @@ class TableView implements InnerView {
   private sync: TableSyncHandle | null = null;
   private toolbar: Root | null = null;
   private widthOpen = false;
+  private heightOpen = false;
   private extras: TableExtraHandle[] = [];
   private gone = false;
   private stopOverflow = () => {};
@@ -134,12 +146,13 @@ class TableView implements InnerView {
     this.editRoot.dataset.scope = 'editor editor.table';
     this.handle = {
       block: current.id,
-      can: (op) => applyTableOp(this.data, this.caretCell(), op) !== null,
+      can: (op) => canApply(this.data, this.caretCell(), this.boxed(op), this.sheetData(), this.book()),
       header: () => this.data.header,
       run: (op) => this.run(op),
       deleteTable: () => this.deleteTable(),
       selectAll: () => this.selectAll(),
       openColumnWidth: () => this.openColumnWidth(),
+      openRowHeight: () => this.openRowHeight(),
     };
     this.watchOverflow();
     // Static first: the same DOM the editor will show, so nothing moves when it mounts.
@@ -211,27 +224,84 @@ class TableView implements InnerView {
     return out;
   }
 
-  private send(next: TableData, coalesce?: 'resize', extra: Record<string, unknown> = {}): Promise<unknown> {
+  private send(
+    next: TableData,
+    coalesce?: 'resize',
+    extra: Record<string, unknown> = {},
+    also: NonNullable<TableChange['also']> = [],
+  ): Promise<unknown> {
     const { header, columns, rows } = next;
     const block = this.current.id;
     return this.ctx.sync.send({
-      edits: [{ edit: 'patchBlock', block, data: { header, columns, rows, ...this.withExtras(next, extra) } }],
+      edits: [
+        { edit: 'patchBlock', block, data: { header, columns, rows, ...this.withExtras(next, extra) } },
+        // The other tables whose formulas read this one follow in the same batch, so one undo brings both back.
+        ...also.map((one) => ({ edit: 'patchBlock' as const, block: one.block, data: one.data })),
+      ],
       ...(coalesce ? { coalesce: { kind: coalesce, target: block } } : {}),
     });
   }
 
+  /** The table's `data.sheet` as the page holds it, for commands that read or adjust it. */
+  private sheetData(): unknown {
+    const data = this.current.data as { sheet?: unknown } | undefined;
+    return data?.sheet;
+  }
+
+  /** The command with the cells a cell selection covers, for commands that act on a block. */
+  private boxed(op: TableOp): TableOp {
+    return withSelectionBox(op, this.editor?.state ?? null);
+  }
+
+  /** The page's tables: this one's name, and the other tables, whose references to this one follow a line change. */
+  private book(): TableBook | undefined {
+    const blocks = this.ctx.blocks?.();
+    if (!blocks) return undefined;
+    const tables = blocks.filter((block) => block.type === 'table');
+    const index = tables.findIndex((block) => block.id === this.current.id);
+    if (index < 0) return undefined;
+    const api = sheetApi();
+    const own = api?.tableName(api.readSheet(this.current.data));
+    return {
+      name: own ?? `Table${index + 1}`,
+      others: tables
+        .filter((block) => block.id !== this.current.id)
+        .map((block) => ({ block: block.id, data: block.data })),
+    };
+  }
+
+  /** Fit column width measures what the cells show, in the font they are drawn in, unless the command says more. */
+  private async measured(op: TableOp): Promise<TableOp> {
+    if (op.op !== 'fitColumns' || (op.measure && op.texts)) return op;
+    const inputs = domFitInputs(this.editRoot, (await loadSheetApi()).canvasMeasure);
+    return inputs ? { ...op, texts: op.texts ?? inputs.texts, measure: op.measure ?? inputs.measure } : op;
+  }
+
   private async run(op: TableOp): Promise<boolean> {
-    if (this.sync) await this.sync.flush('command');
+    await loadSheetApi();
+    // Other tables get the adjusted formulas as whole rows, so their own typing must be saved first, or it is lost.
+    if (this.book()?.others.length) await this.ctx.sync.flushAll('command');
+    else if (this.sync) await this.sync.flush('command');
     const before = this.latest();
-    const applied = applyTableOp(before, this.caretCell(), op);
-    if (!applied) return false;
+    const applied = applyTableOp(
+      before,
+      this.caretCell(),
+      await this.measured(this.boxed(op)),
+      this.sheetData(),
+      this.book(),
+    );
+    if (!applied) {
+      if (op.op === 'insertCells' || op.op === 'deleteCells')
+        this.ctx.host.announce(t('sheetStructure.announce.mergeBlocked'));
+      return false;
+    }
     const adds = op.op === 'columnLeft' || op.op === 'columnRight';
     // The scroller is the page's width; its border takes a pixel on each side.
     const change = adds ? fitAddedColumn(before, applied, this.scroller.clientWidth - 2) : applied;
     this.show(change.data, change.caret);
     this.editor?.commands.focus();
     this.ctx.host.announce(announcement(op, change));
-    await this.send(change.data);
+    await this.send(change.data, undefined, change.extra, change.also);
     return true;
   }
 
@@ -272,8 +342,31 @@ class TableView implements InnerView {
     if (width !== null) void this.run({ op: 'columnWidth', width });
   }
 
+  private openRowHeight(): void {
+    void loadSheetApi().then(() => this.renderToolbar());
+    this.heightOpen = true;
+    currentTable.set(this.handle);
+    this.setCurrent(true);
+  }
+
+  /** Applies the row height field's result to the rows the selection covers, or cancels with null. */
+  private closeRowHeight(result: { height: number; exact: boolean } | null): void {
+    this.heightOpen = false;
+    this.renderToolbar();
+    this.editor?.commands.focus();
+    if (result) void this.run({ op: 'rowHeight', ...result });
+  }
+
+  /** The height set on the caret's row: what the row height field starts with. */
+  private caretRowHeight(): { height: number | null; exact: boolean } {
+    const row = this.data.rows[Math.min(this.caretCell().row, this.data.rows.length - 1)];
+    const api = sheetApi();
+    const set = row && api ? api.rowHeight(api.readSheet(this.current.data), row.id) : null;
+    return { height: set?.height ?? null, exact: set?.exact ?? false };
+  }
+
   private renderToolbar(): void {
-    if (currentTable.get() !== this.handle && !this.widthOpen) return;
+    if (currentTable.get() !== this.handle && !this.widthOpen && !this.heightOpen) return;
     this.toolbar ??= createRoot(this.toolbarHost);
     const caret = this.caretCell();
     const columns = this.data.columns;
@@ -288,6 +381,9 @@ class TableView implements InnerView {
         widthOpen: this.widthOpen,
         openWidth: this.handle.openColumnWidth,
         closeWidth: (width: number | null) => this.closeColumnWidth(width),
+        heightOpen: this.heightOpen,
+        rowHeight: this.heightOpen ? this.caretRowHeight() : { height: null, exact: false },
+        closeHeight: (result: { height: number; exact: boolean } | null) => this.closeRowHeight(result),
       }),
     );
   }
