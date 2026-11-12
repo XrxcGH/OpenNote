@@ -5,6 +5,9 @@ export { attachSmart } from './smart/attach';
 export { runSmartCommand } from './smart/commands';
 export type { SmartCommand } from './smart/commands';
 export { exportTableCharts } from './smart/exportCharts';
+/** The cell format bar loads on demand, so the tables chunk stays small. */
+export const loadCellFormatBar = () => import('./ui/toolbar/CellFormatBar');
+export type { CellFormatBarProps } from './ui/toolbar';
 // The structure commands and the reference adjustment register themselves with the table commands of the editor.
 import './sheet/structure/hooks';
 export { readSheet, tableName } from './sheet/model';

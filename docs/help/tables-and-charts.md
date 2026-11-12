@@ -63,3 +63,11 @@ A number can have a unit, such as 12.5 kg. When all the numbers in a column shar
 ## Saved views
 
 In the Data menu under a table, choose Saved views, then Save filters and sort as a view. Pick a view later to see the same rows in the same order. Each table keeps its own views.
+
+## Format cells
+
+When a table is current, a second row of tools sits under the table tools. It sets the font, size, bold, italic, underline, and strikethrough, the text and fill colors, borders, alignment, wrapping, rotation, and the number format. It also has Currency, Percent, the thousands separator, more and fewer decimals, and Clear formats.
+
+Select whole cells and a tool formats the cells. Select text inside one cell and the same tool formats only that text. Each change is one undo step.
+
+The Borders button draws the last border you used. Its arrow opens all 16 borders, the line style, and the line color. In a narrow window, the least used tools move into a More menu. Press Ctrl+K and type "Cell:" to find every format by name.

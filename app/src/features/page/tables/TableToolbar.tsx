@@ -10,7 +10,7 @@ import { RowsIcon } from '@phosphor-icons/react/dist/csr/Rows';
 import { RowsPlusBottomIcon } from '@phosphor-icons/react/dist/csr/RowsPlusBottom';
 import { RowsPlusTopIcon } from '@phosphor-icons/react/dist/csr/RowsPlusTop';
 import { TextHOneIcon } from '@phosphor-icons/react/dist/csr/TextHOne';
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { ComponentType, KeyboardEvent } from 'react';
 import type { CommandId } from '../../../commands/types';
 import type { TableOp } from '../../../editor/commands/tables';
@@ -21,7 +21,14 @@ import { IconButton, Switch, TextField } from '../../../ui';
 import type { IconProps } from '../../../ui';
 import styles from './tables.module.css';
 
+/** The cell format bar loads with the first table toolbar (the tables feature's own chunk). */
+const CellFormatBar = lazy(async () => ({
+  default: (await (await import('../../tables')).loadCellFormatBar()).CellFormatBar,
+}));
+
 export interface TableToolbarProps {
+  /** The table block's ID, which the cell format bar uses to find the block's data. */
+  block?: string;
   can(op: TableOp): boolean;
   header: boolean;
   run(op: TableOp): void;
@@ -153,9 +160,40 @@ function HeightField(props: {
   );
 }
 
+/**
+ * The tools sit above the table. When they are taller than the room between the table and the top of the page (the
+ * cell format bar adds rows, and touch targets are larger), they go below it instead, so no button is cut off.
+ */
+function useRoomAbove(wrap: { current: HTMLDivElement | null }) {
+  useLayoutEffect(() => {
+    const node = wrap.current;
+    const owner = node?.parentElement;
+    if (!node || !owner) return undefined;
+    const clipTop = (): number => {
+      for (let at = owner.parentElement; at; at = at.parentElement) {
+        const style = getComputedStyle(at);
+        if (/clip|hidden|auto|scroll/.test(style.overflowY)) return at.getBoundingClientRect().top;
+      }
+      return 0;
+    };
+    const place = () => {
+      const room = owner.getBoundingClientRect().top - clipTop();
+      const tall = node.getBoundingClientRect().height;
+      if (tall > 0 && tall > room) node.setAttribute('data-below', '');
+      else node.removeAttribute('data-below');
+    };
+    place();
+    const watch = new ResizeObserver(place);
+    watch.observe(node);
+    return () => watch.disconnect();
+  }, [wrap]);
+}
+
 export function TableToolbar(props: TableToolbarProps) {
-  const { can, header, run, more, width, widthOpen, openWidth, closeWidth } = props;
+  const { block, can, header, run, more, width, widthOpen, openWidth, closeWidth } = props;
   const moreButton = useRef<HTMLSpanElement>(null);
+  const wrap = useRef<HTMLDivElement>(null);
+  useRoomAbove(wrap);
   const button = (tool: Tool, first: boolean) => (
     <span key={tool.command} data-tool-slot="">
       <IconButton
@@ -169,7 +207,7 @@ export function TableToolbar(props: TableToolbarProps) {
     </span>
   );
   return (
-    <div className={styles.toolbarWrap}>
+    <div ref={wrap} className={styles.toolbarWrap}>
       <div
         role="toolbar"
         aria-label={t('tables.toolbar.label')}
@@ -215,6 +253,11 @@ export function TableToolbar(props: TableToolbarProps) {
           </span>
         </span>
       </div>
+      {block ? (
+        <Suspense fallback={null}>
+          <CellFormatBar block={block} />
+        </Suspense>
+      ) : null}
       {widthOpen ? <WidthField width={width} close={closeWidth} /> : null}
       {props.heightOpen && props.closeHeight ? (
         <HeightField current={props.rowHeight ?? { height: null, exact: false }} close={props.closeHeight} />

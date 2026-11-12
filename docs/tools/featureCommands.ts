@@ -2,6 +2,8 @@
 // words of its own. A kit tab with an about, intro, lead, or summary string uses that instead (registry.json `about`).
 // The generator stops when a listed command, section, or step has no sentence, so a new one must get a line here.
 
+import { CELL_COMMAND_TEXT } from './featureCommandsCells.ts';
+
 /** Each settings section, by its registry id. */
 export const SETTINGS_TEXT: Readonly<Record<string, string>> = {
   general: 'Sets the notes folder, where OpenNote lives, the Start menu entry, and what opens at start-up.',
@@ -37,6 +39,7 @@ export const SETUP_TEXT: Readonly<Record<string, string>> = {
 
 /** Each command with no words of its own, by its registry id. */
 export const COMMAND_TEXT: Readonly<Record<string, string>> = {
+  ...CELL_COMMAND_TEXT,
   'tools.calculator.basic': 'Opens the calculator on its basic tab for everyday arithmetic.',
   'tools.calculator.scientific': 'Opens the calculator on its scientific tab, with functions, powers, and angle modes.',
   'tools.calculator.graphing': 'Opens the calculator on its graphing tab to plot functions in 2D.',

@@ -134,6 +134,13 @@
     padding-block: var(--space-1) 0;
   }
 
+  /* Too tall for the room above the table (set from the toolbar's own measure): the tools go below it. */
+  .toolbarWrap[data-below] {
+    inset-block-end: auto;
+    inset-block-start: 100%;
+    padding-block: var(--space-1) 0;
+  }
+
   .wrapper[data-current] .toolbarWrap {
     display: flex;
   }

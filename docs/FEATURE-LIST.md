@@ -2,7 +2,7 @@
 
 Every tool, action, and feature in OpenNote, grouped by category, with one sentence each. `npm run docs:features` makes this page. The commands, tool windows, title bar items, settings sections, and setup steps come from what the app registers, so a new one shows up here or fails the tests. The feature sentences come from [FEATURES.md](FEATURES.md), which also says what has been tested by hand and which flag turns each one on. The [help pages](help/README.md) explain how to use them. [docs/screens](screens/README.md) has every picture in light and dark.
 
-The app registers 1018 commands and 48 tool windows. 24 of the windows are subject and engineering kits. The count includes the ink commands, which register when a page first shows its ink, and the commands that register once start-up is done or with the first page: on-device intelligence, the second pass of page commands, and the code block and table commands. The command palette (Ctrl+K) runs every command not marked as left out of it. Some commands need a feature flag, which FEATURES.md names. The keys shown are the defaults of the standard shortcut set.
+The app registers 1080 commands and 48 tool windows. 24 of the windows are subject and engineering kits. The count includes the ink commands, which register when a page first shows its ink, and the commands that register once start-up is done or with the first page: on-device intelligence, the second pass of page commands, and the code block and table commands. The command palette (Ctrl+K) runs every command not marked as left out of it. Some commands need a feature flag, which FEATURES.md names. The keys shown are the defaults of the standard shortcut set.
 
 ## Contents
 
@@ -400,6 +400,68 @@ Open it with the command "Open the code studio".
 | Table: Eigenvalues of the selection as an equation | Inserts the eigenvalues of the selected matrix as an equation. |  |
 | Table: Solution of Ax = b as an equation | Inserts the solution of Ax = b from the selected cells as an equation. |  |
 | Insert table | Inserts a table. |  |
+| Cell: Fill color | Opens the fill colors for the selected cells. |  |
+| Cell: Text color | Opens the text colors for the selected cells. |  |
+| Cell: Borders | Draws the last border preset again on the selected cells. |  |
+| Cell: All borders | Draws a border around every selected cell. |  |
+| Cell: Outside borders | Draws a border around the outside of the selected cells. |  |
+| Cell: Thick outside borders | Draws the thick outside borders on the selected cells. |  |
+| Cell: Top border | Draws the top border on the selected cells. |  |
+| Cell: Bottom border | Draws the bottom border on the selected cells. |  |
+| Cell: Left border | Draws the left border on the selected cells. |  |
+| Cell: Right border | Draws the right border on the selected cells. |  |
+| Cell: Inside horizontal borders | Draws the inside horizontal borders on the selected cells. |  |
+| Cell: Inside vertical borders | Draws the inside vertical borders on the selected cells. |  |
+| Cell: No border | Takes every border off the selected cells. |  |
+| Cell: Bottom double border | Draws the bottom double border on the selected cells. |  |
+| Cell: Thick bottom border | Draws the thick bottom border on the selected cells. |  |
+| Cell: Top and bottom border | Draws the top and bottom border on the selected cells. |  |
+| Cell: Top and thick bottom border | Draws the top and thick bottom border on the selected cells. |  |
+| Cell: Diagonal up border | Draws the diagonal up border on the selected cells. |  |
+| Cell: Diagonal down border | Draws the diagonal down border on the selected cells. |  |
+| Cell: Border line thin | Draws the next borders with a thin line. |  |
+| Cell: Border line medium | Draws the next borders with a medium line. |  |
+| Cell: Border line thick | Draws the next borders with a thick line. |  |
+| Cell: Border line hairline | Draws the next borders with a hairline line. |  |
+| Cell: Border line dotted | Draws the next borders with a dotted line. |  |
+| Cell: Border line dashed | Draws the next borders with a dashed line. |  |
+| Cell: Border line double | Draws the next borders with a double line. |  |
+| Cell: Border line color | Opens the colors for the line the next borders are drawn with. |  |
+| Cell: Wrap text | Wraps long text inside the selected cells. |  |
+| Cell: Overflow into empty cells | Lets long text run into the empty cells next to the selected cells. |  |
+| Cell: Clip text | Cuts long text off at the edge of the selected cells. |  |
+| Cell: Horizontal text | Shows the text of the selected cells horizontally. |  |
+| Cell: Rotate text up | Turns the text of the selected cells up 45 degrees. |  |
+| Cell: Rotate text down | Turns the text of the selected cells down 45 degrees. |  |
+| Cell: Vertical text | Turns the text of the selected cells to read bottom to top. |  |
+| Cell: Stacked text | Stacks the letters of the selected cells one above the other. |  |
+| Cell: Align left | Aligns the selected cells to the left. |  |
+| Cell: Align center | Centers the selected cells. |  |
+| Cell: Align right | Aligns the selected cells to the right. |  |
+| Cell: Justify | Spreads the text of the selected cells from edge to edge. |  |
+| Cell: Align top | Aligns the text of the selected cells to the top. |  |
+| Cell: Align middle | Centers the text of the selected cells between top and bottom. |  |
+| Cell: Align bottom | Aligns the text of the selected cells to the bottom. |  |
+| Cell: No underline | Sets the no underline on the selected cells or text. |  |
+| Cell: Single underline | Sets the single underline on the selected cells or text. |  |
+| Cell: Double underline | Sets the double underline on the selected cells or text. |  |
+| Cell: Single accounting underline | Sets the single accounting underline on the selected cells or text. |  |
+| Cell: Double accounting underline | Sets the double accounting underline on the selected cells or text. |  |
+| Cell: Currency format | Shows the selected cells as currency. |  |
+| Cell: Percent format | Shows the selected cells as a percent. |  |
+| Cell: General format | Takes the number format off the selected cells. |  |
+| Cell: Number format | Shows the selected cells as plain numbers with two decimals. |  |
+| Cell: Accounting format | Shows the selected cells with the accounting number format. |  |
+| Cell: Short date format | Shows the selected cells with the short date number format. |  |
+| Cell: Long date format | Shows the selected cells with the long date number format. |  |
+| Cell: Time format | Shows the selected cells with the time number format. |  |
+| Cell: Fraction format | Shows the selected cells with the fraction number format. |  |
+| Cell: Scientific format | Shows the selected cells with the scientific number format. |  |
+| Cell: Text format | Shows the selected cells with the text number format. |  |
+| Cell: Thousands separator | Turns the thousands separator on or off in the selected cells. |  |
+| Cell: More decimals | Shows one more decimal place in the selected cells. |  |
+| Cell: Fewer decimals | Shows one fewer decimal place in the selected cells. |  |
+| Cell: Clear formats | Takes every format off the selected cells and leaves their text. |  |
 | Add row above | Adds a row above the current one. |  |
 | Add row below | Adds a row below the current one. | Ctrl+Enter |
 | Move row up | Moves the current row up one place. | Alt+Shift+Up |
