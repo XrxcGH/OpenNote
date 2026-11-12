@@ -23,11 +23,8 @@ import { ALLOWANCES } from '../../run/adapters';
 import { Clang, fileAt } from './clang';
 import { clangMapper } from './diagnostics';
 import { type ClangLanguage, type ClangOptions, OUTPUT, checkArgs, compileArgs, sourcesOf, standardOf } from './flags';
-import { say } from './say';
+import { phase, say } from './say';
 import { runProgram } from './wasi';
-
-/** The console's own lines, in the error stream and gray (SGR 90), so they stand apart from the program's output. */
-const phase = (text: string) => `\u001b[90m${text}\u001b[39m\n`;
 
 const STANDARD_NAMES: Record<string, string> = { 'c++20': 'C++20', 'c++17': 'C++17', 'c++23': 'C++23' };
 const standardName = (standard: string) => STANDARD_NAMES[standard] ?? standard.toUpperCase();
@@ -43,9 +40,13 @@ export interface ClangAdapter extends RuntimeAdapter {
   check(file: RunFile, files: RunFile[]): Promise<RuntimeDiagnostic[]>;
 }
 
+/** clang's error for throw or try, which the pack's libc++ cannot support (it is built without exceptions). */
+const EXCEPTIONS = /with exceptions disabled/;
+
 /**
  * The compile step: one clang command over every source of the language. Its own lines and clang's messages go to
- * the error stream. Returns the program, or null when the compile failed.
+ * the error stream. Returns the program, or how the run ends when the compile failed (message `compile`) or clang
+ * itself stopped (message `compiler-stopped`).
  */
 function compile(
   clang: Clang,
@@ -53,19 +54,25 @@ function compile(
   request: RunRequest,
   emit: Emit,
   options: ClangOptions,
-): Uint8Array | null {
+): Uint8Array | RunEnd {
   const sources = sourcesOf(language, request.files, request.main);
   const err = (text: string) => emit({ kind: 'out', stream: 'err', text });
   const standard = standardName(standardOf(language, options));
   err(phase(say(codeStudioCpp.phase.compiling, { files: sources.join(', '), version: clang.version, standard })));
   const started = performance.now();
   const command = language === 'cpp' ? 'clang++' : 'clang';
-  const result = clang.run(command, compileArgs(language, sources, request.limits, options), request.files);
+  let result: ReturnType<Clang['run']>;
+  try {
+    result = clang.run(command, compileArgs(language, sources, request.limits, options), request.files);
+  } catch {
+    return { status: 'failed', message: 'compiler-stopped' };
+  }
   if (result.text !== '') err(result.text.endsWith('\n') ? result.text : `${result.text}\n`);
   const program = result.code === 0 ? fileAt(result.files, OUTPUT) : null;
   if (!program) {
+    if (language === 'cpp' && EXCEPTIONS.test(result.text)) err(phase(codeStudioCpp.noExceptions));
     err(phase(codeStudioCpp.phase.failed));
-    return null;
+    return { status: 'error', message: 'compile' };
   }
   const seconds = ((performance.now() - started) / 1000).toFixed(2);
   err(phase(say(codeStudioCpp.phase.compiled, { seconds })));
@@ -86,17 +93,19 @@ export function clangAdapter(language: ClangLanguage, clang: Clang, options: Cla
         await clang.load(onProgress);
       } catch (error) {
         const missing = error instanceof TypeError || /import|fetch|module/i.test(String(error));
-        throw new Error(missing ? codeStudioCpp.packMissing : codeStudioCpp.startFailed, { cause: error });
+        // A code: the page shows its sentence as the status line (run/summary.ts).
+        throw new Error(missing ? 'pack-missing' : 'start-failed', { cause: error });
       }
       adapter.version = `clang ${clang.version}`;
     },
 
     async prepare(request: RunRequest, emit: Emit): Promise<RunEnd | null> {
       if (sourcesOf(language, request.files, request.main).length === 0) {
-        return { status: 'error', message: codeStudioCpp.noSources };
+        return { status: 'error', message: 'no-sources' };
       }
-      program = compile(clang, language, request, emit, options);
-      return program ? null : { status: 'error', message: 'compile' };
+      const compiled = compile(clang, language, request, emit, options);
+      program = compiled instanceof Uint8Array ? compiled : null;
+      return program ? null : (compiled as RunEnd);
     },
 
     async run(request: RunRequest, emit: Emit, context: RunContext): Promise<RunEnd> {

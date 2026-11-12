@@ -11,8 +11,13 @@ import type { ClangLanguage } from './flags';
 
 /** The pause after typing before a check, the compiler layer's debounce (DESIGN 6.1). */
 export const CHECK_DELAY_MS = 800;
-/** A check that takes longer than this ends its worker and reports nothing. */
+/**
+ * The time limit of one check, counted from when the worker begins it. A check past it reports nothing, and its
+ * worker ends. The worker's first load and the checks queued before it do not count.
+ */
 export const CHECK_TIMEOUT_MS = 15_000;
+/** The wait for the worker to begin a check: the first load of clang and the checks before it in the queue. */
+export const CHECK_WAIT_MS = 120_000;
 
 export interface CheckRequest {
   kind: 'check';
@@ -26,6 +31,20 @@ export interface CheckReply {
   kind: 'checked';
   id: number;
   items: RuntimeDiagnostic[];
+  /** Set when clang did not load. The page ends the worker, so the next check loads clang again. */
+  failed?: true;
+}
+
+/** The worker begins check `id`: its timeout starts now. */
+export interface CheckBegun {
+  kind: 'checking';
+  id: number;
+}
+
+/** A `checking` message, or null. */
+export function readBegun(value: unknown): CheckBegun | null {
+  const begun = value as Partial<CheckBegun> | null;
+  return begun?.kind === 'checking' && typeof begun.id === 'number' ? { kind: 'checking', id: begun.id } : null;
 }
 
 /** A reply's items, checked as the page checks a run's diagnostics: plain fields, capped lengths. */
@@ -45,7 +64,7 @@ export function readReply(value: unknown): CheckReply | null {
       kind: kind.slice(0, MESSAGE_LIMITS.shortChars),
     });
   }
-  return { kind: 'checked', id: reply.id, items };
+  return { kind: 'checked', id: reply.id, items, ...(reply.failed === true ? { failed: true as const } : {}) };
 }
 
 export interface CheckWorker {
@@ -58,6 +77,7 @@ export interface CheckerOptions {
   createWorker?: () => CheckWorker;
   idleMs?: number;
   timeoutMs?: number;
+  waitMs?: number;
 }
 
 const defaultWorker = (): CheckWorker =>
@@ -75,11 +95,13 @@ export class ClangChecker {
   private readonly create: () => CheckWorker;
   private readonly idleMs: number;
   private readonly timeoutMs: number;
+  private readonly waitMs: number;
 
   constructor(options: CheckerOptions = {}) {
     this.create = options.createWorker ?? defaultWorker;
     this.idleMs = options.idleMs ?? IDLE_RELEASE_MS;
     this.timeoutMs = options.timeoutMs ?? CHECK_TIMEOUT_MS;
+    this.waitMs = options.waitMs ?? CHECK_WAIT_MS;
   }
 
   /** Whether a check worker is alive now. */
@@ -92,7 +114,7 @@ export class ClangChecker {
     const id = this.next++;
     this.hold();
     return new Promise((resolve) => {
-      const timer = setTimeout(() => this.release(), this.timeoutMs);
+      const timer = setTimeout(() => this.release(), this.waitMs);
       this.waiting.set(id, { resolve, timer });
       worker.postMessage({ kind: 'check', id, language, file, files });
     });
@@ -115,13 +137,21 @@ export class ClangChecker {
     if (this.worker) return this.worker;
     const worker = this.create();
     worker.onmessage = (event) => {
+      const begun = readBegun(event.data);
+      const started = begun ? this.waiting.get(begun.id) : undefined;
+      if (started) {
+        clearTimeout(started.timer);
+        started.timer = setTimeout(() => this.release(), this.timeoutMs);
+        return;
+      }
       const reply = readReply(event.data);
       const waiter = reply ? this.waiting.get(reply.id) : undefined;
       if (!reply || !waiter) return;
       this.waiting.delete(reply.id);
       clearTimeout(waiter.timer);
       waiter.resolve(reply.items);
-      this.hold();
+      if (reply.failed) this.release();
+      else this.hold();
     };
     this.worker = worker;
     return worker;

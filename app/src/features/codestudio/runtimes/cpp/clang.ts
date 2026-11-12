@@ -81,7 +81,8 @@ export class Clang {
 
   /** Fetches the pack's files and compiles clang once; later calls wait for the same load. */
   load(onProgress: (percent: number) => void = () => {}): Promise<void> {
-    this.loading ??= (async () => {
+    if (this.loading) return this.loading;
+    this.loading = (async () => {
       const module = await this.importClang();
       await module.runLLVM(
         null,
@@ -97,6 +98,8 @@ export class Clang {
       if (version.code !== 0 || this.version === '') throw new Error('clang');
       this.module = module;
     })();
+    // A load that failed is not kept, so the next call loads again.
+    this.loading.catch(() => (this.loading = null));
     return this.loading;
   }
 
@@ -139,12 +142,16 @@ function drive(module: ClangModule, command: 'clang' | 'clang++', args: string[]
   return { code: 0, text, files };
 }
 
-/** Runs one tool of the LLVM module (clang, clang++, wasm-ld) and keeps what it printed. */
+/**
+ * Runs one tool of the LLVM module (clang, clang++, wasm-ld) and keeps what it printed. The module writes in small
+ * pieces with a null (a flush) between them, and a piece may end inside a character. So a null does not end the
+ * text: the decoder keeps a split character until its last byte comes, and it is flushed once, after the command.
+ */
 function tool(module: ClangModule, argv: string[], tree: Tree): CommandResult {
   const decoder = new TextDecoder();
   let text = '';
   const write: Output = (bytes) => {
-    text += bytes ? decoder.decode(bytes, { stream: true }) : decoder.decode();
+    if (bytes) text += decoder.decode(bytes, { stream: true });
   };
   try {
     const files = module.runLLVM(argv, tree, {

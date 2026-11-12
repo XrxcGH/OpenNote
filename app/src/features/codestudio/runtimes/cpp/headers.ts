@@ -107,8 +107,9 @@ const CPP_GROUPS: Record<string, string> = {
   cassert: 'assert',
 };
 
+/** Name to header. The table has no prototype, so names such as "toString" and "__proto__" are not found in it. */
 function expand(groups: Record<string, string>): Record<string, string> {
-  const table: Record<string, string> = {};
+  const table = Object.create(null) as Record<string, string>;
   for (const [header, names] of Object.entries(groups)) {
     for (const name of names.split(/\s+/)) if (name) table[name] = header;
   }

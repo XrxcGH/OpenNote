@@ -61,6 +61,10 @@ function common(language: ClangLanguage, options: ClangOptions): string[] {
     ...(options.warnings === false ? [] : ['-Wall', '-Wextra']),
     // The pack's libc++ and libc++abi are built without exceptions, so throw and try are compile errors.
     ...(language === 'cpp' ? ['-fno-exceptions'] : []),
+    // clock() (C17 7.27.2.1) and <signal.h> come from wasi-libc's emulation libraries, linked in compileArgs.
+    // POSIX names such as usleep stay hidden under a strict -std, as they are in a native strict build.
+    '-D_WASI_EMULATED_PROCESS_CLOCKS',
+    '-D_WASI_EMULATED_SIGNAL',
     '-fno-color-diagnostics',
     '-iquote',
     PROJECT_DIR,
@@ -91,6 +95,8 @@ export function compileArgs(
     '-Wl,--stack-first',
     `-Wl,-z,stack-size=${stack}`,
     `-Wl,--max-memory=${maxMemory}`,
+    '-lwasi-emulated-process-clocks',
+    '-lwasi-emulated-signal',
   ];
 }
 

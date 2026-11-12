@@ -7,6 +7,19 @@ import { COMPILE_MS } from './protocol';
 
 const seconds = (ms: number) => (ms / 1000).toFixed(2);
 
+/** The codes a runtime may send as a run's message, and the sentence each one shows as the status line. */
+const MESSAGES = {
+  compile: 'codeStudio.cpp.compileFailed',
+  'compiler-stopped': 'codeStudio.cpp.compilerStopped',
+  'no-sources': 'codeStudio.cpp.noSources',
+  'pack-missing': 'codeStudio.cpp.packMissing',
+  'start-failed': 'codeStudio.cpp.startFailed',
+} as const;
+
+/** The status line a run's message code asks for, or null. */
+const coded = (message: string): string | null =>
+  Object.hasOwn(MESSAGES, message) ? t(MESSAGES[message as keyof typeof MESSAGES]) : null;
+
 /** One line for the end of a run, such as "Ran in 0.12 seconds." */
 export function statusLine(result: RunResult, limits: RunLimits): string {
   const code = result.exitCode;
@@ -16,7 +29,8 @@ export function statusLine(result: RunResult, limits: RunLimits): string {
         ? t('codeStudio.run.status.okExit', { seconds: seconds(result.elapsedMs), code })
         : t('codeStudio.run.status.ok', { seconds: seconds(result.elapsedMs) });
     case 'error':
-      return code ? t('codeStudio.run.status.errorExit', { code }) : t('codeStudio.run.status.error');
+      if (code) return t('codeStudio.run.status.errorExit', { code });
+      return coded(result.message) ?? t('codeStudio.run.status.error');
     case 'time':
       return t('codeStudio.run.status.time', { seconds: Math.round(limits.timeMs / 1000) });
     case 'memory':
@@ -24,9 +38,9 @@ export function statusLine(result: RunResult, limits: RunLimits): string {
     case 'stopped':
       return t('codeStudio.run.status.stopped');
     case 'failed':
-      return result.message === 'compile-time'
-        ? t('codeStudio.cpp.compileTime', { seconds: Math.round(COMPILE_MS / 1000) })
-        : t('codeStudio.run.status.failed');
+      if (result.message === 'compile-time')
+        return t('codeStudio.cpp.compileTime', { seconds: Math.round(COMPILE_MS / 1000) });
+      return coded(result.message) ?? t('codeStudio.run.status.failed');
   }
 }
 

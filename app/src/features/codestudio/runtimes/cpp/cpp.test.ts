@@ -11,9 +11,14 @@
 // checks-disable-file modifiability: one describe block per feature
 import { readFileSync } from 'node:fs';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import type { RunFile } from '../../contracts/run';
+import type { RunContext, RunFile, RunRequest } from '../../contracts/run';
+import type { RunResult } from '../../run/host';
+import { RUN_LIMITS } from '../../run/protocol';
+import { statusLine } from '../../run/summary';
 import { adapters, clang, main, run } from './fixtures/harness';
-import { commandOf } from './clang';
+import { Clang, commandOf } from './clang';
+import { type ClangAdapter, clangAdapter } from './adapter';
+import { serveChecks } from './checkServe';
 import { CHECK_DELAY_MS, ClangChecker, LiveCheck, clangEngineCheck, readReply } from './checker';
 import type { CheckRequest, CheckWorker } from './checker';
 import { checkArgs, compileArgs, sourcesOf } from './flags';
@@ -868,6 +873,7 @@ describe('the live check', () => {
     const checker = new ClangChecker({ createWorker: () => worker, timeoutMs: 500 });
     const file = { path: 'main.c', text: '' };
     const pending = checker.check('c', file, [file]);
+    worker.begin();
     await vi.advanceTimersByTimeAsync(500);
     expect(await pending).toEqual([]);
     expect(worker.ended).toBe(true);
@@ -896,9 +902,313 @@ class StubWorker implements CheckWorker {
     this.ended = true;
   }
 
+  /** The worker begins the newest check. */
+  begin(): void {
+    this.onmessage?.({ data: { kind: 'checking', id: this.requests[this.requests.length - 1]!.id } } as MessageEvent);
+  }
+
   answer(): void {
     const request = this.requests[this.requests.length - 1]!;
     const items = [{ file: request.file.path, line: 1, message: 'm', kind: 'error' }];
     this.onmessage?.({ data: { kind: 'checked', id: request.id, items } } as MessageEvent);
   }
 }
+
+describe('names and arguments outside ASCII', () => {
+  const hello = (language: 'c' | 'cpp') =>
+    language === 'c'
+      ? '#include <stdio.h>\nint main(int argc, char **argv) { (void)argc; printf("%s\\n", argv[0]); return 0; }\n'
+      : '#include <cstdio>\nint main(int argc, char **argv) { (void)argc; std::printf("%s\\n", argv[0]); }\n';
+
+  // The program is named after its main file (programName), so argv[0] is the file name without its extension.
+  for (const [language, path, name] of [
+    ['c', 'ünï.c', 'ünï'],
+    ['c', 'café/main.c', 'main'],
+    ['cpp', '作业.cpp', '作业'],
+    ['cpp', 'café/作业.cpp', '作业'],
+  ] as const) {
+    it(`${language}: compiles and runs ${path}`, async () => {
+      const ran = await run(language, [{ path, text: hello(language) }]);
+      expect(ran).toMatchObject({ status: 'ok', out: `${name}\n`, ran: true });
+      expect(ran.err).toContain(`Compiling ${path} with clang`);
+    });
+  }
+
+  it('maps a diagnostic to a file with a non-ASCII name', async () => {
+    const ran = await run('c', [{ path: 'café/ünï.c', text: 'int main(void) {\n  int x = 1\n  return x;\n}\n' }]);
+    expect(ran.err).toContain("café/ünï.c:2:12: error: expected ';' at end of declaration");
+    expect(ran.diagnostics).toContainEqual(expect.objectContaining({ file: 'café/ünï.c', line: 2, column: 12 }));
+  });
+
+  it('passes non-ASCII arguments byte for byte and keeps the heap whole', async () => {
+    // UTF-8 lengths (RFC 3629): é is 2 bytes, each of 作 and 业 is 3. So "héllo" is 6 bytes, "作业.txt" is 10, and
+    // forty é are 80.
+    const ran = await run(
+      'c',
+      main(
+        'c',
+        c`#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+int main(int argc, char **argv) {
+  for (int i = 1; i < argc; i++) printf("%zu %s\n", strlen(argv[i]), argv[i]);
+  char *blocks[64];
+  for (int i = 0; i < 64; i++) { blocks[i] = malloc(100 + i); memset(blocks[i], 0x5a, 100 + i); }
+  int whole = argv[argc] == NULL;
+  for (int i = 0; i < 64; i++) { whole = whole && blocks[i][99 + i] == 0x5a; free(blocks[i]); }
+  printf("%d\n", whole);
+  return 0;
+}
+`,
+      ),
+      { args: ['héllo', '作业.txt', 'é'.repeat(40)] },
+    );
+    expect(ran.out).toBe(`6 héllo\n10 作业.txt\n80 ${'é'.repeat(40)}\n1\n`);
+    expect(ran).toMatchObject({ status: 'ok', exitCode: 0 });
+  });
+});
+
+describe('header hints without the object prototype', () => {
+  it('finds no header for names on Object.prototype', () => {
+    for (const name of ['toString', 'valueOf', 'constructor', 'hasOwnProperty', '__proto__']) {
+      for (const language of ['c', 'cpp'] as const) {
+        expect(headerFor(name, language)).toBeNull();
+        expect(headerFor(`std::${name}`, language)).toBeNull();
+        expect(includeHint(`use of undeclared identifier '${name}'`, language)).toBeNull();
+        expect(
+          includeHint(`call to undeclared function '${name}'; ISO C99 and later do not support`, language),
+        ).toBeNull();
+      }
+    }
+  });
+});
+
+describe('the C library parts wasi-libc emulates', () => {
+  // C17 7.27.2.1: clock() gives the processor time used, which does not go back. C17 7.14.2.1: raise() calls the
+  // handler that signal() set (7.14.1.1) before it returns.
+  it('c: clock() and signal() with raise()', async () => {
+    const ran = await run(
+      'c',
+      main(
+        'c',
+        c`#include <signal.h>
+#include <stdio.h>
+#include <time.h>
+static volatile sig_atomic_t got = 0;
+static void on(int number) { got = number; }
+int main(void) {
+  clock_t a = clock();
+  volatile unsigned long sum = 0;
+  for (unsigned long i = 0; i < 100000; i++) sum += i;
+  clock_t b = clock();
+  signal(SIGINT, on);
+  raise(SIGINT);
+  printf("%d %d %d\n", a != (clock_t)-1, b >= a, got == SIGINT);
+  return 0;
+}
+`,
+      ),
+    );
+    expect(ran.err).not.toMatch(/warning|error/);
+    expect(ran).toMatchObject({ status: 'ok', out: '1 1 1\n' });
+  });
+
+  it('cpp: std::clock() and std::signal() with std::raise()', async () => {
+    const ran = await run(
+      'cpp',
+      main(
+        'cpp',
+        c`#include <csignal>
+#include <cstdio>
+#include <ctime>
+static volatile std::sig_atomic_t got = 0;
+int main() {
+  std::clock_t a = std::clock();
+  std::signal(SIGTERM, [](int number) { got = number; });
+  std::raise(SIGTERM);
+  std::printf("%d %d\n", std::clock() >= a, got == SIGTERM);
+}
+`,
+      ),
+    );
+    expect(ran).toMatchObject({ status: 'ok', out: '1 1\n' });
+  });
+});
+
+describe('the C gates', () => {
+  // G-D1: a live check in under 1.5 s. G-R4: a small program compiled and run in under 1.5 s. Measured warm.
+  it('checks a C file and compiles and runs a C program in under 1.5 seconds each', async () => {
+    const files = main('c', '#include <stdio.h>\nint main(void) { printf("hi\\n"); return 0; }\n');
+    let started = performance.now();
+    await adapters.c.check(files[0]!, files);
+    expect(performance.now() - started).toBeLessThan(1500);
+    started = performance.now();
+    const ran = await run('c', files);
+    expect(performance.now() - started).toBeLessThan(1500);
+    expect(ran.out).toBe('hi\n');
+  });
+});
+
+describe('what the person sees when a run does not work', () => {
+  const result = (status: RunResult['status'], message: string): RunResult => ({
+    status,
+    message,
+    elapsedMs: 0,
+    written: [],
+    notes: [],
+  });
+
+  it('says the compiler is not downloaded when the pack is missing, and loads again on the next run', async () => {
+    let tries = 0;
+    const missing = new Clang(() => {
+      tries++;
+      return Promise.reject(new TypeError('Failed to fetch'));
+    });
+    const adapter = clangAdapter('c', missing);
+    await expect(adapter.load(() => {})).rejects.toThrow('pack-missing');
+    await expect(adapter.load(() => {})).rejects.toThrow('pack-missing');
+    expect(tries).toBe(2);
+    expect(statusLine(result('failed', 'pack-missing'), RUN_LIMITS)).toBe(
+      'C and C++ are not downloaded yet. Download them in Settings, under Code downloads.',
+    );
+    expect(statusLine(result('failed', 'start-failed'), RUN_LIMITS)).toBe(
+      'The C and C++ compiler did not start as expected.',
+    );
+  });
+
+  it('gives a failed compile, a missing source, and a stopped compiler their own status lines', async () => {
+    const ran = await run('c', [{ path: 'notes.txt', text: '' }]);
+    expect(ran).toMatchObject({ status: 'error', message: 'no-sources' });
+    expect(statusLine(result('error', 'no-sources'), RUN_LIMITS)).toBe('There is no C or C++ source file to compile.');
+    expect(statusLine(result('error', 'compile'), RUN_LIMITS)).toBe(
+      'The program did not compile. The errors are in the console.',
+    );
+    expect(statusLine(result('failed', 'compiler-stopped'), RUN_LIMITS)).toBe(
+      'The compiler stopped unexpectedly, so the program did not run.',
+    );
+    const broken = {
+      version: '22',
+      run: () => {
+        throw new RangeError('stack');
+      },
+    } as unknown as Clang;
+    const request: RunRequest = {
+      kind: 'run',
+      runtime: 'c',
+      files: main('c', 'int main(void) { return 0; }\n'),
+      main: 'main.c',
+      args: [],
+      stdin: { mode: 'prefilled', text: '' },
+      limits: RUN_LIMITS,
+      seed: 1,
+    };
+    const end = await clangAdapter('c', broken).prepare!(request, () => {}, {} as RunContext);
+    expect(end).toEqual({ status: 'failed', message: 'compiler-stopped' });
+  });
+
+  it('prints why a program stopped at a trap', async () => {
+    const ran = await run('c', main('c', '#include <stdlib.h>\nint main(void) { abort(); }\n'));
+    expect(ran.status).toBe('error');
+    expect(ran.err).toContain('The program stopped: unreachable.');
+  });
+
+  it('explains that C++ here has no exceptions', async () => {
+    const ran = await run('cpp', main('cpp', 'int main() { try { throw 1; } catch (...) {} }\n'));
+    expect(ran.err).toContain('C++ here is built without exceptions, so throw, try and catch cannot be used.');
+  });
+
+  it('reports a failed new in C++ as the memory limit', async () => {
+    const grow = await run(
+      'cpp',
+      main('cpp', '#include <vector>\nint main() { std::vector<char*> v; for (;;) v.push_back(new char[1 << 20]); }\n'),
+      { limits: { memoryBytes: 16 * 1024 * 1024 } },
+    );
+    expect(grow).toMatchObject({ status: 'memory', message: 'memory' });
+    const large = await run(
+      'cpp',
+      main('cpp', '#include <cstdio>\nint main() { int *p = new int[1000000000]; std::printf("%p", (void *)p); }\n'),
+      { limits: { memoryBytes: 16 * 1024 * 1024 } },
+    );
+    expect(large).toMatchObject({ status: 'memory' });
+  });
+});
+
+describe('the check worker', () => {
+  afterEach(() => vi.useRealTimers());
+
+  const failing = () => {
+    let loads = 0;
+    const adapter = {
+      load: () => {
+        loads++;
+        return Promise.reject(new Error('pack-missing'));
+      },
+      check: () => Promise.resolve([]),
+    } as unknown as ClangAdapter;
+    const sent: unknown[] = [];
+    let listener: (event: MessageEvent) => void = () => undefined;
+    serveChecks(
+      { c: async () => adapter, cpp: async () => adapter },
+      { postMessage: (message) => sent.push(message), addEventListener: (_, on) => (listener = on) },
+    );
+    const ask = (id: number, path = 'main.c') =>
+      listener({ data: { kind: 'check', id, language: 'c', file: { path, text: '' }, files: [] } } as MessageEvent);
+    return { sent, ask, loads: () => loads };
+  };
+
+  it('does not keep a load that failed, and says so', async () => {
+    const worker = failing();
+    worker.ask(1);
+    await vi.waitFor(() => expect(worker.sent).toHaveLength(1));
+    worker.ask(2);
+    await vi.waitFor(() => expect(worker.sent).toHaveLength(2));
+    expect(worker.sent).toEqual([
+      { kind: 'checked', id: 1, items: [], failed: true },
+      { kind: 'checked', id: 2, items: [], failed: true },
+    ]);
+    expect(worker.loads()).toBe(2);
+  });
+
+  it('skips a queued check that a newer change of the same file replaced', async () => {
+    const worker = failing();
+    worker.ask(1);
+    worker.ask(2);
+    worker.ask(3, 'other.c');
+    worker.ask(4);
+    await vi.waitFor(() => expect(worker.sent).toHaveLength(4));
+    expect(worker.sent.slice(0, 2)).toEqual([
+      { kind: 'checked', id: 1, items: [] },
+      { kind: 'checked', id: 2, items: [] },
+    ]);
+    expect(worker.loads()).toBe(2);
+  });
+
+  it('times a check from when the worker begins it, not from the load', async () => {
+    vi.useFakeTimers();
+    const worker = new StubWorker();
+    const checker = new ClangChecker({ createWorker: () => worker, timeoutMs: 500, waitMs: 5000 });
+    const file = { path: 'main.c', text: '' };
+    const pending = checker.check('c', file, [file]);
+    await vi.advanceTimersByTimeAsync(3000);
+    expect(worker.ended).toBe(false);
+    worker.begin();
+    await vi.advanceTimersByTimeAsync(400);
+    worker.answer();
+    expect(await pending).toHaveLength(1);
+    expect(worker.ended).toBe(false);
+    checker.release();
+  });
+
+  it('ends the worker after a failed load, so the next check starts a fresh one', async () => {
+    const made: StubWorker[] = [];
+    const checker = new ClangChecker({ createWorker: () => made[made.push(new StubWorker()) - 1]! });
+    const file = { path: 'main.c', text: '' };
+    const first = checker.check('c', file, [file]);
+    made[0]!.onmessage?.({ data: { kind: 'checked', id: 1, items: [], failed: true } } as MessageEvent);
+    expect(await first).toEqual([]);
+    expect(made[0]!.ended).toBe(true);
+    void checker.check('c', file, [file]);
+    expect(made).toHaveLength(2);
+    checker.release();
+  });
+});

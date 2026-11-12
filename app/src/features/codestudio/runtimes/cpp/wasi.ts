@@ -24,10 +24,12 @@ import {
 import { PROJECT_LIMITS } from '../../contracts/project';
 import type { Emit, RunContext, RunEnd } from '../../contracts/run';
 import { codeStudioCpp } from '../../../../strings/en/codeStudio/cpp';
-import { say } from './say';
+import { phase, say } from './say';
 
 const WASI_MODULE = 'wasi_snapshot_preview1';
 const encoder = new TextEncoder();
+/** libc++abi's last words when new fails in a build without exceptions, before it aborts. */
+const BAD_ALLOC = /bad_alloc was thrown in -fno-exceptions mode\s*$/;
 
 /** Standard input as a character device that reads the run's input. */
 export class Input extends Fd {
@@ -186,6 +188,15 @@ function wire(shim: WASI, root: Map<string, Inode>, input: Input, options: Progr
     context.randomBytes(new Uint8Array(memory, pointer, length));
     return defs.ERRNO_SUCCESS;
   };
+  // The shim counts each argument in UTF-16 units, but args_get writes UTF-8 bytes. Counted that way, a non-ASCII
+  // argument would overflow the buffer the program allocated for argv.
+  imports.args_sizes_get = (countPointer: number, sizePointer: number) => {
+    const view = new DataView((shim.inst.exports.memory as WebAssembly.Memory).buffer);
+    const bytes = options.args.reduce((total, arg) => total + encoder.encode(arg).length + 1, 0);
+    view.setUint32(countPointer, options.args.length, true);
+    view.setUint32(sizePointer, bytes, true);
+    return defs.ERRNO_SUCCESS;
+  };
   budgetFiles(shim, root, options.memoryBytes, imports);
   const jspi = WebAssembly as unknown as Partial<Jspi>;
   const suspend = options.interactive && jspi.Suspending && jspi.promising ? (jspi as Jspi) : null;
@@ -209,15 +220,26 @@ export async function runProgram(
 ): Promise<RunEnd> {
   const module = await WebAssembly.compile(wasm as Uint8Array<ArrayBuffer>);
   const decoders = { out: new TextDecoder(), err: new TextDecoder() };
+  // The end of what the program wrote to its error stream, where libc++abi says a failed new stopped it.
+  let errTail = '';
   const writer = (stream: 'out' | 'err') =>
-    new ConsoleStdout((bytes) => emit({ kind: 'out', stream, text: decoders[stream].decode(bytes, { stream: true }) }));
+    new ConsoleStdout((bytes) => {
+      const text = decoders[stream].decode(bytes, { stream: true });
+      if (stream === 'err') errTail = (errTail + text).slice(-512);
+      emit({ kind: 'out', stream, text });
+    });
+  const line = (text: string) => emit({ kind: 'out', stream: 'err', text: phase(text) });
   const input = new Input(context);
   const { root, texts } = mountTree(context);
   const mount = new PreopenDirectory('.', root);
   const shim = new WASI(options.args, [], [input, writer('out'), writer('err'), mount], { debug: false });
   const { imports, suspend } = wire(shim, root, input, options, context);
   const foreign = foreignImport(module, imports);
-  if (foreign !== null) return { status: 'error', message: say(codeStudioCpp.foreignImport, { name: foreign }) };
+  if (foreign !== null) {
+    const message = say(codeStudioCpp.foreignImport, { name: foreign });
+    line(message);
+    return { status: 'error', message };
+  }
 
   const instance = await WebAssembly.instantiate(module, { [WASI_MODULE]: imports as WebAssembly.ModuleImports });
   let end: RunEnd;
@@ -228,12 +250,14 @@ export async function runProgram(
     else start();
     end = { status: 'ok', exitCode: 0, message: '' };
   } catch (error) {
-    end = ended(error, instance.exports.memory as WebAssembly.Memory, options.memoryBytes);
+    end = ended(error, instance.exports.memory as WebAssembly.Memory, options.memoryBytes, BAD_ALLOC.test(errTail));
   }
   for (const stream of ['out', 'err'] as const) {
     const rest = decoders[stream].decode();
     if (rest !== '') emit({ kind: 'out', stream, text: rest });
   }
+  // The trap's reason reaches the console; the status line says only that the program stopped.
+  if (end.status === 'error' && end.exitCode === undefined) line(end.message);
   keepWritten(root, texts, context);
   return end;
 }
@@ -257,13 +281,14 @@ async function nextLine(context: RunContext): Promise<string | null> {
 }
 
 /** How the program ended when _start did not return: exit(), a trap, or the engine's own limits. */
-function ended(error: unknown, memory: WebAssembly.Memory, limit: number): RunEnd {
+function ended(error: unknown, memory: WebAssembly.Memory, limit: number, badAlloc: boolean): RunEnd {
   if (error instanceof WASIProcExit) {
     const code = error.code | 0;
     return { status: code === 0 ? 'ok' : 'error', exitCode: code, message: '' };
   }
   // A trap close to the memory limit is the program running out of memory: new and malloc failed and it stopped.
-  if (memory.buffer.byteLength + 64 * 1024 > limit) return { status: 'memory', message: 'memory' };
+  // In C++ a failed new aborts at once (there are no exceptions), even for one large request far below the limit.
+  if (badAlloc || memory.buffer.byteLength + 64 * 1024 > limit) return { status: 'memory', message: 'memory' };
   const reason = error instanceof Error ? error.message : String(error);
   return { status: 'error', message: say(codeStudioCpp.trap, { reason }) };
 }
