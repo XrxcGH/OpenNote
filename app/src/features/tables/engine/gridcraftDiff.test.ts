@@ -10,6 +10,7 @@ import { describe, expect, it } from 'vitest';
 import { findTool } from '../../../../../tests/crosscheck/tools';
 import { createTable, setColumnFormula } from './edit';
 import { functions as ARRAY_FUNCTIONS } from './formula/fn/arrays';
+import { REGISTRY } from './formula/fn';
 import { FUNCTIONS } from './formula/functions';
 import { EN_US } from './locale';
 import { ERROR_TOKENS, type Value } from './values';
@@ -90,6 +91,7 @@ const CASES: Record<string, string[]> = {
 
 /** Differences that are understood. The key is the formula; the value says why the two engines part. */
 const KNOWN: Record<string, string> = {
+  'UPPER("straße")': 'OpenNote keeps the sharp s (STRAßE), as Excel does. GridCraft expands it to SS.',
   '2^3^2': 'OpenNote chains powers to the right, as in mathematics (512). Excel chains to the left (64).',
   '-2^2': 'OpenNote binds the power tighter than the minus sign (-4), as in mathematics. Excel negates first (4).',
   'ROUND(7)':
@@ -99,7 +101,14 @@ const KNOWN: Record<string, string> = {
 };
 
 /** Functions that cannot be compared with a fixed answer: their result depends on the day it runs. */
-const NOT_COMPARABLE = new Set(['TODAY']);
+// The text and regular expression families have their own hand-worked fixtures (fixtures/fn/text.json), and the math
+// family has fn/math.test.ts and fixtures/fn/math.json, so only the functions that were here before need a case.
+const NOT_COMPARABLE = new Set([
+  'TODAY',
+  ...[...REGISTRY.values()]
+    .filter((spec) => ['text', 'regex', 'math'].includes(spec.family) && !(spec.name in CASES))
+    .map((spec) => spec.name),
+]);
 
 /** Functions that give arrays, which the tool's eval cannot print: fn/arrays.test.ts checks them by hand. */
 const ARRAY_RESULTS = new Set(ARRAY_FUNCTIONS.map((spec) => spec.name));

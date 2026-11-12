@@ -7,7 +7,7 @@ import { createTable, setCellInput } from '../../edit';
 import { EN_US } from '../../locale';
 import type { Table } from '../../model';
 import { DEFAULT_ENV, errorOrigin, spillRange } from '../../recalc';
-import { err, isError, type ArrayValue, type Scalar, type Value } from '../../values';
+import { err, isError, reasonOf, type ArrayValue, type Scalar, type Value } from '../../values';
 import { explainOrigin } from '../explain';
 import fixture from '../../../fixtures/fn/arrays.json';
 import { fnArrays, type FnText } from '../../../../../strings/en/fnArrays';
@@ -347,7 +347,9 @@ describe('documented choices', () => {
 describe('the size cap', () => {
   it('SEQUENCE(2000,1000) is #NUM! with Too many values, without allocating (lane test)', () => {
     const t = run('SEQUENCE(2000,1000)');
-    expect(t.rows[0].cells[HOME.col].value).toMatchObject({ error: 'NUM', reason: 'tooMany' });
+    const value = t.rows[0].cells[HOME.col].value;
+    expect(value).toMatchObject({ error: 'NUM' });
+    expect(reasonOf(value)).toBe('tooMany');
     const origin = errorOrigin(t, HOME.col, HOME.row);
     expect(origin).toMatchObject({ code: 'NUM', kind: 'function', name: 'SEQUENCE', reason: 'tooMany' });
     const reasons = fnArrays.reasons as Record<string, string>;
@@ -355,7 +357,7 @@ describe('the size cap', () => {
       explainOrigin(
         origin!,
         () => '',
-        (key) => reasons[key],
+        (_key, values) => reasons[values.reason ?? ''],
       ),
     ).toBe('Too many values');
     // A request of 10^12 items would throw or stall if anything were allocated; it is refused at once.
@@ -370,8 +372,10 @@ describe('the size cap', () => {
     const spec = REGISTRY.get('SEQUENCE')!;
     const full = spec.run([MAX_ELEMENTS], { today: () => 0 });
     expect(isError(full)).toBe(false);
-    expect(spec.run([MAX_ELEMENTS + 1], { today: () => 0 })).toMatchObject({ error: 'NUM', reason: 'tooMany' });
-    expect(calc('VSTACK(SEQUENCE(1000,1000),1)')).toMatchObject({ error: 'NUM', reason: 'tooMany' });
+    const over = spec.run([MAX_ELEMENTS + 1], { today: () => 0 });
+    expect(over).toMatchObject({ error: 'NUM' });
+    expect(reasonOf(over)).toBe('tooMany');
+    expect(reasonOf(calc('VSTACK(SEQUENCE(1000,1000),1)'))).toBe('tooMany');
   });
 });
 

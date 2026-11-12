@@ -3,7 +3,7 @@
 // a cycle, or a cell the formula read that already held the error. The engine keeps one origin per cell with an
 // error, so the formula bar can follow a chain of cells back to the first one.
 
-import type { ErrorCode, ErrorReason, Scalar } from '../values';
+import type { ErrorCode, Scalar } from '../values';
 
 /** A cell on the page: the table's index on the page, the column, and the data row, all zero-based. */
 export interface OriginCell {
@@ -32,8 +32,8 @@ export interface ErrorOrigin {
   readonly args?: readonly (Scalar | ArgSummary)[];
   /** For 'cell', the cell the error was read from; for 'spill', the cell that blocks the spill. */
   readonly cell?: OriginCell;
-  /** For 'function', why it gave the error, when the function says. */
-  readonly reason?: ErrorReason;
+  /** The key of a sentence in the interface strings that says why the function refused (for example a limit). */
+  readonly reason?: string;
 }
 
 /**
@@ -43,7 +43,6 @@ export interface ErrorOrigin {
 export type OriginSentence =
   | 'function'
   | 'functionUnnamed'
-  | 'tooMany'
   | 'operator'
   | 'cell'
   | 'cellUnknown'
@@ -58,6 +57,8 @@ export type OriginSentence =
 export interface OriginSentenceValues {
   readonly name?: string;
   readonly cell?: string;
+  /** The reason key of a function origin, when it has one: the formula bar shows that sentence too. */
+  readonly reason?: string;
 }
 
 /** The key and values for an origin's sentence. */
@@ -67,8 +68,9 @@ export function originSentence(
 ): { key: OriginSentence; values: OriginSentenceValues } {
   switch (origin.kind) {
     case 'function':
-      if (origin.reason === 'tooMany') return { key: 'tooMany', values: { name: origin.name ?? '' } };
-      return origin.name ? { key: 'function', values: { name: origin.name } } : { key: 'functionUnnamed', values: {} };
+      return origin.name
+        ? { key: 'function', values: { name: origin.name, ...(origin.reason ? { reason: origin.reason } : {}) } }
+        : { key: 'functionUnnamed', values: {} };
     case 'operator':
       return { key: 'operator', values: { name: origin.name ?? '' } };
     case 'cell':

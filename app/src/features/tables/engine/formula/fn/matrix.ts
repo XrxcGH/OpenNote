@@ -9,6 +9,7 @@ import { identity, luDecompose, luDeterminant, luSolve, type Matrix } from '../.
 import { makeArray } from '../../arrays';
 import {
   err,
+  errBecause,
   isArray,
   toBool,
   toNumber,
@@ -25,8 +26,6 @@ export const MAX_ELEMENTS = 1_000_000;
 /** The largest square matrix MINVERSE and MDETERM take: their work grows with the cube of the order. */
 export const MAX_ORDER = 500;
 
-const TOO_MANY: FormulaError = Object.freeze({ error: 'NUM', reason: 'tooMany' });
-
 /** Whether a result is an error rather than what was asked for. */
 export function failed<T>(value: T | FormulaError): value is FormulaError {
   return typeof value === 'object' && value !== null && 'error' in value;
@@ -34,7 +33,7 @@ export function failed<T>(value: T | FormulaError): value is FormulaError {
 
 /** The error for an array past the cap. */
 export function tooMany(): FormulaError {
-  return TOO_MANY;
+  return errBecause('NUM', 'tooMany');
 }
 
 /** Whether an array of rows by cols fits under the cap. */

@@ -428,13 +428,15 @@ const shapeOf = (data: TableData) =>
 
 /**
  * A table block's sync: a patchBlock of `data.rows` for typing, coalesced by cell as `<block>/<row>/<column>`
- * (P3-4). A change to the table's shape sends the whole data.
+ * (P3-4). A change to the table's shape sends the whole data. `extra` adds keys to the same patch, such as the
+ * formula results a smart table caches (ADR 0061), so one undo step takes back both.
  */
 export function attachTableSync(
   editor: Editor,
   block: BlockId,
   queue: SyncQueue,
   toData: (doc: PMNode) => TableData,
+  extra: (data: TableData) => Record<string, unknown> | null = () => null,
 ): TableSyncHandle {
   let shape = shapeOf(toData(editor.state.doc));
   const source: Source = {
@@ -444,7 +446,7 @@ export function attachTableSync(
       const next = shapeOf(data);
       const same = next === shape;
       shape = next;
-      return { kind: 'data', data: same ? { rows: data.rows } : { ...data } };
+      return { kind: 'data', data: { ...(same ? { rows: data.rows } : data), ...extra(data) } };
     },
     target(doc, selection) {
       const cell = cellAt(doc, selection.head);

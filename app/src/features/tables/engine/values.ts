@@ -7,17 +7,15 @@ import { parseDate } from './dates';
 export type ErrorCode =
   'DIV0' | 'VALUE' | 'REF' | 'NAME' | 'NUM' | 'NA' | 'NULL' | 'SPILL' | 'CALC' | 'FIELD' | 'BUSY' | 'CYCLE';
 
-/** Why a function gave an error, where the code alone says too little. 'tooMany': an array past the size cap. */
-export type ErrorReason = 'tooMany';
-
 export interface FormulaError {
   readonly error: ErrorCode;
-  /** Set only by a function that knows more than the code says. Equal codes are the same error. */
-  readonly reason?: ErrorReason;
 }
 
 /** What a cell holds. */
 export type Scalar = number | string | boolean | null | FormulaError;
+
+/** Whether a row shows: 0 shown, 1 hidden by hand, 2 filtered out. */
+export type RowState = 0 | 1 | 2;
 
 /** A block of values in row-major order. Arrays never nest, so every item is a scalar. */
 export interface ArrayValue {
@@ -25,6 +23,10 @@ export interface ArrayValue {
   readonly rows: number;
   readonly cols: number;
   readonly data: readonly Scalar[];
+  /** One state per row, set only on a reference given to a parameter marked `rowState` (SUBTOTAL, AGGREGATE). */
+  readonly rowState?: readonly RowState[];
+  /** Row-major, like `data`: true for a cell that is a nested subtotal (its formula calls SUBTOTAL or AGGREGATE). Set with `rowState`. */
+  readonly nested?: readonly boolean[];
 }
 
 /** A block of cells in a table, zero-based and inclusive. `table` is unset for the formula's own table. */
@@ -86,6 +88,23 @@ export const ERROR_WORDS: Record<ErrorCode, string> = {
 
 export function err(code: ErrorCode): FormulaError {
   return ERRORS[code];
+}
+
+const REASONS = new WeakMap<FormulaError, string>();
+
+/**
+ * An error that also says why, as the key of a sentence in the interface strings (for example a limit a function
+ * named). It equals the plain error everywhere else, and the formula bar reads the key through `reasonOf`.
+ */
+export function errBecause(code: ErrorCode, reason: string): FormulaError {
+  const e: FormulaError = { error: code };
+  REASONS.set(e, reason);
+  return e;
+}
+
+/** The key an error carries, if it was made with `errBecause`. */
+export function reasonOf(value: Value): string | undefined {
+  return typeof value === 'object' && value !== null && 'error' in value ? REASONS.get(value) : undefined;
 }
 
 export function isError(value: Value): value is FormulaError {

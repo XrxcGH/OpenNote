@@ -172,6 +172,37 @@ function ruledTable(order: number): BlockJson {
   return block('table', order, data as unknown as Record<string, unknown>);
 }
 
+/** A table from rows of cell text, the first row its header, with `extra` keys in its data (data.sheet, say). */
+function tableOf(order: number, texts: readonly (readonly string[])[], extra: Record<string, unknown> = {}): BlockJson {
+  const columns = texts[0].map(() => ({ id: fixtureId(), width: 120 }));
+  const rows = texts.map((line) => ({
+    id: fixtureId(),
+    cells: Object.fromEntries(columns.map((column, c) => [column.id, { markdown: line[c] ?? '' }])),
+  }));
+  return block('table', order, { header: true, columns, rows, ...extra });
+}
+
+/**
+ * 3,000 rows of 10 cells, the last a formula: 30,000 cells, past the worker's threshold of 20,000. Each formula also
+ * sums the rest of columns B to I, which adds nothing but keeps the worker busy for most of a second.
+ */
+function bigTable(order: number): BlockJson {
+  const head = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+  const sum = (r: number) => `=A${r}+1+0*SUM(B${r}:I3000)`;
+  const body = Array.from({ length: 3000 }, (_, r) => [...head.slice(0, 9).map((_, c) => `${r + c}`), sum(r + 1)]);
+  return tableOf(order, [head, ...body], { sheet: { table: { grid: true } } });
+}
+
+/**
+ * 1,500 rows of 10 cells with data.sheet, the last a formula: 15,000 cells, under the worker's threshold, so each
+ * edit calculates the page on its own thread and writes the value cache with the edit (ADR 0061).
+ */
+function largeSheetTable(order: number): BlockJson {
+  const head = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+  const body = Array.from({ length: 1500 }, (_, r) => [...head.slice(0, 9).map((_, c) => `${r + c}`), `=A${r + 1}+1`]);
+  return tableOf(order, [head, ...body], { sheet: { table: { grid: true } } });
+}
+
 function build(): Record<string, () => PageFixture> {
   return {
     sampler: () =>
@@ -234,6 +265,23 @@ function build(): Record<string, () => PageFixture> {
     // A line of text and a picture with no description, for the accessibility checker's main path.
     unlabeled: () =>
       page('Unlabeled picture', [text(0, 'A picture follows.'), block('image', 1, { asset: null, alt: '' })]),
+    // These sit last: a fixture's block IDs come from its place in this list, so a new one must not move the others.
+    // A table that already has data.sheet, so its formula results are cached with each edit (ADR 0061).
+    sheetTable: () =>
+      page('Sheet notes', [
+        text(0, 'Start here.'),
+        tableOf(
+          1,
+          [
+            ['Item', 'Qty', 'Total'],
+            ['Pen', '2', '=B1+3'],
+            ['Ink', '5', '=C1+B2'],
+          ],
+          { sheet: { table: { grid: true } } },
+        ),
+      ]),
+    bigTable: () => page('Big table', [text(0, 'Start here.'), bigTable(1)]),
+    largeSheetTable: () => page('Large sheet', [text(0, 'Start here.'), largeSheetTable(1)]),
   };
 }
 
@@ -248,7 +296,10 @@ export type PageFixtureName =
   | 'budget500'
   | 'ruled'
   | 'ruledSheets'
-  | 'unlabeled';
+  | 'unlabeled'
+  | 'sheetTable'
+  | 'bigTable'
+  | 'largeSheetTable';
 
 const made = new Map<PageFixtureName, PageFixture>();
 const makers = build();

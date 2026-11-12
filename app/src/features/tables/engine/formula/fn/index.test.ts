@@ -39,14 +39,12 @@ const BY_FAMILY: Partial<Record<Family, string[]>> = {
 };
 
 describe('the function registry', () => {
-  it('keeps every name of before in its family', () => {
+  it('holds the 48 names of before, each in its family', () => {
+    // Family lanes add functions, so each family holds at least the names it always had.
+    expect(REGISTRY.size).toBeGreaterThanOrEqual(48);
     for (const [family, names] of Object.entries(BY_FAMILY)) {
-      const found = new Set([...REGISTRY.values()].filter((spec) => spec.family === family).map((spec) => spec.name));
-      // Family lanes add names; every name of before stays, in its family.
-      expect(
-        names.filter((name) => !found.has(name)),
-        family,
-      ).toEqual([]);
+      const found = [...REGISTRY.values()].filter((spec) => spec.family === family).map((spec) => spec.name);
+      expect(found, family).toEqual(expect.arrayContaining(names));
     }
   });
 
@@ -58,7 +56,8 @@ describe('the function registry', () => {
     expect(FUNCTIONS.ROUND).toMatchObject({ kind: 'scalar', min: 1, max: 2 });
     expect(FUNCTIONS.PI).toMatchObject({ min: 0, max: 0 });
     expect(FUNCTIONS.ISBLANK).toMatchObject({ handlesErrors: true });
-    expect(FUNCTIONS.CONCAT).toMatchObject({ kind: 'scalar', min: 1, max: Infinity });
+    // CONCAT joins every cell of a range, so it is an aggregate that keeps its values as they are.
+    expect(FUNCTIONS.CONCAT).toMatchObject({ kind: 'aggregate', raw: true, min: 1, max: Infinity });
     expect(REGISTRY.get('TODAY')?.volatile).toBe(true);
   });
 
