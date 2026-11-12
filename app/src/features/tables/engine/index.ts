@@ -66,8 +66,8 @@ export {
   tableNames,
 } from './workbook';
 export type { Workbook } from './workbook';
-export { sortedIndices, sortTable } from './sort';
-export type { SortKey } from './sort';
+export { builtInLists, sortedIndices, sortTable } from './sort';
+export type { LookOf, SortBy, SortKey } from './sort';
 export { columnTotal, hasTotals, totalsRow } from './totals';
 export { ERROR_TOKENS, ERROR_WORDS, err, isError } from './values';
 export type { ErrorCode, FormulaError, Value } from './values';
