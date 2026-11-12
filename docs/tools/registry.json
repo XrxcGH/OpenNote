@@ -1222,6 +1222,176 @@
       "flag": "doc.figureExport"
     },
     {
+      "id": "format.font",
+      "title": "Font",
+      "category": "format",
+      "keys": [],
+      "flag": "text.v2Controls",
+      "palette": false
+    },
+    {
+      "id": "format.fontSize",
+      "title": "Font size",
+      "category": "format",
+      "keys": [],
+      "flag": "text.v2Controls",
+      "palette": false
+    },
+    {
+      "id": "format.weight",
+      "title": "Font weight",
+      "category": "format",
+      "keys": [],
+      "flag": "text.v2Controls",
+      "palette": false
+    },
+    {
+      "id": "format.underlineStyle",
+      "title": "Underline style",
+      "category": "format",
+      "keys": [],
+      "flag": "text.v2Controls",
+      "palette": false
+    },
+    {
+      "id": "format.effect",
+      "title": "Text effects",
+      "category": "format",
+      "keys": [],
+      "flag": "text.v2Controls",
+      "palette": false
+    },
+    {
+      "id": "format.changeCase",
+      "title": "Change case",
+      "category": "format",
+      "keys": [],
+      "flag": "text.v2Controls",
+      "palette": false
+    },
+    {
+      "id": "list.bullet",
+      "title": "Bullets",
+      "category": "format",
+      "keys": [],
+      "flag": "text.v2Controls",
+      "palette": false
+    },
+    {
+      "id": "list.numberLook",
+      "title": "Numbering",
+      "category": "format",
+      "keys": [],
+      "flag": "text.v2Controls",
+      "palette": false
+    },
+    {
+      "id": "list.multilevel",
+      "title": "Multilevel list",
+      "category": "format",
+      "keys": [],
+      "flag": "text.v2Controls",
+      "palette": false
+    },
+    {
+      "id": "para.lineSpacing",
+      "title": "Line spacing",
+      "category": "format",
+      "keys": [],
+      "flag": "text.v2Controls",
+      "palette": false
+    },
+    {
+      "id": "format.growFont",
+      "title": "Grow font",
+      "category": "format",
+      "keys": [],
+      "flag": "text.v2Controls"
+    },
+    {
+      "id": "format.shrinkFont",
+      "title": "Shrink font",
+      "category": "format",
+      "keys": [],
+      "flag": "text.v2Controls"
+    },
+    {
+      "id": "format.strikeDouble",
+      "title": "Double strikethrough",
+      "category": "format",
+      "keys": [],
+      "flag": "text.v2Controls"
+    },
+    {
+      "id": "format.selectSimilar",
+      "title": "Select text with similar formatting",
+      "category": "format",
+      "keys": [],
+      "flag": "text.v2Controls"
+    },
+    {
+      "id": "para.shade",
+      "title": "Paragraph formatting",
+      "category": "format",
+      "keys": [],
+      "flag": "text.v2Controls",
+      "palette": false
+    },
+    {
+      "id": "para.border",
+      "title": "Paragraph formatting",
+      "category": "format",
+      "keys": [],
+      "flag": "text.v2Controls",
+      "palette": false
+    },
+    {
+      "id": "text.select",
+      "title": "Paragraph formatting",
+      "category": "format",
+      "keys": [],
+      "flag": "text.v2Controls",
+      "palette": false
+    },
+    {
+      "id": "format.painter",
+      "title": "Format painter",
+      "category": "format",
+      "keys": [],
+      "flag": "text.v2Controls"
+    },
+    {
+      "id": "format.painterLocked",
+      "title": "Format painter, locked",
+      "category": "format",
+      "keys": [],
+      "flag": "text.v2Controls"
+    },
+    {
+      "id": "text.compactSheet",
+      "title": "Text formatting",
+      "category": "format",
+      "keys": [],
+      "flag": "text.v2Controls",
+      "palette": false
+    },
+    {
+      "id": "text.contextFont",
+      "title": "Font",
+      "category": "format",
+      "keys": [],
+      "flag": "text.v2Controls",
+      "palette": false
+    },
+    {
+      "id": "text.contextParagraph",
+      "title": "Paragraph",
+      "category": "format",
+      "keys": [],
+      "flag": "text.v2Controls",
+      "palette": false
+    },
+    {
       "id": "format.bold",
       "title": "Bold",
       "category": "format",

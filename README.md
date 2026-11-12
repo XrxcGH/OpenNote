@@ -55,7 +55,7 @@ You keep notebooks, sections, and pages in a notes folder you choose, as plain f
 
 The Word-level text, Excel-level table, and code studio foundations are on the beta branch behind flags that are off. The table work so far adds a cell format bar, spreadsheet keys, conditional formatting, styled tables in Word and HTML exports, and the logic, lookup, array, and statistics functions.
 
-- [Typed notes](docs/help/typed-notes.md): text, headings, text styles kept with the notebook, lists, checklists, tables, code, callouts, Markdown, templates, and find and replace. Find by format, special character, wildcard, or regular expression. Typed web and e-mail addresses turn into links, pasted tables and spreadsheet cells become tables, and copies give other apps plain text.
+- [Typed notes](docs/help/typed-notes.md): text, headings, text styles kept with the notebook, lists, checklists, tables, code, callouts, Markdown, templates, and find and replace. Find by format, special character, wildcard, or regular expression. The Home tab has font and size boxes, split buttons for underline, colors, and lists, and a styles gallery. Typed web and e-mail addresses turn into links. Pasted tables and spreadsheet cells become tables. Copies give other apps plain text.
 - [Moving between blocks](docs/help/moving-between-blocks.md): keys that move between text, pictures, tables, and code without the mouse.
 - [Document structure](docs/help/document-structure.md): equation numbers and references, formula sheets, practice mode, problem-set templates, and figures.
 - [Code cells](docs/help/code-cells.md): short Python or JavaScript programs that run on the page; a cell from a newer version opens read-only instead of being changed.
