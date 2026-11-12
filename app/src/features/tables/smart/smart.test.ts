@@ -532,8 +532,12 @@ describe('the worker and the menus', () => {
     );
     try {
       const after = dataMenu(fake().inst);
-      expect(after.map((item) => item.id)).toEqual([...before, 'sheet.dedupe']);
-      expect(after.at(-1)).toMatchObject({ label: expect.stringContaining('Table'), separatorBefore: true });
+      // Items other lanes contribute keep their places; the new one is the only addition.
+      expect(after.map((item) => item.id).filter((id) => id !== 'sheet.dedupe')).toEqual(before);
+      expect(after.find((item) => item.id === 'sheet.dedupe')).toMatchObject({
+        label: expect.stringContaining('Table'),
+        separatorBefore: true,
+      });
     } finally {
       take();
     }
