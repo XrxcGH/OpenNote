@@ -1,7 +1,16 @@
 // Reading the operands of a rule: constants, formulas relative to the rule's anchor cell, list items, and the
 // numbers, dates, and times that typed text means. A formula runs in the engine on a scratch copy of the table that
 // holds one extra column, so it sees the same cells, names, and functions as every formula of the table.
-import { EN_US, checkFormulaInput, formatValue, makeCell, parseDate, parseIsoDate, parseLocaleNumber, recalculate } from '../../engine';
+import {
+  EN_US,
+  checkFormulaInput,
+  formatValue,
+  makeCell,
+  parseDate,
+  parseIsoDate,
+  parseLocaleNumber,
+  recalculate,
+} from '../../engine';
 import type { Cell, Column, Value } from '../../engine';
 import { isError } from '../../engine';
 import { shiftFormula } from '../../smart/fill';

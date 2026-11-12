@@ -7,7 +7,18 @@ import { gridOf, validationAt } from '../model';
 import type { Box, JsonObject, TableLike } from '../model';
 import { evalMany } from './batch';
 import type { Job } from './batch';
-import { RANGE, evalFormula, keyOf, listItems, operand, readText, recall, sameValue, scalarText, shiftedOf } from './operands';
+import {
+  RANGE,
+  evalFormula,
+  keyOf,
+  listItems,
+  operand,
+  readText,
+  recall,
+  sameValue,
+  scalarText,
+  shiftedOf,
+} from './operands';
 import type { Kind } from './operands';
 import type { Alert, At, Context, Reason, Verdict } from './types';
 

@@ -1,6 +1,15 @@
 // The dialog's working copy of a rule: plain strings and booleans a form edits, turned into a rule (or the problems
 // that stop it) when the person saves. A rule keeps only what differs from the defaults, so files stay small.
-import { EN_US, STORED, convertFormula, daysToIso, parseDate, parseIsoDate, parseLocaleNumber, syntaxOf } from '../../engine';
+import {
+  EN_US,
+  STORED,
+  convertFormula,
+  daysToIso,
+  parseDate,
+  parseIsoDate,
+  parseLocaleNumber,
+  syntaxOf,
+} from '../../engine';
 import type { Locale } from '../../engine';
 import type { JsonObject } from '../../sheet/model';
 import { parseTime } from '../../sheet/validation/operands';
@@ -66,7 +75,7 @@ function shownText(text: string, locale: Locale, formula = false): string {
     const out = convertFormula(text.replace(/^=/, ''), STORED, syntaxOf(locale));
     return typeof out === 'string' ? `${text.startsWith('=') ? '=' : ''}${out}` : text;
   }
-  return /^-?\d+(\.\d+)?%?$/.test(text) ? text.replace(".", locale.decimal) : text;
+  return /^-?\d+(\.\d+)?%?$/.test(text) ? text.replace('.', locale.decimal) : text;
 }
 
 /** What a person typed in a rule's field, in their region, as the stored form; null when it can't be read. */
@@ -150,7 +159,8 @@ export function ruleOf(
     rule.a = a ?? d.a.trim();
     if (a === null || (two && b === null)) problems.push('operand');
     if (two) rule.b = b ?? d.b.trim();
-    if (two && a !== null && b !== null && NUMBER.test(a) && NUMBER.test(b) && Number(a) > Number(b)) problems.push('order');
+    if (two && a !== null && b !== null && NUMBER.test(a) && NUMBER.test(b) && Number(a) > Number(b))
+      problems.push('order');
   } else if (d.kind === 'custom') {
     const typed = d.a.trim();
     const out = convertFormula(typed.replace(/^=/, ''), syntaxOf(locale), STORED);
