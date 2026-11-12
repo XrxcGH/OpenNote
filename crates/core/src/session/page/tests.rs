@@ -182,6 +182,39 @@ fn a_failed_save_backs_off_and_a_read_only_file_stops_saving() {
     assert!(!handle.has_unsaved());
 }
 
+/// N1-N03-4: the person clears the file's read-only attribute outside the app and presses Retry. The save looks at
+/// the file again, instead of failing on what it found the first time, and later edits are taken and saved.
+#[test]
+fn saving_now_after_the_read_only_attribute_is_cleared_saves_the_page() {
+    let s = setup();
+    let c = client("main-1");
+    let handle = s.notebook.open_page(s.page, c.clone()).unwrap();
+    let dir = s.notebook.inner.tree().store.page_dir(s.page).unwrap();
+    let json = NotebookLayout::page_json(&dir);
+    s.kit.fs.inner.set_read_only(&json, true);
+    s.kit.backend.fail_saves(Some(FsErrorKind::ReadOnlyFile));
+    handle
+        .commit_for_tests(&retitle(s.kit.clock.as_ref(), &c, "Photosynthesis", "A"))
+        .unwrap();
+    s.kit.advance(secs(1));
+    assert_eq!(handle.read_only(), Some(ReadOnlyReason::ReadOnlyFile));
+    // Saving now fails again while the file is still read-only. The page stays read-only.
+    assert!(handle.save_now().is_err());
+    assert_eq!(handle.read_only(), Some(ReadOnlyReason::ReadOnlyFile));
+    s.kit.fs.inner.set_read_only(&json, false);
+    s.kit.backend.fail_saves(None);
+    handle.save_now().unwrap();
+    assert_eq!(handle.read_only(), None);
+    assert!(!handle.has_unsaved());
+    assert_eq!(on_disk(&s).title, "A");
+    handle
+        .commit_for_tests(&retitle(s.kit.clock.as_ref(), &c, "A", "B"))
+        .unwrap();
+    s.kit.advance(secs(1));
+    assert!(!handle.has_unsaved());
+    assert_eq!(on_disk(&s).title, "B");
+}
+
 #[test]
 fn strokes_become_a_segment_and_survive_a_reopen() {
     let s = setup();
