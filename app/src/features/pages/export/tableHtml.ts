@@ -1,13 +1,15 @@
 // A table block as HTML, with what the sheet adds: cached formula results, fills, borders, alignment, padding,
 // fonts, and merged cells (format spec 6.3, ADR 0067). Without `data.sheet` the table is the plain one it always was.
-// The Markdown export reads the same view, so both agree on what a cell shows.
+// The Markdown export reads the same view, so both agree on what a cell shows. The sheet reader belongs to the
+// tables feature, which loads on demand (tableSheet.ts).
 
-import { MAX_HEIGHT, MIN_HEIGHT, renderNumberFormat, sheetModel } from '../../tables';
+import type { SheetBox, SheetCellStyle, SheetTableLike } from '../../tables';
 import { isObject, own as ownKey } from '../layout/json';
 import type { JsonObject } from '../layout/json';
 import { resolveColor } from '../../../ui/color/parse';
 import { escapeAttr, escapeHtml, parseInline, renderInlineHtml, voidEnd, type HtmlOptions } from './markdown';
 import type { TableBlock } from './source';
+import { tableSheet, type TableSheet } from './tableSheet';
 
 /** The object under a key, or undefined. */
 const sub = (o: JsonObject | undefined, key: string): JsonObject | undefined => {
@@ -26,33 +28,37 @@ export interface CellView {
 }
 
 export interface TableView {
-  readonly like: sheetModel.TableLike;
+  readonly like: SheetTableLike;
   readonly sheet: Record<string, unknown> | undefined;
   /** True when formula cells had to keep their text because the cached results are stale. */
   stale: boolean;
   /** The merge whose top-left cell is at this row and column, as `row:col`. */
-  readonly anchors: ReadonlyMap<string, sheetModel.Box>;
+  readonly anchors: ReadonlyMap<string, SheetBox>;
   /** The cells a merge covers, other than its anchor, as `row:col`. */
   readonly covered: ReadonlySet<string>;
   cell(row: number, col: number): CellView;
-  style(row: number, col: number): sheetModel.CellStyle | null;
+  style(row: number, col: number): SheetCellStyle | null;
   /** The row height in page units, when the sheet sets one. */
   height(row: number): number | null;
 }
 
-function resultText(value: unknown, fmt?: string): string | null {
-  const v = sheetModel.cachedValue(value as never);
+function resultText(kit: TableSheet, value: unknown, fmt?: string): string | null {
+  const v = kit.sheetModel.cachedValue(value as never);
   if (v === undefined || v === null) return v === null ? '' : null;
   if (typeof v === 'boolean') return v ? 'TRUE' : 'FALSE';
   if (typeof v === 'object') return v.e;
   // A number shows the way its cell's number format writes it, so 0.25 under `0%` is 25%.
-  if (typeof v === 'number' && fmt !== undefined && fmt !== '') return renderNumberFormat(v, fmt);
+  if (typeof v === 'number' && fmt !== undefined && fmt !== '') return kit.renderNumberFormat(v, fmt);
   return String(v);
 }
 
-/** Reads the sheet of a table block once: cached results, merges, and the resolver of cell styles. */
+/**
+ * Reads the sheet of a table block once: cached results, merges, and the resolver of cell styles. While the sheet
+ * reader has not loaded, the view is the plain table.
+ */
 export function tableView(block: TableBlock): TableView {
-  const like: sheetModel.TableLike = {
+  const kit = block.sheet === undefined ? null : tableSheet();
+  const like: SheetTableLike = {
     header: block.header,
     columns: block.columns,
     rows: block.rows.map((r) => ({
@@ -62,11 +68,11 @@ export function tableView(block: TableBlock): TableView {
     smart: block.smart,
     sheet: block.sheet,
   };
-  const sheet = block.sheet;
-  const anchors = new Map<string, sheetModel.Box>();
+  const sheet = kit ? block.sheet : undefined;
+  const anchors = new Map<string, SheetBox>();
   const covered = new Set<string>();
   const values = sub(sheet, 'values');
-  const fresh = sheet !== undefined && ownKey(sheet, 'valuesOf') === sheetModel.fingerprint(like);
+  const fresh = kit !== null && sheet !== undefined && ownKey(sheet, 'valuesOf') === kit.sheetModel.fingerprint(like);
   const view: TableView = {
     like,
     sheet,
@@ -78,34 +84,35 @@ export function tableView(block: TableBlock): TableView {
       const c = like.columns[col];
       const markdown = r && c ? (Object.hasOwn(r.cells, c.id) ? r.cells[c.id].markdown : '') : '';
       const stored = r && c ? ownKey(sub(values, r.id), c.id) : undefined;
-      const formula = sheetModel.readableText(markdown).startsWith('=');
+      if (kit === null || sheet === undefined) return { markdown, result: null };
+      const formula = kit.sheetModel.readableText(markdown).startsWith('=');
       if (formula) {
-        const text = fresh ? resultText(stored === undefined ? null : stored, view.style(row, col)?.fmt) : null;
+        const text = fresh ? resultText(kit, stored === undefined ? null : stored, view.style(row, col)?.fmt) : null;
         if (text !== null) return { markdown: null, result: text };
-        if (!fresh && sheet !== undefined) view.stale = true;
+        if (!fresh) view.stale = true;
       } else if (markdown === '' && fresh && stored !== undefined) {
-        const text = resultText(stored, view.style(row, col)?.fmt);
+        const text = resultText(kit, stored, view.style(row, col)?.fmt);
         if (text !== null) return { markdown: null, result: text };
       }
       return { markdown, result: null };
     },
     style(row, col) {
-      if (!sheet || Object.keys(sheet).length === 0) return null;
+      if (!kit || !sheet || Object.keys(sheet).length === 0) return null;
       const r = like.rows[row];
       const c = like.columns[col];
-      return r && c ? sheetModel.resolve(sheet as never, like, r.id, c.id).style : null;
+      return r && c ? kit.sheetModel.resolve(sheet as never, like, r.id, c.id).style : null;
     },
     height(row) {
       const r = like.rows[row];
       const h = r ? ownKey(sub(sub(sheet, 'rows'), r.id), 'height') : undefined;
       // The same bounds the structure commands keep (MIN_HEIGHT to MAX_HEIGHT).
-      return typeof h === 'number' && Number.isFinite(h) && h > 0
-        ? Math.min(MAX_HEIGHT, Math.max(MIN_HEIGHT, h))
+      return kit && typeof h === 'number' && Number.isFinite(h) && h > 0
+        ? Math.min(kit.MAX_HEIGHT, Math.max(kit.MIN_HEIGHT, h))
         : null;
     },
   };
-  if (sheet) {
-    for (const { box } of sheetModel.activeMerges(sheet as never, like)) {
+  if (kit && sheet) {
+    for (const { box } of kit.sheetModel.activeMerges(sheet as never, like)) {
       anchors.set(`${box.top}:${box.left}`, box);
       for (let r = box.top; r <= box.bottom; r++) {
         for (let c = box.left; c <= box.right; c++) if (r !== box.top || c !== box.left) covered.add(`${r}:${c}`);
@@ -138,7 +145,7 @@ function color(value: string | undefined): string | null {
 }
 
 /** The CSS of one cell's resolved style, leaving out what the defaults of R-SHT-8 already give. */
-export function cellCss(style: sheetModel.CellStyle): string {
+export function cellCss(style: SheetCellStyle): string {
   const css: string[] = [];
   const font = style.font ?? {};
   if (font.family && !font.family.startsWith('+') && !font.family.startsWith('theme:')) {

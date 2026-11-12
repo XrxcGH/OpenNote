@@ -1,10 +1,14 @@
 // checks-disable-file brand-consistency: the test data holds color values to check how they are written
 // Tests for the table export in Markdown. Expected values are written by hand from GFM tables and the format spec
 // (R-SHT-12 for merges, R-SHT-17 for cached results), not taken from the code's output.
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { sheetModel } from '../../tables';
 import { readExportPage, type ExportPage } from './source';
 import { exportMarkdown } from './toMarkdown';
+import { loadTableSheet } from './tableSheet';
+
+// The sheet reader loads on demand; the export paths load it before they write (tableSheet.ts).
+beforeAll(loadTableSheet);
 
 const cell = (markdown: string) => ({ markdown });
 

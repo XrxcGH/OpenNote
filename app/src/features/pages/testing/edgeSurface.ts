@@ -29,7 +29,7 @@ const DRAWERS: Readonly<Record<string, string>> = {
   '../../tables': fileURLToPath(new URL('../../tables/smart/exportCharts.ts', import.meta.url)),
 };
 
-/** The table export reads the sheet model through the tables index too, so it gets the light module instead. */
+/** The table export loads the sheet reader through the tables index too, so it gets the light module instead. */
 const TABLE_VIEW: Readonly<Record<string, string>> = {
   '../../tables': fileURLToPath(new URL('../../tables/exportView.ts', import.meta.url)),
 };
@@ -46,7 +46,7 @@ export function printBundle(): Promise<string> {
         resolveId(source, importer) {
           if (importer === undefined) return undefined;
           if (importer.endsWith('export/renderers.ts')) return DRAWERS[source];
-          return importer.endsWith('export/tableHtml.ts') ? TABLE_VIEW[source] : undefined;
+          return importer.endsWith('export/tableSheet.ts') ? TABLE_VIEW[source] : undefined;
         },
       },
     ],

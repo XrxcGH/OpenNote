@@ -1,11 +1,15 @@
 // checks-disable-file brand-consistency: the test data holds color values to check how they are written
 // Tests for the table export: formula results, merges, and cell looks in HTML. Expected values are worked out by
 // hand from the format spec (R-SHT-5, R-SHT-12, R-SHT-17, R-SHT-18) and from HTML and CSS, not from the code's output.
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { sheetModel } from '../../tables';
 import { readExportPage, type ExportPage } from './source';
 import { cellCss } from './tableHtml';
 import { exportHtml } from './toHtml';
+import { loadTableSheet } from './tableSheet';
+
+// The sheet reader loads on demand; the export paths load it before they write (tableSheet.ts).
+beforeAll(loadTableSheet);
 
 const cols = ['k1', 'k2', 'k3'];
 const cell = (markdown: string) => ({ markdown });

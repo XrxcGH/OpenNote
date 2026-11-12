@@ -10,6 +10,7 @@ import {
   dataUri,
   exportHtml,
   exportMarkdown,
+  loadTableSheetFor,
   readStyles,
   hasInk,
   inkExtent,
@@ -223,6 +224,7 @@ export async function exportMarkdownFile(
   const suggested = exportFileName(source.title || t('pageViews.print.untitled'), 'md');
   const path = await client.pickSave({ suggested, label: t('pageViews.files.markdownLabel'), extension: 'md' });
   if (path === null) return { status: 'canceled' };
+  await loadTableSheetFor(source.page);
   const folder = `${stemOf(path)}_files`;
   const ink = hasInk(source.page) ? pageInkSvg(source) : null;
   const stale = new Set<string>();
@@ -251,6 +253,7 @@ export async function exportHtmlFile(client: ExportsClient, source: PageSource):
   const suggested = exportFileName(source.title || t('pageViews.print.untitled'), 'html');
   const path = await client.pickSave({ suggested, label: t('pageViews.files.htmlLabel'), extension: 'html' });
   if (path === null) return { status: 'canceled' };
+  await loadTableSheetFor(source.page);
   const uris = new Map<string, string>();
   await Promise.all(
     Object.values(source.page.assets).map(async (asset) => {

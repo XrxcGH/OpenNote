@@ -10,6 +10,7 @@ export const loadCellFormatBar = () => import('./ui/toolbar/CellFormatBar');
 export type { CellFormatBarProps } from './ui/toolbar';
 // What the page's exports read of a table block: the sheet model, the row height limits, and number text.
 export { MAX_HEIGHT, MIN_HEIGHT, renderNumberFormat, sheetModel } from './exportView';
+export type { SheetBox, SheetCellStyle, SheetTableLike } from './exportView';
 // The structure commands and the reference adjustment register themselves with the table commands of the editor.
 import './sheet/structure/hooks';
 export { readSheet, tableName } from './sheet/model';
