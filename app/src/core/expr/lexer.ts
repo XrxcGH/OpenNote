@@ -35,11 +35,11 @@ export interface LexSpec {
   /** The characters that separate arguments, such as "," or ";,". */
   separators: string;
   /**
-   * What a name looks like. 'ascii' is a letter or a low line, then letters, digits, or low lines. 'cell' also
-   * allows "$", for references such as $A$1. 'letters' is a run of any letters plus trailing digits. The parser
-   * splits that run into known names, so "pix" can mean pi times x.
+   * What a name looks like. The 'ascii' form is a letter or a low line, then letters, digits, or low lines.
+   * The 'cell' form also allows "$", as in $A$1. The 'dotted' form also allows dots between parts, as Excel function
+   * names have. The 'letters' form is a run of any letters plus trailing digits, which the parser splits into names.
    */
-  names: 'ascii' | 'cell' | 'letters';
+  names: 'ascii' | 'cell' | 'dotted' | 'letters';
   /** Every operator the dialect reads, in plain form. Multi-character ones such as "<=" are matched first. */
   operators: readonly string[];
   /** Other spellings of operators, such as the multiplication sign for "*". */
@@ -62,6 +62,8 @@ export interface LexSpec {
    * "]]" stays an escaped "]", as in [Unit price [EUR]]].
    */
   nestedBrackets?: boolean;
+  /** Error values such as #REF! and #N/A, read as a name that starts with "#". */
+  errorLiterals?: boolean;
   /**
    * A mark that groups digits in threes, as in 1,200. Only a mark followed by exactly three digits counts, so a
    * dialect that also separates arguments with this mark reads max(1,200) as one number. Give such a dialect a
@@ -77,9 +79,12 @@ const SUPERSCRIPT_MINUS = '⁻';
 const NAME_PATTERNS = {
   ascii: /[A-Za-z_][A-Za-z0-9_]*/y,
   cell: /[A-Za-z_$][A-Za-z0-9_$]*/y,
+  // Excel's function names have dots inside: CEILING.MATH, STDEV.S, NORM.S.DIST.
+  dotted: /[A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z][A-Za-z0-9_]*)*/y,
   letters: /\p{L}+\d*/uy,
 } as const;
 const WHITESPACE = /\s/;
+const ERROR_LITERAL = /^#(?:NULL!|DIV\/0!|VALUE!|REF!|NAME\?|NUM!|N\/A|SPILL!|CALC!|FIELD!|BUSY!)/i;
 
 const escape = (mark: string): string => (/[.\\^$*+?()|[\]{}]/.test(mark) ? `\\${mark}` : mark);
 
@@ -215,7 +220,7 @@ class Lexer {
   private startsName(code: number): boolean {
     const letter = (code >= 65 && code <= 90) || (code >= 97 && code <= 122) || code === 95;
     if (letter) return true;
-    if (this.plan.names === 'cell') return code === 36;
+    if (this.plan.names === 'cell' || this.plan.names === 'dotted') return code === 36;
     return this.plan.names === 'letters' && code > 127;
   }
 
@@ -237,6 +242,11 @@ class Lexer {
     if (word !== undefined) return this.push(token('name', word, this.at, this.at + 1));
     if (this.spec.superscripts && (SUPERSCRIPT_DIGITS.includes(char) || char === SUPERSCRIPT_MINUS)) {
       return this.readSuperscript();
+    }
+    if (char === '#' && this.spec.errorLiterals === true) {
+      const literal = ERROR_LITERAL.exec(source.slice(this.at, this.at + 8));
+      if (literal !== null)
+        return this.push(token('name', literal[0].toUpperCase(), this.at, this.at + literal[0].length));
     }
     const operator = this.operatorAt(char);
     if (operator !== null) return this.push(operator);

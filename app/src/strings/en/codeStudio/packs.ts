@@ -1,4 +1,47 @@
-// Runtime packs: downloads, sizes, and removal.
+// Runtime packs: downloads, sizes, and removal (ADR 0070).
 // Owner: code:L18 (B11). shared:x-shared registered it in the string index, and the owner fills it in.
 
-export const codeStudioPacks = {} as const;
+export const codeStudioPacks = {
+  heading: 'Code',
+  help: 'Full Python, C and C++, and Ruby run inside OpenNote after a one-time download. Code models are listed here too.',
+  packagesHelp: 'Python packages you downloaded for full Python.',
+  downloadsLink: 'Code downloads',
+  desktopOnly: 'Code downloads work in the desktop app.',
+  license: 'License: {license}',
+  sizeOf: '{size}',
+  state: {
+    absent: 'Not downloaded.',
+    partial: 'Paused at {done} of {size}.',
+    downloading: 'Downloading: {done} of {size}.',
+    ready: 'Downloaded. Works offline.',
+    failed: 'The download failed. {reason}',
+    blocked: '{reason}',
+  },
+  download: 'Download',
+  downloadNamed: 'Download {name}, {size}',
+  resume: 'Resume',
+  resumeNamed: 'Resume {name}',
+  cancel: 'Cancel',
+  cancelNamed: 'Cancel the download of {name}',
+  remove: 'Remove',
+  removeNamed: 'Remove {name}',
+  confirmTitle: 'Download {name}?',
+  confirmBody: 'This downloads {size} once. After that it works offline.',
+  confirmLicense: 'License: {license}.',
+  confirmYes: 'Download',
+  confirmNo: 'Not now',
+  removeTitle: 'Remove {name}?',
+  removeBody: 'Programs that need it won’t run until you download it again.',
+  removeYes: 'Remove',
+  removing: 'Stopping the download, then removing it.',
+  errors: {
+    offline: 'Work offline is on. Turn it off to download this pack.',
+    safeMode: 'Safe mode is on. Restart OpenNote normally to download this pack.',
+    network: 'The connection stopped. Press Resume to go on from where it stopped.',
+    checksum: 'The file that arrived wasn’t the expected one, so it was deleted. Try again later.',
+    io: 'The file couldn’t be saved. Check that the drive has room.',
+    stopping: 'The download is still stopping. Try again in a moment.',
+    invalid: 'There is no pack with that name.',
+    unknown: 'Something went wrong. Try again.',
+  },
+} as const;

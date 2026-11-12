@@ -111,6 +111,7 @@ export const money = {
   },
   loan: {
     invalid: 'The amount, the payments per year, and the years must be positive.',
+    tooLong: 'That loan has too many payments. Use at most {max} in all.',
     headline: 'Payment each period: {pay}',
     formula: 'Payment = P × i / (1 − (1 + i)^−n) with i = {rate} and n = {n}: {pay}',
     interest: 'Total interest: {interest}; total paid with the principal: {total}',

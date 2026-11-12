@@ -56,7 +56,8 @@ export function sheetDialect(syntax: SheetSyntax): Dialect {
         decimal: syntax.decimal,
         // A semicolon always separates arguments, and so does the comma when it is not the decimal mark.
         separators: syntax.separator === ';' ? ';' : ';,',
-        names: 'cell',
+        // Dotted names read in both rule sets: a dot after a name was a lex error before, so no old formula changes.
+        names: 'dotted',
         operators: excel ? EXCEL_OPERATORS : OPERATORS,
         aliases: ALIASES,
         superscripts: false,
@@ -64,7 +65,7 @@ export function sheetDialect(syntax: SheetSyntax): Dialect {
         strings: true,
         brackets: true,
         colon: true,
-        ...(excel ? { quotedNames: true, nestedBrackets: true } : {}),
+        ...(excel ? { quotedNames: true, nestedBrackets: true, errorLiterals: true } : {}),
       },
       infix: setOf('+', '-', '*', '/', '^', '&', '=', '<>', '<', '>', '<=', '>='),
       prefix: excel ? setOf('-', '+', '√', '@') : setOf('-', '+', '√'),

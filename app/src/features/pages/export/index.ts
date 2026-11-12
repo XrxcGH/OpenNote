@@ -34,6 +34,7 @@ export type { TapeBox, TapeLabels } from './tape';
 export { documentCss, lightTheme, readStyles } from './style';
 export type { DocTheme, NotebookStyles, StyleSpec } from './style';
 export { dataUri, exportHtml } from './toHtml';
+export type { FontFile, FontSource } from './fonts';
 export type { HtmlExport, HtmlExportOptions } from './toHtml';
 export { HANDWRITING_LINE, NEWER_VERSION_LINE, bodyParts, exportMarkdown, hasInk, tableCell } from './toMarkdown';
 export type { BodyPart, MarkdownExport, MarkdownOptions } from './toMarkdown';

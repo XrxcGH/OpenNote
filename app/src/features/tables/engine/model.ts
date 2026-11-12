@@ -2,6 +2,7 @@
 // Tables are immutable values. Every edit in edit.ts returns a new table and shares the rows it didn't change.
 
 import { parseDate } from './dates';
+import type { FilterCondition } from './filter';
 import { parseLocaleNumber, type Locale } from './locale';
 import { round15, type Value } from './values';
 import { columnFromLetters, lettersFromColumn } from '../../../core/expr';
@@ -42,6 +43,13 @@ export interface Cell {
   value: Value;
   /** The formula in stored form when this single cell was entered as "=...". */
   formula?: string;
+  /** Set when the value comes from a formula in another cell that spills over this one (ADR 0059). */
+  spill?: true;
+  /**
+   * A legacy array formula entered over a block, as older workbooks store it: the formula's result fills this many
+   * rows and columns from this cell, with #N/A where the result is smaller.
+   */
+  array?: { readonly rows: number; readonly cols: number };
 }
 
 export interface Row {
@@ -57,6 +65,52 @@ export interface Table {
    * before them, and its formulas keep their old meaning (formula/legacy.ts).
    */
   sheetVersion?: number;
+  /** The table's name for references from other tables, such as Sales[Amount]. Unset means Table1, Table2, ... */
+  name?: string;
+  /** Defined names (ADR 0062): table scope unless `scope` is 'page'. */
+  names?: readonly TableName[];
+  /** 'manual' recalculates only on request (F9), as Excel's manual calculation does. Default 'auto'. */
+  calc?: 'auto' | 'manual';
+  /** Iterative calculation for circular formulas. Unset means off: a cycle shows Circular. */
+  iterate?: IterateSettings;
+  /** The ids of rows the person hid by hand. SUBTOTAL 101 to 111 and AGGREGATE skip them (formula/fn/mathAgg.ts). */
+  hidden?: readonly string[];
+  /** The filter on the table. Rows that fail it count as filtered out for SUBTOTAL and AGGREGATE. */
+  filter?: readonly FilterCondition[];
+}
+
+/** A defined name: a formula text (a range, a constant, a formula, or a function made by LAMBDA) and its scope. */
+export interface TableName {
+  readonly name: string;
+  /** The formula in stored form, without "=". */
+  readonly ref: string;
+  /** 'table' (the default) is visible in its own table; 'page' in every table of the page. */
+  readonly scope?: 'table' | 'page';
+}
+
+/** How circular formulas iterate: at most `max` passes, until no value changes by more than `change`. */
+export interface IterateSettings {
+  readonly max: number;
+  readonly change: number;
+}
+
+/** Excel's defaults for iterative calculation. */
+export const ITERATE_DEFAULTS: IterateSettings = Object.freeze({ max: 100, change: 0.001 });
+
+/** Excel's documented upper limit on iteration passes. */
+export const ITERATE_MAX_PASSES = 32_767;
+
+/** Settings safe to run: passes a whole number from 1 to 32,767, and a change that is finite and not negative. */
+export function iterateLimits(settings: IterateSettings): IterateSettings {
+  const max = Number.isFinite(settings.max)
+    ? Math.min(ITERATE_MAX_PASSES, Math.max(1, Math.floor(settings.max)))
+    : Number.isNaN(settings.max)
+      ? ITERATE_DEFAULTS.max
+      : settings.max > 0
+        ? ITERATE_MAX_PASSES
+        : 1;
+  const change = Number.isFinite(settings.change) && settings.change >= 0 ? settings.change : ITERATE_DEFAULTS.change;
+  return { max, change };
 }
 
 export const EMPTY_CELL: Cell = Object.freeze({ raw: '', value: null });

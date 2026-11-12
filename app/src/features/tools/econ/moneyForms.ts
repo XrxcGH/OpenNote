@@ -22,6 +22,7 @@ import {
   property,
   rateFor,
   schedule,
+  MAX_LOAN_PAYMENTS,
   sinkingDeposit,
 } from './money';
 import type { Convention, Method } from './money';
@@ -151,6 +152,7 @@ const loan: EconForm = {
     const [amount, apr, years, perYear, extra] = nums;
     const count = Math.round(years * perYear);
     if (!(amount > 0) || !(perYear >= 1) || count < 1) return bad('money.loan.invalid');
+    if (count > MAX_LOAN_PAYMENTS) return bad('money.loan.tooLong', { max: MAX_LOAN_PAYMENTS.toLocaleString('en-US') });
     const rate = apr / 100 / perYear;
     const pay = loanPayment(amount, rate, count);
     const plan = schedule(amount, rate, count, Math.max(0, extra));
@@ -169,7 +171,7 @@ const loan: EconForm = {
       );
     }
     const first = plan.rows[0];
-    steps.push(tx('money.loan.first', { interest: m(first.interest), principal: m(first.principal) }));
+    if (first) steps.push(tx('money.loan.first', { interest: m(first.interest), principal: m(first.principal) }));
     return ok(tx('money.loan.headline', { pay: m(pay) }), steps);
   },
 };

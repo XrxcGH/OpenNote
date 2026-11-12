@@ -1,4 +1,102 @@
 // Code projects: their files, export, and import.
 // Owner: code:L02 (B11). shared:x-shared registered it in the string index, and the owner fills it in.
 
-export const codeStudioProject = {} as const;
+export const codeStudioProject = {
+  block: 'Code project',
+  insert: 'Insert code project',
+  insertKeywords: 'code project program files studio python javascript run test',
+  inserted: 'Code project inserted.',
+  starterName: 'Untitled project',
+  starterMain: 'print("Hello from OpenNote")\n',
+  /** The card on the page. */
+  card: {
+    files: '{count, plural, one {# file} other {# files}}',
+    tests: '{count, plural, one {# test} other {# tests}}',
+    run: 'Run',
+    open: 'Open in Code studio',
+    exportZip: 'Export as .zip',
+    importFiles: 'Import files',
+    importLabel: 'Choose files or a .zip to import into the project',
+    newer: 'This code project needs a newer version of OpenNote. It is shown read-only.',
+    readOnly: 'Read-only',
+  },
+  /** Why a change was refused. Each says what to do instead. */
+  refusal: {
+    readOnly: 'This project is read-only.',
+    noFile: 'That file is not in the project.',
+    tooManyFiles: 'A project holds at most {max} files. Delete a file first.',
+    fileTooBig: '{path} is larger than {max}. Split it into smaller files.',
+    projectTooBig: 'A project holds at most {max} of text. Remove some files first.',
+    tooManyTests: 'A project holds at most {max} tests. Delete a test first.',
+    lastFile: 'A project needs at least one file.',
+    reservedName: '{path} is kept for the export files. Choose another name.',
+    path: {
+      empty: 'Type a file name.',
+      tooLong: 'A path holds at most {max} characters.',
+      absolute: 'A path cannot start with a slash.',
+      backslash: 'Use / between folders, not \\.',
+      colon: 'A path cannot hold a colon.',
+      control: 'A path cannot hold control characters.',
+      reservedChar: 'A path cannot hold < > " | ? or *.',
+      notNfc: 'The path is not in Unicode normal form C.',
+      emptySegment: 'A path cannot hold an empty folder name.',
+      dotSegment: 'A path cannot hold . or .. as a folder name.',
+      trailingDotOrSpace: 'A file or folder name cannot end with a dot or a space.',
+      reserved: '{name} is a reserved name on Windows. Choose another name.',
+      duplicate: 'Another file already has this path (letter case does not count).',
+      folderClash: 'A file and a folder cannot share a path.',
+    },
+  },
+  /** Import and export results. */
+  exchange: {
+    imported: '{count, plural, one {Imported # file.} other {Imported # files.}}',
+    skipped: '{count, plural, one {Skipped # file:} other {Skipped # files:}} {list}.',
+    skipBinary: '{path} (not UTF-8 text)',
+    skipPath: '{path} (path not allowed)',
+    skipTooBig: '{path} (larger than 1 MiB)',
+    skipTest: '{path} (not a test case OpenNote can read)',
+    skipMore: '{count, plural, one {and # more} other {and # more}}',
+    exported: 'Exported {name}.',
+    exportFailed: 'The project could not be exported.',
+    importFailed: 'The files could not be imported.',
+    notZip: 'The file is not a .zip archive OpenNote can read.',
+    zipTooBig: 'The .zip holds more files or more text than a project can hold.',
+    zipLabel: 'Code project archive',
+    fileLabel: 'Project file',
+    readmeTitle: '# {name}',
+    readmeLanguage: 'Language: {language}.',
+    readmeMain: 'Main file: {path}.',
+    readmeRun:
+      'To run it in the Code studio, insert a code project in OpenNote and import these files. ' +
+      'Or run the main file with your own tools.',
+    readmeFiles: 'opennote-project.json keeps the settings, and opennote-tests.json keeps the test cases.',
+  },
+  /** The page fallback: what search, exports, and older versions show. */
+  fallback: {
+    summary: '({language}, {count, plural, one {# file} other {# files}})',
+    more: '{count, plural, one {…and # more line} other {…and # more lines}}',
+  },
+  /** Language names, which the card and the fallback show. */
+  languages: {
+    python: 'Python',
+    javascript: 'JavaScript',
+    typescript: 'TypeScript',
+    sql: 'SQL',
+    lua: 'Lua',
+    c: 'C',
+    cpp: 'C++',
+    ruby: 'Ruby',
+    r: 'R',
+    java: 'Java',
+    kotlin: 'Kotlin',
+    csharp: 'C#',
+    go: 'Go',
+    rust: 'Rust',
+    swift: 'Swift',
+    dart: 'Dart',
+    bash: 'Bash',
+    powershell: 'PowerShell',
+    php: 'PHP',
+    julia: 'Julia',
+  },
+} as const;

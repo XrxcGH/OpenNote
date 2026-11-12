@@ -16,9 +16,16 @@ import {
   TITLE_BAR,
   type Category,
 } from './featureMaps.ts';
-import { COMMAND_TEXT, SETTINGS_TEXT, SETUP_TEXT } from './featureCommands.ts';
+import { CODE_COMMAND_TEXT } from './featureCodeCommands.ts';
+import { TABLE_STRUCTURE_COMMAND_TEXT } from './featureTableStructureCommands.ts';
+import { COMMAND_TEXT as BASE_COMMAND_TEXT, SETTINGS_TEXT, SETUP_TEXT } from './featureCommands.ts';
 import { entryName, entryText, firstSentence, rowName, sectionsOf, type Section } from './featureRows.ts';
 import { TOOL_ENTRIES } from './featureTools.ts';
+const COMMAND_TEXT: Readonly<Record<string, string>> = {
+  ...BASE_COMMAND_TEXT,
+  ...CODE_COMMAND_TEXT,
+  ...TABLE_STRUCTURE_COMMAND_TEXT,
+};
 
 export { CATEGORIES, SCREEN_CATEGORIES, TITLE_BAR } from './featureMaps.ts';
 export { sectionsOf } from './featureRows.ts';
