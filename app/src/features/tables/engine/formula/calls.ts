@@ -252,6 +252,8 @@ function plain(h: Host, spec: FnSpec2, node: Call): Fn {
   const returnsRef = spec.returnsRef === true;
   if (returnsRef) h.dynamic = true;
   const parts: Fn[] = node.args.map((arg, i) => {
+    // An argument left empty takes the parameter's default, or empty when it has none.
+    if (arg.type === 'name' && arg.name === '') return constant(params[i]?.default ?? null);
     const kind = params[i]?.kind ?? 'value';
     if (kind === 'ref') {
       const ref = h.refOrNull(arg);

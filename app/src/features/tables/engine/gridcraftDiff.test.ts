@@ -9,6 +9,7 @@ import { spawnSync } from 'node:child_process';
 import { describe, expect, it } from 'vitest';
 import { findTool } from '../../../../../tests/crosscheck/tools';
 import { createTable, setColumnFormula } from './edit';
+import { functions as ARRAY_FUNCTIONS } from './formula/fn/arrays';
 import { REGISTRY } from './formula/fn';
 import { FUNCTIONS } from './formula/functions';
 import { EN_US } from './locale';
@@ -148,6 +149,8 @@ const OWN_FIXTURES = new Set([
   ...['ISDATE', 'ISEMAIL', 'ISERR', 'ISERROR', 'ISEVEN', 'ISFORMULA', 'ISLOGICAL', 'ISNA', 'ISNONTEXT', 'ISNUMBER'],
   ...['ISODD', 'ISREF', 'ISTEXT', 'ISURL', 'N', 'NA', 'SHEET', 'SHEETS', 'TYPE'],
 ]);
+/** Functions that give arrays, which the tool's eval cannot print: fn/arrays.test.ts checks them by hand. */
+const ARRAY_RESULTS = new Set(ARRAY_FUNCTIONS.map((spec) => spec.name));
 
 const DATE_RESULTS = new Set(['DATE']);
 
@@ -190,7 +193,11 @@ describe('the formula function set', () => {
     const covered = new Set(Object.keys(CASES));
     const missing = Object.keys(FUNCTIONS).filter(
       (name) =>
-        !covered.has(name) && !NOT_COMPARABLE.has(name) && !HAND_WORKED.has(name) && !OWN_FIXTURES.has(name),
+        !covered.has(name) &&
+        !NOT_COMPARABLE.has(name) &&
+        !HAND_WORKED.has(name) &&
+        !OWN_FIXTURES.has(name) &&
+        !ARRAY_RESULTS.has(name),
     );
     expect(missing, 'add cases for these functions to CASES').toEqual([]);
   });
