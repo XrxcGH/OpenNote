@@ -212,7 +212,7 @@
   }
 
   .split > .caret {
-    min-inline-size: 22px;
+    min-inline-size: var(--size-target-min);
     padding-inline: var(--space-1);
     border-start-start-radius: 0;
     border-end-start-radius: 0;
@@ -248,6 +248,15 @@
 
   .sizeBox {
     inline-size: 60px;
+  }
+
+  /* The font and size fields fill their box, so a wide field never runs over its neighbor. */
+  .fontBox > :first-child,
+  .sizeBox > :first-child,
+  .fontBox input,
+  .sizeBox input {
+    inline-size: 100%;
+    min-inline-size: 0;
   }
 
   .gallery {
