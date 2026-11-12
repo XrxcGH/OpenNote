@@ -7,7 +7,7 @@ import type { Table } from '../model';
 import { err } from '../values';
 import { cellCount, createRecalcClient, WORKER_CELLS, BUSY_MS, type WorkerLike } from './client';
 import type { RecalcReply, RecalcRequest } from './protocol';
-import { applyChanges, respond } from './run';
+import { applyChanges, respond, respondWhenReady } from './run';
 
 class SlowWorker implements WorkerLike {
   onmessage: ((event: { data: RecalcReply }) => void) | null = null;
@@ -124,6 +124,16 @@ describe('recalculation worker', () => {
     const [busy] = await client.recalc([page]);
     expect(busy.rows[0].cells[0].value).toEqual(err('BUSY'));
     client.dispose();
+  });
+
+  it('waits in the worker for the lazy statistical chunk instead of answering #BUSY!', async () => {
+    const table = createTable([{ name: 'A', type: 'number' }], [['']], EN_US);
+    const page = {
+      ...table,
+      rows: [{ ...table.rows[0], cells: [{ raw: '=GEOMEAN(2,8)', value: null, formula: 'GEOMEAN(2,8)' }] }],
+    };
+    const reply = await respondWhenReady({ id: 1, tables: [page], today: 0 });
+    expect(reply.changes).toEqual([{ table: 0, row: 0, col: 0, value: 4 }]);
   });
 
   it('turns error copies back into the engine errors', () => {

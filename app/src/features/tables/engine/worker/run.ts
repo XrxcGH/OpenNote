@@ -1,6 +1,7 @@
 // The work the recalculation worker does, as plain functions so tests run them without a worker: recalculate the
 // page and list the cells that changed, and on the page, apply such a list back to the tables.
 
+import { loadStatistics, statisticsLoaded } from '../formula/fn/statsKit';
 import type { Cell, Table } from '../model';
 import { recalculateBook } from '../workbook';
 import { err, isError, type Scalar, type Value } from '../values';
@@ -27,6 +28,25 @@ export function respond(request: RecalcRequest): RecalcReply {
     });
   });
   return { id: request.id, changes };
+}
+
+/**
+ * Answers a request in the worker. A statistical function that runs before its lazy chunk has loaded gives #BUSY! and
+ * starts the load (fn/statsKit.ts). The worker has no page to recalculate later, so it waits for the chunk and answers
+ * again; a failed load keeps the first answer.
+ */
+export async function respondWhenReady(request: RecalcRequest): Promise<RecalcReply> {
+  const loadedBefore = statisticsLoaded();
+  const first = respond(request);
+  if (loadedBefore || !first.changes.some((change) => isError(change.value) && change.value.error === 'BUSY')) {
+    return first;
+  }
+  try {
+    await loadStatistics();
+  } catch {
+    return first;
+  }
+  return respond(request);
 }
 
 /** An error value that crossed the worker boundary as a copy becomes the engine's own again. */
