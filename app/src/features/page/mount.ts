@@ -340,7 +340,7 @@ export function mountPage(container: HTMLElement, page: OpenPage, options: Mount
   keepTextBox(frames, layer, pool, page.readOnly !== null);
   const title = titleBand(viewport.world, { page, sync, layer, pool }, options);
   const compact = options.compact ?? false;
-  const layout = createPageLayout({ page, sync, layer, pool, flow, viewport, compact, reading });
+  const layout = createPageLayout({ page, sync, layer, pool, flow, viewport, title, compact, reading });
   const chrome = createChrome({ container, viewport, layer, pool });
   const keepBelow = createKeepBelow(layer, sync, pool);
   objects = new Objects({
