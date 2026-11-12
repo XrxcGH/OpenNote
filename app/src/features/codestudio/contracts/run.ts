@@ -179,6 +179,11 @@ export interface RuntimeAdapter {
   /** The runtime's version, reported when a run starts, such as `MicroPython 1.27.0`. */
   version?: string;
   load(onProgress: (percent: number) => void): Promise<void>;
+  /**
+   * A step before the program starts, such as a compile (DESIGN 4.1). It runs under the load limit, not the time
+   * limit, and its output reaches the console before `started`. A RunEnd ends the run there; null goes on to `run`.
+   */
+  prepare?(request: RunRequest, emit: Emit, context: RunContext): Promise<RunEnd | null>;
   /** Runs one request and sends everything but `started` and `done`; the worker sends those. */
   run(request: RunRequest, emit: Emit, context: RunContext): Promise<RunEnd>;
   /** Maps the error text of a run to project lines. */

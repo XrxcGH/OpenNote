@@ -2,7 +2,17 @@
 // worker). When the run request comes, it locks itself down (lockdown.ts), runs the program once through the runtime's
 // adapter, and reports. The page ends the worker after that, so no state is kept from one run to the next.
 
-import type { Emit, RunRequest, RuntimeAdapter, RuntimeId, Stream, WorkerMessage } from '../contracts/run';
+import type {
+  Emit,
+  RunContext,
+  RunEnd,
+  RunFile,
+  RunRequest,
+  RuntimeAdapter,
+  RuntimeId,
+  Stream,
+  WorkerMessage,
+} from '../contracts/run';
 import { mapDiagnostics } from './diagnostics';
 import { globalNames, lockDown } from './lockdown';
 import { Mount } from './mount';
@@ -61,6 +71,40 @@ class OutputGate {
   }
 }
 
+/**
+ * The adapter's steps. prepare() (such as a compile) runs before `started`, so the page counts it against the load
+ * limit. run() runs after it, under the time limit.
+ */
+async function steps(
+  adapter: RuntimeAdapter,
+  request: RunRequest,
+  emit: Emit,
+  start: (message: { kind: 'started'; version?: string }) => void,
+  context: (limitMs: number) => RunContext,
+): Promise<RunEnd> {
+  const prepared = adapter.prepare ? await adapter.prepare(request, emit, context(request.limits.loadMs)) : null;
+  if (prepared) return prepared;
+  start({ kind: 'started', ...(adapter.version ? { version: adapter.version } : {}) });
+  return adapter.run(request, emit, context(request.limits.timeMs));
+}
+
+/** The random source a run context hands an adapter. */
+function seededSource(random: ReturnType<typeof seeded>): Pick<RunContext, 'random' | 'randomBytes'> {
+  return { random: random.random, randomBytes: random.fill };
+}
+
+/** The run's last message. */
+function doneMessage(end: RunEnd, written: RunFile[], inputEnded: boolean): WorkerMessage {
+  return {
+    kind: 'done',
+    status: end.status,
+    message: end.message,
+    ...(end.exitCode === undefined ? {} : { exitCode: end.exitCode }),
+    ...(written.length > 0 ? { written } : {}),
+    ...(inputEnded ? { inputEnded: true } : {}),
+  };
+}
+
 /** Starts the worker's side of the run protocol with the runtimes in `registry`. Call once, at the worker's start. */
 export function serve(registry: AdapterRegistry, scope: WorkerScope = globalThis as unknown as WorkerScope): void {
   // Kept before lockdown takes postMessage and addEventListener off the global.
@@ -111,31 +155,29 @@ export function serve(registry: AdapterRegistry, scope: WorkerScope = globalThis
       });
     const stdin = new Stdin(request.stdin.text, interactive, ask);
     const files = new Mount(request.files);
-    send({ kind: 'started', ...(adapter.version ? { version: adapter.version } : {}), interactive });
-    let end: Awaited<ReturnType<RuntimeAdapter['run']>>;
+    const context = (limitMs: number): RunContext => ({
+      stdin,
+      files,
+      ...seededSource(random),
+      deadline: performance.now() + limitMs,
+    });
+    let end: RunEnd;
     try {
-      end = await adapter.run(request, emit, {
-        stdin,
-        files,
-        random: random.random,
-        randomBytes: random.fill,
-        deadline: performance.now() + request.limits.timeMs,
-      });
+      // The compile step's output reaches the page before `started`.
+      end = await steps(
+        adapter,
+        request,
+        emit,
+        (started) => (output.flush(), send({ ...started, interactive })),
+        context,
+      );
     } finally {
       // Output the program wrote before a failure still reaches the page.
       output.flush();
     }
     const items = mapDiagnostics(adapter.diagnostics, output.errorText, request.files);
     if (items.length > 0) send({ kind: 'diagnostic', items });
-    const written = files.written();
-    send({
-      kind: 'done',
-      status: end.status,
-      message: end.message,
-      ...(end.exitCode === undefined ? {} : { exitCode: end.exitCode }),
-      ...(written.length > 0 ? { written } : {}),
-      ...(stdin.askedPastEnd ? { inputEnded: true } : {}),
-    });
+    send(doneMessage(end, files.written(), stdin.askedPastEnd));
   };
 
   const fail = (error: unknown) =>

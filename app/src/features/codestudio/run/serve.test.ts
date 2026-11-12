@@ -89,4 +89,47 @@ describe('serve', () => {
     expect(await texts('12345')).toEqual(['12345']);
     expect(await texts('1234567')).toEqual(['123456']);
   });
+
+  it('runs a prepare step before started, under the load limit', async () => {
+    const worker = scope();
+    const deadlines: string[] = [];
+    const compiled: RuntimeAdapter = {
+      ...adapter(async (_, emit, context) => {
+        deadlines.push(`run ${Math.round(context.deadline - performance.now()) <= RUN_LIMITS.timeMs}`);
+        emit({ kind: 'out', stream: 'out', text: 'ran' });
+        return { status: 'ok', exitCode: 0, message: '' };
+      }),
+      version: 'v1',
+      prepare: async (_, emit, context) => {
+        deadlines.push(`prepare ${Math.round(context.deadline - performance.now()) > RUN_LIMITS.timeMs}`);
+        emit({ kind: 'out', stream: 'err', text: 'compiled\n' });
+        return null;
+      },
+    };
+    serve({ javascript: async () => compiled }, worker);
+    worker.page(request);
+    const kinds = (await ended(worker.sent)).filter((message) => message.kind !== 'loading').map((m) => m.kind);
+    expect(kinds).toEqual(['out', 'started', 'out', 'done']);
+    expect(worker.sent.find((message) => message.kind === 'started')).toEqual({
+      kind: 'started',
+      version: 'v1',
+      interactive: false,
+    });
+    expect(deadlines).toEqual(['prepare true', 'run true']);
+  });
+
+  it('ends the run without started when the prepare step ends it', async () => {
+    const worker = scope();
+    const run = vi.fn();
+    const failing: RuntimeAdapter = {
+      ...adapter(run),
+      prepare: async () => ({ status: 'error', message: 'compile' }),
+    };
+    serve({ javascript: async () => failing }, worker);
+    worker.page(request);
+    const sent = await ended(worker.sent);
+    expect(sent.some((message) => message.kind === 'started')).toBe(false);
+    expect(sent.at(-1)).toEqual({ kind: 'done', status: 'error', message: 'compile' });
+    expect(run).not.toHaveBeenCalled();
+  });
 });
