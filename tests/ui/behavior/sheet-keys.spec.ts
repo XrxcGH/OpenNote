@@ -97,9 +97,9 @@ test('tells a screen reader the address, header, value, and formula', async ({ p
   await setCell(page, 0, 2, 'Total');
   await setCell(page, 3, 1, '5');
   await setCell(page, 3, 2, '=B3*2');
-  // The result arrives a moment after the formula, and the announcement says the result.
-  await expect(cell(page, 3, 2)).toHaveAttribute('data-shown', '10', { timeout: 20_000 });
   await gridAt(page, 2, 2);
+  // The result is drawn once the formula's cell is left, and the announcement says the result.
+  await expect(cell(page, 3, 2)).toHaveAttribute('data-shown', '10', { timeout: 20_000 });
   await page.keyboard.press('ArrowDown');
   await expect(said(page, 'C3, Total, 10, formula equals B3 times 2')).toHaveCount(1);
 });
