@@ -6764,8 +6764,7 @@
       "category": "notebooks",
       "keys": [
         "Ctrl+Shift+Up"
-      ],
-      "palette": false
+      ]
     },
     {
       "id": "tree.moveDown",
@@ -6773,8 +6772,7 @@
       "category": "notebooks",
       "keys": [
         "Ctrl+Shift+Down"
-      ],
-      "palette": false
+      ]
     },
     {
       "id": "pages.indent",

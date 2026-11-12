@@ -236,6 +236,18 @@ describe('the Tauri page service’s unwritten edits', () => {
     expect(pageWaiting(saveHealthStore.get())).toBe(false);
   });
 
+  it('keeps a page that failed to save failing after it closes, until a save reports it (walk bug N1-N03-5)', async () => {
+    resetStores();
+    const { core, emit } = fakeCore([envelope([]), envelope([])]);
+    const service = createTauriPageService(core, images);
+    const page = await service.open('p1', { viewport: null });
+    emit('core:save-failed', { page: 'p1', kind: 'readOnlyFile', message: 'x', retryInMs: null });
+    await page.close();
+    expect([...saveHealthStore.get().failing]).toEqual(['p1']);
+    emit('core:saved', { page: 'p1', revision: 'r2', at: AT });
+    expect([...saveHealthStore.get().failing]).toEqual([]);
+  });
+
   it('keeps a page saving after a redo the core answers as not yet in its journal, until a save holds it', async () => {
     resetStores();
     const { core, calls, emit } = fakeCore([envelope([])]);

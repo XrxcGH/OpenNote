@@ -13,7 +13,7 @@ import { MenuItem, hasSubmenu, menuColumns } from './MenuItem';
 import type { MenuItemSpec } from './MenuItem';
 import { placeAtPoint, placeBelow, placeBeside } from './position';
 import type { Point } from './position';
-import { anchorTo, hideFromTopLayer, playExit, showInTopLayer, supportsAnchors } from './topLayer';
+import { anchorTo, fitToZoom, hideFromTopLayer, playExit, showInTopLayer, supportsAnchors } from './topLayer';
 import { typeaheadMatch, useTypeahead } from './typeahead';
 
 export type { MenuItemSpec } from './MenuItem';
@@ -39,22 +39,24 @@ function itemsOf(menu: HTMLElement | null): HTMLElement[] {
   return menu ? [...menu.querySelectorAll<HTMLElement>(':scope > [role^="menuitem"]')] : [];
 }
 
-function setPoint(menu: HTMLElement, point: Point, width: number): void {
+function setPoint(menu: HTMLElement, point: Point, width: number, zoom: number): void {
   const rtl = getComputedStyle(menu).direction === 'rtl';
-  menu.style.setProperty('--point-x', `${rtl ? window.innerWidth - point.x - width : point.x}px`);
-  menu.style.setProperty('--point-y', `${point.y}px`);
+  menu.style.setProperty('--point-x', `${(rtl ? window.innerWidth - point.x - width : point.x) / zoom}px`);
+  menu.style.setProperty('--point-y', `${point.y / zoom}px`);
 }
 
 /** Places the menu with CSS anchor positioning when it has an element anchor, else at a clamped point. */
 function place(menu: HTMLElement, anchor: MenuAnchor, beside: boolean): () => void {
   if (anchor instanceof HTMLElement && supportsAnchors()) {
+    fitToZoom(menu);
     menu.dataset.anchored = beside ? 'beside' : 'below';
     return anchorTo(menu, anchor);
   }
+  const zoom = fitToZoom(menu);
   const { width, height } = menu.getBoundingClientRect();
   const size = { width, height };
-  if (!(anchor instanceof HTMLElement)) setPoint(menu, placeAtPoint(anchor, size), width);
-  else setPoint(menu, (beside ? placeBeside : placeBelow)(anchor.getBoundingClientRect(), size), width);
+  if (!(anchor instanceof HTMLElement)) setPoint(menu, placeAtPoint(anchor, size), width, zoom);
+  else setPoint(menu, (beside ? placeBeside : placeBelow)(anchor.getBoundingClientRect(), size), width, zoom);
   return () => {};
 }
 

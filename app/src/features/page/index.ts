@@ -26,6 +26,9 @@ export type { TableExtraDef, TableExtraHandle, TableExtraHost } from './tables/e
 /** What features add to a table block, such as the spreadsheet keys (a light module). */
 export { tableExtras } from './tables/extras';
 export { assetTable } from './images/assets';
+/** Shows blocks this window inserted, which the page view does not show until it has them. Loads when first used. */
+export const showInserted = async (...args: Parameters<typeof import('./images/insert').showInserted>) =>
+  (await import('./images/insert')).showInserted(...args);
 /** The exporter's helpers load when a page is exported, not at start-up. */
 export const expandEmbedText = async (...args: Parameters<typeof import('./embeds/expand').expandEmbedText>) =>
   (await import('./embeds/expand')).expandEmbedText(...args);

@@ -9,6 +9,7 @@ import type { NodeId } from '../../services/notes/types';
 import type { MessageKey } from '../../strings/t';
 import { expectFocus, expectNoAxeViolations, renderApp, setViewport } from '../../test';
 import { recordRecentPage } from '../../state/session';
+import { getSettings, updateSettings } from '../../state/settings';
 import { registerRegionMain } from '../regions';
 
 const stops: (() => void)[] = [];
@@ -250,10 +251,26 @@ describe('the bottom bar', () => {
       within(panel)
         .getAllByRole('button')
         .map((button) => button.textContent),
-    ).toEqual(['Settings', 'Keyboard shortcuts', 'Update ready', 'Trash']);
+    ).toEqual(['Start recording', 'Settings', 'Keyboard shortcuts', 'Update ready', 'Trash']);
     await userEvent.keyboard('{Escape}');
     await expectFocus(more);
     await expectNoAxeViolations(document.body);
+  });
+
+  it('keeps the More sheet inside a small window at a large interface size (walk bugs VA-2, VA-4)', async () => {
+    await setViewport(300, 500);
+    await renderApp({ sizeClass: 'compact' });
+    await updateSettings({ appearance: { ...getSettings().appearance, uiScale: 150 } });
+    const bar = screen.getByRole('navigation', { name: 'Quick actions' });
+    await userEvent.click(within(bar).getByRole('button', { name: 'More commands' }));
+    const panel = await screen.findByRole('dialog', { name: 'More commands' });
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    const box = panel.getBoundingClientRect();
+    expect(box.left).toBeGreaterThanOrEqual(-1);
+    expect(box.right).toBeLessThanOrEqual(window.innerWidth + 1);
+    expect(box.top).toBeGreaterThanOrEqual(-1);
+    expect(box.bottom).toBeLessThanOrEqual(window.innerHeight + 1);
+    await setViewport(1280, 800);
   });
 
   it('lists the recent pages in More', async () => {

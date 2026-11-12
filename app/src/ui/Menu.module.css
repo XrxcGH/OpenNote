@@ -11,8 +11,10 @@
     inset-inline-start: var(--point-x, auto);
     box-sizing: border-box;
     min-inline-size: var(--size-menu-min-width);
-    max-inline-size: calc(100vw - 2 * var(--space-3));
-    max-block-size: calc(100vh - 2 * var(--space-3));
+    /* The window less a margin, in this box's own pixels: an overlay inside a zoomed region (interface size) shrinks
+       its limit by the zoom, set as --fit-zoom by fitToZoom, so it never passes the window's edge. */
+    max-inline-size: calc((100vw - 2 * var(--space-3)) / var(--fit-zoom, 1));
+    max-block-size: calc((100vh - 2 * var(--space-3)) / var(--fit-zoom, 1));
     margin: 0;
     padding: var(--space-2);
     overflow-y: auto;

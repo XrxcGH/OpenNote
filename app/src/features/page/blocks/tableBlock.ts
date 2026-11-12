@@ -547,6 +547,11 @@ class TableView implements InnerView {
     void this.send(change.data, 'resize');
   }
 
+  liveData(): Record<string, unknown> {
+    const { header, columns, rows } = this.latest();
+    return { ...this.current.data, header, columns, rows };
+  }
+
   update(next: BlockJson): void {
     this.current = next;
     placeBlock(this.element, next);

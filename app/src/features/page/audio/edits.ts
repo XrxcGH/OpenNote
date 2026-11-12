@@ -10,8 +10,7 @@ import { t } from '../../../strings/t';
 import { announce, confirm, showToast } from '../../../ui';
 import { shownPage as shownOpenPage } from '../history/shown';
 import { shownLayer } from '../mount';
-import { shownQueue } from '../sync/shown';
-import { insertRecordingBlock, writeEntry } from './blocks';
+import { writeEntry, writeSplit } from './blocks';
 import { describeError, platformAudio } from './controller';
 import { activeNs } from './entry';
 import { clockNs, lengthNs } from './format';
@@ -46,20 +45,22 @@ async function replace(block: string, pageId: string, old: RecordingEntry, next:
   await deleteAudioFiles(dir, old);
 }
 
-/** Gives the marks of the text that was written in the second half to the second recording. */
-async function moveMarks(from: string, halves: readonly SplitHalf[]): Promise<void> {
+/** The steps that give the marks of the text written in the second half to the second recording. */
+function moveMarks(from: string, halves: readonly SplitHalf[]): Edit[] {
   const edits: Edit[] = [];
   for (const block of shownLayer.get()?.blocks() ?? []) {
     const marks = marksOf(block.id);
     if (marks?.moveToSplit(from, halves))
       edits.push({ edit: 'patchBlock', block: block.id, data: { marks: marks.toData() } });
   }
-  if (edits.length > 0) await shownQueue.get()?.send({ edits });
+  return edits;
 }
 
 /**
  * Splits the recording at `positionNs`. The first half stays in its block with the recording's ID, and the second
  * is a new recording in a new block after it. Flags and the marks of typed text go to the half they were made in.
+ * The split is one change, so one undo brings the whole recording back. That is why the original's files stay: the
+ * undo lists them in the page again. They go with the page's other unused files once nothing can bring them back.
  */
 export async function splitRecording(
   block: string,
@@ -75,12 +76,10 @@ export async function splitRecording(
     const flags = Flags.fromEntries([entry]);
     flags.moveToSplit(entry.id, [first.entry, second.entry]);
     const [one, two] = [first.entry, second.entry].map((half) => flags.into(withoutEnhanced(half)));
-    await writeEntry(pageId, block, one, { track: 'finished', drop: entry });
-    const secondBlock = await insertRecordingBlock(two, { after: block, track: 'finished' });
-    await moveMarks(entry.id, [first.entry, second.entry]);
+    const marks = moveMarks(entry.id, [first.entry, second.entry]);
+    const secondBlock = await writeSplit(pageId, block, entry, [one, two], marks);
     await withTranscripts((module) => module.afterSplit(entry.id, two.id, positionNs, secondBlock));
     await shownOpenPage.get()?.saveNow();
-    await deleteAudioFiles(dir, entry);
     announce(t('audioMore.split.done', { first: lengthNs(first.durationNs), second: lengthNs(second.durationNs) }));
   } catch (error) {
     showToast({ message: describeError(error), tone: 'danger' });
