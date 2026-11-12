@@ -94,6 +94,8 @@ export interface TableBlock extends BlockBase {
   readonly rows: readonly TableRow[];
   /** The smart-table data the block keeps beside its cells (columns, filters, charts), as the file has it. */
   readonly smart?: JsonObject;
+  /** The sheet data the block keeps beside its cells (styles, merges, cached results), as the file has it. */
+  readonly sheet?: JsonObject;
 }
 
 /** A diagram drawn from Mermaid text. `svg` is the drawing, added by the caller that can draw it. */
@@ -213,6 +215,7 @@ function readTable(data: JsonObject): Body<TableBlock> {
   return {
     type: 'table',
     ...(isObject(data.smart) ? { smart: data.smart } : {}),
+    ...(isObject(data.sheet) ? { sheet: data.sheet } : {}),
     header: flag(data.header),
     columns: columns.filter(isObject).map((c) => ({ id: str(c.id), width: geometry(c.width) ?? 120 })),
     rows: rows.filter(isObject).map((r) => {

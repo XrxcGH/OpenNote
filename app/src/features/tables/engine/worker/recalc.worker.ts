@@ -1,6 +1,7 @@
-// The recalculation worker's entry (client.ts starts it). It answers each request with the cells that changed.
+// The recalculation worker's entry (client.ts starts it). It answers each request with the cells that changed,
+// after the lazy statistical chunk when a formula needs it.
 
-import { respond } from './run';
+import { respondWhenReady } from './run';
 import type { RecalcReply, RecalcRequest } from './protocol';
 
 interface WorkerScope {
@@ -10,5 +11,5 @@ interface WorkerScope {
 
 if ('WorkerGlobalScope' in globalThis) {
   const scope = globalThis as unknown as WorkerScope;
-  scope.onmessage = (event) => scope.postMessage(respond(event.data));
+  scope.onmessage = (event) => void respondWhenReady(event.data).then((reply) => scope.postMessage(reply));
 }

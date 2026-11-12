@@ -50,6 +50,8 @@ struct Tally {
     /// Blocks of OpenNote's own extra types (flashcards, study tape, live citations), which a file shows as text.
     own_with_fallback: usize,
     unknown: Vec<String>,
+    /// Tables whose formulas show their text because their cached results are out of date.
+    stale_tables: Vec<String>,
 }
 
 impl Tally {
@@ -86,6 +88,12 @@ impl Tally {
             } else {
                 report.skipped(what, "This format cannot hold ink. Export to PDF to keep it.");
             }
+        }
+        for name in &self.stale_tables {
+            report.simplified(
+                format!("table {name}"),
+                "Its formulas show their text, because its results are out of date. Open the page in OpenNote once to refresh them.",
+            );
         }
         let missing = ("file that was not found", "files that were not found");
         report.skipped_count(self.missing_assets, missing, "Their names stay in the text.");
@@ -319,17 +327,47 @@ impl Convert<'_> {
 
     fn table(&mut self, table: &TableData) -> Block {
         self.tally.tables += 1;
+        let sheet = crate::sheet::read(table);
         let rows = table
             .rows
             .iter()
-            .map(|row| {
+            .enumerate()
+            .map(|(r, row)| {
                 let cells = table.columns.iter().map(|column| row.cells.get(&column.id));
                 cells
-                    .map(|cell| self.cell(cell.map_or("", |c| c.markdown.as_str())))
+                    .enumerate()
+                    .map(|(c, cell)| {
+                        let result = sheet.as_ref().and_then(|s| s.results[r][c].as_deref());
+                        match result {
+                            Some(text) => vec![Inline::text(text)],
+                            None => self.cell(cell.map_or("", |c| c.markdown.as_str())),
+                        }
+                    })
                     .collect()
             })
             .collect();
-        Block::table(table.header, rows)
+        let widths = table
+            .columns
+            .iter()
+            .map(|c| c.width.map_or(0, |w| w.round().clamp(0.0, 100_000.0) as u32))
+            .collect::<Vec<_>>();
+        let widths = if widths.contains(&0) { Vec::new() } else { widths };
+        match sheet {
+            Some(sheet) => {
+                if sheet.stale {
+                    let name = sheet.name.clone().unwrap_or_else(|| self.tally.tables.to_string());
+                    self.tally.stale_tables.push(name);
+                }
+                Block::Table {
+                    header: table.header,
+                    rows,
+                    cell_styles: sheet.styles,
+                    merges: sheet.merges,
+                    widths,
+                }
+            }
+            None => Block::table(table.header, rows),
+        }
     }
 
     /// The inlines of a table cell: its paragraphs, joined by breaks.
@@ -436,3 +474,6 @@ impl Convert<'_> {
 fn asset_id(dest: &str) -> Option<AssetId> {
     AssetId::parse(dest.strip_prefix("asset:")?).ok()
 }
+
+#[cfg(test)]
+mod sheet_tests;

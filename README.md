@@ -53,7 +53,7 @@ You keep notebooks, sections, and pages in a notes folder you choose, as plain f
 
 ### Write and draw
 
-The Word-level text, Excel-level table, and code studio foundations are on the beta branch behind flags that are off.
+The Word-level text, Excel-level table, and code studio foundations are on the beta branch behind flags that are off. The table work so far adds a cell format bar, spreadsheet keys, conditional formatting, styled tables in Word and HTML exports, and the logic, lookup, array, and statistics functions.
 
 - [Typed notes](docs/help/typed-notes.md): text, headings, text styles kept with the notebook, lists, checklists, tables, code, callouts, Markdown, templates, and find and replace. Find by format, special character, wildcard, or regular expression. The Home tab has font and size boxes, split buttons for underline, colors, and lists, and a styles gallery. Typed web and e-mail addresses turn into links. Pasted tables and spreadsheet cells become tables. Copies give other apps plain text.
 - [Moving between blocks](docs/help/moving-between-blocks.md): keys that move between text, pictures, tables, and code without the mouse.
@@ -63,7 +63,7 @@ The Word-level text, Excel-level table, and code studio foundations are on the b
 - [Ink and palm rejection](docs/help/ink-and-palm-rejection.md): pens, a highlighter, erasers, the lasso, shapes, and gestures, with your palm resting on the screen.
 - [My handwriting](docs/help/my-handwriting.md): typed text and math written in your own hand, learned from a calibration page.
 - [Paper and page views](docs/help/paper-and-page-views.md): flow, paginated, and canvas pages, with lined, grid, and dot paper; slides, print, and PDF.
-- [Tables and charts](docs/help/tables-and-charts.md): smart tables with views and formulas, and charts that update with them.
+- [Tables and charts](docs/help/tables-and-charts.md): smart tables with views, Excel-style formulas (logic, lookup, arrays, and statistics), cell formats (colors, borders, number formats), conditional formatting, spreadsheet keys with Grid and Edit modes (a setting chooses them for new tables), and charts that update with them.
 - [Language and spelling](docs/help/language-and-spelling.md): American English by default, and one choice for every part that reads or writes words.
 
 ### Organize and find
@@ -256,31 +256,32 @@ The root also holds tool settings such as `package.json`, `Cargo.toml`, `checks.
 
 The [documentation index](docs/README.md) lists everything in `docs/`. Start with the help pages to use the app, or pick a document below.
 
-| Document                                                             | What it covers                                                                         |
-| -------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| [Help pages](docs/help/README.md)                                    | How to use each part of the app                                                        |
-| [docs/FEATURE-LIST.md](docs/FEATURE-LIST.md)                         | Every tool, command, and feature, by category, with pictures                           |
-| [docs/screens/README.md](docs/screens/README.md)                     | Real pictures of every major screen, in light and dark                                 |
-| [Project wiki](https://github.com/XrxcGH/OpenNote/wiki)              | The user guide, development updates, and the developer guide                           |
-| [CHANGELOG.md](CHANGELOG.md)                                         | What changed, and what each early beta added                                           |
-| [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)                           | The step-by-step plan for the Windows prototype, with a status note under each phase   |
-| [docs/FEATURES.md](docs/FEATURES.md)                                 | The feature spec, with what is built, untested, not built, or waiting on the owner     |
-| [docs/RESEARCH.md](docs/RESEARCH.md)                                 | Popular and rising note apps, the features people love, and the gaps OpenNote can fill |
-| [docs/BRAND.md](docs/BRAND.md)                                       | Colors, type, layout, motion, accessibility, and performance budgets                   |
-| [docs/design/SCREENS.md](docs/design/SCREENS.md)                     | Wireframes of each major screen, with sizes and keep-out zones                         |
-| [docs/intel.md](docs/intel.md)                                       | The on-device intelligence engines, which run with no network client                   |
-| [docs/CHECKS.md](docs/CHECKS.md)                                     | The quality gate every file change must pass                                           |
-| [docs/format/README.md](docs/format/README.md)                       | The note file format specification and tools                                           |
-| [docs/adr/README.md](docs/adr/README.md)                             | Every architecture decision record (ADR), its status, and how to write one             |
-| [docs/testing/beta-4-checklist.md](docs/testing/beta-4-checklist.md) | The hand test checklist (written at beta 4), starting with the safest way to run it    |
-| [docs/testing/flags.md](docs/testing/flags.md)                       | The test that fails when a feature flag is read by nothing                             |
-| [docs/HARDENING.md](docs/HARDENING.md)                               | Crash reports, the self-check, the feedback file, and safe start                       |
-| [docs/RELEASING.md](docs/RELEASING.md)                               | The maintainer guide to cutting, checking, and rolling back a release                  |
-| [docs/CONNECTORS.md](docs/CONNECTORS.md)                             | Registering OpenNote with each connected service, and where the client IDs go          |
-| [docs/ATTRIBUTION.md](docs/ATTRIBUTION.md)                           | The author, source, and license of every picture, font, model, and vendored crate      |
-| [CONTRIBUTING.md](CONTRIBUTING.md)                                   | How to set up, make a change, and get it merged                                        |
-| [SECURITY.md](SECURITY.md)                                           | How to report a security problem privately                                             |
-| [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)                             | How we treat each other                                                                |
+| Document                                                                  | What it covers                                                                          |
+| ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| [Help pages](docs/help/README.md)                                         | How to use each part of the app                                                         |
+| [docs/FEATURE-LIST.md](docs/FEATURE-LIST.md)                              | Every tool, command, and feature, by category, with pictures                            |
+| [docs/screens/README.md](docs/screens/README.md)                          | Real pictures of every major screen, in light and dark                                  |
+| [Project wiki](https://github.com/XrxcGH/OpenNote/wiki)                   | The user guide, development updates, and the developer guide                            |
+| [CHANGELOG.md](CHANGELOG.md)                                              | What changed, and what each early beta added                                            |
+| [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)                                | The step-by-step plan for the Windows prototype, with a status note under each phase    |
+| [docs/FEATURES.md](docs/FEATURES.md)                                      | The feature spec, with what is built, untested, not built, or waiting on the owner      |
+| [docs/RESEARCH.md](docs/RESEARCH.md)                                      | Popular and rising note apps, the features people love, and the gaps OpenNote can fill  |
+| [docs/BRAND.md](docs/BRAND.md)                                            | Colors, type, layout, motion, accessibility, and performance budgets                    |
+| [docs/design/SCREENS.md](docs/design/SCREENS.md)                          | Wireframes of each major screen, with sizes and keep-out zones                          |
+| [docs/intel.md](docs/intel.md)                                            | The on-device intelligence engines, which run with no network client                    |
+| [docs/CHECKS.md](docs/CHECKS.md)                                          | The quality gate every file change must pass                                            |
+| [docs/format/README.md](docs/format/README.md)                            | The note file format specification and tools                                            |
+| [Formula differences](app/src/features/tables/fixtures/fn/DIFFERENCES.md) | Where table formulas answer differently from Excel, Google Sheets, and LibreOffice Calc |
+| [docs/adr/README.md](docs/adr/README.md)                                  | Every architecture decision record (ADR), its status, and how to write one              |
+| [docs/testing/beta-4-checklist.md](docs/testing/beta-4-checklist.md)      | The hand test checklist (written at beta 4), starting with the safest way to run it     |
+| [docs/testing/flags.md](docs/testing/flags.md)                            | The test that fails when a feature flag is read by nothing                              |
+| [docs/HARDENING.md](docs/HARDENING.md)                                    | Crash reports, the self-check, the feedback file, and safe start                        |
+| [docs/RELEASING.md](docs/RELEASING.md)                                    | The maintainer guide to cutting, checking, and rolling back a release                   |
+| [docs/CONNECTORS.md](docs/CONNECTORS.md)                                  | Registering OpenNote with each connected service, and where the client IDs go           |
+| [docs/ATTRIBUTION.md](docs/ATTRIBUTION.md)                                | The author, source, and license of every picture, font, model, and vendored crate       |
+| [CONTRIBUTING.md](CONTRIBUTING.md)                                        | How to set up, make a change, and get it merged                                         |
+| [SECURITY.md](SECURITY.md)                                                | How to report a security problem privately                                              |
+| [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)                                  | How we treat each other                                                                 |
 
 ## License
 

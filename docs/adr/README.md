@@ -93,7 +93,7 @@ Accepted records aren't rewritten when plans change. Instead, write a new ADR fo
 | [0060](0060-own-function-library-and-oracle-fixtures.md) | An in-repository function library tested against reference values | Proposed | 2026-11-01 |
 | [0061](0061-cached-formula-results.md) | Tables cache formula results in the file | Proposed | 2026-11-01 |
 | [0062](0062-names-and-cross-table-references.md) | Names, structured references, and references to other tables and pages | Proposed | 2026-11-01 |
-| [0063](0063-spreadsheet-keyboard-model.md) | Tables use a spreadsheet keyboard model with grid and edit modes | Proposed | 2026-11-01 |
+| [0063](0063-spreadsheet-keyboard-model.md) | Tables use a spreadsheet keyboard model with grid and edit modes | Accepted | 2026-11-01 |
 | [0064](0064-merged-cells.md) | Merged cells are ranges by corner IDs over a whole grid | Proposed | 2026-11-01 |
 | [0065](0065-incremental-recalculation.md) | Incremental recalculation, iterative calculation, and the worker | Proposed | 2026-11-01 |
 | [0066](0066-table-merge-on-sync.md) | Three-way merge of table blocks when two devices edit one page | Proposed | 2026-11-01 |

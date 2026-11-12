@@ -80,6 +80,11 @@ export interface Dialect {
    * rows 3:3. It also lets a name that is not a cell through as a name, which the host reports as unknown.
    */
   excelRefs?: boolean;
+  /**
+   * When true, an argument may be left empty, as in UNIQUE(A1:A9,,TRUE). It reads as a name with no text, which the
+   * host treats as an omitted argument. Default false.
+   */
+  emptyArguments?: boolean;
   /** When set, R1C1 references such as R[-1]C read relative to this cell (zero-based), as the clipboard needs. */
   r1c1?: { readonly row: number; readonly col: number };
 }

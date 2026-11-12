@@ -188,6 +188,7 @@ describe('dotted function names (Excel dialect)', () => {
   it('reads CEILING.MATH and NORM.S.DIST as one name in the Excel dialect', () => {
     expect(kinds('CEILING.MATH(2)', excel)[0]).toBe('name:CEILING.MATH');
     expect(kinds('NORM.S.DIST(1)', excel)[0]).toBe('name:NORM.S.DIST');
+    expect(kinds('T.DIST.2T(1,2)', excel)[0]).toBe('name:T.DIST.2T');
   });
 
   it('does not take a dot followed by a digit or nothing as part of the name', () => {

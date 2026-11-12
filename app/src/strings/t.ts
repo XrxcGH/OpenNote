@@ -13,7 +13,13 @@ export type DottedKeys<T, Prefix extends string = ''> = {
   [K in keyof T & string]: T[K] extends string ? `${Prefix}${K}` : DottedKeys<T[K], `${Prefix}${K}.`>;
 }[keyof T & string];
 
-export type MessageKey = DottedKeys<Messages>;
+/**
+ * The function description namespaces (fnMath, fnText, ...) are read through `fnKey` in the formula help, never
+ * through t(). Keeping them out of MessageKey holds the key union under TypeScript's size limit.
+ */
+type FunctionNamespace = `fn${string}`;
+
+export type MessageKey = DottedKeys<Omit<Messages, FunctionNamespace>>;
 
 /** The message text at a key, as a string literal type. */
 export type MessageAt<K extends string, T = Messages> = K extends `${infer Head}.${infer Rest}`

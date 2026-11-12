@@ -23,6 +23,11 @@ export type { TranscriptAction, TranscriptContext } from './audio/transcripts/ac
 export { usePrefs as usePageExtrasPrefs } from './qol/prefs';
 export { readingLock } from './qol/stores';
 export type { TableExtraDef, TableExtraHandle, TableExtraHost } from './tables/extras';
+/** What features add to a table block, such as the spreadsheet keys (a light module). */
+export { tableExtras } from './tables/extras';
+/** The table the table commands act on now. */
+export { currentTable } from './tables/current';
+export type { TableHandle } from './tables/current';
 export { assetTable } from './images/assets';
 /** Shows blocks this window inserted, which the page view does not show until it has them. Loads when first used. */
 export const showInserted = async (...args: Parameters<typeof import('./images/insert').showInserted>) =>

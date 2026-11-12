@@ -83,7 +83,13 @@ export function sheetDialect(syntax: SheetSyntax): Dialect {
       definitions: false,
       maxDepth: 200,
       ...(excel
-        ? { signBindsTighter: true, powerAssociativity: 'left', inputDigits: EXCEL_DIGITS, excelRefs: true }
+        ? {
+            signBindsTighter: true,
+            powerAssociativity: 'left',
+            inputDigits: EXCEL_DIGITS,
+            excelRefs: true,
+            emptyArguments: true,
+          }
         : {}),
     };
     cache.set(key, dialect);

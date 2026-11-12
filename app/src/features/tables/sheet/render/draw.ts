@@ -5,7 +5,7 @@
 
 import { resolve, type CellStyle, type ResolveHooks, type Sheet, type TableLike } from '../model';
 import { own, ownObject } from '../model/json';
-import { getConditionalLayer } from '../model/rules';
+import { getConditionalLayer, getDrawnLayer, setLayerScheme, type DrawnDecoration } from '../model/rules';
 import { kindOf, textAlign, verticalAlign, type ValueKind } from './align';
 import { cssLine, resolvedSides, type Edge } from './borders';
 import { automaticText, colorOf, drawFill, type Scheme } from './color';
@@ -169,6 +169,8 @@ interface View {
   visCols: number[];
   styles: CellStyle[][];
   texts: RowCell[][];
+  /** What the conditional lane draws in each shown cell besides its style: data bars and icons. */
+  drawn: (DrawnDecoration | undefined)[][];
 }
 
 /** The text and kind of each shown cell of one shown row. */
@@ -186,6 +188,7 @@ function textRow(input: DrawInput, v: Pick<View, 'visCols' | 'styles'>, r: numbe
 
 function viewOf(input: DrawInput): View {
   const { sheet, table, scheme } = input;
+  setLayerScheme(scheme);
   const settings = ownObject(sheet, 'table');
   const freeze = ownObject(settings, 'freeze');
   const rowHidden = table.rows.map((r) => hiddenOf(sheet, 'rows', r.id, input.hiddenRows));
@@ -218,7 +221,10 @@ function viewOf(input: DrawInput): View {
     visCols,
     styles,
     texts: [],
+    drawn: [],
   };
+  const drawn = ownObject(sheet, 'conditional') === undefined ? null : getDrawnLayer();
+  if (drawn) v.drawn = visRows.map((r) => visCols.map((c) => drawn({ row: r, col: c }, sheet, table, scheme)));
   v.texts = visRows.map((r, vr) => textRow(input, v, r, vr));
   return v;
 }
@@ -277,6 +283,7 @@ function revisedView(last: View, input: DrawInput, changed: Set<number>): View {
   v.styles.forEach((row, vr) => {
     const same =
       JSON.stringify(row) === JSON.stringify(last.styles[vr]) &&
+      JSON.stringify(v.drawn[vr]) === JSON.stringify(last.drawn[vr]) &&
       v.texts[vr].every((t, vc) => t.text === last.texts[vr][vc].text && t.kind === last.texts[vr][vc].kind);
     if (same) return;
     for (const k of [vr - 1, vr, vr + 1]) if (v.visRows[k] !== undefined) changed.add(v.visRows[k]);
@@ -322,6 +329,11 @@ function drawCell(input: DrawInput, v: View, vr: number, vc: number, d: Drawn): 
   fontVars(style, d.vars, scheme, fill.under);
   alignVars(style, v.texts[vr][vc].kind, d.vars, d.data);
   padVars(style, d.vars);
+  const extra = v.drawn[vr]?.[vc];
+  if (extra) {
+    Object.assign(d.vars, extra.vars);
+    Object.assign(d.data, extra.data);
+  }
   const near = {
     above: vr > 0 ? v.styles[vr - 1][vc].border : undefined,
     below: vr < v.visRows.length - 1 ? v.styles[vr + 1][vc].border : undefined,

@@ -3,12 +3,24 @@
 // never touch the same file. The descriptions people read (one line per function, one per argument) live in
 // app/src/strings/en/fn<Family>.ts under the function's name, written fresh in our own words.
 
-import { isError, isNumber, type FormulaError, type RowState, type Value } from '../../values';
+import {
+  isError,
+  isNumber,
+  type FormulaError,
+  type RefValue,
+  type RowState,
+  type Scalar,
+  type Value,
+} from '../../values';
 
 /** What the formula engine gives every function. */
 export interface Env {
   /** Today as a serial, read when a formula is calculated. */
   today: () => number;
+  /** The page's title, which CELL("filename") returns. Unset gives an empty text, as an unsaved workbook does. */
+  title?: string;
+  /** What the engine knows about the formula's cell and page. Set only for a function with `refArgs`. */
+  probe?: Probe;
   /** Whether a row of a table (by its index on the page) shows. Unset: every row shows. */
   rowState?: (sheet: number, row: number) => RowState;
   /**
@@ -16,6 +28,44 @@ export interface Env {
    * formula calls SUBTOTAL or AGGREGATE. Row-major flags, or undefined when none is. Unset: none is.
    */
   subtotalsIn?: (sheet: number, r1: number, c1: number, r2: number, c2: number) => readonly boolean[] | undefined;
+  /** The cell the formula runs in. Set only for a function with `wantsCaller`. */
+  caller?: Caller;
+}
+
+/** The calling cell, for ROW() and COLUMN() without an argument, INDIRECT's R1C1 text, and FORMULATEXT. */
+export interface Caller {
+  /** Zero-based row and column of the cell being calculated. */
+  readonly row: number;
+  readonly col: number;
+  /** The formula of a reference's top-left cell in stored form, without "=". Null when it holds none. */
+  formulaAt(ref: RefValue): string | null;
+}
+
+/** One cell as functions about cells see it (CELL, ISFORMULA). */
+export interface ProbeCell {
+  /** The cell's value. Empty cells are null. */
+  readonly value: Scalar;
+  /** True when the cell holds a formula, alone, or through its calculated column. */
+  readonly formula: boolean;
+  /** The column's type, such as "number" or "date". */
+  readonly type: string;
+  /** The column's decimal places, when set. */
+  readonly decimals?: number;
+}
+
+/** The look at the page that the engine lends to a function with `refArgs`. */
+export interface Probe {
+  /** The formula's own table, zero-based. */
+  readonly sheet: number;
+  /** The name of every table on the page, in order. */
+  readonly sheets: readonly string[];
+  /** The cell the formula is in. */
+  readonly self: RefValue;
+  readonly calc: 'auto' | 'manual';
+  /** The table a reference names, zero-based, or -1 when it names none. */
+  sheetOf(ref: RefValue): number;
+  /** The cell at the top left of a reference, or undefined when it lies outside the table. */
+  cell(ref: RefValue): ProbeCell | undefined;
 }
 
 /**
@@ -24,10 +74,11 @@ export interface Env {
  * - number, text, bool: one value the function reads as that kind.
  * - range: every cell of a reference, or a value typed directly (see `direct`).
  * - array: an array. A single value comes as a one-by-one array.
+ * - ref: a reference as a RefValue, unions included. Other values come as they are.
  * - lambda: a function value, made by LAMBDA.
  * - lazy: not evaluated until the function asks, as IF's branches are.
  */
-export type ParamKind = 'value' | 'number' | 'text' | 'bool' | 'range' | 'array' | 'lambda' | 'lazy';
+export type ParamKind = 'value' | 'number' | 'text' | 'bool' | 'range' | 'array' | 'ref' | 'lambda' | 'lazy';
 
 export interface Param {
   /** The argument's name in the signature, such as "number" or "digits". */
@@ -42,6 +93,10 @@ export interface Param {
    * TRUE as 1, as SUM("3",TRUE) is 4; 'raw' keeps the value as it is, as COUNTA counts it.
    */
   readonly direct?: 'number' | 'raw';
+  /** For an array: text in a referenced cell counts as empty, as the logical functions skip it. Typed text still counts. */
+  readonly skipRefText?: boolean;
+  /** A typed lone text reaches the function as a scalar, not as a one-element array. */
+  readonly loneText?: boolean;
   /** For a range: a reference arrives with the state of each row (`ArrayValue.rowState`), as SUBTOTAL reads it. */
   readonly rowState?: boolean;
   /**
@@ -92,6 +147,13 @@ export interface FnSpec2 {
   readonly volatile?: boolean;
   /** Returns a reference rather than a value, as OFFSET and INDEX do. */
   readonly returnsRef?: boolean;
+  /**
+   * Array parameters get a reference as a reference (a RefValue) instead of its values, and `env.probe` is set. For
+   * functions that ask about a cell rather than its content, as ISREF and CELL do.
+   */
+  readonly refArgs?: boolean;
+  /** Gets the calling cell in `env.caller`. */
+  readonly wantsCaller?: boolean;
   /** An error argument reaches the function instead of becoming its result. */
   readonly handlesErrors?: boolean;
   /** Computes the result. A function with lazy parameters is evaluated by the compiler itself and never runs this. */

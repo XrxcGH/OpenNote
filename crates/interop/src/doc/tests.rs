@@ -437,6 +437,8 @@ fn a_table_cell_holds_its_sheet_style() {
         header: true,
         rows,
         cell_styles: vec![vec![None, Some(style.clone())]],
+        merges: Vec::new(),
+        widths: Vec::new(),
     };
     assert_eq!(styled.cell_style(0, 1), Some(&style));
     assert_eq!(styled.cell_style(0, 0), None);

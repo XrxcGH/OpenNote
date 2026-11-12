@@ -56,7 +56,8 @@ interface Meta {
 export function currentScheme(): Scheme {
   const set = document.documentElement.dataset.theme;
   if (set === 'dark' || set === 'light') return set;
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  // A document with no media queries (a test document) is light.
+  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
 const attrsOf = (d: Drawn, extra: Record<string, string> = {}, measured?: CellProps): Record<string, string> => {

@@ -89,6 +89,7 @@ TABLE = obj(
         "pad": PAD,
         "grid": BOOL,
         "name": ok(is_name, "a name (R-SHT-13)"),
+        "keys": enum("spreadsheet", "document"),
     }
 )
 COL = obj({"style": STYLE_REF, "hidden": BOOL, "level": integer(0, 7), "collapsed": BOOL})

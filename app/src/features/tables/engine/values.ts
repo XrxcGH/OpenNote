@@ -37,6 +37,8 @@ export interface RefValue {
   readonly c1: number;
   readonly r2: number;
   readonly c2: number;
+  /** A union such as (A1:B2,D4): every area in order, this block being the first. Unset for one block. */
+  readonly areas?: readonly RefValue[];
 }
 
 /** A function value: its parameter names and a body to call with their values. */

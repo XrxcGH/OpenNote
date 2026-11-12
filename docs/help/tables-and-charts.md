@@ -22,6 +22,15 @@ A smart table holds typed columns, formulas, and several views of the same rows.
 
 Add a calculated column and type a formula, such as `=Price * Qty`. The column fills in for every row and stays up to date as you edit.
 
+Formulas follow Excel's rules. Beyond math, text, and dates, they have these families:
+
+- Logic and information: IFS, SWITCH, XOR, IFNA, the IS functions, CELL, INFO, TYPE, and ERROR.TYPE.
+- Lookup: XLOOKUP, XMATCH, INDEX, MATCH, VLOOKUP, HLOOKUP, OFFSET, INDIRECT, ROW, COLUMN, FORMULATEXT, and HYPERLINK.
+- Arrays: FILTER, SORT, SORTBY, UNIQUE, SEQUENCE, TAKE, DROP, VSTACK, HSTACK, MMULT, MINVERSE, and the LAMBDA helpers MAP, REDUCE, SCAN, BYROW, BYCOL, and MAKEARRAY. An array result spills into the cells beside it.
+- Statistics: averages, deviations, ranks, percentiles, distributions such as NORM.DIST and T.DIST, regression such as LINEST, and FORECAST.ETS. These load the first time a formula uses one, so the cell shows #BUSY! for a moment.
+
+The places where OpenNote's answers differ from Excel's are listed in the engine's DIFFERENCES.md.
+
 ## Views
 
 A table can show its rows as a board, a calendar, a gallery, or a timeline. The rows do not change. Only the view does.
@@ -35,6 +44,8 @@ Every chart has a text summary and a data table, so a screen reader can read it.
 ## Take a table out
 
 Export a table as an Excel file (`.xlsx`) or as `.csv`. Both are in the Export dialog.
+
+A page exported to Word, HTML, or Markdown keeps each table's last results. Word and HTML also keep fills, borders, alignment, fonts, and merged cells. When a table's results are out of date, the export report names it.
 
 Smart tables and charts are built. They have been checked by automated tests only. The [feature list](../FEATURES.md) shows their status.
 
@@ -63,3 +74,25 @@ A number can have a unit, such as 12.5 kg. When all the numbers in a column shar
 ## Saved views
 
 In the Data menu under a table, choose Saved views, then Save filters and sort as a view. Pick a view later to see the same rows in the same order. Each table keeps its own views.
+
+## Format cells
+
+When a table is current, a second row of tools sits under the table tools. It sets the font, size, bold, italic, underline, and strikethrough, the text and fill colors, borders, alignment, wrapping, rotation, and the number format. It also has Currency, Percent, the thousands separator, more and fewer decimals, and Clear formats.
+
+Select whole cells and a tool formats the cells. Select text inside one cell and the same tool formats only that text. Each change is one undo step.
+
+The Borders button draws the last border you used. Its arrow opens all 16 borders, the line style, and the line color. In a narrow window, the least used tools move into a More menu. Press Ctrl+K and type "Cell:" to find every format by name.
+
+## Spreadsheet keys
+
+A table can use spreadsheet keys. In Grid mode the arrow keys move between cells, Shift extends the selection, and Ctrl jumps to the edge of the data. Type to replace a cell, or press F2 to edit it with the caret at the end. Esc puts the old content back. Enter and Tab move to the next cell, and inside a selection they cycle through it.
+
+Ctrl+D and Ctrl+R fill down and right, and formula references move with them. Ctrl+; enters today's date and Ctrl+: the time. Alt+Enter starts a new line in a cell.
+
+Choose Use document keys in this table to get the old keys back, where Enter starts a new line. A setting chooses the keys for new tables. A screen reader hears each cell's position, column name, value, and formula. Keyboard shortcuts lists every key.
+
+## Conditional formatting
+
+A rule can color a cell by its value, its text, a date, blanks, errors, top or bottom values, values above or below the average, duplicates, or a formula. Color scales, data bars, and icon sets show a range at a glance. Rules run in priority order, and Stop if true keeps lower rules from applying.
+
+To manage rules, run Cell: Conditional formatting rules from the command palette (Ctrl+K) or the table's context menu. A window lists the rules of the selection, the table, or the page. You can raise or lower a rule, turn Stop if true on or off, or delete it. Undo takes each change back. Making a new rule from a window is not built yet.
