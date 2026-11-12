@@ -194,7 +194,9 @@ describe('the Settings sections and screens', () => {
     const used = Math.max(...[...main.children].map((child) => child.getBoundingClientRect().right));
     expect(used - main.getBoundingClientRect().left).toBeGreaterThan(main.clientWidth / 2);
   });
+});
 
+describe('the Settings page in a narrow window', () => {
   it('keeps every section inside a 300 px window with no sideways scrolling (walk bug A2-A14-1, not reproduced)', async () => {
     await setViewport(300, 800);
     await renderApp({ sizeClass: 'compact' });
