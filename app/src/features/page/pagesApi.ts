@@ -57,6 +57,10 @@ setSaveRecovery({
   async retry(page) {
     const mounted = shownMounted.get();
     if (mounted?.page.id !== page) return false;
+    // The core takes no edits while the page's file is read-only, so what was typed since waits in the editors. The
+    // first save finds the file writable again, the flush sends what waited, and the second save writes it.
+    await mounted.page.saveNow();
+    await mounted.sync.flushAll('save');
     await mounted.page.saveNow();
     return true;
   },

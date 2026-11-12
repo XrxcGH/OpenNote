@@ -69,14 +69,18 @@ export function addCommand(spec: Spec): void {
   if (spec.bar) commandBar.register({ id: spec.id, tab: 'insert', command: spec.id, flag: spec.flag, ...spec.bar });
 }
 
-/** The text of the shown page's text blocks, and its title. */
-function shownText(): { text: string; title: string } | null {
+/**
+ * The text of the shown page's text blocks, and its title. Each box is read as it is now: the layer keeps a box's text
+ * as it was opened, so text typed since is only in the box's editor.
+ */
+async function shownText(): Promise<{ text: string; title: string } | null> {
   const mounted = shownMounted.get();
   if (!mounted) return null;
+  const { liveBlock } = await import('../blocks/textBlock');
   const text = mounted.layer
     .blocks()
     .filter((block) => block.type === 'text')
-    .map((block) => String(block.data.markdown ?? ''))
+    .map((block) => String(liveBlock(mounted.layer, block).data.markdown ?? ''))
     .join('\n\n');
   return { text, title: mounted.page.initial.title };
 }
@@ -173,7 +177,7 @@ addCommand({
 });
 
 async function makeCards(selection: boolean): Promise<void> {
-  const shown = shownText();
+  const shown = await shownText();
   if (!shown) return void say(t('study.generate.noPage'));
   let text = shown.text;
   if (selection) {

@@ -58,11 +58,17 @@ async function copyPageText(recovery: SaveRecovery | null, page: string): Promis
 }
 
 /** Saves the page now. Returns what to tell the person when that did not settle it, or null. */
-async function retryPage(recovery: SaveRecovery | null, page: string, failure: SaveFailure): Promise<string | null> {
+export async function retryPage(
+  recovery: SaveRecovery | null,
+  page: string,
+  failure: SaveFailure,
+): Promise<string | null> {
   try {
     return (await recovery?.retry(page)) === false ? t('tree.save.notice.notOpen') : null;
   } catch {
-    const text = t('tree.save.notice.stillFailing', { reason: saveFailureReason(failure.kind) });
+    // The retry's own failure may have a new reason, which the store has by now.
+    const latest = saveHealthStore.get().failures.get(page) ?? failure;
+    const text = t('tree.save.notice.stillFailing', { reason: saveFailureReason(latest.kind) });
     announce(text, 'assertive');
     return text;
   }
