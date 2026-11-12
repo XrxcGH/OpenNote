@@ -290,3 +290,18 @@ describe('accounting forms', () => {
     expect(headline(run('cvp', { variable: '60' }))).toMatch(/above the variable cost/i);
   });
 });
+
+describe('accounting forms with absurd sizes (B2-B09-5, B2-B09-6)', () => {
+  it('answers a huge bond term at once with a message', () => {
+    const t0 = Date.now();
+    const out = run('bonds', { periods: '1e12' });
+    expect(out.ok).toBe(false);
+    expect(Date.now() - t0).toBeLessThan(2000);
+  });
+  it('answers huge expected deviations at once with a message', () => {
+    const t0 = Date.now();
+    const out = run('audit', { test: 'sample', deviations: '1e12', tolerable: '1e-12' });
+    expect(out.ok).toBe(false);
+    expect(Date.now() - t0).toBeLessThan(2000);
+  });
+});
