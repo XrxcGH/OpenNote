@@ -4,6 +4,7 @@
 // results (ADR 0061, data.sheet.values) is worked out here too, so it goes in the same patch as the edit.
 import type { TableData } from '../../../editor/schema/specs';
 import { ERROR_TOKENS, isError, recalculateBook, todayDays } from '../engine';
+import { onFinanceLoaded } from '../engine/formula/fn/finance';
 import { toScalar } from '../engine/values';
 import type { EngineEnv, Table } from '../engine';
 import { cellCount, createRecalcClient, needsWorker, WORKER_CELLS } from '../engine/worker/client';
@@ -42,6 +43,8 @@ export class PageBook {
   private last: { raws: readonly Table[]; results: readonly Table[] }[] = [];
   // One environment per page: the engine compares it by identity and starts over for a new one (ADR 0065).
   private readonly env: EngineEnv = { today: () => todayDays() };
+  // The financial functions load on first use and show #BUSY! until then; once they land the page calculates again.
+  private readonly stopLoaded = onFinanceLoaded(() => this.reload());
 
   constructor(
     private readonly options: RecalcClientOptions = {},
@@ -59,7 +62,16 @@ export class PageBook {
     this.client = null;
     this.flight = null;
     this.queued = false;
+    this.stopLoaded();
     this.gone();
+  }
+
+  /** Forgets the results of before and calculates the page again, as a lazily loaded family has landed. */
+  private reload(): void {
+    this.last = [];
+    this.flight = null;
+    this.queued = false;
+    if (this.members.size > 0) this.refresh();
   }
 
   /** The members in page order. */
