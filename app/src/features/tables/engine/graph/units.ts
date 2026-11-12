@@ -65,7 +65,7 @@ export function parseName(text: string): Node | null {
 /** A formula that does not read: #REF! when reference adjustment left one in it, else #VALUE!. */
 export function refused(formula: string): Compiled {
   const value = err(formula.includes('#REF!') ? 'REF' : 'VALUE');
-  return { fn: () => value, reads: [], volatile: false, dynamic: false };
+  return { fn: () => value, reads: [], volatile: false, dynamic: false, subtotal: false };
 }
 
 export function sameValue(a: Value, b: Value): boolean {

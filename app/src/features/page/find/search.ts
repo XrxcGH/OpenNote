@@ -2,6 +2,7 @@
 // them. The text comes from each box as it is now (the editor's, or the last text drawn), never from the layer's
 // copy of the block, which is out of date while someone types. Highlights use the CSS Custom Highlight API, so
 // they sit over the editors and the static text alike without changing either.
+import type { Node as PMNode } from '@tiptap/pm/model';
 import { unfoldAroundDom } from '../../../editor/commands/fold';
 import { serializeTextBlock } from '../../../editor/markdown';
 import type { BlockId, Edit } from '../../../services/pages/types';
@@ -10,24 +11,95 @@ import { liveText } from '../blocks/textBlock';
 import type { LazyBlockView } from '../blocks/textBlock';
 import type { MountedPage } from '../mount';
 import { readingLock } from '../qol/stores';
-import { LEAF, matchesInDoc, replaceInDoc } from './match';
-import type { DocMatch, FindOptions } from './match';
+import { blockTexts, leafText, matchesInDoc, replaceInDoc } from './match';
+import type { DocMatch, FindOptions, ReplaceSpec } from './match';
+import type { FormatCriterion } from './format';
+import { patternProblem } from './pattern';
+import { scanTexts } from './scan';
+import type { PatternProblem } from './pattern';
 
 export interface FindMatch extends DocMatch {
   block: BlockId;
 }
 
-/** Every match on the page, in reading order. */
-export function collectMatches(mounted: MountedPage, query: string, options: FindOptions): FindMatch[] {
-  if (query === '') return [];
-  const found: FindMatch[] = [];
+/** How long one search may take, in milliseconds, before it stops with what it has and says so. */
+export const SEARCH_BUDGET_MS = 400;
+
+export interface SearchResult {
+  matches: FindMatch[];
+  /** Why the search found nothing or stopped early: a bad pattern, or the time limit. */
+  problem: PatternProblem | 'slow' | 'unavailable' | null;
+}
+
+/** Every match on the page, in reading order, and the problem with the query, if any. */
+export function searchPage(
+  mounted: MountedPage,
+  query: string,
+  options: FindOptions,
+  formats: readonly FormatCriterion[] = [],
+): SearchResult {
+  const matches: FindMatch[] = [];
+  if (query === '' && formats.length === 0) return { matches, problem: null };
+  const problem = query === '' ? null : patternProblem(query, options);
+  if (problem) return { matches, problem };
+  const until = performance.now() + SEARCH_BUDGET_MS;
+  for (const block of mounted.layer.blocks()) {
+    if (block.type !== 'text') continue;
+    if (performance.now() > until) return { matches, problem: 'slow' };
+    const live = liveText(mounted.layer.view(block.id));
+    if (!live) continue;
+    for (const match of matchesInDoc(live.liveDoc(), query, options, formats, until)) {
+      matches.push({ ...match, block: block.id });
+    }
+  }
+  return { matches, problem: performance.now() > until ? 'slow' : null };
+}
+
+/**
+ * The same search, with a regular expression or wildcard pattern run in a worker, so a pattern that backtracks
+ * without end cannot freeze the page: it stops at the time limit with the problem 'slow'.
+ */
+export async function searchPageAsync(
+  mounted: MountedPage,
+  query: string,
+  options: FindOptions,
+  formats: readonly FormatCriterion[] = [],
+  budgetMs = SEARCH_BUDGET_MS,
+): Promise<SearchResult> {
+  if (query === '' || !(options.regex || options.wildcards)) return searchPage(mounted, query, options, formats);
+  const problem = patternProblem(query, options);
+  if (problem) return { matches: [], problem };
+  const boxes: { block: BlockId; doc: PMNode }[] = [];
   for (const block of mounted.layer.blocks()) {
     if (block.type !== 'text') continue;
     const live = liveText(mounted.layer.view(block.id));
-    if (!live) continue;
-    for (const match of matchesInDoc(live.liveDoc(), query, options)) found.push({ ...match, block: block.id });
+    if (live) boxes.push({ block: block.id, doc: live.liveDoc() });
   }
-  return found;
+  const scanned = await scanTexts(
+    boxes.flatMap(({ doc }) => blockTexts(doc)),
+    query,
+    options,
+    budgetMs,
+  );
+  if (scanned === 'slow' || scanned === 'unavailable') return { matches: [], problem: scanned };
+  if (scanned === 'superseded') return { matches: [], problem: null };
+  let at = 0;
+  const matches: FindMatch[] = [];
+  for (const { block, doc } of boxes) {
+    const finder = () => scanned[at++] ?? [];
+    for (const match of matchesInDoc(doc, query, options, formats, Infinity, finder)) matches.push({ ...match, block });
+  }
+  return { matches, problem: null };
+}
+
+/** Every match on the page, in reading order. */
+export function collectMatches(
+  mounted: MountedPage,
+  query: string,
+  options: FindOptions,
+  formats: readonly FormatCriterion[] = [],
+): FindMatch[] {
+  return searchPage(mounted, query, options, formats).matches;
 }
 
 /** The textblock elements of a text box, in document order: the same order the matches count them in. */
@@ -137,9 +209,13 @@ export function reveal(mounted: MountedPage, match: FindMatch): void {
 }
 
 /** Whether `match` still holds the text it was found with. */
-function stillThere(mounted: MountedPage, match: FindMatch, found: string): boolean {
+function stillThere(mounted: MountedPage, match: FindMatch): boolean {
   const live = liveText(mounted.layer.view(match.block));
-  return !!live && live.liveDoc().textBetween(match.from, match.to, '', LEAF).toLowerCase() === found.toLowerCase();
+  if (!live) return false;
+  const doc = live.liveDoc();
+  if (match.to > doc.content.size) return false;
+  const found = (match.groups?.[0] ?? '').replace(/\n$/, '');
+  return doc.textBetween(match.from, match.to, '', leafText).toLowerCase() === found.toLowerCase();
 }
 
 /**
@@ -150,14 +226,13 @@ function stillThere(mounted: MountedPage, match: FindMatch, found: string): bool
 export async function replaceMatches(
   mounted: MountedPage,
   matches: readonly FindMatch[],
-  found: string,
-  replacement: string,
+  replacement: ReplaceSpec,
 ): Promise<number> {
   if (mounted.page.readOnly || readingLock.get() || matches.length === 0) return 0;
   await mounted.sync.flushAll('command');
   const byBlock = new Map<BlockId, FindMatch[]>();
   for (const match of matches) {
-    if (!stillThere(mounted, match, found)) continue;
+    if (!stillThere(mounted, match)) continue;
     byBlock.set(match.block, [...(byBlock.get(match.block) ?? []), match]);
   }
   const edits: Edit[] = [];

@@ -51,6 +51,7 @@ impl PageSession {
     pub(crate) fn save(&self, why: Why) -> Result<Option<RevisionInfo>, CoreError> {
         let _io = self.io.lock().unwrap_or_else(PoisonError::into_inner);
         let mut retried = false;
+        self.recheck_read_only();
         loop {
             let Some(snapshot) = self.snapshot()? else {
                 self.version_when_idle(why);
@@ -76,6 +77,26 @@ impl PageSession {
                 }
                 Err(e) => return Err(self.failed(snapshot, e)),
             }
+        }
+    }
+
+    /// A read-only file or a cloud placeholder stops saving until the person acts (spec 17.6). Each save looks at
+    /// `page.json` again. So a Retry saves the page once the person cleared the attribute or downloaded the file.
+    /// It lets edits in again too, instead of failing on what the first failure found.
+    fn recheck_read_only(&self) {
+        let mut st = self.state();
+        if !matches!(
+            st.read_only,
+            Some(ReadOnlyReason::ReadOnlyFile | ReadOnlyReason::CloudPlaceholder)
+        ) {
+            return;
+        }
+        let Ok(meta) = self.ctx.fs.metadata(&st.dir.join(PAGE_JSON)) else {
+            return;
+        };
+        if !meta.read_only && !meta.placeholder {
+            st.read_only = None;
+            st.failures = 0;
         }
     }
 

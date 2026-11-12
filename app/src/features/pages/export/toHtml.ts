@@ -8,7 +8,9 @@ import { ENGLISH_LABELS, renderBlock, strokesByBlock, type ExportLabels } from '
 import { escapeAttr, escapeHtml, safeHref, type HtmlOptions } from './markdown';
 import { readingOrder } from './order';
 import type { ExportAsset, ExportPage } from './source';
-import { documentCss, lightTheme, type DocTheme, type NotebookStyles } from './style';
+import { fontFaceRules, usedFonts, type FontSource } from './fonts';
+import { documentCss, lightTheme, paragraphBorderCss, readStyles, type DocTheme, type NotebookStyles } from './style';
+import { mergeSheets } from './styleSheet';
 
 export interface HtmlExportOptions {
   /** Where an asset loads from. The default is `assets/<file name>`. Null leaves the image out. */
@@ -26,6 +28,11 @@ export interface HtmlExportOptions {
   readonly imageOrigins?: readonly string[];
   /** Recordings the page can play, and the notes written while they ran. Adds the player script to the page. */
   readonly player?: PlayerPlan;
+  /**
+   * The files of the bundled fonts, by family. A bundled font the page uses is embedded as a `data:` URI, so the file
+   * shows the same on a device without it. Other fonts are named with fallback stacks only. Without it nothing embeds.
+   */
+  readonly fonts?: FontSource;
 }
 
 export interface HtmlExport {
@@ -67,7 +74,11 @@ export function exportHtml(page: ExportPage, options: HtmlExportOptions = {}): H
   const tags = page.tags.length > 0 ? `<p class="tags">${page.tags.map(escapeHtml).join(' · ')}</p>\n` : '';
   const header = options.header === false ? '' : `<h1 class="page-title">${escapeHtml(title)}</h1>\n${tags}`;
   const theme = options.theme ?? lightTheme();
-  const css = documentCss(theme, options.styles);
+  const pageStyles = readStyles(page.rawStyles);
+  const css = documentCss(theme, options.styles, null, pageStyles);
+  const faces = options.fonts
+    ? fontFaceRules(usedFonts(body, mergeSheets(options.styles ?? {}, pageStyles)), options.fonts)
+    : '';
   const max = Math.max(320, Math.min(2000, Math.round(options.maxWidth ?? 760)));
   const lang = LANGUAGE.test(page.language) ? page.language : 'en';
   const origins = (options.imageOrigins ?? []).filter((origin) => ORIGIN.test(origin));
@@ -76,6 +87,9 @@ export function exportHtml(page: ExportPage, options: HtmlExportOptions = {}): H
   const media = player || hasVideo ? "; media-src 'self' file: data:" : '';
   const script = (player ? `; script-src 'sha256-${sha256Base64(PLAYER_SCRIPT)}'` : '') + media;
   const csp = `default-src 'none'; img-src ${images}; style-src 'unsafe-inline'; font-src data: file: 'self'${script}`;
+  // Embedded fonts first, then the sheet, and the paragraph border rule only when a paragraph has one.
+  const border = body.includes(' data-border=') ? paragraphBorderCss() : '';
+  const styleText = `${faces === '' ? '' : `${faces}\n`}${css}${border}`;
   const html = [
     '<!doctype html>',
     `<html lang="${escapeAttr(lang)}">`,
@@ -85,7 +99,7 @@ export function exportHtml(page: ExportPage, options: HtmlExportOptions = {}): H
     `<meta http-equiv="Content-Security-Policy" content="${csp}">`,
     '<meta name="generator" content="OpenNote">',
     `<title>${escapeHtml(title)}</title>`,
-    `<style>\n${css}main{max-width:${max}px;margin:0 auto;padding:32px 16px}\n${player ? `${PLAYER_CSS}\n` : ''}</style>`,
+    `<style>\n${styleText}main{max-width:${max}px;margin:0 auto;padding:32px 16px}\n${player ? `${PLAYER_CSS}\n` : ''}</style>`,
     '</head>',
     '<body>',
     `<main>\n${header}${body}\n</main>`,
@@ -97,10 +111,4 @@ export function exportHtml(page: ExportPage, options: HtmlExportOptions = {}): H
   return { html, assets: [...used] };
 }
 
-/** A data URI for a file, so the document can hold its images itself. */
-export function dataUri(mime: string, bytes: Uint8Array): string {
-  let binary = '';
-  for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
-  const safe = /^[a-z]+\/[a-z0-9.+-]+$/i.test(mime) ? mime : 'application/octet-stream';
-  return `data:${safe};base64,${btoa(binary)}`;
-}
+export { dataUri } from './dataUri';

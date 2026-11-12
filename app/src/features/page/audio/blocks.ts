@@ -187,6 +187,29 @@ export async function insertRecordingBlock(entry: RecordingEntry, options?: Inse
 }
 
 /**
+ * Puts a split recording on the shown page in one change. The first half takes the entry's place in `block`. The
+ * second half goes in a new block after it. `also` adds other steps, such as the marks of typed text. One undo takes
+ * the whole split back.
+ */
+export async function writeSplit(
+  page: string,
+  block: BlockId,
+  entry: RecordingEntry,
+  [one, two]: readonly [RecordingEntry, RecordingEntry],
+  also: readonly Edit[] = [],
+): Promise<BlockId> {
+  const queue = shownQueue.get();
+  if (!queue || !shownLayer.get() || pageId() !== page) throw new Error('No page is shown.');
+  const id: BlockId = newId();
+  const edits = await entryEdits(page, one, { track: 'finished', drop: entry });
+  const insert = insertEdit(id, recordingSpec(two), block);
+  edits.push(insert, ...(await entryEdits(page, two, { track: 'finished' })), ...also);
+  setEntries([one, two]);
+  showBlock(id, insert, await queue.send({ edits }));
+  return id;
+}
+
+/**
  * Saves a recording's entry in `page`. A block the person deleted or undid while recording is put back. When the
  * page isn't the one shown, such as after the person went to another page, it is opened just for the change.
  */

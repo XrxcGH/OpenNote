@@ -5,6 +5,7 @@ import { isEnabled } from '../../../app/flags';
 import { confirm, showToast } from '../../../ui';
 import { checkBeforeOutput, reviewPages } from '../../a11yCheck';
 import { exportHtmlFile, exportMarkdownFile } from '../host/exporter';
+import { exportMarkdown } from '../export';
 import { collectSource, type PageSource } from '../host/source';
 import { openDialog } from './openDialog';
 import { PrintDialog } from './PrintDialog';
@@ -36,6 +37,19 @@ async function withTapeChoice(source: PageSource): Promise<PageSource> {
   return { ...source, page: study.blankTape(source.page, covered, labels, order) };
 }
 
+/** Asks whether to keep formatting Markdown cannot hold, only when the page has some. */
+export async function markdownFormatting(source: PageSource): Promise<'keep' | 'remove'> {
+  const keep = exportMarkdown(source.page, { formatting: 'keep' }).markdown;
+  if (keep === exportMarkdown(source.page, { formatting: 'remove' }).markdown) return 'keep';
+  const remove = await confirm({
+    title: t('pageViews.files.markdownFormatting.title'),
+    body: t('pageViews.files.markdownFormatting.body'),
+    confirmLabel: t('pageViews.files.markdownFormatting.remove'),
+    cancelLabel: t('pageViews.files.markdownFormatting.keep'),
+  });
+  return remove ? 'remove' : 'keep';
+}
+
 /** Opens the print dialog for the shown page. */
 export async function printPage(ctx: CommandContext, mode: 'print' | 'export'): Promise<void> {
   const found = await collectSource(ctx.notes);
@@ -58,7 +72,9 @@ export async function exportText(ctx: CommandContext, kind: 'markdown' | 'html')
   const source = await withTapeChoice(found);
   try {
     const client = ctx.platform.exports;
-    const outcome = await (kind === 'markdown' ? exportMarkdownFile(client, source) : exportHtmlFile(client, source));
+    const outcome = await (kind === 'markdown'
+      ? exportMarkdownFile(client, source, await markdownFormatting(source))
+      : exportHtmlFile(client, source));
     if (outcome.status === 'canceled') return;
     showToast({
       message: t('pageViews.files.saved', { name: outcome.name }),
