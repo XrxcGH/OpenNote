@@ -6,7 +6,10 @@
 import type { RuntimeId } from '../contracts/run';
 import type { AdapterRegistry } from './serve';
 
-export const ADAPTERS: AdapterRegistry = {};
+export const ADAPTERS: AdapterRegistry = {
+  sql: () => import('../runtimes/sql/adapter').then((loaded) => loaded.sqlAdapter),
+  lua: () => import('../runtimes/lua/adapter').then((loaded) => loaded.luaAdapter),
+};
 
 /**
  * The extra globals each runtime's lockdown keeps (RuntimeAdapter.allowances), in one place so the run tests can
