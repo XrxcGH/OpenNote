@@ -86,8 +86,8 @@ function moveCommand(direction: 'up' | 'down') {
     category: 'notebooks',
     keys: [chord(up ? 'Ctrl+Shift+Up' : 'Ctrl+Shift+Down')],
     scope: 'tree',
+    keywords: up ? 'tree.commands.keywords.moveUp' : 'tree.commands.keywords.moveDown',
     allowRepeat: true,
-    palette: false,
     enabled: (ctx) => canStep(ctx, direction),
     disabledReason: (ctx) => {
       const node = currentNode(ctx);

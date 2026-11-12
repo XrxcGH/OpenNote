@@ -46,6 +46,21 @@ describe('TabStrip', () => {
     openInNewTab(place('c'));
   });
 
+  it('keeps every tab wide enough to read when many are open (walk bug N1-N03-7)', async () => {
+    const extra = Array.from({ length: 24 }, (_, at) => page(`x${at}`, `Extra page ${at}`));
+    treeStore.set((state) => ({
+      ...state,
+      nodes: { ...state.nodes, ...Object.fromEntries(extra.map((node) => [node.id, node])) },
+    }));
+    for (const node of extra) openInNewTab(place(node.id));
+    renderUi(<TabStrip />);
+    const tabs = await screen.findAllByRole('tab');
+    expect(tabs.length).toBe(27);
+    const strip = screen.getByRole('tablist');
+    for (const tab of tabs) expect(tab.parentElement!.getBoundingClientRect().width).toBeGreaterThanOrEqual(96);
+    expect(strip.scrollWidth).toBeGreaterThan(strip.clientWidth);
+  });
+
   it('closes a tab on a middle-click', () => {
     renderUi(<TabStrip />);
     const tab = screen.getByRole('tab', { name: 'Alpha' });

@@ -1,5 +1,5 @@
 // The compact layout's bottom bar (ARCHITECTURE.md section 11.1), a navigation landmark with 44 px targets:
-// Notebooks, Search, New page, and More. More holds Settings, Keyboard shortcuts, the title bar items placed
+// Notebooks, Search, New page, and More. More holds Record, Settings, Keyboard shortcuts, the title bar items placed
 // there (such as the update chip), and Trash, under the last few pages opened when bottomBar.recent is on.
 // Buttons show only when their command exists and is available.
 
@@ -43,6 +43,8 @@ const ACTIONS: readonly BottomAction[] = [
 ];
 
 const MORE: readonly { command: CommandId; label: MessageKey }[] = [
+  // The ribbon's Record button is not on this layout, so recording starts here (walk bug B1-B01-5).
+  { command: 'audio.record', label: 'audio.commands.record' },
   { command: 'app.settings', label: 'commands.bar.settings' },
   { command: 'app.shortcuts', label: 'commands.bar.shortcuts' },
 ];

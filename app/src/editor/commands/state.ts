@@ -95,10 +95,20 @@ export function blockKindAt(state: EditorState): BlockKindName | null {
   return parent.type.name === 'paragraph' ? 'paragraph' : null;
 }
 
-/** Whether the caret's textblock allows marks: code blocks and math don't. */
+/**
+ * Whether the caret's textblock allows marks: code blocks and math don't. A range holds when some textblock in it
+ * does, so Ctrl+A, whose range starts and ends outside every textblock, still takes formats (A1-A04-2).
+ */
 export function marksAllowed(state: EditorState): boolean {
-  const { $from } = state.selection;
-  return $from.parent.isTextblock && $from.parent.type.spec.code !== true;
+  const { $from, from, to, empty } = state.selection;
+  const allows = (node: PMNode) => node.isTextblock && node.type.spec.code !== true;
+  if (empty || allows($from.parent)) return allows($from.parent);
+  let found = false;
+  state.doc.nodesBetween(from, to, (node) => {
+    if (allows(node)) found = true;
+    return !found && !node.isTextblock;
+  });
+  return found;
 }
 
 /** Whether the caret is in a task item's first paragraph, where Check or uncheck applies. */

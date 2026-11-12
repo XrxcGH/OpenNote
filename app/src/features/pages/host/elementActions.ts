@@ -5,7 +5,7 @@ import type { Edit, ImportedAsset, NewBlock } from '../../../services/pages/type
 import { documentCss, lightTheme } from '../export';
 import { addElement, elementSvg, fitScale, insertElement, makeElement } from '../elements';
 import type { ElementAsset, ElementData, ElementEntry } from '../elements';
-import { shownMounted } from '../../page';
+import { assetTable, shownMounted, showInserted } from '../../page';
 import { fromBase64, toBase64 } from './base64';
 import { chosenSelection } from './chosen';
 import { exportLabels } from './exporter';
@@ -102,6 +102,8 @@ export async function insertEntry(entry: ElementEntry): Promise<boolean> {
   for (const asset of inserted.assets) {
     const bytes = bufferOf(fromBase64(asset.data));
     const result = await mounted.page.importImage({ kind: 'bytes', bytes, name: asset.name, mime: asset.mime });
+    // The page's image blocks look the asset up here, so it must be known before they show.
+    assetTable(mounted.page).add(result.id, result.asset);
     imported.set(asset.id, result);
     edits.push({ edit: 'addAsset', asset: result.id });
   }
@@ -134,6 +136,7 @@ export async function insertEntry(entry: ElementEntry): Promise<boolean> {
       name: `${entry.name}.png`,
       mime: 'image/png',
     });
+    assetTable(mounted.page).add(result.id, result.asset);
     const frame = { x: at.x, y: at.y, w: width * scale, h: height * scale };
     edits.push({ edit: 'addAsset', asset: result.id });
     edits.push({
@@ -142,6 +145,8 @@ export async function insertEntry(entry: ElementEntry): Promise<boolean> {
     });
   }
   if (edits.length === 0) return false;
-  await mounted.sync.send({ edits });
+  const ack = await mounted.sync.send({ edits });
+  // The view shows what this window inserted only when it is told; the page does not echo it back.
+  await showInserted(mounted, edits, ack.orderKeys);
   return true;
 }

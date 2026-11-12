@@ -2,7 +2,7 @@
 // one onto a core command through the client in app/src/core/, which keeps one request in flight per page. The
 // core's `core:*` events become frames, external changes, and read-only notices for the page they name.
 import type { CoreClient, DecodedEnvelope, FrameInfo } from '../../core/client';
-import { coreBusy, pageClosed, pageOpened, pageUnwritten, watchSaveHealth } from './saveHealth';
+import { coreBusy, pageOpened, pageUnwritten, watchSaveHealth } from './saveHealth';
 import type { ImagesClient, IpcError } from '../../platform/types';
 import { inkListeners } from './ink';
 import { PageServiceError } from './types';
@@ -357,8 +357,6 @@ export function createTauriPageService(client: CoreClient, images: ImagesClient,
         onReadOnly: heard.onReadOnly,
         close: () => {
           heard.stop();
-          // Not "saved": an edit answered as unwritten waits for the `core:saved` through it (saveHealth.ts).
-          pageClosed(pageId);
           return turn(() => client.pageClose(pageId, name)).catch(rejectAs);
         },
       };

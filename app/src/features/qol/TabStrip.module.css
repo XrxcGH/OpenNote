@@ -16,7 +16,8 @@
     display: flex;
     flex: 0 1 16rem;
     align-items: center;
-    min-inline-size: 0;
+    /* Tabs shrink only to a width that keeps a title readable. With more tabs than fit, the strip scrolls. */
+    min-inline-size: 7.5rem;
     border: 1px solid transparent;
     border-block-end: none;
     border-start-start-radius: var(--radius-md);

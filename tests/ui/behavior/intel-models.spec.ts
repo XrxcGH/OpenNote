@@ -6,6 +6,11 @@ import type { Page } from '@playwright/test';
 import { expect, test } from '../fixtures';
 import { openMembranes, runCommand, startWith } from '../intel';
 
+/** Ctrl+K adds a link while text is selected in a box. Taking focus off the box keeps the selection and opens the palette. */
+async function leaveFocusKeepSelection(page: Page): Promise<void> {
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+}
+
 async function openModels(page: Page): Promise<void> {
   await page.goto('/');
   await expect(page.getByText('Biology 101')).toBeVisible();
@@ -76,6 +81,7 @@ test('with a language model downloaded, a writing suggestion says the model wrot
   await box.click();
   await page.keyboard.type('the cells make make energy');
   await page.keyboard.press('Control+KeyA');
+  await leaveFocusKeepSelection(page);
   await runCommand(page, 'Proofread');
   const suggestion = page.getByRole('dialog', { name: 'Proofread' });
   await expect(suggestion).toContainText('Suggested by the language model on this device.');
@@ -90,6 +96,7 @@ test('without a model, a writing suggestion says the built-in rules wrote it', a
   await box.click();
   await page.keyboard.type('the cells make make energy');
   await page.keyboard.press('Control+KeyA');
+  await leaveFocusKeepSelection(page);
   await runCommand(page, 'Proofread');
   await page.getByRole('dialog', { name: 'Turn on writing tools?' }).getByRole('button', { name: 'Turn on' }).click();
   await expect(page.getByRole('dialog', { name: 'Proofread' })).toContainText('Suggested by the built-in rules.');

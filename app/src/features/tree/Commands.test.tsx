@@ -7,6 +7,10 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { getLocation } from '../../app/location';
 import { announcements, expectFocus, pressChord, renderApp } from '../../test';
 import type { NodeId } from '../../services/notes';
+import { act } from '@testing-library/react';
+import { multiStore } from './multi';
+import { getSettings, updateSettings } from '../../state/settings';
+import { setViewport } from '../../test';
 
 const notebooksTree = () => screen.getByRole('tree', { name: 'Notebooks' });
 const pagesTree = () => screen.getByRole('tree', { name: 'Pages' });
@@ -214,6 +218,22 @@ describe('moving', () => {
   });
 });
 
+describe('menus in a small window at a large interface size', () => {
+  it('keeps every item of a context menu inside the window (walk bug VA-4, not reproduced for menus)', async () => {
+    await setViewport(450, 400);
+    await renderTree();
+    await updateSettings({ appearance: { ...getSettings().appearance, uiScale: 150 } });
+    await openMenuOn(notebooksTree, 'Biology 101');
+    const menu = screen.getByRole('menu');
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    const out = [menu, ...menu.querySelectorAll('*')]
+      .filter((element) => element.getBoundingClientRect().right > window.innerWidth + 1)
+      .map((element) => `${element.tagName} ${Math.round(element.getBoundingClientRect().right)}`);
+    expect(out).toEqual([]);
+    await setViewport(1280, 800);
+  });
+});
+
 describe('delete and Undo', () => {
   it('moves a page to Trash, focuses its neighbor, and undoes from the toast and from Ctrl+Z', async () => {
     await renderTree();
@@ -236,6 +256,21 @@ describe('delete and Undo', () => {
     expect(announcements()).toContain('Restored "Mitosis".');
     await pressChord('Ctrl+Y');
     await expect.poll(() => within(pagesTree()).queryByRole('treeitem', { name: 'Mitosis' })).toBeNull();
+  });
+
+  it('keeps focus in the pages tree after deleting several pages, so Ctrl+Z undoes them (walk bug A2-A13-5)', async () => {
+    await renderTree();
+    await openLectures();
+    await focusRow(pagesTree, 'Mitosis');
+    act(() =>
+      multiStore.set({ tree: 'pages', ids: ['p-mitosis', 'p-meiosis'] as NodeId[], anchor: 'p-mitosis' as NodeId }),
+    );
+    await pressChord('Delete');
+    await expect.poll(() => within(pagesTree()).queryByRole('treeitem', { name: 'Mitosis' })).toBeNull();
+    await expectFocus(row(pagesTree(), 'Photosynthesis'));
+    await pressChord('Ctrl+Z');
+    await findRow(pagesTree, 'Mitosis');
+    await findRow(pagesTree, 'Meiosis');
   });
 
   it('closes the open page when it is deleted, and opens its neighbor', async () => {

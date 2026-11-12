@@ -914,8 +914,8 @@ Open it with the command "Open the code studio".
 | New section | Makes a new section. | Ctrl+T |
 | New page | Makes a new page in the section. | Ctrl+N |
 | New subpage | Makes a new subpage under the current page. | Ctrl+Alt+Shift+N |
-| Move up (not in the palette) | Moves the selected item up in its list. | Ctrl+Shift+Up |
-| Move down (not in the palette) | Moves the selected item down in its list. | Ctrl+Shift+Down |
+| Move up | Moves the selected item up in its list. | Ctrl+Shift+Up |
+| Move down | Moves the selected item down in its list. | Ctrl+Shift+Down |
 | Make subpage | Makes the page a subpage of the page above it. | Ctrl+Shift+Right, Ctrl+Alt+] |
 | Promote | Moves the subpage out one level. | Ctrl+Shift+Left, Ctrl+Alt+[ |
 | Rename | Renames the selected item. | F2 |
