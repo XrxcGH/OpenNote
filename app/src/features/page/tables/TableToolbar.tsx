@@ -183,6 +183,8 @@ function useRoomAbove(wrap: { current: HTMLDivElement | null }) {
       else node.removeAttribute('data-below');
     };
     place();
+    // A surface with no ResizeObserver (a test document) keeps the first placement.
+    if (typeof ResizeObserver === 'undefined') return undefined;
     const watch = new ResizeObserver(place);
     watch.observe(node);
     return () => watch.disconnect();
