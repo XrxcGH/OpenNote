@@ -1,6 +1,6 @@
 {
   "startup": {
-    "jsKb": 580,
+    "jsKb": 582,
     "cssKb": 28.5
   },
   "after": [
@@ -83,7 +83,7 @@
     "features/accounts/tasks/auto.ts": 208,
     "features/accounts/tasks/commands.ts": 206,
     "features/ink/index.ts": 67,
-    "features/math/index.ts": 293,
+    "features/math/index.ts": 294,
     "features/math/solvers/ui/SolversTool.tsx": 61,
     "features/page/audio/exportVideo.ts": 93,
     "features/pages/host/shareRender.ts": 69,
@@ -94,7 +94,7 @@
     "features/pages/ui/imageCommands.tsx": 74,
     "features/pages/ui/presentCommands.tsx": 74,
     "features/pdf/importPdf.ts": 69,
-    "features/tables/index.ts": 131,
+    "features/tables/index.ts": 132,
     "features/tools/index.ts": 392,
     "features/engineering/control/ui/ControlKit.tsx": 328,
     "features/engineering/index.ts": 222,
@@ -113,7 +113,7 @@
     "features/page/PageBody": 276,
     "@observablehq/plot": 135,
     "features/math": 185,
-    "features/tables": 77,
+    "features/tables": 86,
     "features/search/links": 195,
     "features/search/lineTags": 160,
     "features/page": 40,
@@ -125,8 +125,8 @@
     "features/shortcuts": 40,
     "features/trash": 40,
     "features/updates": 40,
-    "features/tools/statinfer": 330,
-    "features/tools/humanities/timeline": 318,
+    "features/tools/statinfer": 332,
+    "features/tools/humanities/timeline": 320,
     "features/tools": 317,
     "features/engineering/fluidheat/ui/FluidHeatKit.tsx": 317,
     "features/engineering/mechdyn/ui/MechDynKit.tsx": 124,
@@ -134,7 +134,7 @@
     "features/engineering/mechdyn": 12,
     "features/engineering/aero/ui/KitAeroTool.tsx": 230,
     "features/engineering/solids/ui/SolidsKit.tsx": 119,
-    "features/engineering/thermo/ui/ThermoKit.tsx": 468,
+    "features/engineering/thermo/ui/ThermoKit.tsx": 470,
     "features/study/ui/exam/ExamResults.tsx": 43
   },
   "lazyDefaultKb": 40,
