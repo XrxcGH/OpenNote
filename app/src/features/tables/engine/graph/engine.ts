@@ -4,7 +4,7 @@
 // and finds cycles in one walk. Every edit forks the state, and a fork shares what it does not change.
 
 import { legacyFunctions } from '../formula/fn/legacyText';
-import { newCtx, type Ctx, type Scope, type SheetInfo } from '../formula/compile';
+import { colKey, newCtx, type Ctx, type Scope, type SheetInfo } from '../formula/compile';
 import type { ErrorOrigin } from '../formula/explain';
 import { releaseSpill, spillBox } from '../arrays/spill';
 import { Graph, stronglyConnected, type Box, type Read } from '.';
@@ -29,8 +29,8 @@ import {
   type EngineEnv,
   type Unit,
 } from './units';
-import { colKey } from '../formula/compile';
 import type { Table } from '../model';
+import { tableFacts } from './facts';
 import { filterIndices } from '../filter';
 import { isError, type RowState, type Scalar } from '../values';
 
@@ -105,9 +105,8 @@ export class Engine {
   }
 
   makeCtx(): Ctx {
-    const ctx = newCtx([], { spillBox: (s, c, r) => spillBox(this, s, c, r) });
-    ctx.sheets = this.sheets;
-    return ctx;
+    const ctx = newCtx([], { spillBox: (s, c, r) => spillBox(this, s, c, r), ...tableFacts(() => this.tables) });
+    return Object.assign(ctx, { sheets: this.sheets });
   }
 
   /** Builds the state of a page and calculates every formula. */

@@ -38,6 +38,9 @@ const BY_FAMILY: Partial<Record<Family, string[]>> = {
   datetime: ['DATE', 'DAY', 'DAYS', 'MONTH', 'TODAY', 'YEAR'],
 };
 
+/** The functions the compiler evaluates itself, because an argument is lazy. */
+const LAZY = new Set(['IF', 'IFERROR', 'LET', 'LAMBDA', 'ISOMITTED']);
+
 describe('the function registry', () => {
   it('holds the 48 names of before, each in its family', () => {
     // Family lanes add functions, so each family holds at least the names it always had.
@@ -51,7 +54,8 @@ describe('the function registry', () => {
 
   it('keeps the argument counts and the kinds the compiler knew', () => {
     expect(Object.keys(FUNCTIONS).length).toBeGreaterThanOrEqual(46);
-    expect(SPECIAL_FORMS).toEqual({ IF: { min: 2, max: 3 }, IFERROR: { min: 2, max: 2 } });
+    expect(SPECIAL_FORMS).toMatchObject({ IF: { min: 2, max: 3 }, IFERROR: { min: 2, max: 2 } });
+    expect(Object.keys(SPECIAL_FORMS).sort()).toEqual([...LAZY].sort());
     expect(FUNCTIONS.SUM).toMatchObject({ kind: 'aggregate', min: 1, max: Infinity });
     expect(FUNCTIONS.COUNTA).toMatchObject({ kind: 'aggregate', raw: true });
     expect(FUNCTIONS.ROUND).toMatchObject({ kind: 'scalar', min: 1, max: 2 });
@@ -66,7 +70,7 @@ describe('the function registry', () => {
     for (const spec of REGISTRY.values()) {
       expect(spec.meta.signature.startsWith(`${spec.name}(`), spec.name).toBe(true);
       expect(spec.meta.example, spec.name).toMatch(/^=/);
-      expect(isSpecial(spec)).toBe(spec.name === 'IF' || spec.name === 'IFERROR');
+      expect(isSpecial(spec)).toBe(LAZY.has(spec.name));
     }
   });
 

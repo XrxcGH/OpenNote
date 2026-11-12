@@ -76,6 +76,24 @@ describe('recalculation worker', () => {
     expect(worker.terminated).toBe(true);
   });
 
+  it('carries the page title to the worker, so CELL("filename") reads it (gap G3)', async () => {
+    const worker = new SlowWorker(0);
+    const client = createRecalcClient({ spawn: () => worker, threshold: 4, busyMs: 1000 });
+    const table = createTable(
+      [
+        { name: 'A', type: 'number' },
+        { name: 'B', type: 'text', formula: 'CELL("filename")' },
+      ],
+      [['1'], ['2'], ['3']],
+      EN_US,
+    );
+    const blank = { ...table, rows: table.rows.map((r) => ({ ...r, cells: [r.cells[0], { raw: '', value: null }] })) };
+    const [done] = await client.recalc([blank], { today: () => 1, title: 'Budget' });
+    expect(worker.posted).toBe(1);
+    expect(done.rows.map((r) => r.cells[1].value)).toEqual(['Budget', 'Budget', 'Budget']);
+    client.dispose();
+  });
+
   it('shows #BUSY! past the busy time, then the results when the worker answers', async () => {
     const worker = new SlowWorker(80);
     const client = createRecalcClient({ spawn: () => worker, threshold: 4, busyMs: 10 });

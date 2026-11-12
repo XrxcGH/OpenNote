@@ -109,7 +109,7 @@ export function createRecalcClient(options: RecalcClientOptions = {}): RecalcCli
           clearTimeout(timer);
           resolve(result);
         });
-        start().postMessage({ id, tables, today: env.today() });
+        start().postMessage({ id, tables, today: env.today(), title: env.title });
       });
     },
     stop() {

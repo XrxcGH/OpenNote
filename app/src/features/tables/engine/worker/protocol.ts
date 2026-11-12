@@ -9,6 +9,8 @@ export interface RecalcRequest {
   readonly tables: readonly Table[];
   /** Today as a serial, read on the page, so TODAY() agrees with it. */
   readonly today: number;
+  /** The page's title, read on the page, so CELL("filename") agrees with it. */
+  readonly title?: string;
 }
 
 /** One changed cell: the table's index on the page, the data row, and the column. */

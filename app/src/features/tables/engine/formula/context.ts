@@ -39,6 +39,17 @@ export interface Scope {
 export interface Runtime {
   /** The block a formula cell spills into, the cell itself when it does not spill, or its error. */
   spillBox(s: number, col: number, row: number): Box | FormulaError;
+  /** What CELL and ISFORMULA ask about a cell, read from the table as it is now. Unset: nothing is known. */
+  cellFacts?(s: number, col: number, row: number): CellFacts | undefined;
+  /** The table's calculation mode. */
+  calcMode?(s: number): 'auto' | 'manual';
+}
+
+/** A cell's kind of content and its column's type, as functions about cells read them. */
+export interface CellFacts {
+  readonly formula: boolean;
+  readonly type: string;
+  readonly decimals?: number;
 }
 
 /** What a closure reads while it runs. One context serves a whole recalculation. */
