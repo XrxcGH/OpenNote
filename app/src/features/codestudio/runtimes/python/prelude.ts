@@ -22,6 +22,8 @@ export interface PythonState {
   exit: number;
   kind: string;
   wantedInput: boolean;
+  /** True when the program failed before it ran: compile() itself gave up, as on a parser stack overflow. */
+  compiling?: boolean;
 }
 
 /** What the compile() check found: nothing, or one error with the place CPython gives (MicroPython gives text). */
@@ -29,6 +31,8 @@ export interface PythonChecked {
   ok: boolean;
   kind?: string;
   text?: string;
+  /** The error's own last line, for an error that has no frame to map. */
+  message?: string;
   line?: number | null;
   column?: number | null;
 }
@@ -226,11 +230,14 @@ def _on_run():
         module.__file__ = path
         scope = module.__dict__
         real.modules['__main__'] = module
+    state['compiling'] = True
     try:
         text = _on_read(path)
         if text.startswith('\ufeff'):
             text = text[1:]
-        exec(compile(text, main, 'exec'), scope)
+        code = compile(text, main, 'exec')
+        state['compiling'] = False
+        exec(code, scope)
     except SystemExit as e:
         code = e.args[0] if len(e.args) > 0 else None
         # A bool is an int in CPython but not in MicroPython: test it first. A code past 32 bits is clamped, so the
@@ -276,16 +283,18 @@ def _on_check():
         text = text[1:]
     try:
         compile(text, cfg['path'], 'exec')
-    except SyntaxError as e:
-        found = {
-            'ok': False,
-            'kind': type(e).__name__,
-            'text': _on_format(e, cfg['home']),
-            'line': getattr(e, 'lineno', None),
-            'column': getattr(e, 'offset', None),
-        }
-    except Exception:
-        pass
+    except Exception as e:
+        # MemoryError and RecursionError: the parser's own stack ran out, as it will in the run. MicroPython has no
+        # RecursionError, so it is matched by name.
+        if isinstance(e, (SyntaxError, MemoryError)) or type(e).__name__ == 'RecursionError':
+            found = {
+                'ok': False,
+                'kind': type(e).__name__,
+                'text': _on_format(e, cfg['home']),
+                'message': type(e).__name__ + ': ' + str(getattr(e, 'msg', None) or e),
+                'line': getattr(e, 'lineno', None),
+                'column': getattr(e, 'offset', None),
+            }
     _on_write('` +
   CHECKED_FILE +
   String.raw`', json.dumps(found))

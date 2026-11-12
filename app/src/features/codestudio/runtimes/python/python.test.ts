@@ -21,6 +21,7 @@ import type { LoadPyodide } from './pyodide';
 import { checkPython, runPython } from './session';
 import type { PythonEngine } from './session';
 import { pythonMapper } from './traceback';
+import { REACH, REACH_HELD } from './fixtures/reach';
 
 // Pyodide takes seconds to start on a loaded machine, and fib(30) takes a while in MicroPython.
 vi.setConfig({ testTimeout: 120_000, hookTimeout: 180_000 });
@@ -404,6 +405,31 @@ describe.each(['quick', 'full'] as const)('errors and diagnostics in Python (%s)
   });
 });
 
+describe('the check and the run agree on sources compile() gives up on (full Python)', () => {
+  it('reports a NUL character, which has no frame to map, as a diagnostic', async () => {
+    const file = { path: 'main.py', text: 'print(1)\nx = "a\0b"\n' };
+    const found = checkPython(full, file, [file]);
+    expect(found).toHaveLength(1);
+    expect(found[0]).toMatchObject({ file: 'main.py', kind: 'SyntaxError' });
+    expect(found[0]!.message).toMatch(/null/);
+    const ran = await run('full', { 'main.py': file.text });
+    expect([ran.status, ran.out]).toEqual(['error', '']);
+  });
+
+  it('reports a parser stack overflow in the check, and the run ends as "error", not "memory"', async () => {
+    // CPython's parser gives up on deep nesting with MemoryError ("Parser stack overflowed").
+    const text = 'x = ' + '-'.repeat(200_000) + '1\n';
+    const file = { path: 'main.py', text };
+    const found = checkPython(full, file, [file]);
+    expect(found).toHaveLength(1);
+    expect(found[0]).toMatchObject({ file: 'main.py', line: 1 });
+    expect(found[0]!.message).toMatch(/^(MemoryError|RecursionError|SyntaxError)/);
+    const ran = await run('full', { 'main.py': text });
+    expect(ran.status).toBe('error');
+    expect((await run('full', { 'main.py': 'print(2)\n' })).out).toBe('2\n');
+  });
+});
+
 describe('a reused full Python', () => {
   it('forgets the last run project modules', async () => {
     await run('full', { 'main.py': 'import util\nprint(util.A)\n', 'util.py': 'A = 1\n' });
@@ -517,6 +543,76 @@ describe('the sandbox of full Python, without lockdown (python.test.tsx repeats 
         "['data.txt', 'main.py']",
       ),
     );
+  });
+
+  it('leaves the program no JavaScript value and no way to make one, by any route REACH knows', async () => {
+    const ran = await run('full', { 'main.py': REACH });
+    expect([ran.status, ran.err]).toEqual(['ok', '']);
+    expect(ran.out).toBe(REACH_HELD);
+  });
+});
+
+// A program that writes 1 MiB blocks to a file until the write fails. File data lives outside the heap, so only the
+// file cap stops it; without the cap a program wrote 400 MiB under a 64 MiB limit.
+const FILL = lines(
+  'n = 0',
+  'chunk = "x" * (1024 * 1024)',
+  'try:',
+  '    with open("big.txt", "w") as f:',
+  '        for _ in range(64):',
+  '            f.write(chunk)',
+  '            f.flush()',
+  '            n += 1',
+  'except OSError as e:',
+  '    print("refused", e.errno)',
+  'print(n)',
+);
+
+describe.each(['quick', 'full'] as const)('the file cap in Python (%s)', (kind) => {
+  const MiB = 1024 * 1024;
+
+  it('fails a write with ENOSPC once the files would pass the memory limit', async () => {
+    const ran = await run(kind, { 'main.py': FILL }, { limits: { ...RUN_LIMITS, memoryBytes: 8 * MiB } });
+    expect([ran.status, ran.err]).toEqual(['ok', '']);
+    // Emscripten's ENOSPC is 51.
+    expect(ran.out).toMatch(/^refused 51\n[0-8]\n$/);
+    const big = ran.written.find((file) => file.path === 'big.txt');
+    expect(big?.text.length ?? 0).toBeLessThanOrEqual(8 * MiB);
+  });
+
+  it('counts files the program removed as free again', async () => {
+    const program = lines(
+      'import os',
+      'chunk = "x" * (1024 * 1024)',
+      'for _ in range(6):',
+      '    with open("t.txt", "w") as f:',
+      '        for _ in range(4):',
+      '            f.write(chunk)',
+      '    os.remove("t.txt")',
+      'print("done")',
+    );
+    const ran = await run(kind, { 'main.py': program }, { limits: { ...RUN_LIMITS, memoryBytes: 8 * MiB } });
+    expect([ran.status, ran.out, ran.err]).toEqual(['ok', 'done\n', '']);
+  });
+});
+
+describe('links in the project folder (full Python)', () => {
+  it('keeps the status and the written files when links are left behind, and the next run works', async () => {
+    const program = lines(
+      'import os',
+      'os.symlink("/", "root")',
+      'os.symlink("me", "me")',
+      'os.symlink("missing", "dangling")',
+      'os.mkdir("sub")',
+      'os.symlink("..", "sub/up")',
+      'open("o.txt", "w").write("kept")',
+      'print("end")',
+    );
+    const ran = await run('full', { 'main.py': program });
+    expect([ran.status, ran.message, ran.out, ran.err]).toEqual(['ok', '', 'end\n', '']);
+    expect(ran.written).toEqual([{ path: 'o.txt', text: 'kept' }]);
+    const next = await run('full', { 'main.py': 'import os\nprint(sorted(os.listdir(".")))\n' });
+    expect([next.status, next.out]).toEqual(['ok', "['main.py']\n"]);
   });
 });
 

@@ -6,6 +6,7 @@
 import { loadMicroPython } from '@micropython/micropython-webassembly-pyscript';
 import type { RuntimeAdapter } from '../../contracts/run';
 import { ALLOWANCES } from '../../run/adapters';
+import { codeStudioPython } from '../../../../strings/en/codeStudio/python';
 import { capHeap, loadWithMemory } from './heap';
 import { checkPython, runPython } from './session';
 import type { EmscriptenFS, PythonEngine } from './session';
@@ -29,7 +30,7 @@ interface RuntimeTables {
 export function cutOffJavaScript(tables: RuntimeTables): void {
   const table = tables.proxy_js_ref;
   if (!Array.isArray(table) || !(tables.proxy_js_ref_map instanceof Map)) {
-    throw new Error('The Python runtime did not start as expected.');
+    throw new Error(codeStudioPython.startFailed);
   }
   const inert: unknown = Object.freeze(Object.create(null));
   const isValue = (value: unknown) => (typeof value === 'object' && value !== null) || typeof value === 'function';
@@ -68,7 +69,7 @@ export async function loadMicroPythonEngine(url: string): Promise<PythonEngine> 
     }),
   );
   // Without its memory there is no limit, so the runtime does not start.
-  if (!memory) throw new Error('The Python runtime did not start as expected.');
+  if (!memory) throw new Error(codeStudioPython.startFailed);
   // The limit counts from the top of what the runtime uses, not from the end of its memory. The memory starts with
   // free room, and the program would get it on top of the limit. A small block marks that top.
   const module = (python as unknown as { _module: { _malloc(size: number): number; _free(at: number): void } })._module;

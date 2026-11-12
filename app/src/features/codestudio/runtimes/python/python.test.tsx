@@ -17,6 +17,7 @@ import type { RunFile, RuntimeDiagnostic, RuntimeId } from '../../contracts/run'
 import { RunHost, createRunWorker, fromWorker } from '../../run/host';
 import type { RunOrder } from '../../run/host';
 import { RUN_LIMITS } from '../../run/protocol';
+import { REACH, REACH_HELD } from './fixtures/reach';
 
 // Loading Pyodide in a worker takes seconds, more on a loaded machine; the test server also transforms its loader.
 vi.setConfig({ testTimeout: 180_000 });
@@ -84,58 +85,8 @@ const ESCAPES = lines(
   'print(sorted(os.listdir(".")))',
 );
 
-// Three routes past the cut-off (the import hook's table, dropping the refusing finder, and making the built-in
-// module again), then every JavaScript object Python's garbage collector can see.
-const REACH = lines(
-  'import sys, gc',
-  'reached = []',
-  'held = [f for f in sys.meta_path if getattr(f, "jsproxies", None)]',
-  'print("import hook:", len(held))',
-  'for f in held:',
-  '    reached.extend(f.jsproxies.values())',
-  'first = sys.meta_path.pop(0)',
-  'try:',
-  '    import js',
-  '    reached.append(js)',
-  '    print("import js: imported")',
-  'except ImportError:',
-  '    print("import js: refused")',
-  'sys.meta_path.insert(0, first)',
-  'try:',
-  '    import _imp',
-  '    from importlib.machinery import BuiltinImporter',
-  '    core = _imp.create_builtin(BuiltinImporter.find_spec("_pyodide_core"))',
-  '    reached.append(core.to_js({}))',
-  '    print("_pyodide_core: made")',
-  'except Exception:',
-  '    print("_pyodide_core: refused")',
-  'def is_js(value):',
-  '    try:',
-  '        return any(c.__name__ == "JsProxy" for c in type(value).__mro__)',
-  '    except Exception:',
-  '        return False',
-  'for item in gc.get_objects():',
-  '    values = list(item.values()) if isinstance(item, dict) else [item]',
-  '    reached.extend(v for v in values if is_js(v))',
-  'names = ["fetch", "eval", "postMessage", "setTimeout", "setInterval", "importScripts"]',
-  'names += ["XMLHttpRequest", "WebSocket"]',
-  'powers = set()',
-  'ran = False',
-  'for value in reached:',
-  '    for name in names:',
-  '        try:',
-  '            if hasattr(value, name):',
-  '                powers.add(name)',
-  '        except Exception:',
-  '            pass',
-  '    try:',
-  '        value.constructor.constructor("return 1")()',
-  '        ran = True',
-  '    except Exception:',
-  '        pass',
-  'print("powers:", sorted(powers))',
-  'print("reached:", len(reached))',
-  'print("code from text:", "ran" if ran else "refused")',
+// After REACH (fixtures/reach.ts), the network from Python's side.
+const NETWORK = lines(
   'import socket',
   'try:',
   '    socket.create_connection(("example.com", 80), timeout=1)',
@@ -173,19 +124,33 @@ describe('full Python in the run worker', () => {
     );
   });
 
-  it('lockdown is the boundary: no JavaScript object the program reaches can fetch, post, time, or eval', async () => {
-    const ran = await run('python-full', [{ path: 'main.py', text: REACH }]);
+  it('lockdown is the boundary: the program reaches no JavaScript value, nor any way to make one', async () => {
+    const ran = await run('python-full', [{ path: 'main.py', text: REACH + NETWORK }]);
     expect([ran.status, ran.err]).toEqual(['ok', '']);
-    // The cut-off holds for each route the program tried, so nothing is reached through them.
-    expect(ran.out).toContain('import hook: 0\n');
-    expect(ran.out).toContain('import js: refused\n');
-    expect(ran.out).toContain('_pyodide_core: refused\n');
-    // Whatever was reached by other ways can do nothing.
-    expect(ran.out).toMatch(/reached: [1-9]/);
-    expect(ran.out).toContain('powers: []\n');
-    expect(ran.out).toContain('code from text: refused\n');
-    expect(ran.out).toContain('socket: refused\n');
-    expect(ran.out).toContain('urlopen: refused\n');
+    expect(ran.out).toBe(REACH_HELD + lines('socket: refused', 'urlopen: refused'));
+  });
+
+  it('runs no code from text through ctypes, and the run says so in its own words', async () => {
+    const program = lines(
+      'import ctypes',
+      'try:',
+      '    print("eval:", ctypes.CDLL(None).emscripten_run_script_int(b"6*7"), flush=True)',
+      'except Exception as e:',
+      '    print("eval:", type(e).__name__, flush=True)',
+    );
+    const ran = await run('python-full', [{ path: 'main.py', text: program }]);
+    expect(ran.out).not.toContain('eval: 42');
+    // Whatever ends the run, its message is the app's text or a Python error name, never the runtime's raw text.
+    expect(ran.message).not.toMatch(/console|not defined|Program terminated/);
+  });
+
+  it('gives os._exit its exit code', async () => {
+    const three = await run('python-full', [
+      { path: 'main.py', text: 'import os\nprint("a", flush=True)\nos._exit(3)\n' },
+    ]);
+    expect([three.status, three.exitCode, three.out]).toEqual(['error', 3, 'a\n']);
+    const zero = await run('python-full', [{ path: 'main.py', text: 'import os\nos._exit(0)\n' }]);
+    expect([zero.status, zero.exitCode, zero.message]).toEqual(['ok', 0, '']);
   });
 
   it('runs asyncio with sleep and gather after lockdown', async () => {
@@ -270,6 +235,27 @@ describe.each(['python-quick', 'python-full'] as const)('how a run of %s ends', 
     expect([ran.status, ran.err]).toEqual(['ok', '']);
     expect(Number(ran.out)).toBeGreaterThan(0);
     expect(Number(ran.out)).toBeLessThan(66);
+  });
+
+  it('stops a file that grows past the memory limit with ENOSPC', async () => {
+    const program = lines(
+      'n = 0',
+      'chunk = "x" * (1024 * 1024)',
+      'try:',
+      '    with open("big.txt", "w") as f:',
+      '        for _ in range(400):',
+      '            f.write(chunk)',
+      '            f.flush()',
+      '            n += 1',
+      'except OSError as e:',
+      '    print("refused", e.errno)',
+      'print(n)',
+    );
+    const ran = await run(runtime, [{ path: 'main.py', text: program }]);
+    expect([ran.status, ran.err]).toEqual(['ok', '']);
+    const [refused, n] = ran.out.split('\n');
+    expect(refused).toBe('refused 51');
+    expect(Number(n)).toBeLessThanOrEqual(64);
   });
 
   it('runs main.py next to project files named random.py, io.py, and json.py', async () => {

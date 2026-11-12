@@ -6,18 +6,25 @@
 import type { Emit, RunContext, RunEnd, RunFile, RunRequest, RuntimeDiagnostic, Stream } from '../../contracts/run';
 import { mapDiagnostics } from '../../run/diagnostics';
 import { isProjectPath } from '../../run/mount';
+import { capFiles } from './heap';
+import type { CappedFS } from './heap';
 import { CHECKED_FILE, CHECK_FILE, CHECK_SOURCE, HOME, RUN_FILE, RUN_SOURCE, SCRATCH, STATE_FILE } from './prelude';
 import type { PythonChecked, PythonState } from './prelude';
 import { pythonMapper } from './traceback';
+import { codeStudioPython } from '../../../../strings/en/codeStudio/python';
+
+/** Room the run's state file has past the file cap, so a program that fills the cap still ends with its state. */
+const STATE_RESERVE = 1024 * 1024;
 
 /** The part of Emscripten's FS object both runtimes expose. */
-export interface EmscriptenFS {
+export interface EmscriptenFS extends CappedFS {
   mkdir(path: string): void;
   writeFile(path: string, data: string | Uint8Array): void;
   readFile(path: string): Uint8Array;
   readdir(path: string): string[];
   stat(path: string): { mode: number };
-  isDir(mode: number): boolean;
+  lstat(path: string): { mode: number };
+  isLink(mode: number): boolean;
   unlink(path: string): void;
   rmdir(path: string): void;
   analyzePath(path: string): { exists: boolean };
@@ -49,22 +56,35 @@ function makeFolders(fs: EmscriptenFS, path: string): void {
   }
 }
 
+/** The mode of `path` itself: a link is not followed. Null when nothing is there. */
+function modeOf(fs: EmscriptenFS, path: string): number | null {
+  try {
+    return fs.lstat(path).mode;
+  } catch {
+    return null;
+  }
+}
+
+/** Removes `path` and what it holds. A link is removed, never followed, so a link to "/" or to itself is safe. */
 function removeTree(fs: EmscriptenFS, path: string): void {
-  if (!exists(fs, path)) return;
-  if (!fs.isDir(fs.stat(path).mode)) return fs.unlink(path);
+  const mode = modeOf(fs, path);
+  if (mode === null) return;
+  if (!fs.isDir(mode)) return fs.unlink(path);
   for (const name of fs.readdir(path)) if (name !== '.' && name !== '..') removeTree(fs, `${path}/${name}`);
   fs.rmdir(path);
 }
 
-/** Every file under `root`, as project paths. */
+/** Every file under `root`, as project paths. Links are skipped: the overlay holds files and folders only. */
 function walk(fs: EmscriptenFS, root: string): string[] {
   const found: string[] = [];
   const visit = (folder: string, prefix: string) => {
     for (const name of fs.readdir(folder)) {
       if (name === '.' || name === '..' || found.length >= MAX_WALK) continue;
       const full = `${folder}/${name}`;
-      if (fs.isDir(fs.stat(full).mode)) visit(full, `${prefix}${name}/`);
-      else found.push(`${prefix}${name}`);
+      const mode = modeOf(fs, full);
+      if (mode === null || fs.isLink(mode)) continue;
+      if (fs.isDir(mode)) visit(full, `${prefix}${name}/`);
+      else if (fs.isFile(mode)) found.push(`${prefix}${name}`);
     }
   };
   visit(root, '');
@@ -98,7 +118,14 @@ function mountProject(fs: EmscriptenFS, files: readonly RunFile[]): void {
 /** Sends the files the program added or changed to the run's overlay. A file that is not UTF-8 text is skipped. */
 function collectWrites(fs: EmscriptenFS, files: readonly RunFile[], context: RunContext): void {
   const before = new Map(files.map((file) => [file.path, file.text]));
-  for (const path of walk(fs, HOME)) {
+  let paths: string[];
+  try {
+    paths = walk(fs, HOME);
+  } catch {
+    // A folder the program left in a state the walk cannot read: the run keeps its own status.
+    return;
+  }
+  for (const path of paths) {
     const text = readText(fs, `${HOME}/${path}`);
     if (text === null || before.get(path) === text) continue;
     context.files.write(path, text);
@@ -136,8 +163,18 @@ function outputTo(emit: Emit): { write(stream: Stream, bytes: Uint8Array): void;
 /** How a run that the runtime itself ended (not the program) is reported. */
 function runtimeFailure(error: unknown): RunEnd {
   const text = String((error as Error)?.message ?? error);
+  // `os._exit(n)` ends the runtime with Emscripten's ExitStatus, "Program terminated with exit(n)", which carries the
+  // program's exit code.
+  const exit = error as { name?: unknown; status?: unknown } | null;
+  const status =
+    exit?.name === 'ExitStatus' ? exit.status : Number(/^Program terminated with exit\((-?\d+)\)/.exec(text)?.[1]);
+  if (typeof status === 'number' && Number.isInteger(status)) {
+    const code = Math.abs(status) > 2 ** 31 ? 1 : status;
+    return { status: code === 0 ? 'ok' : 'error', exitCode: code, message: code === 0 ? '' : 'SystemExit' };
+  }
   if (/memory|MemoryError|Cannot enlarge memory/i.test(text)) return { status: 'memory', message: 'MemoryError' };
-  return { status: 'error', exitCode: 1, message: text.split('\n')[0]!.slice(0, 200) };
+  // The runtime's own text (a JavaScript error, say) means nothing to the reader of the console.
+  return { status: 'error', exitCode: 1, message: codeStudioPython.runtimeStopped };
 }
 
 /** Runs one request in `engine`. */
@@ -153,6 +190,9 @@ export function runPython(engine: PythonEngine, request: RunRequest, emit: Emit,
   };
   fs.writeFile(RUN_FILE, JSON.stringify(settings));
   engine.limitMemory?.(request.limits.memoryBytes);
+  // File data lives outside the heap, so the files the program writes have a cap of the same size.
+  const limitFiles = capFiles(fs, SCRATCH, STATE_FILE, STATE_RESERVE);
+  limitFiles(request.limits.memoryBytes);
   const output = outputTo(emit);
   engine.sink = output.write;
   let failure: RunEnd | null = null;
@@ -161,6 +201,7 @@ export function runPython(engine: PythonEngine, request: RunRequest, emit: Emit,
   } catch (error) {
     failure = runtimeFailure(error);
   } finally {
+    limitFiles(null);
     output.end();
     engine.sink = () => undefined;
   }
@@ -174,7 +215,9 @@ export function runPython(engine: PythonEngine, request: RunRequest, emit: Emit,
   }
   if (failure) return failure;
   if (!state) return { status: 'error', exitCode: 1, message: '' };
-  if (state.kind === 'MemoryError') return { status: 'memory', exitCode: 1, message: 'MemoryError' };
+  // A MemoryError from compile() is the parser's stack, not the run's memory: the program is too deeply nested.
+  if (state.kind === 'MemoryError' && !state.compiling)
+    return { status: 'memory', exitCode: 1, message: 'MemoryError' };
   return readState(state);
 }
 
@@ -189,6 +232,13 @@ function readState(state: PythonState): RunEnd {
     return { status: 'error', exitCode: 1, message };
   }
   return { status: state.status === 'ok' && exit === 0 ? 'ok' : 'error', exitCode: exit, message };
+}
+
+/** The diagnostic for a check error the traceback mapper finds no frame for. */
+function frameless(path: string, found: PythonChecked): RuntimeDiagnostic | undefined {
+  const message = found.message ?? found.text?.trimEnd().split('\n').at(-1);
+  if (!message) return undefined;
+  return { file: path, line: 1, message, kind: found.kind ?? 'SyntaxError' };
 }
 
 /** Compiles one file without running it: the syntax error it has, if any, as diagnostics (DESIGN 6.1, L-c). */
@@ -207,10 +257,12 @@ export function checkPython(engine: PythonEngine, file: RunFile, files: readonly
   if (!found || found.ok || !found.text) return [];
   const known = files.some((item) => item.path === file.path) ? files : [...files, file];
   const items = mapDiagnostics(pythonMapper, found.text, known).filter((item) => item.file === file.path);
-  const item = items[items.length - 1];
+  const lineCount = file.text.split('\n').length;
+  // An error with no frame in the file (a NUL character, a parser stack that ran out) still gets a diagnostic: at its
+  // own line, or at line 1.
+  const item = items[items.length - 1] ?? frameless(file.path, found);
   if (!item) return [];
   // CPython gives the exact place; MicroPython gives the line only, which the traceback already holds.
-  const lineCount = file.text.split('\n').length;
   const line = typeof found.line === 'number' && found.line >= 1 ? Math.min(found.line, lineCount) : item.line;
   const column = typeof found.column === 'number' && found.column >= 1 ? found.column : undefined;
   return [{ ...item, line, ...(column === undefined ? {} : { column }) }];

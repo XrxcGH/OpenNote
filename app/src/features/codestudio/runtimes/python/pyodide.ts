@@ -2,12 +2,21 @@
 // a pack (ADR 0070): the worker loads it from the opennote-pack scheme while it is warm, before lockdown, since
 // lockdown takes fetch away. The project lives in Pyodide's MEMFS, as for MicroPython.
 //
-// The boundary is lockdown: it empties the global object and refuses code from text, so a JavaScript value Python
-// still reaches has nothing to call. The cut-off (CUT_OFF_SOURCE) is a second layer that gives plain errors. An
-// `import` of `js`, `pyodide_js`, `pyodide.ffi`, `pyodide.http`, or the rest of the `pyodide` and `_pyodide`
-// packages meets ModuleNotFoundError, and Pyodide's import hook for the js modules is gone. A program that works
-// hard can still reach a JavaScript object through Python's own objects; python.test.tsx checks that such objects
-// can do nothing.
+// The boundary is lockdown. It empties the global object and refuses code from text, so a JavaScript value Python
+// still reaches has nothing to call.
+//
+// The cut-off (CUT_OFF_SOURCE) is a second layer. It gives plain errors and takes away what Pyodide's Python side
+// still holds:
+// - An `import` of `js`, `pyodide_js`, `pyodide.ffi`, `pyodide.http`, or the rest of `pyodide` and `_pyodide` meets
+//   ModuleNotFoundError.
+// - Every JavaScript proxy Python holds is destroyed and dropped. The Pyodide API object is one of them.
+// - The functions and classes that make new JavaScript values (`to_js`, `create_proxy`, `JsException`) are gone or
+//   refuse.
+//
+// Nothing can be hidden from Python's own introspection, so the cut-off is not a wall. A program that gets past it may
+// still make a JavaScript value; lockdown makes that value harmless. python.test.tsx walks all a program reaches to
+// check it. The memory limit caps the WebAssembly heap and the files. A JavaScript value is not in either, so the time
+// limit, which ends the worker, is what bounds it.
 
 import type { RuntimeAdapter, Stream } from '../../contracts/run';
 import { packFileUrl } from '../../packs/client';
@@ -83,10 +92,15 @@ del _on_event_loop
 `;
 
 /**
- * Refuses the program every module that reaches JavaScript or the network, and forgets the ones already loaded,
- * so an `import` meets ModuleNotFoundError. Pyodide's import hook for the js modules leaves the import path and
- * forgets what it held, and the built-in `_pyodide_core` cannot be made again. Pyodide keeps its own references to
- * its internals, so its runtime still works. This is not the boundary: lockdown is (see the top of this file).
+ * Refuses the program every module that reaches JavaScript or the network, and forgets the ones already loaded. An
+ * `import` meets ModuleNotFoundError, and Pyodide's import hook for the js modules leaves the import path.
+ *
+ * Then `_on_forget` drops every JavaScript proxy the garbage collector can see from what holds it, and destroys it.
+ * The built-in functions of `_pyodide_core` go too: from every module, and from the copy Python keeps to make the
+ * module again. So the module `_imp.create_builtin` makes has none of them. Pyodide's classes that make a JavaScript
+ * value from Python arguments refuse to. Pyodide's runtime keeps its own references in C, so it still works.
+ *
+ * This is not the boundary: lockdown is (see the top of this file).
  */
 const CUT_OFF_SOURCE = String.raw`
 def _on_cut_off():
@@ -115,6 +129,80 @@ def _on_cut_off():
 
 _on_cut_off()
 del _on_cut_off
+
+def _on_forget():
+    import gc
+    def is_js(value):
+        try:
+            return any(c.__name__ == 'JsProxy' for c in type(value).__mro__)
+        except Exception:
+            return False
+    def makes_js(value):
+        owner = getattr(value, '__self__', None)
+        native = type(value).__name__ == 'builtin_function_or_method'
+        return native and getattr(owner, '__name__', None) == '_pyodide_core'
+    def held(value):
+        return is_js(value) or makes_js(value)
+    gc.collect()
+    found = []
+    for item in gc.get_objects():
+        if held(item):
+            found.append(item)
+        found.extend(value for value in gc.get_referents(item) if held(value))
+    done = set()
+    for value in found:
+        if id(value) in done:
+            continue
+        done.add(id(value))
+        for holder in gc.get_referrers(value):
+            if holder is found:
+                continue
+            if isinstance(holder, dict):
+                for key in [key for key, item in holder.items() if item is value]:
+                    del holder[key]
+            elif isinstance(holder, list):
+                holder[:] = [item for item in holder if item is not value]
+            elif type(holder).__name__ == 'cell':
+                holder.cell_contents = None
+            elif isinstance(getattr(holder, '__dict__', None), dict):
+                for key in [key for key, item in vars(holder).items() if item is value]:
+                    try:
+                        delattr(holder, key)
+                    except Exception:
+                        pass
+        if is_js(value):
+            try:
+                value.destroy()
+            except Exception:
+                pass
+    def refuse(*args, **kwargs):
+        raise TypeError('JavaScript objects are not available here.')
+    def classes(base, out, ids):
+        for sub in type.__subclasses__(base):
+            if id(sub) not in ids:
+                ids.add(id(sub))
+                out.append(sub)
+                classes(sub, out, ids)
+        return out
+    for cls in classes(object, [], set()):
+        if not cls.__name__.startswith('Js') or not str(cls.__module__).startswith(('pyodide', '_pyodide')):
+            continue
+        for name in ('new', '_new_exc'):
+            if name in vars(cls):
+                try:
+                    delattr(cls, name)
+                except Exception:
+                    pass
+        if '__new__' in vars(cls):
+            try:
+                cls.__new__ = staticmethod(refuse)
+            except Exception:
+                pass
+    found.clear()
+    gc.collect()
+
+_on_forget()
+del _on_forget
 `;
 
 /** Loads Pyodide from `indexURL` and makes it an engine. Output goes to the engine's sink. */
