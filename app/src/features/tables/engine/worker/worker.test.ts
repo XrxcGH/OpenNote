@@ -126,6 +126,13 @@ describe('recalculation worker', () => {
     client.dispose();
   });
 
+  it('turns error copies back into the engine errors', () => {
+    const [table] = applyChanges([stale(1)], [{ table: 0, row: 0, col: 1, value: { error: 'DIV0' } }]);
+    expect(table.rows[0].cells[1].value).toBe(err('DIV0'));
+  });
+});
+
+describe('the worker and the lazy statistical chunk', () => {
   it('waits in the worker for the lazy statistical chunk instead of answering #BUSY!', async () => {
     const table = createTable([{ name: 'A', type: 'number' }], [['']], EN_US);
     const page = {
@@ -134,10 +141,5 @@ describe('recalculation worker', () => {
     };
     const reply = await respondWhenReady({ id: 1, tables: [page], today: 0 });
     expect(reply.changes).toEqual([{ table: 0, row: 0, col: 0, value: 4 }]);
-  });
-
-  it('turns error copies back into the engine errors', () => {
-    const [table] = applyChanges([stale(1)], [{ table: 0, row: 0, col: 1, value: { error: 'DIV0' } }]);
-    expect(table.rows[0].cells[1].value).toBe(err('DIV0'));
   });
 });
