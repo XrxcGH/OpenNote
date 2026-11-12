@@ -39,7 +39,7 @@ const BY_FAMILY: Partial<Record<Family, string[]>> = {
 };
 
 describe('the function registry', () => {
-  it('holds the 48 names of before, each in its family', () => {
+  it('keeps every name of before in its family', () => {
     for (const [family, names] of Object.entries(BY_FAMILY)) {
       const found = new Set([...REGISTRY.values()].filter((spec) => spec.family === family).map((spec) => spec.name));
       // Family lanes add names; every name of before stays, in its family.

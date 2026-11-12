@@ -7,12 +7,13 @@ import { createTable, setCellInput } from '../../edit';
 import { EN_US } from '../../locale';
 import type { Table } from '../../model';
 import { DEFAULT_ENV, errorOrigin, spillRange } from '../../recalc';
-import { err, isError, type Scalar, type Value } from '../../values';
+import { err, isError, type ArrayValue, type Scalar, type Value } from '../../values';
 import { explainOrigin } from '../explain';
 import fixture from '../../../fixtures/fn/arrays.json';
 import { fnArrays, type FnText } from '../../../../../strings/en/fnArrays';
 import { REGISTRY, paramsOf } from '.';
 import { MAX_ELEMENTS } from './matrix';
+import { makeArray } from '../../arrays';
 
 const COLUMNS = 'ABCDEFGHIJKLMN'.split('').map((name) => ({ name, type: 'number' as const }));
 /** The formula goes in F1, with columns A to D for data and room to spill right and down. */
@@ -221,6 +222,32 @@ describe('reshaping', () => {
   });
 });
 
+describe('TOROW and TOCOL', () => {
+  it('scan by column and skip empty cells', () => {
+    expect(calc('TOCOL({1,2,3;4,5,6},0,TRUE)')).toEqual([[1], [4], [2], [5], [3], [6]]);
+    expect(
+      calc('TOROW(A1:C2,1,TRUE)', [
+        ['1', '', '3'],
+        ['', '5', '6'],
+      ]),
+    ).toEqual([[1, 5, 3, 6]]);
+  });
+
+  it('TOROW and TOCOL turn a million items into one line well inside the recalc budget', () => {
+    const data = Array.from({ length: 1e6 }, (_, k) => (k % 7 === 0 ? null : k));
+    const big = makeArray(1000, 1000, data);
+    const ctx = { today: () => 0 };
+    const started = performance.now();
+    const row = REGISTRY.get('TOROW')!.run([big, 3], ctx);
+    const col = REGISTRY.get('TOCOL')!.run([big, 1, true], ctx);
+    // Filling a preallocated line by index takes tens of milliseconds here; the budget leaves room for a busy machine.
+    expect(performance.now() - started).toBeLessThan(600);
+    expect(row).toMatchObject({ rows: 1, cols: 1e6 - Math.ceil(1e6 / 7) });
+    expect(col).toMatchObject({ rows: 1e6 - Math.ceil(1e6 / 7), cols: 1 });
+    expect((col as ArrayValue).data.slice(0, 3)).toEqual([1000, 2000, 3000]);
+  });
+});
+
 describe('matrices', () => {
   it('MMULT, MINVERSE, and MDETERM (lane test)', () => {
     expect(calc('MMULT({1,2;3,4},{5;6})')).toEqual([[17], [39]]);
@@ -290,6 +317,30 @@ describe('LAMBDA helpers', () => {
     expect(calc('MAP({1,2},LAMBDA(a,b,a+b))')).toEqual([[err('VALUE'), err('VALUE')]]);
     expect(calc('BYROW({1,2;3,4},LAMBDA(r,r))')).toEqual([[err('CALC')], [err('CALC')]]);
     expect(calc('MAKEARRAY(0,2,LAMBDA(r,c,r))')).toEqual(err('VALUE'));
+  });
+
+  it('refuses an empty parameter or name, as in LAMBDA(,x) and LET(,1,x)', () => {
+    expect(calc('LAMBDA(,1)(2)')).toEqual(err('VALUE'));
+    expect(calc('MAP({1,2},LAMBDA(,1))')).toEqual(err('VALUE'));
+    expect(calc('LET(,1,2)')).toEqual(err('VALUE'));
+    // An empty argument in a call, as UNIQUE(x,,TRUE), still reads as left out.
+    expect(calc('UNIQUE({1;1;2},,TRUE)')).toBe(2);
+  });
+});
+
+describe('documented choices', () => {
+  it('SEQUENCE lifts over an array count: each item keeps the first value of its own result', () => {
+    expect(calc('SEQUENCE({2,3})')).toEqual([[1, 1]]);
+  });
+
+  it('FILTER reads an empty include cell as FALSE', () => {
+    expect(
+      calc('FILTER(A1:A3,B1:B3)', [
+        ['a', '1'],
+        ['b', ''],
+        ['c', '1'],
+      ]),
+    ).toEqual([['a'], ['c']]);
   });
 });
 

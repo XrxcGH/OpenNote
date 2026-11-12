@@ -310,17 +310,21 @@ function toLine([array, ignore, byColumn]: Value[], column: boolean): Value {
   if (skip < 0 || skip > 3) return err('VALUE');
   const byCol = boolArg(byColumn, false);
   if (typeof byCol !== 'boolean') return byCol;
-  const items: Scalar[] = [];
-  const outer = byCol ? a.cols : a.rows;
-  const inner = byCol ? a.rows : a.cols;
-  for (let i = 0; i < outer; i++) {
-    for (let j = 0; j < inner; j++) {
-      const v = byCol ? at(a, j, i) : at(a, i, j);
-      if (((skip & 1) !== 0 && v === null) || ((skip & 2) !== 0 && failed(v))) continue;
-      items.push(v);
-    }
+  // The output is allocated once and filled by index, reading the data directly: a million items stay well under
+  // the recalc budget.
+  const total = a.rows * a.cols;
+  const items = new Array<Scalar>(total);
+  const skipEmpty = (skip & 1) !== 0;
+  const skipErrors = (skip & 2) !== 0;
+  let n = 0;
+  for (let k = 0; k < total; k++) {
+    // Row by row reads the data in order; by column, item k is row k % rows of column k / rows.
+    const v = byCol ? a.data[(k % a.rows) * a.cols + Math.floor(k / a.rows)] : a.data[k];
+    if ((skipEmpty && v === null) || (skipErrors && v !== null && typeof v === 'object')) continue;
+    items[n++] = v;
   }
-  if (items.length === 0) return err('CALC');
+  if (n === 0) return err('CALC');
+  items.length = n;
   return column ? makeArray(items.length, 1, items) : makeArray(1, items.length, items);
 }
 

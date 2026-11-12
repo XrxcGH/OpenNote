@@ -60,9 +60,13 @@ export function readLocal<C extends SpecialCtx>(hops: number, slot: number): Spe
   return (ctx) => frameAt(ctx.env, hops)?.vals[slot] ?? null;
 }
 
-/** How a parameter of LAMBDA or a name of LET is written: a plain name, or [name] for an optional parameter. */
+/**
+ * How a parameter of LAMBDA or a name of LET is written: a plain name, or [name] for an optional parameter. An
+ * empty argument, as in LAMBDA(,x), is no name, so the call gives #VALUE!.
+ */
 function paramName(node: Node): { name: string; optional: boolean } | null {
-  if (node.type === 'name' && !node.name.startsWith('#')) return { name: node.name.toUpperCase(), optional: false };
+  if (node.type === 'name' && node.name !== '' && !node.name.startsWith('#'))
+    return { name: node.name.toUpperCase(), optional: false };
   if (node.type === 'col' && node.by === 'name' && /^[A-Za-z_][\w.]*$/.test(node.key.trim())) {
     return { name: node.key.trim().toUpperCase(), optional: true };
   }
