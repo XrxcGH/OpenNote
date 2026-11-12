@@ -60,6 +60,23 @@ function memorySource(block: string, data: Record<string, unknown>) {
   };
 }
 
+/** One channel shared by several windows: each message reaches every other end, on a later turn. */
+function hub(count: number): Channel[] {
+  const targets = Array.from({ length: count }, () => new EventTarget());
+  return targets.map((target) => ({
+    postMessage(message: RelayMessage) {
+      for (const other of targets) {
+        if (other !== target) setTimeout(() => other.dispatchEvent(new MessageEvent('message', { data: message })), 0);
+      }
+    },
+    addEventListener: (type: 'message', listener: (event: MessageEvent) => void) =>
+      target.addEventListener(type, listener as EventListener),
+    removeEventListener: (type: 'message', listener: (event: MessageEvent) => void) =>
+      target.removeEventListener(type, listener as EventListener),
+    close: () => {},
+  }));
+}
+
 const turn = () => new Promise((resolve) => setTimeout(resolve, 5));
 
 afterEach(() => vi.unstubAllGlobals());
@@ -153,4 +170,35 @@ describe('the pop-out relay', () => {
     expect(readRelay({ kind: 'other', block: 'b' })).toBeNull();
     expect(readRelay({ kind: 'open', block: 'b' })).toEqual({ kind: 'open', block: 'b' });
   });
+});
+
+describe('the pop-out relay with several windows', () => {
+  it.each([
+    ['before', 'after'],
+    ['after', 'before'],
+  ])(
+    'opens the block when a window without it also answers (that window serving %s the one with the block)',
+    async (order) => {
+      const [popped, first, second] = hub(3);
+      const held = memorySource('b1', { name: 'One' });
+      // Every window serves the relay: the one with the block, and one without it (a page window, quick capture).
+      const withBlock = order === 'before' ? second! : first!;
+      const without = order === 'before' ? first! : second!;
+      serveRelay(without, () => null);
+      serveRelay(withBlock, () => held.source);
+      const remote = await remoteSource('b1', popped!);
+      expect(remote?.data()).toEqual({ name: 'One' });
+
+      // A patch is answered with "missing" by the window without the block: the popped studio still hears the page.
+      remote!.patch({ name: 'Two' }, 'fallback');
+      await turn();
+      await turn();
+      const heard = vi.fn();
+      remote!.subscribe(heard);
+      held.change({ name: 'Three' });
+      await turn();
+      expect(heard).toHaveBeenCalled();
+      expect(remote!.data()).toEqual({ name: 'Three' });
+    },
+  );
 });

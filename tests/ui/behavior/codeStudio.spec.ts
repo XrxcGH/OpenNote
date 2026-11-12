@@ -92,3 +92,47 @@ test('keeps text typed just before a page switch, and sends it to the page', asy
   await expect(editor).toContainText('kept = 42');
   expect(errors).toEqual([]);
 });
+
+test('scrolls a long file with the wheel and with Control+Home and Control+End', async ({ page }) => {
+  await openSmart(page);
+  await newLine(page);
+  await runCommand(page, 'New code project');
+  const studio = page.getByRole('dialog', { name: 'Code studio' });
+  const editor = studio.getByRole('textbox', { name: 'Code editor, main.py' });
+  await editor.focus();
+  await page.keyboard.press('Control+a');
+  await page.keyboard.insertText(Array.from({ length: 300 }, (_, at) => `row_${at + 1} = ${at + 1}`).join('\n'));
+  const scroller = studio.locator('.cm-scroller');
+  const slot = studio.locator('[data-file="main.py"]');
+  const line = (n: number) => editor.locator('.cm-line', { hasText: new RegExp(`^row_${n} = `) });
+  const top = () => scroller.evaluate((element) => element.scrollTop);
+
+  // The editor is as tall as its slot, so the file scrolls inside it.
+  const [inner, outer] = await Promise.all([scroller.boundingBox(), slot.boundingBox()]);
+  expect(inner!.height).toBeLessThanOrEqual(outer!.height + 1);
+  await expect(line(300)).toBeInViewport();
+
+  await page.keyboard.press('Control+Home');
+  await expect(line(1)).toBeInViewport();
+  await expect.poll(top).toBe(0);
+
+  await scroller.hover();
+  await page.mouse.wheel(0, 2000);
+  await expect.poll(top).toBeGreaterThan(0);
+
+  await page.keyboard.press('Control+End');
+  await expect(line(300)).toBeInViewport();
+});
+
+test('marks the active tab without color in forced colors', async ({ page }) => {
+  await page.emulateMedia({ forcedColors: 'active' });
+  await openSmart(page);
+  await newLine(page);
+  await runCommand(page, 'New code project');
+  const studio = page.getByRole('dialog', { name: 'Code studio' });
+  await expect(studio.getByRole('button', { name: 'main.py', exact: true })).toBeVisible();
+  // Forced colors drop the tab's colored border: an outline in a system color marks it instead.
+  const tab = studio.getByRole('group', { name: 'Open files' }).locator('[data-active]');
+  await expect(tab).toHaveCount(1);
+  expect(await tab.evaluate((element) => getComputedStyle(element).outlineStyle)).toBe('solid');
+});

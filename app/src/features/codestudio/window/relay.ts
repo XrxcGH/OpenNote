@@ -12,6 +12,11 @@ export const RELAY_CHANNEL = 'opennote.codestudio';
 export const CURRENT_KEY = 'opennote.codestudio.current';
 /** How long the popped studio waits for the main window. */
 export const RELAY_WAIT_MS = 2000;
+/**
+ * How long the popped window still waits for the block's data after a window says it has no such block. Every
+ * window serves the relay, so a page window or the quick capture window without the block may answer first.
+ */
+export const MISSING_GRACE_MS = 250;
 
 export type RelayMessage =
   | { kind: 'open'; block: string }
@@ -155,17 +160,20 @@ export function remoteSource(block: string, channel: Channel, waitMs = RELAY_WAI
         channel.postMessage({ kind: 'close', block });
       },
     };
-    const timer = setTimeout(() => {
+    const giveUp = () => {
       channel.removeEventListener('message', listener);
       resolve(null);
-    }, waitMs);
+    };
+    let timer = setTimeout(giveUp, waitMs);
     function listener(event: MessageEvent) {
       const message = readRelay(event.data);
       if (!message || message.block !== block) return;
       if (message.kind === 'missing') {
+        // Another window without the block. Once the data came, that is no news; before it, the window that has
+        // the block may still answer.
+        if (data !== null) return;
         clearTimeout(timer);
-        channel.removeEventListener('message', listener);
-        resolve(null);
+        timer = setTimeout(giveUp, Math.min(MISSING_GRACE_MS, waitMs));
       } else if (message.kind === 'data') {
         const first = data === null;
         data = message.data;

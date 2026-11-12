@@ -60,4 +60,17 @@ describe('output in pieces', () => {
     expect(parser.push('1mtwo')).toEqual([{ text: 'two', fg: 1, bold: false }]);
     expect(parser.push(' three')).toEqual([{ text: ' three', fg: 1, bold: false }]);
   });
+
+  it('drops an unterminated string command too long to be one only to the end of its line', () => {
+    expect(stripAnsi(`a${E}]${'x'.repeat(80)}\nnext line\nmore`)).toBe('a\nnext line\nmore');
+    const parser = new AnsiParser();
+    expect(parser.push(`a${E}P${'y'.repeat(80)}\nnext`)).toEqual([{ text: 'a\nnext', fg: null, bold: false }]);
+  });
+
+  it('shows the text after a short unterminated sequence when the run ends', () => {
+    const parser = new AnsiParser();
+    expect(parser.push(`a${E}]title\nnext line`)).toEqual([{ text: 'a', fg: null, bold: false }]);
+    expect(parser.push('', true)).toEqual([{ text: '\nnext line', fg: null, bold: false }]);
+    expect(stripAnsi(`a${E}]title\nnext line`)).toBe('a\nnext line');
+  });
 });

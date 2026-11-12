@@ -238,7 +238,9 @@
     overflow: hidden;
   }
 
-  .editorSlot > :global(.cm-editor) {
+  /* The code editor wraps its view in .cm-code-editor: both take the slot's height, so the view scrolls. */
+  .editorSlot > :global(.cm-code-editor),
+  .editorSlot :global(.cm-editor) {
     block-size: 100%;
   }
 
@@ -402,5 +404,30 @@
     overflow: hidden;
     clip-path: inset(50%);
     white-space: nowrap;
+  }
+
+  /*
+   * Forced colors drop backgrounds and author colors. The active file and tab, the not-sent dot, and the grip under
+   * the pointer or focus draw in system colors instead.
+   */
+  @media (forced-colors: active) {
+    .treeRow[data-active],
+    .tab[data-active] {
+      outline: 2px solid Highlight;
+      outline-offset: -2px;
+    }
+
+    .dirty {
+      forced-color-adjust: none;
+      background: CanvasText;
+      border: 1px solid CanvasText;
+    }
+
+    .grip:hover,
+    .grip:focus-visible {
+      forced-color-adjust: none;
+      background: Highlight;
+      outline: 1px solid Highlight;
+    }
   }
 }

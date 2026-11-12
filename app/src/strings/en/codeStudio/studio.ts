@@ -51,6 +51,8 @@ export const codeStudioStudio = {
     setMain: 'Run this file first',
     download: 'Download',
     delete: 'Delete',
+    deleteTitle: 'Delete {name}?',
+    deleteBody: 'Undo in this window cannot bring the file back.',
     main: 'main',
     unsent: 'Not on the page yet',
     actions: 'Actions for {name}',

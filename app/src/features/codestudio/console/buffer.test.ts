@@ -60,4 +60,12 @@ describe('the console buffer and blank lines', () => {
     buffer.write('out', 'd\n');
     expect(buffer.lines.map(lineText)).toEqual(['a', '', 'b', '', 'cd']);
   });
+
+  it('shows the output held behind a cut sequence when the run ends', () => {
+    const buffer = new ConsoleBuffer();
+    buffer.write('out', `a${E}]title\nnext line`);
+    expect(buffer.text()).toBe('a');
+    buffer.end();
+    expect(buffer.text()).toBe('a\nnext line');
+  });
 });

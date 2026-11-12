@@ -20,7 +20,7 @@ export const PLAIN: AnsiStyle = { fg: null, bold: false };
 
 const ESC = '\u001b';
 const BEL = '\u0007';
-/** A control sequence longer than this is not one: it is dropped as it is. */
+/** A control sequence longer than this is not one: it is dropped to the end of its line. */
 const MAX_SEQUENCE = 64;
 
 /** Applies one SGR parameter list (ECMA-48 8.3.117) to a style. Unknown parameters change nothing. */
@@ -59,7 +59,8 @@ export class AnsiParser {
     this.pending = '';
   }
 
-  push(chunk: string): AnsiSpan[] {
+  /** Reads the next piece. `final` marks the last one: a sequence still cut short then is dropped as too long. */
+  push(chunk: string, final = false): AnsiSpan[] {
     const text = this.pending + chunk;
     this.pending = '';
     const spans: AnsiSpan[] = [];
@@ -83,9 +84,16 @@ export class AnsiParser {
       }
       const end = this.sequenceEnd(text, index);
       if (end === null) {
-        // Cut short: wait for the next piece, unless it is too long to be a sequence.
-        if (text.length - index <= MAX_SEQUENCE) this.pending = text.slice(index);
-        break;
+        // Cut short: wait for the next piece, unless it is too long to be a sequence or no piece follows.
+        if (!final && text.length - index <= MAX_SEQUENCE) {
+          this.pending = text.slice(index);
+          break;
+        }
+        // Not a sequence: it is dropped to the end of its line, and the lines after it are kept.
+        const lineEnd = text.indexOf('\n', index);
+        if (lineEnd === -1) break;
+        index = lineEnd;
+        continue;
       }
       const sequence = text.slice(index, end);
       if (sequence[1] === '[' && sequence.endsWith('m')) {
@@ -127,7 +135,7 @@ export class AnsiParser {
 
 /** The spans of one whole text. */
 export function parseAnsi(text: string): AnsiSpan[] {
-  return new AnsiParser().push(text);
+  return new AnsiParser().push(text, true);
 }
 
 /** The text with every escape sequence removed, for copying and for Insert into page. */

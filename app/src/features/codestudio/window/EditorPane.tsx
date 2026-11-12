@@ -8,7 +8,15 @@ import type { StudioController } from './controller';
 import { fileLanguage } from './languages';
 import styles from './studio.module.css';
 
-function EditorSlot({ controller, id, shown }: { controller: StudioController; id: string; shown: boolean }) {
+interface SlotProps {
+  controller: StudioController;
+  id: string;
+  shown: boolean;
+  /** The project's open count: a slot of the project before never shows the next one. */
+  generation: number;
+}
+
+function EditorSlot({ controller, id, shown, generation }: SlotProps) {
   const host = useRef<HTMLDivElement>(null);
   const path = controller.pathOf(id);
   useEffect(() => {
@@ -44,10 +52,9 @@ function EditorSlot({ controller, id, shown }: { controller: StudioController; i
     });
     return () => {
       gone = true;
-      controller.detachEditor(id);
-      editor?.destroy();
+      if (editor && controller.detachEditor(id, editor)) editor.destroy();
     };
-  }, [controller, id, path]);
+  }, [controller, id, path, generation]);
   return <div ref={host} className={styles.editorSlot} hidden={!shown} data-file={path} />;
 }
 
@@ -55,7 +62,13 @@ export function EditorPane({ controller }: { controller: StudioController }) {
   return (
     <div className={styles.editor}>
       {controller.tabs.map((id) => (
-        <EditorSlot key={id} controller={controller} id={id} shown={controller.activeFile === id} />
+        <EditorSlot
+          key={`${controller.generation}:${id}`}
+          controller={controller}
+          id={id}
+          shown={controller.activeFile === id}
+          generation={controller.generation}
+        />
       ))}
       {controller.tabs.length === 0 && <p className={styles.empty}>{t('codeStudio.studio.noFileOpen')}</p>}
     </div>

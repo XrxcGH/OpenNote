@@ -50,9 +50,9 @@ export class ConsoleBuffer {
   }
 
   /** Program output. A line stays open until its line feed. */
-  write(stream: 'out' | 'err', text: string): void {
+  write(stream: 'out' | 'err', text: string, final = false): void {
     const err = stream === 'err';
-    for (const span of this.parsers[stream].push(text)) {
+    for (const span of this.parsers[stream].push(text, final)) {
       const parts = span.text.split('\n');
       parts.forEach((part, index) => {
         const ended = index < parts.length - 1;
@@ -72,6 +72,12 @@ export class ConsoleBuffer {
       });
     }
     this.changed();
+  }
+
+  /** The run ended: text still held for the rest of a sequence is shown, without the sequence. */
+  end(): void {
+    this.write('out', '', true);
+    this.write('err', '', true);
   }
 
   private whole(kind: LineKind, text: string): void {

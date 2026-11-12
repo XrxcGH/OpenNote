@@ -82,6 +82,11 @@ export class StudioController {
   /** A message the files strip shows, such as a refused name. */
   notice = '';
   version = 0;
+  /**
+   * Counts the projects opened. The editor slots key on it, so a project never shows the editors of the one before,
+   * even when both have a file with the same ID.
+   */
+  generation = 0;
 
   private readonly editors = new Map<string, CodeEditor>();
   private readonly reveals = new Map<string, Cursor>();
@@ -143,6 +148,7 @@ export class StudioController {
 
   open(source: ProjectSource): void {
     this.close();
+    this.generation += 1;
     this.bind(source);
     const session = source.kind === 'block' || source.kind === 'remote' ? loadSession(source.key) : null;
     const ids = this.fileIds();
@@ -192,6 +198,11 @@ export class StudioController {
     this.handle?.stop();
     this.unbind();
     this.dirty.clear();
+    // The editors hold this project's text: none of them may carry over to the next project.
+    for (const editor of this.editors.values()) editor.destroy();
+    this.editors.clear();
+    this.reveals.clear();
+    this.setCursor({ line: 1, column: 1 });
   }
 
   dispose(): void {
@@ -309,8 +320,11 @@ export class StudioController {
     }
   }
 
-  detachEditor(id: string): void {
+  /** Lets go of a slot's editor. True when the studio still held it, so the slot destroys it; false when it is gone. */
+  detachEditor(id: string, editor: CodeEditor): boolean {
+    if (this.editors.get(id) !== editor) return false;
     this.editors.delete(id);
+    return true;
   }
 
   editorOf(id: string): CodeEditor | null {
@@ -376,6 +390,24 @@ export class StudioController {
       this.changed();
     }
     return ok;
+  }
+
+  /**
+   * Deletes a file from the files strip. A scratch project has no page undo, and the popped studio's undo is in the
+   * other window, so the file would be gone for good: the studio asks first. A block of this window's page does not
+   * ask, since the page's undo brings the file back.
+   */
+  async removeFile(id: string): Promise<boolean> {
+    if (this.source?.kind !== 'block') {
+      const sure = await confirm({
+        title: t('codeStudio.studio.files.deleteTitle', { name: this.pathOf(id) }),
+        body: t('codeStudio.studio.files.deleteBody'),
+        confirmLabel: t('codeStudio.studio.files.delete'),
+        danger: true,
+      });
+      if (!sure) return false;
+    }
+    return this.deleteFile(id);
   }
 
   deleteFile(id: string): boolean {
@@ -495,6 +527,7 @@ export class StudioController {
         result.status === 'failed' && result.message === 'runtime'
           ? t('codeStudio.studio.console.runtimeMissing')
           : statusLine(result, order.limits);
+      this.console.end();
       this.console.note(line);
       for (const note of result.notes) this.console.note(noteText(note));
       announce(line);

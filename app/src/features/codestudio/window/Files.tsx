@@ -80,7 +80,7 @@ function fileItems(controller: StudioController, id: string, edit: (next: Editin
       danger: true,
       disabled: !editable || project?.main === id,
       separatorBefore: true,
-      onSelect: () => void controller.deleteFile(id),
+      onSelect: () => void controller.removeFile(id),
     },
   ];
 }
@@ -114,7 +114,7 @@ function fileKeys(
     edit({ mode: 'rename', id });
   } else if (event.key === 'Delete' && allowDelete && editable && controller.project()?.main !== id) {
     event.preventDefault();
-    controller.deleteFile(id);
+    void controller.removeFile(id);
   } else if (event.key === 'F4' && event.ctrlKey && !allowDelete) {
     // Ctrl+F4 closes the tab, as in other editors.
     event.preventDefault();

@@ -47,37 +47,43 @@ export const PAGE_LEAVING_EVENT = 'opennote:codestudio-page-leaving';
 export const SCRATCH = 'scratch';
 const SCRATCH_KEY = 'opennote.codestudio.scratch';
 
-/** A project block of a page view (by default the shown one), or null when the page has no such block. */
-export function blockSource(block: string, mounted: MountedPage | null = shownMounted.get()): ProjectSource | null {
-  const current = () => mounted?.layer.block(block) ?? null;
-  const found = current();
-  if (!mounted || !found || found.type !== CODE_PROJECT_TYPE) return null;
-  const page = mounted;
-  let latest: BlockJson = found;
-  let gone = false;
-  let removed = false;
-  // A send the page refused: the page closed under it. The data goes back to what the page holds.
-  let refused = false;
-  const listeners = new Set<() => void>();
-  const leaving = new Set<() => void>();
-  const notify = () => {
-    for (const listener of [...listeners]) listener();
-  };
-  const stopLayer = page.layer.onChange(() => {
-    if (gone) return;
-    const next = current();
-    if (!next || next.type !== CODE_PROJECT_TYPE) {
-      if (removed) return;
-      removed = true;
-      notify();
-      return;
-    }
-    if (!removed && next.data === latest.data) return;
-    removed = false;
-    refused = false;
-    latest = next;
-    notify();
-  });
+/** What a block source knows of its block, shared by the helpers below. */
+interface BlockState {
+  latest: BlockJson;
+  /** The source let go of its page. */
+  gone: boolean;
+  /** The block is gone from its page. */
+  removed: boolean;
+  /** A send the page refused: the page closed under it. */
+  refused: boolean;
+  readonly listeners: Set<() => void>;
+  readonly leaving: Set<() => void>;
+}
+
+const notify = (state: BlockState): void => {
+  for (const listener of [...state.listeners]) listener();
+};
+
+/** The page's block layer changed: the block changed, left the page, or came back. */
+function layerChanged(block: string, page: MountedPage, state: BlockState): void {
+  if (state.gone) return;
+  const next = page.layer.block(block);
+  if (!next || next.type !== CODE_PROJECT_TYPE) {
+    if (state.removed) return;
+    state.removed = true;
+    notify(state);
+    return;
+  }
+  if (!state.removed && next.data === state.latest.data) return;
+  state.removed = false;
+  state.refused = false;
+  state.latest = next;
+  notify(state);
+}
+
+/** Follows the block and its page view: the layer's changes, the view closing, another page shown. Returns the undo. */
+function watchBlock(block: string, page: MountedPage, state: BlockState, leave: () => void): () => void {
+  const stopLayer = page.layer.onChange(() => layerChanged(block, page, state));
   // The page hands its hooks a copy of the MountedPage (features/page/mount.ts), so the match is on its sync.
   const onLeaving = (event: Event) => {
     const detail = (event as CustomEvent<Partial<MountedPage> | null>).detail;
@@ -87,65 +93,98 @@ export function blockSource(block: string, mounted: MountedPage | null = shownMo
     if (shownMounted.get() !== page) leave();
   });
   if (typeof window !== 'undefined') window.addEventListener(PAGE_LEAVING_EVENT, onLeaving);
-  const stop = () => {
+  return () => {
     stopLayer();
     stopShown();
     if (typeof window !== 'undefined') window.removeEventListener(PAGE_LEAVING_EVENT, onLeaving);
   };
-  function leave(): void {
-    if (gone) return;
-    // The text still waiting goes to the page while its view can take it.
-    for (const listener of [...leaving]) listener();
-    gone = true;
+}
+
+/** Lets go of the page. The text still waiting goes to the page first, while its view can take it. */
+function leaveBlock(state: BlockState, stop: () => void): void {
+  if (state.gone) return;
+  for (const listener of [...state.leaving]) listener();
+  state.gone = true;
+  stop();
+  notify(state);
+}
+
+/** The page did not take a send. The data goes back, so the file reads as not sent. */
+function sendRefused(block: string, page: MountedPage, state: BlockState, stop: () => void, before: unknown): void {
+  if (state.refused || state.gone) return;
+  state.refused = true;
+  state.latest = { ...state.latest, data: before } as BlockJson;
+  // The block was deleted under the send. Otherwise the page closed, and the source lets go of it.
+  if (!page.layer.block(block)) state.removed = true;
+  else {
+    state.gone = true;
     stop();
-    notify();
   }
+  notify(state);
+}
+
+/** Sends a merge patch to the page, and draws it on the card. Nothing is sent once the page or the block is gone. */
+function sendPatch(
+  block: string,
+  page: MountedPage,
+  state: BlockState,
+  stop: () => void,
+  patch: { data: Record<string, unknown>; fallback: string },
+): void {
+  // The studio then keeps the file marked as not sent.
+  if (state.gone || state.removed) return;
+  if (!page.layer.block(block)) {
+    state.removed = true;
+    notify(state);
+    return;
+  }
+  const { data, fallback } = patch;
+  const before = state.latest.data;
+  state.latest = {
+    ...state.latest,
+    data: applyMergePatch(state.latest.data, data),
+    fallback: { markdown: fallback },
+  } as BlockJson;
+  const sent = Promise.resolve(
+    page.sync.send({ edits: [{ edit: 'patchBlock', block, data, fallback: { markdown: fallback } }] }),
+  );
+  sent.catch(() => sendRefused(block, page, state, stop, before));
+  // The card on the page draws the change too.
+  page.layer.upsert(state.latest);
+}
+
+/** A project block of a page view (by default the shown one), or null when the page has no such block. */
+export function blockSource(block: string, mounted: MountedPage | null = shownMounted.get()): ProjectSource | null {
+  const found = mounted?.layer.block(block) ?? null;
+  if (!mounted || !found || found.type !== CODE_PROJECT_TYPE) return null;
+  const page = mounted;
+  const state: BlockState = {
+    latest: found,
+    gone: false,
+    removed: false,
+    refused: false,
+    listeners: new Set(),
+    leaving: new Set(),
+  };
+  const stop: () => void = watchBlock(block, page, state, () => leaveBlock(state, stop));
   return {
     key: block,
     kind: 'block',
-    data: () => latest.data,
-    readOnly: () => gone || removed || page.page.readOnly !== null,
-    removed: () => removed,
-    patch(data, fallback) {
-      // The page or the block is gone: nothing is sent, so the studio keeps the file marked as not sent.
-      if (gone || removed) return;
-      if (!current()) {
-        removed = true;
-        notify();
-        return;
-      }
-      const before = latest.data;
-      latest = { ...latest, data: applyMergePatch(latest.data, data), fallback: { markdown: fallback } } as BlockJson;
-      const sent = Promise.resolve(
-        page.sync.send({ edits: [{ edit: 'patchBlock', block, data, fallback: { markdown: fallback } }] }),
-      );
-      sent.catch(() => {
-        // The page did not take it. The data goes back, so the file reads as not sent.
-        if (refused || gone) return;
-        refused = true;
-        latest = { ...latest, data: before } as BlockJson;
-        // The block was deleted under the send. Otherwise the page closed, and the source lets go of it.
-        if (!current()) removed = true;
-        else {
-          gone = true;
-          stop();
-        }
-        notify();
-      });
-      // The card on the page draws the change too.
-      page.layer.upsert(latest);
-    },
+    data: () => state.latest.data,
+    readOnly: () => state.gone || state.removed || page.page.readOnly !== null,
+    removed: () => state.removed,
+    patch: (data, fallback) => sendPatch(block, page, state, stop, { data, fallback }),
     subscribe(listener) {
-      listeners.add(listener);
-      return () => listeners.delete(listener);
+      state.listeners.add(listener);
+      return () => state.listeners.delete(listener);
     },
-    live: () => !gone,
+    live: () => !state.gone,
     onLeave(listener) {
-      leaving.add(listener);
-      return () => leaving.delete(listener);
+      state.leaving.add(listener);
+      return () => state.leaving.delete(listener);
     },
     dispose() {
-      gone = true;
+      state.gone = true;
       stop();
     },
   };

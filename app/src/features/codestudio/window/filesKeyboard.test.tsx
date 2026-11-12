@@ -1,7 +1,7 @@
 // The file tree and the tab strip by keyboard alone (review gap G4). Each file's actions and each tab's Close button
 // take focus. On a file, Shift+F10 or the menu key opens its actions, F2 renames, and Delete deletes. On a tab,
 // Ctrl+F4 closes it.
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import { useSyncExternalStore } from 'react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';
@@ -68,6 +68,16 @@ describe('files and tabs by keyboard', () => {
     await waitFor(() => expect(row()).toBeTruthy());
     row().focus();
     await userEvent.keyboard('{Delete}');
+    // A scratch project has no page undo: the studio asks first, and Cancel keeps the file.
+    await userEvent.click(await screen.findByRole('button', { name: 'Cancel' }));
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(controller.fileIds()).toContain(extra);
+
+    await waitFor(() => expect(row()).toBeTruthy());
+    row().focus();
+    await userEvent.keyboard('{Delete}');
+    const dialog = await screen.findByRole('dialog', { name: 'Delete extra.py?' });
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Delete' }));
     await waitFor(() => expect(controller.fileIds()).not.toContain(extra));
   });
 

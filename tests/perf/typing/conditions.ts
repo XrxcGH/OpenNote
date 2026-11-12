@@ -205,7 +205,7 @@ const inStudio = (consoleLines: number) => async (page: Page) => {
   await page.keyboard.type('New code project');
   await page.getByRole('option', { name: 'New code project' }).first().click();
   const editor = page.getByRole('dialog', { name: 'Code studio' }).getByRole('textbox', { name: /^Code editor/ });
-  await editor.click();
+  await editor.focus();
   await page.keyboard.press('Control+a');
   await page.keyboard.insertText(Array.from({ length: 3000 }, (_, at) => `value_${at} = ${at} * 2`).join('\n'));
   if (consoleLines > 0) {
@@ -218,7 +218,7 @@ const inStudio = (consoleLines: number) => async (page: Page) => {
     );
     await expect(page.getByRole('log', { name: 'Console output' })).toContainText(`output line ${consoleLines - 1}`);
   }
-  await editor.click();
+  await editor.focus();
   await page.keyboard.press('Control+End');
   await page.keyboard.press('Enter');
 };
