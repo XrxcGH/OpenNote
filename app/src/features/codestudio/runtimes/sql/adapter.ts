@@ -5,6 +5,7 @@ import sqlite3InitModule from '@sqlite.org/sqlite-wasm';
 import type { Sqlite3Static } from '@sqlite.org/sqlite-wasm';
 import wasmUrl from '@sqlite.org/sqlite-wasm/sqlite3.wasm?url';
 import type { RuntimeAdapter } from '../../contracts/run';
+import { t } from '../../../../strings/t';
 import { ALLOWANCES } from '../../run/adapters';
 import { checkSql, sqlMapper } from './diagnostics';
 import { runSql } from './engine';
@@ -37,7 +38,7 @@ function load(): Promise<Sqlite3Static> {
 export function restoreFunctionTest(scope: object = globalThis): void {
   if (typeof (scope as { Function?: unknown }).Function === 'function') return;
   const standIn = function Function(): never {
-    throw new TypeError('Code cannot be made from text in a run.');
+    throw new TypeError(t('codeStudio.sqlLua.sql.noCodeFromText'));
   };
   standIn.prototype = Object.getPrototypeOf(() => undefined) as object;
   Object.defineProperty(scope, 'Function', { value: standIn, writable: false, configurable: true });

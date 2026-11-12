@@ -107,17 +107,17 @@ File.__index = File
 File.__name = "FILE*"
 local function newFile(fields) return setmetatable(fields, File) end
 function File:write(...)
-  if self.closed then error("attempt to use a closed file", 2) end
+  if self.closed then error(messages.closedFile, 2) end
   if self.sink then put(self.sink, "write", ...)
   elseif self.mode == "w" then
     local s = {}
     for i = 1, select("#", ...) do s[i] = tostring((select(i, ...))) end
     self.data = self.data .. concat(s)
-  else return nil, "Bad file descriptor", 9 end
+  else return nil, messages.badFd, 9 end
   return self
 end
 function File:read(...)
-  if self.closed then error("attempt to use a closed file", 2) end
+  if self.closed then error(messages.closedFile, 2) end
   if self.stdin then return readMany(...) end
   local n = select("#", ...)
   local fmt = n == 0 and "l" or ...
@@ -148,7 +148,7 @@ function File:flush() return self end
 function File:setvbuf() return true end
 function File:seek() return 0 end
 function File:close()
-  if self.closed then error("attempt to use a closed file", 2) end
+  if self.closed then error(messages.closedFile, 2) end
   if self.mode == "w" and not self.sink then
     if not writeFile(self.path, self.data) then return nil, format(messages.notWritable, self.path), 1 end
   end
@@ -229,6 +229,17 @@ os.exit = function(code)
   error(messages.exit, 0)
 end
 debug.getregistry = nil
+
+-- Binary chunks are not safe: Lua 5.4 does not verify bytecode, so a crafted chunk can read and write the memory of
+-- the WebAssembly module. load takes text only, and string.dump does not exist, so the program cannot make one.
+local rawload = load
+function load(chunk, chunkname, mode, ...) return rawload(chunk, chunkname, "t", ...) end
+string.dump = nil
+
+-- A program's debug hook would replace the count hook that ends a program at its time limit, and Lua cannot chain
+-- the two. So debug.sethook does nothing. (A slow call into C, such as a hard string.find pattern, never reaches
+-- the hook either. The run host's hard timer is the backstop for that.)
+function debug.sethook() end
 
 -- A check without running: nil when the source loads, else the error text.
 return function(source, name)

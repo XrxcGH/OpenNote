@@ -50,60 +50,99 @@ export function failureOf(s3: Sqlite3Static, db: Db, rc: number, base: number, p
   return { code: capi.sqlite3_js_rc_str(rc) ?? 'SQLITE_ERROR', message, offset: base + chars };
 }
 
-/** Where to go on after a statement that failed to prepare: just past the next semicolon. */
-function skipPast(text: string, from: number): number {
-  const semicolon = text.indexOf(';', from);
-  return semicolon === -1 ? text.length : semicolon + 1;
+const SPACE = new Set([9, 10, 11, 12, 13, 32]);
+
+/**
+ * Where a statement that failed to prepare ends: just past the first semicolon at or after `from` that is not inside
+ * a string, a quoted name, or a comment. The scan starts at the statement's `start`, so quotes are read right.
+ */
+export function statementEnd(bytes: Uint8Array, start: number, from: number): number {
+  let at = start;
+  while (at < bytes.length) {
+    const byte = bytes[at]!;
+    if (byte === 0x27 || byte === 0x22 || byte === 0x60 || byte === 0x5b) {
+      const close = byte === 0x5b ? 0x5d : byte;
+      at += 1;
+      // A doubled quote inside a quoted text closes and reopens at once, so the same scan reads it.
+      while (at < bytes.length && bytes[at] !== close) at += 1;
+      at += 1;
+    } else if (byte === 0x2d && bytes[at + 1] === 0x2d) {
+      while (at < bytes.length && bytes[at] !== 10) at += 1;
+    } else if (byte === 0x2f && bytes[at + 1] === 0x2a) {
+      at += 2;
+      while (at < bytes.length && !(bytes[at] === 0x2a && bytes[at + 1] === 0x2f)) at += 1;
+      at += 2;
+    } else {
+      if (byte === 0x3b && at >= from) return at + 1;
+      at += 1;
+    }
+  }
+  return bytes.length;
 }
 
+/**
+ * Walks `text` statement by statement. The text is encoded and copied into the WebAssembly heap once, and each
+ * prepare call starts where the last one ended (the pzTail it returns), so the work grows with the script's size and
+ * not with its square. Byte offsets turn into character offsets only as the walk moves along.
+ */
 export function walk(s3: Sqlite3Static, db: Db, text: string, handlers: Handlers): void {
   const { capi, wasm } = s3;
   const [stmtOut, tailOut] = wasm.allocPtr(2, false) as [number, number];
+  const bytes = encoder.encode(text);
+  const pointer = wasm.alloc(bytes.length + 1);
   try {
-    let at = 0;
-    while (at < text.length) {
-      const first = /\S/.exec(text.slice(at));
-      if (!first) return;
-      at += first.index;
-      if (text[at] === '.' && handlers.directive) {
-        const end = text.indexOf('\n', at);
-        const stop = end === -1 ? text.length : end;
-        if (handlers.directive(text.slice(at, stop).trim(), at) === false) return;
-        at = stop;
+    wasm.heap8u().set(bytes, pointer);
+    wasm.poke8(pointer + bytes.length, 0);
+    let byteAt = 0;
+    let charAt = 0;
+    /** Moves the position to byte `to`, keeping the character offset in step. */
+    const moveTo = (to: number) => {
+      charAt += decoder.decode(bytes.subarray(byteAt, to)).length;
+      byteAt = to;
+    };
+    while (byteAt < bytes.length) {
+      while (byteAt < bytes.length && SPACE.has(bytes[byteAt]!)) moveTo(byteAt + 1);
+      if (byteAt >= bytes.length) return;
+      const start = byteAt;
+      const startChar = charAt;
+      if (bytes[start] === 0x2e && handlers.directive) {
+        let stop = start;
+        while (stop < bytes.length && bytes[stop] !== 10) stop += 1;
+        const line = decoder.decode(bytes.subarray(start, stop)).trim();
+        if (handlers.directive(line, startChar) === false) return;
+        moveTo(stop);
         continue;
       }
-      const bytes = encoder.encode(text.slice(at));
-      const pointer = wasm.alloc(bytes.length + 1);
-      let consumed = 0;
-      try {
-        wasm.heap8u().set(bytes, pointer);
-        wasm.poke8(pointer + bytes.length, 0);
-        wasm.pokePtr(stmtOut, 0);
-        wasm.pokePtr(tailOut, 0);
-        const rc = capi.sqlite3_prepare_v2(db.pointer!, pointer, bytes.length, stmtOut, tailOut);
-        const stmt = wasm.peekPtr(stmtOut) as number;
-        if (rc !== 0) {
-          const failure = failureOf(s3, db, rc, at, bytes);
-          if (stmt) capi.sqlite3_finalize(stmt);
-          if (!handlers.failure(failure)) return;
-          at = skipPast(text, Math.max(failure.offset, at));
-          continue;
-        }
-        consumed = decoder.decode(bytes.subarray(0, (wasm.peekPtr(tailOut) as number) - pointer)).length;
-        if (stmt) {
-          try {
-            if (handlers.statement(stmt, at, text.slice(at, at + consumed)) === false) return;
-          } finally {
-            capi.sqlite3_finalize(stmt);
-          }
-        }
-      } finally {
-        wasm.dealloc(pointer);
+      wasm.pokePtr(stmtOut, 0);
+      wasm.pokePtr(tailOut, 0);
+      const rc = capi.sqlite3_prepare_v2(db.pointer!, pointer + start, bytes.length - start, stmtOut, tailOut);
+      const stmt = wasm.peekPtr(stmtOut) as number;
+      if (rc !== 0) {
+        const end = statementEnd(bytes, start, start);
+        const failure = failureOf(s3, db, rc, startChar, bytes.subarray(start, end));
+        if (stmt) capi.sqlite3_finalize(stmt);
+        if (!handlers.failure(failure)) return;
+        // Go on after the statement's end, but not before the place SQLite pointed to.
+        const pointedAt = start + encoder.encode(text.slice(startChar, Math.max(failure.offset, startChar))).length;
+        moveTo(statementEnd(bytes, start, pointedAt));
+        continue;
       }
-      if (consumed === 0) return;
-      at += consumed;
+      const tail = (wasm.peekPtr(tailOut) as number) - pointer;
+      if (tail <= start) {
+        if (stmt) capi.sqlite3_finalize(stmt);
+        return;
+      }
+      if (stmt) {
+        try {
+          if (handlers.statement(stmt, startChar, decoder.decode(bytes.subarray(start, tail))) === false) return;
+        } finally {
+          capi.sqlite3_finalize(stmt);
+        }
+      }
+      moveTo(tail);
     }
   } finally {
+    wasm.dealloc(pointer);
     wasm.dealloc(stmtOut);
     wasm.dealloc(tailOut);
   }

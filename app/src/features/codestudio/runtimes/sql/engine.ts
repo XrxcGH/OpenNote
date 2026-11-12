@@ -123,7 +123,7 @@ export function planTree(rows: readonly unknown[][]): string {
 
 const isPlan = (text: string) => /^\s*explain\s+query\s+plan\b/i.test(text);
 
-interface Session {
+export interface Session {
   s3: Sqlite3Static;
   db: Db;
   emit: Emit;
@@ -151,7 +151,11 @@ function errorLine(file: RunFile, failure: SqlFailure): string {
   return `${file.path}:${line}:${column}: ${failure.code}: ${failure.message}\n`;
 }
 
-function importCsv(session: Session, files: readonly RunFile[], line: string): void {
+export function importCsv(
+  session: Pick<Session, 'db' | 'loud' | 'emit'>,
+  files: readonly RunFile[],
+  line: string,
+): void {
   const usage = () => new Error(t('codeStudio.sqlLua.sql.importUsage'));
   const words = line.split(/\s+/).slice(1);
   let skip: number | null = null;

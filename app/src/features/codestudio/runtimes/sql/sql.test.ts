@@ -293,6 +293,61 @@ describe('the check before a run', () => {
       [4, 'no such column: b'],
     ]);
   });
+
+  it('stops a runaway write statement at its time limit instead of running it', () => {
+    const bomb = [
+      'create table n (x);',
+      'insert into n with recursive c(x) as (select 1 union all select x + 1 from c) select x from c;',
+      'select nope from n;',
+    ].join('\n');
+    const file: RunFile = { path: 'main.sql', text: bomb };
+    const started = performance.now();
+    const found = checkSql(sqlite, file, [file]);
+    expect(performance.now() - started).toBeLessThan(1000);
+    expect(found.map((item) => [item.line, item.message])).toEqual([[3, 'no such column: nope']]);
+    // A setup file with the same loop is also cut off.
+    const seed: RunFile = { path: 'seed.sql', text: bomb.split('\n').slice(0, 2).join('\n') };
+    const main: RunFile = { path: 'main.sql', text: 'select 1;' };
+    const begun = performance.now();
+    expect(checkSql(sqlite, main, [main, seed])).toEqual([]);
+    expect(performance.now() - begun).toBeLessThan(1000);
+  });
+
+  it('knows the table a file imports from CSV', () => {
+    const data: RunFile = { path: 'data.csv', text: 'name,age\nAda,36\n' };
+    const file: RunFile = {
+      path: 'main.sql',
+      text: '.import data.csv people\nselect name from people;\nselect nmae from people;',
+    };
+    const found = checkSql(sqlite, file, [file, data]);
+    expect(found.map((item) => [item.line, item.message])).toEqual([[3, 'no such column: nmae']]);
+  });
+
+  it('goes on after a failed statement past a semicolon inside a string', () => {
+    const file: RunFile = {
+      path: 'main.sql',
+      text: "select nope from x where y = 'a;b';\n-- one; two\nselect 1;\nselec 2;",
+    };
+    const found = checkSql(sqlite, file, [file]);
+    expect(found.map((item) => [item.line, item.message])).toEqual([
+      [1, 'no such table: x'],
+      [4, 'near "selec": syntax error'],
+    ]);
+  });
+
+  it('runs a script of 20,000 statements in about a second', () => {
+    const text = `create table t (a);\n${'insert into t values (1);\n'.repeat(20_000)}select count(*) from t;`;
+    const started = performance.now();
+    const ran = run({ 'main.sql': text });
+    expect(performance.now() - started).toBeLessThan(3000);
+    expect(ran.tables[0]?.rows).toEqual([[20_000]]);
+  });
+
+  it('reports a column right in a script with non-ASCII text before it', () => {
+    const file: RunFile = { path: 'main.sql', text: "select 'é😀';\ncreate table t (a);\nselect nmae from t;" };
+    const found = checkSql(sqlite, { ...file }, [file]);
+    expect(found.map((item) => [item.line, item.column])).toEqual([[3, 8]]);
+  });
 });
 
 describe('CSV', () => {

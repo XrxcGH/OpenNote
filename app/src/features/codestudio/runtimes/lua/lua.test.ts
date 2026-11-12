@@ -378,6 +378,30 @@ describe('escapes', () => {
     const ran = await run({ 'main.lua': 'print(__host, host, _VERSION, type(string.format), type(utf8.char))' });
     expect(ran.out).toBe('nil\tnil\tLua 5.4\tfunction\tfunction\n');
   });
+
+  it('does not load a binary chunk, and has no string.dump', async () => {
+    // A real Lua 5.4 chunk, made in a plain state: bytecode is not verified, so it must never load.
+    const plain = await factory.createEngine();
+    // The bytes come out as decimal escapes, so no byte is lost to text decoding on the way.
+    const literal = plain.doStringSync(
+      "return (string.dump(function() return 42 end):gsub('.', function(c) return string.format('\\\\%03d', c:byte()) end))",
+    ) as string;
+    plain.global.close();
+    const ran = await run({
+      'main.lua': `print(string.dump)\nlocal f, e = load("${literal}", "x", "b")\nprint(f, e)\nprint(load("return 7", "y", "b"))`,
+    });
+    expect(ran.err).toBe('');
+    const lines = ran.out.split('\n');
+    expect(lines[0]).toBe('nil');
+    expect(lines[1]).toMatch(/^nil\t.*binary chunk/);
+    // Text still loads, whatever mode the program asks for.
+    expect(lines[2]).toMatch(/^function/);
+  });
+
+  it('keeps the time limit when the program sets a debug hook', async () => {
+    const ran = await run({ 'main.lua': 'while true do debug.sethook() end' }, { timeMs: 300 });
+    expect(ran.status).toBe('time');
+  });
 });
 
 describe('versions', () => {

@@ -40,6 +40,8 @@ function messages(): Record<string, string> {
     noFile: t('codeStudio.sqlLua.lua.noFile', { path: '%s' }),
     notWritable: t('codeStudio.sqlLua.lua.notWritable', { path: '%s' }),
     formatBad: t('codeStudio.sqlLua.lua.formatBad', { index: '%d' }),
+    closedFile: t('codeStudio.sqlLua.lua.closedFile'),
+    badFd: t('codeStudio.sqlLua.lua.badFd'),
   };
 }
 
