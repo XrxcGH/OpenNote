@@ -99,7 +99,9 @@ export function tableView(block: TableBlock): TableView {
       const r = like.rows[row];
       const h = r ? ownKey(sub(sub(sheet, 'rows'), r.id), 'height') : undefined;
       // The same bounds the structure commands keep (MIN_HEIGHT to MAX_HEIGHT).
-      return typeof h === 'number' && Number.isFinite(h) && h > 0 ? Math.min(MAX_HEIGHT, Math.max(MIN_HEIGHT, h)) : null;
+      return typeof h === 'number' && Number.isFinite(h) && h > 0
+        ? Math.min(MAX_HEIGHT, Math.max(MIN_HEIGHT, h))
+        : null;
     },
   };
   if (sheet) {
