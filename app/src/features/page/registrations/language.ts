@@ -88,8 +88,8 @@ add({
 });
 
 const DIRECTIONS = [
-  { dir: 'rtl', id: 'text.paragraphRtl', icon: 'ArrowLineLeft', priority: 25 },
-  { dir: 'ltr', id: 'text.paragraphLtr', icon: 'ArrowLineRight', priority: 24 },
+  { dir: 'rtl', id: 'text.paragraphRtl', icon: 'ArrowLeft', priority: 25 },
+  { dir: 'ltr', id: 'text.paragraphLtr', icon: 'ArrowRight', priority: 24 },
 ] as const;
 for (const { dir, id, icon, priority } of DIRECTIONS) {
   add({
