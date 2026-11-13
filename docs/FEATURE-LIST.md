@@ -2,7 +2,7 @@
 
 Every tool, action, and feature in OpenNote, grouped by category, with one sentence each. `npm run docs:features` makes this page. The commands, tool windows, title bar items, settings sections, and setup steps come from what the app registers, so a new one shows up here or fails the tests. The feature sentences come from [FEATURES.md](FEATURES.md), which also says what has been tested by hand and which flag turns each one on. The [help pages](help/README.md) explain how to use them. [docs/screens](screens/README.md) has every picture in light and dark.
 
-The app registers 1143 commands and 48 tool windows. 24 of the windows are subject and engineering kits. The count includes the ink commands, which register when a page first shows its ink, and the commands that register once start-up is done or with the first page: on-device intelligence, the second pass of page commands, and the code block and table commands. The command palette (Ctrl+K) runs every command not marked as left out of it. Some commands need a feature flag, which FEATURES.md names. The keys shown are the defaults of the standard shortcut set.
+The app registers 1148 commands and 48 tool windows. 24 of the windows are subject and engineering kits. The count includes the ink commands, which register when a page first shows its ink, and the commands that register once start-up is done or with the first page: on-device intelligence, the second pass of page commands, and the code block and table commands. The command palette (Ctrl+K) runs every command not marked as left out of it. Some commands need a feature flag, which FEATURES.md names. The keys shown are the defaults of the standard shortcut set.
 
 ## Contents
 
@@ -213,6 +213,11 @@ Open it with the command "Open the code studio".
 | Crop image | Crops the edges of the selected image. |  |
 | Alt text… | Writes the alt text that screen readers read for the image, or marks it decorative. |  |
 | Copy as Markdown | Copies the selection as Markdown text. |  |
+| Language | Sets the language of the selected text or paragraph, for spell check and hyphenation. |  |
+| Do not check spelling | Turns spell check off or on for the selected text or paragraph. |  |
+| Right-to-left text direction | Makes the paragraph read right to left, with its start on the right. |  |
+| Left-to-right text direction | Makes the paragraph read left to right. |  |
+| Automatic hyphenation | Turns automatic hyphenation on or off for the paragraph, by its language. |  |
 | Page break | Starts a new page after the paragraph at the caret, from the Insert tab or the slash menu. |  |
 | Column break | Moves the text after the caret to the next column of the text box. | Ctrl+Shift+Enter |
 | Insert footnote | Inserts a footnote at the caret. Its note shows under the page, numbered in reading order. |  |

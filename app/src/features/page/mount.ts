@@ -19,7 +19,7 @@ import { createBlockLayer } from './blocks/blockLayer';
 import type { PageBlockLayer } from './blocks/blockLayer';
 import { frameContext } from './blocks/frameContext';
 import { markDraft, syncOf } from './blocks/textBlock';
-import { createEditorHost } from './editorHost';
+import { createEditorHost, pageSettingsOf } from './editorHost';
 import { createFlow } from './layout/flow';
 import type { Flow } from './layout/flow';
 import { createPageLayout } from './layout/actions';
@@ -328,13 +328,16 @@ export function mountPage(container: HTMLElement, page: OpenPage, options: Mount
   restoreView(page.id, viewport, () => flow.extent());
   const pool = createEditorPool();
   let objects: Objects | null = null;
+  let pageSettings = pageSettingsOf(page.initial.view);
   const host = createEditorHost({
     selectBlocks: (blocks, reason) => objects?.selectBlocks(blocks, reason),
+    pageSettings: () => pageSettings,
     ...options.host,
   });
   const frames = frameContext(pool, () => layer, {
     setPageFields(fields) {
       if (fields.view) {
+        pageSettings = pageSettingsOf(fields.view);
         layout.setView(fields.view);
         applyPageDefaults(fields.view, options.shown !== false);
         layer.setPreferredOrder(fields.view.readingOrder ?? []);

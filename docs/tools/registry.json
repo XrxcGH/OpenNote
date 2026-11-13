@@ -4338,6 +4338,41 @@
       "flag": "kits.thermo"
     },
     {
+      "id": "text.setLanguage",
+      "title": "Language",
+      "category": "format",
+      "keys": [],
+      "flag": "text.language"
+    },
+    {
+      "id": "text.noProof",
+      "title": "Do not check spelling",
+      "category": "format",
+      "keys": [],
+      "flag": "text.language"
+    },
+    {
+      "id": "text.paragraphRtl",
+      "title": "Right-to-left text direction",
+      "category": "format",
+      "keys": [],
+      "flag": "text.language"
+    },
+    {
+      "id": "text.paragraphLtr",
+      "title": "Left-to-right text direction",
+      "category": "format",
+      "keys": [],
+      "flag": "text.language"
+    },
+    {
+      "id": "text.hyphenate",
+      "title": "Automatic hyphenation",
+      "category": "format",
+      "keys": [],
+      "flag": "text.language"
+    },
+    {
       "id": "insert.pageBreakMenu",
       "title": "Page break",
       "category": "insert",

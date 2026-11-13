@@ -17,15 +17,40 @@ export interface EditingSettingsView {
   spelling: { enabled: boolean; languages: readonly string[] };
 }
 
+/** The page's own text settings, `view.text` (format spec 5.4.2), as the editor needs them. */
+export interface PageTextSettingsView {
+  /** Automatic hyphenation for paragraphs without their own `hyphenate`. */
+  hyphenate: boolean;
+  /** Points between default tab stops. */
+  defaultTab: number;
+}
+
+/** The page's own settings, as the editor needs them. */
+export interface PageSettingsView {
+  text: PageTextSettingsView;
+}
+
+/** A part of a textblock's text in its own language (spellingText's LangSpan). */
+export interface SpellLang {
+  readonly start: number;
+  readonly length: number;
+  readonly lang: string;
+}
+
 /** Spelling results for the text of one textblock, from the page's cache. */
 export interface SpellingService {
-  /** UTF-16 ranges of the misspelled words, or null when the text hasn't been checked yet. */
-  errorsFor(textblockText: string): readonly { start: number; length: number }[] | null;
-  requestCheck(key: string, text: string): void;
+  /**
+   * UTF-16 ranges of the misspelled words, or null when the text hasn't been checked yet. `langs` are the parts in
+   * their own language; the rest is in the page's languages.
+   */
+  errorsFor(text: string, langs?: readonly SpellLang[]): readonly { start: number; length: number }[] | null;
+  requestCheck(key: string, text: string, langs?: readonly SpellLang[]): void;
 }
 
 export interface EditorHost {
   settings(): EditingSettingsView;
+  /** The page's own settings (`view`). Absent outside a page, where every default applies. */
+  pageSettings?(): PageSettingsView;
   flag(id: FlagId): boolean;
   announce(text: string, politeness?: 'polite' | 'assertive'): void;
   openMenu(options: { label: string; items: readonly MenuItemSpec[]; anchor: MenuAnchor }): Promise<string | null>;
