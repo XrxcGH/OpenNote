@@ -1973,6 +1973,27 @@
       "flag": "study.exams"
     },
     {
+      "id": "format.fontDialog",
+      "title": "Open the Format pane on Text",
+      "category": "format",
+      "keys": [],
+      "flag": "text.formatPane"
+    },
+    {
+      "id": "format.paragraphDialog",
+      "title": "Open the Format pane on Paragraph",
+      "category": "format",
+      "keys": [],
+      "flag": "text.formatPane"
+    },
+    {
+      "id": "format.reveal",
+      "title": "Reveal formatting",
+      "category": "format",
+      "keys": [],
+      "flag": "text.formatPane"
+    },
+    {
       "id": "math.simplify",
       "title": "Simplify",
       "category": "insert",

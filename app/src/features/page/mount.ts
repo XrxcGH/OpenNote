@@ -45,6 +45,7 @@ import { createSyncQueue, exitHook, shownQueue } from './sync';
 import { keepLinksInPlace } from './linkClicks';
 import type { FrameContext, SyncQueue } from './sync';
 import type { Point } from './viewport/camera';
+import { readDefaultTab, setDefaultTab, setPageHyphenate } from '../../editor/paragraph/defaultTab';
 import { createGestureTool } from './viewport/gestures';
 import { rememberView, restoreView } from './viewport/remember';
 import { dropDuplicateMenus } from './viewport/menuRequests';
@@ -308,12 +309,20 @@ function titleBand(world: HTMLElement, parts: TitleParts, options: MountOptions)
   });
 }
 
+/** One page is shown at a time: only a shown page sets the tab interval and hyphenation default in force. */
+function applyPageDefaults(view: unknown, shown: boolean): void {
+  if (!shown) return;
+  setDefaultTab(readDefaultTab(view));
+  setPageHyphenate(view);
+}
+
 export function mountPage(container: HTMLElement, page: OpenPage, options: MountOptions): MountedPage {
   registerEscapeToObjects();
   const cache = createMarkdownCache();
   const viewport = createViewport(container, options.classNames);
   const flow = createFlow(viewport);
   flow.setView(page.initial.view);
+  applyPageDefaults(page.initial.view, options.shown !== false);
   const reading = opensInReading(page, options);
   flow.setReading(reading);
   restoreView(page.id, viewport, () => flow.extent());
@@ -327,6 +336,7 @@ export function mountPage(container: HTMLElement, page: OpenPage, options: Mount
     setPageFields(fields) {
       if (fields.view) {
         layout.setView(fields.view);
+        applyPageDefaults(fields.view, options.shown !== false);
         layer.setPreferredOrder(fields.view.readingOrder ?? []);
       }
       if (fields.title !== undefined) title?.setTitle(fields.title);

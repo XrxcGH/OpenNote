@@ -11,6 +11,7 @@ import type { EditorView } from '@tiptap/pm/view';
 import { editorExtensions } from '../extensions/kit';
 import { paraFormat } from './attributes';
 import type { TabLeader, TabStop } from './attributes';
+import { getDefaultTab, onDefaultTab } from './defaultTab';
 import { applyMeasurement, blocksOf, initial, mapState } from './tabIndex';
 import type { Measurement, TabAt, TabState, Width } from './tabIndex';
 
@@ -208,8 +209,14 @@ class TabLayoutView implements PluginView {
       this.resize = new ResizeObserver(() => this.resized());
       this.resize.observe(view.dom);
     }
+    this.stopTab = onDefaultTab(() => {
+      if (this.view.isDestroyed) return;
+      this.view.dispatch(this.view.state.tr.setMeta(REMEASURE, true).setMeta('addToHistory', false));
+    });
     this.schedule();
   }
+
+  private readonly stopTab: () => void;
 
   private resized(): void {
     const width = this.view.dom.clientWidth;
@@ -260,6 +267,7 @@ class TabLayoutView implements PluginView {
   }
 
   destroy(): void {
+    this.stopTab();
     if (this.frame) cancelAnimationFrame(this.frame);
     this.resize?.disconnect();
   }
@@ -267,7 +275,7 @@ class TabLayoutView implements PluginView {
 
 /** The tab layout plugin. */
 export function tabLayoutPlugin(options: TabLayoutOptions = {}): Plugin<TabState> {
-  const defaultTab = options.defaultTab ?? (() => DEFAULT_TAB);
+  const defaultTab = options.defaultTab ?? getDefaultTab;
   return new Plugin<TabState>({
     key,
     state: {
