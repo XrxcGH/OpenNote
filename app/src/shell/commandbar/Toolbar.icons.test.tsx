@@ -134,6 +134,8 @@ async function viewBar() {
 }
 
 async function drawBar() {
+  // With every flag on, the Review tab shows too, so the Draw bar needs a little more room than 2200 px gives it.
+  await setViewport(2400, 900);
   await showTab('Draw');
   const curve = await waitFor(() => tool('Draw', 'Make curve'));
   await waitFor(() => expect(svgs(curve)).toHaveLength(1));
