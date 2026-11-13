@@ -5,7 +5,14 @@
 import type { EditorState } from '@tiptap/pm/state';
 import type { Command } from '../../../editor/commands/command';
 import { setAlign, setPara, setParaEach } from '../../../editor/commands/paragraph';
-import { editRunTokens, runMarkPressed, setRunMark, setRunValue, setWeight, weightAt } from '../../../editor/commands/runFormat';
+import {
+  editRunTokens,
+  runMarkPressed,
+  setRunMark,
+  setRunValue,
+  setWeight,
+  weightAt,
+} from '../../../editor/commands/runFormat';
 import { sizeText } from '../../../editor/commands/sizes';
 import type { Align, ParaFormat, ParaKey } from '../../../editor/paragraph/attributes';
 import {
@@ -121,7 +128,6 @@ const UNDERLINES = ['', 'single', ...UNDERLINE_STYLES.filter((style) => style !=
 const WEIGHTS = ['100', '200', '300', '400', '500', '600', '700', '800', '900'];
 const CAPS = ['', 'small', 'all'];
 
-
 /** An effect toggled in the `effect` mark's list, with emboss and engrave excluding each other. */
 function effect(token: (typeof TEXT_EFFECTS)[number]): Field {
   const opposite = token === 'emboss' ? 'engrave' : token === 'engrave' ? 'emboss' : '';
@@ -151,12 +157,17 @@ function otf(id: string, group: readonly string[]): Field {
     kind: 'choice',
     options,
     read: (state) => {
-      const runs = new Set(runTokens(state, 'otf').map((tokens) => tokens.find((token) => group.includes(token)) ?? ''));
+      const runs = new Set(
+        runTokens(state, 'otf').map((tokens) => tokens.find((token) => group.includes(token)) ?? ''),
+      );
       return runs.size > 1 ? 'mixed' : ([...runs][0] ?? '');
     },
     parse: choiceParse(options),
     apply: (value) =>
-      editRunTokens('otf', (tokens) => [...tokens.filter((token) => !group.includes(token)), ...(value ? [String(value)] : [])]),
+      editRunTokens('otf', (tokens) => [
+        ...tokens.filter((token) => !group.includes(token)),
+        ...(value ? [String(value)] : []),
+      ]),
   };
 }
 
