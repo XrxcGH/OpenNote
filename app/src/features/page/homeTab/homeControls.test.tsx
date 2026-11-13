@@ -81,14 +81,25 @@ afterEach(async () => {
 
 /** Clicks a control by its name. A control the narrow bar moved into More is clicked there, as a person would. */
 async function press(toolbar: HTMLElement, name: string): Promise<void> {
-  const found = within(toolbar).queryByRole('button', { name });
-  if (found) {
-    await userEvent.click(found);
-    return;
-  }
-  await userEvent.click(within(toolbar).getByRole('button', { name: 'More commands' }));
-  const menu = await screen.findByRole('menu');
-  await userEvent.click(within(menu).getByRole('menuitem', { name }));
+  // The bar re-measures when a font loads, and a tool is then briefly on neither the bar nor the More list.
+  const visible = () => {
+    const found = within(toolbar).queryByRole('button', { name });
+    if (!found?.checkVisibility({ visibilityProperty: true })) return null;
+    const box = found.getBoundingClientRect();
+    const top = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
+    return top && found.contains(top) ? found : null;
+  };
+  const where = await waitFor(
+    () => {
+      const found = visible();
+      if (found) return found;
+      const more = within(toolbar).getByRole('button', { name: 'More commands' });
+      if (!screen.queryByRole('menu')) more.click();
+      return within(screen.getByRole('menu')).getByRole('menuitem', { name });
+    },
+    { timeout: 8000 },
+  );
+  where.click();
 }
 const ran = () => calls.map(([name]) => name);
 

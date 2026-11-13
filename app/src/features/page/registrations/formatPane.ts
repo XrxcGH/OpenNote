@@ -4,7 +4,6 @@
 import { defineCommand } from '../../../commands/registry';
 import { commandContext } from '../../../commands/registry';
 import type { CommandId } from '../../../commands/types';
-import { hostOf } from '../../../editor/extensions/keys';
 import { commands } from '../../../registries';
 import type { MessageKey } from '../../../strings/t';
 import { t } from '../../../strings/t';
@@ -60,9 +59,13 @@ commands.register(
         showToast({ message: t('textPane.noEditor') });
         return;
       }
-      const [store, reveal] = await Promise.all([import('../styles/store'), import('../formatPane/reveal')]);
+      const [store, reveal, keys] = await Promise.all([
+        import('../styles/store'),
+        import('../formatPane/reveal'),
+        import('../../../editor/extensions/keys'),
+      ]);
       const words = reveal.revealText(reveal.revealFormatting(editor.state, store.shownContext(store.shownNotebook())));
-      hostOf(editor)?.announce(words);
+      keys.hostOf(editor)?.announce(words);
     },
   }),
 );
