@@ -19,7 +19,7 @@ import { createBlockLayer } from './blocks/blockLayer';
 import type { PageBlockLayer } from './blocks/blockLayer';
 import { frameContext } from './blocks/frameContext';
 import { markDraft, syncOf } from './blocks/textBlock';
-import { createEditorHost } from './editorHost';
+import { createEditorHost, pageSettingsOf } from './editorHost';
 import { createFlow } from './layout/flow';
 import type { Flow } from './layout/flow';
 import { createPageLayout } from './layout/actions';
@@ -45,6 +45,7 @@ import { createSyncQueue, exitHook, shownQueue } from './sync';
 import { keepLinksInPlace } from './linkClicks';
 import type { FrameContext, SyncQueue } from './sync';
 import type { Point } from './viewport/camera';
+import { readDefaultTab, setDefaultTab, setPageHyphenate } from '../../editor/paragraph/defaultTab';
 import { createGestureTool } from './viewport/gestures';
 import { rememberView, restoreView } from './viewport/remember';
 import { dropDuplicateMenus } from './viewport/menuRequests';
@@ -308,25 +309,37 @@ function titleBand(world: HTMLElement, parts: TitleParts, options: MountOptions)
   });
 }
 
+/** One page is shown at a time: only a shown page sets the tab interval and hyphenation default in force. */
+function applyPageDefaults(view: unknown, shown: boolean): void {
+  if (!shown) return;
+  setDefaultTab(readDefaultTab(view));
+  setPageHyphenate(view);
+}
+
 export function mountPage(container: HTMLElement, page: OpenPage, options: MountOptions): MountedPage {
   registerEscapeToObjects();
   const cache = createMarkdownCache();
   const viewport = createViewport(container, options.classNames);
   const flow = createFlow(viewport);
   flow.setView(page.initial.view);
+  applyPageDefaults(page.initial.view, options.shown !== false);
   const reading = opensInReading(page, options);
   flow.setReading(reading);
   restoreView(page.id, viewport, () => flow.extent());
   const pool = createEditorPool();
   let objects: Objects | null = null;
+  let pageSettings = pageSettingsOf(page.initial.view);
   const host = createEditorHost({
     selectBlocks: (blocks, reason) => objects?.selectBlocks(blocks, reason),
+    pageSettings: () => pageSettings,
     ...options.host,
   });
   const frames = frameContext(pool, () => layer, {
     setPageFields(fields) {
       if (fields.view) {
+        pageSettings = pageSettingsOf(fields.view);
         layout.setView(fields.view);
+        applyPageDefaults(fields.view, options.shown !== false);
         layer.setPreferredOrder(fields.view.readingOrder ?? []);
       }
       if (fields.title !== undefined) title?.setTitle(fields.title);

@@ -22,6 +22,15 @@ Setup has a step called Language and spelling. It shows English (United States) 
 
 You can change it later in Settings, under Language.
 
+## Language and direction of a passage
+
+These are on the beta branch behind a flag that is off.
+
+- Select text, or put the cursor in a paragraph, and choose Language on the Review tab. Pick a language, or Use the page language. Spell check then checks that text in its own language. A language with no spelling dictionary on this PC is left unchecked.
+- Choose Do not check spelling for text such as code names or citations. Choose it again to check that text once more.
+- On the Home tab, choose Right-to-left text direction to make the paragraph read from the right. Left-to-right text direction sets it back. Start alignment follows the direction, so a right-to-left paragraph starts on the right.
+- On the Layout tab, Automatic hyphenation breaks the paragraph's words by its language.
+
 ## What stays in American English
 
 OpenNote's own text stays in American English for now, because translations are not built yet. There is one dictionary pack, the English one. A language with no dictionary yet gets a calm note saying so. The English dictionary stays available. Spelling, recognition, and read aloud still use your language.

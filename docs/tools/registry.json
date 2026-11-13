@@ -1973,6 +1973,27 @@
       "flag": "study.exams"
     },
     {
+      "id": "format.fontDialog",
+      "title": "Open the Format pane on Text",
+      "category": "format",
+      "keys": [],
+      "flag": "text.formatPane"
+    },
+    {
+      "id": "format.paragraphDialog",
+      "title": "Open the Format pane on Paragraph",
+      "category": "format",
+      "keys": [],
+      "flag": "text.formatPane"
+    },
+    {
+      "id": "format.reveal",
+      "title": "Reveal formatting",
+      "category": "format",
+      "keys": [],
+      "flag": "text.formatPane"
+    },
+    {
       "id": "math.simplify",
       "title": "Simplify",
       "category": "insert",
@@ -4317,6 +4338,41 @@
       "flag": "kits.thermo"
     },
     {
+      "id": "text.setLanguage",
+      "title": "Language",
+      "category": "format",
+      "keys": [],
+      "flag": "text.language"
+    },
+    {
+      "id": "text.noProof",
+      "title": "Do not check spelling",
+      "category": "format",
+      "keys": [],
+      "flag": "text.language"
+    },
+    {
+      "id": "text.paragraphRtl",
+      "title": "Right-to-left text direction",
+      "category": "format",
+      "keys": [],
+      "flag": "text.language"
+    },
+    {
+      "id": "text.paragraphLtr",
+      "title": "Left-to-right text direction",
+      "category": "format",
+      "keys": [],
+      "flag": "text.language"
+    },
+    {
+      "id": "text.hyphenate",
+      "title": "Automatic hyphenation",
+      "category": "format",
+      "keys": [],
+      "flag": "text.language"
+    },
+    {
       "id": "insert.pageBreakMenu",
       "title": "Page break",
       "category": "insert",
@@ -4915,6 +4971,13 @@
       "category": "view",
       "keys": [],
       "flag": "editor.readAloud"
+    },
+    {
+      "id": "view.ruler",
+      "title": "Ruler",
+      "category": "view",
+      "keys": [],
+      "flag": "text.ruler"
     },
     {
       "id": "tools.latex",

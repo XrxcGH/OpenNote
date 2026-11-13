@@ -2,7 +2,7 @@
 
 Every tool, action, and feature in OpenNote, grouped by category, with one sentence each. `npm run docs:features` makes this page. The commands, tool windows, title bar items, settings sections, and setup steps come from what the app registers, so a new one shows up here or fails the tests. The feature sentences come from [FEATURES.md](FEATURES.md), which also says what has been tested by hand and which flag turns each one on. The [help pages](help/README.md) explain how to use them. [docs/screens](screens/README.md) has every picture in light and dark.
 
-The app registers 1140 commands and 48 tool windows. 24 of the windows are subject and engineering kits. The count includes the ink commands, which register when a page first shows its ink, and the commands that register once start-up is done or with the first page: on-device intelligence, the second pass of page commands, and the code block and table commands. The command palette (Ctrl+K) runs every command not marked as left out of it. Some commands need a feature flag, which FEATURES.md names. The keys shown are the defaults of the standard shortcut set.
+The app registers 1149 commands and 48 tool windows. 24 of the windows are subject and engineering kits. The count includes the ink commands, which register when a page first shows its ink, and the commands that register once start-up is done or with the first page: on-device intelligence, the second pass of page commands, and the code block and table commands. The command palette (Ctrl+K) runs every command not marked as left out of it. Some commands need a feature flag, which FEATURES.md names. The keys shown are the defaults of the standard shortcut set.
 
 ## Contents
 
@@ -60,6 +60,9 @@ The app registers 1140 commands and 48 tool windows. 24 of the windows are subje
 - **Footnotes and endnotes.** Insert, number in reading order, restart per document or at each Heading 1, edit in a notes area under the page, and jump between the reference and the note.
 - **Symbols and formatting marks.** The Symbol dialog searches by name or code.
 - **Copy and paste with formatting.** Copy writes inline CSS that Word and Google Docs keep.
+- **Format pane.** Font (Ctrl+D) and Paragraph open one pane with every text and paragraph field, tab stops, borders, shading, and list levels.
+- **Language and text direction.** Set the language of a selection or paragraph, or mark it Do not check spelling.
+- **Text ruler.** View, Ruler shows a ruler above the text box with the cursor, in the unit you choose, at any zoom.
 - **Bundled fonts and device fonts.** Carlito and Caladea stand in for Calibri and Cambria, and load only when a page uses them.
 - **Word import and export.** Import reads styles, themes, lists, notes, comments, and tracked changes into version 2 data.
 - **Shared color palette.** One palette for text and tables: theme colors with tints and shades, standard colors, recent colors per notebook, Automatic, No color, and More colors.
@@ -206,10 +209,18 @@ Open it with the command "Open the code studio".
 | Edit link (not in the palette) | Edits the text and address of the link at the caret. |  |
 | Remove link (not in the palette) | Removes the link but keeps its text. |  |
 | Text styles | Edits the look of the text styles, such as headings and quotes. |  |
+| Open the Format pane on Text | Opens the Format pane on the Text tab: font, size, color, underline, effects, and a preview of the selected text. |  |
+| Open the Format pane on Paragraph | Opens the Format pane on the Paragraph tab: alignment, indents, spacing, line spacing, and pagination. |  |
+| Reveal formatting | Says where each format at the caret comes from: the run, the paragraph, or its style. |  |
 | Image… | Inserts a picture from a file. |  |
 | Crop image | Crops the edges of the selected image. |  |
 | Alt text… | Writes the alt text that screen readers read for the image, or marks it decorative. |  |
 | Copy as Markdown | Copies the selection as Markdown text. |  |
+| Language | Sets the language of the selected text or paragraph, for spell check and hyphenation. |  |
+| Do not check spelling | Turns spell check off or on for the selected text or paragraph. |  |
+| Right-to-left text direction | Makes the paragraph read right to left, with its start on the right. |  |
+| Left-to-right text direction | Makes the paragraph read left to right. |  |
+| Automatic hyphenation | Turns automatic hyphenation on or off for the paragraph, by its language. |  |
 | Page break | Starts a new page after the paragraph at the caret, from the Insert tab or the slash menu. |  |
 | Column break | Moves the text after the caret to the next column of the text box. | Ctrl+Shift+Enter |
 | Insert footnote | Inserts a footnote at the caret. Its note shows under the page, numbered in reading order. |  |
@@ -981,6 +992,7 @@ Open it with the command "Open the code studio".
 | Extract selection to a new page | Moves the selection to a new page and leaves a link to it. |  |
 | Merge pages | Merges the selected pages into one page, each under its own heading. |  |
 | Split page at headings | Splits the page into separate pages at its headings. |  |
+| Ruler | Shows or hides the ruler above the text, with the indents and the tab stops. |  |
 | Open command palette (not in the palette) | Opens the command palette to find and run any command. | Ctrl+K |
 | Go to a page | Finds a page by name and opens it. | Ctrl+O |
 | Pin page | Pins the page to the top of the pages pane. |  |

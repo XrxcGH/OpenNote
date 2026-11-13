@@ -200,7 +200,7 @@ export const BORDER_STYLES = [
   'inset',
   'outset',
 ] as const;
-const SHADE_PATTERNS = [
+export const SHADE_PATTERNS = [
   'clear',
   'solid',
   'horzStripe',

@@ -1,12 +1,11 @@
-// A custom text color (owner: WP4). The text color picker's "Custom color…" asks for #rrggbb. It shows the
-// styles dialog's contrast warning when the color is hard to read on a light or a dark page, and a color that isn't
-// one keeps the dialog open with the reason.
-import { useId, useState } from 'react';
+// A custom text color (owner: WP4, then text:format-pane). The text color picker's "Custom color…" opens the full
+// picker in a dialog: theme colors with tints, standard colors, recent colors, and hex, RGB, and HSL fields with the
+// contrast badge. A pick closes the dialog; Cancel or Escape answers null.
 import { createRoot } from 'react-dom/client';
 import { t } from '../../../strings/t';
 import { Dialog } from '../../../ui';
-import { contrastWarning } from './styleVars';
-import styles from './TextStylesDialog.module.css';
+import { ColorPalette } from '../../../ui/color';
+import { currentScheme } from '../formatPane/ColorPicker';
 
 const HEX = /^#[0-9a-f]{6}$/i;
 const SHORT_HEX = /^#[0-9a-f]{3}$/i;
@@ -20,51 +19,7 @@ export function normalizeHex(value: string): string | null {
   return null;
 }
 
-function CustomColorField({
-  value,
-  invalid,
-  onChange,
-}: {
-  value: string;
-  invalid: boolean;
-  onChange(value: string): void;
-}) {
-  const id = useId();
-  const warningId = useId();
-  const errorId = useId();
-  const color = normalizeHex(value);
-  const contrast = color ? contrastWarning(color) : null;
-  const theme = contrast && contrast.dark < 4.5 ? 'dark' : 'light';
-  const describedBy = invalid ? errorId : contrast && !contrast.ok ? warningId : undefined;
-  return (
-    <div className={styles.field}>
-      <label htmlFor={id}>{t('editor.styles.colorHex')}</label>
-      <input
-        id={id}
-        value={value}
-        autoFocus
-        aria-invalid={invalid || undefined}
-        aria-describedby={describedBy}
-        onChange={(event) => onChange(event.target.value)}
-      />
-      {invalid ? (
-        <p id={errorId} role="alert" className={styles.warning}>
-          {t('editor.styles.colorInvalid')}
-        </p>
-      ) : null}
-      {!invalid && contrast && !contrast.ok ? (
-        <p id={warningId} className={styles.warning}>
-          {t('editor.styles.contrast', { theme })}
-        </p>
-      ) : null}
-    </div>
-  );
-}
-
 function CustomColorDialog({ initial, finish }: { initial: string; finish(answer: string | null): void }) {
-  const [current, setCurrent] = useState(initial);
-  const [tried, setTried] = useState(false);
-  const invalid = tried && normalizeHex(current) === null;
   return (
     <Dialog
       title={t('editor.colorMenu.label')}
@@ -78,31 +33,20 @@ function CustomColorDialog({ initial, finish }: { initial: string; finish(answer
           leastDestructive: true,
           onPress: () => finish(null),
         },
-        {
-          id: 'ok',
-          label: t('editor.colorMenu.apply'),
-          variant: 'primary',
-          onPress: () => {
-            const color = normalizeHex(current);
-            if (color) finish(color);
-            else setTried(true);
-          },
-        },
       ]}
     >
-      <CustomColorField
-        value={current}
-        invalid={invalid}
-        onChange={(value) => {
-          setCurrent(value);
-          setTried(false);
-        }}
+      <ColorPalette
+        scheme={currentScheme()}
+        automatic={false}
+        noColor={false}
+        current={normalizeHex(initial)}
+        onPick={(pick) => finish(pick.kind === 'color' ? pick.value : null)}
       />
     </Dialog>
   );
 }
 
-/** Asks for a custom color. Resolves to #rrggbb, or null when canceled. */
+/** Asks for a custom color. Resolves to a color value (#rrggbb, a pen name, or theme:NAME), or null when canceled. */
 export function chooseCustomColor(initial = '#'): Promise<string | null> {
   const host = document.body.appendChild(document.createElement('div'));
   const root = createRoot(host);

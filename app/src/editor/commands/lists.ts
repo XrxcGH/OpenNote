@@ -7,8 +7,9 @@ import type { Node as PMNode } from '@tiptap/pm/model';
 import type { EditorState, Transaction } from '@tiptap/pm/state';
 import { LISTS_META, listDefinitionsOf } from '../extensions/listItem';
 import { META_ELEMENT_DATA } from '../meta';
+import { isFontName } from '../schema/constants';
 import { LIST_ID } from '../paragraph/attributes';
-import { MAX_LEVELS, MAX_START, NUMBER_FORMATS, numberItems } from '../paragraph/numbering';
+import { MAX_LEVELS, MAX_START, NUMBER_FORMATS, levelOf, numberItems } from '../paragraph/numbering';
 import type { ListDefinitions, ListLevel, NumberFormat } from '../paragraph/numbering';
 import { ancestorDepth, fromChange } from './command';
 import type { Command } from './command';
@@ -187,6 +188,7 @@ export function applyBullet(symbol: string, font: string | null = null): Command
   const chars = [...symbol];
   // An invisible bullet is refused: controls, format characters, spaces, and a lone combining mark.
   if (chars.length !== 1 || /^[\p{C}\p{Z}\p{M}]$/u.test(symbol)) return () => false;
+  if (font && !isFontName(font)) return () => false;
   return redefine('bulletList', (levels, depth) => {
     levels[depth] = { ...levels[depth], format: 'bullet', symbol, ...(font ? { font } : {}) };
     return levels;
@@ -311,4 +313,42 @@ export function labelAt(state: EditorState): string | null {
   const at = itemAt(state);
   if (!at) return null;
   return numberItems(state.doc, listDefinitionsOf(state)).find((item) => item.pos === at.pos)?.label ?? null;
+}
+
+// ---- Format pane: any field of the caret's level ----
+
+/** A level's fields as the Format pane reads them: the caret's depth, whether the list counts, and the level. */
+export interface ListLevelAt {
+  depth: number;
+  ordered: boolean;
+  level: ListLevel;
+}
+
+/** The level of the caret's list item, with defaults filled in, or null outside a list. */
+export function listLevelAt(state: EditorState): ListLevelAt | null {
+  const at = itemAt(state);
+  if (!at) return null;
+  const ordered = at.list.type.name === 'orderedList';
+  const ref = refOf(at.item);
+  const levels = ref ? listDefinitionsOf(state).get(ref.id) : undefined;
+  return { depth: at.depth, ordered, level: levelOf(levels, at.depth, ordered) };
+}
+
+/** Sets some fields of the caret's level (a new list definition, as Word writes one). A bad field is refused. */
+export function setListLevel(patch: Level): Command {
+  const chars = patch.symbol == null ? 1 : [...patch.symbol].length;
+  const valid =
+    (patch.format === undefined || (NUMBER_FORMATS as readonly string[]).includes(patch.format)) &&
+    (patch.text === undefined || [...patch.text].length <= 64) &&
+    (patch.start === undefined || (Number.isInteger(patch.start) && patch.start >= 0 && patch.start <= MAX_START)) &&
+    (patch.indent === undefined || (patch.indent >= 0 && patch.indent <= 1584)) &&
+    (patch.hanging === undefined || (patch.hanging >= 0 && patch.hanging <= 1584)) &&
+    (patch.font == null || isFontName(patch.font)) &&
+    chars === 1 &&
+    (patch.symbol == null || !/^[\p{C}\p{Z}\p{M}]$/u.test(patch.symbol));
+  if (!valid) return () => false;
+  return redefine(null, (levels, depth) => {
+    levels[depth] = { ...levels[depth], ...patch };
+    return levels;
+  });
 }

@@ -17,6 +17,7 @@ import { shownPool } from '../pool/shown';
 import type { EditorPool } from '../pool/pool';
 import { shownViewport } from '../viewport/viewport';
 import { spellingEngine } from './current';
+import { langAt } from './languages';
 import { openSpellingMenu } from './menu';
 
 interface Spot {
@@ -66,7 +67,7 @@ function findError(world: Element, pool: EditorPool, direction: 1 | -1): Spot | 
 }
 
 /** Mounts the error's block if needed, and returns its editor and the word's positions there. */
-function mountAt(pool: EditorPool, spot: Spot): { editor: Editor; from: number; to: number } | null {
+function mountAt(pool: EditorPool, spot: Spot): { editor: Editor; from: number; to: number; lang?: string } | null {
   const wrapper = spot.element.closest<HTMLElement>('[data-block-id]');
   const block = wrapper?.dataset.blockId;
   if (!wrapper || !block) return null;
@@ -77,14 +78,15 @@ function mountAt(pool: EditorPool, spot: Spot): { editor: Editor; from: number; 
   if (!editor) return null;
   const element = textblocks()[index];
   if (!element || textblockText(element).text !== text) return null;
-  const range = rangeOver(textblockText(element), spot.error.start, spot.error.length);
+  const extracted = textblockText(element);
+  const range = rangeOver(extracted, spot.error.start, spot.error.length);
   if (!range) return null;
   const from = editor.view.posAtDOM(range.startContainer, range.startOffset);
   const to = editor.view.posAtDOM(range.endContainer, range.endOffset);
   pool.mount(block, { kind: 'selection', anchor: from, head: to }, 'target');
   unfoldTo(editor, from);
   editor.view.focus();
-  return { editor, from, to };
+  return { editor, from, to, lang: langAt(extracted.langs, spot.error.start) };
 }
 
 /** Moves to the next (1) or previous (-1) misspelled word and opens its menu. Resolves false when there is none. */
@@ -99,10 +101,10 @@ export async function moveToError(direction: 1 | -1): Promise<boolean> {
     announce(t('spelling.none'));
     return false;
   }
-  const { editor, from, to } = target;
+  const { editor, from, to, lang } = target;
   lastEditor = editor;
   editor.commands.scrollIntoView();
   const word = editor.state.doc.textBetween(from, to);
-  await openSpellingMenu({ editor, from, to, word, engine, announceWord: true });
+  await openSpellingMenu({ editor, from, to, word, engine, lang, announceWord: true });
   return true;
 }
