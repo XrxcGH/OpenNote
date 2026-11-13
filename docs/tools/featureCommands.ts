@@ -4,6 +4,7 @@
 
 import { CELL_COMMAND_TEXT } from './featureCommandsCells.ts';
 import { HOME_TAB_TEXT } from './featureCommandsHome.ts';
+import { TEXT_PANE_TEXT } from './featureCommandsText.ts';
 import { SHEET_COMMAND_TEXT } from './featureCommandsSheet.ts';
 
 /** Each settings section, by its registry id. */
@@ -44,6 +45,7 @@ export const SETUP_TEXT: Readonly<Record<string, string>> = {
 export const COMMAND_TEXT: Readonly<Record<string, string>> = {
   ...CELL_COMMAND_TEXT,
   ...HOME_TAB_TEXT,
+  ...TEXT_PANE_TEXT,
   'tools.calculator.basic': 'Opens the calculator on its basic tab for everyday arithmetic.',
   'tools.calculator.scientific': 'Opens the calculator on its scientific tab, with functions, powers, and angle modes.',
   'tools.calculator.graphing': 'Opens the calculator on its graphing tab to plot functions in 2D.',
@@ -165,11 +167,6 @@ export const COMMAND_TEXT: Readonly<Record<string, string>> = {
   'text.emDash': 'Inserts an em dash.',
   'text.enDash': 'Inserts an en dash.',
   'text.formattingMarks': 'Shows or hides marks for paragraphs, spaces, tabs, and special characters.',
-  'text.setLanguage': 'Sets the language of the selected text or paragraph, for spell check and hyphenation.',
-  'text.noProof': 'Turns spell check off or on for the selected text or paragraph.',
-  'text.paragraphRtl': 'Makes the paragraph read right to left, with its start on the right.',
-  'text.paragraphLtr': 'Makes the paragraph read left to right.',
-  'text.hyphenate': 'Turns automatic hyphenation on or off for the paragraph, by its language.',
   'insert.fromPhone': 'Shows a QR code to scan with your phone, so its photos go onto the page.',
   'api.cliPathOnMove': 'Adds the opennote command to PATH, so other programs can find it.',
   'interop.import': 'Imports notes from Obsidian, Evernote, Notion, OneNote, Markdown, Word, HTML, and more.',
@@ -359,11 +356,6 @@ export const COMMAND_TEXT: Readonly<Record<string, string>> = {
   'styles.chooseSet': 'Replaces the notebook styles with the OpenNote, Word, or Google Docs style set.',
   'styles.pane':
     'Shows the Styles pane: every gallery style with a preview, its source, and its look. Choosing one applies it.',
-  'format.fontDialog':
-    'Opens the Format pane on the Text tab: font, size, color, underline, effects, and a preview of the selected text.',
-  'format.paragraphDialog':
-    'Opens the Format pane on the Paragraph tab: alignment, indents, spacing, line spacing, and pagination.',
-  'format.reveal': 'Says where each format at the caret comes from: the run, the paragraph, or its style.',
   'insert.freeBodyDiagram': 'Inserts a free-body diagram with forces, moments, and supports.',
   'insert.beam': 'Inserts a beam solver that finds reactions and draws shear and moment diagrams.',
   'insert.truss': 'Inserts a truss solver that finds member forces by the method of joints.',
@@ -648,7 +640,6 @@ export const COMMAND_TEXT: Readonly<Record<string, string>> = {
   'tabs.reopenClosed': 'Opens the tab you closed last.',
   'tabs.openInWindow': 'Opens the page in a new window.',
   'view.focusMode': 'Hides the panes and bars so only the page shows.',
-  'view.ruler': 'Shows or hides the ruler above the text, with the indents and the tab stops.',
   'window.toggleMini': 'Keeps the OpenNote window on top of other windows.',
   'window.dockLeft': 'Docks OpenNote to the left edge of the screen.',
   'window.dockRight': 'Docks OpenNote to the right edge of the screen.',
