@@ -50,6 +50,16 @@ Press Ctrl+Enter to check or uncheck an item. Finished items move down, and the 
 - A pattern may have at most 250 characters. A pattern that takes more than a moment stops with a message. Make it simpler. A class such as \s or [^x] never takes the paragraph mark. Only ^p (or \n in a regular expression) does.
 - In the replacement, ^p splits the paragraph. Replacing ^p with nothing removes an empty paragraph.
 
+## Format pane and ruler
+
+These are on the beta branch behind flags that are off.
+
+- Press Ctrl+D to open the Format pane on Text. Its tabs are Text, Advanced, Paragraph, Tabs, Borders and shading, and Lists. A preview line shows the selected text. The arrow keys move between tabs, and Escape returns to the page.
+- Type a value with its unit: pt, in, cm, mm, px, or pc. A value out of range shows the range and changes nothing.
+- Choose Reveal formatting to see each format at the caret and where it comes from: the text itself, the paragraph, or a style.
+- Modify on a style opens the same pane for the style. A change there applies to every paragraph that uses it.
+- On the View tab, choose Ruler to show the ruler above the text box with the cursor. Drag the first line, hanging, left, and right indent markers. Click the ruler to add a tab stop of the type shown at its left, drag it to move it, and drag it off the ruler to remove it. Hold Alt to drag without snapping. A marker moves with the arrow keys and tells a screen reader its place.
+
 ## Templates, series, and the source
 
 - Start a page from a template when you make it.

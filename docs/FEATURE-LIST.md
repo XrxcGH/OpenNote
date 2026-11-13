@@ -60,6 +60,9 @@ The app registers 1149 commands and 48 tool windows. 24 of the windows are subje
 - **Footnotes and endnotes.** Insert, number in reading order, restart per document or at each Heading 1, edit in a notes area under the page, and jump between the reference and the note.
 - **Symbols and formatting marks.** The Symbol dialog searches by name or code.
 - **Copy and paste with formatting.** Copy writes inline CSS that Word and Google Docs keep.
+- **Format pane.** Font (Ctrl+D) and Paragraph open one pane with every text and paragraph field, tab stops, borders, shading, and list levels.
+- **Language and text direction.** Set the language of a selection or paragraph, or mark it Do not check spelling.
+- **Text ruler.** View, Ruler shows a ruler above the text box with the cursor, in the unit you choose, at any zoom.
 - **Bundled fonts and device fonts.** Carlito and Caladea stand in for Calibri and Cambria, and load only when a page uses them.
 - **Word import and export.** Import reads styles, themes, lists, notes, comments, and tracked changes into version 2 data.
 - **Shared color palette.** One palette for text and tables: theme colors with tints and shades, standard colors, recent colors per notebook, Automatic, No color, and More colors.
