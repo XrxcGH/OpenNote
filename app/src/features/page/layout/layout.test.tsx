@@ -11,6 +11,7 @@ import type { PageFixture } from '../../../services/pages/memory';
 import type { BlockJson } from '../../../services/pages/types';
 import { mountPage } from '../mount';
 import type { MountedPage, MountOptions } from '../mount';
+import { readingLock } from '../qol/stores';
 import { textPageFixture } from '../test/fixtures';
 
 const shown: { mounted: MountedPage; container: HTMLElement }[] = [];
@@ -146,6 +147,34 @@ describe('page layout', () => {
     expect(mounted.layout.reading()).toBe(false);
     expect(canvas.textContent).toBe('Reading view');
     expect(second!.getBoundingClientRect().left).toBeGreaterThan(first!.getBoundingClientRect().right);
+  });
+});
+
+describe('a new text box', () => {
+  it('goes under the title, not on it (A1-A07-5)', async () => {
+    const { mounted } = await open(textPageFixture('First'), 800, {
+      title: { text: 'A long page title', changed: null },
+    });
+    const band = mounted.title!.element.getBoundingClientRect();
+    const before = new Set(mounted.layer.blocks().map((block) => block.id));
+    mounted.layout.newTextBox();
+    const added = mounted.layer.blocks().find((block) => !before.has(block.id))!;
+    expect(added.frame!.y!).toBeGreaterThanOrEqual(mounted.viewport.toWorld(0, band.bottom).y);
+  });
+
+  it('adds no text box while the page is locked for reading (A2-A08-2)', async () => {
+    const { mounted } = await open(textPageFixture('First'));
+    const before = mounted.layer.blocks().length;
+    readingLock.set(true);
+    try {
+      mounted.layout.newTextBox();
+      mounted.layout.pressEmpty({ x: 300, y: 300 });
+      expect(mounted.layer.blocks()).toHaveLength(before);
+    } finally {
+      readingLock.set(false);
+    }
+    mounted.layout.newTextBox();
+    expect(mounted.layer.blocks()).toHaveLength(before + 1);
   });
 });
 

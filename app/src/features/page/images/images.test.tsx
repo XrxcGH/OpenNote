@@ -93,6 +93,18 @@ describe('image blocks', () => {
     expect(move.edit).toBe('moveBlock');
   });
 
+  it('crop handles take a real pointer press at their center, so a mouse or pen drag crops (A1-A07-2)', async () => {
+    const { handle } = await pageWithImage();
+    startCrop(handle);
+    const buttons = [...handle.element.querySelectorAll<HTMLButtonElement>('button[aria-label^="Crop from"]')];
+    expect(buttons).toHaveLength(8);
+    for (const button of buttons) {
+      const box = button.getBoundingClientRect();
+      const hit = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
+      expect(hit === button, button.getAttribute('aria-label') ?? '').toBe(true);
+    }
+  });
+
   it('crop mode cancels with Escape', async () => {
     const { page, handle } = await pageWithImage();
     const before = page.sent().length;
@@ -141,6 +153,26 @@ describe('dragging an image', () => {
     const before = page.sent().length;
     dragFrom(handle.element.querySelector('img')!, 'mouse', 60, 30, 6);
     expect(await movedFrame(page, id, before)).toMatchObject({ x: 100, y: 230 });
+  });
+
+  it('moves a selected image with a finger drag on its picture, as a mouse does (A1-A07-11)', async () => {
+    const { page, id, handle } = await pageWithImage();
+    selectOnPage({ blocks: [id], strokes: [] });
+    const before = page.sent().length;
+    // Twelve 5 px steps go past the touch slop, where a one-finger pan would take the pointer.
+    dragFrom(handle.element.querySelector('img')!, 'touch', 60, 30, 12);
+    expect(await movedFrame(page, id, before)).toMatchObject({ x: 100, y: 230 });
+  });
+
+  it('leaves an unselected image to a finger pan, which does not move it (A1-A07-11)', async () => {
+    const { page, handle } = await pageWithImage();
+    const before = page.sent().length;
+    dragFrom(handle.element.querySelector('img')!, 'touch', 60, 30, 12);
+    const moves = page
+      .sent()
+      .slice(before)
+      .flatMap((batch) => batch.edits);
+    expect(moves.filter((edit) => edit.edit === 'moveBlock')).toEqual([]);
   });
 
   it('resizes it with a finger as far as the finger went (Beta 8 walk A1-A07-8)', async () => {

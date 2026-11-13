@@ -217,8 +217,13 @@
 
   .cropWindow {
     position: absolute;
-    overflow: clip;
     outline: 2px solid var(--color-accent-clay);
+  }
+
+  .cropClip {
+    position: absolute;
+    inset: 0;
+    overflow: clip;
   }
 
   .cropWindow .picture {

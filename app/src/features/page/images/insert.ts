@@ -9,6 +9,7 @@ import { announce, showToast } from '../../../ui';
 import type { MountedPage } from '../mount';
 import { pageSelection, selectOnPage } from '../seams/selectionStore';
 import { assetTable } from './assets';
+import { belowTitle, clearOfBlocks, KEEP_BELOW } from '../layout/freeSpot';
 import { offerActualSize, sizeFor, sizingFor } from '../qol/pasteSize';
 import type { Sizing } from '../qol/pasteSize';
 import { FREEFORM_MAX_WIDTH } from './geometry';
@@ -45,7 +46,6 @@ export function isMetafile(file: Pick<File, 'type' | 'name'>): boolean {
 }
 /** What the shell can convert when page.heicImport is on. */
 export const CONVERTIBLE_TYPES = ['image/heic', 'image/heif', 'image/tiff'] as const;
-const KEEP_BELOW = 24;
 const PROGRESS_DELAY = 300;
 
 export type Placement = { kind: 'point'; x: number; y: number } | { kind: 'after'; block: BlockId | null };
@@ -134,31 +134,6 @@ export function defaultPlacement(mounted: MountedPage): Placement {
   const corner = mounted.viewport.toWorld(box.left + 48, box.top + 48);
   const x = Math.max(0, corner.x);
   return { kind: 'point', x, y: clearOfBlocks(mounted, x, Math.max(0, corner.y, belowTitle(mounted))) };
-}
-
-/** The size of a new block's footprint that must not land on a block already there (a file card, a small picture). */
-const FOOTPRINT = { w: 320, h: 96 };
-
-/** `y`, or the first y below the blocks that a block at `x`, `y` would cover, so a new block never hides one. */
-function clearOfBlocks(mounted: MountedPage, x: number, y: number): number {
-  const boxes = mounted.layer
-    .blocks()
-    .map((block) => mounted.layer.view(block.id)?.measure())
-    .filter((box): box is NonNullable<typeof box> => !!box && box.w > 0 && box.h > 0)
-    .sort((a, b) => a.y - b.y);
-  let top = y;
-  for (const box of boxes) {
-    const covers = box.x < x + FOOTPRINT.w && box.x + box.w > x && box.y < top + FOOTPRINT.h && box.y + box.h > top;
-    if (covers) top = box.y + box.h + KEEP_BELOW;
-  }
-  return top;
-}
-
-/** The first world y under the title band, so a new block never covers the page title. */
-function belowTitle(mounted: Pick<MountedPage, 'title' | 'viewport'>): number {
-  const band = mounted.title?.element.getBoundingClientRect();
-  if (!band || band.height === 0) return 0;
-  return mounted.viewport.toWorld(band.left, band.bottom).y + KEEP_BELOW;
 }
 
 export function isFlow(page: OpenPage): boolean {

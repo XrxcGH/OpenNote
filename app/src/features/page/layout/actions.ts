@@ -10,6 +10,7 @@ import type { PageBlockLayer } from '../blocks/blockLayer';
 import { DISCARD_DRAFT, markDraft, markEphemeral } from '../blocks/textBlock';
 import type { PagePool } from '../pool/pool';
 import { byOrder } from '../readingOrder/order';
+import { readingLock } from '../qol/stores';
 import { savePageView } from '../runtime';
 import type { SyncQueue } from '../sync';
 import type { Point } from '../viewport/camera';
@@ -17,7 +18,9 @@ import type { PageActions } from '../viewport/shown';
 import { isFloating } from '../blocks/textBlock';
 import styles from './layout.module.css';
 import type { PageViewport } from '../viewport/viewport';
+import type { TitleBand } from '../title/title';
 import type { Flow } from './flow';
+import { belowTitle, clearOfBlocks } from './freeSpot';
 import { snapY } from './rules';
 
 /** An RFC 7396 merge patch over a view: null removes a key, an object merges, anything else replaces. */
@@ -53,6 +56,9 @@ function viewChannel(initial: PageViewJson, flow: Flow) {
 
 /** A new text box goes this far below the block it follows. */
 export const BELOW_GAP = 16;
+
+/** The size of a new text box, for finding it a free spot. */
+const TEXT_BOX = { w: 120, h: 42 };
 /** Half a Normal line: a tapped caret's first line is centered on the tap. */
 const HALF_LINE = 12;
 
@@ -63,6 +69,8 @@ export interface LayoutParts {
   readonly pool: PagePool;
   readonly flow: Flow;
   readonly viewport: PageViewport;
+  /** The title band: a new text box goes under it, not on it. */
+  readonly title?: TitleBand | null;
   readonly compact: boolean;
   readonly reading: boolean;
 }
@@ -81,8 +89,22 @@ export interface PageLayout extends Omit<PageActions, 'objectCommand' | 'objectE
   stop(): void;
 }
 
+/** Where a new text box goes: 16 units below the last focused block, or in the view's top left, clear of the title. */
+function newTextBoxPoint(parts: LayoutParts, lastFocused: BlockId | null): Point {
+  const { layer, viewport } = parts;
+  const last = lastFocused ? layer.block(lastFocused) : null;
+  const element = lastFocused ? layer.view(lastFocused)?.element : null;
+  if (last?.frame?.x !== undefined && last.frame.y !== undefined && element) {
+    return { x: last.frame.x, y: last.frame.y + element.offsetHeight + BELOW_GAP };
+  }
+  const camera = viewport.camera();
+  const x = camera.scrollX / camera.zoom + 48;
+  const at = { layer, viewport, title: parts.title ?? null };
+  return { x, y: clearOfBlocks(at, x, Math.max(camera.scrollY / camera.zoom + 24, belowTitle(at)), TEXT_BOX) };
+}
+
 export function createPageLayout(parts: LayoutParts): PageLayout {
-  const { page, sync, layer, pool, flow, viewport } = parts;
+  const { page, sync, layer, pool, flow } = parts;
   const channel = viewChannel({ ...page.initial.view }, flow);
   let reading = parts.reading;
   let lastFocused: BlockId | null = null;
@@ -123,21 +145,13 @@ export function createPageLayout(parts: LayoutParts): PageLayout {
     pool.mount(id, { kind: 'start' }, 'target');
   };
 
-  /** 16 units below the last focused block, or the view's top left. */
-  const newTextBoxPoint = (): Point => {
-    const last = lastFocused ? layer.block(lastFocused) : null;
-    const element = lastFocused ? layer.view(lastFocused)?.element : null;
-    if (last?.frame?.x !== undefined && last.frame.y !== undefined && element) {
-      return { x: last.frame.x, y: last.frame.y + element.offsetHeight + BELOW_GAP };
-    }
-    const camera = viewport.camera();
-    return { x: camera.scrollX / camera.zoom + 48, y: camera.scrollY / camera.zoom + 24 };
-  };
-
   const self: PageLayout = {
-    newTextBox: () => caretAt(newTextBoxPoint(), true),
+    newTextBox() {
+      if (readingLock.get()) return announce(t('pageExtras.lock.blocked'));
+      caretAt(newTextBoxPoint(parts, lastFocused), true);
+    },
     pressEmpty(point) {
-      if (page.readOnly) return;
+      if (page.readOnly || readingLock.get()) return;
       if (reading || channel.get().layout === 'flow') {
         const last = [...layer.blocks()].reverse().find((block) => block.type === 'text' && !block.frame?.y);
         if (last) return void pool.mount(last.id, { kind: 'end' }, 'target');
