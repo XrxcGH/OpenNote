@@ -179,6 +179,7 @@ const TABLE = obj({
   pad: PAD,
   grid: BOOL,
   name: ok(isName, 'a name (R-SHT-13)'),
+  keys: oneOf('spreadsheet', 'document'),
 });
 const COL = obj({ style: STYLE_REF, hidden: BOOL, level: integer(0, 7), collapsed: BOOL });
 const ROW = obj({

@@ -61,6 +61,7 @@ export function formatTargetFor(state: EditorState): FormatTarget | null {
 export function viaFormatTarget(request: FormatRequest, onText: Command): Command {
   return (state, dispatch) => {
     const target = formatTargetFor(state);
-    return target ? target.apply(request, state, dispatch) : onText(state, dispatch);
+    // A target that has no meaning for the request (highlight on whole cells) leaves it to the text.
+    return target ? target.apply(request, state, dispatch) || onText(state, dispatch) : onText(state, dispatch);
   };
 }

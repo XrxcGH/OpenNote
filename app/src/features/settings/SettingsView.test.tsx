@@ -28,6 +28,7 @@ describe('the Settings page', () => {
       'Appearance',
       'Language',
       'Editing',
+      'Tables',
       'Recording',
       'Pen and touch',
       'My handwriting',

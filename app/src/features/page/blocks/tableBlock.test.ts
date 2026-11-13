@@ -15,6 +15,8 @@ import { textPageFixture } from '../test/fixtures';
 import { cleanupPages, renderPage } from '../test/harness';
 import type { PageHarness } from '../test/harness';
 import { currentTable } from '../tables/current';
+import { tableExtras } from '../tables/extras';
+import type { TableExtraHost } from '../tables/extras';
 import { whenViewReady } from '../tables/lazyView';
 import '../register';
 
@@ -218,5 +220,68 @@ describe('table commands', () => {
     const data = inserted.block.data as unknown as TableData;
     expect([data.columns.length, data.rows.length, data.header]).toEqual([3, 3, true]);
     expect(page.markdown(text)).toBe('First');
+  });
+});
+
+describe('table extras', () => {
+  it('tells every extra about the data an extra wrote, so a second extra plans from it', async () => {
+    let writer: TableExtraHost | undefined;
+    const seen: unknown[] = [];
+    const stop = [
+      tableExtras.register({
+        id: 'test.writer',
+        attach: (host) => {
+          writer = host;
+          return { update: () => {}, destroy: () => {} };
+        },
+      }),
+      tableExtras.register({
+        id: 'test.reader',
+        attach: () => ({ update: (block) => seen.push(block.data), destroy: () => {} }),
+      }),
+    ];
+    try {
+      await tablePage();
+      await vi.waitFor(() => expect(writer).toBeDefined());
+      await writer!.patch({ sheet: { styles: { s1: { fmt: 'first' } } } });
+      expect(seen.at(-1)).toMatchObject({ sheet: { styles: { s1: { fmt: 'first' } } } });
+      expect(writer!.data().sheet).toEqual({ styles: { s1: { fmt: 'first' } } });
+      // A second write merges into the first, as the core does.
+      await writer!.patch({ sheet: { styles: { s2: { fmt: 'second' } } } });
+      expect(writer!.data().sheet).toEqual({ styles: { s1: { fmt: 'first' }, s2: { fmt: 'second' } } });
+    } finally {
+      stop.forEach((undo) => undo());
+    }
+  });
+
+  it('tells each extra once per write, with the smart extra attached, so no extra writes in a loop', async () => {
+    let writer: TableExtraHost | undefined;
+    let updates = 0;
+    const stop = [
+      tableExtras.register({
+        id: 'test.writer',
+        attach: (host) => {
+          writer = host;
+          return { update: () => {}, destroy: () => {} };
+        },
+      }),
+      tableExtras.register({
+        id: 'test.counter',
+        attach: () => ({ update: () => void updates++, destroy: () => {} }),
+      }),
+    ];
+    try {
+      const { editor } = await tablePage();
+      await vi.waitFor(() => expect(writer).toBeDefined());
+      const before = updates;
+      await writer!.patch({ smart: { filters: [] } });
+      await writer!.patch({ sheet: { styles: { s1: { fmt: 'first' } } } });
+      // The page's own smart extra receives these writes too. A write of its own would show as a third update.
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(updates - before).toBe(2);
+      expect(editor.isDestroyed).toBe(false);
+    } finally {
+      stop.forEach((undo) => undo());
+    }
   });
 });

@@ -293,6 +293,8 @@ class Compiler implements Host {
   }
 
   private nameValue(node: Extract<Node, { type: 'name' }>): Fn {
+    // An argument left empty, as in IF(A1,,2), is empty.
+    if (node.name === '') return constant(null);
     if (node.name.startsWith('#')) return constant(errorFromToken(node.name) ?? err('NAME'));
     const local = this.local(node.name);
     if (local) return readLocal<Ctx>(local.hops, local.slot);
@@ -303,7 +305,7 @@ class Compiler implements Host {
   }
 
   private nameRef(node: Extract<Node, { type: 'name' }>): RefPart | null {
-    if (node.name.startsWith('#') || this.local(node.name)) return null;
+    if (node.name === '' || node.name.startsWith('#') || this.local(node.name)) return null;
     const entry = this.namedEntry(node.name);
     if (entry) return entry.ref;
     if (this.columnIndex(this.sheet, 'name', node.name) < 0) return null;

@@ -17,7 +17,7 @@ import { functions as statsCompat } from './statsCompat';
 import { functions as text } from './text';
 import type { FnSpec2 } from './types';
 
-export type { Env, Family, FnMeta, FnSpec2, Param, ParamGroup, ParamKind } from './types';
+export type { Env, Family, FnMeta, FnSpec2, Param, ParamGroup, ParamKind, Probe, ProbeCell } from './types';
 export { arity, isGroup, isSpecial, paramsOf } from './types';
 
 const FAMILIES: readonly (readonly FnSpec2[])[] = [

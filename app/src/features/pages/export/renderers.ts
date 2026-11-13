@@ -4,6 +4,7 @@
 // still prints, with the math or the graph as its source text and a chart left out.
 
 import { readingOrder } from './order';
+import { loadTableSheetFor } from './tableSheet';
 import type { ExportBlock, ExportPage, TableBlock } from './source';
 
 /** A chart drawn as SVG text, with the name a screen reader gives it. */
@@ -43,6 +44,8 @@ export async function loadRenderers(page: ExportPage): Promise<ExportRenderers> 
       // The text still prints.
     }
   }
+  // Tables with a sheet print with their cell styles and formula results.
+  await loadTableSheetFor(page);
   if (charts) {
     try {
       out.charts = (await import('../../tables')).exportTableCharts;

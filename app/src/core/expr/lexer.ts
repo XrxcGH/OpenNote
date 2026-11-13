@@ -79,8 +79,9 @@ const SUPERSCRIPT_MINUS = '⁻';
 const NAME_PATTERNS = {
   ascii: /[A-Za-z_][A-Za-z0-9_]*/y,
   cell: /[A-Za-z_$][A-Za-z0-9_$]*/y,
-  // Excel's function names have dots inside: CEILING.MATH, STDEV.S, NORM.S.DIST.
-  dotted: /[A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z][A-Za-z0-9_]*)*/y,
+  // Excel's function names have dots inside: CEILING.MATH, STDEV.S, NORM.S.DIST, and T.DIST.2T, whose last part
+  // starts with a digit. A part must hold a letter, so "A.5" stays a name and a number.
+  dotted: /[A-Za-z_$][A-Za-z0-9_$]*(?:\.\d*[A-Za-z][A-Za-z0-9_]*)*/y,
   letters: /\p{L}+\d*/uy,
 } as const;
 const WHITESPACE = /\s/;

@@ -2,7 +2,7 @@
 
 Every tool, action, and feature in OpenNote, grouped by category, with one sentence each. `npm run docs:features` makes this page. The commands, tool windows, title bar items, settings sections, and setup steps come from what the app registers, so a new one shows up here or fails the tests. The feature sentences come from [FEATURES.md](FEATURES.md), which also says what has been tested by hand and which flag turns each one on. The [help pages](help/README.md) explain how to use them. [docs/screens](screens/README.md) has every picture in light and dark.
 
-The app registers 1040 commands and 48 tool windows. 24 of the windows are subject and engineering kits. The count includes the ink commands, which register when a page first shows its ink, and the commands that register once start-up is done or with the first page: on-device intelligence, the second pass of page commands, and the code block and table commands. The command palette (Ctrl+K) runs every command not marked as left out of it. Some commands need a feature flag, which FEATURES.md names. The keys shown are the defaults of the standard shortcut set.
+The app registers 1140 commands and 48 tool windows. 24 of the windows are subject and engineering kits. The count includes the ink commands, which register when a page first shows its ink, and the commands that register once start-up is done or with the first page: on-device intelligence, the second pass of page commands, and the code block and table commands. The command palette (Ctrl+K) runs every command not marked as left out of it. Some commands need a feature flag, which FEATURES.md names. The keys shown are the defaults of the standard shortcut set.
 
 ## Contents
 
@@ -66,6 +66,14 @@ The app registers 1040 commands and 48 tool windows. 24 of the windows are subje
 - **Sheet cell styles in tables.** A table keeps cell styles, merges, rules, names, and cached results in data.sheet.
 - **Number format codes.** Format codes with sections, colors, and conditions, regional display, and currency, percent, and date column presets, all computed on the device.
 - **Excel-style formulas.** Formulas follow Excel's rules for text, numbers, errors, and dates, with a registry of functions, names, LET and LAMBDA, dynamic arrays that spill, and references across tables.
+- **Logic and information functions.** IFS, SWITCH, XOR, IFNA, the IS functions, CELL, INFO, SHEET, SHEETS, TYPE, and ERROR.TYPE.
+- **Lookup and reference functions.** XLOOKUP and XMATCH with every match and search mode, INDEX, MATCH, and the older lookups.
+- **Array and matrix functions.** FILTER, SORT, SORTBY, UNIQUE, SEQUENCE, RANDARRAY, TAKE, DROP, the stack and wrap functions, TRIMRANGE, MMULT, MINVERSE, and MDETERM.
+- **Statistical functions.** Averages, deviations, ranks, percentiles, the IFS family, distributions with their inverses, tests, regression, and FORECAST.ETS.
+- **Cell format bar.** A second row under the table tools sets the font, size, text styles, and colors.
+- **Spreadsheet keys in tables.** Grid, Edit, and Enter modes use Excel's keys.
+- **Conditional formatting.** Rules color cells by value, text, date, blank, error, top and bottom, average, duplicate, or formula.
+- **Table styles in page exports.** Word, HTML, and Markdown exports write each table's last results.
 - **Code studio foundations.** The contracts, settings, flags, and strings for the code studio: projects as a page block, runs, diagnostics, completion, a replay debugger, tests, and runtime packs.
 - **Code editor keys.** Tab indents in the code editor, and Ctrl+Page Down and Ctrl+Page Up change tabs, so the tab bar stays reachable.
 - **Calm shell polish.** Phosphor icons in the command bar, pens back on the bar at 1,280 px, calm pressed and selected states, notebook accent roles, and group dividers.
@@ -422,6 +430,106 @@ Open it with the command "Open the code studio".
 | Table: Eigenvalues of the selection as an equation | Inserts the eigenvalues of the selected matrix as an equation. |  |
 | Table: Solution of Ax = b as an equation | Inserts the solution of Ax = b from the selected cells as an equation. |  |
 | Insert table | Inserts a table. |  |
+| Cell: Fill color | Opens the fill colors for the selected cells. |  |
+| Cell: Text color | Opens the text colors for the selected cells. |  |
+| Cell: Borders | Draws the last border preset again on the selected cells. |  |
+| Cell: All borders | Draws a border around every selected cell. |  |
+| Cell: Outside borders | Draws a border around the outside of the selected cells. |  |
+| Cell: Thick outside borders | Draws the thick outside borders on the selected cells. |  |
+| Cell: Top border | Draws the top border on the selected cells. |  |
+| Cell: Bottom border | Draws the bottom border on the selected cells. |  |
+| Cell: Left border | Draws the left border on the selected cells. |  |
+| Cell: Right border | Draws the right border on the selected cells. |  |
+| Cell: Inside horizontal borders | Draws the inside horizontal borders on the selected cells. |  |
+| Cell: Inside vertical borders | Draws the inside vertical borders on the selected cells. |  |
+| Cell: No border | Takes every border off the selected cells. |  |
+| Cell: Bottom double border | Draws the bottom double border on the selected cells. |  |
+| Cell: Thick bottom border | Draws the thick bottom border on the selected cells. |  |
+| Cell: Top and bottom border | Draws the top and bottom border on the selected cells. |  |
+| Cell: Top and thick bottom border | Draws the top and thick bottom border on the selected cells. |  |
+| Cell: Diagonal up border | Draws the diagonal up border on the selected cells. |  |
+| Cell: Diagonal down border | Draws the diagonal down border on the selected cells. |  |
+| Cell: Border line thin | Draws the next borders with a thin line. |  |
+| Cell: Border line medium | Draws the next borders with a medium line. |  |
+| Cell: Border line thick | Draws the next borders with a thick line. |  |
+| Cell: Border line hairline | Draws the next borders with a hairline line. |  |
+| Cell: Border line dotted | Draws the next borders with a dotted line. |  |
+| Cell: Border line dashed | Draws the next borders with a dashed line. |  |
+| Cell: Border line double | Draws the next borders with a double line. |  |
+| Cell: Border line color | Opens the colors for the line the next borders are drawn with. |  |
+| Cell: Wrap text | Wraps long text inside the selected cells. |  |
+| Cell: Overflow into empty cells | Lets long text run into the empty cells next to the selected cells. |  |
+| Cell: Clip text | Cuts long text off at the edge of the selected cells. |  |
+| Cell: Horizontal text | Shows the text of the selected cells horizontally. |  |
+| Cell: Rotate text up | Turns the text of the selected cells up 45 degrees. |  |
+| Cell: Rotate text down | Turns the text of the selected cells down 45 degrees. |  |
+| Cell: Vertical text | Turns the text of the selected cells to read bottom to top. |  |
+| Cell: Stacked text | Stacks the letters of the selected cells one above the other. |  |
+| Cell: Align left | Aligns the selected cells to the left. |  |
+| Cell: Align center | Centers the selected cells. |  |
+| Cell: Align right | Aligns the selected cells to the right. |  |
+| Cell: Justify | Spreads the text of the selected cells from edge to edge. |  |
+| Cell: Align top | Aligns the text of the selected cells to the top. |  |
+| Cell: Align middle | Centers the text of the selected cells between top and bottom. |  |
+| Cell: Align bottom | Aligns the text of the selected cells to the bottom. |  |
+| Cell: No underline | Sets the no underline on the selected cells or text. |  |
+| Cell: Single underline | Sets the single underline on the selected cells or text. |  |
+| Cell: Double underline | Sets the double underline on the selected cells or text. |  |
+| Cell: Single accounting underline | Sets the single accounting underline on the selected cells or text. |  |
+| Cell: Double accounting underline | Sets the double accounting underline on the selected cells or text. |  |
+| Cell: Currency format | Shows the selected cells as currency. |  |
+| Cell: Percent format | Shows the selected cells as a percent. |  |
+| Cell: General format | Takes the number format off the selected cells. |  |
+| Cell: Number format | Shows the selected cells as plain numbers with two decimals. |  |
+| Cell: Accounting format | Shows the selected cells with the accounting number format. |  |
+| Cell: Short date format | Shows the selected cells with the short date number format. |  |
+| Cell: Long date format | Shows the selected cells with the long date number format. |  |
+| Cell: Time format | Shows the selected cells with the time number format. |  |
+| Cell: Fraction format | Shows the selected cells with the fraction number format. |  |
+| Cell: Scientific format | Shows the selected cells with the scientific number format. |  |
+| Cell: Text format | Shows the selected cells with the text number format. |  |
+| Cell: Thousands separator | Turns the thousands separator on or off in the selected cells. |  |
+| Cell: More decimals | Shows one more decimal place in the selected cells. |  |
+| Cell: Fewer decimals | Shows one fewer decimal place in the selected cells. |  |
+| Cell: Clear formats | Takes every format off the selected cells and leaves their text. |  |
+| Cell: Conditional formatting rules | Opens the conditional formatting rules of the selection, the table, or the page, to reorder, stop, or delete them. |  |
+| Extend the selection up (not in the palette) | In Grid mode, extends the selected cells one row up. | Shift+Up |
+| Extend the selection down (not in the palette) | In Grid mode, extends the selected cells one row down. | Shift+Down |
+| Extend the selection left (not in the palette) | In Grid mode, extends the selected cells one column left. | Shift+Left |
+| Extend the selection right (not in the palette) | In Grid mode, extends the selected cells one column right. | Shift+Right |
+| Go to the top edge of the data (not in the palette) | In Grid mode, goes to the top edge of the data in the column. | Ctrl+Up |
+| Go to the bottom edge of the data (not in the palette) | In Grid mode, goes to the bottom edge of the data in the column. | Ctrl+Down |
+| Go to the left edge of the data (not in the palette) | In Grid mode, goes to the left edge of the data in the row. | Ctrl+Left |
+| Go to the right edge of the data (not in the palette) | In Grid mode, goes to the right edge of the data in the row. | Ctrl+Right |
+| Extend the selection to the top edge of the data (not in the palette) | In Grid mode, extends the selected cells to the top edge of the data. | Ctrl+Shift+Up |
+| Extend the selection to the bottom edge of the data (not in the palette) | In Grid mode, extends the selected cells to the bottom edge of the data. | Ctrl+Shift+Down |
+| Extend the selection to the left edge of the data (not in the palette) | In Grid mode, extends the selected cells to the left edge of the data. | Ctrl+Shift+Left |
+| Extend the selection to the right edge of the data (not in the palette) | In Grid mode, extends the selected cells to the right edge of the data. | Ctrl+Shift+Right |
+| Go to the first cell (not in the palette) | In Grid mode, goes to the table's first cell. | Ctrl+Home |
+| Go to the last used cell (not in the palette) | In Grid mode, goes to the last cell that holds data. | Ctrl+End |
+| Extend the selection to the first cell (not in the palette) | In Grid mode, extends the selected cells to the table's first cell. | Ctrl+Shift+Home |
+| Extend the selection to the last used cell (not in the palette) | In Grid mode, extends the selected cells to the last cell that holds data. | Ctrl+Shift+End |
+| Extend the selection to the start of the row (not in the palette) | In Grid mode, extends the selected cells to the start of the row. | Shift+Home |
+| Move one screen left (not in the palette) | In Grid mode, moves one screen of columns left. | Alt+PageUp |
+| Move one screen right (not in the palette) | In Grid mode, moves one screen of columns right. | Alt+PageDown |
+| Move up a cell (not in the palette) | In Grid mode, moves up a cell, or back through the selected cells. | Shift+Enter |
+| Fill the selected cells with the active cell (not in the palette) | In Grid mode, fills every selected cell with the active cell, moving formula references. | Ctrl+Enter |
+| Edit the active cell (not in the palette) | In Grid mode, starts editing the active cell with the caret at the end. | F2 |
+| Clear the selected cells (not in the palette) | In Grid mode, clears the text of every selected cell. | Delete |
+| Clear the active cell and edit it (not in the palette) | In Grid mode, clears the active cell and starts editing it. | Backspace |
+| Select the column (not in the palette) | In Grid mode, selects the whole column. | Ctrl+Space |
+| Select the data around the cell, then the table (not in the palette) | In Grid mode, selects the data around the active cell, then the whole table. | Ctrl+A |
+| Fill down | In Grid mode, copies the top cell of the selection down, moving formula references. | Ctrl+D |
+| Fill right | In Grid mode, copies the left cell of the selection right, moving formula references. | Ctrl+R |
+| Copy the formula from the cell above (not in the palette) | In Grid mode, copies the formula of the cell above into the active cell. | Ctrl+' |
+| Copy the value from the cell above (not in the palette) | In Grid mode, copies the value of the cell above into the active cell. | Ctrl+" |
+| Enter today’s date | Enters today's date in the cell, as a date the formulas read. | Ctrl+; |
+| Enter the current time | Enters the current time in the cell. | Ctrl+: |
+| Finish the entry and move up (not in the palette) | In Edit mode, finishes the cell's entry and moves up. | Shift+Enter |
+| Finish the entry and stay in the cell (not in the palette) | In Edit mode, finishes the cell's entry and stays in the cell. | Ctrl+Enter |
+| Start a new line in the cell (not in the palette) | In Edit mode, starts a new line in the cell. | Alt+Enter |
+| Switch between Enter and Edit modes (not in the palette) | In Edit mode, switches between Enter mode, where arrows move to the next cell, and Edit mode. | F2 |
+| Use document keys in this table | Switches a table between spreadsheet keys and document keys, where Enter starts a new line. |  |
 | Add row above | Adds a row above the current one. |  |
 | Add row below | Adds a row below the current one. | Ctrl+Enter |
 | Move row up | Moves the current row up one place. | Alt+Shift+Up |
@@ -2461,6 +2569,7 @@ Open it with the command "Open upcoming".
 - **Appearance.** Sets the theme, the page color in dark mode, the text and interface size, and reduced motion.
 - **Language.** Sets the app language and the spelling dialect, with American English as the default.
 - **Editing.** Turns Markdown shortcuts, the slash menu, and AutoCorrect on or off.
+- **Tables.** Chooses whether new tables use spreadsheet keys or document keys.
 - **Recording.** Sets live captions, transcripts of recordings, audio formats, and the consent reminder.
 - **Pen and touch.** Sets the writing hand, finger drawing, the steady pen, and the pressure curve.
 - **My handwriting.** Calibrates the app to your handwriting and the symbols you write by hand.

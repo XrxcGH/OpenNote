@@ -12,6 +12,7 @@ mod rpr;
 mod runs;
 mod section;
 mod styles;
+mod table;
 mod units;
 pub(crate) mod zip;
 

@@ -39,7 +39,7 @@ export interface TableExtraHost {
 }
 
 export interface TableExtraHandle {
-  /** The block changed from outside this extra: undo, redo, or another window. */
+  /** The block changed from outside this extra (undo, redo, another window), or an extra wrote to it. */
   update(block: BlockJson): void;
   /**
    * Keys to add to the patch of an edit that leaves the table as `data`, with `extra` the keys the edit already

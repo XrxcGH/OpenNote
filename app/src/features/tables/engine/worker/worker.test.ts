@@ -7,7 +7,7 @@ import type { Table } from '../model';
 import { err } from '../values';
 import { cellCount, createRecalcClient, WORKER_CELLS, BUSY_MS, type WorkerLike } from './client';
 import type { RecalcReply, RecalcRequest } from './protocol';
-import { applyChanges, respond } from './run';
+import { applyChanges, respond, respondWhenReady } from './run';
 
 class SlowWorker implements WorkerLike {
   onmessage: ((event: { data: RecalcReply }) => void) | null = null;
@@ -76,6 +76,24 @@ describe('recalculation worker', () => {
     expect(worker.terminated).toBe(true);
   });
 
+  it('carries the page title to the worker, so CELL("filename") reads it (gap G3)', async () => {
+    const worker = new SlowWorker(0);
+    const client = createRecalcClient({ spawn: () => worker, threshold: 4, busyMs: 1000 });
+    const table = createTable(
+      [
+        { name: 'A', type: 'number' },
+        { name: 'B', type: 'text', formula: 'CELL("filename")' },
+      ],
+      [['1'], ['2'], ['3']],
+      EN_US,
+    );
+    const blank = { ...table, rows: table.rows.map((r) => ({ ...r, cells: [r.cells[0], { raw: '', value: null }] })) };
+    const [done] = await client.recalc([blank], { today: () => 1, title: 'Budget' });
+    expect(worker.posted).toBe(1);
+    expect(done.rows.map((r) => r.cells[1].value)).toEqual(['Budget', 'Budget', 'Budget']);
+    client.dispose();
+  });
+
   it('shows #BUSY! past the busy time, then the results when the worker answers', async () => {
     const worker = new SlowWorker(80);
     const client = createRecalcClient({ spawn: () => worker, threshold: 4, busyMs: 10 });
@@ -111,5 +129,17 @@ describe('recalculation worker', () => {
   it('turns error copies back into the engine errors', () => {
     const [table] = applyChanges([stale(1)], [{ table: 0, row: 0, col: 1, value: { error: 'DIV0' } }]);
     expect(table.rows[0].cells[1].value).toBe(err('DIV0'));
+  });
+});
+
+describe('the worker and the lazy statistical chunk', () => {
+  it('waits in the worker for the lazy statistical chunk instead of answering #BUSY!', async () => {
+    const table = createTable([{ name: 'A', type: 'number' }], [['']], EN_US);
+    const page = {
+      ...table,
+      rows: [{ ...table.rows[0], cells: [{ raw: '=GEOMEAN(2,8)', value: null, formula: 'GEOMEAN(2,8)' }] }],
+    };
+    const reply = await respondWhenReady({ id: 1, tables: [page], today: 0 });
+    expect(reply.changes).toEqual([{ table: 0, row: 0, col: 0, value: 4 }]);
   });
 });

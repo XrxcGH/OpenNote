@@ -270,6 +270,11 @@ pub enum Block {
         /// The sheet style of each cell, by row and column like `rows`, from the table's `data.sheet`. Empty when
         /// the table has no sheet styles, and a row may be shorter than its cells.
         cell_styles: Vec<Vec<Option<cell_style::CellStyle>>>,
+        /// The merged ranges from the table's `data.sheet`. Empty without merges. A merge's anchor holds the content
+        /// and the other cells it covers are not drawn.
+        merges: Vec<crate::sheet::Merge>,
+        /// The column widths in whole page units (1/96 inch), from the table block. Empty when the source has none.
+        widths: Vec<u32>,
     },
 }
 
@@ -280,6 +285,8 @@ impl Block {
             header,
             rows,
             cell_styles: Vec::new(),
+            merges: Vec::new(),
+            widths: Vec::new(),
         }
     }
 

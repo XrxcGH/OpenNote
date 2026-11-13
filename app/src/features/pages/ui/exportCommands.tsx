@@ -5,7 +5,7 @@ import { isEnabled } from '../../../app/flags';
 import { confirm, showToast } from '../../../ui';
 import { checkBeforeOutput, reviewPages } from '../../a11yCheck';
 import { exportHtmlFile, exportMarkdownFile } from '../host/exporter';
-import { exportMarkdown } from '../export';
+import { exportMarkdown, loadTableSheetFor } from '../export';
 import { collectSource, type PageSource } from '../host/source';
 import { openDialog } from './openDialog';
 import { PrintDialog } from './PrintDialog';
@@ -39,6 +39,7 @@ async function withTapeChoice(source: PageSource): Promise<PageSource> {
 
 /** Asks whether to keep formatting Markdown cannot hold, only when the page has some. */
 export async function markdownFormatting(source: PageSource): Promise<'keep' | 'remove'> {
+  await loadTableSheetFor(source.page);
   const keep = exportMarkdown(source.page, { formatting: 'keep' }).markdown;
   if (keep === exportMarkdown(source.page, { formatting: 'remove' }).markdown) return 'keep';
   const remove = await confirm({
@@ -76,6 +77,9 @@ export async function exportText(ctx: CommandContext, kind: 'markdown' | 'html')
       ? exportMarkdownFile(client, source, await markdownFormatting(source))
       : exportHtmlFile(client, source));
     if (outcome.status === 'canceled') return;
+    if (outcome.staleTables.length > 0) {
+      showToast({ message: t('pageViews.files.staleTables', { tables: outcome.staleTables.join(', ') }) });
+    }
     showToast({
       message: t('pageViews.files.saved', { name: outcome.name }),
       action: { label: t('pageViews.print.openFile'), run: () => client.open(outcome.path, true) },

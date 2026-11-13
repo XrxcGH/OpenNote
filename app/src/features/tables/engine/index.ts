@@ -34,6 +34,8 @@ export { formatValue } from './format';
 export { convertFormula, STORED, syntaxOf } from './formula/lexer';
 export type { FormulaProblem, Syntax } from './formula/lexer';
 export { parseFormula } from './formula/parser';
+// The statistical distributions load on first use; a page recalculates when they land.
+export { loadStatistics, onStatisticsLoaded } from './formula/fn/statsKit';
 export { DE_DE, EN_US, FR_FR, parseLocaleNumber } from './locale';
 export type { DateOrder, Locale } from './locale';
 export { columnLetter, isMismatch, ITERATE_DEFAULTS, letterToColumn, parseInput } from './model';

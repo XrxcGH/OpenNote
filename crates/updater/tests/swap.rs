@@ -23,25 +23,32 @@ use serde_json::{json, Value};
 use server::{Route, Server};
 use tempfile::TempDir;
 
-/// The fake app, built by `cargo test` with the other examples, or here when a single test runs.
+/// The fake app. Cargo builds it and says where it put it: the test exe's own folder is not the profile folder when
+/// cargo keeps build output apart from the target folder, so the path is asked for, not guessed.
 fn fake_app() -> &'static [u8] {
     static BYTES: OnceLock<Vec<u8>> = OnceLock::new();
     BYTES.get_or_init(|| {
-        let test_exe = std::env::current_exe().expect("the test exe");
-        // Newer Cargo keeps test exes in build/<crate>/<hash>/out, so walk up to the profile folder by name.
-        let profile = test_exe
-            .ancestors()
-            .find(|dir| dir.file_name().is_some_and(|name| name == "debug" || name == "release"))
-            .expect("the target profile folder");
-        let exe = profile.join("examples").join("fake_app.exe");
-        if !exe.exists() {
-            let cargo = std::env::var("CARGO").unwrap_or_else(|_| "cargo".into());
-            let status = Command::new(cargo)
-                .args(["build", "-p", "opennote-updater", "--example", "fake_app"])
-                .status()
-                .expect("cargo runs");
-            assert!(status.success(), "the fake app builds");
-        }
+        let cargo = std::env::var("CARGO").unwrap_or_else(|_| "cargo".into());
+        let output = Command::new(cargo)
+            .args([
+                "build",
+                "-p",
+                "opennote-updater",
+                "--example",
+                "fake_app",
+                "--message-format=json",
+            ])
+            .stderr(std::process::Stdio::inherit())
+            .output()
+            .expect("cargo runs");
+        assert!(output.status.success(), "the fake app builds");
+        let exe = String::from_utf8_lossy(&output.stdout)
+            .lines()
+            .filter_map(|line| serde_json::from_str::<Value>(line).ok())
+            .filter(|message| message["reason"] == "compiler-artifact" && message["target"]["name"] == "fake_app")
+            .filter_map(|message| message["executable"].as_str().map(PathBuf::from))
+            .next_back()
+            .expect("cargo names the fake app");
         fs::read(exe).expect("the fake app")
     })
 }

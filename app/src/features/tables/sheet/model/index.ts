@@ -18,6 +18,11 @@ export {
   validationAt,
   applyOrder,
   setConditionalLayer,
+  getConditionalLayer,
+  setDrawnLayer,
+  getDrawnLayer,
+  setLayerScheme,
+  getLayerScheme,
   freeRuleId,
   setRule,
   removeRule,
@@ -25,7 +30,7 @@ export {
   wholeTable,
   RULE_LIMIT,
 } from './rules';
-export type { Rule, RuleKind, ConditionalLayer } from './rules';
+export type { Rule, RuleKind, ConditionalLayer, DrawnDecoration, DrawnLayer } from './rules';
 export { namesOf, findName, setName, deleteName, pageNames, lookupName, tableName, NAME_LIMIT } from './names';
 export type { NamedRef, NameRefusal, PageName } from './names';
 export {

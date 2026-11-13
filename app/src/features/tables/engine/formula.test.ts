@@ -732,7 +732,7 @@ describe('engine state', () => {
   it('recalculates from scratch under another env', () => {
     const t = sheet(row1('1', '', '', ''));
     expect(at(setCellInput(t, { row: 0, col: 1, raw: '=A1+1' }, EN_US, DEFAULT_ENV), 'B1')).toBe(2);
-    const unknown = setCellInput(t, { row: 0, col: 1, raw: '=SEQUENCE(1)' }, EN_US, DEFAULT_ENV);
+    const unknown = setCellInput(t, { row: 0, col: 1, raw: '=REFTO("A1")' }, EN_US, DEFAULT_ENV);
     expect(at(unknown, 'B1')).toEqual(err('NAME'));
   });
 });
