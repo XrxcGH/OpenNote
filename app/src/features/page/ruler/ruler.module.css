@@ -82,6 +82,11 @@
     stroke-width: 1;
   }
 
+  .defaultTab {
+    stroke: var(--color-text-secondary);
+    stroke-width: 2;
+  }
+
   .tickText {
     fill: var(--color-text-secondary);
     font-size: var(--type-caption-size);
@@ -188,7 +193,8 @@
       border: 1px solid CanvasText;
     }
 
-    .tick {
+    .tick,
+    .defaultTab {
       stroke: CanvasText;
     }
 

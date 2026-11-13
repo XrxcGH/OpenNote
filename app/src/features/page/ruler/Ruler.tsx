@@ -2,10 +2,11 @@
 // at the current zoom and reads the indent and tab stops. It writes a change back as one command. The bar is RulerBar.
 import type { Editor } from '@tiptap/core';
 import type { RefObject } from 'react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { useFlag } from '../../../app/flags';
 import { paraAt, setPara } from '../../../editor/commands/paragraph';
 import type { Indent, ParaFormat, TabStop } from '../../../editor/paragraph/attributes';
+import { getDefaultTab, onDefaultTab } from '../../../editor/paragraph/defaultTab';
 import { useStore } from '../../../state/store';
 import { targetEditor } from '../formattingBar/target';
 import type { MountedPage } from '../mount';
@@ -114,6 +115,8 @@ export function Ruler({ mounted }: { mounted: MountedPage }) {
   const allowed = useFlag('text.ruler');
   const { shown, unit } = useStore(rulerState, (state) => state);
   const tabType = useStore(rulerTabType, (type) => type);
+  // The page's default tab interval, which the Format pane and the page view set (editor/paragraph/defaultTab.ts).
+  const defaultTab = useSyncExternalStore(onDefaultTab, getDefaultTab);
   const clip = useRef<HTMLDivElement>(null);
   const on = allowed && shown;
   const { frame, para, editor } = useRulerFrame(mounted, on, clip);
@@ -143,6 +146,7 @@ export function Ruler({ mounted }: { mounted: MountedPage }) {
               indent={para.indent ?? NO_INDENT}
               rtl={para.dir === 'rtl'}
               tabs={(para.tabs ?? []) as TabStop[]}
+              defaultTab={defaultTab}
               tabType={tabType}
               onIndent={runIndent}
               onTabs={(next) => run('tabs', next.length === 0 ? null : next)}

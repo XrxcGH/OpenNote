@@ -109,6 +109,20 @@ export function storedTabs(stops: readonly TabStop[]): TabStop[] | null {
   return stops.length === 0 ? null : [...stops];
 }
 
+/**
+ * The default stops the ruler shows: one every `interval` points after the last set stop, inside the width. They are
+ * the stops a tab uses when the paragraph sets none further on (tabLayout.ts `nextStop`).
+ */
+export function defaultStops(stops: readonly TabStop[], interval: number, width: number): number[] {
+  if (!(interval > 0)) return [];
+  const last = stops.reduce((max, stop) => (stop.align === 'clear' ? max : Math.max(max, stop.pos)), 0);
+  const out: number[] = [];
+  for (let pos = (Math.floor(last / interval) + 1) * interval; pos < width && out.length < 64; pos += interval) {
+    out.push(pos);
+  }
+  return out;
+}
+
 /** The types the selector cycles through; the last two set the indents instead of a tab stop. */
 export const TAB_TYPES = ['start', 'center', 'end', 'decimal', 'bar', 'first', 'hanging'] as const;
 export type TabType = (typeof TAB_TYPES)[number];

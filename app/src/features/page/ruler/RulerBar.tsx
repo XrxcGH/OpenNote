@@ -41,6 +41,8 @@ export interface RulerBarProps {
   /** A right-to-left paragraph: positions are measured from the right edge, and a drag to the left raises them. */
   rtl?: boolean;
   tabs: readonly TabStop[];
+  /** The page's default tab interval in points (`view.text.defaultTab`); its stops show after the last set stop. */
+  defaultTab?: number;
   tabType: TabType;
   onIndent(next: Indent): void;
   onTabs(next: TabStop[]): void;
@@ -346,7 +348,7 @@ export function RulerBar(props: RulerBarProps) {
         style={{ inlineSize: pointsToPixels(width, zoom) }}
         {...handlers}
       >
-        <Ticks unit={unit} zoom={zoom} width={width} rtl={rtl} />
+        <Ticks unit={unit} zoom={zoom} width={width} rtl={rtl} tabs={tabs} defaultTab={props.defaultTab} />
         {markers.map((marker) => (
           <MarkerView
             key={marker.id}

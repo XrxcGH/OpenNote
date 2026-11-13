@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import type { TabStop } from '../../../editor/paragraph/attributes';
-import { dragValue, markerLimits, movedIndent, movedTab, pixelsToPoints, withTab, withoutTab } from './geometry';
+import {
+  defaultStops,
+  dragValue,
+  markerLimits,
+  movedIndent,
+  movedTab,
+  pixelsToPoints,
+  withTab,
+  withoutTab,
+} from './geometry';
 import { defaultUnit, fromPoints, shownNumber, snapPoints, toPoints } from './units';
 
 describe('ruler arithmetic', () => {
@@ -76,5 +85,23 @@ describe('marker limits', () => {
 
   it('a right marker already across the left one is brought back inside', () => {
     expect(movedIndent('right', { start: 216, end: 468, first: 0 }, 468, 468).end).toBe(468 - 216 - 4.5);
+  });
+});
+
+describe('default tab stops', () => {
+  const stop = (pos: number, align: TabStop['align'] = 'start'): TabStop => ({ pos, align, leader: 'none' });
+
+  it('shows one every interval inside the width, as the tab layout uses them', () => {
+    expect(defaultStops([], 36, 200)).toEqual([36, 72, 108, 144, 180]);
+    expect(defaultStops([], 72, 216)).toEqual([72, 144]);
+  });
+
+  it('starts after the last set stop and ignores cleared ones', () => {
+    expect(defaultStops([stop(50)], 36, 200)).toEqual([72, 108, 144, 180]);
+    expect(defaultStops([stop(50), stop(150, 'clear')], 36, 120)).toEqual([72, 108]);
+  });
+
+  it('shows none for an interval that is not positive', () => {
+    expect(defaultStops([], 0, 200)).toEqual([]);
   });
 });

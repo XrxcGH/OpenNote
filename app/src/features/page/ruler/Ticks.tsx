@@ -2,11 +2,18 @@
 // right-to-left paragraph.
 import type { RulerBarProps } from './RulerBar';
 import { TICKS, fromPoints } from './units';
-import { pointsToPixels } from './geometry';
+import { defaultStops, pointsToPixels } from './geometry';
 import styles from './ruler.module.css';
 
-/** The tick marks and the numbers, from the left edge of the content box. */
-export function Ticks({ unit, zoom, width, rtl }: Pick<RulerBarProps, 'unit' | 'zoom' | 'width' | 'rtl'>) {
+/** The tick marks, the numbers, and the default tab stops, from the left edge of the content box. */
+export function Ticks({
+  unit,
+  zoom,
+  width,
+  rtl,
+  tabs,
+  defaultTab,
+}: Pick<RulerBarProps, 'unit' | 'zoom' | 'width' | 'rtl' | 'tabs' | 'defaultTab'>) {
   const { major, parts } = TICKS[unit];
   const perMajor = major / fromPoints(1, unit);
   const count = Math.floor((width / perMajor) * parts);
@@ -22,6 +29,8 @@ export function Ticks({ unit, zoom, width, rtl }: Pick<RulerBarProps, 'unit' | '
       label: whole && i > 0 ? String(Math.round(fromPoints(points, unit))) : undefined,
     });
   }
+  const side = (points: number) => (rtl ? pointsToPixels(width - points, zoom) : pointsToPixels(points, zoom));
+  const defaults = defaultTab === undefined ? [] : defaultStops(tabs, defaultTab, width);
   const top = { major: '55%', half: '70%', minor: '80%' } as const;
   return (
     <svg
@@ -40,6 +49,17 @@ export function Ticks({ unit, zoom, width, rtl }: Pick<RulerBarProps, 'unit' | '
             </text>
           )}
         </g>
+      ))}
+      {defaults.map((points) => (
+        <line
+          key={`d${points}`}
+          className={styles.defaultTab}
+          data-default-tab={points}
+          x1={side(points)}
+          x2={side(points)}
+          y1="100%"
+          y2="88%"
+        />
       ))}
     </svg>
   );

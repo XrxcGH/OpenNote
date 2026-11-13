@@ -10,7 +10,14 @@ import type { RulerUnit } from './units';
 const WIDTH = 468;
 
 function setup(
-  options: { zoom?: number; indent?: Indent; tabs?: TabStop[]; tabType?: TabType; unit?: RulerUnit } = {},
+  options: {
+    zoom?: number;
+    indent?: Indent;
+    tabs?: TabStop[];
+    tabType?: TabType;
+    unit?: RulerUnit;
+    defaultTab?: number;
+  } = {},
 ) {
   const onIndent = vi.fn();
   const onTabs = vi.fn();
@@ -21,6 +28,7 @@ function setup(
       width={WIDTH}
       indent={options.indent ?? { start: 0, end: 0, first: 0 }}
       tabs={options.tabs ?? []}
+      defaultTab={options.defaultTab}
       tabType={options.tabType ?? 'start'}
       onIndent={onIndent}
       onTabs={onTabs}
@@ -144,5 +152,21 @@ describe('the markers as sliders', () => {
     const { onTabs, marker } = setup({ tabs: [{ pos: 144, align: 'end', leader: 'none' }] });
     marker('tab:144').dispatchEvent(new KeyboardEvent('keydown', { key: 'Delete', bubbles: true, cancelable: true }));
     expect(onTabs).toHaveBeenCalledWith([]);
+  });
+});
+
+describe('default tab stops', () => {
+  const at = (container: HTMLElement) =>
+    [...container.querySelectorAll('[data-default-tab]')].map((line) => Number(line.getAttribute('data-default-tab')));
+
+  it('draws the page interval after the last set stop', () => {
+    const { view } = setup({ defaultTab: 72, tabs: [{ pos: 100, align: 'start', leader: 'none' }] });
+    expect(at(view.container)).toEqual([144, 216, 288, 360, 432]);
+  });
+
+  it('places a stop at its distance in pixels at the zoom', () => {
+    const { view } = setup({ defaultTab: 36, zoom: 2 });
+    const first = view.container.querySelector('[data-default-tab="36"]')!;
+    expect(Number(first.getAttribute('x1'))).toBe(96);
   });
 });
