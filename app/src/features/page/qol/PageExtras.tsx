@@ -4,13 +4,21 @@
 import type { MountedPage } from '../mount';
 import { FindBar } from '../find/FindBar';
 import { SourceView } from '../source/SourceView';
+import { Ruler } from '../ruler/Ruler';
 import { TocPane } from '../toc/TocPane';
 import { StatusLine } from './StatusLine';
 
 export type ExtrasSlot = 'top' | 'source' | 'bottom' | 'side';
 
 export default function PageExtras({ mounted, slot }: { mounted: MountedPage; slot: ExtrasSlot }) {
-  if (slot === 'top') return <FindBar mounted={mounted} />;
+  if (slot === 'top') {
+    return (
+      <>
+        <Ruler mounted={mounted} />
+        <FindBar mounted={mounted} />
+      </>
+    );
+  }
   if (slot === 'source') return <SourceView mounted={mounted} />;
   if (slot === 'bottom') return <StatusLine mounted={mounted} />;
   return <TocPane mounted={mounted} />;

@@ -648,6 +648,7 @@ export const COMMAND_TEXT: Readonly<Record<string, string>> = {
   'tabs.reopenClosed': 'Opens the tab you closed last.',
   'tabs.openInWindow': 'Opens the page in a new window.',
   'view.focusMode': 'Hides the panes and bars so only the page shows.',
+  'view.ruler': 'Shows or hides the ruler above the text, with the indents and the tab stops.',
   'window.toggleMini': 'Keeps the OpenNote window on top of other windows.',
   'window.dockLeft': 'Docks OpenNote to the left edge of the screen.',
   'window.dockRight': 'Docks OpenNote to the right edge of the screen.',

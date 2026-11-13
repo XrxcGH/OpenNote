@@ -4973,6 +4973,13 @@
       "flag": "editor.readAloud"
     },
     {
+      "id": "view.ruler",
+      "title": "Ruler",
+      "category": "view",
+      "keys": [],
+      "flag": "text.ruler"
+    },
+    {
       "id": "tools.latex",
       "title": "Insert LaTeX",
       "category": "insert",

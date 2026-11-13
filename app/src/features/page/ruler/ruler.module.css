@@ -1,0 +1,213 @@
+/*
+ * The ruler above the page (text DESIGN.md 5.4). Colors and sizes come from the tokens. Each marker is a 44 px
+ * target for pen and touch; the glyph inside it is small. Nothing here moves unless the pointer moves it.
+ */
+@layer components {
+  .host {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding-inline: var(--space-2);
+    block-size: 44px;
+    border-block-end: 1px solid var(--color-border-subtle);
+    background: var(--color-surface-raised);
+    color: var(--color-text-secondary);
+    font: var(--type-caption-size) / var(--type-caption-line) var(--font-ui);
+  }
+
+  .control {
+    flex: none;
+  }
+
+  /* Hidden, not removed, so the clip keeps its place while there is no text block. */
+  .control[hidden] {
+    display: inline-block;
+    visibility: hidden;
+  }
+
+  /* The clip is the part that follows the text: the bar inside it is shifted to where the content box starts. */
+  .clip {
+    position: relative;
+    flex: 1 1 0;
+    min-inline-size: 0;
+    block-size: 44px;
+    overflow: hidden;
+  }
+
+  .shift {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+  }
+
+  .bar {
+    block-size: 44px;
+  }
+
+  .needsText {
+    margin: 0;
+    line-height: 44px;
+  }
+
+  .selector,
+  .units {
+    align-self: center;
+    flex: none;
+    min-block-size: 32px;
+    padding-inline: var(--space-2);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-page);
+    color: var(--color-text-primary);
+    font: inherit;
+  }
+
+  .track {
+    position: relative;
+    block-size: 44px;
+    background: var(--color-surface-page);
+    touch-action: none;
+    user-select: none;
+    cursor: crosshair;
+  }
+
+  .ticks {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .tick {
+    stroke: var(--color-text-secondary);
+    stroke-width: 1;
+  }
+
+  .tickText {
+    fill: var(--color-text-secondary);
+    font-size: var(--type-caption-size);
+    dominant-baseline: middle;
+  }
+
+  .marker {
+    position: absolute;
+    inset-block-start: 0;
+    display: grid;
+    place-items: center;
+    /* The track picks the marker under the pointer, so the overlapping 44 px boxes never block each other. */
+    pointer-events: none;
+    cursor: ew-resize;
+  }
+
+  /*
+   * The ring is its own element with the glyph's box and no clip-path, because a clip-path would cut the outline
+   * off. The marker keeps a transparent outline, which forced colors show.
+   */
+  .marker:focus {
+    outline: var(--size-focus-ring-width) solid transparent;
+  }
+
+  .ring {
+    display: none;
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: var(--size-focus-ring-offset);
+    pointer-events: none;
+  }
+
+  .marker:focus-visible .ring {
+    display: block;
+  }
+
+  .glyph,
+  .ring {
+    position: absolute;
+    inline-size: 10px;
+    block-size: 8px;
+  }
+
+  .glyph {
+    background: var(--color-accent-primary);
+  }
+
+  .marker[data-dragging] .glyph {
+    background: var(--color-accent-candle);
+  }
+
+  .marker[data-kind='first'] :is(.glyph, .ring) {
+    inset-block-start: 2px;
+  }
+
+  .marker[data-kind='first'] .glyph {
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
+  }
+
+  .marker[data-kind='hanging'] :is(.glyph, .ring),
+  .marker[data-kind='right'] :is(.glyph, .ring) {
+    inset-block-start: 20px;
+  }
+
+  .marker[data-kind='hanging'] .glyph,
+  .marker[data-kind='right'] .glyph {
+    clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  }
+
+  .marker[data-kind='left'] :is(.glyph, .ring) {
+    inset-block-start: 30px;
+    block-size: 6px;
+  }
+
+  .marker[data-kind='tab'] :is(.glyph, .ring) {
+    inset-block-start: 26px;
+    inline-size: 8px;
+    block-size: 10px;
+  }
+
+  .marker[data-kind='tab'] .glyph {
+    background: var(--color-text-primary);
+  }
+
+  .marker[data-align='start'] .glyph,
+  .marker[data-align='decimal'] .glyph {
+    clip-path: polygon(0 0, 30% 0, 30% 70%, 100% 70%, 100% 100%, 0 100%);
+  }
+
+  .marker[data-align='center'] .glyph {
+    clip-path: polygon(40% 0, 60% 0, 60% 70%, 100% 70%, 100% 100%, 0 100%, 0 70%, 40% 70%);
+  }
+
+  .marker[data-align='end'] .glyph {
+    clip-path: polygon(70% 0, 100% 0, 100% 100%, 0 100%, 0 70%, 70% 70%);
+  }
+
+  .marker[data-align='bar'] .glyph {
+    clip-path: polygon(40% 0, 60% 0, 60% 100%, 40% 100%);
+  }
+
+  /* Forced colors replace background colors with Canvas, which would hide the glyphs: draw them in system colors. */
+  @media (forced-colors: active) {
+    .track {
+      border: 1px solid CanvasText;
+    }
+
+    .tick {
+      stroke: CanvasText;
+    }
+
+    .tickText {
+      fill: CanvasText;
+    }
+
+    .glyph {
+      forced-color-adjust: none;
+      background: CanvasText;
+    }
+
+    .marker[data-dragging] .glyph {
+      background: Highlight;
+    }
+
+    .marker:focus-visible .ring {
+      outline: 2px solid Highlight;
+      outline-offset: 2px;
+    }
+  }
+}

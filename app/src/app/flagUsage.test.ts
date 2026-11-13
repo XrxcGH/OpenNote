@@ -17,7 +17,6 @@ const WAITING: Readonly<Record<string, string>> = {
   'text.paraFormats': 'Beta 10 to 12: the lane that builds it reads it.',
   'text.fontPicker': 'Beta 10 to 12: the lane that builds it reads it.',
   'text.styles2': 'Beta 10 to 12: the lane that builds it reads it.',
-  'text.ruler': 'Beta 10 to 12: the lane that builds it reads it.',
   'text.language': 'Beta 10 to 12: the lane that builds it reads it.',
   'text.findFormat': 'Beta 10 to 12: the lane that builds it reads it.',
   'code.tier2': 'Beta 14: code:L16 and code:L17 run installed toolchains behind it.',
