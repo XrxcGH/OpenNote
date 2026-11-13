@@ -65,9 +65,17 @@ describe('static paragraph direction, language, and hyphenation', () => {
     expect(c.hasAttribute('dir')).toBe(false);
   });
 
-  it('writes none of them when text.language is off', () => {
+  it('adds none of them to the paragraph style render when text.language is off', () => {
+    // paraDom (render/paraStyle.ts) always draws a paragraph's stored direction and language, as the editor does.
+    // The option adds the dir attribute, the physical side, and the hyphens; without it none of those appear.
     const into = document.createElement('div');
     renderStatic(doc(), into);
-    expect(into.querySelector('[dir], [lang], [style]')).toBeNull();
+    const [a, b, c] = [...into.querySelectorAll('p')];
+    expect(into.querySelector('[dir]')).toBeNull();
+    expect(a.style.textAlign).toBe('start');
+    expect(a.getAttribute('style')).not.toContain('hyphens');
+    expect(b.getAttribute('style')).not.toContain('hyphens: auto');
+    expect(c.hasAttribute('style')).toBe(false);
+    expect(c.hasAttribute('lang')).toBe(false);
   });
 });
