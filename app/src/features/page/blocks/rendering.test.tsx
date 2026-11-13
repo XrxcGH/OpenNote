@@ -12,7 +12,7 @@ import { LISTS_META } from '../../../editor/extensions/listItem';
 import { applyElementData } from '../../../editor/markdown/elements';
 import { parseTextBlock } from '../../../editor/markdown/parse';
 import { readLists } from '../../../editor/paragraph/numbering';
-import { renderStatic } from '../../../editor/schema/dom';
+import { renderStatic, staticOptions } from '../../../editor/schema/dom';
 // Importing registers the block marks in every text editor.
 import '../../../editor/render/plugin';
 
@@ -340,10 +340,13 @@ describe('static render equals mounted render', () => {
 
   for (const fixture of all) {
     it(fixture.name, () => {
+      // One host for both, so the static render gets the options a text block gives it (direction with text.language).
+      const editorHost = testHost();
       const staticRoot = host();
-      renderStatic(fixture.doc, staticRoot, fixture.lists === undefined ? undefined : readLists(fixture.lists));
+      const lists = fixture.lists === undefined ? undefined : readLists(fixture.lists);
+      renderStatic(fixture.doc, staticRoot, lists, staticOptions(editorHost));
       const mountedRoot = host();
-      editor = createBlockEditor(mountedRoot, fixture.doc, { kind: 'text', block: 'b1', host: testHost() });
+      editor = createBlockEditor(mountedRoot, fixture.doc, { kind: 'text', block: 'b1', host: editorHost });
       if (fixture.lists !== undefined) editor.view.dispatch(editor.state.tr.setMeta(LISTS_META, fixture.lists));
       expect(normalized(mountedRoot)).toBe(normalized(staticRoot));
       editor.destroy();
