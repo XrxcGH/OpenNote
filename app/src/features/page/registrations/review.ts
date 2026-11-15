@@ -44,6 +44,8 @@ interface Spec {
   icon: string;
   category?: CommandCategory;
   keys?: readonly string[];
+  /** The Google Docs set's keys when they differ from `keys` (ADR 0085); an empty list leaves the command unbound. */
+  docsKeys?: readonly string[];
   checked?: () => boolean;
   /** The Review tab group and priority; none for palette-only commands. */
   bar?: { group: string; priority: number; presentation?: 'toggle' };
@@ -59,6 +61,7 @@ function add(spec: Spec): void {
     icon: spec.icon,
     flag: FLAG,
     ...(spec.keys ? { keys: spec.keys.map(chord), scope: 'editor' as const, allowInTextInput: true } : {}),
+    ...(spec.docsKeys ? { presetKeys: { docs: spec.docsKeys.map(chord) } } : {}),
     ...(spec.checked ? { checked: spec.checked } : {}),
     when: () => shownMounted.get() !== null,
     run: () => void commandsModule().then((m) => spec.run(m)),
@@ -141,8 +144,9 @@ add({
   title: 'textReview.trackChanges',
   keywords: 'textReview.trackChangesKeywords',
   icon: 'PencilSimpleLine',
-  // Word's chord for Track Changes.
+  // Word's chord for Track Changes. In the Google Docs set Ctrl+Shift+E centers the paragraph, so it has no key there.
   keys: ['Ctrl+Shift+E'],
+  docsKeys: [],
   checked: () => suggesting.get(),
   bar: { group: 'tracking', priority: 90, presentation: 'toggle' },
   run: (m) => m.toggleSuggesting(),
