@@ -104,7 +104,7 @@ Accepted records aren't rewritten when plans change. Instead, write a new ADR fo
 | [0071](0071-local-toolchain-runner.md) | Running code with the person's installed toolchains | Proposed | 2026-11-01 |
 | [0072](0072-code-intelligence-on-device.md) | Code completion and fixes with on-device code models only | Proposed | 2026-11-01 |
 | [0073](0073-trace-replay-debugger.md) | Step debugging by recording and replaying, behind one Debug Adapter Protocol contract | Proposed | 2026-11-01 |
-| [0074](0074-code-diagnostics.md) | Error detection with own checkers first, and a code tools pack | Proposed | 2026-11-01 |
+| [0074](0074-code-diagnostics.md) | Error detection with own checkers first, and a code tools pack | Accepted | 2026-11-01 |
 | [0075](0075-code-tests.md) | Test cases stored with projects, with judge-style comparisons | Proposed | 2026-11-01 |
 | [0076](0076-reserved-inline-tags-and-foreign-marks.md) | OpenNote Markdown 2 reserves one inline tag grammar, and readers keep tags they do not know | Proposed | 2026-11-02 |
 | [0077](0077-min-writer-version.md) | Files carry minWriterVersion, the oldest version that may edit them | Proposed | 2026-11-02 |
@@ -119,6 +119,7 @@ Accepted records aren't rewritten when plans change. Instead, write a new ADR fo
 | [0086](0086-comments-and-suggestions.md) | Comments and suggestions are stored in the page, anchored by inline tags, with local author names | Proposed | 2026-11-01 |
 | [0087](0087-footnotes-and-breaks.md) | Footnotes use `[^id]` with their text in data.notes, and page breaks are `break` blocks | Proposed | 2026-11-01 |
 | [0088](0088-symbol-data.md) | The symbol dialog searches a subset of Unicode names generated at build time | Accepted | 2026-11-01 |
+| [0089](0089-block-level-merge-on-sync.md) | Block-level merge on sync, with a merger and a conflict view per block type | Proposed | 2026-11-07 |
 
 The numbers 0009, 0018, 0019, 0028, 0029, and 0031 to 0034 have no record. A number is never reused.
 

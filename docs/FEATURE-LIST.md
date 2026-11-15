@@ -2,7 +2,7 @@
 
 Every tool, action, and feature in OpenNote, grouped by category, with one sentence each. `npm run docs:features` makes this page. The commands, tool windows, title bar items, settings sections, and setup steps come from what the app registers, so a new one shows up here or fails the tests. The feature sentences come from [FEATURES.md](FEATURES.md), which also says what has been tested by hand and which flag turns each one on. The [help pages](help/README.md) explain how to use them. [docs/screens](screens/README.md) has every picture in light and dark.
 
-The app registers 1149 commands and 48 tool windows. 24 of the windows are subject and engineering kits. The count includes the ink commands, which register when a page first shows its ink, and the commands that register once start-up is done or with the first page: on-device intelligence, the second pass of page commands, and the code block and table commands. The command palette (Ctrl+K) runs every command not marked as left out of it. Some commands need a feature flag, which FEATURES.md names. The keys shown are the defaults of the standard shortcut set.
+The app registers 1168 commands and 48 tool windows. 24 of the windows are subject and engineering kits. The count includes the ink commands, which register when a page first shows its ink, and the commands that register once start-up is done or with the first page: on-device intelligence, the second pass of page commands, and the code block and table commands. The command palette (Ctrl+K) runs every command not marked as left out of it. Some commands need a feature flag, which FEATURES.md names. The keys shown are the defaults of the standard shortcut set.
 
 ## Contents
 
@@ -79,6 +79,12 @@ The app registers 1149 commands and 48 tool windows. 24 of the windows are subje
 - **Table styles in page exports.** Word, HTML, and Markdown exports write each table's last results.
 - **Code studio foundations.** The contracts, settings, flags, and strings for the code studio: projects as a page block, runs, diagnostics, completion, a replay debugger, tests, and runtime packs.
 - **Code editor keys.** Tab indents in the code editor, and Ctrl+Page Down and Ctrl+Page Up change tabs, so the tab bar stays reachable.
+- **Comments and suggestions.** New comment covers the selection or the word at the caret.
+- **Python in code projects.** Quick Python (MicroPython, bundled) and full Python (CPython 3.14 through Pyodide, from a pack) run projects in the run sandbox.
+- **JavaScript and TypeScript runs.** QuickJS runs JavaScript and TypeScript projects (Sucrase removes the types) with relative imports, a seeded Math.random, Node-style console output, and a Jest-compatible test API.
+- **Error detection in code.** Syntax errors for nine languages, and OpenNote's own checks for Python (Ruff rules), JavaScript and TypeScript (ESLint rules), C, C++, and Lua.
+- **Code completion without a model.** A ranked list from names in scope, members, keywords, snippets, and words in the project, plus one-line ghost text from patterns, and an explicit request key.
+- **Block-level merge on sync.** When two devices change different blocks of one page, a block type with a merger merges both versions instead of keeping a conflict copy.
 - **Calm shell polish.** Phosphor icons in the command bar, pens back on the bar at 1,280 px, calm pressed and selected states, notebook accent roles, and group dividers.
 
 ### Tool windows
@@ -265,6 +271,25 @@ Open it with the command "Open the code studio".
 | In line | Puts the image in the line of text, like a large letter. |  |
 | Image on the left, text wraps | Puts the image on the left, with the text wrapping around it. |  |
 | Image on the right, text wraps | Puts the image on the right, with the text wrapping around it. |  |
+| New comment | Comments on the selected text, or on the word at the caret. |  |
+| Show comments | Shows or hides the comments pane, with the page's comments in reading order. |  |
+| Previous comment | Goes to the comment before the caret. |  |
+| Next comment | Goes to the comment after the caret. |  |
+| Resolve comment | Marks the comment at the caret as resolved. |  |
+| Reopen comment | Opens a resolved comment again. |  |
+| Delete comment | Deletes the comment at the caret and its replies. |  |
+| Track changes | Turns suggesting on or off. While it is on, edits show as suggestions. | Ctrl+Shift+E |
+| Simple markup | Shows the text with the changes made, and a bar at each change. |  |
+| All markup | Shows every insertion, deletion, format change, and comment. |  |
+| No markup | Shows the text with the changes made and hides the marks. |  |
+| Accept change | Accepts the change at the caret and goes to the next one. |  |
+| Reject change | Rejects the change at the caret and goes to the next one. |  |
+| Accept all changes | Accepts every change on the page. |  |
+| Reject all changes | Rejects every change on the page. |  |
+| Accept all changes by… | Accepts every change one person made. |  |
+| Reject all changes by… | Rejects every change one person made. |  |
+| Previous change | Goes to the change before the caret. |  |
+| Next change | Goes to the change after the caret. |  |
 | Next spelling error | Jumps to the next spelling error. | F7 |
 | Previous spelling error | Jumps to the previous spelling error. | Shift+F7 |
 | Open in another editor | Opens the page's Markdown file in another editor, such as VS Code or Notepad. |  |

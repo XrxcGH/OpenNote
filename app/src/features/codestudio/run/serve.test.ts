@@ -3,6 +3,10 @@
 // - Output written before an adapter throws still reaches the page.
 // - A cut sends one character past the limit, so the page can tell a cut from output at the limit.
 // Lockdown and the Math.random seeding are stand-ins here: the real ones would change this test's own global.
+//
+// It also covers two run ends:
+// - Output goes to the page as it is written, so a run that the time limit ends keeps what it printed.
+// - A runtime that reads only prefilled input makes the run not interactive, so the console says so.
 
 import { describe, expect, it, vi } from 'vitest';
 import type { RunEnd, RunRequest, RuntimeAdapter, WorkerMessage } from '../contracts/run';
@@ -14,6 +18,11 @@ vi.mock('./lockdown', () => ({ globalNames: () => new Set<string>(), lockDown: (
 vi.mock('./random', async (original) => ({
   ...(await original<typeof import('./random')>()),
   seedMathRandom: () => undefined,
+}));
+// JSPI as in WebView2, whatever Node has.
+vi.mock('./stdin', async (original) => ({
+  ...(await original<typeof import('./stdin')>()),
+  jspiAvailable: () => true,
 }));
 
 /** A stand-in worker scope: records what the worker sent, and lets the test send as the page would. */
@@ -88,5 +97,39 @@ describe('serve', () => {
     };
     expect(await texts('12345')).toEqual(['12345']);
     expect(await texts('1234567')).toEqual(['123456']);
+  });
+});
+
+describe('serve, while the program runs', () => {
+  it('sends output as it is written, before the run ends', async () => {
+    const worker = scope();
+    let release = () => undefined as void;
+    const waiting = new Promise<void>((resolve) => (release = resolve));
+    const looping = adapter(async (_, emit): Promise<RunEnd> => {
+      emit({ kind: 'out', stream: 'out', text: 'before the loop\n' });
+      await waiting;
+      return { status: 'ok', message: '' };
+    });
+    serve({ javascript: async () => looping }, worker);
+    worker.page(request);
+    await vi.waitFor(() =>
+      expect(worker.sent).toContainEqual({ kind: 'out', stream: 'out', text: 'before the loop\n' }),
+    );
+    expect(worker.sent.some((message) => message.kind === 'done')).toBe(false);
+    release();
+    await ended(worker.sent);
+  });
+
+  it('reports a run as not interactive when the runtime reads only prefilled input', async () => {
+    const started = async (prefilledOnly: boolean) => {
+      const worker = scope();
+      const reader: RuntimeAdapter = { ...adapter(async () => ({ status: 'ok', message: '' })), prefilledOnly };
+      serve({ javascript: async () => reader }, worker);
+      worker.page({ ...request, stdin: { mode: 'interactive', text: '' } });
+      const sent = await ended(worker.sent);
+      return sent.find((message) => message.kind === 'started');
+    };
+    expect(await started(false)).toMatchObject({ kind: 'started', interactive: true });
+    expect(await started(true)).toMatchObject({ kind: 'started', interactive: false });
   });
 });

@@ -4,7 +4,8 @@
 //! A version that another has seen loses to it. Versions that saw nothing of each other are concurrent: equal
 //! contents just join, an edit beats a delete, and different contents follow the rule for the kind of file. No rule
 //! drops text: when two versions of a page can't both be `page.json`, the other one goes to `.conflicts/`, which
-//! the app shows as a conflict to review (spec 14.1).
+//! the app shows as a conflict to review (spec 14.1). Before that, block types that registered a merger may merge
+//! the two versions of a page into one (ADR 0089).
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::io::Read;
@@ -13,10 +14,15 @@ use opennote_core::format::history_json::{merge_versions, read_versions, write_v
 use opennote_core::format::page_json::read_page;
 use opennote_core::format::tree_json::{merge_notebooks, merge_sections, read_notebook, read_section};
 use opennote_core::format::tree_json::{write_notebook, write_section};
+use opennote_core::merge::{mergers, Mergers};
+use opennote_core::model::Page;
 use opennote_core::Limits;
 
 use crate::error::{Result, SyncError};
 use crate::manifest::{dominates, join, Content, Entry, Manifest, Vv};
+
+mod blocks;
+use blocks::merge_blocks_first;
 
 /// Reads small files for the merge rules, and turns bytes a rule wrote into content.
 pub trait Contents {
@@ -335,25 +341,26 @@ fn merge_tree(path: &str, live: &[Content], contents: &dyn Contents) -> Result<O
     })
 }
 
-/// The ink segments and assets a page file points at, as paths relative to its page folder.
-fn page_refs(bytes: &[u8]) -> BTreeSet<String> {
+/// A page file, read whether it is plain or gzip-compressed, as `.history` snapshots are.
+fn read_any_page(bytes: &[u8]) -> Option<Page> {
     let mut plain = Vec::new();
     let bytes = if bytes.starts_with(&[0x1f, 0x8b]) {
-        if flate2::read::GzDecoder::new(bytes)
+        flate2::read::GzDecoder::new(bytes)
             .take(64 * 1024 * 1024)
             .read_to_end(&mut plain)
-            .is_err()
-        {
-            return BTreeSet::new();
-        }
+            .ok()?;
         &plain[..]
     } else {
         bytes
     };
-    let Ok(read) = read_page(bytes, &Limits::default()) else {
+    read_page(bytes, &Limits::default()).ok().map(|read| read.page)
+}
+
+/// The ink segments and assets a page file points at, as paths relative to its page folder.
+fn page_refs(bytes: &[u8]) -> BTreeSet<String> {
+    let Some(page) = read_any_page(bytes) else {
         return BTreeSet::new();
     };
-    let page = read.page;
     let mut refs: BTreeSet<String> = page
         .ink
         .segments()
@@ -365,13 +372,29 @@ fn page_refs(bytes: &[u8]) -> BTreeSet<String> {
 }
 
 /// Merges manifests. `before` is this device's own manifest before the merge: folders where nothing changed are
-/// not checked again.
+/// not checked again. Block mergers registered for this process take part (ADR 0089).
 pub fn merge(inputs: &[&Manifest], before: &Manifest, contents: &dyn Contents) -> Result<Merged> {
+    merge_with(inputs, before, contents, &mergers())
+}
+
+/// [`merge`] with these block mergers.
+pub fn merge_with(
+    inputs: &[&Manifest],
+    before: &Manifest,
+    contents: &dyn Contents,
+    mergers: &Mergers,
+) -> Result<Merged> {
     let mut by_path: BTreeMap<&str, Vec<Entry>> = BTreeMap::new();
     for manifest in inputs {
         for (path, entry) in manifest.iter() {
             by_path.entry(path.as_str()).or_default().push(entry.clone());
         }
+    }
+    let snapshots = merge_blocks_first(&mut by_path, contents, mergers)?;
+    // The merged revision's snapshot is the base of the next merge of its page. Another device that made the
+    // same merge already published the same snapshot.
+    for (at, snapshot) in &snapshots {
+        by_path.insert(at.as_str(), vec![snapshot.clone()]);
     }
     let mut merged = Merged::default();
     let mut extras: Vec<(String, String, Entry)> = Vec::new();
@@ -392,8 +415,29 @@ pub fn merge(inputs: &[&Manifest], before: &Manifest, contents: &dyn Contents) -
         merged.entries.insert(path.to_owned(), resolved.entry);
         extras.extend(resolved.others.into_iter().map(|(at, e)| (path.to_owned(), at, e)));
     }
-    // Other versions land at new paths. A path may already hold one (another device kept it there too), so they
-    // merge like any other version. Each round moves names further from the original, and three rounds is plenty.
+    place_others(&mut merged, extras, &mut sealed_sets, contents)?;
+    part_case_collisions(&mut merged, contents)?;
+    merged
+        .conflicts
+        .sort_by(|a, b| (&a.path, &a.kept_as).cmp(&(&b.path, &b.kept_as)));
+    merged.conflicts.dedup();
+    let sealed = Sealed {
+        concurrent: &concurrent,
+        had_live: &had_live,
+    };
+    revive_referenced(&mut merged.entries, before, contents, &sealed)?;
+    copy_sealed_sets(&mut merged.entries, &sealed_sets, contents)?;
+    Ok(merged)
+}
+
+/// Other versions land at new paths. A path may already hold one (another device kept it there too), so they
+/// merge like any other version. Each round moves names further from the original, and three rounds is plenty.
+fn place_others(
+    merged: &mut Merged,
+    mut extras: Vec<(String, String, Entry)>,
+    sealed_sets: &mut Vec<(String, String)>,
+    contents: &dyn Contents,
+) -> Result<()> {
     for _ in 0..4 {
         if extras.is_empty() {
             break;
@@ -415,18 +459,7 @@ pub fn merge(inputs: &[&Manifest], before: &Manifest, contents: &dyn Contents) -
         }
         extras = next;
     }
-    part_case_collisions(&mut merged, contents)?;
-    merged
-        .conflicts
-        .sort_by(|a, b| (&a.path, &a.kept_as).cmp(&(&b.path, &b.kept_as)));
-    merged.conflicts.dedup();
-    let sealed = Sealed {
-        concurrent: &concurrent,
-        had_live: &had_live,
-    };
-    revive_referenced(&mut merged.entries, before, contents, &sealed)?;
-    copy_sealed_sets(&mut merged.entries, &sealed_sets, contents)?;
-    Ok(merged)
+    Ok(())
 }
 
 /// The version-vector entry that counts moves made because two paths differ only in case. Every device makes the

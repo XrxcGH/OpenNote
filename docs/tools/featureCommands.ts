@@ -5,6 +5,7 @@
 import { CELL_COMMAND_TEXT } from './featureCommandsCells.ts';
 import { HOME_TAB_TEXT } from './featureCommandsHome.ts';
 import { TEXT_PANE_TEXT } from './featureCommandsText.ts';
+import { REVIEW_TEXT } from './featureCommandsReview.ts';
 import { SHEET_COMMAND_TEXT } from './featureCommandsSheet.ts';
 
 /** Each settings section, by its registry id. */
@@ -46,6 +47,7 @@ export const COMMAND_TEXT: Readonly<Record<string, string>> = {
   ...CELL_COMMAND_TEXT,
   ...HOME_TAB_TEXT,
   ...TEXT_PANE_TEXT,
+  ...REVIEW_TEXT,
   'tools.calculator.basic': 'Opens the calculator on its basic tab for everyday arithmetic.',
   'tools.calculator.scientific': 'Opens the calculator on its scientific tab, with functions, powers, and angle modes.',
   'tools.calculator.graphing': 'Opens the calculator on its graphing tab to plot functions in 2D.',

@@ -60,6 +60,19 @@ These are on the beta branch behind flags that are off.
 - Modify on a style opens the same pane for the style. A change there applies to every paragraph that uses it.
 - On the View tab, choose Ruler to show the ruler above the text box with the cursor. Drag the first line, hanging, left, and right indent markers. Click the ruler to add a tab stop of the type shown at its left, drag it to move it, and drag it off the ruler to remove it. Hold Alt to drag without snapping. A marker moves with the arrow keys and tells a screen reader its place.
 
+## Comments and suggestions
+
+These are on the beta branch behind a flag that is off.
+
+- Choose New comment on the Insert or Review tab. The comment covers the selected text, or the word at the caret. Comments can sit inside other comments.
+- The comments pane opens beside the page. Post a comment, reply, resolve, reopen, or delete it, and click one to go to its text. Type your name in the pane; it stays on this device.
+- Previous comment and Next comment move around the page in reading order.
+- Turn on Track changes (Ctrl+Shift+E with Word keys) to make edits as suggestions. Typed text shows as an insertion, deleted text stays with a deletion mark, and formatting shows as a format change.
+- Accept or reject the change at the caret, every change, or every change by one person. Previous change and Next change move between them.
+- Simple shows the text with the changes made and a bar at each insertion. All shows every mark. No markup hides the marks.
+- Page history's compare view lists formatting changes, such as "Formatting changed: bold added".
+- Paragraph splits and joins, paragraph formatting, tables, and code blocks are not tracked yet.
+
 ## Templates, series, and the source
 
 - Start a page from a template when you make it.
