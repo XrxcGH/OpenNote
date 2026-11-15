@@ -1,11 +1,13 @@
 // T3-4: the lasso's actions exist only while something is selected; with nothing selected the frame (and so every
 // action in it) is not displayed, which also takes it out of the accessibility tree. With a selection the actions show.
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { initFlags } from '../../../app/flags';
 import { makeStroke } from '../geometry/fixtures';
 import type { InkHost, InkSelection } from './host';
 import { attachSelectionFrame, createFrameTool } from './selection';
 import { chooseTool } from './state';
 import type { InkSurface } from './surface';
+import './view.module.css';
 
 let selection: InkSelection = { blocks: [], strokes: [] };
 const listeners = new Set<() => void>();
@@ -157,5 +159,41 @@ describe('a text box selected alone (Beta 6, owner bugs 5 and 8)', () => {
     frame.stop();
     delete chrome.dataset.inkChrome;
     chrome.remove();
+  });
+});
+
+describe('the lasso handles on a thin selection (A2-A09-5)', () => {
+  it('leaves every resize handle on top, with the rewrap handle clear of them', () => {
+    initFlags('dev', { 'ink.handwriting': true, 'intel.handwriting': true });
+    chrome.style.cssText =
+      'position:absolute;left:0;top:0;width:600px;height:300px;--space-1:2px;--space-2:4px;--space-3:8px;--space-4:12px;--space-5:16px';
+    document.body.append(chrome);
+    const line = makeStroke('line', [
+      { x: 100, y: 100 },
+      { x: 400, y: 110 },
+    ]);
+    const thin = {
+      ...surface,
+      strokes: (ids: readonly string[]) => (ids.includes('line') ? [line] : []),
+    } as unknown as InkSurface;
+    selection = { blocks: [], strokes: ['line'] };
+    const frame = attachSelectionFrame(host, thin);
+    // The bar is not under test, and unstyled it is tall enough to cover the top handles.
+    chrome.querySelector<HTMLElement>('[data-ink-selection-bar]')!.style.display = 'none';
+    const side = chrome.querySelector<HTMLElement>('[data-ink-side]')!;
+    expect(side).not.toBeNull();
+    const centerHit = (element: Element) => {
+      const box = element.getBoundingClientRect();
+      return document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
+    };
+    expect(centerHit(side)).toBe(side);
+    for (const corner of ['nw', 'ne', 'se', 'sw']) {
+      const handle = chrome.querySelector<HTMLElement>(`[data-ink-corner="${corner}"]`)!;
+      expect(centerHit(handle), corner).toBe(handle);
+    }
+    frame.stop();
+    chrome.remove();
+    chrome.style.cssText = '';
+    selection = { blocks: [], strokes: [] };
   });
 });
