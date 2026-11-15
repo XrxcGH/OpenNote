@@ -22,3 +22,6 @@ export const loadCodeProjects = () => import('./project');
 
 /** Loads error detection (features/codestudio/diagnostics, code:L10): the scheduler, checkers, and engine checks. */
 export const loadDiagnostics = () => import('./diagnostics');
+
+/** Loads completion without a model (features/codestudio/complete, code:L12): attachCompletion for an editor. */
+export const loadCompletion = () => import('./complete');
