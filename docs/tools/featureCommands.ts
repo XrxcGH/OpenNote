@@ -5,6 +5,7 @@
 import { CELL_COMMAND_TEXT } from './featureCommandsCells.ts';
 import { HOME_TAB_TEXT } from './featureCommandsHome.ts';
 import { TEXT_PANE_TEXT } from './featureCommandsText.ts';
+import { REVIEW_TEXT } from './featureCommandsReview.ts';
 import { SHEET_COMMAND_TEXT } from './featureCommandsSheet.ts';
 
 /** Each settings section, by its registry id. */
@@ -46,6 +47,7 @@ export const COMMAND_TEXT: Readonly<Record<string, string>> = {
   ...CELL_COMMAND_TEXT,
   ...HOME_TAB_TEXT,
   ...TEXT_PANE_TEXT,
+  ...REVIEW_TEXT,
   'tools.calculator.basic': 'Opens the calculator on its basic tab for everyday arithmetic.',
   'tools.calculator.scientific': 'Opens the calculator on its scientific tab, with functions, powers, and angle modes.',
   'tools.calculator.graphing': 'Opens the calculator on its graphing tab to plot functions in 2D.',
@@ -319,25 +321,6 @@ export const COMMAND_TEXT: Readonly<Record<string, string>> = {
   'layout.lineNumbers': 'Turns line numbers on or off in print.',
   'layout.headerFooter': 'Opens a dialog for the header, the footer, and the page number format that print uses.',
   'insert.pageBreak': 'Starts a new page after the paragraph at the caret.',
-  'text.review.newComment': 'Comments on the selected text, or on the word at the caret.',
-  'text.review.showComments': "Shows or hides the comments pane, with the page's comments in reading order.",
-  'text.review.previousComment': 'Goes to the comment before the caret.',
-  'text.review.nextComment': 'Goes to the comment after the caret.',
-  'text.review.resolveComment': 'Marks the comment at the caret as resolved.',
-  'text.review.reopenComment': 'Opens a resolved comment again.',
-  'text.review.deleteComment': 'Deletes the comment at the caret and its replies.',
-  'text.review.trackChanges': 'Turns suggesting on or off. While it is on, edits show as suggestions.',
-  'text.review.markup.simple': 'Shows the text with the changes made, and a bar at each change.',
-  'text.review.markup.all': 'Shows every insertion, deletion, format change, and comment.',
-  'text.review.markup.none': 'Shows the text with the changes made and hides the marks.',
-  'text.review.accept': 'Accepts the change at the caret and goes to the next one.',
-  'text.review.reject': 'Rejects the change at the caret and goes to the next one.',
-  'text.review.acceptAll': 'Accepts every change on the page.',
-  'text.review.rejectAll': 'Rejects every change on the page.',
-  'text.review.acceptByAuthor': 'Accepts every change one person made.',
-  'text.review.rejectByAuthor': 'Rejects every change one person made.',
-  'text.review.previousChange': 'Goes to the change before the caret.',
-  'text.review.nextChange': 'Goes to the change after the caret.',
   'insert.date': "Inserts today's date.",
   'insert.time': 'Inserts the time now.',
   'insert.dateTime': "Inserts today's date and the time now.",
