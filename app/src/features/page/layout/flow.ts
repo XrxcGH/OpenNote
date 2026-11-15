@@ -95,7 +95,9 @@ export function createFlow(viewport: PageViewport): Flow {
     },
     fitWidth() {
       const { w } = contentExtent(viewport.world, flow);
-      return fitWidthZoom(w + flow.offsetLeft, viewport.camera().viewport.w);
+      // A fitted page leaves no spare width, so the desk gutter settles to 0 once it is applied: measure with it back.
+      const gutter = Number(viewport.viewport.closest('main')?.dataset.deskGutter ?? 0) || 0;
+      return fitWidthZoom(w + flow.offsetLeft, viewport.camera().viewport.w + 2 * gutter);
     },
     extent() {
       const { w, h } = contentExtent(viewport.world, flow);

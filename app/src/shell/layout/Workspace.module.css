@@ -123,6 +123,8 @@
     min-inline-size: 0;
     overflow: auto;
     isolation: isolate;
+    /* The desk gutter's motifs hang from its top edge (illustrations.module.css). */
+    position: relative;
     /* The panes inside the page (Reading order, Contents) give way to the page by this width (pane.module.css). */
     container: page-region / inline-size;
     background:
@@ -153,6 +155,14 @@
     :global(:root[data-theme='dark']) .page {
       background: var(--color-surface-sunken);
     }
+  }
+
+  /* The desk gutter (deskGutter.ts): at Wide an open page sits between two strips of this canvas, the window light by
+     day and the evening sky at night, taken only from width the text column doesn't need. The strips are main's own box
+     beside the page, so they show the gradients above and nothing else, and they sit behind no text. While a strip
+     shows, touch and pen drags that start in it pan the page (useDeskGutter.ts). */
+  .page[data-desk-gutter]:not([data-desk-gutter='0']) {
+    touch-action: none;
   }
 
   .page:focus-visible {
