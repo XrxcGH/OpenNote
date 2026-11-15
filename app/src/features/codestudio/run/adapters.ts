@@ -9,6 +9,8 @@ import type { AdapterRegistry } from './serve';
 export const ADAPTERS: AdapterRegistry = {
   'python-quick': () => import('../runtimes/python').then((loaded) => loaded.pythonQuickAdapter),
   'python-full': () => import('../runtimes/python').then((loaded) => loaded.pythonFullAdapter),
+  javascript: () => import('../runtimes/js/adapter').then((loaded) => loaded.javascriptAdapter),
+  typescript: () => import('../runtimes/js/adapter').then((loaded) => loaded.typescriptAdapter),
 };
 
 /**

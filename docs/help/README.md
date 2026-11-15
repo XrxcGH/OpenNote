@@ -40,6 +40,7 @@ Every picture is a real screenshot of the app, and most pages have one. [The scr
 - [Music, script, camera, and studio tools](music-script-camera-and-studio-tools.md): score notation, music theory, voice leading, ear training, tuning and rhythm, a script formatter, camera and lighting arithmetic, and scale, color, and materials.
 - [Document structure](document-structure.md): equation numbers and references, formula sheets, practice mode, problem-set templates, and figure export.
 - [Code cells](code-cells.md): run short Python and JavaScript programs on a page, offline, in a sandbox.
+- [JavaScript and TypeScript in code projects](javascript-and-typescript-projects.md): modules, tests, limits, and what does not run. Code projects are off in this beta.
 - [Data, seeds, and figures in the subject kits](subject-kit-data-and-figures.md): data input, page tables, repeatable random results, coefficient tables, plots, and figure blocks.
 - [Statistics kit](statistics-kit.md): describe data, tests, epidemiology, power, resampling, Bayesian updating, and study design.
 - [Statistical models](statistical-models.md): regression, econometrics and causal inference, survival, time series, PCA and clusters, machine learning, and spatial statistics.
