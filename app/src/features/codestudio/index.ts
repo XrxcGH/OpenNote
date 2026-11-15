@@ -19,3 +19,6 @@ export const openCodeDownloads = () => import('./packs/store').then((module) => 
 export const loadCodeEditor = () => import('./editor');
 /** Loads code projects' chunk (features/codestudio/project, code:L02): the page card, the store, and the exchange. */
 export const loadCodeProjects = () => import('./project');
+
+/** Loads error detection (features/codestudio/diagnostics, code:L10): the scheduler, checkers, and engine checks. */
+export const loadDiagnostics = () => import('./diagnostics');
