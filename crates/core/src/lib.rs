@@ -11,6 +11,7 @@ pub mod error;
 pub mod format;
 pub mod id;
 pub mod limits;
+pub mod merge;
 pub mod model;
 pub mod ops;
 pub mod order;
