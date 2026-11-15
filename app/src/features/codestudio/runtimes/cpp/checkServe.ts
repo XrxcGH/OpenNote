@@ -3,6 +3,7 @@
 
 import type { RunFile, RuntimeDiagnostic } from '../../contracts/run';
 import { globalNames, lockDown } from '../../run/lockdown';
+import { readCompile } from '../../run/protocol';
 import type { ClangAdapter } from './adapter';
 import type { CheckBegun, CheckReply, CheckRequest } from './checker';
 import type { ClangLanguage } from './flags';
@@ -18,7 +19,9 @@ function readRequest(value: unknown): CheckRequest | null {
   if (request?.kind !== 'check' || typeof request.id !== 'number') return null;
   if (request.language !== 'c' && request.language !== 'cpp') return null;
   if (!isFile(request.file) || !Array.isArray(request.files) || !request.files.every(isFile)) return null;
-  return request as CheckRequest;
+  const { options, ...rest } = request as CheckRequest;
+  const read = readCompile(options);
+  return { ...rest, ...(read ? { options: read } : {}) };
 }
 
 interface CheckScope {
@@ -75,7 +78,7 @@ export function serveChecks(
       send({ kind: 'checking', id: request.id });
       let items: RuntimeDiagnostic[];
       try {
-        items = await loaded[request.language].check(request.file, request.files);
+        items = await loaded[request.language].check(request.file, request.files, request.options);
       } catch {
         items = [];
       }

@@ -60,6 +60,14 @@ export interface TestHarness {
 }
 
 /** The page asks a worker to run a program. */
+/** The compile step's choices from Settings, then Code, for runtimes that compile (C and C++). */
+export interface CompileOptions {
+  /** The language standard, such as `c17` or `c++20`. A runtime that does not know it uses its default. */
+  standard?: string;
+  /** Compiler warnings (-Wall -Wextra). On unless false. */
+  warnings?: boolean;
+}
+
 export interface RunRequest {
   kind: 'run';
   runtime: RuntimeId;
@@ -73,6 +81,7 @@ export interface RunRequest {
   seed: number;
   trace?: TraceOptions;
   test?: TestHarness;
+  compile?: CompileOptions;
 }
 
 /** What else the page may send a running worker: a line of interactive input, or the end of input. */

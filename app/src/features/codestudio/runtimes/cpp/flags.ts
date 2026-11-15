@@ -13,7 +13,7 @@ export const OUTPUT = '/build/main.wasm';
 /** The language standards a person can pick (Settings, Code). The first of each is the default. */
 export const STANDARDS = {
   c: ['c17', 'c11', 'c99', 'c23'],
-  cpp: ['c++20', 'c++17', 'c++23'],
+  cpp: ['c++20', 'c++17', 'c++23', 'c++14'],
 } as const satisfies Record<ClangLanguage, readonly string[]>;
 
 const SOURCES: Record<ClangLanguage, RegExp> = {
@@ -27,6 +27,15 @@ export interface ClangOptions {
   standard?: string;
   /** -Wall -Wextra, on unless turned off in Settings. */
   warnings?: boolean;
+}
+
+/** Settings, then Code, as clang's options: the language's standard (cpp20 is c++20) and the warnings switch. */
+export function clangOptionsOf(
+  language: ClangLanguage,
+  code: { cStandard: string; cppStandard: string; compilerWarnings: boolean },
+): ClangOptions {
+  const standard = language === 'c' ? code.cStandard : code.cppStandard.replace(/^cpp/, 'c++');
+  return { standard, warnings: code.compilerWarnings };
 }
 
 /** The standard clang gets: the one asked for when the list has it, else the language's default. */

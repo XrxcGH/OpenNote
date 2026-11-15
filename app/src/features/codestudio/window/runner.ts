@@ -7,6 +7,7 @@ import { DEFAULT_SETTINGS as PROJECT_DEFAULTS } from '../project/model';
 import { RunHost } from '../run/host';
 import type { RunCallbacks, RunHandle, RunOrder } from '../run/host';
 import { RUN_LIMITS } from '../run/protocol';
+import { clangOptionsOf } from '../runtimes/cpp/flags';
 
 export interface Runner {
   run(order: RunOrder, callbacks: RunCallbacks): RunHandle;
@@ -64,5 +65,6 @@ export function orderFor(project: CodeProject, code: Settings['code'], test?: Te
     limits: limitsFor(project, code),
     seed: 1,
     ...(test ? { test } : {}),
+    ...(project.runtime === 'c' || project.runtime === 'cpp' ? { compile: clangOptionsOf(project.runtime, code) } : {}),
   };
 }

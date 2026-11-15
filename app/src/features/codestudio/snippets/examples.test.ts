@@ -122,13 +122,17 @@ for (const [language, runtimes] of Object.entries(RUNTIMES)) {
   const runtime = runtimes![0]!;
   describe.skipIf(!ADAPTERS[runtime])(`the ${language} examples in ${runtime}`, () => {
     for (const example of examplesFor(language as Example['language'])) {
-      it(`${example.id} passes its tests`, async () => {
-        for (const test of example.tests.filter((one) => one.kind === 'io')) {
-          const { out, end } = await runCase(runtime, example, test.stdin ?? '');
-          expect(end.status, test.name).toBe('ok');
-          expect(trimmed(out), test.name).toBe(trimmed(test.expected));
-        }
-      }, SLOW.has(runtime) ? 180_000 : undefined);
+      it(
+        `${example.id} passes its tests`,
+        async () => {
+          for (const test of example.tests.filter((one) => one.kind === 'io')) {
+            const { out, end } = await runCase(runtime, example, test.stdin ?? '');
+            expect(end.status, test.name).toBe('ok');
+            expect(trimmed(out), test.name).toBe(trimmed(test.expected));
+          }
+        },
+        SLOW.has(runtime) ? 180_000 : undefined,
+      );
     }
   });
 }

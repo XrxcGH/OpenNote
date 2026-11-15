@@ -7,7 +7,7 @@ import type { RunFile, RuntimeDiagnostic } from '../../contracts/run';
 import { IDLE_RELEASE_MS } from '../../run/host';
 import { MAX_DIAGNOSTICS } from '../../run/diagnostics';
 import { MESSAGE_LIMITS } from '../../run/protocol';
-import type { ClangLanguage } from './flags';
+import type { ClangLanguage, ClangOptions } from './flags';
 
 /** The pause after typing before a check, the compiler layer's debounce (DESIGN 6.1). */
 export const CHECK_DELAY_MS = 800;
@@ -25,6 +25,8 @@ export interface CheckRequest {
   language: ClangLanguage;
   file: RunFile;
   files: RunFile[];
+  /** Settings, then Code: the standard and the warnings switch. */
+  options?: ClangOptions;
 }
 
 export interface CheckReply {
@@ -109,14 +111,19 @@ export class ClangChecker {
     return this.worker !== null;
   }
 
-  check(language: ClangLanguage, file: RunFile, files: RunFile[]): Promise<RuntimeDiagnostic[]> {
+  check(
+    language: ClangLanguage,
+    file: RunFile,
+    files: RunFile[],
+    options?: ClangOptions,
+  ): Promise<RuntimeDiagnostic[]> {
     const worker = this.ensure();
     const id = this.next++;
     this.hold();
     return new Promise((resolve) => {
       const timer = setTimeout(() => this.release(), this.waitMs);
       this.waiting.set(id, { resolve, timer });
-      worker.postMessage({ kind: 'check', id, language, file, files });
+      worker.postMessage({ kind: 'check', id, language, file, files, ...(options ? { options } : {}) });
     });
   }
 
@@ -216,7 +223,7 @@ export class LiveCheck {
  * The engine check code:L10's scheduler takes (registerEngineCheck): source `clang`, the compiler layer (800 ms),
  * for C and C++. A header is checked as the language of the project's sources.
  */
-export function clangEngineCheck(checker: ClangChecker) {
+export function clangEngineCheck(checker: ClangChecker, optionsOf?: (language: ClangLanguage) => ClangOptions) {
   return {
     id: 'clang',
     layer: 'compiler' as const,
@@ -225,7 +232,7 @@ export function clangEngineCheck(checker: ClangChecker) {
       const cpp = /\.(cpp|cc|cxx|c\+\+|hpp|hh|hxx|h\+\+)$/i;
       const language: ClangLanguage =
         cpp.test(file.path) || (!/\.c$/i.test(file.path) && files.some((other) => cpp.test(other.path))) ? 'cpp' : 'c';
-      return checker.check(language, file, files);
+      return checker.check(language, file, files, optionsOf?.(language));
     },
   };
 }

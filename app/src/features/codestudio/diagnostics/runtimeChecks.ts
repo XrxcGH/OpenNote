@@ -6,7 +6,9 @@
 // (runtimes/cpp/checker.ts), never on the page thread. Each runtime loads on its first check. The studio calls
 // registerRuntimeChecks once, next to createDiagnostics.
 
+import { getSettings } from '../../../state/settings';
 import type { RuntimeAdapter } from '../contracts';
+import { clangOptionsOf } from '../runtimes/cpp/flags';
 import { fromRuntimeAdapter, registerEngineCheck, type EngineCheck } from './engine';
 
 const loadFullPython = (): Promise<RuntimeAdapter> =>
@@ -77,7 +79,10 @@ export const clangCompilerCheck = (): EngineCheck =>
     ['c', 'cpp'],
     () =>
       (clangCheck ??= import('../runtimes/cpp/checker').then((m) => {
-        const check = m.clangEngineCheck(new m.ClangChecker());
+        // Settings, then Code, are read at each check, so a change applies to the next one.
+        const check = m.clangEngineCheck(new m.ClangChecker(), (language) =>
+          clangOptionsOf(language, getSettings().code),
+        );
         return check.check.bind(check);
       })),
     'compiler',

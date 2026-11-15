@@ -6,6 +6,7 @@
 import { PROJECT_LIMITS } from '../contracts/project';
 import { RICH_LIMITS, RUNTIME_IDS } from '../contracts/run';
 import type {
+  CompileOptions,
   PageMessage,
   RichMime,
   RunFile,
@@ -261,6 +262,7 @@ export function readRequest(data: unknown): RunRequest | null {
   if (stdin.mode !== 'prefilled' && stdin.mode !== 'interactive') return null;
   if (!isText(stdin.text, MESSAGE_LIMITS.stdinChars)) return null;
   const seed = typeof data.seed === 'number' && Number.isFinite(data.seed) ? data.seed : 0;
+  const compile = readCompile(data.compile);
   return {
     kind: 'run',
     runtime: data.runtime,
@@ -272,7 +274,17 @@ export function readRequest(data: unknown): RunRequest | null {
     seed,
     ...(isObject(data.trace) ? { trace: data.trace as unknown as RunRequest['trace'] } : {}),
     ...(isObject(data.test) ? { test: data.test as unknown as RunRequest['test'] } : {}),
+    ...(compile ? { compile } : {}),
   };
+}
+
+/** The compile choices of a request: a short standard name and the warnings switch; anything else is dropped. */
+export function readCompile(data: unknown): CompileOptions | null {
+  if (!isObject(data)) return null;
+  const compile: CompileOptions = {};
+  if (isText(data.standard, 16)) compile.standard = data.standard;
+  if (typeof data.warnings === 'boolean') compile.warnings = data.warnings;
+  return compile;
 }
 
 /** A message from the page inside the worker, or null. */

@@ -20,7 +20,15 @@ function standIn() {
   return { updates, service, load, publish: (file: string, items: Diagnostic[]) => publish(file, items) };
 }
 
-const mark: Diagnostic = { file: 'main.py', from: 0, to: 1, severity: 'error', message: 'x', source: 'lezer' };
+const mark: Diagnostic = {
+  file: 'main.py',
+  from: 0,
+  to: 1,
+  severity: 'error',
+  message: 'x',
+  source: 'lezer',
+  code: 'x',
+};
 
 describe('live checks in the studio', () => {
   it('sends each change with a new version, its language, and the other files', async () => {

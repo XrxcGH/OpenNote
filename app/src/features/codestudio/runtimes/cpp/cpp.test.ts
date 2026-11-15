@@ -21,7 +21,10 @@ import { type ClangAdapter, clangAdapter } from './adapter';
 import { serveChecks } from './checkServe';
 import { CHECK_DELAY_MS, ClangChecker, LiveCheck, clangEngineCheck, readReply } from './checker';
 import type { CheckRequest, CheckWorker } from './checker';
-import { checkArgs, compileArgs, sourcesOf } from './flags';
+import { checkArgs, clangOptionsOf, compileArgs, sourcesOf } from './flags';
+
+/** Settings, then Code, as a new install has them. */
+const SETTINGS_CODE = { cStandard: 'c17', cppStandard: 'cpp20', compilerWarnings: true };
 import { HEADER_HINTS, headerFor, includeHint } from './headers';
 import { programName } from './adapter';
 import { clangMapper, projectName } from './diagnostics';
@@ -492,6 +495,24 @@ describe('clang known answers', () => {
     expect(includeHint(missing.message, 'cpp')).toEqual({ name: 'std::vector', header: '<vector>' });
   });
 
+  it('checks with the standard and the warnings switch of Settings, then Code', async () => {
+    const unused = { path: 'main.cpp', text: 'int main() {\n  int unused;\n}\n' };
+    expect(await adapters.cpp.check(unused, [unused], { warnings: false })).toEqual([]);
+    const fourteen = {
+      path: 'main.cpp',
+      text: 'static_assert(__cplusplus == 201402L, "c++14");\nint main() { return 0; }\n',
+    };
+    expect(await adapters.cpp.check(fourteen, [fourteen], { standard: 'c++14' })).toEqual([]);
+    const items = await adapters.cpp.check(fourteen, [fourteen], clangOptionsOf('cpp', SETTINGS_CODE));
+    expect(items.map((item) => item.message)).toEqual([expect.stringContaining('static assertion failed')]);
+  });
+
+  it('compiles with the standard a run request names', async () => {
+    const files = main('c', 'int main(void) { return __STDC_VERSION__ == 199901L ? 0 : 1; }\n');
+    expect((await run('c', files, { compile: { standard: 'c99' } })).exitCode).toBe(0);
+    expect((await run('c', files)).exitCode).toBe(1);
+  });
+
   it('checks a file with the project around it and reports only project files', async () => {
     const header = { path: 'inc/shape.h', text: 'int area(int w, int h);\n' };
     const file = {
@@ -791,6 +812,17 @@ describe('the clang command line', () => {
     );
     expect(checkArgs('c', 'main.c', { warnings: false })).not.toContain('-Wall');
     expect(checkArgs('cpp', 'x.hpp')).toEqual(expect.arrayContaining(['-fsyntax-only', '-x', 'c++-header', 'x.hpp']));
+  });
+
+  it('reads Settings, then Code, as clang options', () => {
+    expect(clangOptionsOf('c', SETTINGS_CODE)).toEqual({ standard: 'c17', warnings: true });
+    expect(clangOptionsOf('cpp', { ...SETTINGS_CODE, cppStandard: 'cpp14', compilerWarnings: false })).toEqual({
+      standard: 'c++14',
+      warnings: false,
+    });
+    expect(
+      compileArgs('cpp', ['main.cpp'], { memoryBytes: 1 << 26, stackBytes: 1 << 19 }, { standard: 'c++14' }),
+    ).toContain('-std=c++14');
   });
 
   it('names the program after the main file', () => {

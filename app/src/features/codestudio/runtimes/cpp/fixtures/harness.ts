@@ -1,7 +1,14 @@
 // Runs the C and C++ adapters in Node for cpp.test.ts, as the run worker would (serve.ts) but without a worker. It
 // uses the run core's own mount, input, and seeded random source. clang comes from the npm package the pack pins.
 
-import type { RunFile, RunLimits, RunStatus, RuntimeDiagnostic, WorkerMessage } from '../../../contracts/run';
+import type {
+  CompileOptions,
+  RunFile,
+  RunLimits,
+  RunStatus,
+  RuntimeDiagnostic,
+  WorkerMessage,
+} from '../../../contracts/run';
 import { mapDiagnostics } from '../../../run/diagnostics';
 import { Mount } from '../../../run/mount';
 import { RUN_LIMITS } from '../../../run/protocol';
@@ -37,6 +44,7 @@ export interface More {
   args?: string[];
   seed?: number;
   limits?: Partial<RunLimits>;
+  compile?: CompileOptions;
 }
 
 /** Compiles and runs `files` (the first is the main file) as the worker does. */
@@ -53,6 +61,7 @@ export async function run(language: ClangLanguage, files: RunFile[], more: More 
     stdin: { mode: 'prefilled' as const, text: more.stdin ?? '' },
     limits,
     seed: more.seed ?? 1,
+    ...(more.compile ? { compile: more.compile } : {}),
   };
   let out = '';
   let err = '';

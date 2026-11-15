@@ -37,7 +37,7 @@ export function programName(main: string): string {
 }
 
 export interface ClangAdapter extends RuntimeAdapter {
-  check(file: RunFile, files: RunFile[]): Promise<RuntimeDiagnostic[]>;
+  check(file: RunFile, files: RunFile[], more?: ClangOptions): Promise<RuntimeDiagnostic[]>;
 }
 
 /** clang's error for throw or try, which the pack's libc++ cannot support (it is built without exceptions). */
@@ -103,7 +103,8 @@ export function clangAdapter(language: ClangLanguage, clang: Clang, options: Cla
       if (sourcesOf(language, request.files, request.main).length === 0) {
         return { status: 'error', message: 'no-sources' };
       }
-      const compiled = compile(clang, language, request, emit, options);
+      // Settings, then Code, come with the request; the adapter's own options are the defaults under them.
+      const compiled = compile(clang, language, request, emit, { ...options, ...request.compile });
       program = compiled instanceof Uint8Array ? compiled : null;
       return program ? null : (compiled as RunEnd);
     },
@@ -120,10 +121,10 @@ export function clangAdapter(language: ClangLanguage, clang: Clang, options: Cla
 
     diagnostics: clangMapper,
 
-    async check(file: RunFile, files: RunFile[]): Promise<RuntimeDiagnostic[]> {
+    async check(file: RunFile, files: RunFile[], more?: ClangOptions): Promise<RuntimeDiagnostic[]> {
       const all = [file, ...files.filter((other) => other.path !== file.path)];
       const command = language === 'cpp' ? 'clang++' : 'clang';
-      const result = clang.run(command, checkArgs(language, file.path, options), all);
+      const result = clang.run(command, checkArgs(language, file.path, { ...options, ...more }), all);
       return clangMapper.map(result.text, all);
     },
   };
