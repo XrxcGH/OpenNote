@@ -89,7 +89,9 @@ jobs:
         run: |
           status=0
           # A runner that closes the browser fails one shard at a random file. A real failure fails the second try too.
-          for shard in 1 2 3 4 5; do npm run test:components -- --shard=$shard/5 || npm run test:components -- --shard=$shard/5 || status=1; done
+          for shard in 1 2 3 4 5; do
+            npm run test:components -- --shard=$shard/5 || npm run test:components -- --shard=$shard/5 || status=1
+          done
           exit $status
       - name: Keep the failure screenshots
         # Vitest saves a screenshot of the page for each failed test.
