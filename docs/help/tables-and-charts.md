@@ -28,6 +28,7 @@ Formulas follow Excel's rules. Beyond math, text, and dates, they have these fam
 - Lookup: XLOOKUP, XMATCH, INDEX, MATCH, VLOOKUP, HLOOKUP, OFFSET, INDIRECT, ROW, COLUMN, FORMULATEXT, and HYPERLINK.
 - Arrays: FILTER, SORT, SORTBY, UNIQUE, SEQUENCE, TAKE, DROP, VSTACK, HSTACK, MMULT, MINVERSE, and the LAMBDA helpers MAP, REDUCE, SCAN, BYROW, BYCOL, and MAKEARRAY. An array result spills into the cells beside it.
 - Statistics: averages, deviations, ranks, percentiles, distributions such as NORM.DIST and T.DIST, regression such as LINEST, and FORECAST.ETS. These load the first time a formula uses one, so the cell shows #BUSY! for a moment.
+- Finance: all 55 of Excel's financial functions. They cover loans and savings (PV, FV, PMT, RATE, NPER), cash flows (NPV, IRR, XNPV, XIRR, MIRR), depreciation (SLN, DB, DDB, VDB), and bonds and bills (PRICE, YIELD, DURATION, ACCRINT, TBILLPRICE, and the ODD functions). Day counts follow Excel's bases 0 to 4. They load the first time a formula uses one, as the statistics do.
 
 The places where OpenNote's answers differ from Excel's are listed in the engine's DIFFERENCES.md.
 
