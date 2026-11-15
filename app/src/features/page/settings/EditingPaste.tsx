@@ -27,10 +27,12 @@ export default function EditingPaste() {
       <Switch
         label={t('paste.settings.saveWebImages')}
         checked={paste.saveWebImages}
+        describedBy="editing-paste-images-help"
         onChange={(saveWebImages) => set({ saveWebImages })}
-      >
+      />
+      <p id="editing-paste-images-help" className={styles.help}>
         {t('paste.settings.saveWebImagesHint')}
-      </Switch>
+      </p>
       <Switch
         label={t('paste.settings.joinPdfLines')}
         checked={paste.joinPdfLines}
