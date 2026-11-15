@@ -178,6 +178,11 @@ export interface RuntimeAdapter {
   allowances?: readonly string[];
   /** The runtime's version, reported when a run starts, such as `MicroPython 1.27.0`. */
   version?: string;
+  /**
+   * True when the runtime reads only the prefilled input. The worker then reports a run as not interactive, and the
+   * console says that interactive input is not available (DESIGN 4.4).
+   */
+  prefilledOnly?: boolean;
   load(onProgress: (percent: number) => void): Promise<void>;
   /** Runs one request and sends everything but `started` and `done`; the worker sends those. */
   run(request: RunRequest, emit: Emit, context: RunContext): Promise<RunEnd>;
