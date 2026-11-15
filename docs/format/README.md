@@ -2103,7 +2103,7 @@ A writer compares the fingerprint of `page.json` (its size, last-write time, and
 | Any other revision, with no unsaved edits here | Reloads the page and clears its undo history. Nothing of this device's is lost |
 | Anything else, with unsaved edits here | A conflict (below) |
 
-In a conflict, nothing is overwritten. The version on disk is copied to `.conflicts/<its revision ID>.json`, and this device's version is saved as `page.json`. The page then shows a notice such as "This page was also changed on Windows device 7Q2M. Compare the versions." Every device that syncs the folder sees the open conflict, because it is a file in the page folder.
+In a conflict, nothing is overwritten. The version on disk is copied to `.conflicts/<its revision ID>.json`, and this device's version is saved as `page.json`. Before a conflict copy, block types with a registered merger may merge the two versions ([ADR 0089](../adr/0089-block-level-merge-on-sync.md)). The page then shows a notice such as "This page was also changed on Windows device 7Q2M. Compare the versions." Every device that syncs the folder sees the open conflict, because it is a file in the page folder.
 
 The person resolves a conflict by keeping this version, keeping the other one, or keeping both as separate pages. The version not kept goes into history with the reason `conflict`, and the conflict file is then deleted.
 
