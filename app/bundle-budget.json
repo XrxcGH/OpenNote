@@ -16,6 +16,7 @@
         "core/audio",
         "editor/",
         "features/docstructure/",
+        "features/review/",
         "features/ink/",
         "features/pdf/"
       ],
