@@ -11,6 +11,8 @@ export const ADAPTERS: AdapterRegistry = {
   'python-full': () => import('../runtimes/python').then((loaded) => loaded.pythonFullAdapter),
   javascript: () => import('../runtimes/js/adapter').then((loaded) => loaded.javascriptAdapter),
   typescript: () => import('../runtimes/js/adapter').then((loaded) => loaded.typescriptAdapter),
+  sql: () => import('../runtimes/sql/adapter').then((loaded) => loaded.sqlAdapter),
+  lua: () => import('../runtimes/lua/adapter').then((loaded) => loaded.luaAdapter),
 };
 
 /**
