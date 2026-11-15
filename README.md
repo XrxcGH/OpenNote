@@ -53,7 +53,7 @@ You keep notebooks, sections, and pages in a notes folder you choose, as plain f
 
 ### Write and draw
 
-The Word-level text, Excel-level table, and code studio foundations are on the beta branch behind flags that are off. The table work so far adds a cell format bar, spreadsheet keys, conditional formatting, styled tables in Word and HTML exports, and the logic, lookup, array, and statistics functions.
+The Word-level text, Excel-level table, and code studio foundations are on the beta branch behind flags that are off. The text work so far adds a Format pane with every font and paragraph field, a ruler for indents and tab stops, and a language and a direction for each passage. The table work so far adds a cell format bar, spreadsheet keys, conditional formatting, styled tables in Word and HTML exports, and the logic, lookup, array, and statistics functions.
 
 - [Typed notes](docs/help/typed-notes.md): text, headings, text styles kept with the notebook, lists, checklists, tables, code, callouts, Markdown, templates, and find and replace. Find by format, special character, wildcard, or regular expression. The Home tab has font and size boxes, split buttons for underline, colors, and lists, and a styles gallery. Typed web and e-mail addresses turn into links. Pasted tables and spreadsheet cells become tables. Copies give other apps plain text.
 - [Moving between blocks](docs/help/moving-between-blocks.md): keys that move between text, pictures, tables, and code without the mouse.
@@ -64,7 +64,7 @@ The Word-level text, Excel-level table, and code studio foundations are on the b
 - [My handwriting](docs/help/my-handwriting.md): typed text and math written in your own hand, learned from a calibration page.
 - [Paper and page views](docs/help/paper-and-page-views.md): flow, paginated, and canvas pages, with lined, grid, and dot paper; slides, print, and PDF.
 - [Tables and charts](docs/help/tables-and-charts.md): smart tables with views, Excel-style formulas (logic, lookup, arrays, and statistics), cell formats (colors, borders, number formats), conditional formatting, spreadsheet keys with Grid and Edit modes (a setting chooses them for new tables), and charts that update with them.
-- [Language and spelling](docs/help/language-and-spelling.md): American English by default, and one choice for every part that reads or writes words.
+- [Language and spelling](docs/help/language-and-spelling.md): American English by default, and one choice for every part that reads or writes words. A passage can have its own language, or skip spell check.
 
 ### Organize and find
 

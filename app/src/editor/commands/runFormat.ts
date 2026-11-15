@@ -135,6 +135,63 @@ export function setRunValue(name: string, value: string | null): Command {
   return setRunMark(name, value === null ? null : { [key]: value });
 }
 
+/** The words of a token list mark (effects, OpenType features), written in order and without repeats. */
+const joinTokens = (tokens: readonly string[]) => [...new Set(tokens)].sort().join(' ');
+
+/**
+ * Edits the token list of a single-attribute mark on each text run by its own list, so a range whose runs differ
+ * keeps what each run has apart from the edit. An empty result takes the mark off that run.
+ */
+export function editRunTokens(name: string, edit: (tokens: readonly string[]) => readonly string[]): Command {
+  const key = spanKey(name);
+  const tokensOf = (marks: readonly Mark[]) =>
+    String(marks.find((mark) => mark.type.name === name)?.attrs[key ?? ''] ?? '')
+      .split(' ')
+      .filter(Boolean);
+  const change = fromChange((tr) => {
+    const type = tr.doc.type.schema.marks[name] as MarkType | undefined;
+    if (!type || key === null || CONTENT_MARKS.has(name)) return false;
+    const write = (next: readonly string[]) => next.length === 0 || validRunAttrs(name, { [key]: joinTokens(next) });
+    if (tr.selection.empty) {
+      const next = edit(tokensOf(caretMarks(tr)));
+      if (!write(next)) return false;
+      return next.length === 0 ? removeMark(tr, type) : addMark(tr, type, { [key]: joinTokens(next) });
+    }
+    if (!canMark(tr, type)) return false;
+    const runs: { from: number; to: number; next: readonly string[]; same: boolean }[] = [];
+    for (const range of tr.selection.ranges) {
+      tr.doc.nodesBetween(range.$from.pos, range.$to.pos, (node, pos) => {
+        if (!node.isText || !node.type.schema.marks[name]) return true;
+        const have = tokensOf(node.marks);
+        const next = edit(have);
+        runs.push({
+          from: Math.max(pos, range.$from.pos),
+          to: Math.min(pos + node.nodeSize, range.$to.pos),
+          next,
+          same: joinTokens(next) === joinTokens(have),
+        });
+        return true;
+      });
+    }
+    if (!runs.every((run) => write(run.next))) return false;
+    for (const run of runs) {
+      if (run.same) continue;
+      tr.removeMark(run.from, run.to, type);
+      if (run.next.length > 0) tr.addMark(run.from, run.to, type.create({ [key]: joinTokens(run.next) }));
+    }
+    return runs.some((run) => !run.same);
+  });
+  return (state, dispatch) => {
+    // A table cell or drawing target takes one value: the first run's list, edited.
+    const first = state.selection.empty
+      ? tokensOf(state.storedMarks ?? state.selection.$from.marks())
+      : tokensOf(state.doc.resolve(state.selection.from).marks());
+    const next = edit(first);
+    const attrs = next.length === 0 || key === null ? null : { [key]: joinTokens(next) };
+    return viaFormatTarget({ format: 'run', mark: name, attrs, toggle: false }, change)(state, dispatch);
+  };
+}
+
 /** On unless the whole selection has the mark with these attributes; then off. The first press of a mixed
  * selection applies to all of it (DESIGN.md 4.1). */
 export function toggleRunMark(name: string, attrs: Attrs | null = null): Command {

@@ -14,6 +14,8 @@ import { ArrowUUpLeftIcon } from '@phosphor-icons/react/dist/csr/ArrowUUpLeft';
 import { ArrowsVerticalIcon } from '@phosphor-icons/react/dist/csr/ArrowsVertical';
 import { ArrowLineLeftIcon } from '@phosphor-icons/react/dist/csr/ArrowLineLeft';
 import { ArrowLineRightIcon } from '@phosphor-icons/react/dist/csr/ArrowLineRight';
+import { ArrowLeftIcon } from '@phosphor-icons/react/dist/csr/ArrowLeft';
+import { ArrowRightIcon } from '@phosphor-icons/react/dist/csr/ArrowRight';
 import { ArrowsClockwiseIcon } from '@phosphor-icons/react/dist/csr/ArrowsClockwise';
 import { BinocularsIcon } from '@phosphor-icons/react/dist/csr/Binoculars';
 import { BoundingBoxIcon } from '@phosphor-icons/react/dist/csr/BoundingBox';
@@ -89,6 +91,8 @@ export const HOME_ICONS: Readonly<Record<string, IconComponent>> = {
   'para.alignCenter': TextAlignCenterIcon,
   'para.alignEnd': TextAlignRightIcon,
   'para.justify': TextAlignJustifyIcon,
+  'text.paragraphRtl': ArrowLeftIcon,
+  'text.paragraphLtr': ArrowRightIcon,
   'para.lineSpacing': ArrowsVerticalIcon,
   'para.shade': PaintBucketIcon,
   'para.border': BoundingBoxIcon,

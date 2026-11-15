@@ -3,7 +3,7 @@
 // heavy parts load when a command runs, so start-up stays light.
 import type { Editor } from '@tiptap/core';
 import { isEnabled } from '../../../app/flags';
-import { defineCommand } from '../../../commands/registry';
+import { commandContext, defineCommand } from '../../../commands/registry';
 import type { CommandId } from '../../../commands/types';
 import { commands } from '../../../registries';
 import type { MessageKey } from '../../../strings/t';
@@ -118,6 +118,12 @@ styleCommand('styles.create', 'textStyles.commands.create', async ({ editor, not
 
 styleCommand('styles.modify', 'textStyles.commands.modify', async ({ editor, notebook, loaded }) => {
   const style = loaded.styleCommands.styleOfNode(editor.state.selection.$from.parent);
+  // With the Format pane on, Modify style edits any style there (ADR 0082); the dialog knows ten.
+  if (isEnabled('text.formatPane')) {
+    const { openFormatPane } = await import('../formatPane/mount');
+    openFormatPane({ notebook, style, tab: 'text', fonts: commandContext('commandBar').platform.fonts });
+    return;
+  }
   const known = loaded.styleCommands.dialogStyle(style);
   if (!known) {
     showToast({ message: t('textStyles.modifyUnsupported') });

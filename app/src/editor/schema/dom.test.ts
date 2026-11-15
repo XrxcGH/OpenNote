@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { parseTextBlock } from '../markdown';
+import { applyElementData, parseTextBlock } from '../markdown';
 import { renderStatic, renderStaticSliced } from './dom';
 import { markSpecs, nodeSpecs, tableNodeSpecs } from './specs';
 
@@ -39,5 +39,43 @@ describe('specs', () => {
     expect(Object.keys(nodeSpecs)).toContain('callout');
     expect(Object.keys(tableNodeSpecs)).toEqual(expect.arrayContaining(['table', 'tableCell', 'paragraph']));
     expect(Object.keys(markSpecs)[0]).toBe('float');
+  });
+});
+
+describe('static paragraph direction, language, and hyphenation', () => {
+  // Hand-worked from text DESIGN.md 2.2: start is the right edge of a right-to-left paragraph, a paragraph's own
+  // hyphenate wins over the page's default, and the attributes are the ones the editor's decorations write.
+  const doc = () =>
+    applyElementData(parseTextBlock('one\n\ntwo\n\nthree'), {
+      ids: ['a', 'b', 'c'],
+      paras: { a: { dir: 'rtl', lang: 'ar-EG', align: 'start' }, b: { lang: 'zxx', hyphenate: false } },
+    });
+
+  it('writes dir, lang, the physical side, and hyphens on a paragraph that is not mounted', () => {
+    const into = document.createElement('div');
+    renderStatic(doc(), into, undefined, { direction: { hyphenate: true } });
+    const [a, b, c] = [...into.querySelectorAll('p')];
+    expect(a.getAttribute('dir')).toBe('rtl');
+    expect(a.getAttribute('lang')).toBe('ar-EG');
+    expect(a.style.textAlign).toBe('right');
+    expect(a.getAttribute('style')).toContain('hyphens: auto');
+    expect(b.getAttribute('lang')).toBe('zxx');
+    expect(b.getAttribute('style')).toContain('hyphens: manual');
+    expect(c.getAttribute('style')).toContain('hyphens: auto');
+    expect(c.hasAttribute('dir')).toBe(false);
+  });
+
+  it('adds none of them to the paragraph style render when text.language is off', () => {
+    // paraDom (render/paraStyle.ts) always draws a paragraph's stored direction and language, as the editor does.
+    // The option adds the dir attribute, the physical side, and the hyphens; without it none of those appear.
+    const into = document.createElement('div');
+    renderStatic(doc(), into);
+    const [a, b, c] = [...into.querySelectorAll('p')];
+    expect(into.querySelector('[dir]')).toBeNull();
+    expect(a.style.textAlign).toBe('start');
+    expect(a.getAttribute('style')).not.toContain('hyphens');
+    expect(b.getAttribute('style')).not.toContain('hyphens: auto');
+    expect(c.hasAttribute('style')).toBe(false);
+    expect(c.hasAttribute('lang')).toBe(false);
   });
 });

@@ -1,4 +1,7 @@
-import { act, fireEvent, screen } from '@testing-library/react';
+// checks-disable-file brand-consistency: the test colors are inputs to the code under test, not design colors
+// The custom color dialog (owner: text:format-pane): the full picker in a dialog.
+import { screen } from '@testing-library/react';
+import { userEvent } from 'vitest/browser';
 import { afterEach, describe, expect, it } from 'vitest';
 import { chooseCustomColor, normalizeHex } from './CustomColor';
 
@@ -19,18 +22,29 @@ describe('the custom color dialog', () => {
     expect(normalizeHex('red')).toBeNull();
   });
 
-  it('stays open and says why when the color is not one', async () => {
+  it('shows theme colors, standard colors, and the hex, RGB, and HSL fields', async () => {
     const answer = chooseCustomColor('#');
-    const field = await screen.findByLabelText(/Custom color/);
-    fireEvent.change(field, { target: { value: hash('12zz') } });
-    fireEvent.click(screen.getByRole('button', { name: /apply/i }));
-    expect((await screen.findByRole('alert')).textContent).toMatch(/not a color/);
-    expect(screen.getByLabelText(/Custom color/).getAttribute('aria-invalid')).toBe('true');
-    fireEvent.change(screen.getByLabelText(/Custom color/), { target: { value: hash('12AB34') } });
-    expect(screen.queryByRole('alert')).toBeNull();
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /apply/i }));
-    });
+    expect(await screen.findByRole('group', { name: 'Theme colors' })).toBeTruthy();
+    expect(screen.getByRole('group', { name: 'Standard colors' })).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: 'More colors' }));
+    expect(screen.getByRole('textbox', { name: 'Hex' })).toBeTruthy();
+    for (const name of ['Red', 'Green', 'Blue', 'Hue', 'Saturation', 'Lightness']) {
+      expect(screen.getByRole('spinbutton', { name })).toBeTruthy();
+    }
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(await answer).toBeNull();
+  });
+
+  it('says why a value is not a color, and answers a valid one', async () => {
+    const answer = chooseCustomColor('#');
+    await userEvent.click(await screen.findByRole('button', { name: 'More colors' }));
+    const field = screen.getByRole('textbox', { name: 'Hex' });
+    await userEvent.clear(field);
+    await userEvent.type(field, hash('12zz'));
+    expect(screen.getByText(/Enter a color as/)).toBeTruthy();
+    await userEvent.clear(field);
+    await userEvent.type(field, hash('12AB34'));
+    await userEvent.click(screen.getByRole('button', { name: 'Apply' }));
     expect(await answer).toBe(hash('12ab34'));
   });
 });

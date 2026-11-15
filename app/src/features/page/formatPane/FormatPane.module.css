@@ -1,0 +1,204 @@
+/* The Format pane: a sheet at the dock with tabs and labeled fields. Tokens only (BRAND.md section 14). */
+@layer components {
+  .sheet {
+    position: fixed;
+    inset-block: var(--panel-top) var(--panel-bottom);
+    inset-inline-end: var(--space-4);
+    z-index: var(--layer-overlay);
+    inline-size: min(22rem, 90vw);
+    overflow: auto;
+    box-sizing: border-box;
+    padding: var(--space-4);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-raised);
+    box-shadow: var(--elevation-2);
+  }
+
+  .stack {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-2);
+  }
+
+  .heading {
+    margin: 0;
+    font-size: var(--type-caption-size);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--type-caption-line);
+  }
+
+  .tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+  }
+
+  .tab {
+    min-block-size: var(--target-size);
+    padding: var(--space-1) var(--space-3);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--color-text-primary);
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .tab[aria-selected='true'] {
+    background: var(--color-surface-selected);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .panel {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .group {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .legend {
+    padding: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .field {
+    display: grid;
+    gap: var(--space-1);
+  }
+
+  .check {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-block-size: var(--target-size);
+  }
+
+  .label {
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+  }
+
+  .row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .input,
+  .select {
+    min-block-size: var(--target-size);
+    box-sizing: border-box;
+    min-inline-size: 0;
+    flex: 1;
+    padding: var(--space-1) var(--space-2);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-page);
+    color: var(--color-text-primary);
+    font: inherit;
+  }
+
+  .input[aria-invalid='true'] {
+    border-color: var(--color-status-danger);
+  }
+
+  .unit {
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+  }
+
+  .swatch {
+    inline-size: 1.25rem;
+    block-size: 1.25rem;
+    flex: none;
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+  }
+
+  .small {
+    min-block-size: var(--target-size);
+    padding: var(--space-1) var(--space-3);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--color-text-primary);
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .help,
+  .detail {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+  }
+
+  .warning {
+    margin: 0;
+    color: var(--color-status-danger);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+  }
+
+  .preview {
+    overflow: hidden;
+    margin: 0;
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-page);
+    color: var(--color-text-primary);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .list {
+    display: grid;
+    gap: var(--space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .reveal {
+    display: grid;
+    gap: var(--space-1);
+    margin: 0;
+    padding-inline-start: var(--space-4);
+  }
+}
+
+@layer forced {
+  @media (forced-colors: active) {
+    .sheet,
+    .tab,
+    .input,
+    .select,
+    .small,
+    .swatch,
+    .preview {
+      border-color: ButtonBorder;
+    }
+
+    .tab[aria-selected='true'] {
+      border-color: Highlight;
+    }
+  }
+}

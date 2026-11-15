@@ -14,13 +14,14 @@ import { isCheckable, spellingHighlights } from './spellingText';
 export {
   HIGHLIGHT_NAME,
   isCheckable,
+  NO_PROOF,
   rangeOver,
   SpellingHighlights,
   spellingHighlights,
   TEXTBLOCK_SELECTOR,
   textblockText,
 } from './spellingText';
-export type { SpellRange, TextblockText } from './spellingText';
+export type { LangSpan, SpellRange, TextblockText } from './spellingText';
 
 /** Where `next` differs from `prev`, in `next`'s positions. */
 function changedRange(prev: PMNode, next: PMNode): { from: number; to: number } | null {

@@ -25,7 +25,7 @@ import {
 import type { CellAt, TableBook, TableChange, TableOp } from '../../../editor/commands/tables';
 import { createBlockEditor } from '../../../editor/extensions/kit';
 import { META_REMOTE } from '../../../editor/meta';
-import { renderStatic } from '../../../editor/schema/dom';
+import { renderStatic, staticOptions } from '../../../editor/schema/dom';
 import type { TableData } from '../../../editor/schema/specs';
 import { docToTableData, normalizeTableData, sameTableData, tableDataToDoc } from '../../../editor/table/mapping';
 import { tableName } from '../../../editor/table/tableKit';
@@ -182,7 +182,7 @@ class TableView implements InnerView {
   }
 
   private showStatic(doc: PMNode): void {
-    renderStatic(doc, this.editRoot);
+    renderStatic(doc, this.editRoot, undefined, staticOptions(this.ctx.host));
     this.editRoot.querySelectorAll('th').forEach((th) => th.setAttribute('scope', 'col'));
     this.editRoot.querySelector('table')?.setAttribute('aria-label', tableName(doc));
     this.name(doc);

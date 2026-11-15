@@ -35,6 +35,8 @@ export const TEXT_KEYS = {
   'format.pasteFormat': text(['Ctrl+Alt+Shift+V'], ['Ctrl+Alt+Shift+V']),
   'format.repeat': text(['F4'], []),
   'format.applyStyle': text(['Ctrl+Shift+S'], [], []),
+  // The Format pane: Ctrl+D opens it on Text (Word's Font dialog). Docs has no such key.
+  'format.fontDialog': text(['Ctrl+D'], []),
   // Paragraph formatting.
   'para.alignStart': text(['Ctrl+L'], ['Ctrl+Shift+L']),
   'para.alignCenter': text(['Ctrl+E'], ['Ctrl+Shift+E'], []),

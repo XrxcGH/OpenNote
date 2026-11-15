@@ -24,6 +24,7 @@ import { NotebookIcon } from '@phosphor-icons/react/dist/csr/Notebook';
 import { NotepadIcon } from '@phosphor-icons/react/dist/csr/Notepad';
 import { PaperclipIcon } from '@phosphor-icons/react/dist/csr/Paperclip';
 import { QuotesIcon } from '@phosphor-icons/react/dist/csr/Quotes';
+import { RulerIcon } from '@phosphor-icons/react/dist/csr/Ruler';
 import { ShapesIcon } from '@phosphor-icons/react/dist/csr/Shapes';
 import { TableIcon } from '@phosphor-icons/react/dist/csr/Table';
 import { VideoCameraIcon } from '@phosphor-icons/react/dist/csr/VideoCamera';
@@ -49,6 +50,7 @@ export const LAZY_ICONS: Readonly<Record<string, IconComponent>> = {
   'page.toc': ListDashesIcon,
   'page.markdownSource': MarkdownLogoIcon,
   'page.lockForReading': BookOpenTextIcon,
+  'view.ruler': RulerIcon,
   'ink.inkToShape': ShapesIcon,
   'ink.curve.make': BezierCurveIcon,
   'ink.zoomBox': MagnifyingGlassPlusIcon,

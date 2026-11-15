@@ -10,7 +10,7 @@ import { highlightStatic } from '../../../editor/highlight';
 import { parseTextBlock, serializeTextBlock } from '../../../editor/markdown';
 import { applyElementData } from '../../../editor/markdown/elements';
 import { readLists } from '../../../editor/paragraph/numbering';
-import { renderStatic } from '../../../editor/schema/dom';
+import { renderStatic, staticOptions } from '../../../editor/schema/dom';
 // eslint-disable-next-line opennote/feature-boundaries -- The search index pulls the whole feature into start-up; this model file is small.
 import { hasLineData, lineDataOf } from '../../search/elements/model';
 import type { BlockId, BlockJson } from '../../../services/pages/types';
@@ -234,6 +234,7 @@ class TextBlockView implements LazyBlockView, LiveText {
       hasLineData(lines) ? applyElementData(doc, lines) : doc,
       this.editRoot,
       readLists(this.block.data.lists),
+      staticOptions(this.ctx.host),
     );
     if (this.ctx.host.flag('page.codeHighlight')) void highlightStatic(this.editRoot, doc).catch(() => undefined);
   }

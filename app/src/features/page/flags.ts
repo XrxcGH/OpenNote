@@ -59,7 +59,11 @@ const TEXT_FLAGS: readonly FlagDef[] = [
   textFlag('text.formatPane', 'The Format pane for text.'),
   textFlag('text.ruler', 'The ruler above the page.'),
   textFlag('text.symbols', 'The symbol and special character picker.'),
-  textFlag('text.language', 'Per-run language and text direction.'),
+  textFlag(
+    'text.language',
+    'Per-run language and text direction. Language sits on the Review tab and Hyphenation on the Layout tab, so ' +
+      'with text.review or text.layout off they are in the command palette only.',
+  ),
   textFlag('text.footnotes', 'Footnotes and endnotes.'),
   textFlag('text.review', 'The Review tab: comments, changes, and proofing.'),
   textFlag('text.layout', 'The Layout tab: breaks, columns, and vertical text.'),
