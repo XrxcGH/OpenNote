@@ -345,6 +345,30 @@ describe('JavaScript checker: scopes', () => {
     expect(lines(join('print("hello");'), 'no-undef', true)).toEqual([]);
   });
 
+  it('knows every global the studio JavaScript runtime sets', () => {
+    // The test reads the runtime's sources as text: the names they set with `globalThis.name =`.
+    const read = (file: string) => readFileSync(new URL(`../runtimes/js/${file}`, import.meta.url), 'utf8');
+    const source = read('environment.ts') + read('engine.ts');
+    const injected = [...new Set([...source.matchAll(/globalThis\.(\w+)\s*=/g)].map((m) => m[1]))];
+    expect(injected.sort()).toEqual([
+      'console',
+      'exports',
+      'module',
+      'print',
+      'process',
+      'prompt',
+      'readline',
+      'require',
+    ]);
+    for (const name of injected) {
+      expect(RUNTIME_GLOBALS).toContain(name);
+      expect(JS_GLOBALS.has(name)).toBe(true);
+    }
+    const program = join('const name = readline();', 'process.stdout.write(name);', 'module.exports = { name };');
+    expect(lines(program, 'no-undef')).toEqual([]);
+    expect(lines(program, 'no-undef', true)).toEqual([]);
+  });
+
   // @typescript-eslint/no-unused-vars skips the parameters of a signature without a body; no-undef knows the name a
   // `declare function` adds (typescript-eslint documentation).
   it('leaves the parameters of overloads and abstract methods alone, and knows declared functions', () => {

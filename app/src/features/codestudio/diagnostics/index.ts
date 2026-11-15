@@ -15,6 +15,7 @@ export {
   runtimeToDiagnostic,
 } from './engine';
 export type { EngineCheck } from './engine';
+export { pythonEngineCheck, registerRuntimeChecks } from './runtimeChecks';
 export { GRAMMAR_LANGUAGES, loadParser } from './parsers';
 export { checkerProvider, createDiagnostics, syntaxProvider, toDiagnostic } from './providers';
 export type { DiagnosticsService } from './providers';

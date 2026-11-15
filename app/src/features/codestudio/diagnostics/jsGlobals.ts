@@ -16,10 +16,20 @@ const HOST =
 
 /**
  * The names the app's JavaScript runtimes set on the global object themselves. The code cell sandbox
- * (features/codecells/sandbox/javascript.ts) sets `print` and `console`; a test reads its source to keep this list
- * true. The studio runtime (code:L06) adds its input and file helpers here when it lands.
+ * (features/codecells/sandbox/javascript.ts) sets `print` and `console`. The studio runtime (runtimes/js, code:L06)
+ * also sets `readline`, `prompt`, `process`, and the CommonJS `module`, `exports`, and `require`. Tests read both
+ * sources to keep this list true.
  */
-export const RUNTIME_GLOBALS: readonly string[] = ['console', 'print'];
+export const RUNTIME_GLOBALS: readonly string[] = [
+  'console',
+  'print',
+  'readline',
+  'prompt',
+  'process',
+  'module',
+  'exports',
+  'require',
+];
 
 /** The Jest-compatible test API the app injects into JavaScript and TypeScript programs (ADR 0075). */
 const TEST_API = 'describe it test expect beforeEach afterEach beforeAll afterAll';
