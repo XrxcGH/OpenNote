@@ -30,6 +30,7 @@ import type { Problem } from '../problems/group';
 import type { Example } from '../snippets/examples';
 import { exampleCollisions, examplePatch, exampleTitle } from '../snippets/menu';
 import { MAIN_FILES, RUNTIMES } from './languages';
+import { LiveChecks } from './liveChecks';
 import { rememberCurrent } from './relay';
 import { orderFor, studioRunner } from './runner';
 import { blockSource } from './source';
@@ -70,7 +71,7 @@ export class StudioController {
   runtimeVersion: string | null = null;
   lastResult: RunResult | null = null;
   runProblems: Problem[] = [];
-  /** The checkers' problems by file (code:L10 publishes them; empty until then). */
+  /** The live checks' problems by file (liveChecks.ts). */
   checkProblems = new Map<string, Problem[]>();
   written: RunFile[] = [];
   testResults: TestResult[] = [];
@@ -98,6 +99,8 @@ export class StudioController {
   private handle: RunHandle | null = null;
   private stopSource: (() => void) | null = null;
   private stopLeave: (() => void) | null = null;
+  /** The live error checks, made with the first editor. */
+  private checks: LiveChecks | null = null;
 
   /** The window is on screen: the commands reach it. Returns the undo. The console redraws from its own buffer. */
   mount(): () => void {
@@ -219,6 +222,9 @@ export class StudioController {
     for (const editor of this.editors.values()) editor.destroy();
     this.editors.clear();
     this.reveals.clear();
+    this.checks?.dispose();
+    this.checks = null;
+    this.checkProblems.clear();
     this.setCursor({ line: 1, column: 1 });
   }
 
@@ -333,6 +339,7 @@ export class StudioController {
   attachEditor(id: string, editor: CodeEditor): void {
     this.editors.set(id, editor);
     editor.setReadOnly(!(this.store?.editable ?? false));
+    this.check(id);
     const at = this.reveals.get(id);
     if (at) {
       this.reveals.delete(id);
@@ -372,6 +379,7 @@ export class StudioController {
     if (this.project()?.files[id]?.text === text) return;
     const outcome = this.store?.editFile(id, text);
     if (outcome && !outcome.ok) this.say(outcome.message);
+    this.check(id, text);
     if (this.dirty.has(id)) return;
     this.dirty.add(id);
     this.changed();
@@ -586,7 +594,20 @@ export class StudioController {
 
   // --- Problems.
 
-  /** A checker's diagnostics for one file (code:L10's publish). */
+  /** Checks a file's text, the editor's when given, with the project's other files beside it. */
+  private check(id: string, text?: string): void {
+    const project = this.project();
+    const file = project?.files[id];
+    if (!project || !file) return;
+    this.checks ??= new LiveChecks((path, items) => {
+      this.setDiagnostics(path, items);
+      const shown = this.idOfPath(path);
+      if (shown) this.editors.get(shown)?.showProblems(items);
+    });
+    this.checks.update({ path: file.path, text: text ?? file.text }, Object.values(project.files));
+  }
+
+  /** A checker's diagnostics for one file (the live checks' publish). */
   setDiagnostics(file: string, items: readonly Diagnostic[]): void {
     const id = this.idOfPath(file);
     const text = id ? (this.project()?.files[id]?.text ?? '') : '';
