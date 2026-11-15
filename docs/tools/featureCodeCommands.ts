@@ -1,6 +1,12 @@
 // The feature-list sentences for the code editor commands.
 
 export const CODE_COMMAND_TEXT: Readonly<Record<string, string>> = {
+  'code.newProject': 'Puts a new code project on the page and opens it in the Code studio.',
+  'code.openCodeBlock': 'Opens the code block at the caret as a project in the Code studio.',
+  'code.run': 'Runs the project in the Code studio.',
+  'code.stop': 'Stops the program running in the Code studio.',
+  'code.restart': 'Stops the program and runs it again from the start.',
+  'code.problems.show': 'Shows the Problems panel of the Code studio.',
   'code.completion.accept': 'Accepts the whole suggestion shown in gray in the code editor.',
   'code.completion.request': 'Asks for a suggestion at the caret in the code editor.',
   'code.completion.list': 'Opens the list of completions at the caret in the code editor.',

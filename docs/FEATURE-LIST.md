@@ -2,7 +2,7 @@
 
 Every tool, action, and feature in OpenNote, grouped by category, with one sentence each. `npm run docs:features` makes this page. The commands, tool windows, title bar items, settings sections, and setup steps come from what the app registers, so a new one shows up here or fails the tests. The feature sentences come from [FEATURES.md](FEATURES.md), which also says what has been tested by hand and which flag turns each one on. The [help pages](help/README.md) explain how to use them. [docs/screens](screens/README.md) has every picture in light and dark.
 
-The app registers 1168 commands and 48 tool windows. 24 of the windows are subject and engineering kits. The count includes the ink commands, which register when a page first shows its ink, and the commands that register once start-up is done or with the first page: on-device intelligence, the second pass of page commands, and the code block and table commands. The command palette (Ctrl+K) runs every command not marked as left out of it. Some commands need a feature flag, which FEATURES.md names. The keys shown are the defaults of the standard shortcut set.
+The app registers 1174 commands and 48 tool windows. 24 of the windows are subject and engineering kits. The count includes the ink commands, which register when a page first shows its ink, and the commands that register once start-up is done or with the first page: on-device intelligence, the second pass of page commands, and the code block and table commands. The command palette (Ctrl+K) runs every command not marked as left out of it. Some commands need a feature flag, which FEATURES.md names. The keys shown are the defaults of the standard shortcut set.
 
 ## Contents
 
@@ -132,6 +132,12 @@ Open it with the command "Open the code studio".
 | Insert diagram from text | Inserts a diagram drawn from text, such as a Mermaid flowchart or timeline. |  |
 | Insert code cell | Inserts a code cell that runs Python or JavaScript in a sandbox. | Ctrl+Alt+Shift+K |
 | Insert code project | Inserts a code project: a folder of files that you can run, export, and import as a .zip. |  |
+| New code project | Puts a new code project on the page and opens it in the Code studio. |  |
+| Open code block in Code studio | Opens the code block at the caret as a project in the Code studio. |  |
+| Run the project (not in the palette) | Runs the project in the Code studio. | Ctrl+Enter, Ctrl+F5 |
+| Stop the run (not in the palette) | Stops the program running in the Code studio. | Shift+F5 |
+| Restart the run (not in the palette) | Stops the program and runs it again from the start. | Ctrl+Shift+F5 |
+| Show the Problems panel (not in the palette) | Shows the Problems panel of the Code studio. | Ctrl+Shift+M |
 | Number this equation | Gives the equation at the caret a number. |  |
 | Number all equations | Numbers every display equation on the page. |  |
 | Remove equation number | Removes the number from the equation at the caret. |  |
@@ -2611,6 +2617,7 @@ Open it with the command "Open upcoming".
 - **Pen and touch.** Sets the writing hand, finger drawing, the steady pen, and the pressure curve.
 - **My handwriting.** Calibrates the app to your handwriting and the symbols you write by hand.
 - **On-device intelligence.** Turns each on-device intelligence feature on or off, and shows what it runs on.
+- **Code.** Sets indents by language, the Python runtime, run time and memory limits, suggestions, and C and C++ standards.
 - **Storage and backups.** Sets scheduled backups and portable mode, and finds notebooks that have moved.
 - **Updates.** Sets the update channel, checks for updates, and goes back to the last version.
 - **Privacy.** Turns on Work offline and lists every way the app uses the network.
