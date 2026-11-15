@@ -13,6 +13,8 @@ export const ADAPTERS: AdapterRegistry = {
   typescript: () => import('../runtimes/js/adapter').then((loaded) => loaded.typescriptAdapter),
   sql: () => import('../runtimes/sql/adapter').then((loaded) => loaded.sqlAdapter),
   lua: () => import('../runtimes/lua/adapter').then((loaded) => loaded.luaAdapter),
+  c: () => import('../runtimes/cpp').then((loaded) => loaded.cAdapter),
+  cpp: () => import('../runtimes/cpp').then((loaded) => loaded.cppAdapter),
 };
 
 /**
