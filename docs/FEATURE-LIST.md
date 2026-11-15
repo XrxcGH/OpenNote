@@ -79,6 +79,12 @@ The app registers 1168 commands and 48 tool windows. 24 of the windows are subje
 - **Table styles in page exports.** Word, HTML, and Markdown exports write each table's last results.
 - **Code studio foundations.** The contracts, settings, flags, and strings for the code studio: projects as a page block, runs, diagnostics, completion, a replay debugger, tests, and runtime packs.
 - **Code editor keys.** Tab indents in the code editor, and Ctrl+Page Down and Ctrl+Page Up change tabs, so the tab bar stays reachable.
+- **Comments and suggestions.** New comment covers the selection or the word at the caret.
+- **Python in code projects.** Quick Python (MicroPython, bundled) and full Python (CPython 3.14 through Pyodide, from a pack) run projects in the run sandbox.
+- **JavaScript and TypeScript runs.** QuickJS runs JavaScript and TypeScript projects (Sucrase removes the types) with relative imports, a seeded Math.random, Node-style console output, and a Jest-compatible test API.
+- **Error detection in code.** Syntax errors for nine languages, and OpenNote's own checks for Python (Ruff rules), JavaScript and TypeScript (ESLint rules), C, C++, and Lua.
+- **Code completion without a model.** A ranked list from names in scope, members, keywords, snippets, and words in the project, plus one-line ghost text from patterns, and an explicit request key.
+- **Block-level merge on sync.** When two devices change different blocks of one page, a block type with a merger merges both versions instead of keeping a conflict copy.
 - **Calm shell polish.** Phosphor icons in the command bar, pens back on the bar at 1,280 px, calm pressed and selected states, notebook accent roles, and group dividers.
 
 ### Tool windows
