@@ -7,6 +7,8 @@ import type { EditorView } from '@tiptap/pm/view';
 import type { TableExtraHost } from '../../page';
 import { gridOf, keysOn, sheetKeysKey } from '../keys/state';
 import type { Elements, PointerContext } from './context';
+import { clearActivePointer, setActivePointer } from './active';
+import type { PointerRunner } from './active';
 import { attachFill } from './fillHandle';
 import { createGeometry } from './geometry';
 import styles from './pointer.module.css';
@@ -90,8 +92,21 @@ export function attachPointerLayer(view: EditorView, host: TableExtraHost): Poin
   const resizes = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(onScroll);
   resizes?.observe(scroller);
   const onKey = (event: KeyboardEvent) => {
-    if (event.key === 'Escape' && fill.isOpen()) fill.close();
+    if (!fill.isOpen()) return;
+    if (event.key === 'Escape') fill.close();
+    else if (event.key === 'ArrowDown' && (event.altKey || (event.ctrlKey && event.shiftKey))) {
+      event.preventDefault();
+      event.stopPropagation();
+      fill.focus();
+    } else if ((event.ctrlKey || event.metaKey) && /^[yz]$/i.test(event.key)) {
+      // The choices belong to the fill that was just made; undo takes the fill back, so they go too.
+      fill.close();
+    }
   };
+  const runner: PointerRunner = { fillSeries: fill.fillSeries };
+  const active = () => setActivePointer(runner);
+  view.dom.addEventListener('focusin', active);
+  if (view.hasFocus()) active();
   view.dom.addEventListener('keydown', onKey, true);
   return {
     update() {
@@ -101,6 +116,8 @@ export function attachPointerLayer(view: EditorView, host: TableExtraHost): Poin
       stops.forEach((stop) => stop());
       scroller.removeEventListener('scroll', onScroll);
       view.dom.removeEventListener('keydown', onKey, true);
+      view.dom.removeEventListener('focusin', active);
+      clearActivePointer(runner);
       resizes?.disconnect();
       els.layer.remove();
     },

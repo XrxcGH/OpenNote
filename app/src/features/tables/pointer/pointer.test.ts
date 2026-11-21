@@ -19,7 +19,8 @@ import { resolve, readSheet } from '../sheet/model';
 import { fill, selectRange } from './actions';
 import { attachPointerLayer } from './layer';
 import type { PointerLayer } from './layer';
-import { setBorderMode } from './mode';
+import { activePointer } from './active';
+import { borderMode, setBorderMode } from './mode';
 
 const editorHost: EditorHost = {
   settings: () => DEFAULT_EDITING_VIEW,
@@ -333,5 +334,71 @@ describe('pen in Draw border mode', () => {
     const written = sheet.patches[0] as { sheet: Record<string, unknown> };
     const table = { columns: COL_IDS.map((id) => ({ id })), rows: ROW_IDS.map((id) => ({ id, cells: {} })) };
     expect(resolve(readSheet({ sheet: written.sheet }), table, 'r1', 'c1').style.border?.b).toBeUndefined();
+  });
+});
+
+describe('Border modes and the menu after a drop, from the keyboard', () => {
+  const key = (target: EventTarget, init: KeyboardEventInit) =>
+    target.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, cancelable: true, ...init }));
+
+  it('ends Draw border on Escape wherever the focus is, and says so once for two tables', () => {
+    const first = mount(GRID, {}, true);
+    const second = mount(GRID, {}, true);
+    setBorderMode('draw');
+    expect(first.said.length + second.said.length).toBe(1);
+    expect(first.editor.view.dom.parentElement!.dataset.borderMode).toBe('draw');
+    expect(second.editor.view.dom.parentElement!.dataset.borderMode).toBe('draw');
+    // The focus is on the page body, as after running the command from the palette.
+    key(document.body, { key: 'Escape' });
+    expect(borderMode()).toBe('off');
+    expect(first.editor.view.dom.parentElement!.dataset.borderMode).toBeUndefined();
+    expect(second.editor.view.dom.parentElement!.dataset.borderMode).toBeUndefined();
+    expect(first.said.length + second.said.length).toBe(2);
+    // The listener goes with the mode: a later Escape is not stopped.
+    const seen = vi.fn();
+    document.addEventListener('keydown', seen);
+    key(document.body, { key: 'Escape' });
+    expect(seen).toHaveBeenCalled();
+    document.removeEventListener('keydown', seen);
+  });
+
+  const dropFill = (sheet: Mounted) => {
+    sheet.select('A1', 'A2');
+    const view = sheet.editor.view;
+    const handle = view.dom.parentElement!.querySelector('[data-sheet-handle="fill"]') as HTMLElement;
+    pointer('pointerdown', handle, 100, 60, 'mouse');
+    pointer('pointermove', handle, 50, 105, 'mouse');
+    pointer('pointerup', handle, 50, 105, 'mouse');
+  };
+
+  it('keeps the focus in the table after a drop, so Ctrl+Z undoes the fill, and Alt+Down reaches the menu', async () => {
+    const sheet = mount(GRID, {}, true);
+    sheet.editor.view.focus();
+    dropFill(sheet);
+    await vi.waitFor(() => expect(document.querySelector('[role="menu"]')).not.toBeNull());
+    expect(sheet.texts().map((row) => row[0])).toEqual(['1', '3', '5', '7', '']);
+    expect(document.activeElement).not.toBeInstanceOf(HTMLButtonElement);
+    key(sheet.editor.view.dom, { key: 'ArrowDown', altKey: true });
+    expect((document.activeElement as HTMLElement).textContent).toBe('Fill series');
+    // Back in the table, undo takes the fill back and closes the menu.
+    sheet.editor.view.focus();
+    key(sheet.editor.view.dom, { key: 'z', ctrlKey: true });
+    expect(document.querySelector('[role="menu"]')).toBeNull();
+  });
+
+  it('runs Fill series down from the keyboard command: 2026-01-02 down three rows is 01-03, 01-04', async () => {
+    const sheet = mount([['2026-01-02', '', '', '', ''], ...GRID.slice(1)], {}, true);
+    sheet.editor.view.focus();
+    sheet.editor.view.dom.dispatchEvent(new FocusEvent('focusin'));
+    sheet.select('A1', 'A3');
+    activePointer()!.fillSeries('down');
+    await vi.waitFor(() =>
+      expect(
+        sheet
+          .texts()
+          .map((row) => row[0])
+          .slice(0, 3),
+      ).toEqual(['2026-01-02', '2026-01-03', '2026-01-04']),
+    );
   });
 });

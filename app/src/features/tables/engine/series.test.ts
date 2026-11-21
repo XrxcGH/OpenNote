@@ -69,15 +69,59 @@ describe('text with a number', () => {
   it('counts: Item 1 goes on Item 2', () => {
     expect(continueSeries(['Item 1'], 2)).toEqual(['Item 2', 'Item 3']);
   });
-  it('uses the gap and keeps leading zeros and the ending', () => {
+  it('uses the gap and keeps leading zeros and the ending (an ordinal ending follows the number)', () => {
     expect(continueSeries(['Q10', 'Q20'], 1)).toEqual(['Q30']);
     expect(continueSeries(['A007'], 2)).toEqual(['A008', 'A009']);
-    expect(continueSeries(['1st'], 1)).toEqual(['2st']);
+    expect(continueSeries(['1st'], 1)).toEqual(['2nd']);
   });
   it('repeats text with no number', () => {
     expect(continueSeries(['a', 'b'], 3)).toEqual(['a', 'b', 'a']);
   });
   it('repeats when a cell is empty', () => {
     expect(continueSeries(['1', ''], 2)).toEqual(['1', '']);
+  });
+});
+
+describe('large and out of range series', () => {
+  it('walks a weekday series in whole weeks: 20,000 cells in well under a second', () => {
+    const start = performance.now();
+    const out = continueSeries(['2026-01-02'], 20000, { unit: 'weekday' });
+    expect(performance.now() - start).toBeLessThan(1000);
+    // 2026-01-02 is a Friday. Monday, Tuesday, Wednesday follow, and every fifth cell is a Friday again.
+    expect(out.slice(0, 3)).toEqual(['2026-01-05', '2026-01-06', '2026-01-07']);
+    expect(out[4]).toBe('2026-01-09');
+    expect(new Date(`${out[19999]}T00:00:00Z`).getUTCDay()).toBe(5);
+  });
+  it('counts weekdays from a weekend: Saturday plus one is Monday, Sunday minus one is Friday', () => {
+    expect(continueSeries(['2026-01-03'], 2, { unit: 'weekday' })).toEqual(['2026-01-05', '2026-01-06']);
+    expect(continueSeries(['2026-01-04'], 1, { unit: 'weekday', step: -1 })).toEqual(['2026-01-02']);
+  });
+  it('repeats the cells when the step runs past the dates a year can name', () => {
+    expect(continueSeries(['2026-01-02'], 2, { unit: 'weekday', step: 1e9 })).toEqual(['2026-01-02', '2026-01-02']);
+    expect(continueSeries(['9999-12-31'], 2)).toEqual(['9999-12-31', '9999-12-31']);
+    expect(continueSeries(['0001-01-02', '0001-01-01'], 2)).toEqual(['0001-01-02', '0001-01-01']);
+    expect(continueSeries(['9999-12-31'], 1, { unit: 'month' })).toEqual(['9999-12-31']);
+  });
+  it('repeats the cells when a number overflows', () => {
+    expect(continueSeries(['1e300', '1e305'], 2, { growth: true })).toEqual(['1e300', '1e305']);
+  });
+});
+
+describe('money, percent, padding, negatives, and ordinals', () => {
+  it('copies one amount or percent, and steps a pair, keeping the sign', () => {
+    expect(continueSeries(['$5'], 2)).toEqual(['$5', '$5']);
+    expect(continueSeries(['10%'], 2)).toEqual(['10%', '10%']);
+    expect(continueSeries(['$5', '$7'], 2)).toEqual(['$9', '$11']);
+    expect(continueSeries(['10%', '20%'], 2)).toEqual(['30%', '40%']);
+  });
+  it('keeps the width of numbers written with leading zeros: 001, 002 goes on 003, 004', () => {
+    expect(continueSeries(['001', '002'], 2)).toEqual(['003', '004']);
+  });
+  it('counts below zero: Item 3, Item 2 goes on Item 1, Item 0, Item -1', () => {
+    expect(continueSeries(['Item 3', 'Item 2'], 3)).toEqual(['Item 1', 'Item 0', 'Item -1']);
+  });
+  it('writes ordinals: 1st goes on 2nd, 3rd, 4th, and 10th goes on 11th, 12th, 13th', () => {
+    expect(continueSeries(['1st'], 3)).toEqual(['2nd', '3rd', '4th']);
+    expect(continueSeries(['10th'], 3)).toEqual(['11th', '12th', '13th']);
   });
 });

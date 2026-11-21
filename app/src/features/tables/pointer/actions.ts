@@ -1,13 +1,13 @@
 // What the pointer does to a table: fills (content in one editor transaction, formats in the sheet), and a
 // selection that touch handles move. The gestures in layer.ts call these; tests call them directly, since a
 // test document has no layout.
-import type { Fragment } from '@tiptap/pm/model';
+import { Fragment } from '@tiptap/pm/model';
 import type { Transaction } from '@tiptap/pm/state';
 import { CellSelection } from '@tiptap/pm/tables';
 import type { EditorView } from '@tiptap/pm/view';
 import { t } from '../../../strings/t';
 import type { SeriesOptions } from '../engine/series';
-import { gridOf, placedAt, selectCells, setCellContent, sheetKeysKey, textsOf, contentOf } from '../keys/state';
+import { cellsOf, gridOf, placedAt, selectCells, sheetKeysKey, textRange } from '../keys/state';
 import type { SheetMeta } from '../keys/state';
 import type { Box, GridCell } from '../keys/grid';
 import { readSheet, sheetPatch, styleById } from '../sheet/model';
@@ -65,19 +65,37 @@ export function fillContent(
   before?: Map<string, Fragment>,
 ): { writes: FillWrite[]; formats: boolean; before: Map<string, Fragment> } {
   const { state } = view;
-  const texts = textsOf(state.doc);
+  const cells = cellsOf(state.doc);
+  const texts = cells.map((row) => row.map((cell) => cell.node.textContent));
   const plan = planFill(texts, drop.source, drop.box, drop.direction, mode, options);
-  const kept = before ?? new Map(newCells(drop).map((at) => [key(at), contentOf(state.doc, at)] as const));
-  const tr = state.tr;
+  const fresh = newCells(drop);
+  const contentAt = (at: GridCell): Fragment => cells[at.row]?.[at.column]?.node.firstChild?.content ?? Fragment.empty;
+  const kept = before ?? new Map(fresh.map((at) => [key(at), contentAt(at)] as const));
+  const planned = new Map(plan.writes.map((w) => [key(w.at), w] as const));
   const from = (at: GridCell) => texts[at.row]?.[at.column] ?? '';
-  for (const cell of newCells(drop)) {
-    const write = plan.writes.find((w) => w.at.row === cell.row && w.at.column === cell.column);
+  const tr = state.tr;
+  // One layout snapshot, and the replacements from the end of the document back, so no position shifts.
+  const edits: { from: number; to: number; content: Fragment | string }[] = [];
+  for (const cell of fresh) {
+    const placed = cells[cell.row]?.[cell.column];
+    if (!placed) continue;
+    const write = planned.get(key(cell));
+    let content: Fragment | string | undefined;
     // Formats-only puts back what the cell held before; every other mode writes the plan's text.
-    if (!write || write.text === null) {
-      const old = kept.get(key(cell));
-      if (old) setCellContent(tr, cell, old);
-    } else if (write.text === from(write.from)) setCellContent(tr, cell, contentOf(state.doc, write.from));
-    else setCellContent(tr, cell, write.text);
+    if (!write || write.text === null) content = kept.get(key(cell));
+    else if (write.text === from(write.from)) content = contentAt(write.from);
+    else content = write.text;
+    if (content !== undefined) edits.push({ ...textRange(placed), content });
+  }
+  edits.sort((x, y) => y.from - x.from);
+  for (const edit of edits) {
+    const nodes =
+      typeof edit.content === 'string'
+        ? edit.content
+          ? state.doc.type.schema.text(edit.content)
+          : Fragment.empty
+        : edit.content;
+    tr.replaceWith(edit.from, edit.to, nodes);
   }
   const active = gridOf(state)?.active ?? { row: drop.source.top, column: drop.source.left };
   selectBox(tr, drop.box, active);

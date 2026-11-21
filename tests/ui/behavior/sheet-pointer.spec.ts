@@ -75,17 +75,48 @@ test('fits a row with a double click on its edge, and sets its height by draggin
   await expect.poll(async () => (await row.boundingBox())!.height).toBeLessThan(before + 10);
 });
 
-test('draws a border along the bottom of a row with a stroke, and erases it', async ({ page }) => {
-  await runCommand(page, 'Draw border');
-  const second = await cell(page, 1, 1).boundingBox();
-  const third = await cell(page, 1, 2).boundingBox();
+/** A stroke along the bottom edge of the second and third cells of row `row`. */
+async function strokeBottom(page: Page, row: number): Promise<void> {
+  const second = await cell(page, row, 1).boundingBox();
+  const third = await cell(page, row, 2).boundingBox();
   if (!second || !third) throw new Error('no cells');
   const y = second.y + second.height;
   await page.mouse.move(second.x + 40, y);
   await page.mouse.down();
   await page.mouse.move(third.x + third.width - 40, y, { steps: 8 });
   await page.mouse.up();
+}
+
+test('draws a border with a stroke, erases it with Erase border, and Escape ends the mode from anywhere', async ({
+  page,
+}) => {
+  await runCommand(page, 'Draw border');
+  await expect(page.locator('[data-border-mode="draw"]').first()).toBeAttached();
+  await strokeBottom(page, 1);
   await expect(cell(page, 1, 1)).toHaveAttribute('data-bb', 'thin');
   await expect(cell(page, 1, 2)).toHaveAttribute('data-bb', 'thin');
+  await runCommand(page, 'Erase border');
+  await expect(page.locator('[data-border-mode="erase"]').first()).toBeAttached();
+  await strokeBottom(page, 1);
+  await expect(cell(page, 1, 1)).not.toHaveAttribute('data-bb', 'thin');
+  // The focus is not in a table, as after running the command from the palette.
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
   await page.keyboard.press('Escape');
+  await expect(page.locator('[data-border-mode]')).toHaveCount(0);
+});
+
+test('Ctrl+Z straight after a drop undoes the fill, and Ctrl+drag copies instead of continuing', async ({ page }) => {
+  await gridAt(page, 1, 1);
+  await page.keyboard.press('Shift+ArrowDown');
+  await dragFill(page, 3, 1);
+  await expect(cell(page, 3, 1)).toHaveText('180');
+  await page.keyboard.press('Control+z');
+  await expect(cell(page, 3, 1)).not.toHaveText('180');
+  await expect(page.getByRole('menu', { name: 'Fill options' })).toHaveCount(0);
+  await gridAt(page, 1, 1);
+  await page.keyboard.press('Shift+ArrowDown');
+  await page.keyboard.down('Control');
+  await dragFill(page, 3, 1);
+  await page.keyboard.up('Control');
+  await expect(cell(page, 3, 1)).toHaveText('120');
 });

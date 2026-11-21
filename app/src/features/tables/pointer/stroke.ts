@@ -5,7 +5,8 @@ import { keysOn } from '../keys/state';
 import { strokeBorders } from './actions';
 import type { Point } from './borders';
 import type { PointerContext } from './context';
-import { borderMode, onBorderMode, setBorderMode } from './mode';
+import { borderMode, onBorderMode } from './mode';
+import type { BorderMode } from './mode';
 
 function attachStroke(ctx: PointerContext): () => void {
   const { view, host } = ctx;
@@ -32,21 +33,17 @@ function attachStroke(ctx: PointerContext): () => void {
   const onMouseDown = (event: MouseEvent) => {
     if (borderMode() !== 'off' && keysOn(view.state)) event.preventDefault();
   };
-  const onKey = (event: KeyboardEvent) => {
-    if (event.key !== 'Escape' || borderMode() === 'off') return;
-    event.stopPropagation();
-    setBorderMode('off');
-  };
   // The capture phase, so a stroke never reaches the editor or the page's own pointer handling.
   view.dom.addEventListener('pointerdown', onDown, true);
   view.dom.addEventListener('mousedown', onMouseDown, true);
-  view.dom.addEventListener('keydown', onKey, true);
   return () => {
     view.dom.removeEventListener('pointerdown', onDown, true);
     view.dom.removeEventListener('mousedown', onMouseDown, true);
-    view.dom.removeEventListener('keydown', onKey, true);
   };
 }
+
+/** The tables that show the mode, in the order they attached. */
+const announcers: PointerContext[] = [];
 
 /** Attaches the strokes, and the table's crosshair while a mode is on. Returns the function that stops. */
 export function attachBorders(ctx: PointerContext): () => void {
@@ -54,16 +51,29 @@ export function attachBorders(ctx: PointerContext): () => void {
   const show = () => {
     const mode = borderMode();
     if (mode === 'off') delete ctx.scroller.dataset.borderMode;
-    else {
-      ctx.scroller.dataset.borderMode = mode;
-      ctx.host.announce(t(mode === 'draw' ? 'sheetPointer.border.drawOn' : 'sheetPointer.border.eraseOn'));
-    }
+    else ctx.scroller.dataset.borderMode = mode;
   };
-  const stopMode = onBorderMode(show);
+  // Every attached table shows the mode, but only the first one announces it.
+  const announce = (mode: BorderMode) => {
+    show();
+    if (announcers[0] !== ctx) return;
+    ctx.host.announce(
+      t(
+        mode === 'draw'
+          ? 'sheetPointer.border.drawOn'
+          : mode === 'erase'
+            ? 'sheetPointer.border.eraseOn'
+            : 'sheetPointer.border.off',
+      ),
+    );
+  };
+  announcers.push(ctx);
+  const stopMode = onBorderMode(announce);
   show();
   return () => {
     stopStroke();
     stopMode();
+    announcers.splice(announcers.indexOf(ctx), 1);
     delete ctx.scroller.dataset.borderMode;
   };
 }

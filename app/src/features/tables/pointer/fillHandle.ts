@@ -86,12 +86,20 @@ function createMenu(ctx: PointerContext, choose: (drop: FillDrop, mode: FillMode
       button.addEventListener('click', () => choose(drop, id));
     }
     el.addEventListener('keydown', (event) => onMenuKey(ctx, el, event, close));
-    el.querySelector('button')?.focus();
+    // The focus stays in the table, so Ctrl+Z right after a drop undoes the fill. Alt+Down moves into the menu.
   };
-  return { open, close, isOpen: () => menu !== null, contains: (node: Node) => menu?.contains(node) ?? false };
+  const focus = () => {
+    const buttons = Array.from(menu?.querySelectorAll('button') ?? []);
+    (buttons.find((b) => b.getAttribute('aria-checked') === 'true') ?? buttons[0])?.focus();
+  };
+  return { open, close, focus, isOpen: () => menu !== null, contains: (node: Node) => menu?.contains(node) ?? false };
 }
 
 export interface FillControl {
+  /** Moves the focus into the menu after a drop, when one is open. */
+  focus(): void;
+  /** Fills the selection as a series, down from its first row or right from its first column. */
+  fillSeries(direction: 'down' | 'right'): void;
   stop(): void;
   close(): void;
   isOpen(): boolean;
@@ -129,12 +137,26 @@ export function attachFill(ctx: PointerContext): FillControl {
       const { box, direction } = target;
       void fill(view, host, { source, box, direction }, mode, seriesOptions()).then((drop) => {
         menu.open(drop, mode);
+        host.announce(t('sheetPointer.fill.menuOpen'));
         ctx.place();
       });
     };
     drag(els.fill, event, move, done);
   }
   els.fill.addEventListener('pointerdown', onDown);
+  /** The keyboard's way to the same fill: the first row (or column) of the selection into the rest. */
+  function fillSeries(direction: 'down' | 'right') {
+    const g = gridOf(view.state);
+    const box = g?.box;
+    const down = direction === 'down';
+    if (!box || (down ? box.top === box.bottom : box.left === box.right)) {
+      host.announce(t('sheetPointer.fill.nothing'));
+      return;
+    }
+    const source = down ? { ...box, bottom: box.top } : { ...box, right: box.left };
+    menu.close();
+    void fill(view, host, { source, box, direction }, 'series', seriesOptions());
+  }
   // A press anywhere else closes the menu: its choices belong to the fill that was just made.
   const outside = (event: Event) => {
     const node = event.target;
@@ -149,5 +171,7 @@ export function attachFill(ctx: PointerContext): FillControl {
     },
     close: menu.close,
     isOpen: menu.isOpen,
+    focus: menu.focus,
+    fillSeries,
   };
 }

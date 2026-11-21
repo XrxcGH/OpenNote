@@ -43,4 +43,8 @@ export const SHEET_COMMAND_TEXT: Readonly<Record<string, string>> = {
     'Turns on a pen or mouse that draws cell borders along the lines of the table you drag over. Escape stops it.',
   'table.sheet.eraseBorder':
     'Turns on a pen or mouse that erases cell borders along the lines of the table you drag over. Escape stops it.',
+  'table.sheet.fillSeriesDown':
+    'Continues the first row of the selected cells down through the rest, as a series of numbers, dates, or names.',
+  'table.sheet.fillSeriesRight':
+    'Continues the first column of the selected cells to the right through the rest, as a series of numbers, dates, or names.',
 };

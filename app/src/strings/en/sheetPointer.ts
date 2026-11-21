@@ -6,22 +6,21 @@ export const sheetPointer = {
     drawBorder: 'Draw border',
     drawBorderKeywords: 'pen line cell edge gridline table outline',
     eraseBorder: 'Erase border',
+    fillSeriesDown: 'Fill series down',
+    fillSeriesRight: 'Fill series right',
+    fillSeriesKeywords: 'drag handle autofill continue sequence numbers dates days months',
     eraseBorderKeywords: 'pen remove clear line cell edge gridline table outline',
   },
   fill: {
-    handle: 'Fill handle. Drag to fill the cells below or beside the selection.',
     menu: 'Fill options',
     copy: 'Copy cells',
     series: 'Fill series',
     formats: 'Fill formatting only',
     values: 'Fill without formatting',
+    menuOpen: 'Fill options are available. Press Alt and Down Arrow to choose, or Control and Z to undo.',
     filled: 'Filled {count} cells.',
     filledFormats: 'Filled the formatting of {count} cells.',
     nothing: 'There is nothing to fill there.',
-  },
-  handles: {
-    start: 'Selection handle at the first corner. Drag to change the range.',
-    end: 'Selection handle at the last corner. Drag to change the range.',
   },
   border: {
     drawOn: 'Draw border is on. Drag along the lines of the table. Press Escape to stop.',
@@ -29,10 +28,5 @@ export const sheetPointer = {
     off: 'Border drawing is off.',
     drawn: 'Drew {count} cell borders.',
     erased: 'Erased {count} cell borders.',
-    refused: 'There are too many different cell styles to draw this border.',
-  },
-  row: {
-    height: 'Row height set to {height}.',
-    fit: 'Row height now fits the content.',
   },
 } as const;
