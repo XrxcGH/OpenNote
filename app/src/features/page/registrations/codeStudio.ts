@@ -6,7 +6,7 @@ import { isEnabled } from '../../../app/flags';
 import { windowKind } from '../../../app/windowKind';
 import { chord, defineCommand } from '../../../commands/registry';
 import type { CommandDef, CommandId } from '../../../commands/types';
-import { codeBlockAt } from '../../../editor/commands/code';
+import { codeBlockAt } from '../../../editor/commands/codeBlockAt';
 import { commands, settingsSections } from '../../../registries';
 import { t } from '../../../strings/t';
 import { announce } from '../../../ui';
