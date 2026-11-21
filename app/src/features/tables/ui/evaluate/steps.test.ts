@@ -83,4 +83,11 @@ describe('Evaluate formula', () => {
     expect(step.values).toEqual([null]);
     expect(firstStep('ROW(B2)+B1').next).toEqual({ start: 0, end: 7 });
   });
+
+  it('keeps a cell given to SUM as typed, as SUM reads a text in a cell differently from a typed one', () => {
+    // A cell that holds the text 5 counts as nothing in SUM, but a typed "5" counts as 5. Showing SUM("5") would mislead.
+    expect(firstStep('SUM(B1,1)').next).toEqual({ start: 0, end: 9 });
+    expect(firstStep('AVERAGE(B1)+B1').next).toEqual({ start: 0, end: 11 });
+    expect(evaluateStep(firstStep('SUM(B1)'), () => 0).text).toBe('0');
+  });
 });

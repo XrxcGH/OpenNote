@@ -34,6 +34,40 @@ const REFERENCE_FUNCTIONS = new Set([
   'SHEETS',
 ]);
 
+/**
+ * Functions that read a cell's value differently from the same value typed as an argument. SUM skips a text in a cell
+ * but counts a typed number text. So a cell given to one of these stays as typed, and the call is worked out whole.
+ */
+const AGGREGATE_FUNCTIONS = new Set([
+  'SUM',
+  'SUMSQ',
+  'PRODUCT',
+  'AVERAGE',
+  'AVERAGEA',
+  'COUNT',
+  'COUNTA',
+  'COUNTBLANK',
+  'MIN',
+  'MINA',
+  'MAX',
+  'MAXA',
+  'MEDIAN',
+  'MODE',
+  'STDEV',
+  'STDEVA',
+  'STDEVP',
+  'STDEV.S',
+  'STDEV.P',
+  'VAR',
+  'VARA',
+  'VARP',
+  'VAR.S',
+  'VAR.P',
+  'AND',
+  'OR',
+  'XOR',
+]);
+
 /** True for a node that is already a value: a number, a text, TRUE or FALSE, an error, an array, or a minus number. */
 function isLiteral(node: Node): boolean {
   if (LITERALS.has(node.type)) return true;
@@ -56,7 +90,7 @@ function partsOf(node: Node): Node[] {
       // LAMBDA and LET keep their parts as written.
       const name = node.name.toUpperCase();
       if (node.callee || ['LAMBDA', 'LET'].includes(name)) return [];
-      const keepsRefs = REFERENCE_FUNCTIONS.has(name);
+      const keepsRefs = REFERENCE_FUNCTIONS.has(name) || AGGREGATE_FUNCTIONS.has(name);
       return node.args.filter((arg) => !isRange(arg) && !(keepsRefs && isReference(arg)));
     }
     default:

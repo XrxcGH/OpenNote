@@ -54,14 +54,44 @@ export function outlineKey(text: string | null): string | null {
     .join('|');
 }
 
-/** Tells the plugin the bar's formula (null when the bar's entry lets go), so the grid outlines its references. */
-export function showBarFormula(view: EditorView, text: string | null): void {
+/** The bar text each view still has to show, and the frame that will show it. */
+const pending = new WeakMap<EditorView, { text: string; frame: number }>();
+
+/** Puts the bar's text in the table's state now, unless the outlines would stay as they are. */
+function dispatchBar(view: EditorView, text: string | null): void {
   if (view.isDestroyed) return;
   // Most keys leave the references as they were, so no outline changes: skip the table's transaction, which on a
   // large table costs more than a frame.
   const old = formulaRefsKey.getState(view.state)?.bar ?? null;
   if (old !== null && text !== null && outlineKey(old) === outlineKey(text)) return;
+  if (old === null && text === null) return;
   view.dispatch(view.state.tr.setMeta(formulaRefsKey, { bar: text } satisfies RefsMeta).setMeta('addToHistory', false));
+}
+
+/**
+ * Tells the plugin the bar's formula (null when the bar's entry lets go), so the grid outlines its references. A key
+ * typed in the bar only asks for the outlines: they are drawn once in the next animation frame, off the key handler,
+ * so fast typing on a large table draws once per frame. Letting go clears them at once.
+ */
+export function showBarFormula(view: EditorView, text: string | null): void {
+  if (view.isDestroyed) return;
+  const waiting = pending.get(view);
+  if (text === null) {
+    if (waiting) cancelAnimationFrame(waiting.frame);
+    pending.delete(view);
+    dispatchBar(view, null);
+    return;
+  }
+  if (waiting) {
+    waiting.text = text;
+    return;
+  }
+  const frame = requestAnimationFrame(() => {
+    const now = pending.get(view);
+    pending.delete(view);
+    if (now) dispatchBar(view, now.text);
+  });
+  pending.set(view, { text, frame });
 }
 
 /** The cell with the caret, its text, and the caret's place in the text, when the caret is in a cell. */
@@ -76,6 +106,33 @@ function editedCell(state: EditorState): { at: GridCell; from: number; text: str
   return { at, from, text, offset: state.selection.head - from };
 }
 
+type Box = { top: number; left: number; bottom: number; right: number };
+
+/**
+ * Visits the cells on the edge of a reference's box that lie inside the table, with the box's edges each one draws.
+ * Only edge cells show an outline, so a cell inside the box is skipped. The loops stay inside the table, so a hostile
+ * box such as A1:ZZZ9999999 costs no more than the table's own edge. `visit` returns false to stop.
+ */
+export function visitEdgeCells(
+  box: Box,
+  rowLength: (row: number) => number,
+  rows: number,
+  visit: (row: number, column: number, edges: string) => boolean,
+): void {
+  const bottom = Math.min(box.bottom, rows - 1);
+  for (let r = box.top; r <= bottom; r += 1) {
+    const right = Math.min(box.right, rowLength(r) - 1);
+    if (right < box.left) continue;
+    const full = r === box.top || r === box.bottom;
+    // A row between the top and the bottom only has its two side cells on the edge.
+    const step = full ? 1 : Math.max(1, box.right - box.left);
+    for (let c = box.left; c <= right; c += step) {
+      const edges = `${r === box.top ? 't' : ''}${c === box.right ? 'r' : ''}${r === box.bottom ? 'b' : ''}${c === box.left ? 'l' : ''}`;
+      if (!visit(r, c, edges)) return;
+    }
+  }
+}
+
 /** The outlines of a formula's references on the table's cells. */
 function outlinesOf(state: EditorState, text: string | null): DecorationSet {
   if (!text?.startsWith('=')) return DecorationSet.empty;
@@ -86,14 +143,17 @@ function outlinesOf(state: EditorState, text: string | null): DecorationSet {
   const decorations: Decoration[] = [];
   const done = new Set<number>();
   for (const { token, color } of refs) {
+    if (done.size >= OUTLINE_CAP) break;
     const box = refCells(token, header);
     if (!box) continue;
-    for (let r = box.top; r <= box.bottom && r < grid.length; r += 1) {
-      for (let c = box.left; c <= box.right; c += 1) {
+    visitEdgeCells(
+      box,
+      (r) => grid[r]?.length ?? 0,
+      grid.length,
+      (r, c, edges) => {
         const placed = grid[r]?.[c];
-        if (!placed || done.has(placed.pos) || done.size >= OUTLINE_CAP) continue;
+        if (!placed || done.has(placed.pos)) return true;
         done.add(placed.pos);
-        const edges = `${r === box.top ? 't' : ''}${c === box.right ? 'r' : ''}${r === box.bottom ? 'b' : ''}${c === box.left ? 'l' : ''}`;
         decorations.push(
           Decoration.node(placed.pos, placed.pos + placed.node.nodeSize, {
             class: styles.refCell ?? '',
@@ -101,8 +161,9 @@ function outlinesOf(state: EditorState, text: string | null): DecorationSet {
             'data-formula-ref-edges': edges,
           }),
         );
-      }
-    }
+        return done.size < OUTLINE_CAP;
+      },
+    );
   }
   return DecorationSet.create(state.doc, decorations);
 }
