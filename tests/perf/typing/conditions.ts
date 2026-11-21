@@ -200,7 +200,7 @@ const inNote = (caret: Caret) => async (page: Page) => placeCaret(page, await lo
  */
 const inStudio = (consoleLines: number) => async (page: Page) => {
   await atEndOfNote(page);
-  const palette = page.getByRole('combobox').first();
+  const palette = page.getByRole('combobox', { name: 'Search commands and pages' });
   await expect(async () => {
     if (!(await palette.isVisible())) await page.keyboard.press('Control+k');
     await expect(palette).toBeFocused({ timeout: 2000 });
