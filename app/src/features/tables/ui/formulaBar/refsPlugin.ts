@@ -9,7 +9,7 @@ import type { EditorView } from '@tiptap/pm/view';
 import { cellOfPos, cellsOf, hasHeader, textRange } from '../../keys/state';
 import type { GridCell } from '../../keys/grid';
 import { canPick, coloredRefs, cycleAnchor, gridRange, insertRef, refCells } from './refs';
-import { scanFormula } from './scan';
+import { refKey, scanFormula } from './scan';
 import styles from './formulaBar.module.css';
 
 /** At most this many cells get an outline, so a reference to a whole large table stays cheap. */
@@ -45,9 +45,22 @@ export function setBarPicker(view: EditorView, picker: BarPicker | null): void {
   else pickers.delete(view);
 }
 
+/** What the outlines of a bar text depend on: its references and their colors. Null when the bar lets go. */
+export function outlineKey(text: string | null): string | null {
+  if (text === null) return null;
+  if (!text.startsWith('=')) return '';
+  return coloredRefs(scanFormula(text))
+    .map(({ token, color }) => `${refKey(token)}#${color}`)
+    .join('|');
+}
+
 /** Tells the plugin the bar's formula (null when the bar's entry lets go), so the grid outlines its references. */
 export function showBarFormula(view: EditorView, text: string | null): void {
   if (view.isDestroyed) return;
+  // Most keys leave the references as they were, so no outline changes: skip the table's transaction, which on a
+  // large table costs more than a frame.
+  const old = formulaRefsKey.getState(view.state)?.bar ?? null;
+  if (old !== null && text !== null && outlineKey(old) === outlineKey(text)) return;
   view.dispatch(view.state.tr.setMeta(formulaRefsKey, { bar: text } satisfies RefsMeta).setMeta('addToHistory', false));
 }
 
