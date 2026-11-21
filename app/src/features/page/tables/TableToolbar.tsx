@@ -25,6 +25,10 @@ import styles from './tables.module.css';
 const CellFormatBar = lazy(async () => ({
   default: (await (await import('../../tables')).loadCellFormatBar()).CellFormatBar,
 }));
+/** The formula bar (tables:formula-bar) loads the same way, under the cell format bar. */
+const FormulaBar = lazy(async () => ({
+  default: (await (await import('../../tables')).loadFormulaBar()).FormulaBar,
+}));
 
 export interface TableToolbarProps {
   /** The table block's ID, which the cell format bar uses to find the block's data. */
@@ -258,6 +262,7 @@ export function TableToolbar(props: TableToolbarProps) {
       {block ? (
         <Suspense fallback={null}>
           <CellFormatBar block={block} />
+          <FormulaBar block={block} />
         </Suspense>
       ) : null}
       {widthOpen ? <WidthField width={width} close={closeWidth} /> : null}
