@@ -7445,6 +7445,20 @@
       "flag": "tables.sheetWrites"
     },
     {
+      "id": "table.sheet.drawBorder",
+      "title": "Draw border",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.sheet.eraseBorder",
+      "title": "Erase border",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
       "id": "theme.toggle",
       "title": "Toggle dark mode",
       "category": "appearance",

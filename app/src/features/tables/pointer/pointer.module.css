@@ -1,0 +1,126 @@
+/*
+ * The pointer layer of a table: the fill handle, the touch selection handles, the preview of a fill, and the menu
+ * after a drop. The layer sits in the table's scroller and scrolls with the cells. Only the handles take pointer
+ * events. The drawn handle is 8 px; its hit area is a chrome target (44 px at touch density).
+ */
+@layer components {
+  .layer {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    inline-size: 0;
+    block-size: 0;
+    pointer-events: none;
+    z-index: var(--layer-page-chrome);
+  }
+
+  .fill,
+  .start,
+  .end {
+    position: absolute;
+    display: grid;
+    place-items: center;
+    inline-size: var(--size-chrome-hit);
+    block-size: var(--size-chrome-hit);
+    margin: calc(var(--size-chrome-hit) / -2) 0 0 calc(var(--size-chrome-hit) / -2);
+    pointer-events: auto;
+    touch-action: none;
+  }
+
+  :root[data-density='touch'] :is(.fill, .start, .end),
+  .layer[data-touch] :is(.fill, .start, .end) {
+    inline-size: var(--size-chrome-hit-touch);
+    block-size: var(--size-chrome-hit-touch);
+    margin: calc(var(--size-chrome-hit-touch) / -2) 0 0 calc(var(--size-chrome-hit-touch) / -2);
+  }
+
+  .fill {
+    cursor: crosshair;
+  }
+
+  .fill::after {
+    content: '';
+    inline-size: 8px;
+    block-size: 8px;
+    background: var(--color-accent-primary);
+    border: 1px solid var(--color-surface-page);
+    box-sizing: border-box;
+  }
+
+  .start,
+  .end {
+    cursor: grab;
+  }
+
+  .start::after,
+  .end::after {
+    content: '';
+    inline-size: 14px;
+    block-size: 14px;
+    border-radius: 50%;
+    background: var(--color-accent-primary);
+    border: 2px solid var(--color-surface-page);
+    box-sizing: border-box;
+  }
+
+  .preview {
+    position: absolute;
+    border: 2px dashed var(--color-accent-primary);
+    box-sizing: border-box;
+    pointer-events: none;
+  }
+
+  .menu {
+    position: absolute;
+    display: grid;
+    min-inline-size: 12rem;
+    padding: var(--space-1);
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-md);
+    pointer-events: auto;
+    z-index: var(--layer-dropdown);
+  }
+
+  .menu button {
+    min-block-size: var(--size-chrome-hit);
+    padding: var(--space-1) var(--space-3);
+    border: 0;
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--color-text-primary);
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+  }
+
+  :root[data-density='touch'] .menu button {
+    min-block-size: var(--size-chrome-hit-touch);
+  }
+
+  .menu button:hover {
+    background: var(--color-surface-hover);
+  }
+
+  .menu button[aria-checked='true'] {
+    font-weight: 600;
+  }
+
+  /* Draw border and Erase border: a crosshair over the table while the mode is on. */
+  :global([data-border-mode]) :global(table) {
+    cursor: crosshair;
+  }
+
+  @media (forced-colors: active) {
+    .fill::after,
+    .start::after,
+    .end::after {
+      background: Highlight;
+      border-color: Canvas;
+    }
+
+    .preview {
+      border-color: Highlight;
+    }
+  }
+}

@@ -25,6 +25,7 @@ export { readingLock } from './qol/stores';
 export type { TableExtraDef, TableExtraHandle, TableExtraHost } from './tables/extras';
 /** What features add to a table block, such as the spreadsheet keys (a light module). */
 export { tableExtras } from './tables/extras';
+export { requestContextMenu } from './viewport/menuRequests';
 /** The table the table commands act on now. */
 export { currentTable } from './tables/current';
 export type { TableHandle } from './tables/current';
