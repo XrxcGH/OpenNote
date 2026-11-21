@@ -1,6 +1,7 @@
 // What shows under the entry while a formula is typed: the autocomplete list, or the argument hint of the function
 // the caret is in, with the current argument in bold and its description below.
 import { t } from '../../../../strings/t';
+import { VisuallyHidden } from '../../../../ui/VisuallyHidden';
 import type { Completion } from './complete';
 import type { Hint } from './complete';
 import { fnInfo, hintParts, specOf } from './functions';
@@ -32,8 +33,12 @@ export function SuggestList({ id, completion, selected, choose }: SuggestListPro
           >
             <span>{item.label}</span>
             <span className={styles.detail}>
-              {t(`sheetFormula.kinds.${item.kind}`)}
-              {item.detail ? `: ${item.detail}` : ''}
+              {item.detail
+                ? t('sheetFormula.kinds.withDetail', {
+                    kind: t(`sheetFormula.kinds.${item.kind}`),
+                    detail: item.detail,
+                  })
+                : t(`sheetFormula.kinds.${item.kind}`)}
             </span>
           </li>
         ))}
@@ -52,15 +57,25 @@ export function HintLine({ id, hint }: { id: string; hint: Hint }) {
     const label = part.optional ? `[${part.name}]` : part.name;
     return (
       <span key={`${part.name}:${i}`}>
-        {i > 0 ? ', ' : ''}
-        {i === hint.part ? <strong data-current-arg="">{label}</strong> : label}
-        {part.repeat && i === parts.length - 1 ? ', ...' : ''}
+        {i > 0 ? t('sheetFormula.hint.between') : ''}
+        {i === hint.part ? (
+          <>
+            <strong data-current-arg="" aria-hidden="true">
+              {label}
+            </strong>
+            <VisuallyHidden>{t('sheetFormula.hint.current', { name: label })}</VisuallyHidden>
+          </>
+        ) : (
+          label
+        )}
+        {part.repeat && i === parts.length - 1 ? t('sheetFormula.hint.more') : ''}
       </span>
     );
   });
   return (
-    <div className={styles.popup} id={id} role="tooltip" aria-label={t('sheetFormula.bar.label')}>
-      <div className={styles.hint} aria-label={t('sheetFormula.hint.label', { name: spec.name })}>
+    // No aria-label here: the entry's description is the hint's own text: the signature with the current argument.
+    <div className={styles.popup} id={id} role="tooltip">
+      <div className={styles.hint}>
         {spec.name}({items})
       </div>
       {current && info?.args[current.name] ? <div className={styles.detail}>{info.args[current.name]}</div> : null}

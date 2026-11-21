@@ -245,6 +245,23 @@
     border-inline-start-color: var(--ref-color);
   }
 
+  /*
+   * Forced colors turn every border, even a transparent one, to the text color, and drop backgrounds. The outline
+   * keeps its own colors: only the outer edges of a reference show, in Highlight. The matched bracket gets an outline.
+   */
+  @media (forced-colors: active) {
+    .refCell,
+    .refCell[data-formula-ref] {
+      --ref-color: Highlight;
+    }
+    .refCell::after {
+      forced-color-adjust: none;
+    }
+    .bracket {
+      outline: 2px solid Highlight;
+    }
+  }
+
   /* The fields of the bar's dialogs take the full width of the dialog. */
   .field {
     inline-size: 100%;

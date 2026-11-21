@@ -3,7 +3,7 @@
 // entry back to the cell and selecting a range from the name box go through the same editor.
 import { Fragment } from '@tiptap/pm/model';
 import type { Node as PMNode } from '@tiptap/pm/model';
-import type { EditorState } from '@tiptap/pm/state';
+import type { EditorState, Transaction } from '@tiptap/pm/state';
 import { CellSelection } from '@tiptap/pm/tables';
 import type { EditorView } from '@tiptap/pm/view';
 import { useCallback, useRef, useSyncExternalStore } from 'react';
@@ -24,6 +24,7 @@ import { isError } from '../../engine/values';
 import { namesOf, readSheet } from '../../sheet/model';
 import { bookFor } from '../../smart/book';
 import type { BoxName, GridBox } from './nameBox';
+import { formulaRefsKey } from './refsPlugin';
 
 export interface Active {
   /** The active cell, in grid cells (the header row counted). */
@@ -56,7 +57,9 @@ function errorAt(host: TableExtraHost, col: number, row: number): string | null 
   if (row < 0) return null;
   const book = bookFor(host.page);
   const member = book.ordered().find((one) => one.element === host.element);
-  const value = member ? book.calculateNow(member)?.rows[row]?.cells[col]?.value : undefined;
+  // A large page goes to the worker, so calculateNow has no answer for it: the worker's last results explain it.
+  const table = member ? (book.calculateNow(member) ?? book.lastCalculated(member)) : null;
+  const value = table?.rows[row]?.cells[col]?.value;
   return value !== undefined && isError(value) ? value.error : null;
 }
 
@@ -87,13 +90,28 @@ export function readActive(host: TableExtraHost): Active | null {
   return host.editor.isDestroyed ? null : activeOf(host.editor.state, host);
 }
 
+/** True for a transaction that only tells the table the bar's text, so the active cell cannot change. */
+export function barTextOnly(tr: Transaction): boolean {
+  const meta = tr.getMeta(formulaRefsKey) as { bar?: unknown } | undefined;
+  return meta !== undefined && 'bar' in meta && !tr.docChanged && !tr.selectionSet && !tr.getMeta(sheetKeysKey);
+}
+
 /** The active cell, following the table's editor. */
 export function useActive(host: TableExtraHost): Active | null {
   const cache = useRef<{ state: EditorState | null; value: Active | null }>({ state: null, value: null });
   const subscribe = useCallback(
     (changed: () => void) => {
-      host.editor.on('transaction', changed);
-      return () => void host.editor.off('transaction', changed);
+      const onTransaction = ({ transaction }: { transaction: Transaction }) => {
+        // Each key typed in the bar tells the table its text (showBarFormula). That changes no cell, selection, or
+        // grid state, so the active cell stays as it was: keep it, as working it out again reads the whole grid.
+        if (barTextOnly(transaction) && cache.current.state?.doc === transaction.before) {
+          cache.current = { state: host.editor.state, value: cache.current.value };
+          return;
+        }
+        changed();
+      };
+      host.editor.on('transaction', onTransaction);
+      return () => void host.editor.off('transaction', onTransaction);
     },
     [host],
   );

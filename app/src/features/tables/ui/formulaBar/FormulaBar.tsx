@@ -5,7 +5,7 @@
 import { CalculatorIcon } from '@phosphor-icons/react/dist/csr/Calculator';
 import { FunctionIcon } from '@phosphor-icons/react/dist/csr/Function';
 import { TagIcon } from '@phosphor-icons/react/dist/csr/Tag';
-import { useId, useRef, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from 'react';
 import type { KeyboardEvent, ReactElement, RefObject } from 'react';
 import { useSettings } from '../../../../state/settings';
 import { t } from '../../../../strings/t';
@@ -13,6 +13,7 @@ import { IconButton } from '../../../../ui';
 import type { TableExtraHost } from '../../../page';
 import { hostOfBlock, hostsVersion, subscribeHosts } from '../toolbar/hosts';
 import { ErrorButton } from './ErrorButton';
+import { addBar } from './insertCommand';
 import { Mirror } from './Mirror';
 import { nameBoxText, readNameBox } from './nameBox';
 import { HintLine, SuggestList } from './Popups';
@@ -156,7 +157,8 @@ function EntryField({ entry, active, field, held }: EntryFieldProps) {
         }}
         onChange={(event) => {
           const cell = entry.draft?.cell ?? active;
-          if (cell) entry.update({ cell, text: event.currentTarget.value, caret: event.currentTarget.selectionStart }, true);
+          if (cell)
+            entry.update({ cell, text: event.currentTarget.value, caret: event.currentTarget.selectionStart }, true);
         }}
         onSelect={(event) => entry.moveCaret(event.currentTarget.selectionStart)}
         onKeyDown={entry.onKeyDown}
@@ -176,10 +178,12 @@ function Bar({ host }: { host: TableExtraHost }) {
   const active = useActive(host);
   const field = useRef<HTMLTextAreaElement>(null);
   const [dialog, setDialog] = useState<null | { View: DialogView }>(null);
-  const open = (name: DialogName) => {
+  const open = useCallback((name: DialogName) => {
     void DIALOGS[name]().then((module) => setDialog({ View: module.default as DialogView }));
-  };
+  }, []);
   const entry = useEntry(host, active, field, () => open('insert'));
+  // Shift+F3 in a cell of this table (the table.insertFunction command) opens Insert function here.
+  useEffect(() => addBar({ host, insert: () => open('insert') }), [host, open]);
   const refocus = () => requestAnimationFrame(() => field.current?.focus());
   return (
     <div className={styles.bar} role="group" aria-label={t('sheetFormula.bar.label')} data-formula-bar="">

@@ -21,4 +21,8 @@ describe('Insert function', () => {
     expect(insertCall('', 0, 'SUM')).toEqual({ text: '=SUM(', caret: 5 });
     expect(insertCall('=1+', 3, 'ABS')).toEqual({ text: '=1+ABS(', caret: 7 });
   });
+
+  it('starts a new formula in a cell that holds a text, in place of the text', () => {
+    expect(insertCall('Pen', 3, 'SUM')).toEqual({ text: '=SUM(', caret: 5 });
+  });
 });

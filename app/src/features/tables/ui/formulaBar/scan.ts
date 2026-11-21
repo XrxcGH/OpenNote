@@ -2,6 +2,7 @@
 // bar colors, completes, and hints text that is half written, so this scanner never fails: what it cannot read
 // becomes an 'other' token. It finds functions, names, references (with a table and a range), numbers, text, errors,
 // operators, brackets, and separators, each with its place in the text.
+import { appLocale } from '../../smart/locale';
 
 export type TokenKind =
   | 'equals'
@@ -42,8 +43,13 @@ export interface Token {
 }
 
 export interface ScanOptions {
-  /** The argument separator people type: "," or ";". */
+  /** The argument separator people type: "," or ";". The person's region gives it when left out. */
   separator?: ',' | ';';
+}
+
+/** The argument separator of the person's region: ";" where the decimal mark is a comma, else ",". */
+export function formulaSeparator(): ',' | ';' {
+  return appLocale().list;
 }
 
 const ERRORS =
@@ -196,7 +202,7 @@ const READERS: readonly Reader[] = [readSpace, readString, readQuoted, readError
 
 /** Splits formula text into tokens that cover it exactly, never failing. */
 export function scanFormula(text: string, options: ScanOptions = {}): Token[] {
-  const separator = options.separator ?? ',';
+  const separator = options.separator ?? formulaSeparator();
   const tokens: Token[] = text.startsWith('=') ? [{ kind: 'equals', start: 0, end: 1, text: '=' }] : [];
   let i = tokens.length;
   while (i < text.length) {

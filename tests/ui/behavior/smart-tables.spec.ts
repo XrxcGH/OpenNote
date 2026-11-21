@@ -207,6 +207,45 @@ test('keeps a 15,000-cell table with sheet writes on within the typing budget at
   expect(p95(calculate)).toBeLessThanOrEqual(120 * scale);
 });
 
+test('keeps typing in the formula bar of a 15,000-cell table within 16 ms a key at the 95th percentile', async ({
+  page,
+}) => {
+  test.slow();
+  await page.addInitScript(() => {
+    const durations: number[] = [];
+    (window as unknown as { __durations: number[] }).__durations = durations;
+    new PerformanceObserver((list) => {
+      for (const entry of list.getEntries()) if (entry.name === 'keydown') durations.push(entry.duration);
+    }).observe({ type: 'event', durationThreshold: 16, buffered: true } as PerformanceObserverInit);
+  });
+  await openSmart(page, 'largeSheetTable');
+  await expect(shown(page, 1, 9)).toHaveAttribute('data-shown', '1', { timeout: 60_000 });
+  const entry = page.getByRole('textbox', { name: 'Contents of the active cell' });
+  await expect(async () => {
+    await shown(page, 1, 0).click();
+    await expect(entry).toBeVisible({ timeout: 2000 });
+  }).toPass({ timeout: 30_000 });
+  await entry.click();
+  await page.keyboard.press('Control+a');
+  await page.keyboard.type('=SUM(');
+  await page.waitForTimeout(500);
+  await page.evaluate(() => (window as unknown as { __durations: number[] }).__durations.splice(0));
+  const samples = 30;
+  for (let i = 0; i < samples; i += 1) {
+    await page.keyboard.press(String(i % 10));
+    await page.waitForTimeout(120);
+  }
+  await page.waitForTimeout(300);
+  const durations = await page.evaluate(() => (window as unknown as { __durations: number[] }).__durations);
+  // Key presses under the 16 ms threshold are not reported: they count as fast.
+  const paints = [...durations, ...Array.from({ length: Math.max(0, samples - durations.length) }, () => 0)];
+  const p95 = [...paints].sort((a, b) => a - b)[Math.ceil(paints.length * 0.95) - 1]!;
+  test.info().annotations.push({ type: 'p95', description: `bar key to paint ${p95.toFixed(1)} ms` });
+  // The draft stays in the bar: the grid is not written until Enter, so a key costs the bar, not the table.
+  expect(p95).toBeLessThanOrEqual(16 * (await slowness(page)));
+  await page.keyboard.press('Escape');
+});
+
 test('sorts a column and puts the rows back with undo', async ({ page }) => {
   await openSmart(page);
   await fillSales(page);

@@ -5,7 +5,7 @@ import { t } from '../../../../strings/t';
 import { originSentence } from '../../engine/formula/explain';
 import type { ErrorOrigin, OriginCell } from '../../engine/formula/explain';
 import type { Scalar } from '../../engine/values';
-import { scanFormula } from './scan';
+import { formulaSeparator, scanFormula } from './scan';
 
 /** t() for a key made at run time, from the sentence keys the engine names (OriginSentence). */
 const say = t as unknown as (key: string, values: Record<string, unknown>) => string;
@@ -13,7 +13,7 @@ const say = t as unknown as (key: string, values: Record<string, unknown>) => st
 const LOOKUPS = new Set(['VLOOKUP', 'HLOOKUP', 'LOOKUP', 'MATCH', 'XLOOKUP', 'XMATCH']);
 
 /** The text of each argument of the call that spans `start` to `end` in `formula` (without "="). */
-export function callArgs(formula: string, start: number, end: number, separator: ',' | ';' = ','): string[] {
+export function callArgs(formula: string, start: number, end: number, separator = formulaSeparator()): string[] {
   const call = formula.slice(start, end);
   const tokens = scanFormula(call, { separator });
   const args: string[] = [];

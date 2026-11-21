@@ -43,11 +43,16 @@ export function searchFunctions(query: string, family: Family | null = null): Fn
   return scored.sort((a, b) => a.score - b.score || a.info.name.localeCompare(b.info.name)).map((s) => s.info);
 }
 
-/** The text the dialog inserts at the caret: the function's name and an opening bracket, after "=" in an empty cell. */
+/**
+ * The text the dialog inserts: the function's name and an opening bracket at the caret of a formula. A cell that holds
+ * no formula (empty, or a value such as a text) starts a new formula, "=NAME(", in place of its contents.
+ */
 export function insertCall(text: string, caret: number, name: string): { text: string; caret: number } {
-  const lead = text.trim() === '' ? '=' : '';
-  const before = lead ? '' : text.slice(0, caret);
-  const after = lead ? '' : text.slice(caret);
-  const call = `${lead}${name}(`;
-  return { text: before + call + after, caret: before.length + call.length };
+  if (!text.trimStart().startsWith('=')) {
+    const call = `=${name}(`;
+    return { text: call, caret: call.length };
+  }
+  const before = text.slice(0, caret);
+  const call = `${name}(`;
+  return { text: before + call + text.slice(caret), caret: before.length + call.length };
 }

@@ -7,22 +7,25 @@ export const sheetFormula = {
     label: 'Formula bar',
     nameBox: 'Name box',
     entry: 'Contents of the active cell',
-    expand: 'Show more lines',
-    collapse: 'Show one line',
     insertFunction: 'Insert function (Shift+F3)',
     names: 'Name manager',
     evaluate: 'Evaluate formula',
-    cancel: 'Cancel (Esc)',
-    enter: 'Enter (Enter)',
     suggestions: 'Suggestions',
     notFound: '{text} is not a cell, a range, or a name in this table.',
     picked: '{ref} added to the formula.',
   },
   hint: {
-    label: 'Arguments of {name}',
+    /** Read after the argument the caret is on; the bold type shows it on screen. */
+    current: '{name}, current argument',
+    /** Between two arguments of the hint. */
+    between: ', ',
+    /** After the last argument when more of the same may follow. */
+    more: ', ...',
     optional: '{name} may be left out.',
   },
   kinds: {
+    /** A suggestion's kind and what it holds, such as "Name: =0.0825". */
+    withDetail: '{kind}: {detail}',
     function: 'Function',
     name: 'Name',
     table: 'Table',

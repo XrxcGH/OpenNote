@@ -2,7 +2,7 @@
 // insert one. Each distinct reference takes the next of the reference colors in the order it first appears, and the
 // grid outlines its cells in the same color, as spreadsheets do.
 import type { CellRef, Token } from './scan';
-import { cellText, refKey, scanFormula, solidBefore } from './scan';
+import { cellText, formulaSeparator, refKey, scanFormula, solidBefore } from './scan';
 
 /** How many reference colors there are. The seventh distinct reference takes the first color again. */
 export const REF_COLORS = 6;
@@ -54,7 +54,7 @@ export interface Edited {
 }
 
 /** F4: cycles the "$" marks of the reference at the caret. Null when the formula has no reference there. */
-export function cycleAnchor(text: string, caret: number, separator: ',' | ';' = ','): Edited | null {
+export function cycleAnchor(text: string, caret: number, separator = formulaSeparator()): Edited | null {
   const token = refAtCaret(scanFormula(text, { separator }), caret);
   if (!token?.first) return null;
   const first = nextAnchor(token.first);
@@ -68,7 +68,7 @@ export function cycleAnchor(text: string, caret: number, separator: ',' | ';' = 
  * True when a click on the grid should insert a reference at the caret: the text is a formula and the caret follows
  * "=", an operator, an opening bracket, or a separator.
  */
-export function canPick(text: string, caret: number, separator: ',' | ';' = ','): boolean {
+export function canPick(text: string, caret: number, separator = formulaSeparator()): boolean {
   if (!text.startsWith('=') || caret < 1) return false;
   const tokens = scanFormula(text, { separator });
   const before = solidBefore(tokens, caret);

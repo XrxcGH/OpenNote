@@ -96,3 +96,29 @@ test('defines TaxRate = 0.0825 for the page, and =100*TaxRate in the other table
   await enterInBar(page, '=100*TaxRate');
   await expect(cell(page, 1, 1, 1)).toHaveAttribute('data-shown', '8.25', { timeout: 10_000 });
 });
+
+test('opens Insert function with Shift+F3 from a cell, not only from the bar', async ({ page }) => {
+  await activate(page, 1, 3);
+  const before = await cell(page, 1, 3).innerText();
+  await page.keyboard.press('Shift+F3');
+  await expect(page.getByRole('dialog', { name: 'Insert function' })).toBeVisible();
+  // The text program's Change case did not run on the cell.
+  await expect(cell(page, 1, 3)).toHaveText(before);
+});
+
+test('outlines only the outer edges of a range in forced colors', async ({ page }) => {
+  await page.emulateMedia({ forcedColors: 'active' });
+  await activate(page, 1, 3);
+  await entry(page).click();
+  await page.keyboard.type('=A1:B2');
+  await expect(cell(page, 1, 0)).toHaveAttribute('data-formula-ref', '1');
+  const edges = (row: number, column: number) =>
+    cell(page, row, column).evaluate((el) => {
+      const style = getComputedStyle(el, '::after');
+      return { left: style.borderLeftColor, right: style.borderRightColor };
+    });
+  const corner = await edges(1, 0);
+  // A1's left edge is the range's outer edge; its right edge is inside the range and stays hidden.
+  expect(corner.right).toBe('rgba(0, 0, 0, 0)');
+  expect(corner.left).not.toBe('rgba(0, 0, 0, 0)');
+});

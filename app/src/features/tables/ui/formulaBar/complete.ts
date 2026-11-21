@@ -2,7 +2,7 @@
 // registry), defined names, tables, and a table's columns after "Table[". The hint names the function the caret is
 // in and which argument it is on.
 import { allFunctions, fnInfo, partOfArg, specOf } from './functions';
-import { scanFormula } from './scan';
+import { formulaSeparator, scanFormula } from './scan';
 import type { Token } from './scan';
 
 export type SuggestionKind = 'function' | 'name' | 'table' | 'column';
@@ -51,7 +51,7 @@ function typedWord(tokens: readonly Token[], caret: number): Token | undefined {
 /** The suggestions for the caret's place in the formula, or null when nothing is being typed there. */
 export function complete(text: string, caret: number, context: CompleteContext = {}): Completion | null {
   if (!text.startsWith('=')) return null;
-  const tokens = scanFormula(text.slice(0, caret), { separator: context.separator ?? ',' });
+  const tokens = scanFormula(text.slice(0, caret), { separator: context.separator ?? formulaSeparator() });
   const last = tokens.at(-1);
   // After "Table[": the table's columns.
   if (last?.kind === 'struct' && !last.text.endsWith(']')) {
@@ -100,7 +100,7 @@ export interface Hint {
 }
 
 /** The function call the caret is inside and the argument it is on, or null outside every known function. */
-export function hintAt(text: string, caret: number, separator: ',' | ';' = ','): Hint | null {
+export function hintAt(text: string, caret: number, separator = formulaSeparator()): Hint | null {
   if (!text.startsWith('=')) return null;
   const tokens = scanFormula(text.slice(0, caret), { separator });
   const stack: { name: string | null; arg: number }[] = [];
