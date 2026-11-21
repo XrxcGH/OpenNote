@@ -1,0 +1,52 @@
+/*
+ * Row edges (DESIGN.md section 12): like column edges, a hit area as tall as a chrome target (32 px with a mouse, 44 px
+ * at touch density), centered on the rule. The area is short across, at the table's left edge, so it leaves the cells'
+ * text free to click.
+ */
+@layer components {
+  .rows {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    inline-size: 0;
+    block-size: 0;
+    pointer-events: none;
+  }
+
+  .edge {
+    position: absolute;
+    inset-inline-start: 0;
+    inline-size: 20px;
+    block-size: var(--size-chrome-hit);
+    margin-block-start: calc(var(--size-chrome-hit) / -2);
+    cursor: row-resize;
+    pointer-events: auto;
+    touch-action: none;
+  }
+
+  :root[data-density='touch'] .edge {
+    block-size: var(--size-chrome-hit-touch);
+    margin-block-start: calc(var(--size-chrome-hit-touch) / -2);
+  }
+
+  .edge::after {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    inset-block-start: calc(50% - 1px);
+    block-size: 2px;
+    background: transparent;
+  }
+
+  .edge:hover::after,
+  .edge[data-dragging]::after {
+    background: var(--color-accent-primary);
+  }
+
+  @media (forced-colors: active) {
+    .edge:hover::after,
+    .edge[data-dragging]::after {
+      background: Highlight;
+    }
+  }
+}

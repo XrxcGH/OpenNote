@@ -1,0 +1,91 @@
+// The pointer in a table (DESIGN.md section 12): the fill handle continues a series, a row edge changes a row's
+// height and a double click fits it, and Draw border and Erase border follow a stroke along the gridlines.
+
+import type { Locator, Page } from '@playwright/test';
+import { expect, test } from '../fixtures';
+import { fillSales, openSmart, runCommand } from './smart';
+
+const cell = (page: Page, row: number, column: number): Locator =>
+  page.locator('table tr').nth(row).locator('td, th').nth(column);
+const inText = (page: Page, row: number, column: number): Locator => cell(page, row, column).locator('p').first();
+
+/** Grid mode on a cell: a click into its text, then Esc, repeated until the cell is selected. */
+async function gridAt(page: Page, row: number, column: number): Promise<void> {
+  await expect(async () => {
+    await inText(page, row, column).click();
+    await page.keyboard.press('Escape');
+    await expect(cell(page, row, column)).toHaveAttribute('aria-selected', 'true', { timeout: 2000 });
+  }).toPass({ timeout: 20_000 });
+}
+
+const center = async (locator: Locator) => {
+  const box = await locator.boundingBox();
+  if (!box) throw new Error('no box');
+  return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+};
+
+test.beforeEach(async ({ page }) => {
+  await openSmart(page);
+  await expect(cell(page, 0, 0)).toHaveAttribute('aria-rowindex', '1', { timeout: 20_000 });
+  await fillSales(page);
+});
+
+/** Drags the fill handle to the middle of a cell. */
+async function dragFill(page: Page, row: number, column: number): Promise<void> {
+  const handle = page.locator('[data-sheet-handle="fill"]');
+  await expect(handle).toBeVisible();
+  const from = await center(handle);
+  const to = await center(cell(page, row, column));
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down();
+  await page.mouse.move(to.x, to.y, { steps: 6 });
+  await page.mouse.up();
+}
+
+test('drags the fill handle down and moves the references of a formula', async ({ page }) => {
+  await gridAt(page, 2, 2);
+  await dragFill(page, 3, 2);
+  await expect(cell(page, 3, 2)).toContainText('=B3*0.6');
+});
+
+test('continues a series from two numbers, and the menu after the drop copies the cells instead', async ({ page }) => {
+  await gridAt(page, 1, 1);
+  await page.keyboard.press('Shift+ArrowDown');
+  await dragFill(page, 3, 1);
+  // 120 and 150 continue as 180.
+  await expect(cell(page, 3, 1)).toHaveText('180');
+  const menu = page.getByRole('menu', { name: 'Fill options' });
+  await expect(menu).toBeVisible();
+  await menu.getByRole('menuitemradio', { name: 'Copy cells' }).click();
+  await expect(cell(page, 3, 1)).toHaveText('120');
+});
+
+test('fits a row with a double click on its edge, and sets its height by dragging', async ({ page }) => {
+  const row = page.locator('table tr').nth(2);
+  const before = (await row.boundingBox())!.height;
+  const edge = page.locator('[data-row="2"]').first();
+  await expect(edge).toBeAttached();
+  const at = await center(edge);
+  await page.mouse.move(at.x, at.y);
+  await page.mouse.down();
+  await page.mouse.move(at.x, at.y + 40, { steps: 5 });
+  await page.mouse.up();
+  await expect.poll(async () => (await row.boundingBox())!.height).toBeGreaterThan(before + 20);
+  await page.locator('[data-row="2"]').first().dblclick();
+  await expect.poll(async () => (await row.boundingBox())!.height).toBeLessThan(before + 10);
+});
+
+test('draws a border along the bottom of a row with a stroke, and erases it', async ({ page }) => {
+  await runCommand(page, 'Draw border');
+  const second = await cell(page, 1, 1).boundingBox();
+  const third = await cell(page, 1, 2).boundingBox();
+  if (!second || !third) throw new Error('no cells');
+  const y = second.y + second.height;
+  await page.mouse.move(second.x + 6, y);
+  await page.mouse.down();
+  await page.mouse.move(third.x + third.width - 6, y, { steps: 8 });
+  await page.mouse.up();
+  await expect(cell(page, 1, 1)).toHaveCSS('border-bottom-style', 'solid');
+  await expect(cell(page, 1, 2)).toHaveCSS('border-bottom-style', 'solid');
+  await page.keyboard.press('Escape');
+});

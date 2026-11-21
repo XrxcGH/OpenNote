@@ -47,6 +47,7 @@ import { currentTable } from '../tables/current';
 import type { TableHandle } from '../tables/current';
 import type { InnerView } from '../tables/lazyView';
 import { attachColumnHandles } from '../tables/columnResize';
+import { attachRowHandles } from '../tables/rowResize';
 import '../tables/commands';
 import { TableToolbar } from '../tables/TableToolbar';
 import tableStyles from '../tables/tables.module.css';
@@ -547,7 +548,31 @@ class TableView implements InnerView {
   private placeHandles(): void {
     this.stopHandles();
     const resize = (column: number, width: number) => this.resize(column, width);
-    this.stopHandles = attachColumnHandles(this.scroller, this.data.columns, this.ctx.viewport, resize);
+    const stopColumns = attachColumnHandles(this.scroller, this.data.columns, this.ctx.viewport, resize, (column) =>
+      this.fitLine({ op: 'fitColumns' }, { row: 0, column }, 'sheetStructure.announce.fitColumns'),
+    );
+    const stopRows = attachRowHandles(
+      this.scroller,
+      this.ctx.viewport,
+      (row, height) =>
+        this.fitLine({ op: 'rowHeight', height, exact: true }, { row, column: 0 }, 'sheetStructure.announce.rowHeight'),
+      (row) => this.fitLine({ op: 'fitRows' }, { row, column: 0 }, 'sheetStructure.announce.fitRows'),
+    );
+    this.stopHandles = () => {
+      stopColumns();
+      stopRows();
+    };
+  }
+
+  /** The end of an edge drag or a double click on one: a size change of one line, coalesced with other resizes. */
+  private async fitLine(op: TableOp, at: { row: number; column: number }, said: MessageKey): Promise<void> {
+    await loadSheetApi();
+    if (this.sync) await this.sync.flush('command');
+    const applied = applyTableOp(this.latest(), at, await this.measured(op), this.sheetData(), this.book());
+    if (!applied) return this.placeHandles();
+    this.show(applied.data, applied.caret);
+    this.ctx.host.announce(t(said));
+    await this.send(applied.data, 'resize', applied.extra, applied.also);
   }
 
   /** The end of a column edge drag: one change, coalesced with other resizes of the table. */
