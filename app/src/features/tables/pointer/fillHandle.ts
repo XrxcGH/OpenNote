@@ -41,6 +41,22 @@ function showPreview(ctx: PointerContext, box: Box | null): void {
   });
 }
 
+/** Arrows move between the choices, and Escape closes the menu and gives the table the focus back. */
+function onMenuKey(ctx: PointerContext, menu: HTMLElement, event: KeyboardEvent, close: () => void): void {
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    close();
+    ctx.view.focus();
+    return;
+  }
+  const step = event.key === 'ArrowDown' ? 1 : event.key === 'ArrowUp' ? -1 : 0;
+  if (!step) return;
+  event.preventDefault();
+  const buttons = Array.from(menu.querySelectorAll('button'));
+  const at = buttons.indexOf(ctx.doc.activeElement as HTMLButtonElement);
+  buttons[(at + step + buttons.length) % buttons.length]?.focus();
+}
+
 /** The menu after a drop. */
 function createMenu(ctx: PointerContext, choose: (drop: FillDrop, mode: FillMode) => void) {
   let menu: HTMLElement | null = null;
@@ -52,14 +68,15 @@ function createMenu(ctx: PointerContext, choose: (drop: FillDrop, mode: FillMode
     close();
     const last = ctx.geo.cellElement({ row: drop.box.bottom, column: drop.box.right });
     if (!last) return;
-    const at = ctx.geo.local(last.getBoundingClientRect());
-    const el = ctx.els.layer.appendChild(ctx.doc.createElement('div'));
+    const at = last.getBoundingClientRect();
+    // In the page, not the table, which clips what hangs below it.
+    const el = ctx.doc.body.appendChild(ctx.doc.createElement('div'));
     menu = el;
     el.className = styles.menu;
     el.setAttribute('role', 'menu');
     el.setAttribute('aria-label', t('sheetPointer.fill.menu'));
-    el.style.left = `${at.right}px`;
-    el.style.top = `${at.bottom + 12}px`;
+    el.style.left = `${Math.max(8, Math.min(at.right, window.innerWidth - 220))}px`;
+    el.style.top = `${at.bottom + 8}px`;
     for (const [id, label] of MODES) {
       const button = el.appendChild(ctx.doc.createElement('button'));
       button.type = 'button';
@@ -68,6 +85,7 @@ function createMenu(ctx: PointerContext, choose: (drop: FillDrop, mode: FillMode
       button.textContent = t(label);
       button.addEventListener('click', () => choose(drop, id));
     }
+    el.addEventListener('keydown', (event) => onMenuKey(ctx, el, event, close));
     el.querySelector('button')?.focus();
   };
   return { open, close, isOpen: () => menu !== null, contains: (node: Node) => menu?.contains(node) ?? false };

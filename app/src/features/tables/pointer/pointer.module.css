@@ -71,7 +71,7 @@
   }
 
   .menu {
-    position: absolute;
+    position: fixed;
     display: grid;
     min-inline-size: 12rem;
     padding: var(--space-1);
@@ -109,6 +109,11 @@
   /* Draw border and Erase border: a crosshair over the table while the mode is on. */
   :global([data-border-mode]) :global(table) {
     cursor: crosshair;
+  }
+
+  /* While a border mode is on, a stroke may start anywhere: the row and column edges step aside. */
+  :global([data-border-mode]) :is(:global([data-row]), :global([data-column])) {
+    pointer-events: none;
   }
 
   @media (forced-colors: active) {

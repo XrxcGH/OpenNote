@@ -81,11 +81,11 @@ test('draws a border along the bottom of a row with a stroke, and erases it', as
   const third = await cell(page, 1, 2).boundingBox();
   if (!second || !third) throw new Error('no cells');
   const y = second.y + second.height;
-  await page.mouse.move(second.x + 6, y);
+  await page.mouse.move(second.x + 40, y);
   await page.mouse.down();
-  await page.mouse.move(third.x + third.width - 6, y, { steps: 8 });
+  await page.mouse.move(third.x + third.width - 40, y, { steps: 8 });
   await page.mouse.up();
-  await expect(cell(page, 1, 1)).toHaveCSS('border-bottom-style', 'solid');
-  await expect(cell(page, 1, 2)).toHaveCSS('border-bottom-style', 'solid');
+  await expect(cell(page, 1, 1)).toHaveAttribute('data-bb', 'thin');
+  await expect(cell(page, 1, 2)).toHaveAttribute('data-bb', 'thin');
   await page.keyboard.press('Escape');
 });

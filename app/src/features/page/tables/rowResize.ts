@@ -1,5 +1,5 @@
 // Dragging a row's bottom edge (DESIGN.md section 12): the same as a column edge. Each edge has a hit area as tall as
-// a chrome target. While dragging, only the row's height changes on screen; letting go applies the height as one
+// a chrome target. While dragging, the edge follows the pointer; letting go applies the height as one
 // change. Double-click or double-tap an edge to fit the row to its content. The Row height field is the keyboard
 // and single-pointer way to do the same, so the edges are hidden from assistive technology.
 import type { PageViewportApi } from '../viewport/viewport';
@@ -26,13 +26,20 @@ export function attachRowHandles(
   layer.className = styles.rows;
   layer.setAttribute('aria-hidden', 'true');
   const stops: (() => void)[] = [];
+  // The rows' heights come from layout, which settles after the table first shows: the edges follow it.
+  const places: (() => void)[] = [];
   Array.from(table.rows).forEach((row, index) => {
     const handle = layer.appendChild(doc.createElement('div'));
     handle.className = styles.edge;
     handle.dataset.row = String(index);
+    // The edge sits at the row's bottom, in the scroller's coordinates, which scroll with the table.
     const place = (height: number) => {
-      handle.style.insetBlockStart = `${table.offsetTop + row.offsetTop + height}px`;
+      const base = host.getBoundingClientRect();
+      const k = (host.offsetWidth > 0 ? base.width / host.offsetWidth : 1) || 1;
+      const top = (row.getBoundingClientRect().top - base.top) / k + host.scrollTop;
+      handle.style.insetBlockStart = `${top + height}px`;
     };
+    places.push(() => place(row.offsetHeight));
     place(row.offsetHeight);
     let lastTap = Number.NEGATIVE_INFINITY;
     const onDown = (event: PointerEvent) => {
@@ -54,7 +61,7 @@ export function attachRowHandles(
       let height = start;
       const onMove = (move: PointerEvent) => {
         height = Math.max(MIN_DRAGGED_HEIGHT, Math.round(start + (move.clientY - startY) / zoom));
-        row.style.height = `${height}px`;
+        // The row itself stays: the editor takes back what is changed inside its cells. The edge shows the new height.
         place(height);
       };
       const onUp = (up: PointerEvent) => {
@@ -81,7 +88,10 @@ export function attachRowHandles(
       handle.removeEventListener('dblclick', onDouble);
     });
   });
+  const resizes = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => places.forEach((go) => go()));
+  resizes?.observe(table);
   return () => {
+    resizes?.disconnect();
     stops.forEach((stop) => stop());
     layer.remove();
   };

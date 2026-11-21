@@ -564,15 +564,17 @@ class TableView implements InnerView {
     };
   }
 
-  /** The end of an edge drag or a double click on one: a size change of one line, coalesced with other resizes. */
+  /** The end of an edge drag or a double click on one: a size change of one line, sent with its sheet settings. */
   private async fitLine(op: TableOp, at: { row: number; column: number }, said: MessageKey): Promise<void> {
     await loadSheetApi();
     if (this.sync) await this.sync.flush('command');
     const applied = applyTableOp(this.latest(), at, await this.measured(op), this.sheetData(), this.book());
     if (!applied) return this.placeHandles();
     this.show(applied.data, applied.caret);
+    // The extras draw from the block's data: the new sheet settings reach them now, as an extra's own write does.
+    if (applied.extra) this.echo(applied.extra);
     this.ctx.host.announce(t(said));
-    await this.send(applied.data, 'resize', applied.extra, applied.also);
+    await this.send(applied.data, undefined, applied.extra, applied.also);
   }
 
   /** The end of a column edge drag: one change, coalesced with other resizes of the table. */

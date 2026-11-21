@@ -2,6 +2,7 @@
 // press, and the Draw border and Erase border strokes. It draws in the table's scroller, so it scrolls with the
 // cells. It needs a layout: the actions it calls (actions.ts) are tested directly, and the gestures by a test that
 // stubs the layout and by the UI spec.
+import { CellSelection } from '@tiptap/pm/tables';
 import type { EditorView } from '@tiptap/pm/view';
 import type { TableExtraHost } from '../../page';
 import { gridOf, keysOn, sheetKeysKey } from '../keys/state';
@@ -21,12 +22,14 @@ export interface PointerLayer {
 function createElements(doc: Document, scroller: HTMLElement): Elements {
   const layer = scroller.appendChild(doc.createElement('div'));
   layer.className = styles.layer;
-  layer.setAttribute('aria-hidden', 'true');
+  // The handles are for the pointer: each has a keyboard way (Ctrl+D, Shift+arrows), so they are hidden from
+  // assistive technology one by one. The menu after a drop is not.
   const make = (className: string, handle: string): HTMLElement => {
     const el = layer.appendChild(doc.createElement('div'));
     el.className = className;
     el.dataset.sheetHandle = handle;
     el.hidden = true;
+    el.setAttribute('aria-hidden', 'true');
     return el;
   };
   // The selection handles come first, so the fill handle paints over them where they overlap.
@@ -36,6 +39,7 @@ function createElements(doc: Document, scroller: HTMLElement): Elements {
   const preview = layer.appendChild(doc.createElement('div'));
   preview.className = styles.preview;
   preview.hidden = true;
+  preview.setAttribute('aria-hidden', 'true');
   return { layer, fill, start, end, preview };
 }
 
@@ -47,7 +51,9 @@ const put = (el: HTMLElement, x: number, y: number) => {
 /** Puts the handles at the corners of the range: the fill handle at the last cell, touch handles just outside. */
 function placeHandles(ctx: PointerContext): void {
   const { view, els, geo } = ctx;
-  const g = keysOn(view.state) && sheetKeysKey.getState(view.state)?.focused ? gridOf(view.state) : null;
+  // A caret in a cell has no range to handle, and the check is free: typing in a large table pays nothing here.
+  const ranged = view.state.selection instanceof CellSelection;
+  const g = ranged && keysOn(view.state) && sheetKeysKey.getState(view.state)?.focused ? gridOf(view.state) : null;
   const first = g && geo.cellElement({ row: g.box.top, column: g.box.left });
   const last = g && geo.cellElement({ row: g.box.bottom, column: g.box.right });
   els.fill.hidden = !first || !last;
@@ -89,8 +95,6 @@ export function attachPointerLayer(view: EditorView, host: TableExtraHost): Poin
   view.dom.addEventListener('keydown', onKey, true);
   return {
     update() {
-      // Another selection ends the menu: its choices belong to the fill that was just made.
-      if (fill.isOpen() && !(gridOf(view.state) && keysOn(view.state))) fill.close();
       ctx.place();
     },
     destroy() {
