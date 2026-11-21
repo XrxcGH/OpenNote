@@ -66,32 +66,27 @@ The app registers 1174 commands and 48 tool windows. 24 of the windows are subje
 - **Bundled fonts and device fonts.** Carlito and Caladea stand in for Calibri and Cambria, and load only when a page uses them.
 - **Word import and export.** Import reads styles, themes, lists, notes, comments, and tracked changes into version 2 data.
 - **Shared color palette.** One palette for text and tables: theme colors with tints and shades, standard colors, recent colors per notebook, Automatic, No color, and More colors.
+
 #### Table program foundations
 
 - **Sheet cell styles in tables.** A table keeps cell styles, merges, rules, names, and cached results in data.sheet.
 - **Number format codes.** Format codes with sections, colors, and conditions, regional display, and currency, percent, and date column presets, all computed on the device.
-#### Table formulas and functions
-
 - **Excel-style formulas.** Formulas follow Excel's rules for text, numbers, errors, and dates, with a registry of functions, names, LET and LAMBDA, dynamic arrays that spill, and references across tables.
 - **Logic and information functions.** IFS, SWITCH, XOR, IFNA, the IS functions, CELL, INFO, SHEET, SHEETS, TYPE, and ERROR.TYPE.
 - **Lookup and reference functions.** XLOOKUP and XMATCH with every match and search mode, INDEX, MATCH, and the older lookups.
 - **Array and matrix functions.** FILTER, SORT, SORTBY, UNIQUE, SEQUENCE, RANDARRAY, TAKE, DROP, the stack and wrap functions, TRIMRANGE, MMULT, MINVERSE, and MDETERM.
 - **Statistical functions.** Averages, deviations, ranks, percentiles, the IFS family, distributions with their inverses, tests, regression, and FORECAST.ETS.
 - **Financial functions.** All 55 of Excel's financial functions: loans and savings, cash flows (NPV, IRR, XNPV, XIRR, MIRR), depreciation, and bonds and bills, including the ODD functions.
-#### Table tools and formats
-
 - **Data tools for tables.** Table logic for sorts by value, color, or icon, more filters, remove duplicates, trim spaces, text to columns, and find in a table.
 - **Cell format bar.** A second row under the table tools sets the font, size, text styles, and colors.
 - **Spreadsheet keys in tables.** Grid, Edit, and Enter modes use Excel's keys.
 - **Conditional formatting.** Rules color cells by value, text, date, blank, error, top and bottom, average, duplicate, or formula.
 - **Table styles in page exports.** Word, HTML, and Markdown exports write each table's last results.
+
 #### Code studio program foundations
 
 - **Code studio foundations.** The contracts, settings, flags, and strings for the code studio: projects as a page block, runs, diagnostics, completion, a replay debugger, tests, and runtime packs.
 - **Code editor keys.** Tab indents in the code editor, and Ctrl+Page Down and Ctrl+Page Up change tabs, so the tab bar stays reachable.
-#### Review and sync
-
-- **Comments and suggestions.** New comment covers the selection or the word at the caret.
 - **Code studio window.** A tool window that pops out, with tabs or a file tree, a console, Problems and Tests panels, and a status bar.
 - **Python in code projects.** Quick Python (MicroPython, bundled) and full Python (CPython 3.14 through Pyodide, from a pack) run projects in the run sandbox.
 - **JavaScript and TypeScript runs.** QuickJS runs JavaScript and TypeScript projects (Sucrase removes the types) with relative imports, a seeded Math.random, Node-style console output, and a Jest-compatible test API.
@@ -99,6 +94,10 @@ The app registers 1174 commands and 48 tool windows. 24 of the windows are subje
 - **C and C++ runs.** Clang 22 from the clang pack compiles C (C17) and C++ (C++20) projects to WebAssembly, and a WASI runner runs them in the sandbox.
 - **Error detection in code.** Syntax errors for nine languages, and OpenNote's own checks for Python (Ruff rules), JavaScript and TypeScript (ESLint rules), C, C++, and Lua.
 - **Code completion without a model.** A ranked list from names in scope, members, keywords, snippets, and words in the project, plus one-line ghost text from patterns, and an explicit request key.
+
+#### Review, sync, and shell polish
+
+- **Comments and suggestions.** New comment covers the selection or the word at the caret.
 - **Block-level merge on sync.** When two devices change different blocks of one page, a block type with a merger merges both versions instead of keeping a conflict copy.
 - **Calm shell polish.** Phosphor icons in the command bar, pens back on the bar at 1,280 px, calm pressed and selected states, notebook accent roles, and group dividers.
 
