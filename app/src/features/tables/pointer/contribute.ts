@@ -14,7 +14,12 @@ export const FILL_SERIES_DOWN_COMMAND = 'table.sheet.fillSeriesDown';
 export const FILL_SERIES_RIGHT_COMMAND = 'table.sheet.fillSeriesRight';
 
 /** A Fill series command: the keyboard and palette way to what the fill handle does with a drag (WCAG 2.5.7). */
-const fillSeries = (id: `${string}.${string}`, title: MessageKey, direction: 'down' | 'right', order: number): SheetContribution[] => [
+const fillSeries = (
+  id: `${string}.${string}`,
+  title: MessageKey,
+  direction: 'down' | 'right',
+  order: number,
+): SheetContribution[] => [
   {
     kind: 'command',
     lane: 'pointer',
