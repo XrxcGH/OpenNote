@@ -4,6 +4,21 @@ A smart table holds typed columns, formulas, and several views of the same rows.
 
 ![A smart table with its formula cell selected, showing =B2*0.6, and the bar chart made from it with its summary in words](../screens/table-chart-light.png)
 
+## Contents
+
+- [Make a table](#make-a-table)
+- [Analyze](#analyze)
+- [Formulas](#formulas)
+- [Views](#views)
+- [Charts](#charts)
+- [Take a table out](#take-a-table-out)
+- [Choices](#choices)
+- [Analyze: statistics, regression, and matrices](#analyze-statistics-regression-and-matrices)
+- [Saved views](#saved-views)
+- [Format cells](#format-cells)
+- [Spreadsheet keys](#spreadsheet-keys)
+- [Conditional formatting](#conditional-formatting)
+
 ## Make a table
 
 - Open Insert, then Smart table.
