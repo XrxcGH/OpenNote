@@ -74,7 +74,9 @@ export function detectSource(html: string): PasteSource {
 
 /** A cell's words: each `<br>` starts a line, and any other run of white space is one space. */
 export function plainText(inner: string): string {
-  return markupText(inner)
+  // Text with no markup and no entity reads the same without the parser, which saves a document per cell.
+  const words = /[<&]/.test(inner) || inner.includes('\0') ? markupText(inner) : inner.replace(/\r\n?/g, '\n');
+  return words
     .split('\n')
     .map((line) => line.replace(/[\s\u00a0]+/g, ' ').trim())
     .join('\n')

@@ -1,6 +1,7 @@
 // Paste special (DESIGN 13.7): what to paste, an operation with the cells already there, skip blanks, transpose, and
-// paste link. Ctrl+Alt+V asks; Ctrl+Shift+V pastes values only, which keeps today's rule that pasted text that
-// starts with "=" is never made a formula unless the source cell held one.
+// paste link. Ctrl+Alt+V asks; Ctrl+Shift+V pastes values only. Validation rules do not travel on the clipboard yet,
+// so there is no Validation choice. A table has no text marker, so a pasted value that starts with "=" works as a
+// formula, and the paste announces it.
 
 import type { Clip, ClipCell, ClipSpan } from '../engine/paste/clip';
 
@@ -10,7 +11,6 @@ export type PasteWhat =
   | 'values'
   | 'formats'
   | 'notes'
-  | 'validation'
   | 'widths'
   | 'noBorders'
   | 'valuesAndNumberFormats'
@@ -33,7 +33,6 @@ export const PASTE_WHATS: readonly PasteWhat[] = [
   'values',
   'formats',
   'notes',
-  'validation',
   'widths',
   'noBorders',
   'valuesAndNumberFormats',
@@ -84,8 +83,6 @@ export function partsOf(what: PasteWhat): Parts {
       return { ...none, content: true, style: 'fmt' };
     case 'formulasAndNumberFormats':
       return { ...none, content: true, formulas: true, style: 'fmt' };
-    case 'validation':
-      return none;
   }
 }
 

@@ -55,7 +55,8 @@ function inEditor(mounted: MountedPage, target: EventTarget | null): boolean {
 function ownPaste(mounted: MountedPage, target: EventTarget | null): 'code' | 'table' | null {
   if (target instanceof Element && target.closest('td, th')) return 'table';
   const editor = mounted.pool.active()?.editor;
-  if (editor && inTableCells(editor.state.selection)) return 'table';
+  // The table clipboard (ADR 0067) is a sheet write behind its flag; with it off, today's paste runs.
+  if (editor && mounted.host.flag('tables.sheetWrites') && inTableCells(editor.state.selection)) return 'table';
   return editor?.state.selection.$from.parent.type.name === 'codeBlock' ? 'code' : null;
 }
 
@@ -123,7 +124,7 @@ export function attachPageMedia(mounted: MountedPage, container: HTMLElement, sh
     if (!event.clipboardData || editingTextField(event.target)) return;
     const editor = mounted.pool.active()?.editor;
     // Whole cells copy through the table's own clipboard (tables clipboard, ADR 0067).
-    if (editor && '$anchorCell' in editor.state.selection) return;
+    if (editor && mounted.host.flag('tables.sheetWrites') && '$anchorCell' in editor.state.selection) return;
     if (editor && container.contains(document.activeElement) && editor.view.dom.contains(document.activeElement)) {
       if (!copyText(mounted, event.clipboardData)) return;
       event.preventDefault();

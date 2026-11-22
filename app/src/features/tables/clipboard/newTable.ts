@@ -2,6 +2,7 @@
 // Excel, Google Sheets, LibreOffice, or another OpenNote table, with formulas, number formats, styles, merges, and
 // column widths. The page's paste pipeline calls this through features/page/paste/tables.ts.
 
+import { isEnabled } from '../../../app/flags';
 import type { TableData } from '../../../editor/schema/specs';
 import { DEFAULT_COLUMN_WIDTH } from '../../../editor/schema/specs';
 import { readClip } from '../engine/paste/clip';
@@ -19,9 +20,12 @@ function clipHeader(clip: Clip): boolean {
 
 /**
  * Table data with its sheet (`data.sheet`) from a spreadsheet's clipboard HTML: Excel, Google Sheets, LibreOffice, or
- * an OpenNote table copy. Returns null for any other HTML.
+ * an OpenNote table copy. Returns null for any other HTML, and while `tables.sheetWrites` is off.
  */
 export function spreadsheetTableData(html: string, newId: () => string): (TableData & { sheet?: unknown }) | null {
+  // Styles, merges, and notes are sheet writes, and merges and notes are version 2 content (NEXT-PLAN 3.1). With the
+  // flag off, the page's own table reading runs instead.
+  if (!isEnabled('tables.sheetWrites')) return null;
   const clip = readClip({ html });
   if (!clip || clip.source === 'html' || clip.source === 'delimited') return null;
   const height = clip.rows.length;

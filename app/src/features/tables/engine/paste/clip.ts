@@ -4,7 +4,8 @@
 // Sources, best first:
 // - OpenNote's own form: JSON in the table's `data-opennote-cells` attribute, exact between OpenNote tables.
 // - Google Sheets: `data-sheets-value`, `data-sheets-formula` (already R1C1), `data-sheets-numberformat`, inline CSS.
-// - Excel: `x:num`, `x:bool`, `x:fmla` (A1, read as if the copy began at A1), classes of a style block.
+// - Excel: `x:num`, `x:bool`, `x:fmla`, classes of a style block. Excel's HTML does not say where the copy began, so
+//   an `x:fmla` is kept only when, read from A1, it stays inside the copied box; any other pastes as its value.
 // - LibreOffice: `sdval`, `sdnum`, inline CSS.
 // - Any other HTML table, and tab-separated text.
 // Everything read here is data: text is plain text, styles go through the sheet model's validator, and formulas are
@@ -14,11 +15,17 @@ import type { CellStyle } from '../../sheet/model/types';
 import { validStyle } from '../../sheet/model/styles';
 import { cellDeclarations, cssPoints, dropShared, styleOf, styleRules } from './css';
 import { parseDelimited } from './delimited';
-import { a1ToR1C1 } from './formula';
+import { a1ToR1C1, staysInBox } from './formula';
 import { attributes, detectSource, isOnlyTable, plainText, sheetsValue, type PasteSource } from './html';
+import { MAX_COLUMNS, MAX_ROWS } from './infer';
 
-export const CLIP_ROWS = 10_000;
-export const CLIP_COLUMNS = 256;
+/** The same limits as a pasted table (infer.ts). */
+export const CLIP_ROWS = MAX_ROWS;
+export const CLIP_COLUMNS = MAX_COLUMNS;
+/** Clipboard HTML past this length is not read as cells; the plain text stands in, so hostile input stays fast. */
+export const CLIP_HTML_LIMIT = 2_000_000;
+/** An inline style longer than this is not read. */
+const STYLE_LIMIT = 4_096;
 /** The attribute that carries OpenNote's own form on the copied table. */
 export const OWN_ATTRIBUTE = 'data-opennote-cells';
 
@@ -52,6 +59,8 @@ export interface ClipSpan {
 export interface ClipLink {
   block: string;
   name?: string;
+  /** The page the copied table is on. */
+  page?: string;
   /** The grid position of the copied block's first cell, header row included. */
   top: number;
   left: number;
@@ -67,6 +76,8 @@ export interface Clip {
   link?: ClipLink;
   /** Rows and columns past the limits, which are left out. */
   dropped?: { rows: number; cols: number };
+  /** Formulas that could not be translated (an Excel copy that did not begin at A1), so their values came instead. */
+  asValues?: boolean;
 }
 
 const BLANK = (): ClipCell => ({ text: '' });
@@ -103,11 +114,13 @@ function readValue(cell: ClipCell, attrs: Map<string, string>): void {
   if (sheets && sheetsJson(sheets)?.['1'] === 5) cell.error = cell.text;
 }
 
-function readFormula(cell: ClipCell, attrs: Map<string, string>, row: number, col: number): void {
+/** Reads a Sheets formula (already R1C1), or returns an Excel A1 formula for the box check after layout. */
+function readFormula(cell: ClipCell, attrs: Map<string, string>): string | null {
   const sheets = attrs.get('data-sheets-formula');
   const excel = attrs.get('x:fmla');
   if (sheets && sheets.startsWith('=')) cell.formula = sheets;
-  else if (excel && excel.startsWith('=')) cell.formula = a1ToR1C1(excel, { row, col });
+  else if (excel && excel.startsWith('=')) return excel;
+  return null;
 }
 
 interface Raw {
@@ -123,15 +136,25 @@ function spanOf(attrs: Map<string, string>, name: string, limit: number): number
   return Number.isFinite(n) && n > 1 ? Math.min(n, limit) : 1;
 }
 
-/** The rows of the table as raw cells, hidden rows left out. */
-function rawRows(table: string): Raw[][] {
+/**
+ * A cell: its tag, its attributes, and its content up to its end tag or the next cell, as an HTML parser closes an
+ * unclosed cell. Neither part runs past the next cell, so the scan stays linear on hostile input.
+ */
+const CELL = /<(td|th)\b([^<>]*)>((?:(?!<\/?t[dh]\b)[\s\S])*)(?:<\/\1\s*>)?/gi;
+
+/** The rows of the table as raw cells, hidden rows left out, and how many rows were past the limit. */
+function rawRows(table: string): { rows: Raw[][]; dropped: number } {
   const rows: Raw[][] = [];
+  let dropped = 0;
   for (const chunk of table.split(/<\/tr\s*>/i)) {
-    const open = /<tr\b([^>]*)>/i.exec(chunk);
+    const open = /<tr\b([^<>]*)>/i.exec(chunk);
     if (!open || /display\s*:\s*none/i.test(open[1])) continue;
-    if (rows.length > CLIP_ROWS) break;
+    if (rows.length >= CLIP_ROWS) {
+      dropped++;
+      continue;
+    }
     rows.push(
-      [...chunk.matchAll(/<(td|th)\b([^>]*)>([\s\S]*?)<\/\1\s*>/gi)].map((m) => {
+      [...chunk.matchAll(CELL)].map((m) => {
         const attrs = attributes(m[2]);
         return {
           tag: m[1],
@@ -143,7 +166,7 @@ function rawRows(table: string): Raw[][] {
       }),
     );
   }
-  return rows;
+  return { rows, dropped };
 }
 
 /** Column widths from `<col>` elements, which may repeat with `span`. */
@@ -164,18 +187,22 @@ function widthsOf(table: string): (number | null)[] {
 function layout(
   rows: Raw[][],
   read: (raw: Raw, row: number, col: number) => ClipCell,
-): { cells: ClipCell[][]; spans: ClipSpan[]; width: number } {
+): { cells: ClipCell[][]; spans: ClipSpan[]; width: number; droppedCols: number } {
   const taken: boolean[][] = [];
   const cells: ClipCell[][] = [];
   const spans: ClipSpan[] = [];
   let width = 0;
+  let droppedCols = 0;
   rows.forEach((row, r) => {
     cells[r] ??= [];
     taken[r] ??= [];
     let c = 0;
-    for (const raw of row) {
+    for (const [i, raw] of row.entries()) {
       while (taken[r][c]) c++;
-      if (c >= CLIP_COLUMNS) break;
+      if (c >= CLIP_COLUMNS) {
+        droppedCols = Math.max(droppedCols, row.length - i);
+        break;
+      }
       cells[r][c] = read(raw, r, c);
       const h = Math.min(raw.rows, rows.length - r);
       const w = Math.min(raw.cols, CLIP_COLUMNS - c);
@@ -190,28 +217,36 @@ function layout(
     width = Math.max(width, taken[r].length);
   });
   for (const row of cells) for (let c = 0; c < width; c++) row[c] ??= BLANK();
-  return { cells, spans, width };
+  return { cells, spans, width, droppedCols };
 }
 
 function fromHtmlTable(html: string, inner: string): Clip | null {
   const rules = styleRules(html);
-  const raws = rawRows(inner);
+  const { rows: raws, dropped } = rawRows(inner);
   if (raws.length === 0) return null;
   const styles: CellStyle[] = [];
-  const { cells, spans, width } = layout(raws, (raw, row, col) => {
+  const excel: { cell: ClipCell; formula: string; row: number; col: number }[] = [];
+  const { cells, spans, width, droppedCols } = layout(raws, (raw, row, col) => {
     const cell: ClipCell = { text: plainText(raw.inner) };
-    const decl = cellDeclarations(rules, raw.attrs.get('class') ?? '', raw.attrs.get('style') ?? '');
+    const inline = raw.attrs.get('style') ?? '';
+    const decl = cellDeclarations(rules, raw.attrs.get('class') ?? '', inline.length > STYLE_LIMIT ? '' : inline);
     const style = styleOf(decl, raw.attrs.get('align'));
     const code = attributeFormat(raw.attrs);
     if (code && !style.fmt) style.fmt = code;
     if (/<(b|strong)\b/i.test(raw.inner)) style.font = { ...style.font, bold: true };
     readValue(cell, raw.attrs);
-    readFormula(cell, raw.attrs, row, col);
+    const formula = readFormula(cell, raw.attrs);
+    if (formula) excel.push({ cell, formula, row, col });
     if (raw.tag.toLowerCase() === 'th' || style.font?.bold) cell.header = true;
     cell.style = style;
     styles.push(style);
     return cell;
   });
+  let asValues = false;
+  for (const { cell, formula, row, col } of excel) {
+    if (staysInBox(formula, cells.length, width)) cell.formula = a1ToR1C1(formula, { row, col });
+    else asValues = true;
+  }
   dropShared(styles);
   for (const row of cells) {
     for (const cell of row) {
@@ -221,7 +256,10 @@ function fromHtmlTable(html: string, inner: string): Clip | null {
     }
   }
   const widths = widthsOf(inner).slice(0, width);
-  return { source: detectSource(html), rows: cells, spans, widths };
+  const clip: Clip = { source: detectSource(html), rows: cells, spans, widths };
+  if (dropped > 0 || droppedCols > 0) clip.dropped = { rows: dropped, cols: droppedCols };
+  if (asValues) clip.asValues = true;
+  return clip;
 }
 
 /** Reads the first table of clipboard HTML when nothing but the table is there. */
@@ -229,8 +267,10 @@ export function clipFromHtml(input: string): Clip | null {
   const start = input.indexOf('<');
   if (start === -1) return null;
   const html = input.slice(start);
-  const match = /<table\b([^>]*)>([\s\S]*?)<\/table\s*>/i.exec(html);
-  if (!match || (html.match(/<table\b/gi) ?? []).length !== 1) return null;
+  // Counted first, so the table pattern below runs once and stays linear.
+  if ((html.match(/<table\b/gi) ?? []).length !== 1) return null;
+  const match = /<table\b([^<>]*)>([\s\S]*?)<\/table\s*>/i.exec(html);
+  if (!match) return null;
   const own = attributes(match[1]).get(OWN_ATTRIBUTE);
   if (own) {
     const clip = readOwn(own);
@@ -244,18 +284,25 @@ export function clipFromHtml(input: string): Clip | null {
 export function clipFromText(text: string): Clip | null {
   const body = text.replace(/\r\n?/g, '\n').replace(/\n$/, '');
   if (!body.includes('\t') && !body.includes('\n')) return null;
-  const rows = parseDelimited(body, '\t')
+  const all = parseDelimited(body, '\t');
+  let widest = 0;
+  for (const fields of all) widest = Math.max(widest, fields.length);
+  const rows = all
     .slice(0, CLIP_ROWS)
     .map((fields) => fields.slice(0, CLIP_COLUMNS).map((field): ClipCell => ({ text: field })));
   if (rows.length === 0) return null;
   const width = Math.max(...rows.map((row) => row.length));
   for (const row of rows) while (row.length < width) row.push(BLANK());
-  return { source: 'delimited', rows, spans: [], widths: [] };
+  const clip: Clip = { source: 'delimited', rows, spans: [], widths: [] };
+  const dropped = { rows: all.length - rows.length, cols: Math.max(0, widest - CLIP_COLUMNS) };
+  if (dropped.rows > 0 || dropped.cols > 0) clip.dropped = dropped;
+  return clip;
 }
 
 /** The clipboard as cells: its HTML table when it has one, else its tab-separated text. */
 export function readClip(input: { html?: string | null; text?: string | null }): Clip | null {
-  return (input.html ? clipFromHtml(input.html) : null) ?? (input.text ? clipFromText(input.text) : null);
+  const html = input.html && input.html.length <= CLIP_HTML_LIMIT ? input.html : null;
+  return (html ? clipFromHtml(html) : null) ?? (input.text ? clipFromText(input.text) : null);
 }
 
 // OpenNote's own form. Version 1:
@@ -275,6 +322,8 @@ export interface OwnForm {
   v: 1;
   block?: string;
   name?: string;
+  /** The page the copied table is on, so Paste link across tables stays on one page. */
+  page?: string;
   header: boolean;
   top: number;
   left: number;
@@ -337,7 +386,12 @@ export function readOwn(json: string): Clip | null {
       left: data.left,
       header: data.header === true,
       ...(typeof data.name === 'string' ? { name: data.name } : {}),
+      ...(typeof data.page === 'string' ? { page: data.page } : {}),
     };
   }
+  let widest = 0;
+  for (const row of data.rows) if (Array.isArray(row)) widest = Math.max(widest, row.length);
+  const dropped = { rows: data.rows.length - rows.length, cols: Math.max(0, widest - CLIP_COLUMNS) };
+  if (dropped.rows > 0 || dropped.cols > 0) clip.dropped = dropped;
   return clip;
 }

@@ -53,6 +53,29 @@ export function a1ToR1C1(formula: string, at: At, absRows = 0): string {
   );
 }
 
+/** A whole column (A:B) or a whole row (1:3), which a box check cannot vet. */
+const WHOLE = /(?<![A-Za-z0-9_.$])(?:\$?[A-Za-z]{1,3}:\$?[A-Za-z]{1,3}|\$?\d+:\$?\d+)(?![A-Za-z0-9_(])/;
+
+/**
+ * Whether every reference of an A1 formula, read as if the copy began at A1, lands inside a box of `rows` by `cols`
+ * cells, with no absolute reference, no other sheet, and no whole row or column. Excel's clipboard HTML does not say
+ * where a copy began, so only such a formula can be translated without guessing (ADR 0067).
+ */
+export function staysInBox(formula: string, rows: number, cols: number): boolean {
+  let ok = true;
+  outside(formula.replace(PREFIX, ''), SKIP_A1, (part) => {
+    if (part.includes('$') || part.includes('!') || WHOLE.test(part)) ok = false;
+    for (const m of part.matchAll(A1)) {
+      const col = columnFromLetters(m[2]);
+      const row = Number(m[4]) - 1;
+      if (col < 0 || row < 0 || row >= rows || col >= cols) ok = false;
+    }
+    return part;
+  });
+  // A sheet name in single quotes ('Other sheet'!A1) points outside the copy too.
+  return ok && !/'(?:[^']|'')*'!/.test(formula);
+}
+
 /**
  * R1C1 text to A1 text for the cell at `at`. `absRows` is taken off absolute row numbers (the header row offset when
  * pasting into a table with a header row). A reference above the first row or left of column A becomes #REF!.

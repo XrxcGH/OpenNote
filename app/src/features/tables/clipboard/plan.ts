@@ -14,6 +14,7 @@ import type { Node as PMNode } from '@tiptap/pm/model';
 import { lettersFromColumn } from '../../../core/expr';
 import type { Clip, ClipCell } from '../engine/paste/clip';
 import { isFormula, r1c1ToA1 } from '../engine/paste/formula';
+import { MAX_COLUMNS, MAX_ROWS } from '../engine/paste/infer';
 import {
   addMerge,
   gridOf,
@@ -37,10 +38,12 @@ export interface PasteTarget {
   box: Box;
   /** This table block's ID, for Paste link within the same table. */
   block?: string;
+  /** The open page's ID: Paste link writes a reference to another table only when the copy came from this page. */
+  page?: string;
 }
 
-/** Things the paste could not do, for the announcement. */
-export type PasteReport = 'validation' | 'link' | 'styles' | 'merges' | 'header';
+/** Things the paste could not do, or did differently, for the announcement. */
+export type PasteReport = 'link' | 'styles' | 'merges' | 'header' | 'asValues' | 'dropped' | 'equalsText';
 
 export interface PastePlan {
   table: TableData;
@@ -156,6 +159,7 @@ interface Context {
   special: PasteSpecial;
   header: number;
   target: PasteTarget;
+  report: Set<PasteReport>;
 }
 
 /** A reference to the copied cell for Paste link, or null when the copy is not from this page's OpenNote table. */
@@ -166,19 +170,28 @@ function linkText(ctx: Context, r: number, c: number): string | null {
   if (row < 0) return null;
   const ref = `${lettersFromColumn(link.left + c)}${row + 1}`;
   if (link.block === ctx.target.block) return `=${ref}`;
-  return link.name ? `=${link.name}!${ref}` : null;
+  // Another table: only one on this page (DESIGN 13.7), and only by its name.
+  const samePage = link.page !== undefined && link.page === ctx.target.page;
+  return samePage && link.name ? `=${link.name}!${ref}` : null;
 }
 
 /** The text a cell gets, or null to leave it as it is. */
 function contentFor(ctx: Context, cell: ClipCell, at: { row: number; col: number }, r: number, c: number) {
   const parts = partsOf(ctx.special.what);
-  if (ctx.special.link) return linkText(ctx, r, c);
+  if (ctx.special.link) {
+    const text = linkText(ctx, r, c);
+    if (text === null) ctx.report.add('link');
+    return text;
+  }
   if (parts.formulas && cell.formula) {
     if (at.row < 0) return textMarkdown(valueText(cell));
     return textMarkdown(r1c1ToA1(cell.formula, at, ctx.header));
   }
   if (parts.formulas && cell.markdown !== undefined) return cell.markdown;
-  return textMarkdown(valueText(cell));
+  const value = valueText(cell);
+  // The table has no text marker, so a value that starts with "=" works as a formula; the paste says so.
+  if (isFormula(value.trim())) ctx.report.add('equalsText');
+  return textMarkdown(value);
 }
 
 /** The text after an operation with the cell already there, or null to leave the cell. */
@@ -202,24 +215,31 @@ export function planPaste(target: PasteTarget, input: Clip, special: PasteSpecia
   if (height === 0 || width === 0) return null;
   const parts = partsOf(special.what);
   const report = new Set<PasteReport>();
-  if (special.what === 'validation') report.add('validation');
   if (special.link && !clip.link) report.add('link');
+  if (clip.asValues && parts.formulas) report.add('asValues');
+  if (clip.dropped) report.add('dropped');
   const { box } = target;
   const spans = clip.spans.length > 0;
   const down = repeats(box.bottom - box.top + 1, height, spans);
   const across = repeats(box.right - box.left + 1, width, spans);
+  // The table grows no further than a pasted table may be (infer.ts), or than it already is.
+  const lastRow = Math.max(MAX_ROWS + (target.table.header ? 1 : 0), target.table.rows.length) - 1;
+  const lastCol = Math.max(MAX_COLUMNS, target.table.columns.length) - 1;
   const area: Box = {
     top: box.top,
     left: box.left,
-    bottom: box.top + height * down - 1,
-    right: box.left + width * across - 1,
+    bottom: Math.min(box.top + height * down - 1, lastRow),
+    right: Math.min(box.left + width * across - 1, lastCol),
   };
+  if (area.bottom < box.top + height * down - 1 || area.right < box.left + width * across - 1) report.add('dropped');
+  if (area.bottom < area.top || area.right < area.left)
+    return { table: target.table, patch: null, box, report: [...report] };
   const table =
     parts.content || parts.style !== 'none' || parts.notes || special.link
       ? grown(target.table, area.bottom + 1, area.right + 1, deps.newId)
       : target.table;
   const header = table.header ? 1 : 0;
-  const ctx: Context = { clip, special, header, target };
+  const ctx: Context = { clip, special, header, target, report };
   const before = target.sheet;
   const sheet = clone(before);
   const grid = gridOf(table);
@@ -259,6 +279,36 @@ export function planPaste(target: PasteTarget, input: Clip, special: PasteSpecia
   if (parts.widths) widen(out, clip, area);
   tidy(sheet, out);
   return { table: out, patch: sheetPatch(before, sheet), box: area, report: [...report] };
+}
+
+/**
+ * What a cut leaves: the cut cells empty, with no style, no note, and no merge inside the box, as a spreadsheet's
+ * cut moves all of a cell. One change, so it is one undo step.
+ */
+export function planCut(table: TableData, before: Sheet, box: Box): { table: TableData; patch: JsonObject | null } {
+  const sheet = clone(before);
+  const grid = gridOf(table);
+  for (const merge of mergeSet(sheet, table).list) {
+    const b = merge.box;
+    if (b.top >= box.top && b.bottom <= box.bottom && b.left >= box.left && b.right <= box.right) {
+      removeMerge(sheet, merge.id);
+    }
+  }
+  const rows = table.rows.map((row, r) => {
+    if (r < box.top || r > box.bottom) return row;
+    const cells = { ...row.cells };
+    for (let c = box.left; c <= box.right; c++) {
+      const colId = grid.cols[c];
+      if (colId === undefined) continue;
+      if (cells[colId]) cells[colId] = { ...cells[colId], markdown: '' };
+      setStyle(sheet, row.id, colId, undefined);
+      setNote(sheet, row.id, colId, undefined, '');
+    }
+    return { ...row, cells };
+  });
+  const out: TableData = { ...table, rows };
+  tidy(sheet, out);
+  return { table: out, patch: sheetPatch(before, sheet) };
 }
 
 /** Removes the merges that touch the pasted area and adds the clip's, offset to where it landed. */

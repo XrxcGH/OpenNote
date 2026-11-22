@@ -20,30 +20,81 @@ export function readDeclarations(css: string, into: Declarations = new Map()): D
 }
 
 /** The rules of the style blocks: `td` and `.class` selectors with their declarations, in document order. */
-export function styleRules(html: string): Map<string, string> {
-  const rules = new Map<string, string>();
-  for (const block of html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/gi)) {
-    const body = block[1].replace(/<!--|-->/g, '').replace(/\/\*[\s\S]*?\*\//g, '');
-    for (const rule of body.matchAll(/([^{}]+)\{([^}]*)\}/g)) {
-      for (const raw of rule[1].split(',')) {
+/** The rule text kept for one selector; a longer run of rules is hostile, and the rest is not read. */
+const RULE_LIMIT = 4_096;
+
+/** The text of each style block. A scan with indexOf, so unclosed tags stay linear. */
+function styleBodies(html: string): string[] {
+  const lower = html.toLowerCase();
+  const out: string[] = [];
+  let at = 0;
+  for (;;) {
+    const open = lower.indexOf('<style', at);
+    if (open === -1) break;
+    const start = lower.indexOf('>', open);
+    if (start === -1) break;
+    const end = lower.indexOf('</style', start);
+    if (end === -1) break;
+    out.push(html.slice(start + 1, end));
+    at = end + 7;
+  }
+  return out;
+}
+
+/** CSS without comments. An unclosed comment runs to the end, as in CSS. */
+function withoutComments(css: string): string {
+  let out = '';
+  let at = 0;
+  for (;;) {
+    const open = css.indexOf('/*', at);
+    if (open === -1) return out + css.slice(at);
+    out += css.slice(at, open);
+    const close = css.indexOf('*/', open + 2);
+    if (close === -1) return out;
+    at = close + 2;
+  }
+}
+
+/**
+ * The rules of the style blocks: `td` and `.class` selectors with their declarations, read once in document order.
+ * The scan finds each `{` and the next `}` with indexOf, so an unclosed brace cannot make it quadratic.
+ */
+export function styleRules(html: string): Map<string, Declarations> {
+  const text = new Map<string, string>();
+  for (const block of styleBodies(html)) {
+    const body = withoutComments(block.replace(/<!--|-->/g, ''));
+    let at = 0;
+    for (;;) {
+      const open = body.indexOf('{', at);
+      if (open === -1) break;
+      const close = body.indexOf('}', open + 1);
+      if (close === -1) break;
+      const declarations = body.slice(open + 1, close);
+      for (const raw of body.slice(at, open).split(',')) {
         const selector = raw.trim().toLowerCase();
-        if (/^(td|th|td\.[\w-]+|\.[\w-]+)$/.test(selector)) {
-          const key = selector.startsWith('td.') ? selector.slice(2) : selector;
-          rules.set(key, `${rules.get(key) ?? ''};${rule[2]}`);
-        }
+        if (!/^(td|th|td\.[\w-]+|\.[\w-]+)$/.test(selector)) continue;
+        const key = selector.startsWith('td.') ? selector.slice(2) : selector;
+        const before = text.get(key) ?? '';
+        if (before.length + declarations.length <= RULE_LIMIT) text.set(key, `${before};${declarations}`);
       }
+      at = close + 1;
     }
   }
+  const rules = new Map<string, Declarations>();
+  for (const [key, css] of text) rules.set(key, readDeclarations(css));
   return rules;
 }
 
 /**
  * A cell's declarations: its classes in order, then its inline style. The `td` rule is the source's default look
- * (Excel's Normal style), not a format someone chose, so it is not read.
+ * (Excel's Normal style), not a format someone chose, so it is not read. Each class was read once by styleRules.
  */
-export function cellDeclarations(rules: Map<string, string>, classes: string, inline: string): Declarations {
+export function cellDeclarations(rules: Map<string, Declarations>, classes: string, inline: string): Declarations {
   const out: Declarations = new Map();
-  for (const name of classes.split(/\s+/)) if (name) readDeclarations(rules.get(`.${name.toLowerCase()}`) ?? '', out);
+  for (const name of classes.split(/\s+/)) {
+    const rule = name ? rules.get(`.${name.toLowerCase()}`) : undefined;
+    if (rule) for (const [property, value] of rule) out.set(property, value);
+  }
   readDeclarations(inline, out);
   return out;
 }

@@ -29,6 +29,8 @@ export interface CopyInput {
   /** This table block's ID and the table's name, for Paste link. */
   block?: string | undefined;
   name?: string | undefined;
+  /** The open page's ID, so Paste link to another table stays on this page. */
+  page?: string | undefined;
   /** What a formula cell shows. Defaults to the sheet's cached values when they are fresh. */
   shownValue?(row: string, col: string): CachedValue | undefined;
 }
@@ -251,6 +253,7 @@ export function copyCells(input: CopyInput): CopyOutput {
     widths,
     ...(input.block ? { block: input.block } : {}),
     ...(input.name ? { name: input.name } : {}),
+    ...(input.page ? { page: input.page } : {}),
   };
   const cols = widths.map((w) => (w === null ? '<col>' : `<col width="${Math.round(w)}">`)).join('');
   const html =
