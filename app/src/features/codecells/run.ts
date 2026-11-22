@@ -28,6 +28,18 @@ function host(): Promise<RunHost> {
   return hosting;
 }
 
+/** A table a query returns, as tab-separated lines, so the cell's text output shows the values. */
+function tableText(mime: string, data: string, onOutput: (stream: Stream, text: string) => void): void {
+  if (mime !== 'application/vnd.opennote.table+json') return;
+  try {
+    const table = JSON.parse(data) as { columns?: unknown[]; rows?: unknown[][] };
+    const line = (cells: unknown[]) => `${cells.map((cell) => String(cell ?? '')).join('\t')}\n`;
+    onOutput('out', [table.columns ?? [], ...(table.rows ?? [])].map(line).join(''));
+  } catch {
+    // A table that does not parse is left to the summary line.
+  }
+}
+
 export function runCode(
   language: CodeLanguage,
   source: string,
@@ -50,7 +62,7 @@ export function runCode(
         limits,
         seed: (Date.now() % 0xffffffff) + 1,
       },
-      { onStarted, onOutput },
+      { onStarted, onOutput, onRich: (mime, data) => tableText(mime, data, onOutput) },
     );
     stop = () => handle.stop();
     if (stopped) handle.stop();
