@@ -66,7 +66,10 @@ test.describe('Language and direction @forced', () => {
     await runCommand(page, 'Language', /^Language/);
     await expect(page.getByRole('menu', { name: 'Language of the selected text' })).toBeVisible();
     await expectAxeClean(page, '[role="menu"]');
-    await page.getByRole('menuitemradio', { name: /English/ }).first().click();
+    await page
+      .getByRole('menuitemradio', { name: /English/ })
+      .first()
+      .click();
     await expect(page.locator('[aria-live="polite"]').filter({ hasText: 'Language set to English' })).toHaveCount(1);
   });
 });

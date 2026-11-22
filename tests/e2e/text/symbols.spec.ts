@@ -12,7 +12,10 @@ test.describe('Symbol dialog @forced', () => {
     const dialog = page.getByRole('dialog', { name: 'Symbol' });
     await expect(dialog).toBeVisible();
     await dialog.getByRole('searchbox').fill('euro');
-    const option = dialog.getByRole('listbox').first().getByRole('option', { name: /euro sign, U\+20AC/i });
+    const option = dialog
+      .getByRole('listbox')
+      .first()
+      .getByRole('option', { name: /euro sign, U\+20AC/i });
     await expect(option).toBeVisible();
     await expectAxeClean(page, '[role="dialog"]');
     await option.click();
