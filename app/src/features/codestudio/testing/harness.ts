@@ -3,6 +3,7 @@
 // executes the user's file under another module name (so no `if __name__ == "__main__"` block runs and line
 // numbers stay the same); JavaScript, TypeScript, and Lua append it after the file's text.
 import type { RuntimeId } from '../contracts';
+import { MAX_JSON_DEPTH } from './compare';
 
 /** A line that starts with this marker carries a result. Everything else a program prints is shown as usual. */
 export const CALL_MARKER = '@@OPENNOTE-CALL@@';
@@ -15,11 +16,18 @@ export const CALL_RUNTIMES: readonly string[] = ['python-quick', 'python-full', 
 /** A name a person may call: letters, digits, and underscores, or a dotted path of them (`Solution.twoSum`). */
 export const isCallable = (name: string) => /^[A-Za-z_$][\w$]*(\.[A-Za-z_$][\w$]*)*$/.test(name);
 
+/** Whether a JSON value nests no deeper than the limit; a deeper one would overflow a runtime's own parser. */
+function withinDepth(value: unknown, depth: number): boolean {
+  if (depth > MAX_JSON_DEPTH) return false;
+  if (value === null || typeof value !== 'object') return true;
+  return Object.values(value).every((inner) => withinDepth(inner, depth + 1));
+}
+
 /** The argument list in JSON text, or null when the text is not a JSON array. An empty text is no arguments. */
 export function parseCallArgs(text: string): unknown[] | null {
   try {
     const value: unknown = JSON.parse(text.trim() === '' ? '[]' : text);
-    return Array.isArray(value) ? value : null;
+    return Array.isArray(value) && withinDepth(value, 0) ? value : null;
   } catch {
     return null;
   }

@@ -105,7 +105,7 @@ Accepted records aren't rewritten when plans change. Instead, write a new ADR fo
 | [0072](0072-code-intelligence-on-device.md) | Code completion and fixes with on-device code models only | Proposed | 2026-11-01 |
 | [0073](0073-trace-replay-debugger.md) | Step debugging by recording and replaying, behind one Debug Adapter Protocol contract | Proposed | 2026-11-01 |
 | [0074](0074-code-diagnostics.md) | Error detection with own checkers first, and a code tools pack | Accepted | 2026-11-01 |
-| [0075](0075-code-tests.md) | Test cases stored with projects, with judge-style comparisons | Proposed | 2026-11-01 |
+| [0075](0075-code-tests.md) | Test cases stored with projects, with judge-style comparisons | Accepted | 2026-11-01 |
 | [0076](0076-reserved-inline-tags-and-foreign-marks.md) | OpenNote Markdown 2 reserves one inline tag grammar, and readers keep tags they do not know | Proposed | 2026-11-02 |
 | [0077](0077-min-writer-version.md) | Files carry minWriterVersion, the oldest version that may edit them | Proposed | 2026-11-02 |
 | [0078](0078-stamp-the-lowest-version.md) | Writers stamp the lowest format version a file needs | Proposed | 2026-11-02 |

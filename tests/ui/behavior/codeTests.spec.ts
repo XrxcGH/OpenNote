@@ -85,6 +85,7 @@ test('edits and deletes a case, and a time limit is part of the case', async ({ 
 
   // Delete it.
   await again.getByRole('button', { name: 'Delete case' }).click();
+  await again.getByRole('button', { name: 'Confirm delete' }).click();
   await expect(studio.getByRole('button', { name: 'Case 1', exact: true })).toBeHidden();
   await expect(studio.getByText('This project has no tests yet.')).toBeVisible();
 });
