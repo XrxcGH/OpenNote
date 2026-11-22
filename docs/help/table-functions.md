@@ -287,166 +287,166 @@ See [Table formatting](table-formatting.md) for number formats.
 
 | Function | Call | What it does |
 | --- | --- | --- |
-| `ARRAYTOTEXT` | `ARRAYTOTEXT(array, [format])` |  |
-| `ASC` | `ASC(text)` |  |
-| `BAHTTEXT` | `BAHTTEXT(number)` |  |
-| `CHAR` | `CHAR(number)` |  |
-| `CLEAN` | `CLEAN(text)` |  |
-| `CODE` | `CODE(text)` |  |
-| `CONCAT` | `CONCAT(text, ...)` |  |
-| `CONCATENATE` | `CONCATENATE(text, ...)` |  |
-| `DBCS` | `DBCS(text)` |  |
-| `DOLLAR` | `DOLLAR(number, [decimals])` |  |
-| `ENCODEURL` | `ENCODEURL(text)` |  |
-| `EXACT` | `EXACT(text1, text2)` |  |
-| `FIND` | `FIND(find_text, within_text, [start_num])` |  |
-| `FINDB` | `FINDB(find_text, within_text, [start_num])` |  |
-| `FIXED` | `FIXED(number, [decimals], [no_commas])` |  |
-| `JOIN` | `JOIN(delimiter, value, ...)` |  |
-| `LEFT` | `LEFT(text, [num_chars])` |  |
-| `LEFTB` | `LEFTB(text, [num_chars])` |  |
-| `LEN` | `LEN(text)` |  |
-| `LENB` | `LENB(text)` |  |
-| `LOWER` | `LOWER(text)` |  |
-| `MID` | `MID(text, start_num, num_chars)` |  |
-| `MIDB` | `MIDB(text, start_num, num_chars)` |  |
-| `NUMBERVALUE` | `NUMBERVALUE(text, [decimal_separator], [group_separator])` |  |
-| `PHONETIC` | `PHONETIC(reference)` |  |
-| `PROPER` | `PROPER(text)` |  |
-| `REPLACE` | `REPLACE(old_text, start_num, num_chars, new_text)` |  |
-| `REPLACEB` | `REPLACEB(old_text, start_num, num_chars, new_text)` |  |
-| `REPT` | `REPT(text, number_times)` |  |
-| `RIGHT` | `RIGHT(text, [num_chars])` |  |
-| `RIGHTB` | `RIGHTB(text, [num_chars])` |  |
-| `SEARCH` | `SEARCH(find_text, within_text, [start_num])` |  |
-| `SEARCHB` | `SEARCHB(find_text, within_text, [start_num])` |  |
-| `SPLIT` | `SPLIT(text, delimiter, [split_by_each], [remove_empty])` |  |
-| `SUBSTITUTE` | `SUBSTITUTE(text, old_text, new_text, [instance_num])` |  |
-| `T` | `T(value)` |  |
-| `TEXT` | `TEXT(value, format_text)` |  |
-| `TEXTAFTER` | `TEXTAFTER(text, delimiter, [instance_num], [match_mode], [match_end], [if_not_found])` |  |
-| `TEXTBEFORE` | `TEXTBEFORE(text, delimiter, [instance_num], [match_mode], [match_end], [if_not_found])` |  |
-| `TEXTJOIN` | `TEXTJOIN(delimiter, ignore_empty, text, ...)` |  |
-| `TEXTSPLIT` | `TEXTSPLIT(text, [col_delimiter], [row_delimiter], [ignore_empty], [match_mode], [pad_with])` |  |
-| `TRIM` | `TRIM(text)` |  |
-| `UNICHAR` | `UNICHAR(number)` |  |
-| `UNICODE` | `UNICODE(text)` |  |
-| `UPPER` | `UPPER(text)` |  |
-| `VALUE` | `VALUE(text)` |  |
-| `VALUETOTEXT` | `VALUETOTEXT(value, [format])` |  |
+| `ARRAYTOTEXT` | `ARRAYTOTEXT(array, [format])` | Writes an array as text. |
+| `ASC` | `ASC(text)` | Changes full-width characters to half-width. Returns the text unchanged where no region needs it. |
+| `BAHTTEXT` | `BAHTTEXT(number)` | Writes a number as Thai words for baht and satang. |
+| `CHAR` | `CHAR(number)` | Returns the character for a code from 1 to 255. |
+| `CLEAN` | `CLEAN(text)` | Removes the characters that do not print, those with codes 0 to 31. |
+| `CODE` | `CODE(text)` | Returns the code of the first character of text. |
+| `CONCAT` | `CONCAT(text, ...)` | Joins text from values and ranges into one piece of text. |
+| `CONCATENATE` | `CONCATENATE(text, ...)` | Joins text from values into one piece of text. |
+| `DBCS` | `DBCS(text)` | Changes half-width characters to full-width. Returns the text unchanged where no region needs it. |
+| `DOLLAR` | `DOLLAR(number, [decimals])` | Formats a number as dollars, with negative amounts in brackets. |
+| `ENCODEURL` | `ENCODEURL(text)` | Encodes text for use in a web address. |
+| `EXACT` | `EXACT(text1, text2)` | Tells whether 2 pieces of text are the same, with case. |
+| `FIND` | `FIND(find_text, within_text, [start_num])` | Finds text inside other text and returns where it starts. Case matters and wildcards do not work. |
+| `FINDB` | `FINDB(find_text, within_text, [start_num])` | Like FIND, counting in bytes. Every character is one byte. |
+| `FIXED` | `FIXED(number, [decimals], [no_commas])` | Formats a number with a fixed number of decimals. |
+| `JOIN` | `JOIN(delimiter, value, ...)` | Joins values with a delimiter between them. |
+| `LEFT` | `LEFT(text, [num_chars])` | Returns the first characters of text. |
+| `LEFTB` | `LEFTB(text, [num_chars])` | Returns the first bytes of text. Every character is one byte. |
+| `LEN` | `LEN(text)` | Counts the characters in text. |
+| `LENB` | `LENB(text)` | Counts the bytes in text. Every character is one byte. |
+| `LOWER` | `LOWER(text)` | Changes text to lowercase. |
+| `MID` | `MID(text, start_num, num_chars)` | Returns characters from the middle of text. |
+| `MIDB` | `MIDB(text, start_num, num_chars)` | Returns bytes from the middle of text. Every character is one byte. |
+| `NUMBERVALUE` | `NUMBERVALUE(text, [decimal_separator], [group_separator])` | Reads text as a number with separators you choose. |
+| `PHONETIC` | `PHONETIC(reference)` | Returns the text of a value. No phonetic readings are kept. |
+| `PROPER` | `PROPER(text)` | Capitalizes the first letter of every word and lowercases the rest. |
+| `REPLACE` | `REPLACE(old_text, start_num, num_chars, new_text)` | Replaces part of text by position. |
+| `REPLACEB` | `REPLACEB(old_text, start_num, num_chars, new_text)` | Replaces part of text by byte position. Every character is one byte. |
+| `REPT` | `REPT(text, number_times)` | Repeats text a number of times. |
+| `RIGHT` | `RIGHT(text, [num_chars])` | Returns the last characters of text. |
+| `RIGHTB` | `RIGHTB(text, [num_chars])` | Returns the last bytes of text. Every character is one byte. |
+| `SEARCH` | `SEARCH(find_text, within_text, [start_num])` | Finds text inside other text. Case does not matter. Use ? for one character and * for a run. |
+| `SEARCHB` | `SEARCHB(find_text, within_text, [start_num])` | Like SEARCH, counting in bytes. Every character is one byte. |
+| `SPLIT` | `SPLIT(text, delimiter, [split_by_each], [remove_empty])` | Splits text into a row of pieces. |
+| `SUBSTITUTE` | `SUBSTITUTE(text, old_text, new_text, [instance_num])` | Replaces matching text. Case matters. |
+| `T` | `T(value)` | Returns the value if it is text, and empty text if not. |
+| `TEXT` | `TEXT(value, format_text)` | Formats a value with a number format code and returns text. |
+| `TEXTAFTER` | `TEXTAFTER(text, delimiter, [instance_num], [match_mode], [match_end], [if_not_found])` | Returns the text after a delimiter. |
+| `TEXTBEFORE` | `TEXTBEFORE(text, delimiter, [instance_num], [match_mode], [match_end], [if_not_found])` | Returns the text before a delimiter. |
+| `TEXTJOIN` | `TEXTJOIN(delimiter, ignore_empty, text, ...)` | Joins text with a delimiter between the pieces. |
+| `TEXTSPLIT` | `TEXTSPLIT(text, [col_delimiter], [row_delimiter], [ignore_empty], [match_mode], [pad_with])` | Splits text into columns and rows at delimiters. |
+| `TRIM` | `TRIM(text)` | Removes spaces from the ends of text and reduces runs of spaces inside it to one. |
+| `UNICHAR` | `UNICHAR(number)` | Returns the character for a Unicode number. |
+| `UNICODE` | `UNICODE(text)` | Returns the Unicode number of the first character of text. |
+| `UPPER` | `UPPER(text)` | Changes text to uppercase. |
+| `VALUE` | `VALUE(text)` | Reads text as a number. |
+| `VALUETOTEXT` | `VALUETOTEXT(value, [format])` | Writes a value as text. |
 
 ## Regular expressions
 
 | Function | Call | What it does |
 | --- | --- | --- |
-| `REGEXEXTRACT` | `REGEXEXTRACT(text, pattern, [return_mode], [case_sensitivity])` |  |
-| `REGEXMATCH` | `REGEXMATCH(text, pattern)` |  |
-| `REGEXREPLACE` | `REGEXREPLACE(text, pattern, replacement, [occurrence], [case_sensitivity])` |  |
-| `REGEXTEST` | `REGEXTEST(text, pattern, [case_sensitivity])` |  |
+| `REGEXEXTRACT` | `REGEXEXTRACT(text, pattern, [return_mode], [case_sensitivity])` | Pulls matching text out of text. Mode 2 returns the capturing groups. |
+| `REGEXMATCH` | `REGEXMATCH(text, pattern)` | Tells whether text matches a regular expression. A pattern can have at most 1,000 characters. |
+| `REGEXREPLACE` | `REGEXREPLACE(text, pattern, replacement, [occurrence], [case_sensitivity])` | Replaces text that matches a pattern of at most 1,000 characters. Use $1 for a group and $$ for a dollar sign. |
+| `REGEXTEST` | `REGEXTEST(text, pattern, [case_sensitivity])` | Tells whether text matches a regular expression. A pattern can have at most 1,000 characters. |
 
 ## Date and time
 
 | Function | Call | What it does |
 | --- | --- | --- |
-| `DATE` | `DATE(year, month, day)` |  |
-| `DATEDIF` | `DATEDIF(start, end, unit)` |  |
-| `DATEVALUE` | `DATEVALUE(text)` |  |
-| `DAY` | `DAY(date)` |  |
-| `DAYS` | `DAYS(end, start)` |  |
-| `DAYS360` | `DAYS360(start, end, [european])` |  |
-| `EDATE` | `EDATE(start, months)` |  |
-| `EOMONTH` | `EOMONTH(start, months)` |  |
-| `EPOCHTODATE` | `EPOCHTODATE(timestamp, [unit])` |  |
-| `HOUR` | `HOUR(time)` |  |
-| `ISOWEEKNUM` | `ISOWEEKNUM(date)` |  |
-| `MINUTE` | `MINUTE(time)` |  |
-| `MONTH` | `MONTH(date)` |  |
-| `NETWORKDAYS` | `NETWORKDAYS(start, end, [holidays])` |  |
-| `NETWORKDAYS.INTL` | `NETWORKDAYS.INTL(start, end, [weekend], [holidays])` |  |
-| `NOW` | `NOW()` |  |
-| `SECOND` | `SECOND(time)` |  |
-| `TIME` | `TIME(hour, minute, second)` |  |
-| `TIMEVALUE` | `TIMEVALUE(text)` |  |
-| `TODAY` | `TODAY()` |  |
-| `WEEKDAY` | `WEEKDAY(date, [type])` |  |
-| `WEEKNUM` | `WEEKNUM(date, [type])` |  |
-| `WORKDAY` | `WORKDAY(start, days, [holidays])` |  |
-| `WORKDAY.INTL` | `WORKDAY.INTL(start, days, [weekend], [holidays])` |  |
-| `YEAR` | `YEAR(date)` |  |
-| `YEARFRAC` | `YEARFRAC(start, end, [basis])` |  |
+| `DATE` | `DATE(year, month, day)` | Builds a date from a year, a month, and a day. Months and days that run over roll into the next period. |
+| `DATEDIF` | `DATEDIF(start, end, unit)` | The difference between two dates in whole years, months, or days. |
+| `DATEVALUE` | `DATEVALUE(text)` | Reads date text and gives its serial number. |
+| `DAY` | `DAY(date)` | The day of the month of a date, 1 to 31. |
+| `DAYS` | `DAYS(end, start)` | The number of days from one date to another. |
+| `DAYS360` | `DAYS360(start, end, [european])` | Days between two dates on a year of 12 months of 30 days. |
+| `EDATE` | `EDATE(start, months)` | The date a number of months before or after another, on the same day when the month has it. |
+| `EOMONTH` | `EOMONTH(start, months)` | The last day of the month, a number of months before or after a date. |
+| `EPOCHTODATE` | `EPOCHTODATE(timestamp, [unit])` | Turns a Unix timestamp into a date and time in UTC. |
+| `HOUR` | `HOUR(time)` | The hour of a time, 0 to 23. |
+| `ISOWEEKNUM` | `ISOWEEKNUM(date)` | The ISO week of the year, where week 1 holds the first Thursday. |
+| `MINUTE` | `MINUTE(time)` | The minute of a time, 0 to 59. |
+| `MONTH` | `MONTH(date)` | The month of a date, 1 to 12. |
+| `NETWORKDAYS` | `NETWORKDAYS(start, end, [holidays])` | Working days between two dates, counting both ends, with Saturday and Sunday off. |
+| `NETWORKDAYS.INTL` | `NETWORKDAYS.INTL(start, end, [weekend], [holidays])` | Working days between two dates, counting both ends, with weekend days you choose. |
+| `NOW` | `NOW()` | The date and the time right now. It updates whenever the sheet recalculates. |
+| `SECOND` | `SECOND(time)` | The second of a time, 0 to 59. |
+| `TIME` | `TIME(hour, minute, second)` | Builds a time of day, as a fraction of a day. More than 24 hours wraps around. |
+| `TIMEVALUE` | `TIMEVALUE(text)` | Reads time text and gives it as a fraction of a day. |
+| `TODAY` | `TODAY()` | Today as a date. It updates whenever the sheet recalculates. |
+| `WEEKDAY` | `WEEKDAY(date, [type])` | The day of the week of a date as a number. |
+| `WEEKNUM` | `WEEKNUM(date, [type])` | The week of the year of a date. Week 1 is the week that holds January 1. |
+| `WORKDAY` | `WORKDAY(start, days, [holidays])` | The date a number of working days from a start date, with Saturday and Sunday off. |
+| `WORKDAY.INTL` | `WORKDAY.INTL(start, days, [weekend], [holidays])` | The date a number of working days from a start date, with weekend days you choose. |
+| `YEAR` | `YEAR(date)` | The year of a date. |
+| `YEARFRAC` | `YEARFRAC(start, end, [basis])` | The part of a year between two dates. |
 
 ## Lookup and reference
 
 | Function | Call | What it does |
 | --- | --- | --- |
-| `ADDRESS` | `ADDRESS(row_num, column_num, [abs_num], [a1], [sheet_text])` |  |
-| `AREAS` | `AREAS(reference)` |  |
-| `CHOOSE` | `CHOOSE(index_num, value1, [value2], ...)` |  |
-| `COLUMN` | `COLUMN([reference])` |  |
-| `COLUMNS` | `COLUMNS(array)` |  |
-| `FORMULATEXT` | `FORMULATEXT(reference)` |  |
-| `HLOOKUP` | `HLOOKUP(lookup_value, table_array, row_index_num, [range_lookup])` |  |
-| `HYPERLINK` | `HYPERLINK(link_location, [friendly_name])` |  |
-| `INDEX` | `INDEX(array, [row_num], [column_num], [area_num])` |  |
-| `INDIRECT` | `INDIRECT(ref_text, [a1])` |  |
-| `LOOKUP` | `LOOKUP(lookup_value, lookup_vector, [result_vector])` |  |
-| `MATCH` | `MATCH(lookup_value, lookup_array, [match_type])` |  |
-| `OFFSET` | `OFFSET(reference, rows, cols, [height], [width])` |  |
-| `ROW` | `ROW([reference])` |  |
-| `ROWS` | `ROWS(array)` |  |
-| `VLOOKUP` | `VLOOKUP(lookup_value, table_array, col_index_num, [range_lookup])` |  |
-| `XLOOKUP` | `XLOOKUP(lookup_value, lookup_array, return_array, [if_not_found], [match_mode], [search_mode])` |  |
-| `XMATCH` | `XMATCH(lookup_value, lookup_array, [match_mode], [search_mode])` |  |
+| `ADDRESS` | `ADDRESS(row_num, column_num, [abs_num], [a1], [sheet_text])` | Writes a cell reference as text from its row and column numbers. |
+| `AREAS` | `AREAS(reference)` | Gives how many areas a reference has, such as 2 for (A1:B2,D4). |
+| `CHOOSE` | `CHOOSE(index_num, value1, [value2], ...)` | Gives one value from a list, picked by its number. |
+| `COLUMN` | `COLUMN([reference])` | Gives the column number of a reference, or of this cell when left out. |
+| `COLUMNS` | `COLUMNS(array)` | Gives how many columns a reference or an array has. |
+| `FORMULATEXT` | `FORMULATEXT(reference)` | Gives the formula in a cell as text. A cell without a formula gives #N/A. |
+| `HLOOKUP` | `HLOOKUP(lookup_value, table_array, row_index_num, [range_lookup])` | Finds a value in the first row of a table and gives the value in the same column of another row. |
+| `HYPERLINK` | `HYPERLINK(link_location, [friendly_name])` | Shows a link. The cell opens it only when it is clicked. |
+| `INDEX` | `INDEX(array, [row_num], [column_num], [area_num])` | Gives the cell at a row and column of a block, or a whole row or column when one of them is 0. |
+| `INDIRECT` | `INDIRECT(ref_text, [a1])` | Gives the cells that a piece of text names, such as "B2". It recalculates often. |
+| `LOOKUP` | `LOOKUP(lookup_value, lookup_vector, [result_vector])` | Finds the nearest smaller value in sorted data and gives the matching value from another row or column. |
+| `MATCH` | `MATCH(lookup_value, lookup_array, [match_type])` | Gives the position of a value in a row or column. |
+| `OFFSET` | `OFFSET(reference, rows, cols, [height], [width])` | Gives a block that starts a number of rows and columns away from a reference. It recalculates often. |
+| `ROW` | `ROW([reference])` | Gives the row number of a reference, or of this cell when left out. |
+| `ROWS` | `ROWS(array)` | Gives how many rows a reference or an array has. |
+| `VLOOKUP` | `VLOOKUP(lookup_value, table_array, col_index_num, [range_lookup])` | Finds a value in the first column of a table and gives the value in the same row of another column. |
+| `XLOOKUP` | `XLOOKUP(lookup_value, lookup_array, return_array, [if_not_found], [match_mode], [search_mode])` | Finds a value in one row or column and gives what is in the same place in another. |
+| `XMATCH` | `XMATCH(lookup_value, lookup_array, [match_mode], [search_mode])` | Gives the position of a value in a row or column, with the same choices as XLOOKUP. |
 
 ## Logic
 
 | Function | Call | What it does |
 | --- | --- | --- |
-| `AND` | `AND(logical, ...)` |  |
+| `AND` | `AND(logical, ...)` | Gives TRUE when every argument is true. |
 | `BYCOL` | `BYCOL(array, lambda)` | Calls a function on each column of an array and gives one value per column. |
 | `BYROW` | `BYROW(array, lambda)` | Calls a function on each row of an array and gives one value per row. |
-| `FALSE` | `FALSE()` |  |
-| `IF` | `IF(test, then, [otherwise])` |  |
-| `IFERROR` | `IFERROR(value, on_error)` |  |
-| `IFNA` | `IFNA(value, on_na)` |  |
-| `IFS` | `IFS(test, result, ...)` |  |
-| `LAMBDA` | `LAMBDA(parameter, ..., calculation)` |  |
-| `LET` | `LET(name, value, ..., calculation)` |  |
+| `FALSE` | `FALSE()` | Gives the logical value FALSE. |
+| `IF` | `IF(test, then, [otherwise])` | Gives one result when a test is true and another when it is false. |
+| `IFERROR` | `IFERROR(value, on_error)` | Gives a fallback when a value is an error. |
+| `IFNA` | `IFNA(value, on_na)` | Gives a fallback when a value is #N/A. |
+| `IFS` | `IFS(test, result, ...)` | Gives the result of the first test that is true. #N/A when none is. |
+| `LAMBDA` | `LAMBDA(parameter, ..., calculation)` | Makes a function of your own. Call it right away or give it a name. |
+| `LET` | `LET(name, value, ..., calculation)` | Gives names to values, then calculates with them. |
 | `MAKEARRAY` | `MAKEARRAY(rows, columns, lambda)` | Builds an array by calling a function with each cell’s row and column number. |
 | `MAP` | `MAP(array, ..., lambda)` | Calls a function on each value of one or more arrays. |
-| `NOT` | `NOT(logical)` |  |
-| `OR` | `OR(logical, ...)` |  |
+| `NOT` | `NOT(logical)` | Turns TRUE into FALSE and FALSE into TRUE. |
+| `OR` | `OR(logical, ...)` | Gives TRUE when any argument is true. |
 | `REDUCE` | `REDUCE([initial_value], array, lambda)` | Combines the values of an array into one result, a step at a time. |
 | `SCAN` | `SCAN([initial_value], array, lambda)` | Combines the values of an array a step at a time and gives every step. |
-| `SWITCH` | `SWITCH(value, match, result, ..., [default])` |  |
-| `TRUE` | `TRUE()` |  |
-| `XOR` | `XOR(logical, ...)` |  |
+| `SWITCH` | `SWITCH(value, match, result, ..., [default])` | Compares a value with a list of matches and gives the result of the first one that is equal. |
+| `TRUE` | `TRUE()` | Gives the logical value TRUE. |
+| `XOR` | `XOR(logical, ...)` | Gives TRUE when an odd number of arguments are true. |
 
 ## Information
 
 | Function | Call | What it does |
 | --- | --- | --- |
-| `CELL` | `CELL(info_type, [reference])` |  |
-| `ERROR.TYPE` | `ERROR.TYPE(error)` |  |
-| `INFO` | `INFO(type_text)` |  |
-| `ISBLANK` | `ISBLANK(value)` |  |
-| `ISDATE` | `ISDATE(value)` |  |
-| `ISEMAIL` | `ISEMAIL(value)` |  |
-| `ISERR` | `ISERR(value)` |  |
-| `ISERROR` | `ISERROR(value)` |  |
-| `ISEVEN` | `ISEVEN(number)` |  |
-| `ISFORMULA` | `ISFORMULA(reference)` |  |
-| `ISLOGICAL` | `ISLOGICAL(value)` |  |
-| `ISNA` | `ISNA(value)` |  |
-| `ISNONTEXT` | `ISNONTEXT(value)` |  |
-| `ISNUMBER` | `ISNUMBER(value)` |  |
-| `ISODD` | `ISODD(number)` |  |
-| `ISOMITTED` | `ISOMITTED(argument)` |  |
-| `ISREF` | `ISREF(value)` |  |
-| `ISTEXT` | `ISTEXT(value)` |  |
-| `ISURL` | `ISURL(value)` |  |
-| `N` | `N(value)` |  |
-| `NA` | `NA()` |  |
-| `SHEET` | `SHEET([value])` |  |
-| `SHEETS` | `SHEETS([reference])` |  |
-| `TYPE` | `TYPE(value)` |  |
+| `CELL` | `CELL(info_type, [reference])` | Gives facts about a cell, such as its address, row, column, type, or format. |
+| `ERROR.TYPE` | `ERROR.TYPE(error)` | Gives a number for the kind of error, such as 2 for divide by zero and 7 for not available. |
+| `INFO` | `INFO(type_text)` | Gives a fact about this page that is safe to share, such as the calculation mode. |
+| `ISBLANK` | `ISBLANK(value)` | Gives TRUE for an empty cell. |
+| `ISDATE` | `ISDATE(value)` | Gives TRUE for a date, such as a cell in a date column, or for text that reads as a date. |
+| `ISEMAIL` | `ISEMAIL(value)` | Gives TRUE for text shaped like an email address. |
+| `ISERR` | `ISERR(value)` | Gives TRUE for any error except #N/A. |
+| `ISERROR` | `ISERROR(value)` | Gives TRUE for any error. |
+| `ISEVEN` | `ISEVEN(number)` | Gives TRUE when a number is even. A fraction is cut off first. |
+| `ISFORMULA` | `ISFORMULA(reference)` | Gives TRUE when a cell holds a formula. |
+| `ISLOGICAL` | `ISLOGICAL(value)` | Gives TRUE for TRUE or FALSE. |
+| `ISNA` | `ISNA(value)` | Gives TRUE for #N/A. |
+| `ISNONTEXT` | `ISNONTEXT(value)` | Gives TRUE for anything that is not text, an empty cell included. |
+| `ISNUMBER` | `ISNUMBER(value)` | Gives TRUE for a number. Text that looks like a number is not one. |
+| `ISODD` | `ISODD(number)` | Gives TRUE when a number is odd. A fraction is cut off first. |
+| `ISOMITTED` | `ISOMITTED(argument)` | In a function made with LAMBDA, gives TRUE when an optional input was left out. |
+| `ISREF` | `ISREF(value)` | Gives TRUE when the value is a reference to cells. |
+| `ISTEXT` | `ISTEXT(value)` | Gives TRUE for text. |
+| `ISURL` | `ISURL(value)` | Gives TRUE for text shaped like a web address. |
+| `N` | `N(value)` | Turns a value into a number. TRUE is 1, text is 0. |
+| `NA` | `NA()` | Gives the error #N/A, which means a value is not available. |
+| `SHEET` | `SHEET([value])` | Gives the position of a table on the page, counting from 1. |
+| `SHEETS` | `SHEETS([reference])` | Gives how many tables the page has. |
+| `TYPE` | `TYPE(value)` | Gives a code for the kind of value: 1 number, 2 text, 4 logical, 16 error, 64 array. |

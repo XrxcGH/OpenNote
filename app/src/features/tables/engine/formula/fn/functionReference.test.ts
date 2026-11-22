@@ -47,8 +47,10 @@ const TITLES: Record<Family, string> = {
 
 function describe1(name: string): string {
   for (const group of texts) {
-    const entry = group[name] as { description?: string } | undefined;
-    if (entry?.description) return entry.description;
+    const entry = (group[name] ?? group[name.replace(/[.]/g, '_')]) as
+      { description?: string; summary?: string; about?: string } | undefined;
+    const text = entry?.description ?? entry?.summary ?? entry?.about;
+    if (text) return text;
   }
   return '';
 }
@@ -86,6 +88,7 @@ describe('function reference page', () => {
     if (process.env.UPDATE_DOCS === '1') writeFileSync(page, text);
     expect(readFileSync(page, 'utf8')).toBe(text);
     for (const name of REGISTRY.keys()) expect(text, name).toContain(`\`${name}\``);
+    for (const name of REGISTRY.keys()) expect(describe1(name), `${name} has no description`).not.toBe('');
   });
 
   it('has links on the table help pages that all resolve', () => {
