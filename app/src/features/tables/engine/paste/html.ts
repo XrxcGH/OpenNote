@@ -39,7 +39,7 @@ export function decodeEntities(text: string): string {
   });
 }
 
-function attributes(text: string): Map<string, string> {
+export function attributes(text: string): Map<string, string> {
   const map = new Map<string, string>();
   for (const m of text.matchAll(/([\w:.-]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+)))?/g)) {
     map.set(m[1].toLowerCase(), decodeEntities(m[2] ?? m[3] ?? m[4] ?? ''));
@@ -65,7 +65,7 @@ function classHints(html: string): Map<string, FormatHint> {
   return hints;
 }
 
-function detectSource(html: string): PasteSource {
+export function detectSource(html: string): PasteSource {
   if (/urn:schemas-microsoft-com:office:excel|Excel\.Sheet/i.test(html)) return 'excel';
   if (/google-sheets-html-origin|data-sheets-value/i.test(html)) return 'sheets';
   if (/\bsdval=|LibreOffice|OpenOffice/i.test(html)) return 'calc';
@@ -73,7 +73,7 @@ function detectSource(html: string): PasteSource {
 }
 
 /** A cell's words: each `<br>` starts a line, and any other run of white space is one space. */
-function plainText(inner: string): string {
+export function plainText(inner: string): string {
   return markupText(inner)
     .split('\n')
     .map((line) => line.replace(/[\s\u00a0]+/g, ' ').trim())
@@ -81,7 +81,7 @@ function plainText(inner: string): string {
     .trim();
 }
 
-function sheetsValue(json: string): Pick<PasteCell, 'num' | 'bool'> {
+export function sheetsValue(json: string): Pick<PasteCell, 'num' | 'bool'> {
   try {
     const data = JSON.parse(json) as Record<string, unknown>;
     if (data['1'] === 3 && typeof data['3'] === 'number') return { num: data['3'] };
@@ -173,7 +173,7 @@ function readRows(table: string, classes: Map<string, FormatHint>): PasteCell[][
 }
 
 /** True when nothing but whitespace, comments, and head content surrounds the table. */
-function isOnlyTable(outside: string): boolean {
+export function isOnlyTable(outside: string): boolean {
   return markupText(outside).replace(/[\s\u00a0]+/g, '') === '';
 }
 
