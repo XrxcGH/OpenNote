@@ -15,6 +15,9 @@ export { MAX_HEIGHT, MIN_HEIGHT, renderNumberFormat, sheetModel } from './export
 export type { SheetBox, SheetCellStyle, SheetTableLike } from './exportView';
 // The structure commands and the reference adjustment register themselves with the table commands of the editor.
 import './sheet/structure/hooks';
+// The merge commands, menu items, and context menu entries register with the sheet registry (ADR 0064).
+import './sheet/merge/contribute';
 export { readSheet, tableName } from './sheet/model';
 export { canvasMeasure } from './sheet/structure/fit';
 export { rowHeight } from './sheet/structure/lines';
+export * from './tools';

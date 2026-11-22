@@ -111,9 +111,14 @@ function useLayoutSize(): number {
     const main = document.querySelector('main');
     const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => setTick((n) => n + 1));
     if (main) observer?.observe(main);
+    // The desk gutter moves the page's scroll bar in from the region's edge without resizing the region.
+    const gutter =
+      main && typeof MutationObserver !== 'undefined' ? new MutationObserver(() => setTick((n) => n + 1)) : null;
+    if (main) gutter?.observe(main, { attributes: true, attributeFilter: ['data-desk-gutter'] });
     return () => {
       window.removeEventListener('resize', onResize);
       observer?.disconnect();
+      gutter?.disconnect();
     };
   }, []);
   return viewport;
