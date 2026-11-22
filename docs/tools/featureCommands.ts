@@ -238,6 +238,7 @@ export const COMMAND_TEXT: Readonly<Record<string, string>> = {
   'tools.resetWindows': 'Puts every tool window back at its default size and place.',
   'table.calculatedColumn': "Makes a column whose every row works out a formula from the row's own values.",
   'table.clearCalculated': 'Turns a calculated column into plain values.',
+  'table.insertFunction': 'Opens a searchable list of spreadsheet functions and puts the chosen one into the formula.',
   'insert.tape': 'Inserts study tape that covers an answer until you reveal it.',
   'tape.showAll': 'Reveals everything under the study tape on the page.',
   'tape.hideAll': 'Covers everything under the study tape on the page again.',
