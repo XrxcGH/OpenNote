@@ -210,6 +210,12 @@ export const CONDITIONS: readonly Condition[] = [
   },
   { id: 'flat.end', description: '20-page note, caret at the end', fixture: 'twentyPage', prepare: inNote('end') },
   {
+    id: 'formatted.middle',
+    description: '20-page note with fonts, sizes, colors, tab stops, list formats, and borders, caret in the middle',
+    fixture: 'twentyPageFormatted',
+    prepare: inNote('middle'),
+  },
+  {
     id: 'outline',
     description: '20-page outline (about 1,200 items, 4 levels), middle',
     fixture: 'twentyPageOutline',
