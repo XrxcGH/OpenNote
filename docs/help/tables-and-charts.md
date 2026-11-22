@@ -4,6 +4,21 @@ A smart table holds typed columns, formulas, and several views of the same rows.
 
 ![A smart table with its formula cell selected, showing =B2*0.6, and the bar chart made from it with its summary in words](../screens/table-chart-light.png)
 
+## Contents
+
+- [Make a table](#make-a-table)
+- [Analyze](#analyze)
+- [Formulas](#formulas)
+- [Views](#views)
+- [Charts](#charts)
+- [Take a table out](#take-a-table-out)
+- [Choices](#choices)
+- [Analyze: statistics, regression, and matrices](#analyze-statistics-regression-and-matrices)
+- [Saved views](#saved-views)
+- [Format cells](#format-cells)
+- [Spreadsheet keys](#spreadsheet-keys)
+- [Conditional formatting](#conditional-formatting)
+
 ## Make a table
 
 - Open Insert, then Smart table.
@@ -29,7 +44,7 @@ Formulas follow Excel's rules. Beyond math, text, and dates, they have these fam
 - Arrays: FILTER, SORT, SORTBY, UNIQUE, SEQUENCE, TAKE, DROP, VSTACK, HSTACK, MMULT, MINVERSE, and the LAMBDA helpers MAP, REDUCE, SCAN, BYROW, BYCOL, and MAKEARRAY. An array result spills into the cells beside it.
 - Statistics: averages, deviations, ranks, percentiles, distributions such as NORM.DIST and T.DIST, regression such as LINEST, and FORECAST.ETS. These load the first time a formula uses one, so the cell shows #BUSY! for a moment.
 
-The places where OpenNote's answers differ from Excel's are listed in the engine's DIFFERENCES.md.
+Every function has a line in the [function reference](table-functions.md). The places where OpenNote's answers differ from Excel's are listed in `app/src/features/tables/fixtures/fn/DIFFERENCES.md` in the source tree.
 
 ## Views
 
@@ -51,7 +66,7 @@ Smart tables and charts are built. They have been checked by automated tests onl
 
 ## Choices
 
-To pick a value from a short list, such as a status or a tag, click in a column, open the Data menu, choose Format, then pick the format "Choice, pick one" or "Choice, pick several". The column starts with the values it already holds. Each value is a named, colored choice.
+To pick a value from a short list, such as a status or a tag, click in a column. Open the Data menu, choose Format, then pick the format "Choice, pick one" or "Choice, pick several". The column starts with the values it already holds. Each value is a named, colored choice.
 
 Press Alt+Down in a cell, or use Choose a value in the Data menu, to see the list. A column that picks several stays open after each choice, so you can pick more. Choose Done or press Escape to finish. You can still type in the cell. Text that is not one of the choices has a dashed outline and is kept.
 
@@ -81,7 +96,7 @@ When a table is current, a second row of tools sits under the table tools. It se
 
 Select whole cells and a tool formats the cells. Select text inside one cell and the same tool formats only that text. Each change is one undo step.
 
-The Borders button draws the last border you used. Its arrow opens all 16 borders, the line style, and the line color. In a narrow window, the least used tools move into a More menu. Press Ctrl+K and type "Cell:" to find every format by name.
+The Borders button draws the last border you used. Its arrow opens all 16 borders, the line style, and the line color. In a narrow window, the least used tools move into a More menu. Press Ctrl+K and type "Cell:" to find every format by name. Number format codes are described in [Table formatting](table-formatting.md).
 
 ## Spreadsheet keys
 
@@ -96,3 +111,5 @@ Choose Use document keys in this table to get the old keys back, where Enter sta
 A rule can color a cell by its value, its text, a date, blanks, errors, top or bottom values, values above or below the average, duplicates, or a formula. Color scales, data bars, and icon sets show a range at a glance. Rules run in priority order, and Stop if true keeps lower rules from applying.
 
 To manage rules, run Cell: Conditional formatting rules from the command palette (Ctrl+K) or the table's context menu. A window lists the rules of the selection, the table, or the page. You can raise or lower a rule, turn Stop if true on or off, or delete it. Undo takes each change back. Making a new rule from a window is not built yet.
+
+The pages on data tools, formulas in depth, and import and export grow with the releases that add those features (B11.2, B13.2, and B14.2). Until then, this page holds the short versions.
