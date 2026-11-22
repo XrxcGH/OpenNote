@@ -102,6 +102,16 @@ async function measure(page: Page, condition: Condition) {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await installKeyTimer(page);
+  if (condition.flags) {
+    await page.addInitScript((flags) => {
+      const boot = window as unknown as { __OPENNOTE_BOOT__?: object };
+      boot.__OPENNOTE_BOOT__ = {
+        ...boot.__OPENNOTE_BOOT__,
+        bootVersion: 1,
+        flagOverrides: Object.fromEntries(flags.map((flag) => [flag, true])),
+      };
+    }, condition.flags);
+  }
   await openFixture(page, condition.fixture);
   // The page's own idle work (mounting, warming caches) finishes before keys start.
   await page.waitForTimeout(1_000);
