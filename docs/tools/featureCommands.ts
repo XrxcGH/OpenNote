@@ -28,6 +28,7 @@ export const SETTINGS_TEXT: Readonly<Record<string, string>> = {
   sync: 'Sets up optional encrypted sync between your devices.',
   help: 'Shows this copy of OpenNote and the ways to get help or send feedback.',
   shortcuts: 'Picks one of the two shortcut sets and rebinds any command.',
+  code: 'Sets indents by language, the Python runtime, run time and memory limits, suggestions, and C and C++ standards.',
   about: 'Shows the version, the update channel, the license, and the feature flags.',
 };
 
@@ -237,6 +238,7 @@ export const COMMAND_TEXT: Readonly<Record<string, string>> = {
   'tools.resetWindows': 'Puts every tool window back at its default size and place.',
   'table.calculatedColumn': "Makes a column whose every row works out a formula from the row's own values.",
   'table.clearCalculated': 'Turns a calculated column into plain values.',
+  'table.insertFunction': 'Opens a searchable list of spreadsheet functions and puts the chosen one into the formula.',
   'insert.tape': 'Inserts study tape that covers an answer until you reveal it.',
   'tape.showAll': 'Reveals everything under the study tape on the page.',
   'tape.hideAll': 'Covers everything under the study tape on the page again.',

@@ -2,7 +2,7 @@
 
 Every tool, action, and feature in OpenNote, grouped by category, with one sentence each. `npm run docs:features` makes this page. The commands, tool windows, title bar items, settings sections, and setup steps come from what the app registers, so a new one shows up here or fails the tests. The feature sentences come from [FEATURES.md](FEATURES.md), which also says what has been tested by hand and which flag turns each one on. The [help pages](help/README.md) explain how to use them. [docs/screens](screens/README.md) has every picture in light and dark.
 
-The app registers 1168 commands and 48 tool windows. 24 of the windows are subject and engineering kits. The count includes the ink commands, which register when a page first shows its ink, and the commands that register once start-up is done or with the first page: on-device intelligence, the second pass of page commands, and the code block and table commands. The command palette (Ctrl+K) runs every command not marked as left out of it. Some commands need a feature flag, which FEATURES.md names. The keys shown are the defaults of the standard shortcut set.
+The app registers 1175 commands and 48 tool windows. 24 of the windows are subject and engineering kits. The count includes the ink commands, which register when a page first shows its ink, and the commands that register once start-up is done or with the first page: on-device intelligence, the second pass of page commands, and the code block and table commands. The command palette (Ctrl+K) runs every command not marked as left out of it. Some commands need a feature flag, which FEATURES.md names. The keys shown are the defaults of the standard shortcut set.
 
 ## Contents
 
@@ -52,7 +52,7 @@ The app registers 1168 commands and 48 tool windows. 24 of the windows are subje
 - **Equation numbers and references.** A display equation with a label gets a number at its right edge, and an inline reference shows the number of the equation it names.
 - **Problem-set templates.** Problem set (Given, Find, Solution, Answer), Cornell notes, and Lab report in the new-page chooser, before the person's own templates.
 
-#### Text, table, and code program foundations
+#### Text program foundations
 
 - **Format version 2.** Notebooks and pages that hold version 2 data are stamped 2, with minWriterVersion, so an older OpenNote refuses a file it cannot keep intact.
 - **Run and paragraph formats.** Font, size, weight, footnote reference, and foreign marks are read and written as inline tags.
@@ -66,6 +66,9 @@ The app registers 1168 commands and 48 tool windows. 24 of the windows are subje
 - **Bundled fonts and device fonts.** Carlito and Caladea stand in for Calibri and Cambria, and load only when a page uses them.
 - **Word import and export.** Import reads styles, themes, lists, notes, comments, and tracked changes into version 2 data.
 - **Shared color palette.** One palette for text and tables: theme colors with tints and shades, standard colors, recent colors per notebook, Automatic, No color, and More colors.
+
+#### Table program foundations
+
 - **Sheet cell styles in tables.** A table keeps cell styles, merges, rules, names, and cached results in data.sheet.
 - **Number format codes.** Format codes with sections, colors, and conditions, regional display, and currency, percent, and date column presets, all computed on the device.
 - **Excel-style formulas.** Formulas follow Excel's rules for text, numbers, errors, and dates, with a registry of functions, names, LET and LAMBDA, dynamic arrays that spill, and references across tables.
@@ -73,17 +76,28 @@ The app registers 1168 commands and 48 tool windows. 24 of the windows are subje
 - **Lookup and reference functions.** XLOOKUP and XMATCH with every match and search mode, INDEX, MATCH, and the older lookups.
 - **Array and matrix functions.** FILTER, SORT, SORTBY, UNIQUE, SEQUENCE, RANDARRAY, TAKE, DROP, the stack and wrap functions, TRIMRANGE, MMULT, MINVERSE, and MDETERM.
 - **Statistical functions.** Averages, deviations, ranks, percentiles, the IFS family, distributions with their inverses, tests, regression, and FORECAST.ETS.
+- **Financial functions.** All 55 of Excel's financial functions: loans and savings, cash flows (NPV, IRR, XNPV, XIRR, MIRR), depreciation, and bonds and bills, including the ODD functions.
+- **Data tools for tables.** Table logic for sorts by value, color, or icon, more filters, remove duplicates, trim spaces, text to columns, and find in a table.
 - **Cell format bar.** A second row under the table tools sets the font, size, text styles, and colors.
 - **Spreadsheet keys in tables.** Grid, Edit, and Enter modes use Excel's keys.
 - **Conditional formatting.** Rules color cells by value, text, date, blank, error, top and bottom, average, duplicate, or formula.
 - **Table styles in page exports.** Word, HTML, and Markdown exports write each table's last results.
+
+#### Code studio program foundations
+
 - **Code studio foundations.** The contracts, settings, flags, and strings for the code studio: projects as a page block, runs, diagnostics, completion, a replay debugger, tests, and runtime packs.
 - **Code editor keys.** Tab indents in the code editor, and Ctrl+Page Down and Ctrl+Page Up change tabs, so the tab bar stays reachable.
-- **Comments and suggestions.** New comment covers the selection or the word at the caret.
+- **Code studio window.** A tool window that pops out, with tabs or a file tree, a console, Problems and Tests panels, and a status bar.
 - **Python in code projects.** Quick Python (MicroPython, bundled) and full Python (CPython 3.14 through Pyodide, from a pack) run projects in the run sandbox.
 - **JavaScript and TypeScript runs.** QuickJS runs JavaScript and TypeScript projects (Sucrase removes the types) with relative imports, a seeded Math.random, Node-style console output, and a Jest-compatible test API.
+- **SQL and Lua runs.** SQLite 3.54 runs SQL projects in memory: schema and seed files first, `.import` for CSV files, results as tables, and query plans as a tree.
+- **C and C++ runs.** Clang 22 from the clang pack compiles C (C17) and C++ (C++20) projects to WebAssembly, and a WASI runner runs them in the sandbox.
 - **Error detection in code.** Syntax errors for nine languages, and OpenNote's own checks for Python (Ruff rules), JavaScript and TypeScript (ESLint rules), C, C++, and Lua.
 - **Code completion without a model.** A ranked list from names in scope, members, keywords, snippets, and words in the project, plus one-line ghost text from patterns, and an explicit request key.
+
+#### Review, sync, and shell polish
+
+- **Comments and suggestions.** New comment covers the selection or the word at the caret.
 - **Block-level merge on sync.** When two devices change different blocks of one page, a block type with a merger merges both versions instead of keeping a conflict copy.
 - **Calm shell polish.** Phosphor icons in the command bar, pens back on the bar at 1,280 px, calm pressed and selected states, notebook accent roles, and group dividers.
 
@@ -132,6 +146,12 @@ Open it with the command "Open the code studio".
 | Insert diagram from text | Inserts a diagram drawn from text, such as a Mermaid flowchart or timeline. |  |
 | Insert code cell | Inserts a code cell that runs Python or JavaScript in a sandbox. | Ctrl+Alt+Shift+K |
 | Insert code project | Inserts a code project: a folder of files that you can run, export, and import as a .zip. |  |
+| New code project | Puts a new code project on the page and opens it in the Code studio. |  |
+| Open code block in Code studio | Opens the code block at the caret as a project in the Code studio. |  |
+| Run the project (not in the palette) | Runs the project in the Code studio. | Ctrl+Enter, Ctrl+F5 |
+| Stop the run (not in the palette) | Stops the program running in the Code studio. | Shift+F5 |
+| Restart the run (not in the palette) | Stops the program and runs it again from the start. | Ctrl+Shift+F5 |
+| Show the Problems panel (not in the palette) | Shows the Problems panel of the Code studio. | Ctrl+Shift+M |
 | Number this equation | Gives the equation at the caret a number. |  |
 | Number all equations | Numbers every display equation on the page. |  |
 | Remove equation number | Removes the number from the equation at the caret. |  |
@@ -566,6 +586,7 @@ Open it with the command "Open the code studio".
 | Start a new line in the cell (not in the palette) | In Edit mode, starts a new line in the cell. | Alt+Enter |
 | Switch between Enter and Edit modes (not in the palette) | In Edit mode, switches between Enter mode, where arrows move to the next cell, and Edit mode. | F2 |
 | Use document keys in this table | Switches a table between spreadsheet keys and document keys, where Enter starts a new line. |  |
+| Insert function | Opens a searchable list of spreadsheet functions and puts the chosen one into the formula. | Shift+F3 |
 | Add row above | Adds a row above the current one. |  |
 | Add row below | Adds a row below the current one. | Ctrl+Enter |
 | Move row up | Moves the current row up one place. | Alt+Shift+Up |
@@ -2611,6 +2632,7 @@ Open it with the command "Open upcoming".
 - **Pen and touch.** Sets the writing hand, finger drawing, the steady pen, and the pressure curve.
 - **My handwriting.** Calibrates the app to your handwriting and the symbols you write by hand.
 - **On-device intelligence.** Turns each on-device intelligence feature on or off, and shows what it runs on.
+- **Code.** Sets indents by language, the Python runtime, run time and memory limits, suggestions, and C and C++ standards.
 - **Storage and backups.** Sets scheduled backups and portable mode, and finds notebooks that have moved.
 - **Updates.** Sets the update channel, checks for updates, and goes back to the last version.
 - **Privacy.** Turns on Work offline and lists every way the app uses the network.

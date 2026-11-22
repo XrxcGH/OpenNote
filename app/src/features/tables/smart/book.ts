@@ -4,6 +4,7 @@
 // results (ADR 0061, data.sheet.values) is worked out here too, so it goes in the same patch as the edit.
 import type { TableData } from '../../../editor/schema/specs';
 import { ERROR_TOKENS, isError, recalculateBook, todayDays } from '../engine';
+import { financePending, onFinanceLoaded } from '../engine/formula/fn/finance';
 import { toScalar } from '../engine/values';
 import type { EngineEnv, Table } from '../engine';
 import { cellCount, createRecalcClient, needsWorker, WORKER_CELLS } from '../engine/worker/client';
@@ -40,8 +41,12 @@ export class PageBook {
   private queued = false;
   /** The last two calculations, newest first: the edit's own and the page's, say. */
   private last: { raws: readonly Table[]; results: readonly Table[] }[] = [];
+  /** Each member's table from the newest finished calculation, whichever cells it was made from. */
+  private latest = new WeakMap<BookMember, Table>();
   // One environment per page: the engine compares it by identity and starts over for a new one (ADR 0065).
   private readonly env: EngineEnv = { today: () => todayDays() };
+  // The financial functions load on first use and show #BUSY! until then; once they land the page calculates again.
+  private readonly stopLoaded = onFinanceLoaded(() => this.reload());
 
   constructor(
     private readonly options: RecalcClientOptions = {},
@@ -59,7 +64,16 @@ export class PageBook {
     this.client = null;
     this.flight = null;
     this.queued = false;
+    this.stopLoaded();
     this.gone();
+  }
+
+  /** Forgets the results of before and calculates the page again, as a lazily loaded family has landed. */
+  private reload(): void {
+    this.last = [];
+    this.flight = null;
+    this.queued = false;
+    if (this.members.size > 0) this.refresh();
   }
 
   /** The members in page order. */
@@ -104,6 +118,14 @@ export class PageBook {
     return results[at];
   }
 
+  /**
+   * The member's table from the newest finished calculation, even when its cells changed since (such as when the
+   * results were written back into it). On a large page this is what the worker last gave; null before any.
+   */
+  lastCalculated(member: BookMember): Table | null {
+    return this.latest.get(member) ?? null;
+  }
+
   /** Tells the members the worker started or stopped, once for each change. */
   private working(members: readonly BookMember[], on: boolean): void {
     if (this.busy === on) return;
@@ -124,6 +146,10 @@ export class PageBook {
       if (!busy) {
         this.remember(raws, results);
         this.working(members, false);
+        members.forEach((member, i) => {
+          const table = results[i];
+          if (table) this.latest.set(member, table);
+        });
       }
       members.forEach((member, i) => this.members.has(member) && member.calculated(results[i], busy, raws[i]));
     };
@@ -285,6 +311,9 @@ export function valuesPatch(
 ): JsonObject | null {
   const after = sheetAfter(stored, extra);
   if (!after) return null;
+  // Results worked while a lazy family was still loading hold stand-ins, even in a formula that hides the error
+  // (IFERROR). Writing none leaves the cache marked stale, and the next edit after the family lands writes it.
+  if (financePending()) return null;
   const smart = extra?.smart === undefined ? stored.smart : applyPatch(stored.smart as Json, extra.smart as Json);
   const table = { header: data.header, columns: data.columns, rows: data.rows, smart: smart ?? undefined };
   const offset = data.header ? 1 : 0;

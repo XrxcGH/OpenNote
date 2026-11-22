@@ -203,6 +203,77 @@ function largeSheetTable(order: number): BlockJson {
   return tableOf(order, [head, ...body], { sheet: { table: { grid: true } } });
 }
 
+/** A short page of highlighted, shaded, and bordered runs: the ones that can clash in forced colors. */
+function highlightedRuns(order: number): BlockJson {
+  const ids = [fixtureId(), fixtureId(), fixtureId()];
+  const side = { style: 'single', width: 0.5, space: 4, color: 'theme:accent1' };
+  const markdown = [
+    'Plain words.',
+    'A <mark data-color="honey">highlighted run</mark> and ' +
+      '<span data-shade="indigo"><span data-color="honey">a shaded run</span></span>.',
+    'A bordered paragraph.',
+  ].join('\n\n');
+  const paras = { [ids[2]]: { border: { top: side, bottom: side, start: side, end: side } } };
+  return block('text', order, { markdown, ids, paras });
+}
+
+/**
+ * The 20-page note with the formatting a Word user adds (text design 11): 30 percent of the paragraphs in their own
+ * font, size, and color; 50 paragraphs with tab stops; 10 lists with their own number formats; 20 bordered paragraphs.
+ * Every element gets an ID, because `paras` is keyed by element ID.
+ */
+function formattedNote(order: number): BlockJson {
+  const formats = ['decimal', 'lowerLetter', 'upperRoman', 'lowerRoman', 'upperLetter', 'decimalZero', 'ordinal'];
+  const ids: string[] = [];
+  const paras: Record<string, Record<string, unknown>> = {};
+  const lists: Record<string, unknown> = {};
+  let paragraph = 0;
+  let list = 0;
+  const pieces = longNoteMarkdown()
+    .split('\n\n')
+    .map((piece) => {
+      if (piece.startsWith('#')) {
+        ids.push(fixtureId());
+        return piece;
+      }
+      if (/^(- |1\. )/.test(piece)) {
+        const listId = list < 10 ? `f${list}` : null;
+        if (listId) {
+          lists[listId] = {
+            levels: [{ format: formats[list % formats.length], text: list % 2 === 0 ? '%1.' : '(%1)' }],
+          };
+          list += 1;
+        }
+        for (const _item of piece.split('\n')) {
+          const id = fixtureId();
+          ids.push(id);
+          if (listId) paras[id] = { list: { id: listId } };
+        }
+        return piece;
+      }
+      const id = fixtureId();
+      ids.push(id);
+      const n = paragraph++;
+      const entry: Record<string, unknown> = {};
+      if (n < 50) {
+        entry.tabs = [
+          { pos: 72, align: 'start' },
+          { pos: 288, align: 'end', leader: 'dot' },
+        ];
+      }
+      if (n % 7 === 3 && n < 140) {
+        const side = { style: 'single', width: 0.5, space: 4, color: 'theme:accent1' };
+        entry.border = { top: side, bottom: side, start: side, end: side };
+      }
+      if (Object.keys(entry).length > 0) paras[id] = entry;
+      const body = n < 50 ? piece.replace(/^(\S+ \S+ \S+) /, '$1\t') : piece;
+      return n % 10 < 3
+        ? `<span data-font="Georgia"><span data-size="12"><span data-color="indigo">${body}</span></span></span>`
+        : body;
+    });
+  return block('text', order, { markdown: pieces.join('\n\n'), ids, paras, lists });
+}
+
 function build(): Record<string, () => PageFixture> {
   return {
     sampler: () =>
@@ -282,6 +353,33 @@ function build(): Record<string, () => PageFixture> {
       ]),
     bigTable: () => page('Big table', [text(0, 'Start here.'), bigTable(1)]),
     largeSheetTable: () => page('Large sheet', [text(0, 'Start here.'), largeSheetTable(1)]),
+    twentyPageFormatted: () => page('A formatted twenty-page note', [formattedNote(0)]),
+    // Highlight, shading, and a border: the runs that can clash in forced colors (a11y-perf-e2e).
+    highlightedRuns: () => page('Highlighted runs', [highlightedRuns(0)]),
+    // Two tables with Excel's formula rules, for the formula bar: references, errors, and page names across tables.
+    formulaTables: () =>
+      page('Formula tables', [
+        text(0, 'Start here.'),
+        tableOf(
+          1,
+          [
+            ['Item', 'Qty', 'Price', 'Total'],
+            ['Pen', '2', '3', ''],
+            ['Ink', '5', '4', ''],
+            ['Pad', '1', '9', ''],
+          ],
+          { sheet: { v: 1, table: { grid: true } } },
+        ),
+        text(2, 'Between the tables.'),
+        tableOf(
+          3,
+          [
+            ['Label', 'Value'],
+            ['Tax', ''],
+          ],
+          { sheet: { v: 1, table: { grid: true } } },
+        ),
+      ]),
   };
 }
 
@@ -299,7 +397,10 @@ export type PageFixtureName =
   | 'unlabeled'
   | 'sheetTable'
   | 'bigTable'
-  | 'largeSheetTable';
+  | 'largeSheetTable'
+  | 'twentyPageFormatted'
+  | 'highlightedRuns'
+  | 'formulaTables';
 
 const made = new Map<PageFixtureName, PageFixture>();
 const makers = build();
