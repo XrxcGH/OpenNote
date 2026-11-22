@@ -27,6 +27,7 @@ Every picture is a real screenshot of the app, and most pages have one. [The scr
 ## Write
 
 - [Typed notes](typed-notes.md): text, lists, checklists, the slash menu, templates, and find and replace.
+- [Text formatting](text-formatting.md): fonts, the Format pane, the ruler, language and direction, footnotes, comments and suggestions, and paste.
 - [Moving between blocks](moving-between-blocks.md): the keys that move between text, images, tables, and code.
 - [Math and graphs](math-and-graphs.md): equations, quick math, the grapher, and diagrams.
 - [Math solvers](math-solvers.md): integrals, differential equations, transforms, series, roots, uncertainty, probability, matrices, and projectiles, with worked steps.

@@ -3,7 +3,19 @@ import { cdp } from 'vitest/browser';
 import { afterEach, describe, expect, it } from 'vitest';
 import { renderUi } from '../../test';
 import { along, drawn } from '../../test/drawing';
-import { Books, Candle, DeskScene, EmptyArt, Glint, InkStroke, Notebook, Plant, StarField, Window } from './index';
+import {
+  Books,
+  Candle,
+  DeskMotifs,
+  DeskScene,
+  EmptyArt,
+  Glint,
+  InkStroke,
+  Notebook,
+  Plant,
+  StarField,
+  Window,
+} from './index';
 import styles from './illustrations.module.css';
 
 const MOTIFS = {
@@ -268,5 +280,67 @@ describe('under a Windows contrast theme', () => {
     await emulate('active');
     const hidden = renderUi(<StarField />);
     expect(getComputedStyle(drawn(hidden.container)).display).toBe('none');
+  });
+});
+
+describe('the desk gutter motifs', () => {
+  const vine = () => renderUi(<DeskMotifs />).container.querySelector<SVGSVGElement>('[data-art="gutter-vine"]')!;
+  const starSvg = () => renderUi(<DeskMotifs />).container.querySelector<SVGSVGElement>('[data-art="gutter-stars"]')!;
+  const pairs = (d: string): [number, number][] => {
+    const numbers = (d.match(/-?\d*\.?\d+/g) ?? []).map(Number);
+    return numbers.reduce<[number, number][]>((all, n, i) => (i % 2 ? all : [...all, [n, numbers[i + 1]!]]), []);
+  };
+
+  it('draws a vine inside its 16 by 128 box, hung from the frame', () => {
+    const svg = vine();
+    expect(svg.getAttribute('viewBox')).toBe('0 0 16 128');
+    const [stem, ...leaves] = [...svg.querySelectorAll('path')].map((path) => path.getAttribute('d')!);
+    // Every point, with half of the 1.5 px line, stays inside the box.
+    for (const [x, y] of [stem!, ...leaves].flatMap(pairs)) {
+      expect(x).toBeGreaterThanOrEqual(0.75);
+      expect(x).toBeLessThanOrEqual(15.25);
+      expect(y).toBeGreaterThanOrEqual(0.25);
+      expect(y).toBeLessThanOrEqual(127.25);
+    }
+    // The stem is anchored on the window frame at the top edge.
+    expect(pairs(stem!)[0]![1]).toBeLessThanOrEqual(0.75);
+    expect(leaves).toHaveLength(5);
+  });
+
+  it('droops each leaf: its tip is lower than its base', () => {
+    for (const d of [...vine().querySelectorAll('g path')].map((path) => path.getAttribute('d')!)) {
+      const [base, , tip] = pairs(d);
+      expect(tip![1]).toBeGreaterThan(base![1]);
+    }
+  });
+
+  it('fills the leaves with moss and draws the line in the icon style', () => {
+    const svg = vine();
+    expect(svg.querySelector('g')!.getAttribute('class')).toContain('fillMoss');
+    expect(getComputedStyle(svg).strokeWidth).toBe('1.5px');
+    expect(getComputedStyle(svg).strokeLinecap).toBe('round');
+  });
+
+  it('holds four stars that thin out downward, 7 px clear of both edges of the 24 px box', () => {
+    const stars = [...starSvg().querySelectorAll('circle')];
+    expect(stars).toHaveLength(4);
+    const cx = stars.map((star) => Number(star.getAttribute('cx')));
+    const r = stars.map((star) => Number(star.getAttribute('r')));
+    const opacity = stars.map((star) => Number(star.getAttribute('opacity')));
+    expect(Math.max(...r)).toBeLessThanOrEqual(1.1);
+    expect(Math.max(...opacity)).toBeLessThanOrEqual(0.6);
+    for (const x of cx) expect(Math.min(x, 24 - x)).toBeGreaterThanOrEqual(7);
+    expect(r).toEqual([...r].sort((a, b) => b - a));
+    expect(opacity).toEqual([...opacity].sort((a, b) => b - a));
+    for (const star of stars) expect(star.getAttribute('class')).toContain('spark');
+  });
+
+  it('sits behind the page, takes no pointer, and never animates', () => {
+    for (const svg of [vine(), starSvg()]) {
+      const style = getComputedStyle(svg);
+      expect(style.pointerEvents).toBe('none');
+      expect(Number(style.zIndex)).toBeLessThan(0);
+      expect(style.animationName).toBe('none');
+    }
   });
 });

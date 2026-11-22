@@ -9,12 +9,13 @@ import { useLayout } from '../../state/layout';
 import { qolStore } from '../../state/qol';
 import { sessionStore } from '../../state/session';
 import { shallowEqual, useStore } from '../../state/store';
-import { StarField } from '../../ui';
+import { DeskMotifs, StarField } from '../../ui';
 import { useRegion } from '../regions';
 import { NotebooksColumn, PagesColumn } from './Panes';
 import { columnWidth, solvePanes } from './solvePanes';
 import { useWorkspaceFocus } from './useWorkspaceFocus';
 import { useLayoutFollowsNavigation } from './useLayoutFollowsNavigation';
+import { useDeskGutter } from './useDeskGutter';
 import { usePageScrollMemory } from './usePageScrollMemory';
 import styles from './Workspace.module.css';
 
@@ -54,7 +55,7 @@ export function Workspace(props: WorkspaceSlots) {
   } as CSSProperties;
   useLayoutFollowsNavigation();
   useWorkspaceFocus(layout, sizeClass, compactScreen);
-  const pageRef = usePageScrollMemory(page.ref);
+  const pageRef = useDeskGutter(usePageScrollMemory(page.ref));
   // Both panes collapsed to rails share one 48 px column, the notebooks rail above the pages rail.
   const rails =
     layout.pages.mode === 'rail' && (layout.notebooks.mode === 'rail' || layout.notebooks.mode === 'drawer');
@@ -81,6 +82,7 @@ export function Workspace(props: WorkspaceSlots) {
         ref={pageRef}
       >
         <StarField />
+        <DeskMotifs />
         {props.page}
       </main>
       {compact && <div className={styles.bottomBar}>{props.bottomBar}</div>}
