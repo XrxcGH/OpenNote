@@ -28,13 +28,17 @@ async function confirmMerge(page: Page): Promise<void> {
 
 /** Selects the cells between two cells of the table by dragging, as a person does. */
 async function dragSelect(page: Page, from: [number, number], to: [number, number]): Promise<void> {
-  const first = await cellAt(page, from[0], from[1]).boundingBox();
-  const last = await cellAt(page, to[0], to[1]).boundingBox();
-  if (!first || !last) throw new Error('cells are not shown');
-  await page.mouse.move(first.x + first.width / 2, first.y + first.height / 2);
-  await page.mouse.down();
-  await page.mouse.move(last.x + last.width / 2, last.y + last.height / 2, { steps: 6 });
-  await page.mouse.up();
+  // A table that redraws after an edit can swallow the first drag, so the drag repeats until the last cell is selected.
+  await expect(async () => {
+    const first = await cellAt(page, from[0], from[1]).boundingBox();
+    const last = await cellAt(page, to[0], to[1]).boundingBox();
+    if (!first || !last) throw new Error('cells are not shown');
+    await page.mouse.move(first.x + first.width / 2, first.y + first.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(last.x + last.width / 2, last.y + last.height / 2, { steps: 6 });
+    await page.mouse.up();
+    await expect(cellAt(page, to[0], to[1])).toHaveAttribute('aria-selected', 'true', { timeout: 1000 });
+  }).toPass({ timeout: 10_000 });
 }
 
 test('merges B2:C3 after a warning, keeps B2, and Undo restores C3', async ({ page }) => {
