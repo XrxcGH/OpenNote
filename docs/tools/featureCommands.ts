@@ -28,6 +28,7 @@ export const SETTINGS_TEXT: Readonly<Record<string, string>> = {
   sync: 'Sets up optional encrypted sync between your devices.',
   help: 'Shows this copy of OpenNote and the ways to get help or send feedback.',
   shortcuts: 'Picks one of the two shortcut sets and rebinds any command.',
+  code: 'Sets indents by language, the Python runtime, run time and memory limits, suggestions, and C and C++ standards.',
   about: 'Shows the version, the update channel, the license, and the feature flags.',
 };
 

@@ -1166,6 +1166,61 @@
       "flag": "code.studio"
     },
     {
+      "id": "code.newProject",
+      "title": "New code project",
+      "category": "code",
+      "keys": [],
+      "flag": "code.studio"
+    },
+    {
+      "id": "code.openCodeBlock",
+      "title": "Open code block in Code studio",
+      "category": "code",
+      "keys": [],
+      "flag": "code.studio"
+    },
+    {
+      "id": "code.run",
+      "title": "Run the project",
+      "category": "code",
+      "keys": [
+        "Ctrl+Enter",
+        "Ctrl+F5"
+      ],
+      "flag": "code.studio",
+      "palette": false
+    },
+    {
+      "id": "code.stop",
+      "title": "Stop the run",
+      "category": "code",
+      "keys": [
+        "Shift+F5"
+      ],
+      "flag": "code.studio",
+      "palette": false
+    },
+    {
+      "id": "code.restart",
+      "title": "Restart the run",
+      "category": "code",
+      "keys": [
+        "Ctrl+Shift+F5"
+      ],
+      "flag": "code.studio",
+      "palette": false
+    },
+    {
+      "id": "code.problems.show",
+      "title": "Show the Problems panel",
+      "category": "code",
+      "keys": [
+        "Ctrl+Shift+M"
+      ],
+      "flag": "code.studio",
+      "palette": false
+    },
+    {
       "id": "insert.collection",
       "title": "Insert a live collection",
       "category": "insert",
@@ -9111,6 +9166,10 @@
     {
       "id": "intel",
       "title": "On-device intelligence"
+    },
+    {
+      "id": "code",
+      "title": "Code"
     },
     {
       "id": "storage",

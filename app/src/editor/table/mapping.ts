@@ -10,6 +10,8 @@ import { parseCell, serializeCell } from '../markdown';
 import type { MarkdownCache } from '../markdown';
 import { tableSchema } from '../schema/schema';
 import { DEFAULT_COLUMN_WIDTH } from '../schema/specs';
+import type { CellSpan } from './spans';
+import { TableMap } from '@tiptap/pm/tables';
 import type { TableCellData, TableData } from '../schema/specs';
 
 /** The narrowest and widest a column can be, in page units. */
@@ -103,22 +105,46 @@ export function sameTableData(a: TableData, b: TableData): boolean {
   return sameJson(a.columns, b.columns) && sameJson(a.rows, b.rows);
 }
 
-/** The table's document in `schema`'s types: the table schema's by default, or an editor's own schema. */
-export function tableDataToDoc(data: TableData, schema: Schema = tableSchema): PMNode {
+/**
+ * The table's document in `schema`'s types: the table schema's by default, or an editor's own schema. `spans` are the
+ * merged cells (spans.ts spansOf): the anchor gets `colspan` and `rowspan`, the covered cells are left out, and the
+ * table declares the spans so the normalizer keeps them.
+ */
+export function tableDataToDoc(data: TableData, schema: Schema = tableSchema, spans: readonly CellSpan[] = []): PMNode {
   const { nodes } = schema;
   const sameSchema = schema === tableSchema;
   const paragraph = (markdown: string) => {
     const parsed = parseCell(markdown);
     return sameSchema ? parsed : schema.nodeFromJSON(parsed.toJSON());
   };
+  const anchors = new Map<number, CellSpan>();
+  const covered = new Set<number>();
+  const width = data.columns.length;
+  for (const span of spans) {
+    if (span.row + span.rows > data.rows.length || span.column + span.columns > width) continue;
+    anchors.set(span.row * width + span.column, span);
+    for (let r = span.row; r < span.row + span.rows; r++)
+      for (let c = span.column; c < span.column + span.columns; c++)
+        if (r !== span.row || c !== span.column) covered.add(r * width + c);
+  }
   const rows = data.rows.map((row, r) => {
     const type = data.header && r === 0 ? nodes.tableHeader : nodes.tableCell;
-    const cells = data.columns.map((column) =>
-      type.create({ colwidth: [column.width], colId: column.id }, paragraph(row.cells[column.id]?.markdown ?? '')),
-    );
+    const cells: PMNode[] = [];
+    data.columns.forEach((column, c) => {
+      if (covered.has(r * width + c)) return;
+      const span = anchors.get(r * width + c);
+      const widths = span ? data.columns.slice(c, c + span.columns).map((one) => one.width) : [column.width];
+      const attrs = {
+        colwidth: widths,
+        colId: column.id,
+        ...(span ? { colspan: span.columns, rowspan: span.rows } : {}),
+      };
+      cells.push(type.create(attrs, paragraph(row.cells[column.id]?.markdown ?? '')));
+    });
     return nodes.tableRow.create({ rowId: row.id }, cells);
   });
-  return nodes.doc.create(null, nodes.table.create(null, rows));
+  const merges = anchors.size > 0 ? [...anchors.values()] : null;
+  return nodes.doc.create(null, nodes.table.create(merges ? { merges } : null, rows));
 }
 
 /** Each cell paragraph's Markdown, kept while ProseMirror keeps the node, so a flush serializes only edited cells. */
@@ -147,6 +173,53 @@ function idOf(node: PMNode | null | undefined, name: 'rowId' | 'colId'): string 
   return typeof id === 'string' && id !== '' ? id : null;
 }
 
+/** A cell of the grid: the node, and the top-left slot it covers. */
+interface Slot {
+  cell: PMNode;
+  left: number;
+  top: number;
+}
+
+/**
+ * Reads the cell at a grid slot. A table with no merged cell is read by index, as a ragged table needs. One with merged
+ * cells goes through ProseMirror's table map, so a slot a merged cell covers gives that cell.
+ */
+function slotReader(table: PMNode): { map: TableMap | null; at(row: number, column: number): Slot | null } {
+  let merged = false;
+  table.forEach((row) =>
+    row.forEach((cell) => {
+      if (Number(cell.attrs.colspan ?? 1) > 1 || Number(cell.attrs.rowspan ?? 1) > 1) merged = true;
+    }),
+  );
+  if (!merged) {
+    return {
+      map: null,
+      at(row, column) {
+        const line = row < table.childCount ? table.child(row) : null;
+        return line && column < line.childCount ? { cell: line.child(column), left: column, top: row } : null;
+      },
+    };
+  }
+  const map = TableMap.get(table);
+  // One pass builds each cell by offset and its top-left slot, so every read is O(1).
+  const cells = new Map<number, PMNode>();
+  table.forEach((row, rowOffset) => row.forEach((cell, cellOffset) => cells.set(rowOffset + 1 + cellOffset, cell)));
+  const corners = new Map<number, { left: number; top: number }>();
+  map.map.forEach((offset, i) => {
+    if (!corners.has(offset)) corners.set(offset, { left: i % map.width, top: Math.floor(i / map.width) });
+  });
+  return {
+    map,
+    at(row, column) {
+      if (row >= map.height || column >= map.width) return null;
+      const offset = map.map[row * map.width + column];
+      const cell = cells.get(offset);
+      const corner = corners.get(offset);
+      return cell && corner ? { cell, left: corner.left, top: corner.top } : null;
+    },
+  };
+}
+
 /**
  * The data a table document shows. Rows and columns take the IDs their nodes carry. A node without a free ID
  * takes `previous`'s ID at its position, unless another node carries it. Else it gets a fresh one. So pasted rows
@@ -158,10 +231,11 @@ function idOf(node: PMNode | null | undefined, name: 'rowId' | 'colId'): string 
 export function docToTableData(doc: PMNode, previous: TableData, cache: MarkdownCache): TableData {
   const table = tableOf(doc);
   if (!table || table.childCount === 0) return normalizeTableData(previous);
-  let width = 0;
+  const slots = slotReader(table);
+  let width = slots.map ? slots.map.width : 0;
   const carried = new Set<string>();
   table.forEach((row) => {
-    width = Math.max(width, row.childCount);
+    if (!slots.map) width = Math.max(width, row.childCount);
     const rowId = idOf(row, 'rowId');
     if (rowId) carried.add(rowId);
     row.forEach((cell) => {
@@ -178,13 +252,19 @@ export function docToTableData(doc: PMNode, previous: TableData, cache: Markdown
   const rowsBefore = new Map(previous.rows.map((row) => [row.id, row]));
   const firstRow = table.child(0);
   const columns = Array.from({ length: Math.max(1, width) }, (_, c): TableColumn => {
-    const cell = c < firstRow.childCount ? firstRow.child(c) : null;
+    const found = slots.at(0, c);
+    const cell = found?.cell ?? null;
     let own: string | null = null;
-    table.forEach((row) => (own ??= c < row.childCount ? idOf(row.child(c), 'colId') : null));
+    table.forEach((_row, _offset, r) => {
+      // Only a cell anchored in this column names it: a slot a horizontal merge covers holds the anchor's ID.
+      const here = slots.at(r, c);
+      if (here && here.left === c) own ??= idOf(here.cell, 'colId');
+    });
     const id = pick(own, previous.columns[c]?.id);
     const before = columnsBefore.get(id);
     const colwidth = cell?.attrs.colwidth as unknown;
-    const fromDoc = Array.isArray(colwidth) && typeof colwidth[0] === 'number' ? colwidth[0] : null;
+    const here = Array.isArray(colwidth) ? colwidth[c - (found?.left ?? c)] : null;
+    const fromDoc = typeof here === 'number' ? here : null;
     return { ...before, id, width: clampColumnWidth(fromDoc ?? before?.width ?? DEFAULT_COLUMN_WIDTH) };
   });
   let header = firstRow.childCount > 0;
@@ -195,8 +275,14 @@ export function docToTableData(doc: PMNode, previous: TableData, cache: Markdown
     const before = rowsBefore.get(id);
     const cells: TableRow['cells'] = {};
     columns.forEach((column, c) => {
-      const cell = c < row.childCount ? row.child(c) : null;
-      cells[column.id] = { ...before?.cells[column.id], markdown: cellMarkdown(cell?.firstChild ?? null, cache) };
+      const found = slots.at(r, c);
+      const cell = found && found.left === c && found.top === r ? found.cell : null;
+      // A covered slot keeps the Markdown it has: it is hidden, not erased (ADR 0064).
+      const kept = found && !cell ? (before?.cells[column.id]?.markdown ?? '') : null;
+      cells[column.id] = {
+        ...before?.cells[column.id],
+        markdown: kept ?? cellMarkdown(cell?.firstChild ?? null, cache),
+      };
     });
     rows.push({ ...before, id, cells });
   });

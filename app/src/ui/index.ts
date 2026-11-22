@@ -14,6 +14,7 @@ export { FocusScope } from './FocusScope';
 export {
   Books,
   Candle,
+  DeskMotifs,
   DeskScene,
   EmptyArt,
   Glint,

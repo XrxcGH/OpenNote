@@ -7,6 +7,7 @@ import { tableSchema } from '../../../editor/schema/schema';
 import type { TableData } from '../../../editor/schema/specs';
 import { t } from '../../../strings/t';
 import type { TableExtraHost } from '../../page';
+import { sortRefusal } from '../sheet/merge/sort';
 import { chartConfigFor, checkFormulaInput, formatValue, sortedIndices, toCanonical } from '../engine';
 import type { ChartKind, ColumnType, FilterOp, Locale, TotalKind } from '../engine';
 import type { ChartSmart, SmartData, SortSmart, ViewSmart } from './data';
@@ -65,6 +66,14 @@ export async function sortColumn(inst: SmartInstance, column: number, desc: bool
   const model = inst.model();
   const sort: SortSmart = { column: model.columnIds[column], ...(desc ? { desc: true } : {}) };
   const change = sortRows(model, inst.locale, sort);
+  // A range that holds a merge across rows is not sorted (ADR 0064).
+  if (change) {
+    const data = inst.host.table();
+    if (sortRefusal(data, inst.host.data().sheet, model.offset, data.rows.length - 1)) {
+      inst.host.announce(t('sheetMerge.sort.refused'));
+      return false;
+    }
+  }
   const smart = inst.smart();
   const remembered = smart.sort?.column === sort.column && (smart.sort.desc === true) === desc;
   if (!change && remembered) return false;
