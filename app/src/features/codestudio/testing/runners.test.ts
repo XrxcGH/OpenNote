@@ -242,6 +242,54 @@ describe('call harness', () => {
     expect(result).toMatchObject({ status: 'pass' });
   });
 
+  it('output without a trailing newline does not hide the result', async () => {
+    const py = 'import sys\ndef f():\n    sys.stdout.write("abc")\n    return 1\n';
+    const [result] = await runCases(orderOf('python-full', [file('main.py', py)]), [call('c1', 'f', '[]', '1')]);
+    expect(result).toMatchObject({ status: 'pass' });
+  });
+
+  it('a dataclass with postponed annotations works (the file is a module in sys.modules)', async () => {
+    const text = lines(
+      'from __future__ import annotations',
+      'from dataclasses import dataclass',
+      '',
+      '@dataclass',
+      'class P:',
+      '    x: int',
+      '',
+      'def f():',
+      '    return P(7).x',
+    );
+    const [result] = await runCases(orderOf('python-full', [file('main.py', text)]), [call('c1', 'f', '[]', '7')]);
+    expect(result).toMatchObject({ status: 'pass' });
+  });
+
+  it('Solution.add on an instance method builds the instance', async () => {
+    const text = 'class Solution:\n    def add(self, a, b):\n        return a + b\n';
+    for (const runtime of ['python-full', 'python-quick'] as const) {
+      const [result] = await runCases(orderOf(runtime, [file('main.py', text)]), [
+        call('c1', 'Solution.add', '[2, 3]', '5'),
+      ]);
+      expect(result, runtime).toMatchObject({ status: 'pass' });
+    }
+  });
+
+  it('a function that returns a promise says async is not supported', async () => {
+    const [result] = await runCases(orderOf('javascript', [file('main.js', 'async function f() { return 1; }\n')]), [
+      call('c1', 'f', '[]', '1'),
+    ]);
+    expect(result?.status).toBe('error');
+    expect(result?.message).toMatch(/Async functions are not supported/);
+  });
+
+  it('very deep arguments give an error result instead of a stuck run', async () => {
+    const deep = '['.repeat(20000) + ']'.repeat(20000);
+    const [result] = await runCases(orderOf('python-full', [file('main.py', 'def f(x):\n    return 1\n')]), [
+      call('c1', 'f', `[${deep}]`, '1'),
+    ]);
+    expect(result?.status).toBe('error');
+  });
+
   it('a file in a folder runs with the harness next to it', async () => {
     const [result] = await runCases(orderOf('python-full', [file('src/main.py', 'def one():\n    return 1\n')]), [
       call('c1', 'one', '[]', '1'),
@@ -281,6 +329,25 @@ describe('call harness', () => {
       }
       return lastCallResult(out.join('\n'));
     }
+
+    it('the result marker starts on a line of its own, after output with no newline', async () => {
+      const built = buildCall({
+        runtime: 'lua',
+        path: 'main.lua',
+        text: 'function f() return 1 end',
+        fn: 'f',
+        callArgs: '[]',
+      })!;
+      const lua = await new LuaFactory().createEngine();
+      const printed: string[] = [];
+      lua.global.set('print', (...args: unknown[]) => printed.push(args.join('\t')));
+      try {
+        await lua.doString(built.text);
+      } finally {
+        lua.global.close();
+      }
+      expect(printed).toEqual(['\n' + CALL_MARKER + '1']);
+    });
 
     it('two_sum([2,7,11,15], 9) gives [0,1]', async () => {
       expect(await luaCall(LUA_TWO_SUM, 'two_sum', '[[2,7,11,15],9]')).toBe('[0,1]');
@@ -362,6 +429,23 @@ if __name__ == "__main__":
     ]);
     expect(results[1]).toMatchObject({ message: '1 != 2', location: { file: 'main.py', line: 11 } });
     expect(results[2]).toMatchObject({ message: 'division by zero', location: { file: 'main.py', line: 8 } });
+  });
+
+  it('unittest keeps a test whose output has no trailing newline', async () => {
+    const text = lines(
+      'import unittest',
+      '',
+      'class T(unittest.TestCase):',
+      '    def test_a(self):',
+      '        print("x", end="")',
+      '    def test_b(self):',
+      '        pass',
+    );
+    const results = await runCases(orderOf('python-full', [file('main.py', text)]), [], true);
+    expect(results.map((one) => [one.name, one.status])).toEqual([
+      ['T.test_a', 'pass'],
+      ['T.test_b', 'pass'],
+    ]);
   });
 
   it('unittest finds tests in other test files of the project', async () => {

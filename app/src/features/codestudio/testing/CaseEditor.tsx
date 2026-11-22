@@ -1,9 +1,10 @@
 // The test case editor (DESIGN 9.1): an io, call, or sql case with its expected value, how it is compared, and its
 // time limit. It writes one case into the project through the controller.
-import { useId } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { t } from '../../../strings/t';
 import type { MessageKey } from '../../../strings/t';
-import { Button } from '../../../ui';
+import type { RefObject } from 'react';
+import { Button, announce } from '../../../ui';
 import { COMPARE_MODES, TEST_DEFAULTS } from '../contracts';
 import type { CompareMode, CompareSpec, TestCase, TestKind } from '../contracts';
 import { parseCallArgs } from './harness';
@@ -175,12 +176,12 @@ function CompareFields({ draft, set, base }: FieldsProps) {
   );
 }
 
-function HeadFields({ draft, set }: FieldsProps) {
+function HeadFields({ draft, set, nameRef }: FieldsProps & { nameRef: RefObject<HTMLInputElement | null> }) {
   return (
     <div className={styles.row}>
       <label className={styles.field}>
         <span>{t('codeStudio.testing.editor.name')}</span>
-        <input value={draft.name} onChange={(event) => set('name', event.target.value)} />
+        <input ref={nameRef} value={draft.name} onChange={(event) => set('name', event.target.value)} />
       </label>
       <label className={styles.field}>
         <span>{t('codeStudio.testing.editor.kind')}</span>
@@ -232,6 +233,9 @@ export function CaseEditor({ draft, existing, canCall, onChange, onSave, onCance
   const set: SetDraft = (key, value) => onChange({ ...draft, [key]: value });
   const shared = { draft, set, base };
   const valid = canSave(draft);
+  const nameRef = useRef<HTMLInputElement>(null);
+  const [confirming, setConfirming] = useState(false);
+  useEffect(() => nameRef.current?.focus(), []);
   return (
     <form
       className={styles.editor}
@@ -247,7 +251,7 @@ export function CaseEditor({ draft, existing, canCall, onChange, onSave, onCance
         }
       }}
     >
-      <HeadFields {...shared} />
+      <HeadFields {...shared} nameRef={nameRef} />
       {draft.kind === 'io' && <IoFields {...shared} />}
       {draft.kind === 'call' && <CallFields {...shared} canCall={canCall} />}
       <label className={styles.field}>
@@ -261,18 +265,32 @@ export function CaseEditor({ draft, existing, canCall, onChange, onSave, onCance
       </label>
       <CompareFields {...shared} />
       <div className={styles.actions}>
-        <Button type="submit" variant="primary" disabled={!valid}>
+        <Button type="submit" variant="primary" disabled={!valid} aria-describedby={valid ? undefined : `${base}-why`}>
           {t('codeStudio.testing.editor.save')}
         </Button>
         <Button variant="quiet" onClick={onCancel}>
           {t('codeStudio.testing.editor.cancel')}
         </Button>
         {existing && (
-          <Button variant="danger" onClick={onDelete}>
-            {t('codeStudio.testing.editor.delete')}
+          <Button
+            variant="danger"
+            onClick={() => {
+              if (confirming) onDelete();
+              else {
+                setConfirming(true);
+                announce(t('codeStudio.testing.editor.confirmDelete'));
+              }
+            }}
+          >
+            {confirming ? t('codeStudio.testing.editor.confirmDeleteButton') : t('codeStudio.testing.editor.delete')}
           </Button>
         )}
       </div>
+      {!valid && (
+        <p id={`${base}-why`} className={styles.note}>
+          {t('codeStudio.testing.editor.saveNeeds')}
+        </p>
+      )}
     </form>
   );
 }

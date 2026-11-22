@@ -71,7 +71,7 @@ class _OnResult(_on_unittest.TestResult):
         if found is not None:
             item['file'] = found[0].replace('/project/', '', 1)
             item['line'] = found[1]
-        print(${JSON.stringify(TEST_MARKER)} + _on_json.dumps(item))
+        print('\\n' + ${JSON.stringify(TEST_MARKER)} + _on_json.dumps(item))
 
     def startTest(self, test):
         _on_unittest.TestResult.startTest(self, test)
@@ -138,13 +138,6 @@ export function readTestResults(stdout: string): TestResult[] {
   }
   return results;
 }
-
-/** Program output with the harness's marker lines taken out, for the console. */
-export const withoutMarkers = (text: string) =>
-  text
-    .split('\n')
-    .filter((line) => !line.startsWith(TEST_MARKER))
-    .join('\n');
 
 // --- C and C++.
 

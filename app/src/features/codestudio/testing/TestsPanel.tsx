@@ -2,7 +2,7 @@
 // text label as well as an icon. It has Run all, Run one, Run failed, and the case editor. A failed test shows the
 // difference between the expected and the actual output, and a test that ran out of time says so.
 import { CheckCircle, Circle, Clock, Pencil, Play, Plus, WarningCircle, XCircle } from '@phosphor-icons/react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { t } from '../../../strings/t';
 import type { MessageKey } from '../../../strings/t';
 import { Button, IconButton, announce } from '../../../ui';
@@ -64,7 +64,7 @@ function Diff({ result }: { result: TestResult }) {
             ? t('codeStudio.testing.firstLine', { line })
             : ''}
       </p>
-      <pre aria-label={t('codeStudio.testing.diffLabel')} className={styles.diffText}>
+      <pre role="group" aria-label={t('codeStudio.testing.diffLabel')} className={styles.diffText}>
         {rows.map((row, at) => (
           <span key={at} className={styles.diffRow} data-side={row.side}>
             <span className={styles.diffSide}>
@@ -95,7 +95,9 @@ function Details({
 }) {
   return (
     <div className={styles.details} role="group" aria-label={t('codeStudio.testing.details', { name: result.name })}>
-      {result.status === 'time' && <p>{t('codeStudio.testing.timeLimitShown', { seconds: limitSeconds })}</p>}
+      {result.status === 'time' && !result.message && (
+        <p>{t('codeStudio.testing.timeLimitShown', { seconds: limitSeconds })}</p>
+      )}
       {result.message && <p className={styles.message}>{result.message}</p>}
       {result.location && (
         <Button variant="quiet" onClick={() => controller.openPath(result.location!.file, result.location!.line)}>
@@ -170,8 +172,23 @@ interface Editing {
 
 /** The case editor's state and its three actions: open one, save, and delete. */
 function useCaseEditing(controller: StudioController, project: CodeProject, cases: TestCase[]) {
-  const [editing, setEditing] = useState<Editing | null>(null);
-  const edit = (test: TestCase | null) => setEditing({ id: test?.id ?? null, draft: draftOf(test, cases.length + 1) });
+  const [editing, setEditingState] = useState<Editing | null>(null);
+  const opener = useRef<HTMLElement | null>(null);
+  const setEditing = (next: Editing | null) => {
+    setEditingState(next);
+    if (next) return;
+    // The form goes away: focus returns to the button that opened it, or to the panel when that button is gone.
+    const back = opener.current;
+    opener.current = null;
+    setTimeout(() => {
+      const target = back?.isConnected ? back : document.querySelector<HTMLElement>('[data-tests-panel]');
+      target?.focus();
+    }, 0);
+  };
+  const edit = (test: TestCase | null) => {
+    opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    setEditingState({ id: test?.id ?? null, draft: draftOf(test, cases.length + 1) });
+  };
   const save = () => {
     if (!editing) return;
     const id = editing.id ?? nextId('t', project.tests);
@@ -270,7 +287,7 @@ export function TestsPanel({ controller }: { controller: StudioController }) {
   );
 
   return (
-    <div className={styles.panel}>
+    <div className={styles.panel} data-tests-panel tabIndex={-1}>
       <Bar
         controller={controller}
         project={project}

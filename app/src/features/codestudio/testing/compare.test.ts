@@ -156,3 +156,40 @@ describe('the diff', () => {
     expect(firstDifferentToken('1 2', '1 2')).toBeNull();
   });
 });
+
+describe('regex safety', () => {
+  const REGEX: CompareSpec = { mode: 'regex' };
+  it('refuses nested quantifiers at once instead of running for hours', () => {
+    const started = Date.now();
+    // (a+)+ against "aaaa...!" takes exponential time in a backtracking matcher: a documented ReDoS case.
+    const got = compareText(`${'a'.repeat(40)}!`, '^(a+)+$', REGEX);
+    expect(got).toEqual({ pass: false, reason: 'tooComplex' });
+    expect(Date.now() - started).toBeLessThan(1000);
+  });
+
+  it('refuses a quantified group whose alternatives can start the same way', () => {
+    expect(compareText('aaaa!', '^(a|a)*$', REGEX).reason).toBe('tooComplex');
+    expect(compareText('aaaa!', '^(a|ab)+$', REGEX).reason).toBe('tooComplex');
+  });
+
+  it('refuses a pattern over 500 characters and a text over 20000', () => {
+    expect(compareText('x', 'a'.repeat(501), REGEX).reason).toBe('tooComplex');
+    expect(compareText('x'.repeat(20_001), 'x', REGEX).reason).toBe('tooComplex');
+  });
+
+  it('still accepts ordinary patterns', () => {
+    expect(pass('abc123', '^[a-z]+\\d+$', REGEX)).toBe(true);
+    expect(pass('ab', '^(a|b)+$', REGEX)).toBe(true);
+    expect(pass('2024-01-05', '^(\\d{4})-(\\d{2})-(\\d{2})$', REGEX)).toBe(true);
+    expect(pass('x', '(', REGEX)).toBe(false);
+  });
+});
+
+describe('deep JSON', () => {
+  it('compares nested lists to the depth cap, and fails beyond it without throwing', () => {
+    const nest = (depth: number) => '['.repeat(depth) + ']'.repeat(depth);
+    expect(compareJson(nest(100), nest(100), { mode: 'exact' }).pass).toBe(true);
+    expect(compareJson(nest(5000), nest(5000), { mode: 'exact' }).pass).toBe(false);
+    expect(showJson(nest(5000)).length).toBeGreaterThan(0);
+  });
+});

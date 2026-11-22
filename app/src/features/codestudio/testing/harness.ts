@@ -34,6 +34,9 @@ export function lastCallResult(stdout: string): string | null {
 
 const literal = (text: string) => JSON.stringify(text);
 
+/** What a function that returns a promise reports. The harness does not wait for promises. */
+export const ASYNC_MESSAGE = 'Async functions are not supported in tests yet. Return the value directly.';
+
 /** The Lua long string that holds `text`, with enough `=` that the text cannot close it. */
 function luaLong(text: string): string {
   let level = '';
@@ -57,12 +60,34 @@ def _on_plain(v):
         return v
     return str(v)
 
+
+def _on_member(parent, name):
+    found = getattr(parent, name)
+    if isinstance(parent, type):
+        raw = getattr(parent, '__dict__', {}).get(name)
+        if raw is not None and type(raw).__name__ == 'function':
+            return getattr(parent(), name)
+    return found
+
 `;
 
-/** Python that runs the user's file under the name `opennote_user` and leaves its names in `_on_scope`. */
+/**
+ * Python that runs the user's file as the module `opennote_user` (registered in `sys.modules`, so dataclasses and
+ * typing helpers find it) and leaves its names in `_on_scope`.
+ */
 export function pythonLoad(file: string): string {
-  return `_on_source = open(${literal(file)}).read()
-_on_scope = {'__name__': 'opennote_user', '__file__': ${literal(file)}}
+  return `import sys as _on_sys
+_on_source = open(${literal(file)}).read()
+try:
+    if _on_sys.implementation.name != 'cpython':
+        raise ValueError('MicroPython keeps a plain dictionary')
+    import types as _on_types
+    _on_user = _on_types.ModuleType('opennote_user')
+    _on_scope = _on_user.__dict__
+    _on_sys.modules['opennote_user'] = _on_user
+except Exception:
+    _on_scope = {}
+_on_scope.update({'__name__': 'opennote_user', '__file__': ${literal(file)}})
 exec(compile(_on_source, ${literal(file)}, 'exec'), _on_scope)
 `;
 }
@@ -70,8 +95,8 @@ exec(compile(_on_source, ${literal(file)}, 'exec'), _on_scope)
 function pythonHarness(file: string, fn: string, argsJson: string): string {
   const [first, ...rest] = fn.split('.');
   return `${PYTHON_COMMON}${pythonLoad(file)}_on_fn = _on_scope[${literal(first!)}]
-${rest.map((part) => `_on_fn = getattr(_on_fn, ${literal(part)})\n`).join('')}_on_result = _on_fn(*_on_json.loads(${literal(argsJson)}))
-print(${literal(CALL_MARKER)} + _on_json.dumps(_on_plain(_on_result)))
+${rest.map((part) => `_on_fn = _on_member(_on_fn, ${literal(part)})\n`).join('')}_on_result = _on_fn(*_on_json.loads(${literal(argsJson)}))
+print('\\n' + ${literal(CALL_MARKER)} + _on_json.dumps(_on_plain(_on_result)))
 `;
 }
 
@@ -80,8 +105,10 @@ function javascriptHarness(fn: string, argsJson: string): string {
 {
   const __on_args = JSON.parse(${literal(argsJson)});
   const __on_result = (${fn})(...__on_args);
+  if (__on_result && typeof __on_result.then === 'function')
+    throw new Error(${literal(ASYNC_MESSAGE)});
   const __on_json = JSON.stringify(__on_result === undefined ? null : __on_result);
-  console.log(${literal(CALL_MARKER)} + __on_json);
+  console.log('\\n' + ${literal(CALL_MARKER)} + __on_json);
 }
 `;
 }
@@ -235,7 +262,7 @@ ${LUA_JSON}
   local __on_result = (${fn})((table.unpack or unpack)(__on_args, 1, __on_n))
   local __on_out = {}
   __on_enc(__on_result, __on_out)
-  print(${literal(CALL_MARKER)} .. table.concat(__on_out))
+  print('\\n' .. ${literal(CALL_MARKER)} .. table.concat(__on_out))
 end
 `;
 }

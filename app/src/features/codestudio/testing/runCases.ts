@@ -6,11 +6,11 @@ import { TEST_DEFAULTS } from '../contracts';
 import type { RunFile, RunLimits, TestCase, TestResult } from '../contracts';
 import type { RunHandle, RunOrder, RunResult } from '../run/host';
 import type { Runner } from '../window/runner';
-import { compareJson, compareText, showJson } from './compare';
+import { MAX_JSON_TEXT, compareJson, compareText, showJson } from './compare';
 import type { Comparison } from './compare';
 import { capture, lastErrorLine } from './capture';
 import { frameworkRun } from './frameworkRun';
-import { buildCall, isCallable, lastCallResult, parseCallArgs } from './harness';
+import { ASYNC_MESSAGE, buildCall, isCallable, lastCallResult, parseCallArgs } from './harness';
 import { compareResultSets } from './resultSets';
 
 export const limitFor = (test: TestCase, limits: RunLimits): number =>
@@ -19,9 +19,9 @@ export const limitFor = (test: TestCase, limits: RunLimits): number =>
 function verdict(test: TestCase, actual: string, got: Comparison): TestResult {
   const base = { id: test.id, name: test.name, timeMs: 0, expected: test.expected, actual };
   if (got.pass) return { ...base, status: 'pass' };
-  return got.reason === 'badPattern'
-    ? { ...base, status: 'fail', message: t('codeStudio.testing.badPattern') }
-    : { ...base, status: 'fail' };
+  if (got.reason === 'badPattern') return { ...base, status: 'fail', message: t('codeStudio.testing.badPattern') };
+  if (got.reason === 'tooComplex') return { ...base, status: 'fail', message: t('codeStudio.testing.tooComplex') };
+  return { ...base, status: 'fail' };
 }
 
 function failure(test: TestCase, message: string, extra: Partial<TestResult> = {}): TestResult {
@@ -35,6 +35,7 @@ function filesFor(order: RunOrder, test: TestCase): { files: RunFile[]; main: st
   if (!main) return t('codeStudio.testing.noMain');
   if (!isCallable(test.fn ?? '')) return t('codeStudio.testing.badFunction', { name: test.fn ?? '' });
   if (!parseCallArgs(test.callArgs ?? '')) return t('codeStudio.testing.badArguments');
+  if ((test.callArgs ?? '').length > MAX_JSON_TEXT) return t('codeStudio.testing.badArguments');
   const built = buildCall({
     runtime: order.runtime,
     path: main.path,
@@ -74,7 +75,10 @@ export async function runCase(
   if (result.status === 'time')
     return failure(test, t('codeStudio.testing.timeLimit', { seconds: timeMs / 1000 }), { ...timed, status: 'time' });
   if (result.status === 'memory') return failure(test, t('codeStudio.testing.memory'), timed);
-  if (result.status === 'error') return failure(test, lastErrorLine(got.err) || result.message, timed);
+  if (result.status === 'error') {
+    const message = got.err.includes(ASYNC_MESSAGE) ? ASYNC_MESSAGE : lastErrorLine(got.err) || result.message;
+    return failure(test, message, timed);
+  }
   let one: TestResult;
   if (test.kind === 'call') {
     const printed = lastCallResult(got.out);
@@ -110,7 +114,9 @@ export function withTests(base: Runner): Runner {
         callbacks.onStarted?.();
         for (const test of order.test!.cases) {
           if (stopped) break;
-          const one = await runCase(base, order, test, hold);
+          const one = await runCase(base, order, test, hold).catch((error: unknown) =>
+            failure(test, error instanceof Error ? error.message : String(error)),
+          );
           if (one === 'stopped') break;
           if ('elapsedMs' in one) return one;
           callbacks.onTest?.(one);
