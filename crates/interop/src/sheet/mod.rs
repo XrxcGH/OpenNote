@@ -3,8 +3,9 @@
 //! conversion calls it, so the Word and HTML tables draw the cells as the spreadsheet does.
 
 pub mod formula;
-mod numfmt;
+pub mod numfmt;
 mod read;
+pub mod styles;
 
 pub use read::{fingerprint, read, MERGE_LIMIT};
 
