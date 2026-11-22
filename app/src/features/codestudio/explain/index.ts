@@ -2,7 +2,8 @@
 // printed, finds its entry in the catalog of that language, and returns what happened, the likely cause, and the next
 // thing to try, with the failing line quoted. Nothing matches? The raw message comes back with a generic hint.
 
-import { t, type MessageKey } from '../../../strings/t';
+import { explainEntries } from '../../../strings/en/codeStudio/explainEntries';
+import { formatMessage, t } from '../../../strings/t';
 import { CLANG_ENTRIES } from './clang';
 import { JAVASCRIPT_ENTRIES } from './javascript';
 import { LUA_ENTRIES } from './lua';
@@ -93,9 +94,9 @@ export function fixArticles(text: string): string {
 }
 
 function words(key: string, values: Values): string {
-  return fixArticles(
-    (t as (k: MessageKey, p?: Values) => string)(`codeStudio.explain.entries.${key}` as MessageKey, values),
-  );
+  const [id, part] = key.split('.') as [string, string];
+  const entry = (explainEntries as Record<string, Record<string, string> | undefined>)[id];
+  return fixArticles(formatMessage(entry?.[part] ?? '', values));
 }
 
 /** Named groups of the match, empty ones dropped, plus `message` for entries that quote it. */

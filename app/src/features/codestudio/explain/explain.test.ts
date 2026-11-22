@@ -3,7 +3,7 @@
 
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { codeStudioExplain } from '../../../strings/en/codeStudio/explain';
+import { explainEntries } from '../../../strings/en/codeStudio/explainEntries';
 import { PYTHON_BUILTINS } from '../diagnostics/pythonNames';
 import { CATALOG, cleanMessage, explain, fixArticles, indexHint, type ExplainLanguage } from './index';
 import { CLANG_ENTRIES } from './clang';
@@ -14,7 +14,7 @@ describe('catalog entries', () => {
   it('has words for every entry and an entry for every set of words', () => {
     const ids = LANGUAGES.flatMap((l) => CATALOG[l].map((e) => e.id));
     expect(new Set(ids).size).toBe(ids.length);
-    expect([...ids].sort()).toEqual(Object.keys(codeStudioExplain.entries).sort());
+    expect([...ids].sort()).toEqual(Object.keys(explainEntries).sort());
   });
 
   for (const language of LANGUAGES) {

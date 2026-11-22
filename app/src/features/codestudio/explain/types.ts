@@ -1,9 +1,9 @@
 // Shapes of the explanation catalog (DESIGN 7.2). An entry names the error, the pattern that finds it in the runtime's
-// message, and real messages the pattern must match. The words live in strings/en/codeStudio/explain.ts under the id.
+// message, and real messages the pattern must match. The words live in strings/en/codeStudio/explainEntries.ts under the id.
 
-import type { codeStudioExplain } from '../../../strings/en/codeStudio/explain';
+import type { explainEntries } from '../../../strings/en/codeStudio/explainEntries';
 
-export type EntryId = keyof typeof codeStudioExplain.entries;
+export type EntryId = keyof typeof explainEntries;
 
 export type ExplainLanguage = 'python' | 'javascript' | 'typescript' | 'c' | 'cpp' | 'sql' | 'lua';
 
