@@ -1,0 +1,109 @@
+.layout {
+  display: grid;
+  grid-template-columns: minmax(10rem, 14rem) 1fr;
+  gap: var(--space-3, 12px);
+  max-inline-size: 100%;
+}
+
+@media (max-width: 36rem) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1, 4px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-block-size: 22rem;
+  overflow: auto;
+}
+
+.sample {
+  inline-size: 100%;
+  min-block-size: var(--target-size, 32px);
+  padding-inline: var(--space-2, 8px);
+  font: inherit;
+  text-align: start;
+  background: var(--color-surface-page);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-sm, 6px);
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.sample[aria-pressed='true'] {
+  outline: 2px solid var(--color-accent, currentColor);
+  outline-offset: 1px;
+}
+
+.details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2, 8px);
+  min-inline-size: 0;
+}
+
+.heading {
+  margin: 0;
+  font-size: inherit;
+  font-weight: 600;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2, 8px);
+}
+
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(7rem, 1fr));
+  gap: var(--space-2, 8px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.look {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-1, 4px);
+  inline-size: 100%;
+  padding: var(--space-2, 8px);
+  font: inherit;
+  color: var(--color-text-primary);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-sm, 6px);
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.look[aria-pressed='true'] {
+  outline: 2px solid var(--color-accent, currentColor);
+  outline-offset: 1px;
+}
+
+.mini {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border: 1px solid var(--color-border-subtle);
+}
+
+.miniCell {
+  block-size: 0.75rem;
+  box-sizing: border-box;
+}
+
+.options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: var(--space-1, 4px) var(--space-3, 12px);
+}

@@ -1,0 +1,237 @@
+.dialog {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3, 12px);
+  max-inline-size: 100%;
+  box-sizing: border-box;
+}
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1, 4px);
+  border-block-end: 1px solid var(--color-border-subtle);
+}
+
+.tab {
+  min-block-size: var(--target-size, 32px);
+  padding-inline: var(--space-3, 12px);
+  font: inherit;
+  color: var(--color-text-primary);
+  background: transparent;
+  border: 0;
+  border-block-end: 2px solid transparent;
+  cursor: pointer;
+}
+
+.tab[aria-selected='true'] {
+  border-block-end-color: var(--color-accent, currentColor);
+  font-weight: 600;
+}
+
+.panel {
+  min-block-size: 16rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: var(--space-3, 12px);
+  align-items: start;
+}
+
+.numberTab {
+  display: grid;
+  grid-template-columns: minmax(9rem, 12rem) 1fr;
+  gap: var(--space-3, 12px);
+}
+
+@media (max-width: 36rem) {
+  .numberTab {
+    grid-template-columns: 1fr;
+  }
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1, 4px);
+  min-inline-size: 0;
+}
+
+.input,
+.categories {
+  min-block-size: var(--target-size, 32px);
+  font: inherit;
+  color: inherit;
+  background: var(--color-surface-page);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-sm, 6px);
+  padding-inline: var(--space-2, 8px);
+  box-sizing: border-box;
+  max-inline-size: 100%;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 8px);
+  min-block-size: var(--target-size, 32px);
+}
+
+.group {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(6rem, 1fr));
+  gap: var(--space-2, 8px);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-sm, 6px);
+  padding: var(--space-2, 8px);
+  grid-column: 1 / -1;
+}
+
+.sample {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-weight: 600;
+}
+
+.help {
+  margin: 0;
+  color: var(--color-text-secondary);
+}
+
+.error {
+  margin: 0;
+  color: var(--color-danger, var(--color-text-primary));
+  font-weight: 600;
+}
+
+.codes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1, 4px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.codeButton,
+.preset,
+.colorButton,
+.edge {
+  min-block-size: var(--target-size, 32px);
+  padding-inline: var(--space-2, 8px);
+  font: inherit;
+  color: var(--color-text-primary);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-sm, 6px);
+  cursor: pointer;
+}
+
+.colorButton {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 8px);
+  text-align: start;
+}
+
+.swatch {
+  inline-size: 1.25rem;
+  block-size: 1.25rem;
+  border: 1px solid var(--color-border-default);
+  border-radius: 4px;
+  background: repeating-conic-gradient(var(--color-border-subtle) 0 25%, transparent 0 50%) 0 / 8px 8px;
+}
+
+.palette {
+  max-inline-size: 100%;
+  overflow: auto;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-sm, 6px);
+}
+
+.edge[aria-pressed='true'] {
+  background: var(--color-accent-subtle, var(--color-border-subtle));
+  border-color: var(--color-accent, currentColor);
+  font-weight: 600;
+}
+
+.edge:disabled,
+.preset:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.diagram {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-1, 4px);
+  grid-column: 1 / -1;
+  grid-template-areas:
+    'dd t du'
+    'l ih r'
+    'iv b b';
+}
+
+.top {
+  grid-area: t;
+}
+
+.left {
+  grid-area: l;
+}
+
+.right {
+  grid-area: r;
+}
+
+.bottom {
+  grid-area: b;
+}
+
+.insideH {
+  grid-area: ih;
+}
+
+.insideV {
+  grid-area: iv;
+}
+
+.diagDown {
+  grid-area: dd;
+}
+
+.diagUp {
+  grid-area: du;
+}
+
+.previewBox {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3, 12px);
+  padding-block-start: var(--space-2, 8px);
+  border-block-start: 1px solid var(--color-border-subtle);
+}
+
+.previewTitle {
+  font-weight: 600;
+}
+
+.previewCell {
+  flex: 1;
+  min-inline-size: 0;
+  overflow: hidden;
+  background: var(--color-surface-page);
+  padding: var(--space-3, 12px);
+  border-radius: var(--radius-sm, 6px);
+}
+
+.previewInner {
+  display: flex;
+  flex-direction: column;
+  min-block-size: 3rem;
+  box-sizing: border-box;
+  inline-size: 100%;
+  overflow-wrap: anywhere;
+}

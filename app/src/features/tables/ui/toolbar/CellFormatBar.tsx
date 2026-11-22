@@ -14,8 +14,12 @@ import { GridFourIcon } from '@phosphor-icons/react/dist/csr/GridFour';
 import { HashIcon } from '@phosphor-icons/react/dist/csr/Hash';
 import { MinusIcon } from '@phosphor-icons/react/dist/csr/Minus';
 import { PaintBucketIcon } from '@phosphor-icons/react/dist/csr/PaintBucket';
+import { PaintBrushIcon } from '@phosphor-icons/react/dist/csr/PaintBrush';
 import { PercentIcon } from '@phosphor-icons/react/dist/csr/Percent';
 import { PlusIcon } from '@phosphor-icons/react/dist/csr/Plus';
+import { SlidersHorizontalIcon } from '@phosphor-icons/react/dist/csr/SlidersHorizontal';
+import { SwatchesIcon } from '@phosphor-icons/react/dist/csr/Swatches';
+import { TableIcon } from '@phosphor-icons/react/dist/csr/Table';
 import { TextAaIcon } from '@phosphor-icons/react/dist/csr/TextAa';
 import { TextAlignCenterIcon } from '@phosphor-icons/react/dist/csr/TextAlignCenter';
 import { TextAlignJustifyIcon } from '@phosphor-icons/react/dist/csr/TextAlignJustify';
@@ -64,6 +68,7 @@ import { BORDER_IDS, BORDER_LABELS } from './borders';
 import { addOpener, hostOfBlock, hostsVersion, subscribeHosts } from './hosts';
 import { FORMAT_CHOICES, choiceOf } from './numberFormats';
 import { againstFor, paperOf } from './palette';
+import { runFormatCommand } from '../formatCells/register';
 import { moveFocus, rove } from './roving';
 
 /** The bar is this narrow (in pixels) or less when the least used buttons move into the More menu. */
@@ -504,13 +509,23 @@ function NumberGroup({ host, cells, run, narrow }: GroupProps) {
     menuAt(
       host,
       'sheetToolbar.numberFormat',
-      FORMAT_CHOICES.map((choice) => ({
-        id: choice.id,
-        label: t(choice.label),
-        kind: 'radio' as const,
-        checked: choice.id === choiceOf(cells.style.fmt, appLocale()),
-        onSelect: () => run(setChoice(host, choice.id)),
-      })),
+      [
+        ...FORMAT_CHOICES.map((choice) => ({
+          id: choice.id,
+          label: t(choice.label),
+          kind: 'radio' as const,
+          checked: choice.id === choiceOf(cells.style.fmt, appLocale()),
+          onSelect: () => run(setChoice(host, choice.id)),
+        })),
+        {
+          id: 'more',
+          label: t('sheetFormat.commands.moreFormats'),
+          kind: 'radio' as const,
+          checked: false,
+          separatorBefore: true,
+          onSelect: () => void runFormatCommand('formatCells', host),
+        },
+      ],
       anchor,
     );
   return (
@@ -593,6 +608,41 @@ function moreItems({ host, cells, run }: GroupProps, anchor: HTMLElement): MenuI
   ];
 }
 
+/** Format cells, Cell styles, Format as table, and the format painter (the Format Cells lane's commands). */
+function StylesGroup({ host }: GroupProps) {
+  return (
+    <span className={styles.group}>
+      <Tool
+        tool="formatCells"
+        name="sheetFormat.commands.formatCells"
+        icon={SlidersHorizontalIcon}
+        popup="dialog"
+        onPress={() => void runFormatCommand('formatCells', host)}
+      />
+      <Tool
+        tool="cellStyles"
+        name="sheetFormat.commands.cellStyles"
+        icon={SwatchesIcon}
+        popup="dialog"
+        onPress={() => void runFormatCommand('cellStyles', host)}
+      />
+      <Tool
+        tool="formatAsTable"
+        name="sheetFormat.commands.formatAsTable"
+        icon={TableIcon}
+        popup="dialog"
+        onPress={() => void runFormatCommand('formatAsTable', host)}
+      />
+      <Tool
+        tool="formatPainter"
+        name="sheetFormat.commands.formatPainter"
+        icon={PaintBrushIcon}
+        onPress={() => void runFormatCommand('formatPainter', host)}
+      />
+    </span>
+  );
+}
+
 function ClearGroup(props: GroupProps) {
   const { host, run, narrow } = props;
   return (
@@ -666,6 +716,7 @@ export function CellFormatBar({ block }: CellFormatBarProps) {
       </span>
       <AlignGroup {...group} />
       <NumberGroup {...group} />
+      <StylesGroup {...group} />
       <ClearGroup {...group} />
     </div>
   );
