@@ -116,6 +116,7 @@ import { fnFinance } from './fnFinance';
 import { fnStats } from './fnStats';
 import { sheetFormat } from './sheetFormat';
 import { sheetMerge } from './sheetMerge';
+import { sheetClipboard } from './sheetClipboard';
 import { sheetValidation } from './sheetValidation';
 import { sheetTools } from './sheetTools';
 import { sheetStructure } from './sheetStructure';
@@ -257,6 +258,7 @@ export const en = {
   fnStats,
   sheetFormat,
   sheetMerge,
+  sheetClipboard,
   sheetValidation,
   sheetTools,
   sheetStructure,
