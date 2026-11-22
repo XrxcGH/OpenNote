@@ -13,6 +13,7 @@ import type {
   RunFile,
   RuntimeDiagnostic,
   RuntimeId,
+  TestCase,
   TestResult,
 } from '../contracts';
 import type { CodeEditor } from '../editor/create';
@@ -23,6 +24,7 @@ import type { Outcome, ProjectStore } from '../project/store';
 import { loadSession, updateSession } from '../project/session';
 import type { RunHandle, RunResult } from '../run/host';
 import { noteText, statusLine } from '../run/summary';
+import { withTests } from '../testing/runCases';
 import { ConsoleBuffer } from '../console/buffer';
 import { stripAnsi } from '../console/ansi';
 import { fromDiagnostic, fromRuntime } from '../problems/group';
@@ -495,12 +497,28 @@ export class StudioController {
 
   // --- Running.
 
-  run(test = false): void {
+  /** Saves or removes one test case (the Tests panel's editor). */
+  setTest(id: string, test: TestCase | null): boolean {
+    return this.after(this.store?.setTest(id, test));
+  }
+
+  /**
+   * Runs the program, or its tests: all of them, or, with a filter, the cases named in `ids` and the framework
+   * tests when `framework` is set (Run one and Run failed in the Tests panel).
+   */
+  run(test: boolean | { ids: string[]; framework: boolean } = false): void {
     const project = this.project();
     if (!project || this.handle) return;
     this.store?.flush();
-    const cases = Object.values(project.tests).sort((a, b) => a.order - b.order);
-    const order = orderFor(project, getSettings().code, test ? { cases, framework: true } : undefined);
+    const filter = typeof test === 'object' ? test : null;
+    const cases = Object.values(project.tests)
+      .filter((one) => !filter || filter.ids.includes(one.id))
+      .sort((a, b) => a.order - b.order);
+    const order = orderFor(
+      project,
+      getSettings().code,
+      test ? { cases, framework: filter ? filter.framework : true } : undefined,
+    );
     if (!order) {
       this.console.note(t('codeStudio.studio.console.noRuntime'));
       return;
@@ -508,12 +526,17 @@ export class StudioController {
     this.panel = test ? 'tests' : 'console';
     this.runProblems = [];
     this.written = [];
-    if (test) this.testResults = [];
+    if (filter) {
+      // Only the results that run again are replaced; the rest stay.
+      this.testResults = this.testResults.filter((one) =>
+        project.tests[one.id] ? !filter.ids.includes(one.id) : !filter.framework,
+      );
+    } else if (test) this.testResults = [];
     this.runState = 'loading';
     this.console.note(
       t(test ? 'codeStudio.studio.console.testing' : 'codeStudio.studio.console.running', { name: project.name }),
     );
-    const handle = studioRunner().run(order, {
+    const handle = (test ? withTests(studioRunner()) : studioRunner()).run(order, {
       onStarted: () => {
         this.runState = 'running';
         this.changed();
@@ -551,6 +574,10 @@ export class StudioController {
       this.console.note(line);
       for (const note of result.notes) this.console.note(noteText(note));
       announce(line);
+      if (test && result.status === 'ok') {
+        const passed = this.testResults.filter((one) => one.status === 'pass').length;
+        announce(t('codeStudio.testing.finished', { passed, total: this.testResults.length }));
+      }
       this.changed();
     });
   }
