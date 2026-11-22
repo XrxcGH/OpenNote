@@ -29,6 +29,16 @@
         "rows": 3
       }
     ],
+    "multibyte": [
+      {
+        "name": "Table1",
+        "excel": "Table1",
+        "sheet": "Données",
+        "header": true,
+        "columns": ["Preis je Stück", "Größe"],
+        "rows": 3
+      }
+    ],
     "nolist": [
       {
         "name": "Table1",
@@ -67,6 +77,8 @@
     { "name": "a name that is not a cell", "book": "header", "row": 2, "direction": "both", "opennote": "TaxRate*Price_2", "excel": "TaxRate*Price_2" },
     { "name": "Excel's short this-row form", "book": "header", "row": 2, "direction": "fromExcel", "opennote": "[Qty]*2", "excel": "Table1[@Qty]*2" },
     { "name": "a defined name's column is the whole column", "book": "header", "row": null, "direction": "toExcel", "opennote": "[Qty]", "excel": "Table1[Qty]" },
-    { "name": "defined name refers to its sheet", "book": "header", "row": null, "direction": "toExcel", "opennote": "$B$1:$B$3", "excel": "Prices!$B$2:$B$4" }
+    { "name": "defined name refers to its sheet", "book": "header", "row": null, "direction": "toExcel", "opennote": "$B$1:$B$3", "excel": "Prices!$B$2:$B$4" },
+    { "name": "a non-ASCII function name and columns", "book": "multibyte", "row": 2, "direction": "both", "opennote": "ÉCARTÉ([Preis je Stück])+[Größe]", "excel": "ÉCARTÉ(Table1[[#This Row],[Preis je Stück]])+Table1[[#This Row],[Größe]]" },
+    { "name": "a non-ASCII column in an aggregate", "book": "multibyte", "row": null, "direction": "both", "opennote": "SUM([Preis je Stück])", "excel": "SUM(Table1[Preis je Stück])" }
   ]
 }

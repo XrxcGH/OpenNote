@@ -72,3 +72,23 @@ fn columns_past_xfd_are_names_not_cells() {
     assert!(cell_of("A0").is_none());
     assert_eq!(column_letters(16_383), "XFD");
 }
+
+#[test]
+fn non_ascii_names_never_split_a_character() {
+    // Byte 6 falls inside the second "É" and byte 12 inside "ü": slicing by bytes would panic.
+    assert_eq!(strip_prefixes("ÉCARTÉ"), "ÉCARTÉ");
+    assert_eq!(strip_prefixes("_xlfn.ÉCARTÉ"), "ÉCARTÉ");
+    assert_eq!(after_prefix("Preis je Stück", "[#This Row],"), None);
+    assert_eq!(after_prefix("[#this row],[X]", "[#This Row],"), Some("[X]"));
+}
+
+#[test]
+fn a_missing_own_table_leaves_the_formula_unchanged() {
+    let cx = Context {
+        book: &[],
+        own: 0,
+        row: Some(2),
+    };
+    assert_eq!(to_excel("SUM([Qty])+A1", &cx), "SUM([Qty])+A1");
+    assert_eq!(from_excel("Table1[@Qty]+A2", &cx), "Table1[@Qty]+A2");
+}

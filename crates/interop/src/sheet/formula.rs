@@ -345,18 +345,29 @@ impl Walker<'_> {
     }
 }
 
+/// The text after an ASCII `prefix`, matched without case, when more text follows it.
+/// It never slices inside a character, so non-ASCII text cannot panic here.
+fn after_prefix<'a>(text: &'a str, prefix: &str) -> Option<&'a str> {
+    let head = text.get(..prefix.len())?;
+    (text.len() > prefix.len() && head.eq_ignore_ascii_case(prefix)).then(|| &text[prefix.len()..])
+}
+
 fn strip_prefixes(name: &str) -> &str {
     let mut bare = name;
     for prefix in ["_xlfn.", "_xlws.", "_xlpm."] {
-        if bare.len() > prefix.len() && bare[..prefix.len()].eq_ignore_ascii_case(prefix) {
-            bare = &bare[prefix.len()..];
+        if let Some(rest) = after_prefix(bare, prefix) {
+            bare = rest;
         }
     }
     bare
 }
 
 /// Translates an OpenNote formula, without its `=`, into Excel's file form.
+/// A context whose own table is missing leaves the formula unchanged.
 pub fn to_excel(formula: &str, cx: &Context<'_>) -> String {
+    if cx.own >= cx.book.len() {
+        return formula.to_owned();
+    }
     let mut w = Walker {
         toks: tokenize(formula, Dialect::OpenNote),
         cx: *cx,
@@ -527,7 +538,11 @@ fn struct_to_excel(w: &Walker<'_>, raw: &str, t: usize, explicit: bool) -> Strin
 }
 
 /// Translates an Excel formula in file form, without its `=`, into OpenNote's stored form.
+/// A context whose own table is missing leaves the formula unchanged.
 pub fn from_excel(formula: &str, cx: &Context<'_>) -> String {
+    if cx.own >= cx.book.len() {
+        return formula.to_owned();
+    }
     let mut w = Walker {
         toks: tokenize(formula, Dialect::Excel),
         cx: *cx,
@@ -598,10 +613,7 @@ fn struct_from_excel(w: &Walker<'_>, raw: &str, t: usize) -> String {
             true,
             rest.strip_prefix('[').and_then(|r| r.strip_suffix(']')).unwrap_or(rest),
         )
-    } else if inner.len() > this_row_prefix.len()
-        && inner[..this_row_prefix.len()].eq_ignore_ascii_case(this_row_prefix)
-    {
-        let rest = &inner[this_row_prefix.len()..];
+    } else if let Some(rest) = after_prefix(inner, this_row_prefix) {
         (
             true,
             rest.strip_prefix('[').and_then(|r| r.strip_suffix(']')).unwrap_or(rest),
