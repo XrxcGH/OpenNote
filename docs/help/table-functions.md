@@ -1,6 +1,6 @@
 # Table function reference
 
-Every function a table formula can use, 394 in all.
+Every function a table formula can use, 449 in all.
 This page is generated from the function registry. Do not edit it by hand.
 
 Square brackets mark an optional argument. "..." means the argument can repeat.
@@ -282,6 +282,66 @@ See [Table formatting](table-formatting.md) for number formats.
 | `VARP` | `VARP(value, ...)` | Gives the population variance. An older name for VAR.P. |
 | `WEIBULL` | `WEIBULL(x, alpha, beta, cumulative)` | Gives the Weibull distribution. An older name for WEIBULL.DIST. |
 | `ZTEST` | `ZTEST(array, x, [sigma])` | Gives the one-tailed chance of a z test. An older name for Z.TEST. |
+
+## Finance
+
+| Function | Call | What it does |
+| --- | --- | --- |
+| `ACCRINT` | `ACCRINT(issue, first_interest, settlement, rate, par, frequency, [basis], [calc_method])` | The interest a bond with regular coupons has earned but not yet paid. |
+| `ACCRINTM` | `ACCRINTM(issue, settlement, rate, par, [basis])` | The interest earned by a security that pays all its interest at maturity. |
+| `AMORDEGRC` | `AMORDEGRC(cost, date_purchased, first_period, salvage, period, rate, [basis])` | Depreciation for a period by the French declining method, with a coefficient set by the life. |
+| `AMORLINC` | `AMORLINC(cost, date_purchased, first_period, salvage, period, rate, [basis])` | Depreciation for a period by the French straight-line method. |
+| `COUPDAYBS` | `COUPDAYBS(settlement, maturity, frequency, [basis])` | Days from the start of the coupon period to settlement. |
+| `COUPDAYS` | `COUPDAYS(settlement, maturity, frequency, [basis])` | Days in the coupon period that holds settlement. |
+| `COUPDAYSNC` | `COUPDAYSNC(settlement, maturity, frequency, [basis])` | Days from settlement to the next coupon date. |
+| `COUPNCD` | `COUPNCD(settlement, maturity, frequency, [basis])` | The next coupon date after settlement. |
+| `COUPNUM` | `COUPNUM(settlement, maturity, frequency, [basis])` | How many coupons are paid from settlement to maturity. |
+| `COUPPCD` | `COUPPCD(settlement, maturity, frequency, [basis])` | The coupon date on or before settlement. |
+| `CUMIPMT` | `CUMIPMT(rate, nper, pv, start_period, end_period, type)` | The interest paid on a loan from one period to another. |
+| `CUMPRINC` | `CUMPRINC(rate, nper, pv, start_period, end_period, type)` | The principal paid on a loan from one period to another. |
+| `DB` | `DB(cost, salvage, life, period, [month])` | Depreciation for a period by the fixed declining balance method. |
+| `DDB` | `DDB(cost, salvage, life, period, [factor])` | Depreciation for a period by the double declining balance method, or another factor. |
+| `DISC` | `DISC(settlement, maturity, pr, redemption, [basis])` | The discount rate of a security. |
+| `DOLLARDE` | `DOLLARDE(fractional_dollar, fraction)` | Turns a price written as a fraction, such as 1.02 for 1 and 2/16, into a decimal number. |
+| `DOLLARFR` | `DOLLARFR(decimal_dollar, fraction)` | Turns a decimal price into one written as a fraction, such as 1.125 into 1.02 for 1 and 2/16. |
+| `DURATION` | `DURATION(settlement, maturity, coupon, yld, frequency, [basis])` | The Macaulay duration of a bond in years: the average time to its payments, weighted by their value. |
+| `EFFECT` | `EFFECT(nominal_rate, npery)` | The yearly effective rate of a nominal rate compounded several times a year. |
+| `FV` | `FV(rate, nper, pmt, [pv], [type])` | What an investment is worth after regular payments at a fixed rate. |
+| `FVSCHEDULE` | `FVSCHEDULE(principal, schedule)` | What an amount grows to under a series of rates, one per period. |
+| `INTRATE` | `INTRATE(settlement, maturity, investment, redemption, [basis])` | The interest rate of a fully invested security. |
+| `IPMT` | `IPMT(rate, per, nper, pv, [fv], [type])` | The interest part of one payment on a loan or investment. |
+| `IRR` | `IRR(values, [guess])` | The internal rate of return of cash flows one period apart. |
+| `ISPMT` | `ISPMT(rate, per, nper, pv)` | The interest paid in one period of a loan repaid in equal parts of principal. |
+| `MDURATION` | `MDURATION(settlement, maturity, coupon, yld, frequency, [basis])` | The modified duration of a bond: the Macaulay duration divided by one plus the yield per period. |
+| `MIRR` | `MIRR(values, finance_rate, reinvest_rate)` | The rate of return when payments are financed at one rate and receipts reinvested at another. |
+| `NOMINAL` | `NOMINAL(effect_rate, npery)` | The nominal yearly rate that gives an effective rate. |
+| `NPER` | `NPER(rate, pmt, pv, [fv], [type])` | How many periods regular payments take at a fixed rate. |
+| `NPV` | `NPV(rate, value1, ...)` | The net present value of cash flows one period apart, the first one period from now. |
+| `ODDFPRICE` | `ODDFPRICE(settlement, maturity, issue, first_coupon, rate, yld, redemption, frequency, [basis])` | The price of a bond whose first period is shorter or longer than the others. |
+| `ODDFYIELD` | `ODDFYIELD(settlement, maturity, issue, first_coupon, rate, pr, redemption, frequency, [basis])` | The yield of a bond whose first period is shorter or longer than the others. |
+| `ODDLPRICE` | `ODDLPRICE(settlement, maturity, last_interest, rate, yld, redemption, frequency, [basis])` | The price of a bond whose last period is shorter or longer than the others. |
+| `ODDLYIELD` | `ODDLYIELD(settlement, maturity, last_interest, rate, pr, redemption, frequency, [basis])` | The yield of a bond whose last period is shorter or longer than the others. |
+| `PDURATION` | `PDURATION(rate, pv, fv)` | How many periods an investment takes to reach a value at a fixed rate. |
+| `PMT` | `PMT(rate, nper, pv, [fv], [type])` | The regular payment of a loan or investment at a fixed rate. |
+| `PPMT` | `PPMT(rate, per, nper, pv, [fv], [type])` | The principal part of one payment on a loan or investment. |
+| `PRICE` | `PRICE(settlement, maturity, rate, yld, redemption, frequency, [basis])` | The price per 100 of face value of a bond that pays regular coupons. |
+| `PRICEDISC` | `PRICEDISC(settlement, maturity, discount, redemption, [basis])` | The price per 100 of face value of a discounted security. |
+| `PRICEMAT` | `PRICEMAT(settlement, maturity, issue, rate, yld, [basis])` | The price per 100 of face value of a security that pays its interest at maturity. |
+| `PV` | `PV(rate, nper, pmt, [fv], [type])` | What a series of future payments is worth now. |
+| `RATE` | `RATE(nper, pmt, pv, [fv], [type], [guess])` | The interest rate per period of a loan or investment. |
+| `RECEIVED` | `RECEIVED(settlement, maturity, investment, discount, [basis])` | What a fully invested security pays at maturity. |
+| `RRI` | `RRI(nper, pv, fv)` | The rate per period that grows a present value to a future value. |
+| `SLN` | `SLN(cost, salvage, life)` | Straight-line depreciation for one period. |
+| `SYD` | `SYD(cost, salvage, life, per)` | Sum-of-years' digits depreciation for a period. |
+| `TBILLEQ` | `TBILLEQ(settlement, maturity, discount)` | The bond-equivalent yield of a Treasury bill. |
+| `TBILLPRICE` | `TBILLPRICE(settlement, maturity, discount)` | The price per 100 of face value of a Treasury bill. |
+| `TBILLYIELD` | `TBILLYIELD(settlement, maturity, pr)` | The yield of a Treasury bill. |
+| `VDB` | `VDB(cost, salvage, life, start_period, end_period, [factor], [no_switch])` | Declining balance depreciation over any span of periods, switching to straight line when that gives more. |
+| `XIRR` | `XIRR(values, dates, [guess])` | The internal rate of return of cash flows on given dates, a year being 365 days. |
+| `XNPV` | `XNPV(rate, values, dates)` | The net present value of cash flows on given dates, a year being 365 days. |
+| `YIELD` | `YIELD(settlement, maturity, rate, pr, redemption, frequency, [basis])` | The yield of a bond that pays regular coupons. |
+| `YIELDDISC` | `YIELDDISC(settlement, maturity, pr, redemption, [basis])` | The yearly yield of a discounted security. |
+| `YIELDMAT` | `YIELDMAT(settlement, maturity, issue, rate, pr, [basis])` | The yearly yield of a security that pays its interest at maturity. |
 
 ## Text
 
