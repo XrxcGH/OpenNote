@@ -428,9 +428,25 @@ function cellAt(doc: PMNode, pos: number): { row: number; column: number } | nul
   return null;
 }
 
-/** A table's shape: everything but the cells' text. */
-const shapeOf = (data: TableData) =>
-  JSON.stringify([data.header, data.columns, data.rows.map((row) => [row.id, Object.keys(row.cells)])]);
+/** Whether two rows have the same ID and the same cells, in the same order. */
+function sameRowShape(a: TableData['rows'][number], b: TableData['rows'][number]): boolean {
+  if (a === b) return true;
+  if (a.id !== b.id) return false;
+  const keys = Object.keys(a.cells);
+  const others = Object.keys(b.cells);
+  return keys.length === others.length && keys.every((key, i) => key === others[i]);
+}
+
+/**
+ * Whether two reads of a table have the same shape: everything but the cells' text. A read after typing keeps every
+ * row the key left alone as the same object, so a long table compares them by reference, not as text.
+ */
+export function sameShape(a: TableData, b: TableData): boolean {
+  if (a === b) return true;
+  if (a.header !== b.header || a.rows.length !== b.rows.length) return false;
+  if (a.columns !== b.columns && JSON.stringify(a.columns) !== JSON.stringify(b.columns)) return false;
+  return a.rows.every((row, i) => sameRowShape(row, b.rows[i]));
+}
 
 /**
  * A table block's sync: a patchBlock of `data.rows` for typing, coalesced by cell as `<block>/<row>/<column>`
@@ -444,14 +460,13 @@ export function attachTableSync(
   toData: (doc: PMNode) => TableData,
   extra: (data: TableData) => Record<string, unknown> | null = () => null,
 ): TableSyncHandle {
-  let shape = shapeOf(toData(editor.state.doc));
+  let shaped = toData(editor.state.doc);
   const source: Source = {
     kind: 'data',
     serialize(doc) {
       const data = toData(doc);
-      const next = shapeOf(data);
-      const same = next === shape;
-      shape = next;
+      const same = sameShape(shaped, data);
+      shaped = data;
       return { kind: 'data', data: { ...(same ? { rows: data.rows } : data), ...extra(data) } };
     },
     target(doc, selection) {
@@ -460,7 +475,7 @@ export function attachTableSync(
       const data = toData(doc);
       return `${block}/${data.rows[cell.row]?.id ?? cell.row}/${data.columns[cell.column]?.id ?? cell.column}`;
     },
-    structural: (before, after) => shapeOf(toData(before)) !== shapeOf(toData(after)),
+    structural: (before, after) => !sameShape(toData(before), toData(after)),
   };
   const initial = JSON.stringify({ rows: toData(editor.state.doc).rows });
   return new Sync(editor, block, queue, source, { sent: initial, insert: null });

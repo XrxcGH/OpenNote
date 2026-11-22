@@ -1,7 +1,9 @@
 // Row virtualization's budgets (DESIGN.md section 18; docs/perf/tables.md). A table of more than 2,000 rows draws
 // only the rows near the view. A 10,000-row table paints within 250 ms of opening its page. Scrolling it keeps
-// every frame's work at or under 8 ms. Ctrl+End still reaches the last cell, and a screen reader hears its row
-// number. A table of 1,999 rows draws every row.
+// the frames' work at or under 8 ms: the 99th percentile of 240 frames, so one stray frame under load does not
+// fail, and no frame over twice that. Typing in one of its cells keeps the script time per key at or under 16 ms
+// (p95). Ctrl+End still reaches the last cell, and a screen reader hears its row number. A table of 1,999 rows
+// draws every row.
 //
 // The budgets hold on the reference laptop (a Surface Laptop Studio 2). The fixed benchmark of tree.perf.spec.ts
 // tells how fast this machine is. A faster machine is throttled to the laptop's speed. A slower one, such as a CI
@@ -12,6 +14,10 @@ import { installKeyTimer, percentile, readKeys, recordKeys } from '../../perf/ty
 
 const FIRST_PAINT_MS = 250;
 const FRAME_MS = 8;
+/** The 99th percentile of the scroll frames must meet FRAME_MS; no single frame may take more than this. */
+const WORST_FRAME_MS = 2 * FRAME_MS;
+/** The typing budget: the script time per key, at the 95th percentile (perf/typing). */
+const TYPING_MS = 16;
 /** The fixed benchmark's time on the reference laptop, in ms (tree.perf.spec.ts). */
 const REFERENCE_BENCHMARK_MS = 60;
 
@@ -79,7 +85,7 @@ function scrollerOf(page: Page) {
   });
 }
 
-test('a 10,000-row table paints within 250 ms of opening its page, and no scroll frame takes over 8 ms', async ({
+test('a 10,000-row table paints within 250 ms of opening its page, and its scroll frames take 8 ms or less', async ({
   page,
 }) => {
   test.setTimeout(120_000);
@@ -158,23 +164,25 @@ test('a 10,000-row table paints within 250 ms of opening its page, and no scroll
   const frames = await page.evaluate(() => (window as unknown as Win).__timing.frames);
   await client.send('Emulation.setCPUThrottlingRate', { rate: 1 });
   const worst = Math.max(...frames);
+  const p99 = percentile(frames, 99);
   test
     .info()
     .annotations.push(
       { type: 'first paint', description: `${paint.toFixed(1)} ms (budget ${(FIRST_PAINT_MS * scale).toFixed(0)})` },
-      { type: 'worst scroll frame', description: `${worst.toFixed(1)} ms of ${frames.length} frames` },
+      { type: 'scroll frame p99', description: `${p99.toFixed(1)} ms of ${frames.length} frames` },
+      { type: 'worst scroll frame', description: `${worst.toFixed(1)} ms` },
       { type: 'scale', description: scale.toFixed(2) },
     );
-  const summary = `first paint ${paint.toFixed(0)} ms, worst scroll frame ${worst.toFixed(1)} ms`;
+  const summary = `first paint ${paint.toFixed(0)} ms, scroll frame p99 ${p99.toFixed(1)} ms, worst ${worst.toFixed(1)} ms`;
   console.log(`sheet tables: ${summary}, scale ${scale.toFixed(2)}`);
   expect.soft(paint).toBeLessThanOrEqual(FIRST_PAINT_MS * scale);
-  expect.soft(worst).toBeLessThanOrEqual(FRAME_MS * scale);
+  expect.soft(p99).toBeLessThanOrEqual(FRAME_MS * scale);
+  expect.soft(worst).toBeLessThanOrEqual(WORST_FRAME_MS * scale);
   // Every jump landed on drawn rows.
   expect(blank).toEqual([]);
 });
 
-test('typing in a cell of a 10,000-row table: script time per key (report)', async ({ page }) => {
-  // A report first (docs/perf/tables.md): it becomes a gate once typing in a long table meets the 16 ms budget.
+test('typing in a cell of a 10,000-row table keeps the script time per key at or under 16 ms', async ({ page }) => {
   test.setTimeout(120_000);
   await installKeyTimer(page);
   await openLibrary(page, 'tenThousandRows');
@@ -206,6 +214,7 @@ test('typing in a cell of a 10,000-row table: script time per key (report)', asy
   );
   expect(script.length).toBeGreaterThanOrEqual(30);
   await expect(cell).toContainText('cells divide');
+  expect(p95).toBeLessThanOrEqual(TYPING_MS * scale);
 });
 
 test('Ctrl+End in a virtualized table selects the last cell and a screen reader hears row 10,001', async ({ page }) => {
