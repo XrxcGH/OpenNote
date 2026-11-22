@@ -1,6 +1,7 @@
 // Plain-language explanations of error messages (DESIGN 7.2). Owner: code:L11. Each catalog entry of
-// features/codestudio/explain has what happened, the likely cause, and the next thing to try. The words of the entries are in explainEntries.ts,
-// which only the lazy chunk of the explain feature loads. `{name}` and the other values come from the named groups of the entry's pattern.
+// features/codestudio/explain has what happened, the likely cause, and what to try next.
+// The words of the entries are in explainEntries.ts. Only the lazy explain chunk loads that file.
+// Values such as `{name}` come from the named groups of the entry's pattern.
 
 export const codeStudioExplain = {
   /** "Line 3: total = total + x" */
