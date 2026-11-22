@@ -42,3 +42,6 @@ export const loadEmbed = async (...args: Parameters<typeof import('./embeds/load
   (await import('./embeds/load')).loadEmbed(...args);
 export const preparePlayer = async (...args: Parameters<typeof import('./audio/exportPlayer').preparePlayer>) =>
   (await import('./audio/exportPlayer')).preparePlayer(...args);
+/** The shown page's viewport (a light module): the desk gutter reads its camera and scroller. */
+export { shownViewport } from './viewport/shown';
+export type { PageViewportApi } from './viewport/viewport';
