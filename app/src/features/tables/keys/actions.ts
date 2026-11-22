@@ -20,6 +20,7 @@ import {
   contentOf,
   gridOf,
   hasHeader,
+  isCovered,
   modeOf,
   placedAt,
   setCellContent,
@@ -80,7 +81,7 @@ function fill(ctx: Ctx, targets: Iterable<GridCell>, source: (at: GridCell) => G
   let count = 0;
   for (const at of targets) {
     const from = source(at);
-    if (!from || (from.row === at.row && from.column === at.column)) continue;
+    if (!from || (from.row === at.row && from.column === at.column) || isCovered(state.doc, at)) continue;
     setCellContent(tr, at, filledFrom(state.doc, from, at));
     count++;
   }
@@ -110,7 +111,7 @@ function clearCells(ctx: Ctx, box: Box): boolean {
   const tr = ctx.state.tr;
   let count = 0;
   for (const at of cellsIn(box)) {
-    if (contentOf(ctx.state.doc, at).size === 0) continue;
+    if (contentOf(ctx.state.doc, at).size === 0 || isCovered(ctx.state.doc, at)) continue;
     setCellContent(tr, at, '');
     count++;
   }

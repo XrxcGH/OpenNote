@@ -81,6 +81,14 @@ Take a photo of a page, a whiteboard, or a slide, and OpenNote can tidy it.
 
 The cleanup runs on this PC. If the edges of the page are not clear, the whole photo is used.
 
+### Word files and text formatting
+
+Import keeps fonts, sizes, colors, paragraph spacing, indents, tab stops, direction, and language. Themes, footnotes, endnotes, comments, and tracked changes come over too. Export writes the same formats back, so a Word file opens with the look it had. A font OpenNote lacks is kept by name. Turn on Embed bundled fonts to carry Carlito and Caladea along.
+
+### Paste and text formatting
+
+Paste from Word, Google Docs, or OneNote keeps the source formatting. A Paste Options notice offers keep source, merge, or plain text. Ctrl+Shift+V pastes plain text. A copy leaves inline formatting for Word and Google Docs, and plain text for other apps. See [Text formatting](text-formatting.md).
+
 ## Export
 
 Open Share, then Export, or press Ctrl+K and choose Export.

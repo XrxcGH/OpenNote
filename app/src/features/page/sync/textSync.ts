@@ -12,6 +12,7 @@
 import type { Editor } from '@tiptap/core';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import type { Selection, Transaction } from '@tiptap/pm/state';
+import { TableMap } from '@tiptap/pm/tables';
 import { diffMarkdown, serializeTextBlock, utf8Offset } from '../../../editor/markdown';
 import type { MarkdownCache } from '../../../editor/markdown';
 import { META_AUTO_CHANGE, META_COMMAND, META_HIGHLIGHT, META_REMOTE } from '../../../editor/meta';
@@ -417,7 +418,12 @@ function cellAt(doc: PMNode, pos: number): { row: number; column: number } | nul
   const $pos = doc.resolve(Math.min(pos, doc.content.size));
   for (let depth = $pos.depth; depth > 1; depth--) {
     const role = $pos.node(depth).type.spec.tableRole as string | undefined;
-    if (role === 'cell' || role === 'header_cell') return { row: $pos.index(depth - 2), column: $pos.index(depth - 1) };
+    if (role === 'cell' || role === 'header_cell') {
+      // The table's map gives the slot, so a merged cell earlier in the row does not shift the column (ADR 0064).
+      const table = $pos.node(depth - 2);
+      const found = TableMap.get(table).findCell($pos.before(depth) - $pos.start(depth - 2));
+      return { row: found.top, column: found.left };
+    }
   }
   return null;
 }

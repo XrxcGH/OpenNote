@@ -64,6 +64,7 @@ The app registers 1177 commands and 48 tool windows. 24 of the windows are subje
 - **Language and text direction.** Set the language of a selection or paragraph, or mark it Do not check spelling.
 - **Text ruler.** View, Ruler shows a ruler above the text box with the cursor, in the unit you choose, at any zoom.
 - **Bundled fonts and device fonts.** Carlito and Caladea stand in for Calibri and Cambria, and load only when a page uses them.
+- **Text formatting help page.** Docs/help/text-formatting.md covers fonts, the Format pane, ruler, language, footnotes, comments, paste, and shortcuts. import-and-export.md has Word and paste sections.
 - **Word import and export.** Import reads styles, themes, lists, notes, comments, and tracked changes into version 2 data.
 - **Shared color palette.** One palette for text and tables: theme colors with tints and shades, standard colors, recent colors per notebook, Automatic, No color, and More colors.
 

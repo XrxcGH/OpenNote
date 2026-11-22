@@ -18,21 +18,25 @@ describe('the sheet contribution registry', () => {
         lane: 'toolbar',
         command: { id: 'sheetTest.bold', title: 'tables.name', category: 'table', run: () => {} },
       },
-      { kind: 'menuItem', item: { id: 'b', lane: 'merge', menu: 'format', command: 'x.b', group: 'g', order: 2 } },
-      { kind: 'menuItem', item: { id: 'a', lane: 'merge', menu: 'format', command: 'x.a', group: 'g', order: 1 } },
+      { kind: 'menuItem', item: { id: 'b', lane: 'protection', menu: 'format', command: 'x.b', group: 'g', order: 2 } },
+      { kind: 'menuItem', item: { id: 'a', lane: 'protection', menu: 'format', command: 'x.a', group: 'g', order: 1 } },
       { kind: 'menuItem', item: { id: 'c', lane: 'data-tools', menu: 'data', command: 'x.c', group: 'g', order: 1 } },
       {
         kind: 'toolbarGroup',
         group: { id: 'font', lane: 'toolbar', label: 'tables.name', order: 1, commands: ['sheetTest.bold'] },
       },
-      { kind: 'contextMenu', lane: 'merge', item: { id: 'sheetTest.merge', command: 'x.m', group: 'g', order: 1 } },
+      {
+        kind: 'contextMenu',
+        lane: 'protection',
+        item: { id: 'sheetTest.merge', command: 'x.m', group: 'g', order: 1 },
+      },
     );
     undo.push(take);
     expect(commands.get('sheetTest.bold')).toBeDefined();
     // Other lanes contribute to the Format and Data menus from their own contribute.ts, so look only at this test's items.
     expect(
       sheetMenu('format')
-        .filter((item) => item.lane === 'merge')
+        .filter((item) => item.lane === 'protection')
         .map((item) => item.id),
     ).toEqual(['a', 'b']);
     expect(
@@ -44,7 +48,7 @@ describe('the sheet contribution registry', () => {
     expect(contextMenus.get('sheetTest.merge')?.menu).toBe(SHEET_CONTEXT_MENU);
     take();
     expect(commands.get('sheetTest.bold')).toBeUndefined();
-    expect(sheetMenu('format').filter((item) => item.lane === 'merge')).toEqual([]);
+    expect(sheetMenu('format').filter((item) => item.lane === 'protection')).toEqual([]);
     expect(contextMenus.get('sheetTest.merge')).toBeUndefined();
   });
 
@@ -52,13 +56,16 @@ describe('the sheet contribution registry', () => {
     undo.push(
       contribute({
         kind: 'menuItem',
-        item: { id: 'a', lane: 'merge', menu: 'format', command: 'x.a', group: 'g', order: 1 },
+        item: { id: 'a', lane: 'protection', menu: 'format', command: 'x.a', group: 'g', order: 1 },
       }),
     );
     expect(() =>
       contribute(
         { kind: 'toolbarGroup', group: { id: 'font', lane: 'toolbar', label: 'tables.name', order: 1, commands: [] } },
-        { kind: 'menuItem', item: { id: 'a', lane: 'merge', menu: 'format', command: 'x.a', group: 'g', order: 1 } },
+        {
+          kind: 'menuItem',
+          item: { id: 'a', lane: 'protection', menu: 'format', command: 'x.a', group: 'g', order: 1 },
+        },
       ),
     ).toThrow();
     expect(sheetToolbar()).toEqual([]);
