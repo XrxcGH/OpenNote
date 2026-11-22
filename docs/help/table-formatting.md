@@ -25,6 +25,10 @@ Numbers keep 15 significant digits, then round half away from zero. A code that 
 
 The decimal mark, the group separator, month and day names, and the AM and PM text follow your region. Typed codes use your region's marks, and the file stores them in the standard form.
 
+## Formula bar
+
+The formula bar sits under the cell format bar. It shows the formula or value of the selected cell. Edit it there, then press Enter.
+
 ## Other formats
 
 - A column can have a unit, such as kN or mm. See [Engineering tools](engineering-tools.md#units-in-tables).

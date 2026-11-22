@@ -113,7 +113,7 @@ Accepted records aren't rewritten when plans change. Instead, write a new ADR fo
 | [0080](0080-font-discovery.md) | The Rust side lists the device's fonts with fontdb, and the list never leaves the device | Accepted | 2026-11-01 |
 | [0081](0081-bundled-fonts.md) | Bundle Carlito and Caladea as metric stand-ins, loaded on demand | Accepted | 2026-11-01 |
 | [0082](0082-named-styles-v2.md) | Named styles move to notebook.json, gain inheritance and user styles, and pages can carry their own sheet | Accepted | 2026-11-01 |
-| [0083](0083-docx-writer-and-reader.md) | Keep the hand-written DOCX writer and reader, and extend them to full formatting fidelity | Accepted | 2026-11-01 |
+| [0083](0083-docx-writer-and-reader.md) | Keep the hand-written DOCX writer and reader, and extend them to full formatting fidelity | Accepted for the writer | 2026-11-01 |
 | [0084](0084-clipboard-fidelity.md) | Copy writes formatting other apps read, and paste keeps source formatting with Paste Options | Accepted | 2026-11-01 |
 | [0085](0085-text-shortcut-policy.md) | The default shortcut set follows Word, with a Google Docs preset beside the OneNote set | Accepted | 2026-11-01 |
 | [0086](0086-comments-and-suggestions.md) | Comments and suggestions are stored in the page, anchored by inline tags, with local author names | Proposed | 2026-11-01 |
@@ -141,6 +141,6 @@ Most records are still Proposed, because each waits on a check by a person. Agen
 | 0030 | A sign-in with real client IDs for each service, which the owner registers (see [CONNECTORS.md](../CONNECTORS.md)) |
 | 0036, 0037 and 0040 | The owner accepts or changes object groups, ink layers, and reading PDFs with pdf.js in the webview |
 | 0041 | The owner's review of the stamped entry lock, which agents built behind `page.lockEntry` |
-| 0042 | The owner's review of protected sections, a Windows Hello unlock on real hardware, and the `protected` field of the notes contract |
+| 0042 | The owner's review of protected sections, a Windows Hello sign-in on real hardware, and the `protected` field of the notes contract |
 | 0049 | The owner's review of end-to-end-encrypted sync and its threat model, a pairing on two real devices, and the decision about a relay |
 | 0054 | The owner compiles LaTeX exports of real notes with the TeX engine they use, since the build machine has none |
