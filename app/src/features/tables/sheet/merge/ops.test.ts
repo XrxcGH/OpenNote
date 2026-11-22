@@ -3,7 +3,7 @@
 // keeps the top-left value and removes the others after a warning; merge across makes one merge per row; split
 // inserts lines.
 import { describe, expect, it } from 'vitest';
-import { applyTableOp } from '../../../../editor/commands/tables';
+import { applyTableOp, canApply } from '../../../../editor/commands/tables';
 import type { TableChange } from '../../../../editor/commands/tables';
 import type { TableData } from '../../../../editor/schema/specs';
 import { spansOf } from '../../../../editor/table/spans';
@@ -219,5 +219,36 @@ describe('sorting through merges', () => {
     const data = table(4, 2);
     const first = applyTableOp(data, at('A1'), { op: 'mergeCells', mode: 'vertical', box: block('A1', 'A2') })!;
     expect(sortRefusal(data, sheetAfter(undefined, first), 1, 3)).toBe(true);
+  });
+});
+
+describe('moving a row next to or inside a merge', () => {
+  // Hand worked: B2:C3 is merged. Swapping row 2 with row 1 would put row 1 inside the span, and swapping row 3 with
+  // row 2 would put the anchor under a covered slot, so Excel refuses both. A move that stays clear is allowed.
+  const merged = () => {
+    const data = table(4, 4, { B1: 'swallowed', C1: 'swallowed2', B2: 'anchor' });
+    const change = applyTableOp(data, at('B2'), { op: 'mergeCells', mode: 'merge', box: block('B2', 'C3') })!;
+    return { data: change.data, sheet: sheetAfter(undefined, change) };
+  };
+
+  it('refuses moveRowUp at B2 and moveRowDown at C3, and keeps the text', () => {
+    const { data, sheet } = merged();
+    expect(applyTableOp(data, at('B2'), { op: 'moveRowUp' }, sheet)).toBeNull();
+    expect(applyTableOp(data, at('C3'), { op: 'moveRowDown' }, sheet)).toBeNull();
+    expect(applyTableOp(data, at('C3'), { op: 'moveRowUp' }, sheet)).toBeNull();
+    expect(applyTableOp(data, at('A1'), { op: 'moveRowDown' }, sheet)).toBeNull();
+    expect(canApply(data, at('B2'), { op: 'moveRowUp' }, sheet)).toBe(false);
+    expect(text(data, 'B2')).toBe('anchor');
+  });
+
+  it('allows a move that does not touch the merge, and a row with only a one-row merge', () => {
+    const top = applyTableOp(table(4, 3), at('A1'), { op: 'mergeCells', mode: 'vertical', box: block('A1', 'A2') })!;
+    const topSheet = sheetAfter(undefined, top);
+    expect(applyTableOp(top.data, at('A4'), { op: 'moveRowUp' }, topSheet)).not.toBeNull();
+    expect(applyTableOp(top.data, at('A3'), { op: 'moveRowUp' }, topSheet)).toBeNull();
+    const flat = applyTableOp(table(3, 3), at('A1'), { op: 'mergeCells', mode: 'merge', box: block('A1', 'B1') })!;
+    const down = applyTableOp(flat.data, at('A1'), { op: 'moveRowDown' }, sheetAfter(undefined, flat));
+    expect(down).not.toBeNull();
+    expect(canApply(flat.data, at('A1'), { op: 'moveRowDown' }, sheetAfter(undefined, flat))).toBe(true);
   });
 });

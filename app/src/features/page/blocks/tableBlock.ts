@@ -319,6 +319,9 @@ class TableView implements InnerView {
     if (!applied) {
       if (op.op === 'insertCells' || op.op === 'deleteCells')
         this.ctx.host.announce(t('sheetStructure.announce.mergeBlocked'));
+      else if (op.op === 'mergeCells') this.ctx.host.announce(t('sheetMerge.announce.mergeBlocked'));
+      else if (op.op === 'moveRowUp' || op.op === 'moveRowDown')
+        this.ctx.host.announce(t('sheetMerge.announce.moveBlocked'));
       return false;
     }
     const adds = op.op === 'columnLeft' || op.op === 'columnRight';

@@ -11,6 +11,7 @@ import {
 } from '../../../../editor/commands/tables';
 import type { TableData } from '../../../../editor/schema/specs';
 import { adjustFormula } from '../../engine/refactor';
+import { mergeSet } from '../model/merges';
 import { readSheet } from '../model/sheet';
 import { applyMergeOp, isMergeOp } from '../merge/ops';
 import { applyStructureOp } from './ops';
@@ -49,6 +50,13 @@ export const structureHooks: TableHooks = {
       ? applyMergeOp(data, at, op, sheet, book, followReferences)
       : applyStructureOp(data, at, op, sheet, book),
   follow: followReferences,
+  // Swapping two rows cuts a merge that spans either of them, so the move is refused (Excel does the same).
+  cutsMerge: (data, row, to, sheet) =>
+    mergeSet(readSheet({ sheet }), data).list.some(
+      (m) =>
+        m.box.top !== m.box.bottom &&
+        ((m.box.top <= row && row <= m.box.bottom) || (m.box.top <= to && to <= m.box.bottom)),
+    ),
 };
 
 setTableHooks(structureHooks);

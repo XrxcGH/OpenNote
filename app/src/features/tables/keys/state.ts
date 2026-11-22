@@ -75,6 +75,21 @@ export function cellsOf(doc: PMNode): Placed[][] {
   const rows: Placed[][] = [];
   layouts.set(doc, rows);
   if (!table || table.childCount === 0) return rows;
+  if (!hasMerged(doc)) {
+    // No merged cell: every row's children are its slots, so the table's map (costly on a large table) is not needed.
+    let rowAt = 0;
+    table.forEach((row) => {
+      const cells: Placed[] = [];
+      let cellAt = rowAt + 1;
+      row.forEach((node) => {
+        cells.push({ pos: cellAt + 1, node });
+        cellAt += node.nodeSize;
+      });
+      rows.push(cells);
+      rowAt += row.nodeSize;
+    });
+    return rows;
+  }
   const map = TableMap.get(table);
   for (let row = 0; row < map.height; row++) {
     const cells: Placed[] = [];
@@ -90,7 +105,7 @@ export function cellsOf(doc: PMNode): Placed[][] {
 
 const merges = new WeakMap<PMNode, boolean>();
 
-/** Whether a cell spans more than one row or column. Spreadsheet keys step one slot at a time, so they wait. */
+/** Whether a cell spans more than one row or column. Moves treat it as one cell, and fills and clears skip the slots it covers. */
 export function hasMerged(doc: PMNode): boolean {
   const known = merges.get(doc);
   if (known !== undefined) return known;
@@ -127,6 +142,15 @@ export function cellOfPos(doc: PMNode, pos: number): GridCell | null {
 }
 
 export const placedAt = (doc: PMNode, at: GridCell): Placed | undefined => cellsOf(doc)[at.row]?.[at.column];
+
+/** Whether the slot only lies under a merged cell: the cell's anchor is a slot above or to the left of it. */
+export function isCovered(doc: PMNode, at: GridCell): boolean {
+  const here = placedAt(doc, at);
+  if (!here) return false;
+  const above = at.row > 0 ? placedAt(doc, { row: at.row - 1, column: at.column }) : undefined;
+  const left = at.column > 0 ? placedAt(doc, { row: at.row, column: at.column - 1 }) : undefined;
+  return above?.pos === here.pos || left?.pos === here.pos;
+}
 
 /** The range of the paragraph's content inside a cell: cells hold one paragraph. */
 export function textRange(cell: Placed): { from: number; to: number } {

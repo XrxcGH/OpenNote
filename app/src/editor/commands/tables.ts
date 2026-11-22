@@ -103,6 +103,8 @@ export interface TableHooks {
   structure(data: TableData, at: CellAt, op: StructureOp, sheet: unknown, book?: TableBook): TableChange | null;
   /** The change with formulas, names, rules, merges, and ranges brought up to date for `change`. */
   follow(before: TableData, applied: TableChange, change: LineChange, sheet: unknown, book?: TableBook): TableChange;
+  /** Whether moving the row at `row` to `to` must be refused because it would cut a merge (ADR 0064). */
+  cutsMerge?(data: TableData, row: number, to: number, sheet: unknown): boolean;
 }
 
 let hooks: TableHooks | null = null;
@@ -261,7 +263,8 @@ export function canApply(data: TableData, at: CellAt, op: TableOp, sheet?: unkno
     case 'moveRowDown': {
       const to = op.op === 'moveRowUp' ? row - 1 : row + 1;
       const first = header ? 1 : 0;
-      return !(row < first || to < first || to >= rows);
+      if (row < first || to < first || to >= rows) return false;
+      return !hooks?.cutsMerge?.(data, row, to, sheet);
     }
     case 'columnWidth':
       return clampColumnWidth(op.width) !== clampColumnWidth(data.columns?.[column]?.width ?? DEFAULT_COLUMN_WIDTH);
@@ -302,6 +305,10 @@ export function applyTableOp(
   const data = normalizeTableData(input);
   const cell = clampCell(data, at);
   if (isStructureOp(op)) return hooks?.structure(data, cell, op, sheet, book) ?? null;
+  if ((op.op === 'moveRowUp' || op.op === 'moveRowDown') && hooks?.cutsMerge) {
+    const to = op.op === 'moveRowUp' ? cell.row - 1 : cell.row + 1;
+    if (hooks.cutsMerge(data, cell.row, to, sheet)) return null;
+  }
   const applied = applyGridOp(data, cell, op);
   if (!applied) return null;
   const change = referenceChange(data, cell, op);

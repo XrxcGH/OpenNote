@@ -64,12 +64,20 @@ interface Fake {
   says(): string[];
 }
 
-function fake(texts = TEXT, caret = { row: 1, column: 1 }, range?: Range, smart: SmartData = EMPTY_SMART): Fake {
+function fake(
+  texts = TEXT,
+  caret = { row: 1, column: 1 },
+  range?: Range,
+  smart: SmartData = EMPTY_SMART,
+  sheet?: unknown,
+): Fake {
   let data = dataOf(texts);
   let state = smart;
   const said: string[] = [];
   const host = {
     cache: createMarkdownCache(),
+    data: () => ({ sheet }),
+    table: () => data,
     announce: (text: string) => said.push(text),
     apply: async (change: (data: TableData) => TableData | null) => {
       const next = change(data);
@@ -673,5 +681,20 @@ describe('the settings a file gives', () => {
       expect(errorLabel(code).words).toBe(strings[code]);
     }
     expect(strings.DIV0).toBe('Divide by 0');
+  });
+});
+
+describe('sorting through merged cells', () => {
+  it('refuses to sort rows whose merged cells differ in size, and says so', async () => {
+    const sheet = {
+      merges: {
+        m1: { from: ['row1', 'item'], to: ['row2', 'item'] },
+        m2: { from: ['row3', 'qty'], to: ['row3', 'price'] },
+      },
+    };
+    const table = fake(TEXT, undefined, undefined, EMPTY_SMART, sheet);
+    expect(await sortColumn(table.inst, 2, true)).toBe(false);
+    expect(column(table.data(), 0)).toEqual(['Pen', 'Ink', 'Pad']);
+    expect(table.says()).toEqual(['Cannot sort: the range has merged cells of different sizes.']);
   });
 });

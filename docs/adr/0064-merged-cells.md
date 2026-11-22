@@ -17,14 +17,17 @@ We will keep the stored grid whole and record merges in `data.sheet.merges` as `
 - Merge asks first when it removes text. The command returns the count (`warn`), the block shows a dialog, and a yes applies the data and the patch of `data.sheet` as one undo step.
 - Spreadsheet keys treat a merged cell as one cell. An arrow leaves the far edge of the merge and keeps the row or column the merge starts in. It lands on the top-left slot of the cell it enters.
 - Split cell unmerges a merged cell; on a plain cell it inserts rows and columns and merges the neighbors in the new bands so the table looks unchanged around it.
-- Sorting a range that cuts through merges of different sizes is refused, as in Excel (`sortRefusal` in `sheet/merge/sort.ts`; the sort dialog calls it).
+- Sorting a range that cuts through merges of different sizes is refused, as in Excel (`sortRefusal` in `sheet/merge/sort.ts`; `sortColumn` in `smart/ops.ts` calls it and announces the refusal).
+- Move row up and Move row down are refused when either row of the swap lies inside a merge that spans more than one row, as in Excel (`cutsMerge` hook). A merge inside one row moves with its row. A refused merge or move is announced.
+- Fill down, Fill right, and Clear skip the slots a merge covers, so the anchor keeps its own content.
+- The Split cell dialog takes columns and rows (2 to 64 cells in all).
 - Merge cells, Merge and keep all text, Merge and center, Merge across, Merge vertically, Unmerge, and Split cell are table operations of the structure hooks, so references follow them. Split on a plain cell inserts lines through the same code as Insert row and Insert column.
 
 ## Options considered
 
 | Option | For | Against |
 |---|---|---|
-| Whole grid plus merge ranges by corner IDs (chosen) | Old readers stay correct; insert inside a merge behaves like Excel; merges survive row moves | Projection logic in the editor; overlap repair after concurrent edits |
+| Whole grid plus merge ranges by corner IDs (chosen) | Old readers stay correct; insert inside a merge behaves like Excel; merges stay whole because a row move that would cut one is refused | Projection logic in the editor; overlap repair after concurrent edits |
 | Spans stored on cells and covered cells removed | Matches HTML | Breaks the whole-grid rule every reader relies on; old readers misplace columns |
 | Merges as row and column indices | Simple | Wrong after any insert, delete, or sort by an older client |
 

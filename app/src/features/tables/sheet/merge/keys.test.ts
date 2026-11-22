@@ -14,7 +14,7 @@ import type { TableData } from '../../../../editor/schema/specs';
 import { registerSheetKeyCommands } from '../../keys/commands';
 import { address } from '../../keys/grid';
 import { activeCell, sheetKeysPlugin } from '../../keys/plugin';
-import { cellsOf } from '../../keys/state';
+import { cellsOf, textRange } from '../../keys/state';
 
 const host: EditorHost = {
   settings: () => DEFAULT_EDITING_VIEW,
@@ -73,9 +73,24 @@ function drive() {
       const pos = cellsOf(view.state.doc)[row][column].pos;
       view.dispatch(view.state.tr.setSelection(CellSelection.create(view.state.doc, pos)));
     },
-    press(key: string) {
-      view.dom.dispatchEvent(new KeyboardEvent('keydown', { key, code: key, bubbles: true, cancelable: true }));
+    press(key: string, ctrl = false) {
+      view.dom.dispatchEvent(
+        new KeyboardEvent('keydown', { key, code: key, ctrlKey: ctrl, bubbles: true, cancelable: true }),
+      );
     },
+    type(row: number, column: number, text: string) {
+      const cell = cellsOf(view.state.doc)[row][column];
+      view.dispatch(view.state.tr.insertText(text, textRange(cell).from));
+    },
+    extend(row: number, column: number, row2: number, column2: number) {
+      const cells = cellsOf(view.state.doc);
+      view.dispatch(
+        view.state.tr.setSelection(
+          CellSelection.create(view.state.doc, cells[row][column].pos, cells[row2][column2].pos),
+        ),
+      );
+    },
+    text: (row: number, column: number) => cellsOf(view.state.doc)[row][column].node.textContent,
     at: () => {
       const at = activeCell(view.state);
       return at && address(at, false);
@@ -112,5 +127,16 @@ describe('keys over merged cells', () => {
     expect(keys.at()).toBe('D2');
     keys.press('Tab');
     expect(keys.at()).toBe('A3');
+  });
+});
+
+describe('fills over merged cells', () => {
+  it('Ctrl+D over a range with a merge fills the anchor from its own column, not from a covered slot', () => {
+    const keys = drive();
+    ['A', 'B', 'C', 'D'].forEach((text, column) => keys.type(0, column, text));
+    keys.extend(0, 0, 3, 3);
+    keys.press('d', true);
+    expect(keys.text(1, 1)).toBe('B');
+    expect(keys.text(3, 2)).toBe('C');
   });
 });

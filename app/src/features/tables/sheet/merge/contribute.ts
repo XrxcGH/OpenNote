@@ -3,6 +3,7 @@
 import type { TableOp } from '../../../../editor/commands/tables';
 import { currentTable } from '../../../page';
 import type { MessageKey } from '../../../../strings/t';
+import { askSplit } from './SplitDialog';
 import { contribute } from '../registry';
 import type { SheetContribution } from '../registry';
 
@@ -25,6 +26,37 @@ const ENTRIES: readonly Entry[] = [
 ];
 
 const table = () => currentTable.get();
+
+/** Split cell…: asks for the columns and rows, then splits. */
+const SPLIT_COMMAND = 'table.merge.split';
+contribute(
+  {
+    kind: 'command',
+    lane: 'merge',
+    command: {
+      id: SPLIT_COMMAND,
+      title: 'sheetMerge.commands.split',
+      keywords: 'sheetMerge.commands.keywords',
+      category: 'table',
+      flag: 'tables.structureUi',
+      when: () => table() !== null,
+      enabled: () => table()?.can({ op: 'splitCell', columns: 2, rows: 1 }) ?? false,
+      run: async () => {
+        const answer = await askSplit();
+        if (answer) await table()?.run({ op: 'splitCell', ...answer });
+      },
+    },
+  },
+  {
+    kind: 'menuItem',
+    item: { id: 'merge.split', lane: 'merge', menu: 'format', command: SPLIT_COMMAND, group: 'merge', order: 9 },
+  },
+  {
+    kind: 'contextMenu',
+    lane: 'merge',
+    item: { id: SPLIT_COMMAND, command: SPLIT_COMMAND, group: 'merge', order: 39 },
+  },
+);
 
 export const mergeCommandId = (id: string): `${string}.${string}` => `table.merge.${id}`;
 

@@ -14,6 +14,16 @@ export const sheetMerge = {
     split2x1: 'Split cell into 2 columns',
     split1x2: 'Split cell into 2 rows',
   },
+  split: {
+    title: 'Split cell',
+    columns: 'Number of columns',
+    rows: 'Number of rows',
+    confirm: 'Split',
+    errorColumns: 'Enter at least 1 column.',
+    errorRows: 'Enter at least 1 row.',
+    errorSame: 'Choose 2 or more cells: more than 1 column or more than 1 row.',
+    errorMany: 'A split makes at most 64 cells. Use fewer columns or rows.',
+  },
   warn: {
     title: 'Merge these cells?',
     body: 'Only the top-left value stays. {count, plural, one {# value goes} other {# values go}}. Undo restores it.',
@@ -23,6 +33,8 @@ export const sheetMerge = {
     mergeCells: 'Cells merged.',
     unmergeCells: 'Cells unmerged.',
     splitCell: 'Cell split.',
+    mergeBlocked: 'Cannot merge: the cells cut through another merged cell, or there are too many merges.',
+    moveBlocked: 'Cannot move the row: it would cut through a merged cell.',
   },
   sort: {
     refused: 'Cannot sort: the range has merged cells of different sizes.',
