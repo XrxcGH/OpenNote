@@ -250,7 +250,7 @@ function structToExcel(w: Walker, raw: string, t: number, explicit: boolean): st
   if (inner.startsWith('[') || inner.startsWith('#')) return table.excel === null ? '#REF!' : table.excel + raw;
   const atSign = inner.startsWith('@');
   const name = (atSign ? inner.slice(1) : inner).replaceAll(']]', ']');
-  const thisRow = atSign || (!explicit && !w.inRangeFunction());
+  const thisRow = atSign || (!explicit && !w.inRangeFunction() && cx.row !== null);
   const col = table.columns.findIndex((c) => c.trim().toLowerCase() === name.trim().toLowerCase());
   if (col < 0) return '#REF!';
   if (table.excel !== null) {

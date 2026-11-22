@@ -3,10 +3,13 @@
 //! conversion calls it, so the Word and HTML tables draw the cells as the spreadsheet does.
 
 pub mod formula;
+mod layout;
 pub mod numfmt;
 mod read;
 pub mod styles;
+pub mod xlsx;
 
+pub use layout::{Axis, Look, Name, Rule};
 pub use read::{fingerprint, read, MERGE_LIMIT};
 
 use crate::doc::cell_style::CellStyle;
@@ -91,6 +94,26 @@ pub struct TableSheet {
     pub stale: bool,
     /// The table's name, when the sheet gives one.
     pub name: Option<String>,
+    /// The number format code of each cell, by row and column.
+    pub formats: Vec<Vec<Option<String>>>,
+    /// The cached value of each formula cell when the cache is fresh, by row and column.
+    pub cached: Vec<Vec<Option<serde_json::Value>>>,
+    /// The settings of each column.
+    pub cols: Vec<Axis>,
+    /// The settings of each row.
+    pub rows: Vec<Axis>,
+    /// The frozen rows and columns.
+    pub freeze: (usize, usize),
+    /// The table's look, banding, and emphasis.
+    pub look: Look,
+    /// The defined names, by name.
+    pub names: Vec<Name>,
+    /// The validation rules, by ID.
+    pub validation: Vec<Rule>,
+    /// The conditional formats, in the order they apply.
+    pub conditional: Vec<Rule>,
+    /// The notes, as plain text, by row and column.
+    pub notes: Vec<(usize, usize, String)>,
 }
 
 #[cfg(test)]

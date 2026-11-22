@@ -1,4 +1,4 @@
-// checks-disable-file brand-consistency: the test data holds color values to check how they are written
+// checks-disable-file brand-consistency, length: the test data holds color values to check how they are written
 use super::*;
 
 fn border(style: &str) -> Option<CellBorder> {

@@ -495,7 +495,7 @@ fn struct_to_excel(w: &Walker<'_>, raw: &str, t: usize, explicit: bool) -> Strin
     }
     let (at_sign, name) = inner.strip_prefix('@').map_or((false, inner), |n| (true, n));
     let name = name.replace("]]", "]");
-    let this_row = at_sign || (!explicit && !w.in_range_function());
+    let this_row = at_sign || (!explicit && !w.in_range_function() && cx.row.is_some());
     let Some(col) = table
         .columns
         .iter()

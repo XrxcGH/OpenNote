@@ -8,7 +8,7 @@
 use std::fs;
 use std::path::Path;
 
-use opennote_core::model::{Asset, BlockData, Page};
+use opennote_core::model::{Asset, BlockData, Page, TableData};
 use opennote_core::{BlockId, PageId};
 
 use super::convert::{page_to_blocks_traced, Resolver};
@@ -20,6 +20,10 @@ use crate::docx::zip::ZipWriter;
 use crate::error::{InteropError, Result};
 use crate::report::{PageReport, Report, ReportKind};
 use crate::run::{Control, Phase, Unit};
+use crate::sheet::formula::TableRef;
+use crate::sheet::styles::{escape, StyleSheet};
+use crate::sheet::xlsx::{self, Input, COMMENTS_REL, TABLE_REL, VML_REL};
+use crate::sheet::TableSheet;
 use crate::source::NoteSource;
 
 /// The file kind of a table export.
@@ -59,6 +63,20 @@ struct Table {
     rows: Vec<Vec<String>>,
     /// The columns that pick one of a set of choices.
     lists: Vec<ChoiceList>,
+    /// The table block, for formulas, widths, and its sheet. `None` when its rows do not match the block's.
+    data: Option<TableData>,
+    /// What the block's `data.sheet` adds.
+    sheet: Option<TableSheet>,
+    /// The place of its page among the exported pages, so formulas find the tables of their own page.
+    page: usize,
+}
+
+/// The table block a converted table came from.
+fn table_data(page: &Page, id: Option<&BlockId>) -> Option<TableData> {
+    match &page.blocks.get(*id?)?.data {
+        BlockData::Table(table) => Some(table.clone()),
+        _ => None,
+    }
 }
 
 /// The single-choice columns of a table block, from the `smart` data the app keeps beside its cells. A column that
@@ -122,7 +140,7 @@ fn collect_tables(
     report: &mut Report,
 ) -> Result<Vec<Table>> {
     let mut tables = Vec::new();
-    for planned in &plan.pages {
+    for (page_at, planned) in plan.pages.iter().enumerate() {
         control.checkpoint()?;
         control.step(Phase::Writing, 1, &planned.title);
         let page = match source.page(planned.id) {
@@ -139,7 +157,8 @@ fn collect_tables(
             ..PageReport::default()
         };
         let (blocks, origins) = page_to_blocks_traced(&page, &mut Nothing, &mut page_report);
-        let found: Vec<(bool, Vec<Vec<String>>, Vec<ChoiceList>)> = blocks
+        type Found = (bool, Vec<Vec<String>>, Vec<ChoiceList>, Option<TableData>);
+        let found: Vec<Found> = blocks
             .iter()
             .enumerate()
             .filter_map(|(at, b)| match b {
@@ -147,6 +166,7 @@ fn collect_tables(
                     *header,
                     rows.iter().map(|r| r.iter().map(|c| cell_text(c)).collect()).collect(),
                     choice_lists(&page, origins.get(at)),
+                    table_data(&page, origins.get(at)),
                 )),
                 _ => None,
             })
@@ -156,7 +176,7 @@ fn collect_tables(
             title: page.title.clone(),
             ..PageReport::default()
         };
-        for (n, (header, rows, lists)) in found.into_iter().enumerate() {
+        for (n, (header, rows, lists, data)) in found.into_iter().enumerate() {
             let (lists, too_long): (Vec<_>, Vec<_>) = lists
                 .into_iter()
                 .partition(|list| list.names.join(",").chars().count() <= MAX_LIST_CHARS);
@@ -172,11 +192,22 @@ fn collect_tables(
                 page.title.clone()
             };
             page_report.came_over(format!("table of {} rows", rows.len()));
+            let data = data.filter(|d| d.rows.len() == rows.len());
+            let sheet = data.as_ref().and_then(crate::sheet::read);
+            if sheet.as_ref().is_some_and(|s| s.stale) {
+                page_report.simplified(
+                    "formula results",
+                    "Some formula results were out of date, so those formulas go without results and Excel calculates them on opening. Open the page in OpenNote once to refresh them.",
+                );
+            }
             tables.push(Table {
                 name,
                 header,
                 rows,
                 lists,
+                data,
+                sheet,
+                page: page_at,
             });
         }
         if !page_report.entries.is_empty() {
@@ -324,8 +355,11 @@ fn runs_as_formula(text: &str) -> bool {
 const NS: &str = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
 const NS_R: &str = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
 const HEADER: &str = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n";
+const RELS_NS: &str = "http://schemas.openxmlformats.org/package/2006/relationships";
+const REL_TYPE: &str = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
 
-fn workbook(tables: &[Table]) -> Result<Vec<u8>> {
+/// Unique sheet names for the tables, in their order.
+fn sheet_names(tables: &[Table]) -> Vec<String> {
     let mut names: Vec<String> = Vec::new();
     for table in tables {
         let base = sheet_name(&table.name);
@@ -341,24 +375,205 @@ fn workbook(tables: &[Table]) -> Result<Vec<u8>> {
         }
         names.push(name);
     }
-    let mut zip = ZipWriter::new();
-    let overrides: String = (1..=tables.len())
-        .map(|n| format!("<Override PartName=\"/xl/worksheets/sheet{n}.xml\" ContentType=\"{SHEET_TYPE}\"/>"))
+    names
+}
+
+/// Whether a table can be an Excel ListObject: a header row of distinct, plain, non-empty names over at least one
+/// body row, and no merges, which a ListObject cannot hold.
+fn fits_list_object(table: &Table) -> bool {
+    let Some(head) = table.rows.first() else {
+        return false;
+    };
+    let mut seen: Vec<String> = Vec::new();
+    let distinct = head.iter().all(|h| {
+        let key = h.to_lowercase();
+        let ok = !h.trim().is_empty() && h.trim() == h && !h.contains('\n') && !seen.contains(&key);
+        seen.push(key);
+        ok
+    });
+    table.header && table.rows.len() > 1 && distinct && table.sheet.as_ref().is_none_or(|s| s.merges.is_empty())
+}
+
+/// The tables as formulas see them: each one's OpenNote name, ListObject, sheet, and column names.
+fn table_refs(tables: &[Table], sheets: &[String]) -> Vec<TableRef> {
+    let mut taken: Vec<String> = Vec::new();
+    let mut places: std::collections::HashMap<usize, usize> = std::collections::HashMap::new();
+    tables
+        .iter()
+        .zip(sheets)
+        .map(|(table, sheet)| {
+            let place = places.entry(table.page).or_insert(0);
+            *place += 1;
+            let name = table
+                .sheet
+                .as_ref()
+                .and_then(|s| s.name.clone())
+                .unwrap_or_else(|| format!("Table{place}"));
+            let width = table.rows.iter().map(Vec::len).max().unwrap_or(0);
+            let columns = (0..width)
+                .map(|c| {
+                    let head = table.rows.first().and_then(|r| r.get(c)).map_or("", |h| h.trim());
+                    if table.header && !head.is_empty() {
+                        head.to_owned()
+                    } else {
+                        crate::sheet::formula::column_letters(c)
+                    }
+                })
+                .collect();
+            let excel = fits_list_object(table).then(|| {
+                let mut unique = name.clone();
+                let mut n = 2;
+                while taken.iter().any(|t| t.eq_ignore_ascii_case(&unique)) {
+                    unique = format!("{name}_{n}");
+                    n += 1;
+                }
+                taken.push(unique.clone());
+                unique
+            });
+            TableRef {
+                name,
+                excel,
+                sheet: sheet.clone(),
+                header: table.header,
+                columns,
+                rows: table.rows.len(),
+            }
+        })
+        .collect()
+}
+
+/// The tables of the page of `tables[at]`, and its place among them.
+fn page_book(tables: &[Table], refs: &[TableRef], at: usize) -> (Vec<TableRef>, usize) {
+    let page: Vec<usize> = (0..tables.len())
+        .filter(|&j| tables[j].page == tables[at].page)
         .collect();
+    let own = page.iter().position(|&j| j == at).unwrap_or(0);
+    (page.into_iter().map(|j| refs[j].clone()).collect(), own)
+}
+
+/// The defined names of the workbook: a table's names belong to its sheet, a page's to the workbook. A name that
+/// repeats in one scope, or that a ListObject already holds, keeps its first entry.
+fn defined_names(tables: &[Table], refs: &[TableRef]) -> String {
+    let mut out = String::new();
+    let mut seen: Vec<(Option<usize>, String)> = Vec::new();
+    for (i, table) in tables.iter().enumerate() {
+        let Some(sheet) = &table.sheet else {
+            continue;
+        };
+        let (book, own) = page_book(tables, refs, i);
+        for name in &sheet.names {
+            let scope = name.table_scope.then_some(i);
+            let key = (scope, name.name.to_lowercase());
+            let list = refs
+                .iter()
+                .any(|r| r.excel.as_deref().is_some_and(|e| e.eq_ignore_ascii_case(&name.name)));
+            if list || seen.contains(&key) {
+                continue;
+            }
+            seen.push(key);
+            let cx = crate::sheet::formula::Context {
+                book: &book,
+                own,
+                row: None,
+            };
+            let text = crate::sheet::formula::to_excel(name.reference.trim_start_matches('='), &cx);
+            let mut attrs = format!(" name=\"{}\"", escape(&name.name));
+            if let Some(s) = scope {
+                attrs.push_str(&format!(" localSheetId=\"{s}\""));
+            }
+            if !name.comment.is_empty() {
+                attrs.push_str(&format!(" comment=\"{}\"", escape(&name.comment)));
+            }
+            out.push_str(&format!("<definedName{attrs}>{}</definedName>", escape(&text)));
+        }
+    }
+    if out.is_empty() {
+        out
+    } else {
+        format!("<definedNames>{out}</definedNames>")
+    }
+}
+
+fn relationships(items: &[(String, &str, String)]) -> Vec<u8> {
+    let body: String = items
+        .iter()
+        .map(|(id, kind, target)| format!("<Relationship Id=\"{id}\" Type=\"{REL_TYPE}/{kind}\" Target=\"{target}\"/>"))
+        .collect();
+    format!("{HEADER}<Relationships xmlns=\"{RELS_NS}\">{body}</Relationships>").into_bytes()
+}
+
+fn workbook(tables: &[Table]) -> Result<Vec<u8>> {
+    let names = sheet_names(tables);
+    let refs = table_refs(tables, &names);
+    let mut styles = StyleSheet::default();
+    let mut zip = ZipWriter::new();
+    let mut overrides = String::new();
+    let mut table_id = 0;
+    let mut comments_id = 0;
+    for (i, table) in tables.iter().enumerate() {
+        let n = i + 1;
+        let (book, own) = page_book(tables, &refs, i);
+        let lists: Vec<(usize, Vec<String>)> = table.lists.iter().map(|l| (l.column, l.names.clone())).collect();
+        let input = Input {
+            texts: &table.rows,
+            table: table.data.as_ref(),
+            sheet: table.sheet.as_ref(),
+            header: table.header,
+            book: &book,
+            own,
+            lists: &lists,
+            table_id: table_id + 1,
+            sheet_number: n,
+        };
+        let written = xlsx::worksheet(&input, &mut styles);
+        zip.add(&format!("xl/worksheets/sheet{n}.xml"), written.sheet.as_bytes())?;
+        overrides.push_str(&format!(
+            "<Override PartName=\"/xl/worksheets/sheet{n}.xml\" ContentType=\"{SHEET_TYPE}\"/>"
+        ));
+        let mut rels = Vec::new();
+        if let Some(part) = written.table {
+            table_id += 1;
+            zip.add(&format!("xl/tables/table{table_id}.xml"), part.as_bytes())?;
+            overrides.push_str(&format!(
+                "<Override PartName=\"/xl/tables/table{table_id}.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.table+xml\"/>"
+            ));
+            rels.push((TABLE_REL.to_owned(), "table", format!("../tables/table{table_id}.xml")));
+        }
+        if let Some((comments, vml)) = written.comments {
+            comments_id += 1;
+            zip.add(&format!("xl/comments{comments_id}.xml"), comments.as_bytes())?;
+            zip.add(&format!("xl/drawings/vmlDrawing{comments_id}.vml"), vml.as_bytes())?;
+            overrides.push_str(&format!(
+                "<Override PartName=\"/xl/comments{comments_id}.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.comments+xml\"/>"
+            ));
+            rels.push((
+                COMMENTS_REL.to_owned(),
+                "comments",
+                format!("../comments{comments_id}.xml"),
+            ));
+            rels.push((
+                VML_REL.to_owned(),
+                "vmlDrawing",
+                format!("../drawings/vmlDrawing{comments_id}.vml"),
+            ));
+        }
+        if !rels.is_empty() {
+            zip.add(&format!("xl/worksheets/_rels/sheet{n}.xml.rels"), &relationships(&rels))?;
+        }
+    }
     zip.add(
         "[Content_Types].xml",
         format!("{HEADER}<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\">\
             <Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\"/>\
             <Default Extension=\"xml\" ContentType=\"application/xml\"/>\
+            <Default Extension=\"vml\" ContentType=\"application/vnd.openxmlformats-officedocument.vmlDrawing\"/>\
             <Override PartName=\"/xl/workbook.xml\" ContentType=\"{MAIN_TYPE}\"/>\
             <Override PartName=\"/xl/styles.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml\"/>\
             {overrides}</Types>").as_bytes(),
     )?;
     zip.add(
         "_rels/.rels",
-        format!("{HEADER}<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">\
-            <Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument\" Target=\"xl/workbook.xml\"/>\
-            </Relationships>").as_bytes(),
+        &relationships(&[("rId1".to_owned(), "officeDocument", "xl/workbook.xml".to_owned())]),
     )?;
     let sheets: String = names
         .iter()
@@ -372,43 +587,21 @@ fn workbook(tables: &[Table]) -> Result<Vec<u8>> {
             )
         })
         .collect();
+    // Excel recalculates on opening, so its results replace ours wherever the two differ.
     zip.add(
         "xl/workbook.xml",
-        format!("{HEADER}<workbook xmlns=\"{NS}\" xmlns:r=\"{NS_R}\"><sheets>{sheets}</sheets></workbook>").as_bytes(),
+        format!(
+            "{HEADER}<workbook xmlns=\"{NS}\" xmlns:r=\"{NS_R}\"><sheets>{sheets}</sheets>{}<calcPr calcId=\"191029\" fullCalcOnLoad=\"1\"/></workbook>",
+            defined_names(tables, &refs)
+        )
+        .as_bytes(),
     )?;
-    let mut rels = String::new();
-    for n in 1..=tables.len() {
-        rels.push_str(&format!(
-            "<Relationship Id=\"rId{n}\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet\" Target=\"worksheets/sheet{n}.xml\"/>"
-        ));
-    }
-    let style_id = tables.len() + 1;
-    rels.push_str(&format!(
-        "<Relationship Id=\"rId{style_id}\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles\" Target=\"styles.xml\"/>"
-    ));
-    zip.add(
-        "xl/_rels/workbook.xml.rels",
-        format!("{HEADER}<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">{rels}</Relationships>").as_bytes(),
-    )?;
-    zip.add(
-        "xl/styles.xml",
-        format!("{HEADER}<styleSheet xmlns=\"{NS}\"><fonts count=\"2\"><font><sz val=\"11\"/><name val=\"Calibri\"/></font>\
-            <font><b/><sz val=\"11\"/><name val=\"Calibri\"/></font></fonts>\
-            <fills count=\"2\"><fill><patternFill patternType=\"none\"/></fill><fill><patternFill patternType=\"gray125\"/></fill></fills>\
-            <borders count=\"1\"><border><left/><right/><top/><bottom/><diagonal/></border></borders>\
-            <cellStyleXfs count=\"1\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\"/></cellStyleXfs>\
-            <cellXfs count=\"3\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\"/>\
-            <xf numFmtId=\"0\" fontId=\"1\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyFont=\"1\"/>\
-            <xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyAlignment=\"1\">\
-            <alignment wrapText=\"1\" vertical=\"top\"/></xf>\
-            </cellXfs></styleSheet>").as_bytes(),
-    )?;
-    for (i, table) in tables.iter().enumerate() {
-        zip.add(
-            &format!("xl/worksheets/sheet{}.xml", i + 1),
-            sheet_xml(table).as_bytes(),
-        )?;
-    }
+    let mut rels: Vec<(String, &str, String)> = (1..=tables.len())
+        .map(|n| (format!("rId{n}"), "worksheet", format!("worksheets/sheet{n}.xml")))
+        .collect();
+    rels.push((format!("rId{}", tables.len() + 1), "styles", "styles.xml".to_owned()));
+    zip.add("xl/_rels/workbook.xml.rels", &relationships(&rels))?;
+    zip.add("xl/styles.xml", styles.xml().as_bytes())?;
     zip.finish()
 }
 
@@ -434,128 +627,20 @@ fn sheet_name(title: &str) -> String {
     }
 }
 
-fn sheet_xml(table: &Table) -> String {
-    let width = table.rows.iter().map(Vec::len).max().unwrap_or(1).max(1);
-    let mut widths = vec![8usize; width];
-    for row in &table.rows {
-        for (c, text) in row.iter().enumerate() {
-            let longest = text.split('\n').map(|l| l.chars().count()).max().unwrap_or(0);
-            widths[c] = widths[c].max(longest.min(60) + 2);
-        }
-    }
-    let cols: String = widths
-        .iter()
-        .enumerate()
-        .map(|(i, w)| format!("<col min=\"{0}\" max=\"{0}\" width=\"{w}\" customWidth=\"1\"/>", i + 1))
-        .collect();
-    let freeze = if table.header && table.rows.len() > 1 {
-        "<pane ySplit=\"1\" topLeftCell=\"A2\" activePane=\"bottomLeft\" state=\"frozen\"/>"
-    } else {
-        ""
-    };
-    let mut data = String::new();
-    for (r, row) in table.rows.iter().enumerate() {
-        data.push_str(&format!("<row r=\"{}\">", r + 1));
-        for (c, text) in row.iter().enumerate() {
-            if text.is_empty() {
-                continue;
-            }
-            let at = format!("{}{}", column_letters(c), r + 1);
-            let bold = table.header && r == 0;
-            let style = if bold {
-                1
-            } else if text.contains('\n') {
-                2
-            } else {
-                0
-            };
-            if is_plain_number(text) {
-                data.push_str(&format!("<c r=\"{at}\" s=\"{style}\"><v>{}</v></c>", text.trim()));
-            } else {
-                data.push_str(&format!(
-                    "<c r=\"{at}\" s=\"{style}\" t=\"inlineStr\"><is><t xml:space=\"preserve\">{}</t></is></c>",
-                    escape(text)
-                ));
-            }
-        }
-        data.push_str("</row>");
-    }
-    format!(
-        "{HEADER}<worksheet xmlns=\"{NS}\"><sheetViews><sheetView workbookViewId=\"0\">{freeze}</sheetView></sheetViews>\
-         <cols>{cols}</cols><sheetData>{data}</sheetData>{}</worksheet>",
-        validations(table)
-    )
-}
-
-/// The drop-down lists of a sheet: each single-choice column offers its options for every cell below the header.
-fn validations(table: &Table) -> String {
-    if table.lists.is_empty() {
-        return String::new();
-    }
-    let first = if table.header { 2 } else { 1 };
-    let mut out = format!("<dataValidations count=\"{}\">", table.lists.len());
-    for list in &table.lists {
-        let letters = column_letters(list.column);
-        let names = list
-            .names
-            .iter()
-            .map(|name| name.replace('"', "\"\""))
-            .collect::<Vec<_>>()
-            .join(",");
-        out.push_str(&format!(
-            "<dataValidation type=\"list\" allowBlank=\"1\" showErrorMessage=\"0\" sqref=\"{letters}{first}:{letters}1048576\">\
-             <formula1>{}</formula1></dataValidation>",
-            escape(&format!("\"{names}\""))
-        ));
-    }
-    out.push_str("</dataValidations>");
-    out
-}
-
-/// A number that Excel would keep exactly: digits with an optional sign and fraction, no leading zero, no more
-/// than 15 digits. Phone numbers, codes with a leading zero, and long IDs stay text.
-fn is_plain_number(text: &str) -> bool {
-    let t = text.trim();
-    let digits = t.strip_prefix('-').unwrap_or(t);
-    let (whole, fraction) = digits.split_once('.').map_or((digits, None), |(w, f)| (w, Some(f)));
-    let all = |s: &str| !s.is_empty() && s.bytes().all(|b| b.is_ascii_digit());
-    all(whole)
-        && fraction.is_none_or(all)
-        && (whole == "0" || !whole.starts_with('0'))
-        && whole.len() + fraction.map_or(0, str::len) <= 15
-}
-
-fn column_letters(mut index: usize) -> String {
-    let mut out = Vec::new();
-    loop {
-        out.push(b'A' + (index % 26) as u8);
-        if index < 26 {
-            break;
-        }
-        index = index / 26 - 1;
-    }
-    out.reverse();
-    String::from_utf8(out).unwrap_or_default()
-}
-
-fn escape(text: &str) -> String {
-    let mut out = String::with_capacity(text.len());
-    for c in text.chars() {
-        match c {
-            '&' => out.push_str("&amp;"),
-            '<' => out.push_str("&lt;"),
-            '>' => out.push_str("&gt;"),
-            '"' => out.push_str("&quot;"),
-            c if (c as u32) < 0x20 && !matches!(c, '\t' | '\n' | '\r') => {}
-            c => out.push(c),
-        }
-    }
-    out
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// The first worksheet of a workbook of one table.
+    fn sheet_part(table: Table) -> String {
+        let bytes = workbook(&[table]).expect("a workbook");
+        let parts = crate::docx::read_parts(&bytes);
+        let sheet = parts
+            .iter()
+            .find(|(n, _)| n == "xl/worksheets/sheet1.xml")
+            .expect("a sheet");
+        String::from_utf8_lossy(&sheet.1).into_owned()
+    }
 
     #[test]
     fn csv_quotes_and_guards_cells() {
@@ -573,9 +658,11 @@ mod tests {
     fn sheet_names_and_columns_follow_excel_rules() {
         assert_eq!(sheet_name("Plan: Q1/Q2 [draft]?"), "Plan- Q1-Q2 -draft--");
         assert_eq!(sheet_name(&"x".repeat(40)).len(), 31);
-        assert_eq!(column_letters(0), "A");
-        assert_eq!(column_letters(26), "AA");
-        assert!(is_plain_number("12.5") && !is_plain_number("007") && !is_plain_number("1234567890123456"));
+        assert!(
+            xlsx::is_plain_number("12.5")
+                && !xlsx::is_plain_number("007")
+                && !xlsx::is_plain_number("1234567890123456")
+        );
     }
 
     #[test]
@@ -588,6 +675,9 @@ mod tests {
                 vec!["Pens & ink".to_owned(), "12.5".to_owned()],
             ],
             lists: Vec::new(),
+            data: None,
+            sheet: None,
+            page: 0,
         }];
         let bytes = workbook(&tables).expect("a workbook");
         let entries = crate::docx::read_parts(&bytes);
@@ -648,6 +738,108 @@ mod tests {
     }
 
     #[test]
+    fn a_workbook_holds_names_and_a_list_object_and_recalculates_on_opening() {
+        use crate::sheet::Name;
+        let name = |name: &str, reference: &str, table_scope: bool, comment: &str| Name {
+            name: name.to_owned(),
+            reference: reference.to_owned(),
+            table_scope,
+            comment: comment.to_owned(),
+        };
+        let sheet = TableSheet {
+            names: vec![
+                name("Qtys", "[Qty]", true, "Every quantity"),
+                name("TaxRate", "0.0825", false, ""),
+            ],
+            ..TableSheet::default()
+        };
+        let table = Table {
+            name: "Prices".to_owned(),
+            header: true,
+            rows: vec![
+                vec!["Item".to_owned(), "Qty".to_owned()],
+                vec!["Pens".to_owned(), "2".to_owned()],
+            ],
+            lists: Vec::new(),
+            data: None,
+            sheet: Some(sheet),
+            page: 0,
+        };
+        let bytes = workbook(&[table]).expect("a workbook");
+        let parts = crate::docx::read_parts(&bytes);
+        let part = |name: &str| {
+            parts
+                .iter()
+                .find(|(n, _)| n == name)
+                .map(|(_, b)| String::from_utf8_lossy(b).into_owned())
+                .unwrap_or_else(|| panic!("no part {name}"))
+        };
+        let book = part("xl/workbook.xml");
+        assert!(
+            book.contains("<definedNames><definedName name=\"Qtys\" localSheetId=\"0\" comment=\"Every quantity\">Table1[Qty]</definedName><definedName name=\"TaxRate\">0.0825</definedName></definedNames>"),
+            "{book}"
+        );
+        assert!(book.contains("fullCalcOnLoad=\"1\""), "{book}");
+        assert!(part("[Content_Types].xml").contains("/xl/tables/table1.xml"));
+        assert!(part("xl/worksheets/_rels/sheet1.xml.rels").contains("Target=\"../tables/table1.xml\""));
+        let list = part("xl/tables/table1.xml");
+        assert!(
+            list.contains("name=\"Table1\"") && list.contains("TableStyleMedium2"),
+            "{list}"
+        );
+        // A ListObject's header cells are text.
+        assert!(part("xl/worksheets/sheet1.xml").contains("<c r=\"B1\" s=\"1\" t=\"inlineStr\">"));
+    }
+
+    #[test]
+    fn our_importer_reads_back_the_cached_values_of_an_exported_workbook() {
+        let data = crate::sheet::xlsx::tests::prices();
+        let rows: Vec<Vec<String>> = data
+            .rows
+            .iter()
+            .map(|r| data.columns.iter().map(|c| r.cells[&c.id].markdown.clone()).collect())
+            .collect();
+        let table = Table {
+            name: "Prices".to_owned(),
+            header: true,
+            rows,
+            lists: Vec::new(),
+            sheet: crate::sheet::read(&data),
+            data: Some(data),
+            page: 0,
+        };
+        let dir = tempfile::tempdir().expect("a temp folder");
+        let path = dir.path().join("Prices.xlsx");
+        fs::write(&path, workbook(&[table]).expect("a workbook")).expect("written");
+        let world = crate::testing::TestEnv::new();
+        let mut sink = crate::MemorySink::default();
+        crate::import_xlsx(&path, &world.env(), &mut sink).expect("imported");
+        let page = &sink.pages[0].1.page;
+        let back = page
+            .blocks
+            .iter()
+            .find_map(|b| match &b.data {
+                BlockData::Table(t) => Some(t.clone()),
+                _ => None,
+            })
+            .expect("a table");
+        let text: Vec<Vec<String>> = back
+            .rows
+            .iter()
+            .map(|r| {
+                back.columns
+                    .iter()
+                    .map(|c| r.cells[&c.id].markdown.replace('\\', ""))
+                    .collect()
+            })
+            .collect();
+        // The formulas' cached values come back as the values they showed.
+        assert_eq!(text[0], ["Item", "Qty", "Price", "Total", "Check"]);
+        assert_eq!(text[1], ["Pens", "2", "5", "10", "10"]);
+        assert_eq!(text[2], ["Ink", "3", "4", "12", ""]);
+    }
+
+    #[test]
     fn a_single_choice_column_becomes_a_drop_down_list_below_the_header() {
         let table = Table {
             name: "Tasks".to_owned(),
@@ -660,8 +852,11 @@ mod tests {
                 column: 1,
                 names: vec!["To do".to_owned(), "Say \"hi\" & go".to_owned(), "Done".to_owned()],
             }],
+            data: None,
+            sheet: None,
+            page: 0,
         };
-        let xml = sheet_xml(&table);
+        let xml = sheet_part(table);
         assert!(xml.contains("</sheetData><dataValidations count=\"1\">"), "{xml}");
         assert!(
             xml.contains("type=\"list\"") && xml.contains("sqref=\"B2:B1048576\""),
@@ -672,7 +867,18 @@ mod tests {
             "{xml}"
         );
         // Without a header row the list starts at the first row.
-        let bare = Table { header: false, ..table };
-        assert!(sheet_xml(&bare).contains("sqref=\"B1:B1048576\""));
+        let bare = Table {
+            header: false,
+            name: "Tasks".to_owned(),
+            rows: vec![vec!["Write".to_owned(), "Done".to_owned()]],
+            lists: vec![ChoiceList {
+                column: 1,
+                names: vec!["Done".to_owned()],
+            }],
+            data: None,
+            sheet: None,
+            page: 0,
+        };
+        assert!(sheet_part(bare).contains("sqref=\"B1:B1048576\""));
     }
 }
