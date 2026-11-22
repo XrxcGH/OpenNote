@@ -1,4 +1,4 @@
-// Code cells: small Python and JavaScript programs that run on this device in a sandbox (features/codecells).
+// Code cells: small programs in several languages that run on this device in a sandbox (features/codecells).
 // Every interface string is a full sentence here, never joined from pieces (ARCHITECTURE.md section 19).
 
 export const codeCells = {

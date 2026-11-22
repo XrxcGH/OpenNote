@@ -12,8 +12,7 @@ int main(void)
     double x = 1.0;
     for (int step = 0; step < 6; step++) {
         x = x - (x * x - 2) / (2 * x);
-        printf("%d %.10f
-", step, x);
+        printf("%d %.10f\\n", step, x);
     }
     return 0;
 }
@@ -26,8 +25,7 @@ int main()
     double x = 1.0;
     for (int step = 0; step < 6; step++) {
         x = x - (x * x - 2) / (2 * x);
-        std::cout << step << " " << x << "
-";
+        std::cout << step << " " << x << "\\n";
     }
     return 0;
 }

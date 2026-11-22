@@ -13,8 +13,15 @@ describe('the code cell starters', () => {
 
   it('keeps the braces and the escaped newline of the C and C++ examples', () => {
     expect(starterOf('c')).toContain('int main(void)');
-    expect(starterOf('c')).toContain('printf("%d %.10f\n", step, x);');
+    expect(starterOf('c')).toContain('printf("%d %.10f\\n", step, x);');
     expect(starterOf('cpp')).toContain('std::cout << step');
-    expect(starterOf('cpp')).toContain('{');
+    expect(starterOf('cpp')).toContain('<< "\\n";');
+  });
+
+  it.each(['c', 'cpp'] as const)('%s has no line break inside a string literal', (language) => {
+    const odd = starterOf(language)
+      .split('\n')
+      .filter((line) => !line.trimStart().startsWith('//') && (line.match(/"/g) ?? []).length % 2 === 1);
+    expect(odd).toEqual([]);
   });
 });

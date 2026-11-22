@@ -99,6 +99,7 @@ export function CodeCellPanel({
   const [failed, setFailed] = useState(false);
   const [running, setRunning] = useState<RunHandle | null>(null);
   const sent = useRef(source);
+  const starting = useRef(false);
   const helpId = useId();
   const host = useRef<HTMLDivElement>(null);
   const editor = useRef<CodeEditor | null>(null);
@@ -194,34 +195,39 @@ export function CodeCellPanel({
   useEffect(() => () => running?.stop(), [running]);
 
   const run = async () => {
-    if (running) return;
-    const { runCode } = await import('./run');
-    const pieces: Piece[] = [];
-    setOutput([]);
-    setTruncated(false);
-    setFailed(false);
-    setStatus(t('codeCells.status.starting', { language: t(`codeCells.languages.${language}`) }));
-    const handle = runCode(
-      language,
-      editor.current?.getText() ?? text,
-      (stream, chunk) => {
-        const last = pieces.at(-1);
-        if (last?.stream === stream) last.text += chunk;
-        else pieces.push({ stream, text: chunk });
-        setOutput([...pieces]);
-      },
-      LIMITS,
-      () => setStatus(t('codeCells.status.running')),
-      engine,
-    );
-    setRunning(handle);
-    const result = await handle.done;
-    setRunning(null);
-    setTruncated(result.truncated);
-    setFailed(result.status === 'failed');
-    const said = statusText(result);
-    setStatus(said);
-    announce(said);
+    if (running || starting.current) return;
+    starting.current = true;
+    try {
+      const { runCode } = await import('./run');
+      const pieces: Piece[] = [];
+      setOutput([]);
+      setTruncated(false);
+      setFailed(false);
+      setStatus(t('codeCells.status.starting', { language: t(`codeCells.languages.${language}`) }));
+      const handle = runCode(
+        language,
+        editor.current?.getText() ?? text,
+        (stream, chunk) => {
+          const last = pieces.at(-1);
+          if (last?.stream === stream) last.text += chunk;
+          else pieces.push({ stream, text: chunk });
+          setOutput([...pieces]);
+        },
+        LIMITS,
+        () => setStatus(t('codeCells.status.running')),
+        engine,
+      );
+      setRunning(handle);
+      const result = await handle.done;
+      setRunning(null);
+      setTruncated(result.truncated);
+      setFailed(result.status === 'failed');
+      const said = statusText(result);
+      setStatus(said);
+      announce(said);
+    } finally {
+      starting.current = false;
+    }
   };
 
   // Ctrl+Enter runs the cell. It is caught before the editor, which would add a blank line.
