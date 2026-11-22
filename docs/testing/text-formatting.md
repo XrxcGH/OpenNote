@@ -1,6 +1,6 @@
 # Text formatting: NVDA and Narrator checklist
 
-A person runs this checklist before each beta that changes text formatting, on Windows 11 with a mouse put away. The automated runs cover what they can: `npm run test:e2e:text` (axe over the Home tab, the Format pane, the font picker, and the ruler, and the forced-colors check), `npm run perf:typing` (the formatted 20-page note), and the component tests of each control. This list covers what needs a person and a real screen reader. File an issue for every item that fails, and record each run in the table at the end.
+A person runs this checklist before each beta that changes text formatting, on Windows 11 with a mouse put away. The automated runs cover what they can: `npm run test:e2e:text` (axe over the Home tab, the Format pane, the font picker, and the ruler, and the forced-colors check), `npm run perf:typing` (the formatted 20-page note), and the component tests of each control. The nightly run sets `OPENNOTE_TYPING_GATE=1` on `perf:typing`, so the formatted note fails the night at a painted p95 over 16 ms. The export-then-import flow is tested in `crates/interop/tests/word_round_trip.rs`. A native tauri-driver spec that drives it through the window is deferred to a later release. This list covers what needs a person and a real screen reader. File an issue for every item that fails, and record each run in the table at the end.
 
 Turn the text flags on first (Settings, Experimental), or use a build where they are on.
 

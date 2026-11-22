@@ -37,8 +37,5 @@ export default defineConfig<UiOptions>({
         reuseExistingServer: false,
         timeout: 60_000,
       },
-  projects: [
-    { name: 'default', testIgnore: '**/*.native.ts' },
-    { name: 'forced-colors', grep: /@forced\b/, use: { forcedColors: 'active' } },
-  ],
+  projects: [{ name: 'default' }, { name: 'forced-colors', grep: /@forced\b/, use: { forcedColors: 'active' } }],
 });

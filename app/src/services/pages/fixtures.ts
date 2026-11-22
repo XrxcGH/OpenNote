@@ -203,11 +203,7 @@ function largeSheetTable(order: number): BlockJson {
   return tableOf(order, [head, ...body], { sheet: { table: { grid: true } } });
 }
 
-/**
- * The 20-page note with the formatting a Word user adds (text design 11): 30 percent of the paragraphs in their own
- * font, size, and color; 50 paragraphs with tab stops; 10 lists with their own number formats; 20 bordered paragraphs.
- * Every element gets an ID, because `paras` is keyed by element ID.
- */
+/** A short page of highlighted, shaded, and bordered runs: the ones that can clash in forced colors. */
 function highlightedRuns(order: number): BlockJson {
   const ids = [fixtureId(), fixtureId(), fixtureId()];
   const side = { style: 'single', width: 0.5, space: 4, color: 'theme:accent1' };
@@ -221,6 +217,11 @@ function highlightedRuns(order: number): BlockJson {
   return block('text', order, { markdown, ids, paras });
 }
 
+/**
+ * The 20-page note with the formatting a Word user adds (text design 11): 30 percent of the paragraphs in their own
+ * font, size, and color; 50 paragraphs with tab stops; 10 lists with their own number formats; 20 bordered paragraphs.
+ * Every element gets an ID, because `paras` is keyed by element ID.
+ */
 function formattedNote(order: number): BlockJson {
   const formats = ['decimal', 'lowerLetter', 'upperRoman', 'lowerRoman', 'upperLetter', 'decimalZero', 'ordinal'];
   const ids: string[] = [];

@@ -1,5 +1,5 @@
-// Apply and change styles, with the Format pane and the ruler: the pane's Paragraph tab sets an alignment, the
-// ruler shows for the focused text, and a style change reaches the page.
+// Apply and change styles with the Format pane and the ruler. The pane's Paragraph tab sets an alignment.
+// The ruler shows for the focused text. A style change reaches the page.
 
 import type { Page } from '@playwright/test';
 import { expect, openNote, runCommand, selectParagraph, test } from './helpers';

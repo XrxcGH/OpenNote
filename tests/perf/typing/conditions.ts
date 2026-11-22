@@ -196,7 +196,7 @@ async function zoomTo(page: Page, target: number): Promise<void> {
 
 const inNote = (caret: Caret) => async (page: Page) => placeCaret(page, await longestBox(page), caret);
 
-/** Every text formatting flag (app/src/features/page/flags.ts): the formatted condition measures a build with them on. */
+/** Every text formatting flag (app/src/features/page/flags.ts). The formatted condition turns them on. */
 const TEXT_FLAGS = [
   'text.runFormats',
   'text.paraFormats',
