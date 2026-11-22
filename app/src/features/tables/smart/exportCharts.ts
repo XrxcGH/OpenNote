@@ -3,6 +3,7 @@
 // drawn from the same spec the table on the page uses. Colors come out as the light values, not as CSS variables,
 // because the print document has no style sheet of tokens. Shapes stay vectors, and the chart keeps its title.
 import { t } from '../../../strings/t';
+import { loadFinance } from '../engine/formula/fn/finance';
 import { tokens } from '../../../theme/tokens';
 import type { SmartData } from './data';
 import { readSmart } from './data';
@@ -42,6 +43,11 @@ export async function exportTableCharts(table: ExportTable): Promise<readonly Ex
   const locale = appLocale();
   const ids = table.columns.map((column) => column.id);
   const texts = table.rows.map((row) => ids.map((id) => row.cells[id] ?? ''));
+  // The model calculates at once, and a financial formula gives #BUSY! until its chunk lands. No page waits to draw
+  // a print, so load the chunk first when the table holds formulas. A failed load leaves the cells as errors.
+  if (texts.some((row) => row.some((text) => text.trimStart().startsWith('=')))) {
+    await loadFinance().catch(() => undefined);
+  }
   const model = buildModel({ header: table.header, columnIds: ids, texts }, smart, locale);
   const out: ExportedChart[] = [];
   for (const chart of smart.charts) {
