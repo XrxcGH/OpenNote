@@ -608,7 +608,6 @@ Open it with the command "Open the code studio".
 | Unhide rows | Shows the hidden rows inside the rows you picked. |  |
 | Hide columns | Hides the columns you picked and keeps their data. |  |
 | Unhide columns | Shows the hidden columns inside the columns you picked. | Ctrl+Shift+0 |
-| Formula bar | Shows the formula or value of the selected cell above the table. You can edit it there. |  |
 | Freeze top row | Keeps the top row in view while the table scrolls. |  |
 | Freeze first column | Keeps the first column in view while the table scrolls. |  |
 | Freeze panes at this cell | Keeps the rows above and the columns left of this cell in view. |  |
