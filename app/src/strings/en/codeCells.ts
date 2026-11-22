@@ -58,34 +58,4 @@ export const codeCells = {
     modules:
       'The sandbox blocks this: a code cell has no network and no installed packages, only the built-in modules.',
   },
-  starter: {
-    python: `# Newton’s method for the square root of 2
-x = 1.0
-for step in range(6):
-    x = x - (x * x - 2) / (2 * x)
-    print(step, x)
-`,
-    javascript: `// Newton’s method for the square root of 2
-// No braces here: the message formatter reads them as placeholders.
-let x = 1;
-const next = (v) => v - (v * v - 2) / (2 * v);
-for (let step = 0; step < 6; step++) console.log(step, (x = next(x)));
-`,
-    typescript: `// Newton’s method for the square root of 2
-const next = (v: number): number => v - (v * v - 2) / (2 * v);
-let x = 1;
-for (let step = 0; step < 6; step++) console.log(step, (x = next(x)));
-`,
-    sql: `-- The squares of 1 to 5, and their sum
-WITH n(i) AS (VALUES (1), (2), (3), (4), (5))
-SELECT i, i * i AS square, SUM(i * i) OVER () AS total FROM n;
-`,
-    lua: `-- Newton’s method for the square root of 2
-local x = 1.0
-for step = 0, 5 do
-  x = x - (x * x - 2) / (2 * x)
-  print(step, x)
-end
-`,
-  },
 } as const;

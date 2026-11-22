@@ -132,9 +132,9 @@ addCommand({
   slash: { group: 'advanced', order: 34 },
   bar: { group: 'math', priority: 35 },
   run: async () => {
-    const { fallbackOf } = await import('../../codecells');
+    const { fallbackOf, starterOf } = await import('../../codecells');
     const { insertPanelBlock } = await import('../panels/insertPanel');
-    const source = t('codeCells.starter.python');
+    const source = starterOf('python');
     const id = await insertPanelBlock(
       PANEL_TYPES.codeCell,
       { language: 'python', source },

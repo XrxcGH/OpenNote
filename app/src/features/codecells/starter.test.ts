@@ -1,5 +1,4 @@
-// The example programs come out whole: the message formatter would read a brace as a placeholder, so C and C++ live
-// in starters.ts. Each example prints the Newton iterations for the square root of 2 (hand-worked: 1.5, 1.41666...).
+// The example programs come out whole. Each prints the Newton iterations for the square root of 2 (hand-worked: 1.5, 1.41666...).
 import { describe, expect, it } from 'vitest';
 import { LANGUAGES } from './model';
 import { starterOf } from './starters';
@@ -23,5 +22,12 @@ describe('the code cell starters', () => {
       .split('\n')
       .filter((line) => !line.trimStart().startsWith('//') && (line.match(/"/g) ?? []).length % 2 === 1);
     expect(odd).toEqual([]);
+  });
+});
+
+describe('the start-up bundle', () => {
+  it('keeps the example programs out of the string catalog, which loads at start-up', async () => {
+    const { codeCells } = await import('../../strings/en/codeCells');
+    expect(Object.keys(codeCells)).not.toContain('starter');
   });
 });
