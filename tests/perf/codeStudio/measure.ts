@@ -15,7 +15,7 @@ import { LuaFactory } from 'wasmoon';
 import { contextAt, suggest } from '../../../app/src/features/codestudio/complete/ghost.ts';
 import { rank } from '../../../app/src/features/codestudio/complete/rank.ts';
 import type { SyntaxTree } from '../../../app/src/features/codestudio/complete/scope.ts';
-import type { RunFile, RunRequest, WorkerMessage } from '../../../app/src/features/codestudio/contracts/run.ts';
+import type { RunFile, RunRequest } from '../../../app/src/features/codestudio/contracts/run.ts';
 import { analyze } from '../../../app/src/features/codestudio/diagnostics/analyze.ts';
 import { sampleFile } from '../../../app/src/features/codestudio/diagnostics/bench.ts';
 import { LAYER_DEBOUNCE_MS } from '../../../app/src/features/codestudio/diagnostics/types.ts';
@@ -36,7 +36,7 @@ import { runPython } from '../../../app/src/features/codestudio/runtimes/python/
 import type { PythonEngine } from '../../../app/src/features/codestudio/runtimes/python/session.ts';
 import { runSql } from '../../../app/src/features/codestudio/runtimes/sql/engine.ts';
 import { GATES } from './budgets.ts';
-import { best, judge, median, timed, timedAsync } from './judge.ts';
+import { best, hearing, judge, median, timed, timedAsync } from './judge.ts';
 import type { GateResult } from './judge.ts';
 
 const ROOT = process.env.OPENNOTE_ROOT ?? process.cwd();
@@ -97,15 +97,27 @@ const bestOfThree = (id: string, base: string, run: (text: string, tree: SyntaxT
 const python1000 = thousandLines();
 
 await measure('completion-list', async () =>
-  bestOfThree('completion-list', python1000, (text, tree) => rank(contextAt('python', text, text.length), { tree })),
+  bestOfThree('completion-list', python1000, (text, tree) => {
+    const items = rank(contextAt('python', text, text.length), { tree });
+    // An empty list would time a no-op, so it fails the gate instead of passing it.
+    if (items.length === 0) throw new Error('The completion list was empty.');
+  }),
 );
+
+/** The file with a run of numbered lines at the end, where the automatic predictor has a suggestion to give. */
+const pythonSteps = `${python1000.slice(0, python1000.indexOf('def last('))}a1 = x[1]\na2 = x[2]\na`;
 
 await measure('pattern-ghost', async () =>
   Math.max(
-    ...[false, true].map((explicit) =>
-      bestOfThree('pattern-ghost', python1000, (text, tree) =>
-        suggest({ language: 'python', text, pos: text.length, explicit }, { tree }),
-      ),
+    ...[
+      { explicit: false, base: pythonSteps },
+      { explicit: true, base: python1000 },
+    ].map(({ explicit, base }) =>
+      bestOfThree('pattern-ghost', base, (text, tree) => {
+        const found = suggest({ language: 'python', text, pos: text.length, explicit }, { tree });
+        // A variant that finds nothing would time a no-op, so it fails the gate instead of passing it.
+        if (!found) throw new Error(`The ${explicit ? 'explicit' : 'automatic'} ghost text found no suggestion.`);
+      }),
     ),
   ),
 );
@@ -114,11 +126,27 @@ await measure('pattern-ghost', async () =>
 
 const MARK_LANGUAGES: EditorLanguage[] = ['python', 'javascript', 'typescript', 'c', 'cpp', 'lua'];
 
+/** A last line with a problem in it, so the layer has a mark to find and a layer that finds none fails the gate. */
+const PROBLEM: Record<'syntax' | 'checker', Partial<Record<EditorLanguage, string>>> = {
+  syntax: { python: ')\n', javascript: ')\n', typescript: ')\n', c: ')\n', cpp: ')\n' },
+  checker: {
+    python: 'print(undefined_name_x)\n',
+    javascript: 'undefinedNameX + 1;\n',
+    typescript: 'undefinedNameX + 1;\n',
+    c: 'int probe(void) { return undefined_name_x; }\n',
+    cpp: 'int probe() { return undefined_name_x; }\n',
+    lua: 'print(undefined_name_x)\n',
+  },
+};
+
 async function slowestLayer(id: string, layer: 'syntax' | 'checker'): Promise<number> {
   let slowest = 0;
   for (const language of MARK_LANGUAGES) {
-    const text = sampleFile(language, 1000);
-    await analyze({ language, text, layers: [layer] });
+    const text = `${sampleFile(language, 1000)}${PROBLEM[layer][language] ?? ''}`;
+    const found = await analyze({ language, text, layers: [layer] });
+    // A layer that finds nothing on the sample file would time a no-op (the Lua parser has no syntax layer).
+    if (found[layer].length === 0 && !(language === 'lua' && layer === 'syntax'))
+      throw new Error(`The ${layer} layer found no mark in the ${language} sample file.`);
     const runs: number[] = [];
     for (let attempt = 0; attempt < ATTEMPTS; attempt++) {
       const times: number[] = [];
@@ -172,18 +200,16 @@ async function warm(id: string, once: () => Promise<void> | void): Promise<numbe
   return best(runs);
 }
 
-const noMessages = (_message: WorkerMessage) => undefined;
-const mustBeOk = (status: string) => {
-  if (status !== 'ok') throw new Error(`The run ended with ${status}.`);
-};
-
 await measure('run-quickjs', async () => {
   const quickjs = await newQuickJSWASMModuleFromVariant(
     newVariant(releaseSync, { wasmMemory: cappedHeap(RUN_LIMITS.memoryBytes) }),
   );
   const request = order('typescript', 'main.ts', 'const name: string = "world";\nconsole.log(`Hello, ${name}!`);\n');
   return warm('run-quickjs', () =>
-    mustBeOk(runProgram({ quickjs, transform }, request, noMessages, context(request)).status),
+    {
+      const heard = hearing();
+      heard.check(runProgram({ quickjs, transform }, request, heard.emit, context(request)).status, 'Hello, world!');
+    },
   );
 });
 
@@ -191,21 +217,30 @@ await measure('run-micropython', async () => {
   const wasm = `${ROOT}/node_modules/@micropython/micropython-webassembly-pyscript/micropython.wasm`;
   const engine = await loadMicroPythonEngine(wasm);
   const request = order('python-quick', 'main.py', 'print("Hello, world!")\n');
-  return warm('run-micropython', () => mustBeOk(runPython(engine, request, noMessages, context(request)).status));
+  return warm('run-micropython', () => {
+    const heard = hearing();
+    heard.check(runPython(engine, request, heard.emit, context(request)).status, 'Hello, world!');
+  });
 });
 
 await measure('run-lua', async () => {
   const factory = new LuaFactory();
   await factory.getLuaModule();
   const request = order('lua', 'main.lua', 'print("Hello, world!")\n');
-  return warm('run-lua', async () => mustBeOk((await runLua(factory, request, noMessages, context(request))).status));
+  return warm('run-lua', async () => {
+    const heard = hearing();
+    heard.check((await runLua(factory, request, heard.emit, context(request))).status, 'Hello, world!');
+  });
 });
 
 await measure('run-sql', async () => {
   const init = sqlite3InitModule as unknown as (options: object) => Promise<Sqlite3Static>;
   const sqlite = await init({ print: () => undefined, printErr: () => undefined });
   const request = order('sql', 'main.sql', 'select 1 + 1 as two;\n');
-  return warm('run-sql', () => mustBeOk(runSql(sqlite, request, noMessages, context(request)).status));
+  return warm('run-sql', () => {
+    const heard = hearing();
+    heard.check(runSql(sqlite, request, heard.emit, context(request)).status, '1 row');
+  });
 });
 
 let pyodide: Promise<PythonEngine> | undefined;
@@ -217,7 +252,10 @@ const pyodideEngine = () =>
     },
   ));
 const hello = order('python-full', 'main.py', 'print("Hello, world!")\n');
-const runHello = (engine: PythonEngine) => mustBeOk(runPython(engine, hello, noMessages, context(hello)).status);
+const runHello = (engine: PythonEngine) => {
+  const heard = hearing();
+  heard.check(runPython(engine, hello, heard.emit, context(hello)).status, 'Hello, world!');
+};
 
 // Cold first: the load and the first run are timed together, once, before the warm gate loads nothing more.
 await measure('run-pyodide-cold', () => timedAsync('run-pyodide-cold', async () => runHello(await pyodideEngine())));
@@ -259,7 +297,7 @@ for (const language of ['c', 'cpp'] as const) {
     await adapter.load(() => {});
     const request = order(language, `main.${language}`, source(language));
     return warm(`compile-${language}`, async () => {
-      const end = await adapter.prepare!(request, noMessages, context(request));
+      const end = await adapter.prepare!(request, () => undefined, context(request));
       if (end !== null) throw new Error(`The compile ended with ${end.status}.`);
     });
   });

@@ -177,6 +177,8 @@ export interface ModelGate {
   readonly model: string;
   readonly file: string;
   readonly firstTokenMs: number;
+  /** The slowest 95th percentile of the first token, when the design sets one (G-M1: 0.5B model only). */
+  readonly firstTokenP95Ms?: number;
   /** The slowest the model may generate, as the lowest tokens per second that passes. */
   readonly minTokensPerSecond: number;
 }
@@ -187,6 +189,7 @@ export const MODEL_GATES: readonly ModelGate[] = [
     model: 'Qwen2.5-Coder 0.5B Q8_0',
     file: 'qwen2.5-coder-0.5b-q8_0.gguf',
     firstTokenMs: 500,
+    firstTokenP95Ms: 1200,
     minTokensPerSecond: 30,
   },
   {

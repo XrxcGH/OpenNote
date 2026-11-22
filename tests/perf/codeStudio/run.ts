@@ -9,7 +9,7 @@
 // OPENNOTE_PERF_INJECT_MS adds a delay to every timed section, to prove that the gates can fail (judge.ts).
 
 import { execFileSync } from 'node:child_process';
-import { appendFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parseArgs } from 'node:util';
 import { rolldown } from 'rolldown';
@@ -20,6 +20,8 @@ import { allPass, gateTable } from './table.ts';
 const HERE = import.meta.dirname;
 const ROOT = join(HERE, '..', '..', '..');
 const RESULTS = join(HERE, 'results');
+/** Browser results are current when at most this old (the browser step runs right before this one). */
+const STALE_MS = 6 * 60 * 60_000;
 
 /** Bundles measure.ts next to the repository's node_modules and runs it; returns its gate results. */
 export async function measureNode(env: NodeJS.ProcessEnv = process.env): Promise<GateResult[]> {
@@ -38,22 +40,38 @@ export async function measureNode(env: NodeJS.ProcessEnv = process.env): Promise
     });
     await bundle.write({ dir: out, format: 'esm', entryFileNames: 'measure.mjs' });
     await bundle.close();
-    const text = execFileSync(process.execPath, [join(out, 'measure.mjs')], {
-      cwd: ROOT,
-      encoding: 'utf8',
-      maxBuffer: 16 * 1024 * 1024,
-      env: { ...env, OPENNOTE_ROOT: ROOT },
-      timeout: 15 * 60_000,
-    });
-    return JSON.parse(text.trim().split('\n').at(-1) ?? '[]') as GateResult[];
+    try {
+      const text = execFileSync(process.execPath, [join(out, 'measure.mjs')], {
+        cwd: ROOT,
+        encoding: 'utf8',
+        maxBuffer: 16 * 1024 * 1024,
+        env: { ...env, OPENNOTE_ROOT: ROOT },
+        timeout: 15 * 60_000,
+      });
+      return JSON.parse(text.trim().split('\n').at(-1) ?? '[]') as GateResult[];
+    } catch (error) {
+      // A crash of the measure process must not hide the table: every Node gate of this run is marked failed.
+      return crashed(env.OPENNOTE_PERF_ONLY?.split(',').filter(Boolean) ?? [], error);
+    }
   } finally {
     rmSync(out, { recursive: true, force: true });
   }
 }
 
+/** One failed result for each gate id, with the reason the measure process crashed. */
+export function crashed(ids: readonly string[], error: unknown): GateResult[] {
+  const reason = `The measure process failed: ${error instanceof Error ? error.message.split('\n')[0] : error}`;
+  return ids.map((id) => ({ id, status: 'fail' as const, reason }));
+}
+
 /** Reads the browser gates' results when the Playwright run left them. */
-export function readBrowser(path: string): GateResult[] {
+export function readBrowser(path: string, notBefore = 0): GateResult[] {
   if (!existsSync(path)) return [];
+  // Results from before this run's window are an older browser run: they are not shown as current.
+  if (statSync(path).mtimeMs < notBefore) {
+    console.warn(`::warning::${path} is older than this run, so its browser results are ignored.`);
+    return [];
+  }
   return JSON.parse(readFileSync(path, 'utf8')) as GateResult[];
 }
 
@@ -84,7 +102,7 @@ if (import.meta.main) {
   const ids = inNode.map((gate) => gate.id).filter((id) => !wantedIds || wantedIds.includes(id));
   env.OPENNOTE_PERF_ONLY = ids.join(',');
   const measured = ids.length > 0 ? await measureNode(env) : [];
-  const browser = readBrowser(values.browser!);
+  const browser = readBrowser(values.browser!, Date.now() - STALE_MS);
   const all = complete(
     [...measured, ...browser].map((result) => ({ ...result, machine: values.machine })),
     {

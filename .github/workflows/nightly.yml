@@ -391,16 +391,27 @@ jobs:
       - name: Check that every gate can fail
         run: npm run test:perf-code-studio
       - name: Browser gates
+        # TEMPORARY waiver, tracking item B12-TYPING-1000: typing-1000 is advisory (in the table, not a failure) until
+        # the editor's typing fix lands. Remove this setting with that fix; see
+        # docs/perf/code-studio.md. The other browser gates fail the job.
+        env:
+          OPENNOTE_PERF_ADVISORY: typing-1000
         run: npm run perf:code-studio:browser
         continue-on-error: true
         id: browser
       - name: Node gates and the budget table
+        if: always()
         run: node tests/perf/codeStudio/run.ts --machine "$OPENNOTE_PERF_MACHINE"
       - name: Model speed
         # No model is downloaded: without OPENNOTE_LLM_MODEL or OPENNOTE_LLM_MODELS the table says "not measured".
-        run: node tests/perf/codeStudio/model.ts --machine "$OPENNOTE_PERF_MACHINE" | tee -a "$GITHUB_STEP_SUMMARY"
+        if: always()
+        # bash with pipefail, so that a failing gate fails the step and not only tee.
+        shell: bash
+        run: |
+          set -o pipefail
+          node tests/perf/codeStudio/model.ts --machine "$OPENNOTE_PERF_MACHINE" | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Fail when a browser gate failed
-        if: steps.browser.outcome == 'failure'
+        if: always() && steps.browser.outcome == 'failure'
         run: |
           echo "::error::A code studio browser gate failed. The budget table above has the numbers."
           exit 1

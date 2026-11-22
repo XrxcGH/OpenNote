@@ -5,6 +5,21 @@
 import { gateOf, MODEL_GATES } from './budgets.ts';
 import type { Gate, ModelGate } from './budgets.ts';
 
+/** Collects a run's standard output, so a gate can check that the program really ran and printed. */
+export function hearing() {
+  const out: string[] = [];
+  return {
+    emit: (message: { kind: string; text?: string }) => {
+      if (message.kind === 'out') out.push(message.text ?? '');
+    },
+    check(status: string, expected: string) {
+      if (status !== 'ok') throw new Error(`The run ended with ${status}.`);
+      if (!out.join('').includes(expected))
+        throw new Error(`The run printed ${JSON.stringify(out.join(''))}, not ${expected}.`);
+    },
+  };
+}
+
 export type Status = 'pass' | 'fail' | 'skipped';
 
 export interface GateResult {
@@ -50,6 +65,12 @@ export async function timedAsync(id: string, work: () => Promise<unknown>): Prom
   return performance.now() - start;
 }
 
+/** The nearest-rank percentile (0 to 100) of the samples. */
+export function percentile(values: readonly number[], p: number): number {
+  const sorted = [...values].sort((a, b) => a - b);
+  return sorted[Math.max(0, Math.ceil((p / 100) * sorted.length) - 1)] ?? 0;
+}
+
 export function median(values: readonly number[]): number {
   const sorted = [...values].sort((a, b) => a - b);
   return sorted[Math.floor(sorted.length / 2)] ?? 0;
@@ -75,9 +96,12 @@ export function judgeModel(
   gate: ModelGate,
   firstTokenMs: number,
   tokensPerSecond: number,
+  firstTokenP95Ms?: number,
 ): { ok: boolean; problems: string[] } {
   const problems: string[] = [];
   if (firstTokenMs > gate.firstTokenMs) problems.push(`first token ${firstTokenMs} ms is over ${gate.firstTokenMs} ms`);
+  if (gate.firstTokenP95Ms !== undefined && firstTokenP95Ms !== undefined && firstTokenP95Ms > gate.firstTokenP95Ms)
+    problems.push(`first token p95 ${firstTokenP95Ms} ms is over ${gate.firstTokenP95Ms} ms`);
   if (tokensPerSecond < gate.minTokensPerSecond) {
     problems.push(`${tokensPerSecond} tokens/s is under ${gate.minTokensPerSecond}`);
   }
@@ -88,4 +112,20 @@ export function modelGateOf(id: string): ModelGate {
   const gate = MODEL_GATES.find((candidate) => candidate.id === id);
   if (!gate) throw new Error(`No model gate named ${id}.`);
   return gate;
+}
+
+/**
+ * A browser gate's measured value with the injected delay added, rounded to two places. The delay is in milliseconds
+ * and is added as is, so for the idle-memory gate (megabytes) it only has to be large enough to pass the budget.
+ */
+export function withInjection(id: string, measured: number, env: NodeJS.ProcessEnv = process.env): number {
+  return Math.round((measured + injectedMs(id, env)) * 100) / 100;
+}
+
+/** True when the gate is advisory: its result is in the table, but a miss does not fail the run (OPENNOTE_PERF_ADVISORY). */
+export function isAdvisory(id: string, env: NodeJS.ProcessEnv = process.env): boolean {
+  return (env.OPENNOTE_PERF_ADVISORY ?? '')
+    .split(',')
+    .map((part) => part.trim())
+    .includes(id);
 }

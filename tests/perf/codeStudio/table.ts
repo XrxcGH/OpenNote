@@ -8,6 +8,7 @@ export interface ModelResult {
   id: string;
   status: 'pass' | 'fail' | 'skipped';
   firstTokenMs?: number;
+  firstTokenP95Ms?: number;
   tokensPerSecond?: number;
   reason?: string;
 }
