@@ -62,16 +62,21 @@ test('continues a series from two numbers, and the menu after the drop copies th
 
 test('fits a row with a double click on its edge, and sets its height by dragging', async ({ page }) => {
   const row = page.locator('table tr').nth(2);
-  const before = (await row.boundingBox())!.height;
-  const edge = page.locator('[data-row="2"]').first();
-  await expect(edge).toBeAttached();
-  const at = await center(edge);
+  const box = (await row.boundingBox())!;
+  const before = box.height;
+  // The one edge moves to the rule under the pointer: it shows when the pointer rests on the row's bottom rule.
+  const at = { x: box.x + 2, y: box.y + box.height };
   await page.mouse.move(at.x, at.y);
+  const edge = page.locator('[data-row="2"]').first();
+  await expect(edge).toBeVisible();
   await page.mouse.down();
   await page.mouse.move(at.x, at.y + 40, { steps: 5 });
   await page.mouse.up();
   await expect.poll(async () => (await row.boundingBox())!.height).toBeGreaterThan(before + 20);
-  await page.locator('[data-row="2"]').first().dblclick();
+  const grown = (await row.boundingBox())!;
+  await page.mouse.move(grown.x + 2, grown.y + grown.height);
+  await expect(page.locator('[data-row="2"]').first()).toBeVisible();
+  await page.mouse.dblclick(grown.x + 2, grown.y + grown.height);
   await expect.poll(async () => (await row.boundingBox())!.height).toBeLessThan(before + 10);
 });
 

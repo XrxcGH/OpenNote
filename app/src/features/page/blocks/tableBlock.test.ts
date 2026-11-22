@@ -294,8 +294,8 @@ describe('table size edges and the structure flag', () => {
     const { page } = await tablePage(tableData(), { 'tables.structureUi': false });
     expect(page.wrapper(TABLE).querySelectorAll('[data-row]').length).toBe(0);
   });
-  it('has one row edge for each row while tables.structureUi is on', async () => {
+  it('has the row edge while tables.structureUi is on', async () => {
     const { page } = await tablePage(tableData(), { 'tables.structureUi': true });
-    expect(page.wrapper(TABLE).querySelectorAll('[data-row]').length).toBe(tableData().rows.length);
+    expect(page.wrapper(TABLE).querySelectorAll('[data-row]').length).toBe(1);
   });
 });

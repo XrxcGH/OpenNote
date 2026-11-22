@@ -1,5 +1,5 @@
 /*
- * Row edges (DESIGN.md section 12): like column edges, a thin hit area (12 px tall and 6 px wide with a mouse, 28 by 10 px at
+ * The row edge (DESIGN.md section 12): like column edges, a thin hit area (12 px tall and 6 px wide with a mouse, 28 by 10 px at
  * touch density) centered on the rule, at the table's left edge. It is small so the first column's text stays
  * clickable; the Row height field is the larger target.
  */
@@ -20,7 +20,7 @@
     block-size: 12px;
     margin-block-start: -6px;
     cursor: row-resize;
-    pointer-events: auto;
+    pointer-events: none;
     touch-action: none;
   }
 
