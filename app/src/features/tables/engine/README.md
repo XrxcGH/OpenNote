@@ -20,6 +20,8 @@ This folder holds the core of Phase 7: typed tables, formulas, quick math, pasti
 | `model.ts`, `edit.ts`                | Typed columns and cells, and edits that return a new, recalculated table                                    |
 | `canonical.ts`, `format.ts`          | Locale-free cell text for storage, and display text in the person's region                                  |
 | `formula/`                           | The formula dialect, the compiler, and the functions. Reading text is the shared engine's job (`core/expr`) |
+| `formula/fn/`                        | The function registry: one `FnSpec2` list per family, collected in `index.ts` (ADR 0060)                    |
+| `numfmt/`                            | Number format codes: compile, render, built-in IDs, and regional display (ADR 0057)                         |
 | `recalc.ts`                          | Dependency-ordered recalculation with cycle detection                                                       |
 | `sort.ts`, `filter.ts`, `totals.ts`  | Multi-column sort, filters, and the totals row                                                              |
 | `quickMath.ts`                       | The "2.5*9.81=" evaluator, on the same engine                                                               |
@@ -42,6 +44,10 @@ A calculated column runs one formula on every row. `[Price]*[Qty]` reads this ro
 - **Single cells.** Typed text that starts with "=" becomes a formula in that cell. Pasted text never does.
 - **Errors.** The values are `#DIV/0!`, `#VALUE!`, `#REF!`, `#NAME?`, and `#NUM!`. A cycle shows as `#REF!` in storage and as "Circular" on screen. `setColumnFormula` refuses a formula with a syntax error or a cycle.
 - **Numbers.** Results round to 15 significant digits, so 0.1 + 0.2 is 0.3. `ROUND` rounds half away from zero, and -2^2 is -4.
+
+## Function reference
+
+Each function is an `FnSpec2` in its family file under `formula/fn/`, with a signature and example in `meta`. Its description strings are in `app/src/strings/en/fn<Family>.ts`. `docs/help/table-functions.md` is generated from them. After adding a function, run `UPDATE_DOCS=1 npx vitest run --config app/vitest.config.ts --project unit app/src/features/tables/engine/formula/fn/functionReference.test.ts`. The test fails when the page is out of date.
 
 ## Pasting
 

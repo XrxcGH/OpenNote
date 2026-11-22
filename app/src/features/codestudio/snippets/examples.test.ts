@@ -2,9 +2,9 @@
 // lanes code:L05 to L08 add them) runs its examples' io cases in process, through the same adapter contract the run
 // worker uses. JavaScript examples also run here with a small stand-in for the runtime's console and readline, so
 // their known answers are checked on every build. The expected outputs are hand-worked (examples.ts).
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { PROJECT_LANGUAGES } from '../contracts';
-import type { RunEnd, RunRequest, RuntimeId, WorkerMessage } from '../contracts';
+import type { RunEnd, RunRequest, RuntimeAdapter, RuntimeId, WorkerMessage } from '../contracts';
 import { pathProblem } from '../project/paths';
 import { ADAPTERS } from '../run/adapters';
 import { Mount } from '../run/mount';
@@ -14,6 +14,30 @@ import { Stdin } from '../run/stdin';
 import { RUNTIMES } from '../window/languages';
 import { EXAMPLE_TEST_PREFIX, EXAMPLES, examplesFor, helloText } from './examples';
 import type { Example } from './examples';
+import { adapters as clangInNode } from '../runtimes/cpp/fixtures/harness';
+
+// In Node a `?url` import of a WebAssembly file gives the dev server's /@fs/ address, which Node cannot open. The
+// runtimes read their module from this file path instead, as each runtime's own test does.
+const nodeModule = (path: string) => async () => {
+  const { fileURLToPath } = await import('node:url');
+  return { default: fileURLToPath(new URL(`../../../../../node_modules/${path}`, import.meta.url)) };
+};
+vi.mock('@micropython/micropython-webassembly-pyscript/micropython.wasm?url', () =>
+  nodeModule('@micropython/micropython-webassembly-pyscript/micropython.wasm')(),
+);
+vi.mock('@jitl/quickjs-wasmfile-release-sync/wasm?url', () =>
+  nodeModule('@jitl/quickjs-wasmfile-release-sync/dist/emscripten-module.wasm')(),
+);
+vi.mock('wasmoon/dist/glue.wasm?url', () => nodeModule('wasmoon/dist/glue.wasm')());
+vi.mock('@sqlite.org/sqlite-wasm/sqlite3.wasm?url', () => nodeModule('@sqlite.org/sqlite-wasm/dist/sqlite3.wasm')());
+
+// The app loads clang from its pack; in Node it comes from the npm package the pack pins (runtimes/cpp/fixtures).
+// Loading clang compiles a 75 MB WebAssembly module, and a C++ compile with the standard library takes seconds.
+const IN_NODE: Partial<Record<RuntimeId, () => Promise<RuntimeAdapter>>> = {
+  c: async () => clangInNode.c,
+  cpp: async () => clangInNode.cpp,
+};
+const SLOW: ReadonlySet<RuntimeId> = new Set(['c', 'cpp']);
 
 /** How the output compares: `trim` ignores trailing whitespace and the final newline (DESIGN 9.1). */
 const trimmed = (text: string) => text.replace(/\s+$/u, '');
@@ -66,7 +90,7 @@ describe('the JavaScript examples, run here', () => {
 
 /** One io case through a runtime adapter, in process. */
 async function runCase(runtime: RuntimeId, example: Example, stdin: string): Promise<{ out: string; end: RunEnd }> {
-  const adapter = await ADAPTERS[runtime]!();
+  const adapter = await (IN_NODE[runtime] ?? ADAPTERS[runtime])!();
   await adapter.load(() => undefined);
   const files = Object.entries(example.files).map(([path, text]) => ({ path, text }));
   const request: RunRequest = {
@@ -98,13 +122,17 @@ for (const [language, runtimes] of Object.entries(RUNTIMES)) {
   const runtime = runtimes![0]!;
   describe.skipIf(!ADAPTERS[runtime])(`the ${language} examples in ${runtime}`, () => {
     for (const example of examplesFor(language as Example['language'])) {
-      it(`${example.id} passes its tests`, async () => {
-        for (const test of example.tests.filter((one) => one.kind === 'io')) {
-          const { out, end } = await runCase(runtime, example, test.stdin ?? '');
-          expect(end.status, test.name).toBe('ok');
-          expect(trimmed(out), test.name).toBe(trimmed(test.expected));
-        }
-      });
+      it(
+        `${example.id} passes its tests`,
+        async () => {
+          for (const test of example.tests.filter((one) => one.kind === 'io')) {
+            const { out, end } = await runCase(runtime, example, test.stdin ?? '');
+            expect(end.status, test.name).toBe('ok');
+            expect(trimmed(out), test.name).toBe(trimmed(test.expected));
+          }
+        },
+        SLOW.has(runtime) ? 180_000 : undefined,
+      );
     }
   });
 }

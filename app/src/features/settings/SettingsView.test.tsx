@@ -33,6 +33,7 @@ describe('the Settings page', () => {
       'Pen and touch',
       'My handwriting',
       'On-device intelligence',
+      'Code',
       'Storage and backups',
       'Updates',
       'Privacy',

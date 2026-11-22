@@ -61,8 +61,9 @@ export const SHEET_KEYS: readonly SheetKeyDef[] = [
   def('extendFirstCell', ['Ctrl+Shift+Home'], GRID),
   def('extendLastCell', ['Ctrl+Shift+End'], GRID),
   def('extendRowStart', ['Shift+Home'], GRID),
-  def('screenLeft', ['Alt+PageUp'], GRID),
-  def('screenRight', ['Alt+PageDown'], GRID),
+  // In a grid, Alt+PageUp and Alt+PageDown move a screen sideways; elsewhere they step the page's sheets.
+  def('screenLeft', ['Alt+PageUp'], GRID, false, 'pages.sheet.previous'),
+  def('screenRight', ['Alt+PageDown'], GRID, false, 'pages.sheet.next'),
   def('moveUp', ['Shift+Enter'], GRID),
   def('fillEntry', ['Ctrl+Enter'], GRID, false, 'table.rowBelow'),
   def('edit', ['F2'], GRID),

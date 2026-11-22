@@ -6,7 +6,7 @@ import { isEnabled } from '../../../app/flags';
 import { windowKind } from '../../../app/windowKind';
 import { chord, defineCommand } from '../../../commands/registry';
 import type { CommandDef, CommandId } from '../../../commands/types';
-import { codeBlockAt } from '../../../editor/commands/code';
+import { codeBlockAt } from '../../../editor/commands/codeBlockAt';
 import { commands, settingsSections } from '../../../registries';
 import { t } from '../../../strings/t';
 import { announce } from '../../../ui';
@@ -155,7 +155,9 @@ function installRelay(): void {
     channel.onmessage = null;
     void studio().then((loaded) => {
       loaded.serveRelay(channel, loaded.blockSource, (listener) => shownMounted.subscribe(listener));
-      channel.dispatchEvent(new MessageEvent('message', { data: event.data }));
+      // The same event again, not a new one: a MessageEvent made here can come from another realm than the channel's
+      // (a test's DOM next to the runtime's BroadcastChannel), and dispatchEvent refuses it.
+      channel.dispatchEvent(event);
     });
   };
 }

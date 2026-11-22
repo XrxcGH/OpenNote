@@ -1,6 +1,7 @@
 // Smart tables (Phase 7): a cell that starts with "=" is a formula and shows its result, results follow the data,
 // and the Data menu sorts, filters, formats, totals, and fills. Every change is one undo step.
 
+import type { Page } from '@playwright/test';
 import { expect, test } from '../fixtures';
 import { fillSales, openSmart, setCell } from './smart';
 
@@ -205,6 +206,79 @@ test('keeps a 15,000-cell table with sheet writes on within the typing budget at
   expect(calculate.length).toBeGreaterThanOrEqual(5);
   expect(p95(values)).toBeLessThanOrEqual(50 * scale);
   expect(p95(calculate)).toBeLessThanOrEqual(120 * scale);
+});
+
+/** The 95th percentile of the page's own work for each key typed in the formula bar of the 15,000-cell table. */
+async function barKeyWork(page: Page, prefix: string, keys: readonly string[]): Promise<number> {
+  // The page's own work for each key: the time its key and input handlers ran, from the Event Timing API. A key's
+  // whole duration also counts the wait behind the test driver's scripts in the page, which is not the app's work.
+  await page.addInitScript(() => {
+    const events: { name: string; start: number; work: number }[] = [];
+    (window as unknown as { __events: typeof events }).__events = events;
+    new PerformanceObserver((list) => {
+      for (const entry of list.getEntries() as PerformanceEventTiming[])
+        events.push({ name: entry.name, start: entry.startTime, work: entry.processingEnd - entry.processingStart });
+    }).observe({ type: 'event', durationThreshold: 16, buffered: true } as PerformanceObserverInit);
+  });
+  await openSmart(page, 'largeSheetTable');
+  await expect(shown(page, 1, 9)).toHaveAttribute('data-shown', '1', { timeout: 60_000 });
+  const entry = page.getByRole('textbox', { name: 'Contents of the active cell' });
+  await expect(async () => {
+    await shown(page, 1, 0).click();
+    await expect(entry).toBeVisible({ timeout: 2000 });
+  }).toPass({ timeout: 30_000 });
+  await entry.click();
+  await page.keyboard.press('Control+a');
+  await page.keyboard.type(prefix);
+  await page.waitForTimeout(500);
+  await page.evaluate(() => (window as unknown as { __events: unknown[] }).__events.splice(0));
+  for (const key of keys) {
+    await page.keyboard.press(key);
+    await page.waitForTimeout(120);
+  }
+  await page.waitForTimeout(300);
+  const events = await page.evaluate(
+    () => (window as unknown as { __events: { name: string; start: number; work: number }[] }).__events,
+  );
+  // Each key's work: its keydown and the events that follow it within the key's 120 ms (keypress, input, keyup).
+  const downs = events.filter((e) => e.name === 'keydown');
+  const work = downs.map((key) =>
+    events.filter((e) => e.start >= key.start && e.start < key.start + 100).reduce((sum, e) => sum + e.work, 0),
+  );
+  // Keys whose whole duration is under 16 ms are not reported: they count as fast.
+  const all = [...work, ...Array.from({ length: Math.max(0, keys.length - work.length) }, () => 0)];
+  return [...all].sort((a, b) => a - b)[Math.ceil(all.length * 0.95) - 1]!;
+}
+
+test('keeps the key handlers of the formula bar of a 15,000-cell table within 16 ms at the 95th percentile', async ({
+  page,
+}) => {
+  test.slow();
+  const p95 = await barKeyWork(
+    page,
+    '=SUM(',
+    Array.from({ length: 30 }, (_, i) => String(i % 10)),
+  );
+  test.info().annotations.push({ type: 'p95', description: `bar key handlers ${p95.toFixed(1)} ms` });
+  // The draft stays in the bar: the grid is not written until Enter, so a key costs the bar, not the table.
+  expect(p95).toBeLessThanOrEqual(16 * (await slowness(page)));
+  await page.keyboard.press('Escape');
+});
+
+test('keeps the bar keys that grow a range on a 15,000-cell table within 16 ms at the 95th percentile', async ({
+  page,
+}) => {
+  test.slow();
+  // Each digit and each Backspace changes the range, so each one changes the outlines on the grid: J10, J100, J1000
+  // (past the table's last row), J10000, and back. The outlines are drawn in the next frame, off the key handler.
+  const round = ['0', '0', '0', '0', 'Backspace', 'Backspace', 'Backspace', 'Backspace'];
+  const p95 = await barKeyWork(page, '=SUM(A1:J1', [...round, ...round, ...round, ...round]);
+  test.info().annotations.push({ type: 'p95', description: `bar range key handlers ${p95.toFixed(1)} ms` });
+  expect(p95).toBeLessThanOrEqual(16 * (await slowness(page)));
+  // The outlines still follow the range once the keys stop, and go at once when the bar lets go.
+  await expect(shown(page, 1, 0)).toHaveAttribute('data-formula-ref', '1');
+  await page.keyboard.press('Escape');
+  await expect(shown(page, 1, 0)).not.toHaveAttribute('data-formula-ref', /./);
 });
 
 test('sorts a column and puts the rows back with undo', async ({ page }) => {

@@ -8,11 +8,16 @@ export { exportTableCharts } from './smart/exportCharts';
 /** The cell format bar loads on demand, so the tables chunk stays small. */
 export const loadCellFormatBar = () => import('./ui/toolbar/CellFormatBar');
 export type { CellFormatBarProps } from './ui/toolbar';
+/** The formula bar loads with the table toolbar, after the cell format bar. */
+export const loadFormulaBar = () => import('./ui/formulaBar/FormulaBar');
 // What the page's exports read of a table block: the sheet model, the row height limits, and number text.
 export { MAX_HEIGHT, MIN_HEIGHT, renderNumberFormat, sheetModel } from './exportView';
 export type { SheetBox, SheetCellStyle, SheetTableLike } from './exportView';
 // The structure commands and the reference adjustment register themselves with the table commands of the editor.
 import './sheet/structure/hooks';
+// The merge commands, menu items, and context menu entries register with the sheet registry (ADR 0064).
+import './sheet/merge/contribute';
 export { readSheet, tableName } from './sheet/model';
 export { canvasMeasure } from './sheet/structure/fit';
 export { rowHeight } from './sheet/structure/lines';
+export * from './tools';

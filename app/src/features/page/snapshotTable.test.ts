@@ -5,6 +5,7 @@ import { afterEach, expect, it } from 'vitest';
 import type { TableData } from '../../editor/schema/specs';
 import { newTableData } from '../../editor/table/mapping';
 import type { BlockJson } from '../../services/pages/types';
+import { loadCellFormatBar, loadFormulaBar } from '../tables';
 import { whenViewReady } from './tables/lazyView';
 import { textPageFixture } from './test/fixtures';
 import { cleanupPages, renderPage } from './test/harness';
@@ -40,4 +41,6 @@ it('has the cells typed into a table since it was last saved', async () => {
   const shown = json.blocks.find((one) => one.id === TABLE)!.data as unknown as TableData;
   const first = shown.columns[0].id;
   expect(shown.rows[0].cells[first]?.markdown).toBe('Typed cell');
+  // The toolbar's lazy bars load while the table is current: let them finish before the page goes away.
+  await Promise.all([loadCellFormatBar(), loadFormulaBar()]);
 });
