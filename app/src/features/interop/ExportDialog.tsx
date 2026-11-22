@@ -104,6 +104,7 @@ function Options({
   refocus: boolean;
   canPrint: boolean;
 }) {
+  const formats = exportFormats(canPrint);
   return (
     <div className={styles.body}>
       <StepHeading focus={refocus}>{t('interop.export.optionsHeading')}</StepHeading>
@@ -128,11 +129,11 @@ function Options({
       ) : (
         <RadioGroup<ExportFormat>
           label={t('interop.export.formatLabel')}
-          columns={4}
+          columns={formats.length % 4 === 1 ? 3 : 4}
           value={state.format}
           onChange={(format) => flow.setFormat(format)}
         >
-          {exportFormats(canPrint).map((format) => (
+          {formats.map((format) => (
             <RadioCard<ExportFormat>
               key={format}
               value={format}
