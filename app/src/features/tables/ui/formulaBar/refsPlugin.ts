@@ -57,6 +57,15 @@ export function outlineKey(text: string | null): string | null {
 /** The bar text each view still has to show, and the frame that will show it. */
 const pending = new WeakMap<EditorView, { text: string; frame: number }>();
 
+/** The last text the bar gave each view, so a plugin that loads after the bar starts typing still shows it. */
+const shown = new WeakMap<EditorView, string>();
+
+/** Gives a plugin that has just been added the bar text it missed while it loaded. */
+export function replayBarFormula(view: EditorView): void {
+  const text = shown.get(view);
+  if (text !== undefined) dispatchBar(view, text);
+}
+
 /** Puts the bar's text in the table's state now, unless the outlines would stay as they are. */
 function dispatchBar(view: EditorView, text: string | null): void {
   if (view.isDestroyed) return;
@@ -75,6 +84,8 @@ function dispatchBar(view: EditorView, text: string | null): void {
  */
 export function showBarFormula(view: EditorView, text: string | null): void {
   if (view.isDestroyed) return;
+  if (text === null) shown.delete(view);
+  else shown.set(view, text);
   const waiting = pending.get(view);
   if (text === null) {
     if (waiting) cancelAnimationFrame(waiting.frame);
