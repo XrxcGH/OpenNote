@@ -1,0 +1,56 @@
+# Code studio
+
+The Code studio is a tool window for writing, running, and testing code projects. It is in testing and is on in Beta and Nightly builds only.
+
+## Open it
+
+- Open Code studio is in the command palette (Ctrl+K).
+- New code project puts a project block on the page and opens it in the studio. With no page shown, it starts a scratch project.
+- Open code block in Code studio turns the code block at the caret into a project.
+- The studio can pop out into a window of its own. It still edits the project block on your page.
+
+## The window
+
+- The toolbar picks the language and the runtime, and has Run, Stop, Restart, Run tests, Snippets and examples, New project, and Settings. A runtime that needs a pack has a Get button.
+- Files show as tabs, or as a file tree when the window is wide. A dot marks a file the page has not saved yet.
+- The bottom panel has the Console, Problems, Tests, and Files.
+- The status bar shows the line and column, the runtime, and how many errors and warnings there are.
+
+## Console
+
+- The console shows what the program prints, in color when the program asks for it.
+- Type a line of input in the console's input box while the program waits for it.
+- A file name and line in an error message is a link. It opens that line.
+- Copy the output, clear it, or insert it into the page.
+
+## Problems
+
+- Errors show while you type. The fast checks run first, then each language's own engine: full Python, SQLite, Lua, and clang for C and C++.
+- Problems lists them by file, with counts. Settings, then Code, chooses errors only, errors and warnings, or everything.
+- A run's errors join the list too.
+
+## Keys
+
+These keys work while the studio's editor has focus.
+
+| Key                   | Action                  |
+| --------------------- | ----------------------- |
+| Ctrl+Enter or Ctrl+F5 | Run the project         |
+| Shift+F5              | Stop the run            |
+| Ctrl+Shift+F5         | Restart the run         |
+| Ctrl+Shift+M          | Show the Problems panel |
+
+## Examples
+
+Examples come in each language, with tests of their own. Insert one into a project, then run its tests.
+
+## Settings, then Code
+
+Set indents for each language, the Python runtime, the run time and memory limits, suggestions, how many problems show, and the C and C++ standards and warnings.
+
+## Languages
+
+- [Python in code projects](python-projects.md)
+- [JavaScript and TypeScript in code projects](javascript-and-typescript-projects.md)
+- [SQL and Lua in code projects](sql-and-lua-projects.md)
+- [C and C++ in code projects](c-and-cpp-projects.md)

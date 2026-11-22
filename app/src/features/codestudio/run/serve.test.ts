@@ -133,3 +133,70 @@ describe('serve, while the program runs', () => {
     expect(await started(true)).toMatchObject({ kind: 'started', interactive: false });
   });
 });
+
+describe('serve with a prepare step', () => {
+  it('runs a prepare step before started, under the compile limit', async () => {
+    const worker = scope();
+    const deadlines: string[] = [];
+    const compiled: RuntimeAdapter = {
+      ...adapter(async (_, emit, context) => {
+        deadlines.push(`run ${Math.round(context.deadline - performance.now()) <= RUN_LIMITS.timeMs}`);
+        emit({ kind: 'out', stream: 'out', text: 'ran' });
+        return { status: 'ok', exitCode: 0, message: '' };
+      }),
+      version: 'v1',
+      prepare: async (_, emit, context) => {
+        deadlines.push(`prepare ${Math.round(context.deadline - performance.now()) > RUN_LIMITS.loadMs}`);
+        emit({ kind: 'out', stream: 'err', text: 'compiled\n' });
+        return null;
+      },
+    };
+    serve({ javascript: async () => compiled }, worker);
+    worker.page(request);
+    const kinds = (await ended(worker.sent)).filter((message) => message.kind !== 'loading').map((m) => m.kind);
+    expect(kinds).toEqual(['compiling', 'out', 'started', 'out', 'done']);
+    expect(worker.sent.find((message) => message.kind === 'started')).toEqual({
+      kind: 'started',
+      version: 'v1',
+      interactive: false,
+    });
+    expect(deadlines).toEqual(['prepare true', 'run true']);
+  });
+
+  it('sends prepare output as it comes, before the prepare step ends', async () => {
+    const worker = scope();
+    let finish: (end: RunEnd | null) => void = () => undefined;
+    const compiled: RuntimeAdapter = {
+      ...adapter(async () => ({ status: 'ok', exitCode: 0, message: '' })),
+      prepare: (_, emit) => {
+        emit({ kind: 'out', stream: 'err', text: 'Compiling main.c\n' });
+        return new Promise((resolve) => (finish = resolve));
+      },
+    };
+    serve({ javascript: async () => compiled }, worker);
+    worker.page(request);
+    await vi.waitFor(() =>
+      expect(worker.sent.filter((message) => message.kind !== 'loading')).toEqual([
+        { kind: 'compiling' },
+        { kind: 'out', stream: 'err', text: 'Compiling main.c\n' },
+      ]),
+    );
+    finish(null);
+    expect((await ended(worker.sent)).some((message) => message.kind === 'started')).toBe(true);
+  });
+
+  it('ends the run without started when the prepare step ends it', async () => {
+    const worker = scope();
+    const run = vi.fn();
+    const failing: RuntimeAdapter = {
+      ...adapter(run),
+      prepare: async () => ({ status: 'error', message: 'compile' }),
+    };
+    serve({ javascript: async () => failing }, worker);
+    worker.page(request);
+    const sent = await ended(worker.sent);
+    expect(sent.some((message) => message.kind === 'started')).toBe(false);
+    expect(sent.at(-1)).toEqual({ kind: 'done', status: 'error', message: 'compile' });
+    expect(run).not.toHaveBeenCalled();
+  });
+});

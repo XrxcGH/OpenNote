@@ -15,6 +15,7 @@ describe('the Models panel', () => {
     const group = await screen.findByRole('list', { name: 'Code' });
     expect(group.closest('#code-downloads')).toBeTruthy();
     // In a browser there is no shell, so the group says where downloads work.
-    expect(within(group.parentElement!).getByText('Code downloads work in the desktop app.')).toBeTruthy();
+    // The note comes after the shell check fails, which can land after the list is drawn.
+    expect(await within(group.parentElement!).findByText('Code downloads work in the desktop app.')).toBeTruthy();
   });
 });
