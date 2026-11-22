@@ -40,6 +40,8 @@ export class PageBook {
   private queued = false;
   /** The last two calculations, newest first: the edit's own and the page's, say. */
   private last: { raws: readonly Table[]; results: readonly Table[] }[] = [];
+  /** Each member's table from the newest finished calculation, whichever cells it was made from. */
+  private latest = new WeakMap<BookMember, Table>();
   // One environment per page: the engine compares it by identity and starts over for a new one (ADR 0065).
   private readonly env: EngineEnv = { today: () => todayDays() };
 
@@ -104,6 +106,14 @@ export class PageBook {
     return results[at];
   }
 
+  /**
+   * The member's table from the newest finished calculation, even when its cells changed since (such as when the
+   * results were written back into it). On a large page this is what the worker last gave; null before any.
+   */
+  lastCalculated(member: BookMember): Table | null {
+    return this.latest.get(member) ?? null;
+  }
+
   /** Tells the members the worker started or stopped, once for each change. */
   private working(members: readonly BookMember[], on: boolean): void {
     if (this.busy === on) return;
@@ -124,6 +134,10 @@ export class PageBook {
       if (!busy) {
         this.remember(raws, results);
         this.working(members, false);
+        members.forEach((member, i) => {
+          const table = results[i];
+          if (table) this.latest.set(member, table);
+        });
       }
       members.forEach((member, i) => this.members.has(member) && member.calculated(results[i], busy, raws[i]));
     };

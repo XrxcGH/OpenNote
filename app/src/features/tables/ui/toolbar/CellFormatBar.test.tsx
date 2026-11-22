@@ -53,8 +53,8 @@ afterEach(() => {
   cleanup.splice(0).forEach((stop) => stop());
 });
 
-/** A table editor with a caret in A1, registered as the block `block`. */
-function mount(block = 'b1') {
+/** A table editor with a caret in A1, registered as the block `block`. `flag` answers the host's feature switches. */
+function mount(block = 'b1', flag: (name: string) => boolean = () => true) {
   const root = document.createElement('div');
   document.body.append(root);
   const editor = createBlockEditor(root, tableDataToDoc(data), { kind: 'table', block, host: editorHost });
@@ -69,6 +69,7 @@ function mount(block = 'b1') {
     apply: vi.fn(() => Promise.resolve(true)),
     patch: vi.fn(() => Promise.resolve(undefined)),
     announce: vi.fn(),
+    flag,
   } as unknown as TableExtraHost;
   cleanup.push(addHost(host));
   cleanup.push(() => {
@@ -118,29 +119,44 @@ describe('the cell format bar', () => {
 });
 
 describe('the cell format bar, layout', () => {
+  const toolbar = () => (
+    <div
+      className={tableStyles.wrapper}
+      data-current=""
+      style={{ inlineSize: 320, marginBlockStart: 160 }}
+      data-testid="column"
+    >
+      <TableToolbar
+        block="b1"
+        can={() => true}
+        header={false}
+        run={vi.fn()}
+        more={vi.fn()}
+        width={100}
+        widthOpen={false}
+        openWidth={vi.fn()}
+        closeWidth={vi.fn()}
+      />
+    </div>
+  );
+
+  it('keeps the cell format bar when the formula bar fails', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    mount('b1', () => {
+      throw new TypeError('no feature switches');
+    });
+    renderUi(toolbar());
+    expect(await screen.findByRole('toolbar', { name: 'Cell format' })).toBeTruthy();
+    vi.mocked(console.error).mockRestore();
+  });
+
   it('wraps without sideways scrolling at 400 percent zoom', async () => {
     mount();
-    renderUi(
-      <div
-        className={tableStyles.wrapper}
-        data-current=""
-        style={{ inlineSize: 320, marginBlockStart: 160 }}
-        data-testid="column"
-      >
-        <TableToolbar
-          block="b1"
-          can={() => true}
-          header={false}
-          run={vi.fn()}
-          more={vi.fn()}
-          width={100}
-          widthOpen={false}
-          openWidth={vi.fn()}
-          closeWidth={vi.fn()}
-        />
-      </div>,
-    );
+    renderUi(toolbar());
     const bar = await screen.findByRole('toolbar', { name: 'Cell format' });
+    // The formula bar is mounted under it and wraps too.
+    const formula = await screen.findByRole('group', { name: 'Formula bar' });
+    expect(formula.scrollWidth).toBeLessThanOrEqual(formula.clientWidth);
     const column = screen.getByTestId('column');
     expect(bar.scrollWidth).toBeLessThanOrEqual(bar.clientWidth);
     expect(column.scrollWidth).toBeLessThanOrEqual(column.clientWidth);

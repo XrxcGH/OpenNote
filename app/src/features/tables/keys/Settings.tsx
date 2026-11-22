@@ -4,6 +4,7 @@ import type { TableKeys } from '../../../platform/bindings/TableKeys';
 import { updateSettings, useSettings } from '../../../state/settings';
 import { t } from '../../../strings/t';
 import { RadioCard, RadioGroup } from '../../../ui';
+import { FormulaBarSetting } from '../ui/formulaBar/Setting';
 import styles from './keys.module.css';
 
 export default function TablesSettings() {
@@ -28,6 +29,7 @@ export default function TablesSettings() {
         />
       </RadioGroup>
       <p className={styles.help}>{t('sheetKeys.settings.help')}</p>
+      <FormulaBarSetting />
     </section>
   );
 }
