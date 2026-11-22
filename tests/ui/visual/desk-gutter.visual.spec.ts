@@ -53,7 +53,16 @@ async function open(page: Page, state: State, theme: Theme): Promise<void> {
   if (state.zoom) {
     await page.locator('[contenteditable] p').first().click();
     await page.keyboard.press('Control+Alt+0');
-    for (let step = 0; step < 6; step++) await page.keyboard.press('Control+Alt+Equal');
+    // ZOOM_STEPS run 110, 125, 150, and so on: press until the page reads the zoom, never past it.
+    const percent = () =>
+      page.evaluate(() => {
+        const title = document.querySelector<HTMLElement>('[data-page-title]')!;
+        return Math.round((title.getBoundingClientRect().height / title.offsetHeight) * 100);
+      });
+    for (let step = 0; step < 6 && (await percent()) < state.zoom; step++)
+      await page.keyboard.press('Control+Alt+Equal');
+    await expect.poll(percent).toBe(state.zoom);
+    await expect(page.locator('main')).toHaveAttribute('data-desk-gutter', '19');
   }
   await settle(page);
 }

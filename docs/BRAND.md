@@ -254,7 +254,7 @@ The layout adapts to the window width, not the device type:
 
 Button and row sizes follow the pointer by default. A touch or pen tap switches to the touch sizes, and a mouse click switches back, never in the middle of a gesture. People who want large targets with a mouse can choose Large in Settings, then Appearance. "Interface size" scales the sidebars, toolbars, and menus from 90% to 150% without changing the page zoom. The title bar is 40 tall, or 48 with touch sizes, and the Windows buttons are 46 wide.
 
-Panes resize by dragging, and collapse with a button or keyboard shortcut. Paginated pages sit centered on `surface.sunken` with a soft shadow, like paper on a desk.
+Panes resize by dragging, and collapse with a button or keyboard shortcut. Paginated pages sit centered on `surface.sunken` with a soft shadow, like paper on a desk. In the Wide size class, a page in the infinite or flow view sits between two desk gutters of up to 24 pixels (section 8).
 
 ## 7. Shape and depth
 
@@ -288,8 +288,9 @@ Illustrations appear in onboarding, empty states, error screens, the theme previ
 | Empty states | 176 pixels wide | A shelf of books with a small potted plant; an open notebook and a candle; four books and a candle |
 | About | The window, 112 pixels tall | The sunset or the moon and stars, and the vine |
 | Notebooks pane footer | The plant, 42 by 50 | A clay pot with a short vine trailing to the left |
+| Desk gutter vine | 16 by 128 | A vine hanging from the window frame, with five drooping leaves |
 
-A drawing never moves to a pane that has none, and the extra motifs live inside the drawings above, never as new decoration.
+A drawing never moves to a pane that has none, and the extra motifs live inside the drawings above, never as new decoration. The one exception is the desk gutter beside an open page: while it is its full 24 pixels, a vine hangs from the top of the right gutter, and in the evening four small stars thin out down the left gutter. They are static, stay at least 4 pixels from the page and the window edge, never meet text, and disappear while the gutter is narrower, under Windows contrast themes, and when the system asks for more contrast.
 
 - They are inline SVG in the 1.5-pixel line style, drawn with a slight wobble so they look handwritten, using only token colors.
 - Lines are `border.control`. Fills come from the five drawing tints and warm paper, so every book has a colored spine, every pot is filled, and every flame has a warm glow.
@@ -308,10 +309,8 @@ A drawing never moves to a pane that has none, and the extra motifs live inside 
 - The page canvas carries window light in Daylight and a dusk-to-stars sky in Evening, around the page card, and never behind the writing. The card itself stays plain paper.
 - By day, warm light pools from the window's top corner, and a soft patch of it, wider than it is tall, lies on the desk. The patch stops growing at 420 by 300 pixels, so a wide window doesn't stretch it. The setup backdrop keeps only the pool, so the steps stay calm.
 - In the evening, the sky deepens from night indigo through dusk to a low plum glow at the horizon. Twenty-five stars sit at the top, 0.75 to 1.25 pixels in radius at 45 to 70 percent opacity, with three larger ones, up to 1.8 pixels, at up to 80 percent. They are drawn at 1:1 at any width, and each stays above the card's top edge, at least 5 pixels clear of it, so none looks like a speck on the card.
+- In the Wide size class, an open page in the infinite or flow view lies on the desk between two gutters of up to 24 pixels, where the window light or the evening sky shows. A gutter only takes width the page's text column doesn't need, so the column never narrows: the gutter shrinks first when the window narrows, a pane widens, a panel docks, or the page is zoomed, and below 8 pixels it is gone. There is no gutter in the Compact, Medium, and Expanded size classes, in the paginated view, or under Windows contrast themes. When the system asks for more contrast, the gutter stays as flat `surface.sunken`.
 - When the system asks for more contrast, the canvas is flat `surface.sunken` with no stars, and command bar dividers use `border.control`.
-- A11. At the Wide size class, an open page sits on the desk with a gutter on each side where the window light or the evening sky shows. It is up to 24 pixels. It takes only width the text column does not need, so the column never narrows. Zooming the page or narrowing the window takes the gutter first, and so does widening a pane or docking a tool window. There is no gutter at Compact, Medium or Expanded, in Pages with breaks, beside Reading order or Contents, with the Paper page color in the dark theme, or under a contrast theme.
-- A12. At a gutter of at least 24 pixels, a small vine hangs from the top of the right gutter. In the evening, four stars thin out down the left gutter. Both are 4 pixels or more clear of the page and the window edge, sit behind the paper, never behind text, and never animate. They are hidden under a contrast theme and with more contrast.
-- A13. Every tone the gutter shows is an existing ambient tone, at most 1.5 to 1 against `surface.sunken`. The gutter adds no token and no brighter value. The candle glow and the sill line are not drawn.
 
 No 3D renders, gradient blobs, stock photos, or mascots.
 
@@ -376,7 +375,7 @@ Heavy work, such as handwriting recognition, transcription, search indexing, exp
 | Choice cards | A radio group of cards. The cards of one choice share one width, and a row that wraps splits evenly, never leaving one card alone. |
 | Theme cards | Three cards in a radio group named "Theme", each with a small live preview that screen readers and Tab skip. Holding an arrow key moves one step. |
 | Empty states | One small drawing above one plain sentence, on a page card. The sentence carries the meaning; the drawing is only company. |
-| Ambient canvas | The desk behind the page card: window light in Daylight, a dusk sky with a few stars in Evening. Static, painted once, and kept within 1.5:1 of `surface.sunken`. Flat under Windows contrast themes. |
+| Ambient canvas | The desk behind the page card: window light in Daylight, a dusk sky with a few stars in Evening. Static, painted once, and kept within 1.5:1 of `surface.sunken`. Flat under Windows contrast themes. At Wide, two gutters of up to 24 pixels frame an open page, with a vine and, in the evening, four stars (section 8). |
 | Sync status | A small icon with a text tooltip in the title bar: saved, syncing, offline, or needs attention. Never a blocking dialog. |
 | Dialogs | Title, one-sentence explanation, then actions (primary on the right). Escape closes. Focus returns to where it was. |
 | Update notice | A small "Update ready" chip in the title bar, with release notes on hover or tap. "Restart to update" applies it; otherwise it applies the next time the app closes. Never a pop-up, never mid-task. |

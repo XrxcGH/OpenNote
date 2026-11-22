@@ -1,90 +1,13 @@
 // The desk gutter (docs/BRAND.md amendments A11 to A13): at the Wide size class an open page sits on the desk between
 // two strips of window light or evening sky, taken only from width the text column does not need. The column never
-// narrows, a wheel, a pen or touch drag or a click in a strip still reaches the page, and the motifs stay clear of
-// the paper, the edges, and every text box. Each is measured from boxes and pixels in the production build.
+// narrows. A wheel, a pen or touch drag, or a click in a strip still reaches the page. Each is measured from boxes in
+// the production build.
 
-import type { Page } from '@playwright/test';
-import { expect, test } from '../fixtures';
+import { test, expect } from '../fixtures';
 import { VIEWPORTS } from '../screens';
-import type { SizeClass, Theme } from '../screens';
+import type { SizeClass } from '../screens';
 import { runCommand } from './smart';
-
-interface Options {
-  width?: number;
-  height?: number;
-  theme?: Theme;
-  paper?: boolean;
-  mode?: 'Infinite canvas' | 'Document flow' | 'Pages with breaks';
-  /** The page to open in Lectures. Membranes has blocks as wide as the viewport, which Fit width cannot go past. */
-  name?: string;
-}
-
-async function openPage(page: Page, options: Options = {}): Promise<void> {
-  const {
-    width = 1440,
-    height = 900,
-    theme = 'light',
-    paper = false,
-    mode = 'Document flow',
-    name = 'Membranes',
-  } = options;
-  await page.emulateMedia({ colorScheme: theme });
-  await page.addInitScript(
-    (appearance) => {
-      window.__OPENNOTE_BOOT__ = { settings: { appearance }, bootVersion: 1 } as never;
-    },
-    { theme, pageColor: paper ? 'paper' : 'match' },
-  );
-  await page.setViewportSize({ width, height });
-  await page.goto('/?fixture=sampler');
-  const wide = width >= 1280;
-  if (wide) {
-    await page.getByRole('tree', { name: 'Notebooks' }).getByRole('treeitem', { name: 'Lectures' }).click();
-    await page.getByRole('tree', { name: 'Pages' }).getByRole('treeitem', { name }).click();
-    await expect(page.getByRole('heading', { level: 1, name })).toBeVisible();
-    await page.locator('html[data-page-commands="ready"]').waitFor({ state: 'attached' });
-    if (mode !== 'Infinite canvas') {
-      await page.getByRole('tab', { name: 'View' }).click();
-      await runCommand(page, 'Document flow');
-      if (mode === 'Pages with breaks') await runCommand(page, 'Pages with breaks');
-    }
-  }
-  await page.waitForLoadState('networkidle');
-}
-
-const gutter = (page: Page) =>
-  page.evaluate(() => document.querySelector('main')?.getAttribute('data-desk-gutter') ?? null);
-
-/** Waits for the gutter to read the given value (it is written after a measuring frame). */
-async function expectGutter(page: Page, value: number): Promise<void> {
-  await expect.poll(() => gutter(page), { timeout: 10_000 }).toBe(String(value));
-}
-
-/** The page's zoom in percent, from the title's drawn height against its layout height. */
-const zoomPercent = (page: Page) =>
-  page.evaluate(() => {
-    const title = document.querySelector<HTMLElement>('[data-page-title]')!;
-    return Math.round((title.getBoundingClientRect().height / title.offsetHeight) * 100);
-  });
-
-async function zoomTo(page: Page, percent: number): Promise<void> {
-  await page.locator('[contenteditable] p').first().click();
-  await page.keyboard.press('Control+Alt+0');
-  for (let step = 0; step < 12 && (await zoomPercent(page)) < percent; step++)
-    await page.keyboard.press('Control+Alt+Equal');
-  await expect.poll(() => zoomPercent(page)).toBeGreaterThanOrEqual(percent);
-}
-
-/** The flow column's width in CSS px. */
-const columnWidth = (page: Page) =>
-  page.evaluate(() => document.querySelector<HTMLElement>('[data-layout]')!.getBoundingClientRect().width);
-
-const boxes = (page: Page) =>
-  page.evaluate(() => {
-    const main = document.querySelector('main')!.getBoundingClientRect();
-    const paper = document.querySelector('main [data-scope="page"]')!.closest('article')!.getBoundingClientRect();
-    return { main: main.toJSON(), paper: paper.toJSON() };
-  });
+import { quiet, boxes, columnWidth, expectGutter, gutter, openPage, zoomTo } from './deskGutterKit';
 
 for (const theme of ['light', 'dark'] as const) {
   for (const mode of ['Document flow', 'Infinite canvas'] as const) {
@@ -153,6 +76,26 @@ for (const size of ['compact', 'medium', 'expanded'] as SizeClass[]) {
   test(`is absent at ${size}`, async ({ page }) => {
     await openPage(page, VIEWPORTS[size]);
     await expect.poll(() => gutter(page)).toMatch(/^(0|null)$/);
+    if (size !== 'compact') {
+      if (size === 'medium') await page.getByRole('button', { name: 'Show notebooks' }).click();
+      await page.getByRole('tree', { name: 'Notebooks' }).getByRole('treeitem', { name: 'Lectures' }).click();
+      await page.getByRole('tree', { name: 'Pages' }).getByRole('treeitem', { name: 'Membranes' }).click();
+      await expect(page.getByRole('heading', { level: 1, name: 'Membranes' })).toBeVisible();
+      await quiet(page);
+    }
+    // The editing surface fills main's content box: no gutter margin remains.
+    const fit = await page.evaluate(() => {
+      const element = document.querySelector('main')!;
+      const main = element.getBoundingClientRect();
+      const style = getComputedStyle(element);
+      const card = document.querySelector('main article')!.getBoundingClientRect();
+      return {
+        left: card.left - main.left - Number.parseFloat(style.paddingLeft),
+        right: main.right - card.right - Number.parseFloat(style.paddingRight),
+      };
+    });
+    expect(Math.abs(fit.left)).toBeLessThanOrEqual(0.5);
+    expect(Math.abs(fit.right)).toBeLessThanOrEqual(0.5);
     expect(await page.locator('main [data-art="gutter-vine"]').evaluate((e) => getComputedStyle(e).display)).toBe(
       'none',
     );
@@ -289,129 +232,4 @@ test('a tool window keeps 8 px clear of the page scroll bar after the gutter ret
   });
   expect(gaps.length).toBeGreaterThan(0);
   for (const gap of gaps) expect(gap).toBeGreaterThanOrEqual(8);
-});
-
-test.describe('the motifs', () => {
-  for (const theme of ['light', 'dark'] as const) {
-    test(`stay clear of the paper, the edges and all text in ${theme}`, async ({ page }) => {
-      await openPage(page, { theme });
-      await expectGutter(page, 24);
-      const result = await page.evaluate(() => {
-        const main = document.querySelector('main')!.getBoundingClientRect();
-        const paper = document.querySelector('main article')!.getBoundingClientRect();
-        const out: Record<string, { display: string; left: number; right: number; top: number; bottom: number }> = {};
-        for (const name of ['gutter-vine', 'gutter-stars']) {
-          const element = document.querySelector(`[data-art="${name}"]`)!;
-          const r = element.getBoundingClientRect();
-          out[name] = {
-            display: getComputedStyle(element).display,
-            left: r.left,
-            right: r.right,
-            top: r.top,
-            bottom: r.bottom,
-          };
-        }
-        return { main: main.toJSON(), paper: paper.toJSON(), out };
-      });
-      const { vine, stars } = { vine: result.out['gutter-vine']!, stars: result.out['gutter-stars']! };
-      expect(vine.display).toBe('block');
-      expect(result.paper.right - vine.left).toBeLessThan(0);
-      expect(vine.left - result.paper.right).toBeGreaterThanOrEqual(4 - 0.5);
-      expect(result.main.right - vine.right).toBeGreaterThanOrEqual(4 - 0.5);
-      if (theme === 'dark') {
-        expect(stars.display).toBe('block');
-        expect(result.paper.left - stars.right).toBeGreaterThanOrEqual(-0.5);
-      } else expect(stars.display).toBe('none');
-    });
-  }
-
-  test('are hidden at 125 percent, with a page pane open and under more contrast', async ({ page }) => {
-    await openPage(page, { theme: 'dark' });
-    await expectGutter(page, 24);
-    await zoomTo(page, 125);
-    await expectGutter(page, 19);
-    for (const name of ['gutter-vine', 'gutter-stars'])
-      expect(await page.locator(`[data-art="${name}"]`).evaluate((e) => getComputedStyle(e).display)).toBe('none');
-    await page.emulateMedia({ contrast: 'more', colorScheme: 'dark' } as never);
-    await zoomTo(page, 100);
-    await expectGutter(page, 24);
-    for (const name of ['gutter-vine', 'gutter-stars'])
-      expect(await page.locator(`[data-art="${name}"]`).evaluate((e) => getComputedStyle(e).display)).toBe('none');
-  });
-});
-
-/** The red, green, and blue of a screenshot's pixels on a grid. */
-async function samples(page: Page, clip: { x: number; y: number; width: number; height: number }) {
-  const shot = await page.screenshot({ clip });
-  return page.evaluate(
-    async ({ base64, width, height }) => {
-      const bitmap = await createImageBitmap(await (await fetch(`data:image/png;base64,${base64}`)).blob());
-      const canvas = new OffscreenCanvas(width, height);
-      const context = canvas.getContext('2d')!;
-      context.drawImage(bitmap, 0, 0);
-      const out: { x: number; y: number; rgb: [number, number, number] }[] = [];
-      for (let y = 0; y < height; y += 4)
-        for (let x = 0; x < width; x += 4) {
-          const [r, g, b] = context.getImageData(x, y, 1, 1).data;
-          out.push({ x, y, rgb: [r!, g!, b!] });
-        }
-      return out;
-    },
-    { base64: shot.toString('base64'), width: clip.width, height: clip.height },
-  );
-}
-
-const luminance = ([r, g, b]: [number, number, number]) => {
-  const lin = (c: number) => ((c /= 255) <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
-  return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
-};
-const ratio = (a: [number, number, number], b: [number, number, number]) => {
-  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x) as [number, number];
-  return (hi + 0.05) / (lo + 0.05);
-};
-
-for (const theme of ['light', 'dark'] as const) {
-  test(`the strips stay within 1.5:1 of the sunken canvas in ${theme}`, async ({ page }) => {
-    await openPage(page, { theme });
-    await expectGutter(page, 24);
-    const sunken = await page.evaluate(() => {
-      const probe = document.createElement('div');
-      probe.style.color = 'var(--color-surface-sunken)';
-      document.body.append(probe);
-      const [r, g, b] = getComputedStyle(probe).color.match(/\d+/g)!.map(Number);
-      probe.remove();
-      return [r, g, b] as [number, number, number];
-    });
-    const { main } = await boxes(page);
-    const motifs = await page.evaluate(() =>
-      [...document.querySelectorAll('[data-art^="gutter"]')].map((e) => e.getBoundingClientRect().toJSON()),
-    );
-    for (const side of [main.left, main.right - 24]) {
-      for (const point of await samples(page, { x: side, y: main.top + 40, width: 24, height: 600 })) {
-        const x = side + point.x;
-        const y = main.top + 40 + point.y;
-        if (motifs.some((m) => x >= m.left - 2 && x <= m.right + 2 && y >= m.top - 2 && y <= m.bottom + 2)) continue;
-        expect(ratio(point.rgb, sunken)).toBeLessThanOrEqual(1.5);
-      }
-    }
-  });
-}
-
-test('nothing in the strip animates, with or without reduced motion', async ({ page }) => {
-  await openPage(page, { theme: 'dark' });
-  await expectGutter(page, 24);
-  await page.waitForTimeout(1000);
-  // What animates in main's own strips, outside the page card: the page's own parts may (a spinner, a caret).
-  const names = () =>
-    page.evaluate(() =>
-      document
-        .getAnimations()
-        .filter((animation) => animation.playState !== 'finished')
-        .map((animation) => (animation.effect as KeyframeEffect | null)?.target as Element | null)
-        .filter((target): target is Element => Boolean(target?.closest('main')) && !target?.closest('article'))
-        .map((target) => `${target.tagName} ${target.getAttribute('class') ?? ''}`),
-    );
-  expect(await names()).toEqual([]);
-  await page.emulateMedia({ reducedMotion: 'reduce' });
-  expect(await names()).toEqual([]);
 });
