@@ -2,11 +2,11 @@
 // go through a range, and Tab in the last cell adds a row. Ctrl+Space, Shift+Space, and Ctrl+A select.
 import type { Node as PMNode } from '@tiptap/pm/model';
 import type { EditorState } from '@tiptap/pm/state';
-import { CellSelection } from '@tiptap/pm/tables';
+import { CellSelection, TableMap } from '@tiptap/pm/tables';
 import type { EditorView } from '@tiptap/pm/view';
 import { boxSize, cycle, jump, region, step } from './grid';
 import type { Box, GridCell, Texts } from './grid';
-import { activeCell, cellsOf, gridOf, placedAt, selectCells, sheetKeysKey } from './state';
+import { activeCell, cellsOf, gridOf, hasMerged, placedAt, selectCells, sheetKeysKey } from './state';
 import type { Dispatch, SheetKeysOptions, SheetMeta } from './state';
 
 export interface Ctx {
@@ -15,6 +15,30 @@ export interface Ctx {
   dispatch: Dispatch;
   options: SheetKeysOptions;
   texts: Texts;
+}
+
+/**
+ * One step from a cell, in a table with merged cells (ADR 0064). A merged cell is one cell: a step leaves its far edge,
+ * keeps the row or column the cell starts in, and lands on the top-left slot of the cell it enters. In a table with no
+ * merged cell this is `step`.
+ */
+export function stepOver(ctx: Ctx, from: GridCell, rows: number, columns: number): GridCell {
+  const { doc } = ctx.state;
+  const table = doc.firstChild;
+  if (!hasMerged(doc) || !table) return step(ctx.texts, from, rows, columns);
+  const map = TableMap.get(table);
+  const placed = placedAt(doc, from);
+  if (!placed) return step(ctx.texts, from, rows, columns);
+  const rect = map.findCell(placed.pos - 1);
+  let row = from.row;
+  let column = from.column;
+  if (rows > 0) row = rect.bottom + rows - 1;
+  else if (rows < 0) row = rect.top + rows;
+  if (columns > 0) column = rect.right + columns - 1;
+  else if (columns < 0) column = rect.left + columns;
+  if (row < 0 || column < 0 || row >= map.height || column >= map.width) return from;
+  const found = map.findCell(map.map[row * map.width + column]);
+  return { row: found.top, column: found.left };
 }
 
 export function move(ctx: Ctx, to: GridCell): boolean {
@@ -34,12 +58,12 @@ export function extend(ctx: Ctx, head: GridCell): boolean {
 /** Arrow: one cell from the active cell, the range collapsed. */
 export function moveBy(ctx: Ctx, rows: number, columns: number): boolean {
   const from = activeCell(ctx.state);
-  return from ? move(ctx, step(ctx.texts, from, rows, columns)) : false;
+  return from ? move(ctx, stepOver(ctx, from, rows, columns)) : false;
 }
 
 export function extendBy(ctx: Ctx, rows: number, columns: number): boolean {
   const grid = gridOf(ctx.state);
-  return grid ? extend(ctx, step(ctx.texts, grid.head, rows, columns)) : false;
+  return grid ? extend(ctx, stepOver(ctx, grid.head, rows, columns)) : false;
 }
 
 export function jumpBy(ctx: Ctx, rows: -1 | 0 | 1, columns: -1 | 0 | 1, extending: boolean): boolean {
@@ -66,9 +90,20 @@ export function advance(ctx: Ctx, by: 'column' | 'row', back: boolean): boolean 
 export function nextInRow(ctx: Ctx, from: GridCell, back: boolean): boolean {
   const cells = cellsOf(ctx.state.doc);
   const width = cells[from.row]?.length ?? 0;
-  const index = from.row * width + from.column + (back ? -1 : 1);
+  const own = placedAt(ctx.state.doc, from)?.pos;
+  let index = from.row * width + from.column;
+  // A merged cell fills several slots, so Tab goes on to the first slot of another cell.
+  do index += back ? -1 : 1;
+  while (index >= 0 && index < cells.length * width && cells[Math.floor(index / width)][index % width]?.pos === own);
   if (index < 0) return move(ctx, from);
-  if (index < cells.length * width) return move(ctx, { row: Math.floor(index / width), column: index % width });
+  if (index < cells.length * width) {
+    const slot = { row: Math.floor(index / width), column: index % width };
+    const entered = placedAt(ctx.state.doc, slot);
+    // Going back into a merged cell lands on its top-left slot.
+    const found =
+      entered && ctx.state.doc.firstChild ? TableMap.get(ctx.state.doc.firstChild).findCell(entered.pos - 1) : null;
+    return move(ctx, found ? { row: found.top, column: found.left } : slot);
+  }
   return addRow(ctx);
 }
 
@@ -103,7 +138,7 @@ export function commitTo(ctx: Ctx, to: GridCell): boolean {
 
 export function commitBy(ctx: Ctx, rows: number, columns: number): boolean {
   const from = activeCell(ctx.state);
-  return from ? commitTo(ctx, step(ctx.texts, from, rows, columns)) : false;
+  return from ? commitTo(ctx, stepOver(ctx, from, rows, columns)) : false;
 }
 
 export function selectBox(ctx: Ctx, box: Box, active?: GridCell): boolean {

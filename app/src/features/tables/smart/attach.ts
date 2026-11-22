@@ -5,7 +5,7 @@ import { CellSelection } from '@tiptap/pm/tables';
 import { createElement } from 'react';
 import { createRoot } from 'react-dom/client';
 import type { Root } from 'react-dom/client';
-import { cellAt } from '../../../editor/commands/tables';
+import { cellAt, selectionBox } from '../../../editor/commands/tables';
 import { t } from '../../../strings/t';
 import { openMenu } from '../../../ui';
 import type { TableData } from '../../../editor/schema/specs';
@@ -90,17 +90,12 @@ function totalItems(model: SmartModel, locale: ReturnType<typeof appLocale>): Ch
 }
 
 /** The selected cells by row and column, or the cell with the caret. */
-function rangeOf(editor: TableExtraHost['editor']): Range | null {
+export function rangeOf(editor: TableExtraHost['editor']): Range | null {
   const { selection } = editor.state;
   if (selection instanceof CellSelection) {
-    const at = (pos: typeof selection.$anchorCell) => ({ row: pos.index(pos.depth - 1), column: pos.index(pos.depth) });
-    const [a, b] = [at(selection.$anchorCell), at(selection.$headCell)];
-    return {
-      row0: Math.min(a.row, b.row),
-      row1: Math.max(a.row, b.row),
-      col0: Math.min(a.column, b.column),
-      col1: Math.max(a.column, b.column),
-    };
+    // The table's map gives the grid slot, so a merged cell in the row does not shift the columns (ADR 0064).
+    const box = selectionBox(editor.state);
+    return box ? { row0: box.row1, row1: box.row2, col0: box.col1, col1: box.col2 } : null;
   }
   const at = cellAt(editor.state);
   return at ? { row0: at.row, row1: at.row, col0: at.column, col1: at.column } : null;

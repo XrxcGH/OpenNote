@@ -487,14 +487,12 @@ describe('merged cells', () => {
     expect(sheet.texts()[0]).toEqual(['wide', 'wide', 'c1']);
   });
 
-  it('uses document keys while a cell is merged, so keys never land on the wrong cell', () => {
+  it('uses spreadsheet keys over merged cells, which count as one cell (ADR 0064, keys over merges in sheet/merge)', () => {
     const sheet = mount([], { doc: mergedDoc() });
     const { view } = sheet.editor;
     sheet.caretIn('A2');
-    expect(modeOf(view.state)).toBeNull();
-    expect(view.dom.getAttribute('data-scope')).toBe('editor editor.table');
-    expect(view.dom.querySelector('table')?.getAttribute('role')).toBeNull();
-    expect(view.dom.querySelector('td')?.getAttribute('role')).toBeNull();
+    expect(modeOf(view.state)).toBe('edit');
+    expect(view.dom.querySelector('td')?.getAttribute('role')).toBe('gridcell');
   });
 });
 
