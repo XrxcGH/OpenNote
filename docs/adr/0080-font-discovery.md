@@ -1,6 +1,6 @@
 # ADR 0080: The Rust side lists the device's fonts with fontdb, and the list never leaves the device
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-11-01
 
 ## Context
