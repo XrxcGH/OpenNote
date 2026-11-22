@@ -282,6 +282,30 @@ function build(): Record<string, () => PageFixture> {
       ]),
     bigTable: () => page('Big table', [text(0, 'Start here.'), bigTable(1)]),
     largeSheetTable: () => page('Large sheet', [text(0, 'Start here.'), largeSheetTable(1)]),
+    // Two tables with Excel's formula rules, for the formula bar: references, errors, and page names across tables.
+    formulaTables: () =>
+      page('Formula tables', [
+        text(0, 'Start here.'),
+        tableOf(
+          1,
+          [
+            ['Item', 'Qty', 'Price', 'Total'],
+            ['Pen', '2', '3', ''],
+            ['Ink', '5', '4', ''],
+            ['Pad', '1', '9', ''],
+          ],
+          { sheet: { v: 1, table: { grid: true } } },
+        ),
+        text(2, 'Between the tables.'),
+        tableOf(
+          3,
+          [
+            ['Label', 'Value'],
+            ['Tax', ''],
+          ],
+          { sheet: { v: 1, table: { grid: true } } },
+        ),
+      ]),
   };
 }
 
@@ -299,7 +323,8 @@ export type PageFixtureName =
   | 'unlabeled'
   | 'sheetTable'
   | 'bigTable'
-  | 'largeSheetTable';
+  | 'largeSheetTable'
+  | 'formulaTables';
 
 const made = new Map<PageFixtureName, PageFixture>();
 const makers = build();

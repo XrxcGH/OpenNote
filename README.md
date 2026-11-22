@@ -63,7 +63,7 @@ The Word-level text, Excel-level table, and code studio foundations are on the b
 - [Ink and palm rejection](docs/help/ink-and-palm-rejection.md): pens, a highlighter, erasers, the lasso, shapes, and gestures, with your palm resting on the screen.
 - [My handwriting](docs/help/my-handwriting.md): typed text and math written in your own hand, learned from a calibration page.
 - [Paper and page views](docs/help/paper-and-page-views.md): flow, paginated, and canvas pages, with lined, grid, and dot paper; slides, print, and PDF.
-- [Tables and charts](docs/help/tables-and-charts.md): smart tables with views, Excel-style formulas (logic, lookup, arrays, and statistics), cell formats (colors, borders, number formats), conditional formatting, spreadsheet keys with Grid and Edit modes (a setting chooses them for new tables), and charts that update with them.
+- [Tables and charts](docs/help/tables-and-charts.md): smart tables with views, Excel-style formulas (logic, lookup, arrays, and statistics), cell formats (colors, borders, number formats), conditional formatting, spreadsheet keys with Grid and Edit modes (a setting chooses them for new tables), and charts that update with them. A formula bar has a name box, autocomplete, argument hints, colored references, and error explanations. It also opens Insert function, the Name manager, and Evaluate formula.
 - [Language and spelling](docs/help/language-and-spelling.md): American English by default, and one choice for every part that reads or writes words. A passage can have its own language, or skip spell check.
 
 ### Organize and find
