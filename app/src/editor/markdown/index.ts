@@ -34,8 +34,17 @@ export function serializeTextBlock(doc: PMNode, cache: MarkdownCache): string {
   return serializeBlock(doc, cache);
 }
 
+/**
+ * Cell text that Markdown leaves as it is: ASCII words separated by single spaces, or a number. No character of it
+ * starts a mark, an escape, an entity, math, a link, or a typographic replacement.
+ */
+const PLAIN_CELL = /^(?:[A-Za-z0-9]+(?: [A-Za-z0-9]+)*|-?[0-9]+(?:[.,][0-9]+)*)$/;
+
 /** A table cell's Markdown as a tableSchema paragraph. Never throws. */
 export function parseCell(markdown: string): PMNode {
+  // Words and numbers have no Markdown in them: the paragraph is the text itself. A table of thousands of rows
+  // opens without parsing each such cell (DESIGN.md section 18).
+  if (PLAIN_CELL.test(markdown)) return tableSchema.nodes.paragraph.create(null, tableSchema.text(markdown));
   try {
     const inline = parseInlineNodes(markdown.replace(/\r?\n/g, ' '));
     const paragraph = textSchema.nodes.paragraph.create(null, inline);
