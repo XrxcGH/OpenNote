@@ -103,7 +103,7 @@
     "features/pages/ui/imageCommands.tsx": 79,
     "features/pages/ui/presentCommands.tsx": 80,
     "features/pdf/importPdf.ts": 69,
-    "features/tables/index.ts": 175,
+    "features/tables/index.ts": 190,
     "features/tables/ui/toolbar/CellFormatBar.tsx": 165,
     "features/tables/ui/toolbar/actions.ts": 138,
     "features/tables/ui/evaluate/EvaluateDialog.tsx": 127,
