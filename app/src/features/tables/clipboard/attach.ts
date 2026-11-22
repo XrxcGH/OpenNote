@@ -3,7 +3,7 @@
 // - Copy and cut of selected cells write the three forms of copy.ts. Cut then clears the cells' text.
 // - A paste of cells (an HTML table, tab-separated text, or OpenNote's own form) lands at the selection with values,
 //   formulas, formats, and merges. One value pasted into a cell that is being edited stays an ordinary text paste.
-// - Ctrl+Shift+V pastes values only. Ctrl+Alt+V opens Paste special.
+// - Ctrl+Shift+V pastes values only. Ctrl+Alt+V (register.ts) opens Paste special.
 // Each paste is one undo step: the rows and the sheet patch go through the host's `apply`.
 
 import { Plugin, PluginKey } from '@tiptap/pm/state';
@@ -104,7 +104,9 @@ async function clipboardNow(): Promise<{ html: string | null; text: string | nul
   return lastCopy;
 }
 
-async function pasteSpecial(host: TableExtraHost, view: EditorView): Promise<void> {
+/** Paste special (Ctrl+Alt+V): asks how to paste the clipboard, then pastes at the selection. */
+export async function pasteSpecial(host: TableExtraHost): Promise<void> {
+  const { view } = host.editor;
   const content = await clipboardNow();
   const clip = content ? readClip(content) : null;
   if (!clip) {
@@ -122,13 +124,9 @@ export function sheetClipboardPlugin(host: TableExtraHost): Plugin {
   return new Plugin({
     key,
     props: {
-      handleKeyDown(view, event) {
+      handleKeyDown(_view, event) {
         const v = event.key.toLowerCase() === 'v' && (event.ctrlKey || event.metaKey);
         valuesNext = v && event.shiftKey && !event.altKey;
-        if (v && event.altKey && !event.shiftKey) {
-          void pasteSpecial(host, view);
-          return true;
-        }
         return false;
       },
       handleDOMEvents: {

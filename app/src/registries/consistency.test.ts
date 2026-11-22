@@ -9,6 +9,9 @@ import '../features';
 // code studio's Shift+F5 refines Present page), so it is checked here with the rest.
 // eslint-disable-next-line opennote/feature-boundaries -- The test loads a registration that runs late, inside its feature.
 import '../features/pages/registerMore';
+// Dictation registers when a page opens; Paste special in a table refines its chord (Ctrl+Alt+V).
+// eslint-disable-next-line opennote/feature-boundaries -- The test loads a registration that runs late, inside its feature.
+import '../features/page/intel/register';
 import { defaultConflicts, scopeDepth, setKeys } from '../commands/keymap';
 import { isChordText } from '../commands/registry';
 import { chordProblem } from '../commands/reserved';
