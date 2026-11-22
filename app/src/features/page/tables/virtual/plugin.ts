@@ -28,6 +28,7 @@ import styles from './virtual.module.css';
 interface Meta {
   window?: RowWindow;
   rowHeight?: number;
+  pinned?: number;
 }
 
 /** A mark's spec: whether the row is drawn, and its index. */
@@ -87,6 +88,9 @@ function around(window: RowWindow, row: number, rows: number): RowWindow {
 
 const inWindow = (window: RowWindow, row: number) => row >= window.from && row < window.to;
 
+/** Whether a virtual table draws row `row`: it is one of the leading pinned rows or in the window. */
+const drawnIn = (window: RowWindow, pinned: number, row: number) => row < pinned || inWindow(window, row);
+
 function build(
   state: EditorState,
   prev: VirtualRowsState | null,
@@ -103,23 +107,30 @@ function build(
   if (virtual && head !== null && (!tr || tr.selectionSet || tr.docChanged) && !meta?.window)
     window = around(window, head, rows);
   const rowHeight = meta?.rowHeight ?? prev?.rowHeight ?? null;
+  // The leading rows that stay drawn wherever the window is, such as frozen header rows.
+  const pinned = Math.min(rows, Math.max(0, meta?.pinned ?? prev?.pinned ?? 0));
   // The rows whose part may have changed, by index in the new document.
   const changed = new Set<number>();
   if (!prev) {
     // The first view drew a virtual table's rows as placeholders: the window's rows are drawn now.
-    if (virtual) for (let i = window.from; i < window.to; i++) changed.add(i);
+    if (virtual) {
+      for (let i = 0; i < pinned; i++) changed.add(i);
+      for (let i = window.from; i < window.to; i++) changed.add(i);
+    }
   } else if (prev.virtual !== virtual) {
     // Crossing the threshold: every row draws itself or its placeholder.
     for (let i = 0; i < rows; i++) changed.add(i);
   } else if (!virtual) {
-    return { ...prev, rows, window, rowHeight, decorations: DecorationSet.empty };
+    return { ...prev, rows, window, rowHeight, pinned, decorations: DecorationSet.empty };
   } else if (prev.rows === rows) {
-    if (prev.window.from === window.from && prev.window.to === window.to) {
+    if (prev.window.from === window.from && prev.window.to === window.to && prev.pinned === pinned) {
       const decorations = tr?.docChanged ? prev.decorations.map(tr.mapping, tr.doc) : prev.decorations;
       return { ...prev, rowHeight, decorations };
     }
+    const differs = (i: number) => drawnIn(prev.window, prev.pinned, i) !== drawnIn(window, pinned, i);
+    for (let i = 0; i < Math.max(prev.pinned, pinned); i++) if (differs(i)) changed.add(i);
     for (let i = Math.min(prev.window.from, window.from); i < Math.max(prev.window.to, window.to); i++)
-      if (inWindow(prev.window, i) !== inWindow(window, i)) changed.add(i);
+      if (differs(i)) changed.add(i);
   } else {
     // Rows came or went: the rows drawn before, wherever they are now, and the window's rows get new marks, so each
     // knows its part and its number.
@@ -130,6 +141,7 @@ function build(
       const row = rowAt(state.doc, mapped.pos);
       if (row !== null) changed.add(row);
     }
+    for (let i = 0; i < pinned; i++) changed.add(i);
     for (let i = window.from; i < window.to; i++) changed.add(i);
   }
   const marks = (prev?.marks ?? 0) + 1;
@@ -137,7 +149,7 @@ function build(
   const decorations: Decoration[] = [];
   for (const i of changed) {
     if (i < 0 || i >= rows) continue;
-    const spec: RowMark = { vrow: !virtual || inWindow(window, i), row: i, n: marks };
+    const spec: RowMark = { vrow: !virtual || drawnIn(window, pinned, i), row: i, n: marks };
     // No attributes: a placeholder comment could not carry them. The spec makes the mark new.
     decorations.push(Decoration.node(at[i], at[i + 1], {}, spec));
   }
@@ -146,6 +158,7 @@ function build(
     virtual,
     window,
     rowHeight,
+    pinned,
     marks,
     decorations: decorations.length > 0 ? DecorationSet.create(state.doc, decorations) : DecorationSet.empty,
   };
@@ -189,7 +202,7 @@ export class RowView implements NodeView {
     const pos = own?.virtual && !mark ? getPos() : undefined;
     const row = mark?.row ?? (pos === undefined ? null : rowStartingAt(state.doc, pos));
     if (mark) this.drawn = mark.vrow;
-    else if (own) this.drawn = !own.virtual || (row !== null && inWindow(own.window, row));
+    else if (own) this.drawn = !own.virtual || (row !== null && drawnIn(own.window, own.pinned, row));
     // Tiptap draws an editor's first view before any plugin is in: a virtual table's rows start as placeholders,
     // and the plugin's first marks draw the window's rows right after.
     else this.drawn = state.plugins.length > 0 || !isVirtualDoc(state.doc);
@@ -263,7 +276,7 @@ class Watcher {
   private clips: HTMLElement[] | null = null;
   private readonly win: Window | null;
   /** Each row's top from the first row's top, and the total at the end, for the document they were made from. */
-  private offsets: { doc: PMNode; typical: number; at: Float64Array } | null = null;
+  private offsets: { doc: PMNode; typical: number; heights: Float64Array; at: Float64Array } | null = null;
 
   constructor(private readonly view: EditorView) {
     views.set(view.dom, view);
@@ -308,9 +321,31 @@ class Watcher {
     if (this.offsets?.doc === doc && this.offsets.typical === typical) return this.offsets.at;
     const table = tableOf(doc);
     const count = table?.childCount ?? 0;
+    const known = this.offsets;
+    const before = known && known.typical === typical ? tableOf(known.doc) : null;
+    if (known && table && before?.childCount === count) {
+      // Typing changes a row or two: only their heights are looked up again, and only the tops after them move.
+      const { heights, at } = known;
+      let first = count;
+      for (let i = 0; i < count; i++) {
+        const row = table.child(i);
+        if (row === before.child(i)) continue;
+        const height = rowHeights.get(row) ?? typical;
+        if (height === heights[i]) continue;
+        heights[i] = height;
+        first = Math.min(first, i);
+      }
+      for (let i = first; i < count; i++) at[i + 1] = at[i] + heights[i];
+      this.offsets = { doc, typical, heights, at };
+      return at;
+    }
+    const heights = new Float64Array(count);
     const at = new Float64Array(count + 1);
-    for (let i = 0; i < count; i++) at[i + 1] = at[i] + (rowHeights.get(table!.child(i)) ?? typical);
-    this.offsets = { doc, typical, at };
+    for (let i = 0; i < count; i++) {
+      heights[i] = rowHeights.get(table!.child(i)) ?? typical;
+      at[i + 1] = at[i] + heights[i];
+    }
+    this.offsets = { doc, typical, heights, at };
     return at;
   }
 
@@ -337,7 +372,9 @@ class Watcher {
     if (!table.hasAttribute('data-virtual-rows')) table.setAttribute('data-virtual-rows', '');
     host.classList.add(styles.host);
     const at = this.offsetsFor(this.typical(table));
-    host.style.setProperty('--opennote-vrows-above', `${at[state.window.from]}px`);
+    // The pinned rows are drawn first, so the padding holds only the rows between them and the window.
+    const { from } = state.window;
+    host.style.setProperty('--opennote-vrows-above', `${at[from] - at[Math.min(state.pinned, from)]}px`);
     host.style.setProperty('--opennote-vrows-below', `${at[state.rows] - at[state.window.to]}px`);
   }
 
