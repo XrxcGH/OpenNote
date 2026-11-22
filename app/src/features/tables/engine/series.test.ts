@@ -125,3 +125,14 @@ describe('money, percent, padding, negatives, and ordinals', () => {
     expect(continueSeries(['10th'], 3)).toEqual(['11th', '12th', '13th']);
   });
 });
+
+describe('dates with uneven gaps', () => {
+  it('rounds to whole days: gaps of 1 and 2 average 1.5, so 01-04 goes on 01-06 and 01-07', () => {
+    // Positions 4 + 1.5 = 5.5 rounds to 6, and 4 + 3 = 7.
+    expect(continueSeries(['2026-01-01', '2026-01-02', '2026-01-04'], 2)).toEqual(['2026-01-06', '2026-01-07']);
+  });
+  it('rounds a half-day step the same way: 01-01 plus 0.5 per step from 01-01 is 01-02 then 01-02', () => {
+    // 1 + 0.5 = 1.5 rounds to 2, and 1 + 1 = 2.
+    expect(continueSeries(['2026-01-01'], 2, { step: 0.5, unit: 'day' })).toEqual(['2026-01-02', '2026-01-02']);
+  });
+});

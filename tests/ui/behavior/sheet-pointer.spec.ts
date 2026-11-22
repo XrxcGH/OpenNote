@@ -120,3 +120,43 @@ test('Ctrl+Z straight after a drop undoes the fill, and Ctrl+drag copies instead
   await page.keyboard.up('Control');
   await expect(cell(page, 3, 1)).toHaveText('120');
 });
+
+test('the row edges leave the start of the first column text free to click', async ({ page }) => {
+  const box = (await inText(page, 2, 0).boundingBox())!;
+  const row = (await page.locator('table tr').nth(2).boundingBox())!;
+  for (const fraction of [0.25, 0.5, 0.75]) {
+    const hit = await page.evaluate(
+      ([x, y]) => {
+        const element = document.elementFromPoint(x, y);
+        return element?.closest('[data-row], [data-sheet-handle]') ? 'edge' : 'cell';
+      },
+      [box.x + 2, row.y + row.height * fraction],
+    );
+    expect(hit, `at ${fraction} of the row`).toBe('cell');
+  }
+  await page.mouse.click(box.x + 2, box.y + box.height / 2);
+  // The click reached the cell: the caret is in its text, or the cell is the selected one.
+  await expect
+    .poll(() =>
+      cell(page, 2, 0).evaluate(
+        (td) => td.contains(getSelection()?.anchorNode ?? null) || td.getAttribute('aria-selected') === 'true',
+      ),
+    )
+    .toBe(true);
+});
+
+test('a long press with a finger opens the menu and lifting the finger does not choose an item', async ({
+  page,
+  context,
+}) => {
+  const session = await context.newCDPSession(page);
+  const at = await center(cell(page, 2, 1));
+  const point = [{ x: at.x, y: at.y, id: 1 }];
+  await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: point });
+  await page.waitForTimeout(900);
+  const menu = page.getByRole('menu').first();
+  await expect(menu).toBeVisible();
+  await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await page.waitForTimeout(300);
+  await expect(menu).toBeVisible();
+});

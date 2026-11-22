@@ -548,16 +548,30 @@ class TableView implements InnerView {
   private placeHandles(): void {
     this.stopHandles();
     const resize = (column: number, width: number) => this.resize(column, width);
-    const stopColumns = attachColumnHandles(this.scroller, this.data.columns, this.ctx.viewport, resize, (column) =>
-      this.fitLine({ op: 'fitColumns' }, { row: 0, column }, 'sheetStructure.announce.fitColumns'),
-    );
-    const stopRows = attachRowHandles(
+    // The size controls (edges to drag, double click to fit) are part of the structure controls: off with them.
+    const structure = this.ctx.host.flag('tables.structureUi');
+    const fitColumn = (column: number) =>
+      this.fitLine({ op: 'fitColumns' }, { row: 0, column }, 'sheetStructure.announce.fitColumns');
+    const stopColumns = attachColumnHandles(
       this.scroller,
+      this.data.columns,
       this.ctx.viewport,
-      (row, height) =>
-        this.fitLine({ op: 'rowHeight', height, exact: true }, { row, column: 0 }, 'sheetStructure.announce.rowHeight'),
-      (row) => this.fitLine({ op: 'fitRows' }, { row, column: 0 }, 'sheetStructure.announce.fitRows'),
+      resize,
+      structure ? fitColumn : undefined,
     );
+    const stopRows = structure
+      ? attachRowHandles(
+          this.scroller,
+          this.ctx.viewport,
+          (row, height) =>
+            this.fitLine(
+              { op: 'rowHeight', height, exact: true },
+              { row, column: 0 },
+              'sheetStructure.announce.rowHeight',
+            ),
+          (row) => this.fitLine({ op: 'fitRows' }, { row, column: 0 }, 'sheetStructure.announce.fitRows'),
+        )
+      : () => {};
     this.stopHandles = () => {
       stopColumns();
       stopRows();

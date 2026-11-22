@@ -176,7 +176,7 @@ function dateSeries(days: readonly number[], count: number, options: SeriesOptio
     if (unit === 'month') next = addMonths(last, n, dayOfMonth);
     else if (unit === 'year') next = addMonths(last, n * 12, dayOfMonth);
     else if (unit === 'weekday') next = addWeekdays(last, n);
-    else next = last + n;
+    else next = Math.round(last + n);
     // A date outside 0001-01-01 to 9999-12-31 has no valid text.
     if (!Number.isFinite(next) || next < MIN_DAY || next > MAX_DAY) return null;
     out.push(daysToIso(next));

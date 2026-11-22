@@ -27,7 +27,8 @@ export function attachRowHandles(
   layer.setAttribute('aria-hidden', 'true');
   const stops: (() => void)[] = [];
   // The rows' heights come from layout, which settles after the table first shows: the edges follow it.
-  const places: (() => void)[] = [];
+  const reads: (() => () => void)[] = [];
+  const placeAll = () => reads.map((read) => read()).forEach((write) => write());
   Array.from(table.rows).forEach((row, index) => {
     const handle = layer.appendChild(doc.createElement('div'));
     handle.className = styles.edge;
@@ -39,8 +40,16 @@ export function attachRowHandles(
       const top = (row.getBoundingClientRect().top - base.top) / k + host.scrollTop;
       handle.style.insetBlockStart = `${top + height}px`;
     };
-    places.push(() => place(row.offsetHeight));
-    place(row.offsetHeight);
+    // Reads and writes are kept apart (one pass of each), so layout is read once, not once per row.
+    reads.push(() => {
+      const base = host.getBoundingClientRect();
+      const k = (host.offsetWidth > 0 ? base.width / host.offsetWidth : 1) || 1;
+      const top = (row.getBoundingClientRect().top - base.top) / k + host.scrollTop;
+      const bottom = top + row.offsetHeight;
+      return () => {
+        handle.style.insetBlockStart = `${bottom}px`;
+      };
+    });
     let lastTap = Number.NEGATIVE_INFINITY;
     const onDown = (event: PointerEvent) => {
       if (event.button !== 0) return;
@@ -88,7 +97,8 @@ export function attachRowHandles(
       handle.removeEventListener('dblclick', onDouble);
     });
   });
-  const resizes = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => places.forEach((go) => go()));
+  placeAll();
+  const resizes = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(placeAll);
   resizes?.observe(table);
   return () => {
     resizes?.disconnect();
