@@ -254,6 +254,14 @@ jobs:
         run: npm ci
       - name: Text end-to-end
         run: npm run test:e2e:text
+      - name: Keep the failure traces
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: text-e2e-results
+          path: tests/e2e/text/results
+          if-no-files-found: ignore
+          retention-days: 14
 
   perf-typing:
     # Phase 4's typing benchmark, in-page measure only (ARCHITECTURE.md section 24.5): every typing condition and

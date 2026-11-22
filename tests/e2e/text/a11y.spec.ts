@@ -2,6 +2,7 @@
 // picker, and the ruler. Tests tagged @forced also run with forced colors on, where every text run must stay
 // readable: no run's color may equal its background (text design 7.6).
 
+import type { Page } from '@playwright/test';
 import { expect, expectAxeClean, openNote, runCommand, selectParagraph, test } from './helpers';
 
 test.describe('no axe violations @forced', () => {
@@ -40,16 +41,47 @@ test.describe('no axe violations @forced', () => {
   });
 });
 
+/**
+ * Runs whose text color equals the color they sit on. The background is the first one that is not transparent,
+ * found by walking up from the run, since a run's own background is almost always transparent.
+ */
+async function clashingRuns(page: Page): Promise<{ checked: number; special: number; clashes: string[] }> {
+  return page.evaluate(() => {
+    const clashes: string[] = [];
+    let checked = 0;
+    let special = 0;
+    const effectiveBackground = (el: HTMLElement): string => {
+      for (let node: HTMLElement | null = el; node; node = node.parentElement) {
+        const color = getComputedStyle(node).backgroundColor;
+        if (color !== 'rgba(0, 0, 0, 0)' && color !== 'transparent') return color;
+      }
+      return getComputedStyle(document.body).backgroundColor;
+    };
+    for (const run of document.querySelectorAll<HTMLElement>('[data-scope="editor"][data-block] :is(span, mark)')) {
+      if (!run.textContent?.trim()) continue;
+      checked += 1;
+      if (run.matches('mark, [data-shade], [data-border]') || run.closest('mark, [data-shade], [data-border]'))
+        special += 1;
+      const color = getComputedStyle(run).color;
+      const background = effectiveBackground(run);
+      if (color === background) clashes.push(`${run.textContent.slice(0, 30)}: ${color}`);
+    }
+    return { checked, special, clashes: clashes.slice(0, 5) };
+  });
+}
+
 test('the formatted note keeps every run readable with forced colors @forced', async ({ page }) => {
   await openNote(page, 'twentyPageFormatted', 'A twenty-page note');
-  const clashes = await page.evaluate(() => {
-    const found: string[] = [];
-    for (const run of document.querySelectorAll<HTMLElement>('[data-scope="editor"][data-block] span')) {
-      if (!run.textContent?.trim()) continue;
-      const style = getComputedStyle(run);
-      if (style.color === style.backgroundColor) found.push(`${run.textContent.slice(0, 30)}: ${style.color}`);
-    }
-    return found.slice(0, 5);
-  });
+  const { checked, clashes } = await clashingRuns(page);
+  expect(checked).toBeGreaterThan(20);
+  expect(clashes).toEqual([]);
+});
+
+test('highlighted, shaded, and bordered runs stay readable with forced colors @forced', async ({ page }) => {
+  await openNote(page, 'highlightedRuns', 'highlighted run');
+  const { checked, special, clashes } = await clashingRuns(page);
+  // The check must not pass for lack of runs: the highlight and the shading are both there.
+  expect(special).toBeGreaterThanOrEqual(2);
+  expect(checked).toBeGreaterThanOrEqual(3);
   expect(clashes).toEqual([]);
 });

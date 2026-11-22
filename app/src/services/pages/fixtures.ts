@@ -208,6 +208,19 @@ function largeSheetTable(order: number): BlockJson {
  * font, size, and color; 50 paragraphs with tab stops; 10 lists with their own number formats; 20 bordered paragraphs.
  * Every element gets an ID, because `paras` is keyed by element ID.
  */
+function highlightedRuns(order: number): BlockJson {
+  const ids = [fixtureId(), fixtureId(), fixtureId()];
+  const side = { style: 'single', width: 0.5, space: 4, color: 'theme:accent1' };
+  const markdown = [
+    'Plain words.',
+    'A <mark data-color="honey">highlighted run</mark> and ' +
+      '<span data-shade="indigo"><span data-color="honey">a shaded run</span></span>.',
+    'A bordered paragraph.',
+  ].join('\n\n');
+  const paras = { [ids[2]]: { border: { top: side, bottom: side, start: side, end: side } } };
+  return block('text', order, { markdown, ids, paras });
+}
+
 function formattedNote(order: number): BlockJson {
   const formats = ['decimal', 'lowerLetter', 'upperRoman', 'lowerRoman', 'upperLetter', 'decimalZero', 'ordinal'];
   const ids: string[] = [];
@@ -340,6 +353,8 @@ function build(): Record<string, () => PageFixture> {
     bigTable: () => page('Big table', [text(0, 'Start here.'), bigTable(1)]),
     largeSheetTable: () => page('Large sheet', [text(0, 'Start here.'), largeSheetTable(1)]),
     twentyPageFormatted: () => page('A formatted twenty-page note', [formattedNote(0)]),
+    // Highlight, shading, and a border: the runs that can clash in forced colors (a11y-perf-e2e).
+    highlightedRuns: () => page('Highlighted runs', [highlightedRuns(0)]),
   };
 }
 
@@ -358,7 +373,8 @@ export type PageFixtureName =
   | 'sheetTable'
   | 'bigTable'
   | 'largeSheetTable'
-  | 'twentyPageFormatted';
+  | 'twentyPageFormatted'
+  | 'highlightedRuns';
 
 const made = new Map<PageFixtureName, PageFixture>();
 const makers = build();

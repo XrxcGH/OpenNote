@@ -56,10 +56,13 @@ fn document_json(page: &Page) -> Value {
             "elements": t.ids.len(),
             "styles": styles,
             "paras": paras,
+            // The fixture has no lists, so this is empty today. A list that export or import drops will show.
+            "lists": t.extra.get("lists").cloned().unwrap_or(Value::Null),
         }));
     }
     let paper = &page.view.paper;
     let mut summary = json!({
+        "title": page.title,
         "blocks": out,
         "paper": {
             "size": paper.size.as_str(),
@@ -84,6 +87,28 @@ fn the_15_feature_page_is_unchanged_by_a_word_export_and_import() {
     std::fs::write(&original, zip_dir(&fixture("word-15-features"))).expect("writes the fixture");
     let first = import_file(&original);
     let before = document_json(&first.pages.first().expect("a page").1.page);
+
+    // An expected value that does not come from the code under test: the fixture's own expected JSON.
+    let expected: Value = serde_json::from_str(
+        &std::fs::read_to_string(fixture("word-15-features.expected.json")).expect("the expected JSON"),
+    )
+    .expect("JSON");
+    let expected_markdown: Vec<&Value> = expected["blocks"]
+        .as_array()
+        .expect("blocks")
+        .iter()
+        .map(|b| &b["markdown"])
+        .collect();
+    let first_markdown: Vec<&Value> = before["blocks"]
+        .as_array()
+        .expect("blocks")
+        .iter()
+        .map(|b| &b["markdown"])
+        .collect();
+    assert_eq!(
+        first_markdown, expected_markdown,
+        "the first import matches the expected JSON"
+    );
 
     let id = first.pages.first().expect("a page").1.page.id;
     let source = MemorySource::from_sink(first).expect("a notebook");
