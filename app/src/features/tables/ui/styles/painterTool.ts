@@ -29,7 +29,8 @@ export function togglePainter(host: TableExtraHost): void {
     host.announce(t('sheetFormat.painter.nothing'));
     return;
   }
-  const source = { row: from.top, col: from.left };
+  // The source is kept by row and column ID, so inserting rows or columns before the paint does not move it.
+  const sourceIds = { row: table.rows[from.top].id, col: table.columns[from.left].id };
   const dom = host.editor.view.dom;
   const stop = () => {
     document.removeEventListener('pointerup', onPointer, true);
@@ -40,7 +41,13 @@ export function togglePainter(host: TableExtraHost): void {
     const target = boxOfSelection(host.editor.state, host.table());
     stop();
     if (!target) return;
-    const done = paint(readSheet(host.data()), host.table(), source, target);
+    const now = host.table();
+    const source = {
+      row: now.rows.findIndex((r) => r.id === sourceIds.row),
+      col: now.columns.findIndex((c) => c.id === sourceIds.col),
+    };
+    if (source.row < 0 || source.col < 0) return host.announce(t('sheetFormat.painter.nothing'));
+    const done = paint(readSheet(host.data()), now, source, target);
     if (!done.patch) return host.announce(t('sheetFormat.painter.nothing'));
     void host.patch(done.patch).then(() => host.announce(t('sheetFormat.painter.done')));
   };

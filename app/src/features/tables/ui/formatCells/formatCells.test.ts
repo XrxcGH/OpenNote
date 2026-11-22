@@ -4,13 +4,13 @@
 // checks-disable-file brand-consistency: cell colors here are document data of the file format, not interface styling
 import { describe, expect, it } from 'vitest';
 import { EN_US } from '../../engine/locale';
-import { applyToRange, styleById } from '../../sheet/model';
+import { applyToRange, sheetProblems, styleById } from '../../sheet/model';
 import type { Sheet } from '../../sheet/model';
 import { writeSteps } from '../../sheet/formatTarget';
 import type { TableData } from '../../../../editor/schema/specs';
 import { applyMergePatch } from '../../../../platform/mergePatch';
 import { K, makeTable, R, range } from '../../sheet/model/testing';
-import { styleDiff, withFormat, withProp } from './draft';
+import { snapNumber, styleDiff, withFace, withFormat, withProp } from './draft';
 import { edgeSteps, edgesOf, presetEdges } from './edges';
 import { categoryOf, checkCode, codeFor, DEFAULT_OPTIONS, previewCode, sampleOf } from './numberCodes';
 import { marksFor } from './open';
@@ -133,6 +133,42 @@ describe('what OK writes', () => {
   });
 });
 
+describe('typed numbers and codes keep the sheet inside the format limits', () => {
+  const table = makeTable(range(1, 2), range(1, 2), true) as TableData;
+  const problems = (change: Record<string, unknown>) => {
+    const sheet = applyToRange({}, table, [R(1), K(1)], [R(1), K(1)], change as never).sheet;
+    return sheetProblems(sheet as never);
+  };
+
+  it('rounds size and padding to 0.5 and the rest to whole numbers (R-SHT-7)', () => {
+    expect(snapNumber(10.3, 1, 1638, 0.5)).toBe(10.5);
+    expect(snapNumber(2.5, 0, 15, 1)).toBe(3);
+    expect(snapNumber(33.3, -90, 90, 1)).toBe(33);
+    expect(snapNumber(45.5, 0, 359, 1)).toBe(46);
+    expect(snapNumber(400, 0, 359, 1)).toBe(359);
+  });
+
+  it('writes sheets that pass the schema', () => {
+    const size = snapNumber(10.3, 1, 1638, 0.5);
+    const indent = snapNumber(2.5, 0, 15, 1);
+    const rotate = snapNumber(33.3, -90, 90, 1);
+    expect(problems({ font: { size }, align: { indent, rotate } })).toEqual([]);
+    expect(problems({ font: { size: 10.3 }, align: { indent: 2.5, rotate: 33.3 } })).not.toEqual([]);
+  });
+
+  it('refuses a custom code of more than 255 characters at position 256', () => {
+    expect(checkCode('0'.repeat(255), EN_US).ok).toBe(true);
+    const long = checkCode('0'.repeat(305), EN_US);
+    expect(long).toMatchObject({ ok: false, error: 'tooLong', at: 255 });
+    expect(checkCode('0'.repeat(1_000_000), EN_US).ok).toBe(false);
+  });
+
+  it('Regular and Italic clear a numeric weight', () => {
+    expect(withFace({ font: { bold: true, weight: 700 } }, false, false)).toEqual({});
+    expect(withFace({ font: { weight: 600 } }, false, true)).toEqual({ font: { italic: true } });
+  });
+});
+
 describe('the Border tab', () => {
   const table = makeTable(range(1, 3), range(1, 3), true) as TableData;
   const one = { top: 1, left: 1, bottom: 1, right: 1 };
@@ -194,6 +230,18 @@ describe('the Border tab', () => {
     expect(border(0, 0)).toEqual({ b: { style: 'thin' } });
     expect(border(1, 0)).toEqual({ t: { style: 'thin' }, b: { style: 'thin' } });
     expect(border(2, 0)).toEqual({ t: { style: 'thin' } });
+  });
+
+  it('reads edges from every cell of the box, so None clears a middle border', () => {
+    const middle = applyToRange({}, table, [R(1), K(2)], [R(1), K(2)], { border: { t: { style: 'thin' } } }).sheet;
+    const edges = edgesOf(middle, table, all);
+    expect(edges.t).toEqual({ style: 'thin' });
+    const cleared = writeSteps(
+      middle,
+      table,
+      edgeSteps(all, edges, presetEdges('none', { style: 'thin' }, all, edges)),
+    );
+    expect(cleared.sheet.cells).toBeUndefined();
   });
 
   it('None clears every edge, diagonals included', () => {

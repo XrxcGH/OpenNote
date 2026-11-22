@@ -70,6 +70,19 @@ describe('named styles', () => {
 });
 
 describe('changing a named style', () => {
+  it('a cell with direct formatting on top of the style still follows it', () => {
+    const base = apply({}, applyStyle({}, table, { top: 0, left: 0, bottom: 0, right: 1 }, 'good').patch);
+    const direct = applyToRange(base, table, [R(1), K(2)], [R(1), K(2)], { fmt: '0.00', font: { italic: true } }).sheet;
+    expect(usesOf(direct, 'good')).toBe(2);
+    const after = apply(direct, changeNamed(direct, table, 'good', { fill: '#c0ffee' }).patch);
+    expect(styleAtCell(after, 0, 0).fill).toBe('#c0ffee');
+    const kept = styleAtCell(after, 0, 1);
+    expect(kept.fill).toBe('#c0ffee');
+    expect(kept.fmt).toBe('0.00');
+    expect(kept.font?.italic).toBe(true);
+    expect(kept.font?.color).toBe('#1f5a1a');
+  });
+
   it("changing the Good style's fill updates every cell using it in one patch", () => {
     const first = applyStyle({}, table, { top: 0, left: 0, bottom: 1, right: 1 }, 'good');
     const used = apply({}, first.patch);

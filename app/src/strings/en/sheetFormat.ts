@@ -38,6 +38,7 @@ export const sheetFormat = {
       bracket: 'A bracket is not closed',
       escape: 'A backslash has nothing after it',
       condition: 'A condition is not valid',
+      tooLong: 'A code has at most 255 characters',
     },
     cat: {
       general: 'General',

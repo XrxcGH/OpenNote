@@ -3,7 +3,7 @@ import type { MessageKey } from '../../../../strings/t';
 import { FontPicker, useFontCatalog } from '../../../fonts';
 import { ColorField, NumberInput, Select } from './controls';
 import type { TabProps } from './controls';
-import { withProp } from './draft';
+import { withFace, withProp } from './draft';
 import styles from './formatCells.module.css';
 
 const noFonts = { list: () => Promise.resolve([]) };
@@ -30,7 +30,7 @@ export function FontTab({ style, set, scheme, notebookId }: TabProps) {
   const setFace = (value: (typeof faces)[number]) => {
     const bold = value === 'bold' || value === 'boldItalic';
     const italic = value === 'italic' || value === 'boldItalic';
-    set(withProp(withProp(style, 'font', 'bold', bold || undefined), 'font', 'italic', italic || undefined));
+    set(withFace(style, bold, italic));
   };
   const underline = (font.underline ?? 'none') as (typeof UNDERLINES)[number];
   const strike = font.strike ?? 'none';

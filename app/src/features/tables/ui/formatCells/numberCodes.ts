@@ -188,11 +188,14 @@ export function categoryOf(code: string | undefined, locale: Locale): { category
   return { category: 'custom', options: base };
 }
 
+/** The format limit: a number code is 1 to 255 characters. */
+export const MAX_CODE = 255;
+
 export interface CodeCheck {
   ok: boolean;
   /** The invariant code, when ok. */
   code?: string;
-  error?: CompileError;
+  error?: CompileError | 'tooLong';
   /** Where the problem is in the typed text, counted from 0, when a position is known. */
   at?: number;
 }
@@ -228,6 +231,7 @@ function whereBroken(typed: string, error: CompileError): number | undefined {
 
 /** Checks a code typed in the region's form. A bad code says what is wrong and, where it can, the position. */
 export function checkCode(typed: string, locale: Locale): CodeCheck {
+  if (typed.length > MAX_CODE) return { ok: false, error: 'tooLong', at: MAX_CODE };
   const read = readTypedCode(typed, locale);
   if (read.ok) return { ok: true, code: read.code };
   return { ok: false, error: read.error, at: whereBroken(typed, read.error) };

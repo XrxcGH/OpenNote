@@ -27,6 +27,7 @@ Each file holds one case for `data.sheet` (spec 6.3). Between them they show eve
 | File | What it shows | Rules |
 |---|---|---|
 | `cells.json`, `styles.json` | Cell styles, the style sheet, and the IDs a writer derives | `R-SHT-3`, `R-SHT-6`, `R-SHT-7` |
+| `named-styles.json` | Named styles in `sheet.named`, a page a version 1 reader edits | `R-SHT-7`, `R-STAMP-6` |
 | `style-keys.json` | Every key of a style, with values a reader finds invalid | `R-SHT-7`, `R-VAL-1` |
 | `style-enums.json` | One style for each named value: alignment, underline, strike, script, the 18 patterns, the 14 border styles, colors, fonts, number formats | `R-SHT-7`, `R-VAL-2` |
 | `style-boundaries.json`, `style-past.json` | Every number of a style at the edge of its range, and just past it | `R-VAL-1`, `R-VAL-3`, `R-VAL-4` |

@@ -6,7 +6,7 @@
 //
 // Cell colors are document data (they travel in the file), so they are literal values, as the looks' fills are.
 // checks-disable-file brand-consistency: cell colors here are document data of the file format, not interface styling
-import { applyToRange, canonical, changeStyle, sheetPatch, tidy, validStyle } from '../../sheet/model';
+import { applyToRange, canonical, changeStyle, clearProperties, sheetPatch, tidy, validStyle } from '../../sheet/model';
 import type { Box, CellStyle, Sheet, StyleChange, TableLike } from '../../sheet/model';
 import { clone, isObject, own, ownObject, put } from '../../sheet/model/json';
 import type { Json, JsonObject } from '../../sheet/model/json';
@@ -96,11 +96,30 @@ export const CLEAR_ALL: StyleChange = {
   protect: null,
 };
 
-/** The IDs in the sheet's style sheet whose content is `style`. */
+/**
+ * True when `content` has every property of `style` with the same value. Direct formatting on top of a style (italics,
+ * a number format) keeps the cell using it. A style with no properties is held only by identical (empty) content.
+ */
+function holds(content: Json | undefined, style: CellStyle): boolean {
+  if (!isObject(content)) return false;
+  const keys = Object.keys(style);
+  if (keys.length === 0) return Object.keys(content).length === 0;
+  const group = new Set(['font', 'fill', 'border', 'align', 'pad', 'protect']);
+  for (const key of keys) {
+    const want = (style as JsonObject)[key];
+    const have = own(content, key);
+    if (group.has(key) && isObject(want) && isObject(have)) {
+      for (const inner of Object.keys(want))
+        if (canonical(own(have, inner) ?? null) !== canonical(want[inner])) return false;
+    } else if (canonical(have ?? null) !== canonical(want)) return false;
+  }
+  return true;
+}
+
+/** The IDs in the sheet's style sheet whose content holds `style` (it may carry direct formatting besides). */
 function idsOf(sheet: Sheet, style: CellStyle): string[] {
-  const body = canonical(style as Json);
   const styles = ownObject(sheet, 'styles') ?? {};
-  return Object.keys(styles).filter((id) => canonical(styles[id]) === body);
+  return Object.keys(styles).filter((id) => holds(styles[id], style));
 }
 
 /** Gives every cell of `target` the style's content in place of the formatting it had. One patch covers all of it. */
@@ -119,9 +138,12 @@ export function applyStyle(before: Sheet, table: TableLike, target: Box, key: st
 }
 
 /** Replaces every use of the style ID `from` (cells, rows, columns, the table) with `to`. */
-function moveUses(sheet: Sheet, from: string, to: string | null): void {
+function moveUses(sheet: Sheet, moves: Map<string, string | null>): void {
   const swap = (holder: JsonObject | undefined, field: string) => {
-    if (!holder || own(holder, field) !== from) return;
+    if (!holder) return;
+    const from = own(holder, field);
+    if (typeof from !== 'string' || !moves.has(from)) return;
+    const to = moves.get(from) ?? null;
     if (to === null) delete holder[field];
     else put(holder, field, to);
   };
@@ -178,8 +200,16 @@ export function setNamed(before: Sheet, table: TableLike, key: string, next: Cel
     else put(named, key, clone(next as JsonObject));
     put(sheet, 'named', named);
     if (oldIds.length === 0) return;
-    const to = intern(sheet, next);
-    for (const id of oldIds) if (id !== to) moveUses(sheet, id, to);
+    // Each user keeps its direct formatting: the style's old properties come out, the new ones go in underneath.
+    const moves = new Map<string, string | null>();
+    const styles = ownObject(sheet, 'styles') ?? {};
+    const old2 = old ?? {};
+    for (const id of oldIds) {
+      const rest = clearProperties(styles[id] as JsonObject, old2 as StyleChange);
+      const to = intern(sheet, changeStyle(next, rest as StyleChange) as CellStyle);
+      if (id !== to) moves.set(id, to);
+    }
+    moveUses(sheet, moves);
   });
 }
 

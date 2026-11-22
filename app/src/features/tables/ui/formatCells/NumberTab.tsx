@@ -12,6 +12,7 @@ import {
   SPECIAL_LABELS,
   TIME_PATTERNS,
   checkCode,
+  MAX_CODE,
   codeFor,
   datePatterns,
   previewCode,
@@ -163,6 +164,7 @@ function Custom({ custom, problem, locale, usedCodes, onCode }: CustomProps) {
             className={styles.input}
             value={custom}
             spellCheck={false}
+            maxLength={MAX_CODE}
             aria-invalid={problem !== undefined}
             onChange={(e) => onCode(e.target.value)}
           />

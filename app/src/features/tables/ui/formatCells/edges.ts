@@ -28,21 +28,26 @@ export function edgeExists(edge: Edge, box: CellBox): boolean {
 const lined = (side: BorderSide | undefined): BorderSide | undefined =>
   side && side.style !== 'none' ? side : undefined;
 
-/** The edges the box has now, read from the cells at its corners (the table's drawing, look included). */
+/** The edges the box has now: a side counts when any cell along it has the line (the table's drawing, look included). */
 export function edgesOf(sheet: Sheet, table: TableData, box: CellBox): Edges {
-  const first = styleAt(sheet, table, box.top, box.left).border ?? {};
-  const last = styleAt(sheet, table, box.bottom, box.right).border ?? {};
-  const edges: Edges = {
-    t: lined(first.t),
-    b: lined(last.b),
-    l: lined(first.l),
-    r: lined(last.r),
-    dd: lined(first.dd),
-    du: lined(first.du),
+  const edges: Edges = {};
+  const take = (edge: Edge, side: BorderSide | undefined) => {
+    if (edges[edge] === undefined && lined(side)) edges[edge] = side;
   };
-  if (edgeExists('ih', box)) edges.ih = lined(first.b);
-  if (edgeExists('iv', box)) edges.iv = lined(first.r);
-  for (const key of Object.keys(edges) as Edge[]) if (edges[key] === undefined) delete edges[key];
+  for (let r = box.top; r <= box.bottom; r++) {
+    for (let c = box.left; c <= box.right; c++) {
+      const border = styleAt(sheet, table, r, c).border ?? {};
+      if (r === box.top) take('t', border.t);
+      if (r === box.bottom) take('b', border.b);
+      if (c === box.left) take('l', border.l);
+      if (c === box.right) take('r', border.r);
+      if (r < box.bottom) take('ih', border.b);
+      if (c < box.right) take('iv', border.r);
+      take('dd', border.dd);
+      take('du', border.du);
+    }
+  }
+  for (const key of Object.keys(edges) as Edge[]) if (!edgeExists(key, box)) delete edges[key];
   return edges;
 }
 

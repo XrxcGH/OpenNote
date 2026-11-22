@@ -235,3 +235,20 @@
   inline-size: 100%;
   overflow-wrap: anywhere;
 }
+
+@media (forced-colors: active) {
+  .tab[aria-selected='true'] {
+    border-block-end-color: Highlight;
+  }
+
+  .edge[aria-pressed='true'] {
+    background: Highlight;
+    color: HighlightText;
+    forced-color-adjust: none;
+  }
+
+  .swatch {
+    border-color: ButtonText;
+    forced-color-adjust: none;
+  }
+}

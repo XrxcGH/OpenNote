@@ -7,6 +7,7 @@ import { ColorPalette } from '../../../../ui/color';
 import type { ColorPick } from '../../../../ui/color';
 import type { Scheme } from '../../../../ui/color/parse';
 import type { CellStyle } from '../../sheet/model';
+import { snapNumber } from './draft';
 import styles from './formatCells.module.css';
 
 /** What every tab gets: the working style, a way to change it, and the color context. */
@@ -86,7 +87,7 @@ export function NumberInput({ label, value, min, max, step = 1, onChange }: Numb
           value={value ?? ''}
           onChange={(e) => {
             const n = num(e.target.value, undefined);
-            onChange(n === undefined ? undefined : Math.min(max, Math.max(min, n)));
+            onChange(n === undefined ? undefined : snapNumber(n, min, max, step));
           }}
         />
       )}

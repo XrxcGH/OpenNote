@@ -14,6 +14,18 @@ export const prop = <K extends Group>(style: CellStyle, group: K, key: string): 
   (style[group] as Record<string, unknown> | undefined)?.[key];
 
 /** A copy of the style with one property of a group set, or removed when `value` is undefined. */
+/** A typed number held to the format's limits: clamped to the range and rounded to the nearest step (0.5 or 1). */
+export function snapNumber(n: number, min: number, max: number, step: number): number {
+  const snapped = Math.round(n / step) * step;
+  return Math.min(max, Math.max(min, snapped));
+}
+
+/** The style with its font face set. A numeric weight goes too, so Regular and Italic are not still heavy. */
+export function withFace(style: CellStyle, bold: boolean, italic: boolean): CellStyle {
+  const faced = withProp(withProp(style, 'font', 'bold', bold || undefined), 'font', 'italic', italic || undefined);
+  return withProp(faced, 'font', 'weight', undefined);
+}
+
 export function withProp(style: CellStyle, group: Group, key: string, value: unknown): CellStyle {
   const next: Record<string, unknown> = { ...((style[group] as Record<string, unknown> | undefined) ?? {}) };
   if (value === undefined) delete next[key];
