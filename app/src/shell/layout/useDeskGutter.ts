@@ -1,5 +1,5 @@
 // Measures the page region and writes the desk gutter on it: --desk-gutter and data-desk-gutter on main (the rule is
-// deskGutter.ts). The zoom is read only when the camera settles, never during a Ctrl+wheel or a pinch, so the page's
+// deskGutter.ts). The zoom is read only when the camera settles, never during a Ctrl+wheel zoom or a pinch, so the page's
 // left edge never jumps under the pointer. Input in the strips, main's own box beside the page, goes to the page.
 
 import { useCallback, useRef } from 'react';
@@ -9,7 +9,8 @@ import { shownViewport } from '../../features/page';
 import type { PageViewportApi } from '../../features/page';
 import { DEFAULT_COLUMN, nextGutter } from './deskGutter';
 
-const PAGE_PANE = '[data-page-pane]';
+/** A pane beside the page that is showing; the Sheets strip carries the attribute too, and is hidden when unused. */
+const PAGE_PANE = '[data-page-pane]:not([hidden])';
 const LINE_PX = 16;
 const MOTIF_GUTTER = 24;
 
@@ -97,13 +98,15 @@ export function startDeskGutter(main: HTMLElement): () => void {
   // A page pane opening or closing; the test switch.
   // Typing changes the subtree all the time, so only a pane's own arrival or departure, or the switch, runs the rule.
   const isPane = (node: Node) => node instanceof Element && (node.matches(PAGE_PANE) || node.querySelector(PAGE_PANE));
+  const paneAttribute = (target: Node) =>
+    target === main || (target instanceof Element && target.matches('[data-page-pane]'));
   const mutations =
     typeof MutationObserver === 'undefined'
       ? null
       : new MutationObserver((records) => {
           const relevant = records.some(
             (record) =>
-              record.type === 'attributes' ||
+              (record.type === 'attributes' && paneAttribute(record.target)) ||
               [...record.addedNodes, ...record.removedNodes].some((node) => isPane(node)),
           );
           if (relevant) update();
@@ -112,7 +115,7 @@ export function startDeskGutter(main: HTMLElement): () => void {
     childList: true,
     subtree: true,
     attributes: true,
-    attributeFilter: ['data-desk-gutter-test'],
+    attributeFilter: ['data-desk-gutter-test', 'hidden'],
   });
   const themes = typeof MutationObserver === 'undefined' ? null : new MutationObserver(() => update());
   themes?.observe(root, { attributes: true, attributeFilter: ['data-theme', 'data-page-color', 'data-contrast'] });

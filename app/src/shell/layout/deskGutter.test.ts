@@ -1,5 +1,5 @@
 // Known answers are worked by hand from the layout rule: need(100%) = 667 / 0.9 = 741.1, so 742 px; at 125% 927 px;
-// at 150% 1,112 px; the cap is 24 up to a 1,120 px region and 40 from 1,384 px.
+// at 150% 1,112 px; the cap is 24 px at any width.
 import { describe, expect, it } from 'vitest';
 import { capFor, deskGutter, needFor, nextGutter } from './deskGutter';
 import type { GutterInput } from './deskGutter';
@@ -30,12 +30,8 @@ describe('the narrowest full column', () => {
 });
 
 describe('the cap', () => {
-  it('is 24 up to a 1,120 px region and 40 from 1,384 px', () => {
-    expect(capFor(820)).toBe(24);
-    expect(capFor(1120)).toBe(24);
-    expect(capFor(1250)).toBe(32);
-    expect(capFor(1384)).toBe(40);
-    expect(capFor(2400)).toBe(40);
+  it('is 24 px at any width', () => {
+    for (const region of [820, 1120, 1250, 1384, 2400]) expect(capFor(region)).toBe(24);
   });
 });
 
@@ -54,10 +50,10 @@ describe('deskGutter at the test widths', () => {
     expect(at(1120, 1.5)).toBe(0);
   });
   it('very wide windows', () => {
-    expect(at(1384)).toBe(40);
-    expect(at(1384, 1.5)).toBe(40);
-    expect(at(1464, 1.5)).toBe(40);
-    expect(at(1250)).toBe(32);
+    expect(at(1384)).toBe(24);
+    expect(at(1384, 1.5)).toBe(24);
+    expect(at(1464, 1.5)).toBe(24);
+    expect(at(1250)).toBe(24);
   });
   it('gives 0 for a spare under 16 px (8 px after halving)', () => {
     expect(deskGutter({ ...base, region: 742 + 15 + 14 })).toBe(0);

@@ -44,9 +44,9 @@ export function needFor(zoom: number, column: number): number {
   return Math.ceil(zoom * units);
 }
 
-/** The most a gutter can be: 24 up to a 1,120 px region, then 1 px more per 16 px, up to 40. */
-export function capFor(region: number): number {
-  return Math.min(40, Math.max(24, 24 + Math.floor((region - 1120) / 16)));
+/** The most a gutter can be: 24 px at any width (the lane contract); the region is kept for a later wider cap. */
+export function capFor(_region: number): number {
+  return 24;
 }
 
 function gutterFrom(spare: number, region: number): number {
