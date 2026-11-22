@@ -30,7 +30,9 @@ export type EditorAction =
   | 'zoomIn'
   | 'zoomOut'
   | 'problemNext'
-  | 'problemPrevious';
+  | 'problemPrevious'
+  | 'problemFix'
+  | 'problemExplain';
 
 /** One mounted editor, as the commands see it. */
 export interface CodeEditorHandle {

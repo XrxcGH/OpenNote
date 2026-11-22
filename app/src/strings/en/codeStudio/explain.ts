@@ -1,4 +1,4 @@
-// Plain-language explanations of error messages (DESIGN 7.2, lane code:L11). Each catalog entry of
+// Plain-language explanations of error messages (DESIGN 7.2). Owner: code:L11. Each catalog entry of
 // features/codestudio/explain has what happened, the likely cause, and the next thing to try. The words are in the
 // files explain*.ts of this folder. `{name}` and the other values come from the named groups of the entry's pattern.
 

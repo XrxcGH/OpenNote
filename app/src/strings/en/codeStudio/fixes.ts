@@ -3,6 +3,8 @@
 
 export const codeStudioFixes = {
   /** The menu entry of each fix (Ctrl+. and the lightbulb). */
+  /** The menu entry that explains a problem in plain words. */
+  explainAction: 'Explain this problem',
   titles: {
     change: 'Change to `{name}`',
     addImport: 'Add `{line}`',

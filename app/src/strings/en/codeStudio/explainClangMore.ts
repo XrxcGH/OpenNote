@@ -58,7 +58,7 @@ export const explainClangMore = {
   },
   clAmbiguous: {
     what: 'The name {name} could mean more than one thing.',
-    cause: 'Two declarations are visible, for example your variable and one from the std namespace.',
+    cause: 'The file sees 2 declarations, for example your variable and one from the std namespace.',
     next: 'Rename yours, or write std:: or :: in front to say which.',
   },
   clIncompleteMember: {
@@ -128,7 +128,7 @@ export const explainClangMore = {
   },
   clAlwaysResult: {
     what: 'This comparison always gives the same answer.',
-    cause: 'An unsigned number is never below 0, or the two sides cannot differ.',
+    cause: 'An unsigned number is never below 0, or the 2 sides cannot differ.',
     next: 'Check the types and the comparison.',
   },
   clStringCompare: {

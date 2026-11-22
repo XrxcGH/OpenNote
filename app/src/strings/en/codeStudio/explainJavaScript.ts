@@ -23,6 +23,26 @@ export const explainJavaScript = {
       'may be misspelled, or an earlier step may have returned undefined.',
     next: 'Print {name} with console.log. Check the spelling and what the earlier call returns.',
   },
+  jsNotFunctionAnon: {
+    what: 'The code calls something that is not a function.',
+    cause: 'A call uses parentheses, but the value in front of them holds a number, text, an object, or nothing.',
+    next: 'Print the value before the parentheses. Check the spelling and what the earlier step returned.',
+  },
+  jsConvertObject: {
+    what: 'undefined or null was used where an object is needed.',
+    cause: 'Functions such as Object.keys and Object.assign need an object. An earlier step gave nothing.',
+    next: 'Print the value before this line. Give it a default value, such as an empty object.',
+  },
+  jsNotConstructorAnon: {
+    what: 'The code uses new on something that is not a constructor.',
+    cause: 'new works on classes and constructor functions. Arrow functions and plain objects do not qualify.',
+    next: 'Call it without new, or write it as a class.',
+  },
+  jsClassNewAnon: {
+    what: 'A class must be created with new.',
+    cause: 'Classes cannot be called like plain functions.',
+    next: 'Write new before the class name, as in new Cat().',
+  },
   jsReadUndefined: {
     what: 'The code reads {name} from {what}.',
     cause:
@@ -71,7 +91,7 @@ export const explainJavaScript = {
   jsArrayLength: {
     what: 'The array length is not valid.',
     cause:
-      'A length must be a whole number from 0 up to about four billion. A negative number or a ' + 'decimal was used.',
+      'A length must be a whole number from 0 up to about 4 billion. A negative number or a ' + 'decimal was used.',
     next: 'Print the number used for the length.',
   },
   jsInvalidJson: {

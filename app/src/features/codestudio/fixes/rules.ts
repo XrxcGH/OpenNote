@@ -344,6 +344,34 @@ const addColon: Rule = (d, ctx) => {
 
 const SEMICOLON_LANGUAGES = new Set(['c', 'cpp', 'java', 'javascript', 'typescript', 'rust']);
 
+/** How far back the bracket scan reads: a statement that is longer is not one a semicolon fixes. */
+const SCAN_BACK = 20_000;
+
+/**
+ * The offset sits inside an open call, array, or object: a semicolon there would be a new syntax error. A "(" or "["
+ * always counts. A "{" counts only when it opens an object literal, which in JavaScript and TypeScript follows an
+ * operator, a comma, a colon, an opening bracket, or "return"; a block's brace takes semicolons.
+ */
+function insideBrackets(text: string, at: number, language: FixContext['language']): boolean {
+  let nest = 0;
+  const stop = Math.max(0, at - SCAN_BACK);
+  for (let i = at - 1; i >= stop; i -= 1) {
+    const ch = text[i]!;
+    if (ch === ')' || ch === ']' || ch === '}') nest += 1;
+    else if (ch === ';' && nest === 0) return false;
+    else if (ch === '(' || ch === '[' || ch === '{') {
+      if (nest > 0) nest -= 1;
+      else if (ch !== '{') return true;
+      else {
+        if (language !== 'javascript' && language !== 'typescript') return false;
+        const lead = text.slice(Math.max(0, i - 12), i).trimEnd();
+        return lead === '' ? false : /[=(,:[?+*/&|<>!-]$|\breturn$/.test(lead);
+      }
+    }
+  }
+  return false;
+}
+
 const addSemicolon: Rule = (d, ctx) => {
   if (!SEMICOLON_LANGUAGES.has(ctx.language)) return [];
   const asked = /expected ';'|missing semicolon/i.test(d.message);
@@ -354,6 +382,7 @@ const addSemicolon: Rule = (d, ctx) => {
   const before = ctx.text[at - 1];
   if (!before || ';{}(,[=+-*/&|<>:?!.'.includes(before)) return [];
   if (unexpected && !/[\p{L}\p{N}_$)\]"'`]/u.test(before)) return [];
+  if (insideBrackets(ctx.text, at, ctx.language)) return [];
   const line = lineAtOffset(ctx.text, at - 1);
   if (ctx.text.slice(line.from, at).includes('//')) {
     // A trailing comment ends the line: the semicolon goes before it.
@@ -429,16 +458,42 @@ const addInclude: Rule = (d, ctx) => {
 };
 
 /** Tables and columns that the CREATE TABLE statements of the file and the project declare. */
+let schemaKey: { text: string; files: FixContext['files'] } | null = null;
+let schemaCache = new Map<string, string[]>();
+
+/** The most one table's column list is read: an unclosed "(" cannot make the scan run to the end of a huge text. */
+const MAX_TABLE_SCAN = 20_000;
+
 export function sqlSchema(ctx: FixContext): Map<string, string[]> {
+  if (schemaKey && schemaKey.text === ctx.text && schemaKey.files === ctx.files) return schemaCache;
+  const found = readSchema(ctx);
+  schemaKey = { text: ctx.text, files: ctx.files };
+  schemaCache = found;
+  return found;
+}
+
+function readSchema(ctx: FixContext): Map<string, string[]> {
   const schema = new Map<string, string[]>();
   const sources = [ctx.text, ...(ctx.files ?? []).map((f) => f.text)];
   const create = /create\s+(?:temp(?:orary)?\s+)?table\s+(?:if\s+not\s+exists\s+)?["`[]?(\w+)["`\]]?\s*\(/gi;
   for (const source of sources) {
-    for (const m of source.matchAll(create)) {
+    const starts = [...source.matchAll(create)];
+    for (const [k, m] of starts.entries()) {
       let depth = 1;
       let i = m.index + m[0].length;
       const start = i;
-      for (; i < source.length && depth > 0; i += 1) depth += source[i] === '(' ? 1 : source[i] === ')' ? -1 : 0;
+      // The list ends at its closing ")", at the next CREATE TABLE, at a ";" outside brackets, or at the scan cap.
+      const limit = Math.min(source.length, start + MAX_TABLE_SCAN, starts[k + 1]?.index ?? source.length);
+      for (; i < limit && depth > 0; i += 1) {
+        const ch = source[i];
+        if (ch === '(') depth += 1;
+        else if (ch === ')') depth -= 1;
+        else if (ch === ';' && depth === 1) {
+          i += 1;
+          break;
+        }
+      }
+      if (depth > 0 && i >= limit) i = Math.max(start + 1, i);
       const columns: string[] = [];
       let level = 0;
       let part = '';

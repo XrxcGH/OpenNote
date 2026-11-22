@@ -91,7 +91,7 @@ export const explainPython = {
   },
   pyUnsupportedOperand: {
     what: 'The operator {op} does not work between {left} and {right}.',
-    cause: 'Python will not mix these two types in this operation, for example a number and text.',
+    cause: 'Python will not mix these 2 types in this operation, for example a number and text.',
     next: 'Convert one side first, such as int("5") or str(5). Print both types to see which one is ' + 'unexpected.',
   },
   pyConcatenate: {
@@ -218,7 +218,7 @@ export const explainPython = {
   },
   pySyntaxEquals: {
     what: 'A single = is used where a comparison belongs.',
-    cause: '= stores a value. == compares two values.',
+    cause: '= stores a value. == compares 2 values.',
     next: 'Change = to == in the condition.',
   },
   pySyntaxNeverClosed: {
@@ -250,7 +250,7 @@ export const explainPython = {
   },
   pySyntaxComma: {
     what: 'A comma may be missing.',
-    cause: 'Two values sit next to each other with no comma between them.',
+    cause: 'Values sit next to each other with no comma between them.',
     next: 'Add a comma between the items of the list, tuple, call, or dictionary.',
   },
   pySyntaxAssign: {

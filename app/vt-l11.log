@@ -1,0 +1,22 @@
+[31mfailed to load config from C:\Users\ericj\GitHub\OpenNote\.claude\worktrees\b12-code-L11\app\app\vitest.config.ts[39m
+
+⎯⎯⎯⎯⎯⎯⎯ Startup Error ⎯⎯⎯⎯⎯⎯⎯⎯
+Error: Build failed with 1 error:
+
+[31m[UNRESOLVED_ENTRY] [0mCannot resolve entry module app/vitest.config.ts.
+
+    at aggregateBindingErrorsIntoJsError (file:///C:/Users/ericj/GitHub/OpenNote/.claude/worktrees/b12-code-L11/node_modules/rolldown/dist/shared/error-C7pxws0W.mjs:48:18)
+    at unwrapBindingResult (file:///C:/Users/ericj/GitHub/OpenNote/.claude/worktrees/b12-code-L11/node_modules/rolldown/dist/shared/error-C7pxws0W.mjs:18:128)
+    at #build (file:///C:/Users/ericj/GitHub/OpenNote/.claude/worktrees/b12-code-L11/node_modules/rolldown/dist/shared/rolldown-CgWItHdG.mjs:133:34)
+    at async bundleConfigFile (file:///C:/Users/ericj/GitHub/OpenNote/.claude/worktrees/b12-code-L11/node_modules/vite/dist/node/chunks/node.js:37813:12)
+    at async bundleAndLoadConfigFile (file:///C:/Users/ericj/GitHub/OpenNote/.claude/worktrees/b12-code-L11/node_modules/vite/dist/node/chunks/node.js:37709:18)
+    at async loadConfigFromFile (file:///C:/Users/ericj/GitHub/OpenNote/.claude/worktrees/b12-code-L11/node_modules/vite/dist/node/chunks/node.js:37670:42)
+    at async resolveConfig (file:///C:/Users/ericj/GitHub/OpenNote/.claude/worktrees/b12-code-L11/node_modules/vite/dist/node/chunks/node.js:37271:22)
+    at async resolveConfig$1 (file:///C:/Users/ericj/GitHub/OpenNote/.claude/worktrees/b12-code-L11/node_modules/vitest/dist/chunks/index.C-uw7tH9.js:14778:25)
+    at async createVitest (file:///C:/Users/ericj/GitHub/OpenNote/.claude/worktrees/b12-code-L11/node_modules/vitest/dist/chunks/cli-api.DL4Bd7Vh.js:26:17)
+    at async prepareVitest (file:///C:/Users/ericj/GitHub/OpenNote/.claude/worktrees/b12-code-L11/node_modules/vitest/dist/chunks/cli-api.DL4Bd7Vh.js:421:14) {
+  errors: [Getter/Setter]
+}
+
+
+

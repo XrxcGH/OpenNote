@@ -41,7 +41,15 @@ export function fixesFor(diagnostic: Diagnostic, ctx: FixContext): KindedFix[] {
       // A fix is a convenience: a rule that fails on odd text must not hide the problem.
     }
   }
-  return found.filter((f) => f.edits.every((e) => e.from >= 0 && e.to >= e.from && e.to <= ctx.text.length));
+  const seen = new Set<string>();
+  return found.filter((f) => {
+    if (!f.edits.every((e) => e.from >= 0 && e.to >= e.from && e.to <= ctx.text.length)) return false;
+    // Two fixes that give the same text are one entry in the menu.
+    const result = applyEdits(ctx.text, f.edits);
+    if (seen.has(result)) return false;
+    seen.add(result);
+    return true;
+  });
 }
 
 /** The diagnostics with their fixes added. Diagnostics that already carry fixes keep them. */

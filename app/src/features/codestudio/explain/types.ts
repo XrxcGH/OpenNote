@@ -20,3 +20,6 @@ export const entry = (id: EntryId, pattern: RegExp, samples: readonly string[]):
   pattern,
   samples,
 });
+
+/** One pattern for two spellings of a message. The second spelling names its groups `name2`, `what2`. */
+export const either = (a: RegExp, b: RegExp): RegExp => new RegExp('(?:' + a.source + ')|(?:' + b.source + ')');

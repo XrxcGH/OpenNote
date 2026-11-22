@@ -10,7 +10,7 @@ export const explainDatabase = {
   sqNoColumn: {
     what: 'There is no column named {name}.',
     cause: 'The name is misspelled, or the column is in another table.',
-    next: "Check the spelling against the table's columns. Add the table name before it if two tables" + ' share it.',
+    next: "Check the spelling against the table's columns. Add the table name before it if 2 tables" + ' share it.',
   },
   sqNoFunction: {
     what: 'There is no function named {name}.',
@@ -150,8 +150,8 @@ export const explainDatabase = {
     next: 'Use tostring() first.',
   },
   luaCompare: {
-    what: 'Two values of different types are compared.',
-    cause: '< and > work on two numbers or two strings, not mixed ones, nil, or tables.',
+    what: 'Values of different types are compared.',
+    cause: '< and > work on 2 numbers or 2 strings, not mixed ones, nil, or tables.',
     next: 'Convert one side, or check for nil.',
   },
   luaLength: {

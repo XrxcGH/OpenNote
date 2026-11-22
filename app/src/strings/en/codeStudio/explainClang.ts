@@ -93,7 +93,7 @@ export const explainClang = {
   },
   clInvalidOperands: {
     what: 'The operator cannot be used with {left} and {right}.',
-    cause: 'These two types have no definition for this operator.',
+    cause: 'These 2 types have no definition for this operator.',
     next: 'Convert one side, or compare strings with strcmp or std::string.',
   },
   clCannotInitialize: {
@@ -147,9 +147,9 @@ export const explainClang = {
     next: 'Rename one, or remove the repeat.',
   },
   clConflictingTypes: {
-    what: 'The function {name} is declared two different ways.',
+    what: 'The function {name} is declared 2 different ways.',
     cause: 'The declaration and the definition disagree on types or the number of parameters.',
-    next: 'Make the two match.',
+    next: 'Make the 2 match.',
   },
   clFormatMismatch: {
     what: 'The format code does not match the value.',

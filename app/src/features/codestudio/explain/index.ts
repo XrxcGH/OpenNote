@@ -53,9 +53,12 @@ export interface Explanation {
   raw: string;
 }
 
+/** A message is read only up to here: a runtime's message is short, and a huge one must not stall the matching. */
+export const MAX_MESSAGE = 2000;
+
 /** The message without the file, line, and flag decoration each runtime wraps around it. */
 export function cleanMessage(language: ExplainLanguage, message: string): string {
-  let text = message.replace(/\r/g, '').trim();
+  let text = message.slice(0, MAX_MESSAGE).replace(/\r/g, '').trim();
   if (language === 'python') {
     const lines = text.split('\n').filter((l) => l.trim() !== '');
     text = (lines[lines.length - 1] ?? '').trim();
@@ -73,7 +76,7 @@ export function cleanMessage(language: ExplainLanguage, message: string): string
       .replace(/^(?:fatal error|error|warning):\s*/, '')
       .replace(/\s*\[-W[\w-]+(?:,-W[\w-]+)*\]\s*$/, '');
   } else if (language === 'lua') {
-    text = text.split('\n')[0]!.replace(/^(?:lua:\s*)?(?:[^\s:]+:\d+:\s*)/, '');
+    text = text.split('\n')[0]!.replace(/^(?:lua:\s*)?(?:\[string [^\n]*?\]|[^\s:]+):\d+:\s*/, '');
   } else if (language === 'sql') {
     text = text.split('\n')[0]!.replace(/^(?:Error: |SQLITE_\w+: |sqlite3\.\w+Error: |OperationalError: )/, '');
   } else {
@@ -98,7 +101,9 @@ function words(key: string, values: Values): string {
 /** Named groups of the match, empty ones dropped, plus `message` for entries that quote it. */
 function valuesOf(match: RegExpExecArray, raw: string): Values {
   const values: Values = { message: raw };
-  for (const [name, value] of Object.entries(match.groups ?? {})) if (value !== undefined) values[name] = value;
+  // A pattern with two spellings of one message names the second spelling's groups `name2`, `what2`: they fold back.
+  for (const [name, value] of Object.entries(match.groups ?? {}))
+    if (value !== undefined) values[name.replace(/2$/, '')] = value;
   return values;
 }
 

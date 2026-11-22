@@ -15,6 +15,7 @@ import {
   fixMenu,
   MAX_FIX_DIAGNOSTICS,
   MAX_FIX_TEXT,
+  sqlSchema,
   suggestions,
 } from './index';
 import { distance, limit } from './distance';
@@ -337,7 +338,9 @@ describe('gaps found in review (lane code:L11)', () => {
     const fixed = applyFirst(text, 'python', d);
     expect(fixed).toBe('def f():\n\tif x:\n\t\ty = 1\n');
     expect(fixed).not.toMatch(/\t {2,}/);
-    expect(unfixed(await diagnose('python', fixed), /expected an indented|inconsistent|unindent|unexpected indent/i)).toEqual([]);
+    expect(
+      unfixed(await diagnose('python', fixed), /expected an indented|inconsistent|unindent|unexpected indent/i),
+    ).toEqual([]);
   });
 
   it('keeps tabs under the lines it re-indents and unindents to the matching line', () => {
@@ -423,5 +426,48 @@ describe('fix performance caps', () => {
     expect(menu.items.every((d) => d.fixes?.length)).toBe(true);
     expect(menu.all.map((e) => [e.kind, e.count])).toEqual([['didYouMean', 2]]);
     expect(applyEdits(text, menu.all[0]!.fix.edits)).toBe("print('a')\nprint('b')\n");
+  });
+});
+
+describe('review gaps, second round', () => {
+  // A semicolon inside brackets is a new syntax error. The known answer is the language grammar: a call, an array, and
+  // an object literal take commas.
+  it.each([
+    ['javascript', 'console.log(x y)\n', 'y'],
+    ['javascript', 'foo(1 2)\n', '2'],
+    ['javascript', 'const a = [1 2]\n', '2'],
+    ['javascript', 'const o = {a: 1 b: 2}\n', 'b'],
+  ] as const)('offers no semicolon inside brackets: %s %s', (language, text, token) => {
+    const d = runtime(text, 1, `Syntax error: '${token}' is not expected here`, token);
+    expect(fixesFor(d, { language, text }).filter((f) => f.kind === 'addSemicolon')).toEqual([]);
+  });
+
+  it('still adds the semicolon after a statement, also inside a block or after a closed call', () => {
+    const text = 'function f() {\n  foo(1)\n  bar(2)\n}\n';
+    const d = runtime(text, 3, "Syntax error: 'bar' is not expected here", 'bar');
+    expect(applyFirst(text, 'javascript', d)).toBe('function f() {\n  foo(1);\n  bar(2)\n}\n');
+  });
+
+  it('offers one entry for two fixes that give the same text', () => {
+    const text = 'print("hi)\n';
+    const d = runtime(text, 1, "SyntaxError: '(' was never closed", '(');
+    const results = fixesFor(d, { language: 'python', text }).map((f) => applyEdits(text, f.edits));
+    expect(new Set(results).size).toBe(results.length);
+  });
+
+  it('reads an unclosed CREATE TABLE in bounded time and caches the schema per text', () => {
+    const text = 'create table t (\n'.repeat(17_000) + 'select nme from t;\n';
+    const d = runtime(text, 17_001, 'no such column: nme', 'nme');
+    const ctx = { language: 'sql' as const, text };
+    const start = performance.now();
+    fixesFor(d, ctx);
+    expect(performance.now() - start).toBeLessThan(3000);
+    expect(sqlSchema(ctx)).toBe(sqlSchema(ctx));
+  });
+
+  it('ends a table list at a semicolon', () => {
+    const text = 'create table a (x int;\ncreate table b (y int);\n';
+    const schema = sqlSchema({ language: 'sql', text });
+    expect(schema.get('b')).toEqual(['y']);
   });
 });

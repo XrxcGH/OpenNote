@@ -172,3 +172,57 @@ describe('output captured from the real runtimes', () => {
     );
   });
 });
+
+describe('review gaps, second round', () => {
+  const captured = JSON.parse(readFileSync(new URL('./runtimeCapture.json', import.meta.url), 'utf8')) as {
+    javascript: string[];
+    lua: string[];
+  };
+  // Messages QuickJS 0.32.0 (the app's engine) and Lua 5.4 (wasmoon) really printed.
+  const specific: Record<string, string> = {
+    "TypeError: cannot read property 'x' of undefined": 'jsReadUndefined',
+    "TypeError: cannot read property 'x' of null": 'jsReadUndefined',
+    "TypeError: cannot set property 'x' of undefined": 'jsSetUndefined',
+    'TypeError: not a function': 'jsNotFunctionAnon',
+    "TypeError: 'c' is read-only": 'jsConstAssign',
+    'TypeError: cannot convert to object': 'jsConvertObject',
+    'TypeError: not a constructor': 'jsNotConstructorAnon',
+    "TypeError: class constructors must be invoked with 'new'": 'jsClassNewAnon',
+    'RangeError: invalid array length': 'jsArrayLength',
+    "ReferenceError: 'foo' is not defined": 'jsNotDefined',
+  };
+
+  it('names the specific entry for every captured QuickJS message', () => {
+    for (const message of captured.javascript) {
+      const want = specific[message];
+      if (want) expect(explain({ language: 'javascript', message }).id, message).toBe(want);
+      else expect(explain({ language: 'javascript', message }).id, message).not.toBeNull();
+    }
+    expect(Object.keys(specific).every((m) => captured.javascript.includes(m))).toBe(true);
+  });
+
+  it('fills the name from the QuickJS wording', () => {
+    const e = explain({ language: 'javascript', message: "TypeError: cannot read property 'x' of undefined" });
+    expect(e.what).toBe('The code reads x from undefined.');
+  });
+
+  it('explains every message Lua printed', () => {
+    for (const message of captured.lua) expect(explain({ language: 'lua', message }).id, message).not.toBeNull();
+  });
+
+  it('answers a hostile message in bounded time, in every language', () => {
+    const hostile = [
+      `Error: ${' '.repeat(200_000)}`,
+      `error: ${'a '.repeat(100_000)}`,
+      `TypeError: ${'('.repeat(100_000)}`,
+      `${'x'.repeat(100_000)}:1:${' '.repeat(100_000)}`,
+    ];
+    for (const language of ['python', 'javascript', 'c', 'cpp', 'sql', 'lua'] as const) {
+      for (const message of hostile) {
+        const start = performance.now();
+        explain({ language, message });
+        expect(performance.now() - start, `${language} ${message.slice(0, 12)}`).toBeLessThan(500);
+      }
+    }
+  });
+});

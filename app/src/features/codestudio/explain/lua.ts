@@ -1,7 +1,7 @@
 // Lua's errors (DESIGN 7.2). The messages are Lua 5.4's, from the runtime (ldebug.c, lauxlib.c) and the parser
 // (llex.c, lparser.c). The cleaned message has no `file:line:` prefix.
 
-import { entry, type CatalogEntry } from './types';
+import { either, entry, type CatalogEntry } from './types';
 
 export const LUA_ENTRIES: readonly CatalogEntry[] = [
   entry(
@@ -24,10 +24,14 @@ export const LUA_ENTRIES: readonly CatalogEntry[] = [
   ),
   entry(
     'luaArithmetic',
-    /^attempt to perform arithmetic on a (?<type>\w+) value(?: \((?<kind>[a-z]+) '(?<name>[^']+)'\))?/,
+    either(
+      /^attempt to perform arithmetic on a (?<type>\w+) value(?: \((?<kind>[a-z]+) '(?<name>[^']+)'\))?/,
+      /^attempt to (?:add|sub|mul|div|mod|pow|unm|idiv) a '(?<type2>\w+)' with a '\w+'/,
+    ),
     [
       "attempt to perform arithmetic on a nil value (local 'x')",
       "attempt to perform arithmetic on a string value (constant 'a')",
+      "attempt to add a 'string' with a 'number'",
     ],
   ),
   entry('luaConcat', /^attempt to concatenate a (?<type>\w+) value(?: \((?<kind>[a-z]+) '(?<name>[^']+)'\))?/, [
@@ -46,9 +50,10 @@ export const LUA_ENTRIES: readonly CatalogEntry[] = [
     "bad argument #2 to 'format' (number expected, got string)",
   ]),
   entry('luaStackOverflow', /^stack overflow/, ['stack overflow (message truncated)', 'stack overflow']),
-  entry('luaDivideZero', /^attempt to perform 'n(?:\/\/|%%?)0'/, [
+  entry('luaDivideZero', /^attempt to (?:perform 'n(?:\/\/|%%?)0'|divide by zero)/, [
     "attempt to perform 'n//0'",
     "attempt to perform 'n%%0'",
+    'attempt to divide by zero',
   ]),
   entry('luaNoInteger', /^number has no integer representation/, ['number has no integer representation']),
   entry(
