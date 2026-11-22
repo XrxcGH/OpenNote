@@ -1,9 +1,10 @@
 // checks-disable-file modifiability, length: OOXML part templates, one element to a line as the spec writes them
-//! Exporting the tables of pages to Excel (`.xlsx`) and CSV.
+//! Exporting the tables of pages to Excel (`.xlsx`), CSV, and TSV.
 //!
-//! An Excel export is one workbook with a sheet for each table, named for its page. A CSV export is one file for a
-//! single table, and a folder of files for several. Cells export as the text the page shows: formatting and
-//! pictures in a cell are dropped, and line breaks stay. The first row of a table with a header is bold in Excel.
+//! An Excel export is one workbook with a sheet for each table, named for its page, with formulas, styles, and the
+//! table's sheet settings (ADR 0067). A CSV or TSV export is one file for a single table, and a folder of files for
+//! several. Those cells hold the text the page shows: formatting and pictures in a cell are dropped, and line breaks
+//! stay.
 
 use std::fs;
 use std::path::Path;
@@ -33,6 +34,8 @@ pub enum TableFormat {
     Xlsx,
     /// A comma separated file for each table.
     Csv,
+    /// A tab separated file for each table.
+    Tsv,
 }
 
 impl TableFormat {
@@ -40,6 +43,7 @@ impl TableFormat {
         match self {
             TableFormat::Xlsx => "xlsx",
             TableFormat::Csv => "csv",
+            TableFormat::Tsv => "tsv",
         }
     }
 }
@@ -231,24 +235,25 @@ fn planned_files(
             let path = unique_file(out_dir, title, "xlsx")?;
             vec![(path, bytes)]
         }
-        TableFormat::Csv if tables.len() == 1 => {
-            let path = unique_file(out_dir, &tables[0].name, "csv")?;
-            vec![(path, csv_bytes(&tables[0].rows))]
+        TableFormat::Csv | TableFormat::Tsv if tables.len() == 1 => {
+            let path = unique_file(out_dir, &tables[0].name, format.extension())?;
+            vec![(path, delimited_bytes(&tables[0].rows, format))]
         }
-        TableFormat::Csv => {
+        TableFormat::Csv | TableFormat::Tsv => {
             let root = new_folder(out_dir, title)?;
             let mut names = Vec::new();
             let mut files = Vec::new();
             for table in tables {
                 let stem = sanitize_name(&table.name, "table");
-                let mut file = format!("{stem}.csv");
+                let extension = format.extension();
+                let mut file = format!("{stem}.{extension}");
                 let mut n = 2;
                 while names.contains(&file.to_lowercase()) {
-                    file = format!("{stem} ({n}).csv");
+                    file = format!("{stem} ({n}).{extension}");
                     n += 1;
                 }
                 names.push(file.to_lowercase());
-                files.push((root.join(file), csv_bytes(&table.rows)));
+                files.push((root.join(file), delimited_bytes(&table.rows, format)));
             }
             files
         }
@@ -269,6 +274,7 @@ pub fn export_tables(
     let label = match format {
         TableFormat::Xlsx => "Excel",
         TableFormat::Csv => "CSV",
+        TableFormat::Tsv => "TSV",
     };
     let mut report = Report::new(ReportKind::Export, format!("tables of {} as {label}", plan.title));
     let tables = collect_tables(source, &plan, control, &mut report)?;
@@ -324,22 +330,29 @@ fn cell_text(inlines: &[Inline]) -> String {
 /// CSV with a byte order mark, so Excel reads the text as UTF-8. A cell that a spreadsheet would run as a formula
 /// gets a leading apostrophe.
 fn csv_bytes(rows: &[Vec<String>]) -> Vec<u8> {
+    delimited_bytes(rows, TableFormat::Csv)
+}
+
+/// CSV or TSV with a byte order mark and the formula guard. A cell is quoted only when it holds the separator, a
+/// quote, or a line break.
+fn delimited_bytes(rows: &[Vec<String>], format: TableFormat) -> Vec<u8> {
+    let separator = if format == TableFormat::Tsv { '\t' } else { ',' };
     let mut out = String::from('\u{feff}');
     for row in rows {
-        let line: Vec<String> = row.iter().map(|c| csv_cell(c)).collect();
-        out.push_str(&line.join(","));
+        let line: Vec<String> = row.iter().map(|c| delimited_cell(c, separator)).collect();
+        out.push_str(&line.join(&separator.to_string()));
         out.push_str("\r\n");
     }
     out.into_bytes()
 }
 
-fn csv_cell(text: &str) -> String {
+fn delimited_cell(text: &str, separator: char) -> String {
     let guarded = if runs_as_formula(text) {
         format!("'{text}")
     } else {
         text.to_owned()
     };
-    if guarded.contains([',', '"', '\n', '\r']) {
+    if guarded.contains([separator, '"', '\n', '\r']) {
         format!("\"{}\"", guarded.replace('"', "\"\""))
     } else {
         guarded
@@ -652,6 +665,19 @@ mod tests {
         ]]);
         let text = String::from_utf8(bytes).expect("utf8");
         assert_eq!(text, "\u{feff}\"a,b\",\"say \"\"hi\"\"\",'=1+2,-5\r\n");
+    }
+
+    #[test]
+    fn tsv_separates_with_tabs_and_quotes_only_when_needed() {
+        let rows = [vec![
+            "a,b".to_owned(),
+            "tab\there".to_owned(),
+            "=1+2".to_owned(),
+            "two\nlines".to_owned(),
+        ]];
+        let text = String::from_utf8(delimited_bytes(&rows, TableFormat::Tsv)).expect("utf8");
+        assert_eq!(text, "\u{feff}a,b\t\"tab\there\"\t'=1+2\t\"two\nlines\"\r\n");
+        assert_eq!(TableFormat::Tsv.extension(), "tsv");
     }
 
     #[test]

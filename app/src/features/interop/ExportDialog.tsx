@@ -40,7 +40,7 @@ export interface ExportDialogProps {
 }
 
 const FORMATS: readonly ExportFormat[] = ['markdown', 'html', 'htmlSingle', 'docx'];
-const OFFICE_FORMATS: readonly ExportFormat[] = ['pptx', 'xlsx', 'csv'];
+const OFFICE_FORMATS: readonly ExportFormat[] = ['pptx', 'xlsx', 'csv', 'tsv'];
 
 /**
  * The choices to show: the PDF and the Office choices appear when their flags are on. PDF also needs a way to print
@@ -65,6 +65,7 @@ const formatLabel = (format: ExportFormat) =>
     pptx: t('interop.export.formats.pptx'),
     xlsx: t('interop.export.formats.xlsx'),
     csv: t('interop.export.formats.csv'),
+    tsv: t('interop.export.formats.tsv'),
     latex: t('interopLatex.format'),
     share: t('interop.share.command'),
   })[format];
@@ -79,6 +80,7 @@ const formatHint = (format: ExportFormat) =>
     pptx: t('interop.export.formats.pptxHint'),
     xlsx: t('interop.export.formats.xlsxHint'),
     csv: t('interop.export.formats.csvHint'),
+    tsv: t('interop.export.formats.tsvHint'),
     latex: t('interopLatex.formatHint'),
     share: t('interop.share.intro'),
   })[format];
