@@ -80,5 +80,9 @@ export const JAVASCRIPT_ENTRIES: readonly CatalogEntry[] = [
   entry('jsClassSyntaxError', /^SyntaxError(?::|$)/, ['SyntaxError: example']),
   entry('jsClassReferenceError', /^ReferenceError(?::|$)/, ['ReferenceError: example']),
   entry('jsClassUriError', /^URIError(?::|$)/, ['URIError: URI malformed']),
-  entry('jsClassError', /^(?:Eval)?Error(?::|$)/, ['Error: example', 'Error: setup']),
+  entry('jsClassError', /^(?:Eval|Internal)?Error(?::|$)/, [
+    'Error: example',
+    'Error: setup',
+    'InternalError: out of memory',
+  ]),
 ];

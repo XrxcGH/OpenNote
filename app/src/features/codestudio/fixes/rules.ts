@@ -10,6 +10,7 @@ import { suggestions } from './distance';
 import {
   codeEnd,
   declaredNames,
+  eolOf,
   findWord,
   indentOf,
   indentWidth,
@@ -134,7 +135,7 @@ function importPosition(text: string, prefix: RegExp): { at: number; before: str
     if (line.to >= text.length) break;
   }
   const needsBreak = at > 0 && at >= text.length && !text.endsWith('\n');
-  return { at, before: needsBreak ? '\n' : '' };
+  return { at, before: needsBreak ? eolOf(text) : '' };
 }
 
 const addImport: Rule = (d, ctx) => {
@@ -144,7 +145,12 @@ const addImport: Rule = (d, ctx) => {
   if (!name || !line) return [];
   const { at, before } = importPosition(ctx.text, /^(?:import|from)\s/);
   return [
-    fix('addImport', t('codeStudio.fixes.titles.addImport', { line }), [edit(at, at, `${before}${line}\n`)], true),
+    fix(
+      'addImport',
+      t('codeStudio.fixes.titles.addImport', { line }),
+      [edit(at, at, `${before}${line}${eolOf(ctx.text)}`)],
+      true,
+    ),
   ];
 };
 
@@ -172,7 +178,20 @@ const closeBracket: Rule = (d, ctx) => {
   const closer = CLOSERS[found.open]!;
   const own = found.open === '{' && last !== opener && ctx.language !== 'python';
   const at = codeEnd(last, ctx.language);
-  const insert = own ? `\n${indentOf(opener.text)}${closer}` : closer;
+  // A string left open on that line takes its quote first, so one edit closes both and the checker is satisfied.
+  const spot = ctx.language === 'sql' || ctx.language === 'lua' ? null : quoteSpot(last);
+  // `print("a" + "b)`: the bracket sits inside the string, so the quote goes before it and closes the call too.
+  if (spot?.kept && found.open === '(') {
+    return [
+      fix(
+        'closeBracket',
+        t('codeStudio.fixes.titles.close', { char: closer }),
+        [edit(spot.at, spot.at, spot.quote)],
+        true,
+      ),
+    ];
+  }
+  const insert = (spot?.quote ?? '') + (own ? `${eolOf(ctx.text)}${indentOf(opener.text)}${closer}` : closer);
   return [fix('closeBracket', t('codeStudio.fixes.titles.close', { char: closer }), [edit(at, at, insert)], true)];
 };
 
@@ -194,11 +213,10 @@ function openQuote(line: Line): { quote: string; at: number } | null {
   return quote ? { quote, at } : null;
 }
 
-const closeQuote: Rule = (d, ctx) => {
-  if (d.severity !== 'error' || ctx.language === 'sql' || ctx.language === 'lua') return [];
-  const line = around(d, ctx.text);
+/** Where the closing quote of a string left open on `line` goes, and how many brackets after it stay. */
+function quoteSpot(line: Line): { quote: string; at: number; kept: boolean } | null {
   const open = openQuote(line);
-  if (!open) return [];
+  if (!open) return null;
   const rest = line.text.slice(open.at + 1);
   // `print("hi)`: the brackets that close the call come after the closing quote.
   let depth = 0;
@@ -206,9 +224,20 @@ const closeQuote: Rule = (d, ctx) => {
   const trailing = /[)\]};,\s]*$/.exec(rest)![0];
   const closers = trailing.replace(/[\s;,]/g, '').length;
   const keep = depth > 0 && closers > 0 && closers <= depth ? trailing.length : /\s*;?$/.exec(rest)![0].length;
-  const at = line.from + line.text.length - keep;
+  return { quote: open.quote, at: line.from + line.text.length - keep, kept: keep === trailing.length && closers > 0 };
+}
+
+const closeQuote: Rule = (d, ctx) => {
+  if (d.severity !== 'error' || ctx.language === 'sql' || ctx.language === 'lua') return [];
+  const spot = quoteSpot(around(d, ctx.text));
+  if (!spot) return [];
   return [
-    fix('closeQuote', t('codeStudio.fixes.titles.closeQuote', { char: open.quote }), [edit(at, at, open.quote)], true),
+    fix(
+      'closeQuote',
+      t('codeStudio.fixes.titles.closeQuote', { char: spot.quote }),
+      [edit(spot.at, spot.at, spot.quote)],
+      true,
+    ),
   ];
 };
 
@@ -222,18 +251,28 @@ function previousLine(ctx: FixContext, line: Line, keep: (l: Line) => boolean): 
   return null;
 }
 
-/** Sets the indentation of `line` and of the deeper lines under it, keeping their relative depth. */
+/**
+ * Sets the indentation of `line` and of the deeper lines under it, keeping their relative depth. The new indent keeps
+ * the file's own characters: the target string, then whatever the line had beyond its own first indent.
+ */
 function reindent(ctx: FixContext, line: Line, indent: string): TextEdit[] {
-  const before = indentWidth(indentOf(line.text));
-  const target = indentWidth(indent);
+  const own = indentOf(line.text);
+  const before = indentWidth(own);
   const edits: TextEdit[] = [];
   for (let l: Line | null = line; l; l = lineNumbered(ctx.text, l.number + 1)) {
     if (isBlank(l)) continue;
     const mine = indentOf(l.text);
     if (l !== line && indentWidth(mine) <= before) break;
-    edits.push(edit(l.from, l.from + mine.length, ' '.repeat(Math.max(0, target + indentWidth(mine) - before))));
+    const extra = mine.startsWith(own) ? mine.slice(own.length) : ' '.repeat(Math.max(0, indentWidth(mine) - before));
+    edits.push(edit(l.from, l.from + mine.length, indent + extra));
   }
   return edits;
+}
+
+/** One step of indentation in the file's style: a tab when the block header or the file indents with tabs. */
+function indentUnit(ctx: FixContext, header: Line): string {
+  const own = indentOf(header.text);
+  return own.includes('\t') || (!own && /^\t/m.test(ctx.text)) ? '\t' : '    ';
 }
 
 const fixIndent: Rule = (d, ctx) => {
@@ -245,28 +284,51 @@ const fixIndent: Rule = (d, ctx) => {
     const indent = indentOf(line.text);
     return make([edit(line.from, line.from + indent.length, ' '.repeat(indentWidth(indent)))]);
   }
-  if (/expected an indented block/i.test(d.message)) {
+  let kind = /expected an indented block/i.test(d.message)
+    ? 'block'
+    : /unexpected indent/i.test(d.message)
+      ? 'unexpected'
+      : /unindent does not match|inconsistent use of tabs/i.test(d.message)
+        ? 'unindent'
+        : '';
+  if (!kind && /^Syntax error: .+ is not expected here/.test(d.message)) {
+    // The editor's own parser does not name the indentation problem: read it from the lines around.
+    const prev = previousLine(ctx, line, () => true);
+    if (prev && !isBlank(line)) {
+      const mine = indentWidth(indentOf(line.text));
+      const theirs = indentWidth(indentOf(prev.text));
+      if (blockHeader(prev) && mine <= theirs) kind = 'block';
+      else if (!blockHeader(prev) && mine > theirs) kind = 'unexpected';
+    }
+  }
+  if (kind === 'block') {
     const header = previousLine(ctx, line, blockHeader);
     if (!header) return [];
-    const unit = indentOf(header.text).includes('\t') ? '\t' : '    ';
-    if (isBlank(line)) return make([edit(header.to, header.to, `\n${indentOf(header.text)}${unit}pass`)]);
+    const unit = indentUnit(ctx, header);
+    if (isBlank(line)) {
+      return make([edit(header.to, header.to, `${eolOf(ctx.text)}${indentOf(header.text)}${unit}pass`)]);
+    }
     return make(reindent(ctx, line, indentOf(header.text) + unit));
   }
-  if (/unexpected indent/i.test(d.message)) {
+  if (kind === 'unexpected') {
     const prev = previousLine(ctx, line, () => true);
     return prev ? make(reindent(ctx, line, indentOf(prev.text))) : [];
   }
-  if (/unindent does not match|inconsistent use of tabs/i.test(d.message)) {
+  if (kind === 'unindent') {
     const mine = indentWidth(indentOf(line.text));
-    let best = 0;
+    let best = '';
+    let bestWidth = 0;
     for (let n = line.number - 1; n >= 1; n -= 1) {
       const l = lineNumbered(ctx.text, n);
       if (l && !isBlank(l)) {
         const w = indentWidth(indentOf(l.text));
-        if (w < mine && w > best) best = w;
+        if (w < mine && w > bestWidth) {
+          best = indentOf(l.text);
+          bestWidth = w;
+        }
       }
     }
-    return make(reindent(ctx, line, ' '.repeat(best)));
+    return make(reindent(ctx, line, best));
   }
   return [];
 };
@@ -293,7 +355,12 @@ const addSemicolon: Rule = (d, ctx) => {
   if (!before || ';{}(,[=+-*/&|<>:?!.'.includes(before)) return [];
   if (unexpected && !/[\p{L}\p{N}_$)\]"'`]/u.test(before)) return [];
   const line = lineAtOffset(ctx.text, at - 1);
-  if (ctx.text.slice(line.from, at).includes('//')) return [];
+  if (ctx.text.slice(line.from, at).includes('//')) {
+    // A trailing comment ends the line: the semicolon goes before it.
+    const end = codeEnd(line, ctx.language);
+    if (end <= line.from || ';{}(,[=+-*/&|<>:?!.'.includes(ctx.text[end - 1]!)) return [];
+    return [fix('addSemicolon', t('codeStudio.fixes.titles.addSemicolon'), [edit(end, end, ';')], true)];
+  }
   return [fix('addSemicolon', t('codeStudio.fixes.titles.addSemicolon'), [edit(at, at, ';')], true)];
 };
 
@@ -355,7 +422,7 @@ const addInclude: Rule = (d, ctx) => {
     fix(
       'addInclude',
       t('codeStudio.fixes.titles.include', { line }),
-      [edit(at, at, `${before}${line}\n${blank}`)],
+      [edit(at, at, `${before}${line}${eolOf(ctx.text)}${blank && eolOf(ctx.text)}`)],
       true,
     ),
   ];
@@ -417,6 +484,18 @@ const sqlName: Rule = (d, ctx) => {
   );
 };
 
+let membersText: string | null = null;
+let membersCache: string[] = [];
+
+/** The names used after a dot anywhere in the file, found once per text. */
+function usedMembers(text: string): string[] {
+  if (membersText !== text) {
+    membersCache = [...new Set([...text.matchAll(/\.([\p{L}_$][\p{L}\p{N}_$]*)/gu)].map((m) => m[1]!))];
+    membersText = text;
+  }
+  return membersCache;
+}
+
 /** `AttributeError: 'Foo' object has no attribute 'lenght'`: the names used after a dot in the file, and the type's table. */
 const attribute: Rule = (d, ctx) => {
   const m = /has no attribute '(\w+)'/.exec(d.message);
@@ -428,7 +507,7 @@ const attribute: Rule = (d, ctx) => {
   const at = line.from + dot.index + dot[0].length - wrong.length;
   const pool = new Set<string>();
   for (const member of membersOf(ctx.language, ctx.text, dot[1]!, at)) pool.add(member.name);
-  for (const used of ctx.text.matchAll(/\.([\p{L}_$][\p{L}\p{N}_$]*)/gu)) pool.add(used[1]!);
+  for (const used of usedMembers(ctx.text)) pool.add(used);
   pool.delete(wrong);
   return suggestions(wrong, pool).map((candidate, i) =>
     fix(

@@ -11,6 +11,26 @@ export { FIX_KINDS, sqlSchema } from './rules';
 export type { FixKind, KindedFix } from './rules';
 export type { FixContext } from './source';
 
+/** Fixes are a convenience on the typing path: past these sizes they are skipped, so a huge file never freezes. */
+export const MAX_FIX_DIAGNOSTICS = 150;
+export const MAX_FIX_TEXT = 500_000;
+
+const remembered = new WeakMap<Diagnostic, { text: string; fixes: KindedFix[] }>();
+
+/** The diagnostics that get fixes: none in a text over the size cap, else the first ones. */
+function eligible(items: readonly Diagnostic[], ctx: FixContext): readonly Diagnostic[] {
+  return ctx.text.length > MAX_FIX_TEXT ? [] : items.slice(0, MAX_FIX_DIAGNOSTICS);
+}
+
+/** `fixesFor`, remembered per diagnostic so `attachFixes`, `fixKindsIn` and `fixAll` do the work once. */
+function cachedFixes(diagnostic: Diagnostic, ctx: FixContext): KindedFix[] {
+  const hit = remembered.get(diagnostic);
+  if (hit && hit.text === ctx.text) return hit.fixes;
+  const fixes = fixesFor(diagnostic, ctx);
+  remembered.set(diagnostic, { text: ctx.text, fixes });
+  return fixes;
+}
+
 /** The fixes one diagnostic offers, best first. A rule that cannot read the diagnostic offers nothing. */
 export function fixesFor(diagnostic: Diagnostic, ctx: FixContext): KindedFix[] {
   const found: KindedFix[] = [];
@@ -26,9 +46,10 @@ export function fixesFor(diagnostic: Diagnostic, ctx: FixContext): KindedFix[] {
 
 /** The diagnostics with their fixes added. Diagnostics that already carry fixes keep them. */
 export function attachFixes(items: readonly Diagnostic[], ctx: FixContext): Diagnostic[] {
+  const allowed = new Set(eligible(items, ctx));
   return items.map((item) => {
-    if (item.fixes?.length) return item;
-    const fixes = fixesFor(item, ctx);
+    if (item.fixes?.length || !allowed.has(item)) return item;
+    const fixes = cachedFixes(item, ctx);
     return fixes.length ? { ...item, fixes } : item;
   });
 }
@@ -52,8 +73,8 @@ export function fixAll(diagnostics: readonly Diagnostic[], ctx: FixContext, kind
   const taken: TextEdit[] = [];
   let count = 0;
   let title = '';
-  for (const d of diagnostics) {
-    const best = fixesFor(d, ctx).find((f) => f.kind === kind);
+  for (const d of eligible(diagnostics, ctx)) {
+    const best = cachedFixes(d, ctx).find((f) => f.kind === kind);
     if (!best) continue;
     if (best.edits.some((e) => taken.some((t) => overlaps(e, t) || sameSpot(e, t)))) continue;
     taken.push(...best.edits);
@@ -66,9 +87,29 @@ export function fixAll(diagnostics: readonly Diagnostic[], ctx: FixContext, kind
 /** The kinds of fix the diagnostics offer, with how many of each, for the "Fix all" menu entries. */
 export function fixKindsIn(diagnostics: readonly Diagnostic[], ctx: FixContext): Map<FixKind, number> {
   const counts = new Map<FixKind, number>();
-  for (const d of diagnostics) {
-    const first = fixesFor(d, ctx)[0];
+  for (const d of eligible(diagnostics, ctx)) {
+    const first = cachedFixes(d, ctx)[0];
     if (first) counts.set(first.kind, (counts.get(first.kind) ?? 0) + 1);
   }
   return new Map(FIX_KINDS.filter((k) => counts.has(k)).map((k) => [k, counts.get(k)!]));
+}
+
+/** One entry of the "Fix all" menu. */
+export interface FixAllEntry {
+  kind: FixKind;
+  count: number;
+  fix: Fix;
+}
+
+/**
+ * What the editor needs for the Ctrl+. menu and the lightbulb: the diagnostics with their fixes, and one "Fix all of
+ * this kind" entry per kind that has two or more fixes. The integrating lanes call this on each diagnostic result.
+ */
+export function fixMenu(items: readonly Diagnostic[], ctx: FixContext): { items: Diagnostic[]; all: FixAllEntry[] } {
+  const all: FixAllEntry[] = [];
+  for (const [kind, count] of fixKindsIn(items, ctx)) {
+    const fix = fixAll(items, ctx, kind);
+    if (fix) all.push({ kind, count, fix });
+  }
+  return { items: attachFixes(items, ctx), all };
 }

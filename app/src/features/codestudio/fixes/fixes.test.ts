@@ -6,7 +6,17 @@ import type { Diagnostic } from '../contracts';
 import { analyze } from '../diagnostics/analyze';
 import { toDiagnostic } from '../diagnostics/providers';
 import type { EditorLanguage } from '../diagnostics/types';
-import { applyEdits, attachFixes, fixAll, fixesFor, fixKindsIn, suggestions } from './index';
+import {
+  applyEdits,
+  attachFixes,
+  fixAll,
+  fixesFor,
+  fixKindsIn,
+  fixMenu,
+  MAX_FIX_DIAGNOSTICS,
+  MAX_FIX_TEXT,
+  suggestions,
+} from './index';
 import { distance, limit } from './distance';
 
 async function diagnose(language: EditorLanguage, text: string): Promise<Diagnostic[]> {
@@ -315,5 +325,103 @@ describe('the fix service', () => {
     expect(fixed).toBe("print('a')\nprint('b')\nprint('c')\n");
     expect((await diagnose('python', fixed)).filter((d) => d.code === 'F821')).toEqual([]);
     expect(fixAll(items.slice(0, 1), ctx, 'didYouMean')).toBeNull();
+  });
+});
+
+describe('gaps found in review (lane code:L11)', () => {
+  const unfixed = (items: Diagnostic[], re: RegExp) => items.filter((d) => re.test(d.message));
+
+  it('indents a tab-indented block with tabs, so the checker is satisfied', async () => {
+    const text = 'def f():\n\tif x:\n\ty = 1\n';
+    const d = runtime(text, 3, 'IndentationError: expected an indented block after if statement on line 2');
+    const fixed = applyFirst(text, 'python', d);
+    expect(fixed).toBe('def f():\n\tif x:\n\t\ty = 1\n');
+    expect(fixed).not.toMatch(/\t {2,}/);
+    expect(unfixed(await diagnose('python', fixed), /expected an indented|inconsistent|unindent|unexpected indent/i)).toEqual([]);
+  });
+
+  it('keeps tabs under the lines it re-indents and unindents to the matching line', () => {
+    const text = 'def f():\n\tif x:\n\ty = 1\n\t\tz = 2\n';
+    const d = runtime(text, 3, 'IndentationError: expected an indented block after if statement on line 2');
+    expect(applyFirst(text, 'python', d)).toBe('def f():\n\tif x:\n\t\ty = 1\n\t\t\tz = 2\n');
+    const bad = 'if a:\n\tx = 1\n\t\ty = 2\n      z = 3\n';
+    const u = runtime(bad, 4, 'IndentationError: unindent does not match any outer indentation level');
+    expect(applyFirst(bad, 'python', u)).toBe('if a:\n\tx = 1\n\t\ty = 2\n\tz = 3\n');
+  });
+
+  it('closes the open string and the bracket in one edit', async () => {
+    const text = 'print("a" + "b)\nx = 1\n';
+    const items = await diagnose('python', text);
+    const never = items.find((d) => /never closed/.test(d.message))!;
+    const fixed = applyFirst(text, 'python', never);
+    expect(fixed).toBe('print("a" + "b")\nx = 1\n');
+    expect(unfixed(await diagnose('python', fixed), /never closed|unterminated/i)).toEqual([]);
+  });
+
+  it("reads the editor parser's indentation errors, not only the runtime text", () => {
+    const text = 'x = 1\n    y = 2\n';
+    const unexpected = { ...runtime(text, 2, 'Syntax error: y is not expected here', 'y'), source: 'lezer' as const };
+    expect(applyFirst(text, 'python', unexpected)).toBe('x = 1\ny = 2\n');
+    const block = 'def f():\ny = 1\n';
+    const lezer = { ...runtime(block, 2, 'Syntax error: y is not expected here', 'y'), source: 'lezer' as const };
+    expect(applyFirst(block, 'python', lezer)).toBe('def f():\n    y = 1\n');
+  });
+
+  it("keeps the file's CRLF line endings in every insert", () => {
+    const text = 'def f():\r\nx = 1\r\n';
+    const d = runtime(text, 2, 'IndentationError: expected an indented block after function definition on line 1');
+    expect(applyFirst(text, 'python', d)).not.toMatch(/(?<!\r)\n/);
+    const blank = 'def f():\r\n';
+    const e = runtime(blank, 1, 'IndentationError: expected an indented block after function definition on line 1');
+    expect(applyFirst(blank, 'python', { ...e, from: blank.length, to: blank.length })).not.toMatch(/(?<!\r)\n/);
+    const imp = 'x = math.pi\r\n';
+    const n = runtime(imp, 1, "NameError: name 'math' is not defined", 'math');
+    expect(applyFirst(imp, 'python', n)).toBe('import math\r\nx = math.pi\r\n');
+    const c = 'int main() {\r\n  return 0;\r\n';
+    const open: Diagnostic = { ...runtime(c, 1, "'{' was never closed"), source: 'opennote' };
+    expect(applyFirst(c, 'c', open)).not.toMatch(/(?<!\r)\n/);
+  });
+
+  it('adds the semicolon before a trailing comment', () => {
+    const text = 'int a = 1 // note\nint b = 2;\n';
+    const d = { ...runtime(text, 1, "expected ';' at end of declaration"), from: 17, to: 17 };
+    expect(applyFirst(text, 'c', d)).toBe('int a = 1; // note\nint b = 2;\n');
+  });
+});
+
+describe('fix performance caps', () => {
+  it('stays fast with thousands of diagnostics in a large file', () => {
+    const lines = Array.from({ length: 3000 }, (_, i) => `v${i} = prnt(${i})  # filler text for a long line ......`);
+    const text = lines.join('\n') + '\n';
+    expect(text.length).toBeGreaterThan(100_000);
+    const items = lines.map((_, i) => runtime(text, i + 1, "NameError: name 'prnt' is not defined", 'prnt'));
+    const ctx = { language: 'python' as const, text };
+    const start = performance.now();
+    const attached = attachFixes(items, ctx);
+    const kinds = fixKindsIn(items, ctx);
+    const all = fixAll(items, ctx, 'didYouMean');
+    const ms = performance.now() - start;
+    expect(ms).toBeLessThan(3000);
+    expect(attached.filter((d) => d.fixes?.length).length).toBe(MAX_FIX_DIAGNOSTICS);
+    expect(kinds.get('didYouMean')).toBe(MAX_FIX_DIAGNOSTICS);
+    expect(all?.edits.length).toBe(MAX_FIX_DIAGNOSTICS);
+  });
+
+  it('offers nothing in a text over the size cap', () => {
+    const text = `${'#'.repeat(MAX_FIX_TEXT)}\npritn('a')\n`;
+    const d = runtime(text, 2, "NameError: name 'pritn' is not defined", 'pritn');
+    expect(attachFixes([d], { language: 'python', text })[0]!.fixes).toBeUndefined();
+  });
+
+  it('builds the Ctrl+. menu data: fixes on each diagnostic and one Fix all entry per kind', () => {
+    const text = "pritn('a')\nprtin('b')\n";
+    const items = [
+      runtime(text, 1, "NameError: name 'pritn' is not defined", 'pritn'),
+      runtime(text, 2, "NameError: name 'prtin' is not defined", 'prtin'),
+    ];
+    const menu = fixMenu(items, { language: 'python', text });
+    expect(menu.items.every((d) => d.fixes?.length)).toBe(true);
+    expect(menu.all.map((e) => [e.kind, e.count])).toEqual([['didYouMean', 2]]);
+    expect(applyEdits(text, menu.all[0]!.fix.edits)).toBe("print('a')\nprint('b')\n");
   });
 });

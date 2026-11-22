@@ -36,6 +36,7 @@ export const SQLITE_ENTRIES: readonly CatalogEntry[] = [
     'misuse of aggregate: sum()',
     'misuse of aggregate function count()',
   ]),
+  entry('sqSystemTable', /^table (?<name>\S+) may not be modified/, ['table sqlite_master may not be modified']),
   entry('sqDatatype', /^datatype mismatch/, ['datatype mismatch']),
   entry('sqLocked', /^database (?:table )?is locked/, ['database is locked', 'database table is locked']),
   entry('sqReadonly', /^attempt to write a readonly database/, ['attempt to write a readonly database']),

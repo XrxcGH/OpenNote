@@ -18,25 +18,48 @@ export interface Line {
   text: string;
 }
 
-export function lineAtOffset(text: string, offset: number): Line {
-  const at = Math.max(0, Math.min(offset, text.length));
-  const from = text.lastIndexOf('\n', at - 1) + 1;
-  let to = text.indexOf('\n', at);
+/** One-entry caches: a pass over many diagnostics of one file reads the same text again and again. */
+let startsText: string | null = null;
+let startsCache: number[] = [];
+
+/** The offset where each line starts, built once per text. */
+export function lineStarts(text: string): number[] {
+  if (startsText === text) return startsCache;
+  const starts = [0];
+  for (let i = text.indexOf('\n'); i >= 0; i = text.indexOf('\n', i + 1)) starts.push(i + 1);
+  startsText = text;
+  startsCache = starts;
+  return starts;
+}
+
+/** The line break of the file: CRLF when the text has one, else LF. */
+export function eolOf(text: string): string {
+  return text.includes('\r\n') ? '\r\n' : '\n';
+}
+
+function lineFromStart(text: string, from: number, number: number): Line {
+  let to = text.indexOf('\n', from);
   if (to < 0) to = text.length;
   if (to > from && text[to - 1] === '\r') to -= 1;
-  let number = 1;
-  for (let i = text.indexOf('\n'); i >= 0 && i < from; i = text.indexOf('\n', i + 1)) number += 1;
   return { number, from, to, text: text.slice(from, to) };
 }
 
-export function lineNumbered(text: string, number: number): Line | null {
-  let from = 0;
-  for (let n = 1; n < number; n += 1) {
-    const next = text.indexOf('\n', from);
-    if (next < 0) return null;
-    from = next + 1;
+export function lineAtOffset(text: string, offset: number): Line {
+  const at = Math.max(0, Math.min(offset, text.length));
+  const starts = lineStarts(text);
+  let lo = 0;
+  let hi = starts.length - 1;
+  while (lo < hi) {
+    const mid = (lo + hi + 1) >> 1;
+    if (starts[mid]! <= at) lo = mid;
+    else hi = mid - 1;
   }
-  return lineAtOffset(text, from);
+  return lineFromStart(text, starts[lo]!, lo + 1);
+}
+
+export function lineNumbered(text: string, number: number): Line | null {
+  const from = lineStarts(text)[number - 1];
+  return number < 1 || from === undefined ? null : lineFromStart(text, from, number);
 }
 
 /** The offset just past the code on a line: before trailing spaces and a trailing comment. */
@@ -86,6 +109,17 @@ export function findWord(text: string, word: string, from: number, to: number, n
 
 /** The names a file declares: functions, classes, variables, parameters, imports, and C declarations. */
 export function declaredNames(text: string): Set<string> {
+  if (namesText !== text) {
+    namesCache = computeDeclaredNames(text);
+    namesText = text;
+  }
+  return new Set(namesCache);
+}
+
+let namesText: string | null = null;
+let namesCache: Set<string> = new Set();
+
+function computeDeclaredNames(text: string): Set<string> {
   const names = new Set<string>();
   const add = (name: string | undefined) => {
     if (name) names.add(name);

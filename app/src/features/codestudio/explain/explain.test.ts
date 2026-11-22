@@ -1,10 +1,11 @@
 // The explanation catalog (DESIGN 7.2, lane code:L11). Every entry carries messages the runtime or compiler really
 // prints. A pattern that drifts away from them, or an entry without words, fails here.
 
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { codeStudioExplain } from '../../../strings/en/codeStudio/explain';
 import { PYTHON_BUILTINS } from '../diagnostics/pythonNames';
-import { CATALOG, cleanMessage, explain, indexHint, type ExplainLanguage } from './index';
+import { CATALOG, cleanMessage, explain, fixArticles, indexHint, type ExplainLanguage } from './index';
 import { CLANG_ENTRIES } from './clang';
 
 const LANGUAGES: ExplainLanguage[] = ['python', 'javascript', 'c', 'sql', 'lua'];
@@ -76,8 +77,7 @@ describe('messages the runtimes printed in their own suites', () => {
     ];
     for (const [message, id] of captured) {
       const found = explain({ language: 'javascript', message }).id;
-      // QuickJS names its own InternalError, which the catalog does not know.
-      expect(found, message).toBe(message.startsWith('InternalError') ? null : id);
+      expect(found, message).toBe(id);
     }
   });
 });
@@ -135,5 +135,40 @@ describe('explain', () => {
     expect(indexHint({ index: 0, length: 0 })).toContain('is empty');
     expect(indexHint({ index: 1 })).toBeUndefined();
     expect(explain({ language: 'python', message: 'IndexError: list index out of range' }).hint).toBeUndefined();
+  });
+});
+
+describe('output captured from the real runtimes', () => {
+  // runtimeCapture.json holds what CPython and SQLite printed for deliberately failing snippets (CPython 3.14.6 and
+  // SQLite 3.50.4 through their standard Python modules). The Pyodide pack runs CPython 3.12, whose wording is the same
+  // for these classes. A pattern that drifts from the runtimes fails here.
+  const captured = JSON.parse(readFileSync(new URL('./runtimeCapture.json', import.meta.url), 'utf8')) as {
+    python: string[];
+    sqlite: string[];
+  };
+
+  it('explains every message CPython printed', () => {
+    for (const message of captured.python) {
+      expect(explain({ language: 'python', message }).id, message).not.toBeNull();
+    }
+  });
+
+  it('explains every message SQLite printed', () => {
+    for (const message of captured.sqlite) {
+      expect(explain({ language: 'sql', message }).id, message).not.toBeNull();
+    }
+  });
+
+  it('knows the InternalError of QuickJS', () => {
+    expect(explain({ language: 'javascript', message: 'InternalError: out of memory' }).id).toBe('jsClassError');
+  });
+
+  it('writes "An int", not "A int"', () => {
+    const e = explain({ language: 'python', message: "TypeError: 'int' object is not subscriptable" });
+    expect(`${e.what} ${e.cause}`).not.toMatch(/\bA int\b/);
+    expect(e.what).toMatch(/^An int/);
+    expect(fixArticles('A user, A union, A one, A string, A object')).toBe(
+      'A user, A union, A one, A string, An object',
+    );
   });
 });

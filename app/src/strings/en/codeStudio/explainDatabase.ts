@@ -87,6 +87,11 @@ export const explainDatabase = {
     cause: 'sum(), count(), and similar cannot go in a WHERE clause.',
     next: 'Use HAVING after GROUP BY, or a subquery.',
   },
+  sqSystemTable: {
+    what: 'The table {name} belongs to SQLite and cannot be changed.',
+    cause: 'SQLite keeps its own bookkeeping in tables such as sqlite_master.',
+    next: 'Change your own tables. Use CREATE, ALTER, or DROP to change the schema.',
+  },
   sqDatatype: {
     what: 'The value does not fit the column type.',
     cause: 'A column such as INTEGER PRIMARY KEY accepts only whole numbers.',

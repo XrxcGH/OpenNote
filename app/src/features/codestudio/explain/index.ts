@@ -84,8 +84,15 @@ export function cleanMessage(language: ExplainLanguage, message: string): string
 
 type Values = Record<string, string | number>;
 
+/** "A int" becomes "An int": the sentences start with "A" before a name that comes from the message. */
+export function fixArticles(text: string): string {
+  return text.replace(/\bA (?=(?:[aeiAEI]|o(?!ne\b)|u(?!ni|se|ti|rl))\w*)/g, 'An ');
+}
+
 function words(key: string, values: Values): string {
-  return (t as (k: MessageKey, p?: Values) => string)(`codeStudio.explain.entries.${key}` as MessageKey, values);
+  return fixArticles(
+    (t as (k: MessageKey, p?: Values) => string)(`codeStudio.explain.entries.${key}` as MessageKey, values),
+  );
 }
 
 /** Named groups of the match, empty ones dropped, plus `message` for entries that quote it. */
@@ -95,7 +102,11 @@ function valuesOf(match: RegExpExecArray, raw: string): Values {
   return values;
 }
 
-/** Valid indexes of a sequence, in words, from the index that failed and the length when the trace has them. */
+/**
+ * Valid indexes of a sequence, in words, from the index that failed and the length when the trace has them. CPython's
+ * IndexError text carries neither, so the caller supplies the hints: the debug frame (lane code:L08) or a re-evaluation
+ * of the failing subscript. Without hints the explanation simply has no index sentence.
+ */
 export function indexHint(hints: RuntimeHints | undefined): string | undefined {
   if (!hints || hints.index === undefined || hints.length === undefined) return undefined;
   const { index, length } = hints;
