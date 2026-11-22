@@ -5,6 +5,10 @@
 
 import { describe, expect, it } from 'vitest';
 import '../features';
+// The pages area's second pass registers with the first page. A start-up command can refine one of its commands (the
+// code studio's Shift+F5 refines Present page), so it is checked here with the rest.
+// eslint-disable-next-line opennote/feature-boundaries -- The test loads a registration that runs late, inside its feature.
+import '../features/pages/registerMore';
 import { defaultConflicts, scopeDepth, setKeys } from '../commands/keymap';
 import { isChordText } from '../commands/registry';
 import { chordProblem } from '../commands/reserved';

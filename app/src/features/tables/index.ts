@@ -18,3 +18,4 @@ import './sheet/structure/hooks';
 export { readSheet, tableName } from './sheet/model';
 export { canvasMeasure } from './sheet/structure/fit';
 export { rowHeight } from './sheet/structure/lines';
+export * from './tools';

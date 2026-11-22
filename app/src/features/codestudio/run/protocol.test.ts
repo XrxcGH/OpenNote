@@ -133,6 +133,14 @@ describe('page messages inside the worker', () => {
     expect(readRequest({ ...request, files: [...request.files, { path: 'main.py', text: 'again' }] })).toBeNull();
   });
 
+  it('keeps the compile choices of Settings, then Code, and drops anything else in them', () => {
+    expect(
+      readRequest({ ...request, compile: { standard: 'c++17', warnings: false, flags: ['-O3'] } })?.compile,
+    ).toEqual({ standard: 'c++17', warnings: false });
+    expect(readRequest({ ...request, compile: { standard: 'x'.repeat(17), warnings: 'no' } })?.compile).toEqual({});
+    expect(readRequest(request)?.compile).toBeUndefined();
+  });
+
   it('drops written files outside the project', () => {
     for (const path of ['../../x', '/etc/passwd', 'C:/x.txt', 'a\\b.txt', 'a/./b.txt']) {
       expect(readMessage({ kind: 'done', status: 'ok', message: '', written: [{ path, text: 'x' }] })).toBeNull();
