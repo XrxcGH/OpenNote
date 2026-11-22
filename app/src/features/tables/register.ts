@@ -3,3 +3,4 @@
 import './ui/toolbar/register';
 import './keys/register';
 import './ui/formatCells/register';
+import './ui/formulaBar/register';

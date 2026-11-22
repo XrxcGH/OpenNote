@@ -159,4 +159,8 @@ export const SHORT: Readonly<Record<string, string>> = {
     'See how a computer stores a number or a character: integer bits, overflow, other bases, floating-point values, and text bytes',
   'Work out spindle speed, feed rate, mater':
     'Work out spindle speed, feed rate, removal rate, and cutting time for a cut, find tool life, and read the tool forces',
+  'The logic for sort by value, fill color,':
+    'Table logic for sorts by value, color, or icon, more filters, remove duplicates, trim spaces, text to columns, and find in a table',
+  'A tool window that can pop out, with tab':
+    'A tool window that pops out, with tabs or a file tree, a console, Problems and Tests panels, and a status bar',
 };

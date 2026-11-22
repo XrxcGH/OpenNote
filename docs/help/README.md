@@ -27,11 +27,14 @@ Every picture is a real screenshot of the app, and most pages have one. [The scr
 ## Write
 
 - [Typed notes](typed-notes.md): text, lists, checklists, the slash menu, templates, and find and replace.
+- [Text formatting](text-formatting.md): fonts, the Format pane, the ruler, language and direction, footnotes, comments and suggestions, and paste.
 - [Moving between blocks](moving-between-blocks.md): the keys that move between text, images, tables, and code.
 - [Math and graphs](math-and-graphs.md): equations, quick math, the grapher, and diagrams.
 - [Math solvers](math-solvers.md): integrals, differential equations, transforms, series, roots, uncertainty, probability, matrices, and projectiles, with worked steps.
 - [3D graphs, vectors, and motion](3d-graphs-vectors-and-motion.md): surfaces, curves, vectors, solids, and projectiles.
 - [Tables and charts](tables-and-charts.md): smart tables, formulas, views, and charts.
+- [Table formatting](table-formatting.md): cell formats and number format codes.
+- [Table function reference](table-functions.md): every formula function, generated from the registry.
 - [Language and spelling](language-and-spelling.md): American English by default, the other dialects and languages, and what the choice sets.
 - [Engineering tools](engineering-tools.md): free-body diagrams, beams, trusses, circuits, and units in tables.
 - [Economics and finance](economics-and-finance.md): money over time, markets, firms, macroeconomics, measurement, accounting, and investment calculators.
@@ -40,6 +43,9 @@ Every picture is a real screenshot of the app, and most pages have one. [The scr
 - [Music, script, camera, and studio tools](music-script-camera-and-studio-tools.md): score notation, music theory, voice leading, ear training, tuning and rhythm, a script formatter, camera and lighting arithmetic, and scale, color, and materials.
 - [Document structure](document-structure.md): equation numbers and references, formula sheets, practice mode, problem-set templates, and figure export.
 - [Code cells](code-cells.md): run short Python and JavaScript programs on a page, offline, in a sandbox.
+- [Code studio](code-studio.md): the window for code projects, with its console, Problems panel, keys, examples, and settings. Off in this beta.
+- [SQL and Lua in code projects](sql-and-lua-projects.md): SQLite with schema and seed files and CSV import, and Lua 5.4. Code projects are off in this beta.
+- [C and C++ in code projects](c-and-cpp-projects.md): clang from a pack, the standards, header hints, and what does not run. Code projects are off in this beta.
 - [JavaScript and TypeScript in code projects](javascript-and-typescript-projects.md): modules, tests, limits, and what does not run. Code projects are off in this beta.
 - [Python in code projects](python-projects.md): quick and full Python, input, errors, limits, and what does not run. Code projects are off in this beta.
 - [Data, seeds, and figures in the subject kits](subject-kit-data-and-figures.md): data input, page tables, repeatable random results, coefficient tables, plots, and figure blocks.
