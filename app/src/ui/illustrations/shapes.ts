@@ -127,3 +127,32 @@ export const DESK = {
   candle: { at: [176, 72.4], scale: 1 },
   shortCandle: { at: [203, 88.08], scale: 0.72 },
 } as const;
+
+/**
+ * The desk gutter's vine, drawn in a 16 x 128 box and hung from the window frame at the region's top edge. The stem
+ * starts at the frame and its five leaves droop: each tip lies lower than its base, which sits on the stem.
+ */
+export const GUTTER_VINE = {
+  box: [16, 128],
+  stem: 'M10 .5C9 8 7.5 14 7.5 22C7.5 30 6 38 6.5 46C7 56 10.5 62 10 72C9.5 82 8 88 9 96C10 106 8.5 112 8.8 118C9 121 8.5 123 8 124',
+  /** Each leaf is two curves from its base on the stem to its tip, which is lower than the base. */
+  leaves: [
+    'M7.5 22Q12 21 14 27.5Q9.5 27.5 7.5 22Z',
+    'M6.5 46Q3 45 1.4 52Q5.5 52 6.5 46Z',
+    'M10 72Q13.6 71 14.6 78Q11.4 77.5 10 72Z',
+    'M9 96Q3.5 95 2.2 102Q7 102 9 96Z',
+    'M8.8 118Q12.5 117.5 14 124Q10.5 124 8.8 118Z',
+  ],
+} as const;
+
+/** The evening stars of the left gutter, in a 24 x 128 box. They thin out downward: smaller and fainter. */
+export const GUTTER_STARS = {
+  box: [24, 128],
+  /** x, y, radius, opacity. */
+  stars: [
+    [9, 14, 1.1, 0.6],
+    [15, 41, 0.9, 0.55],
+    [11, 77, 0.8, 0.5],
+    [14, 122, 0.75, 0.45],
+  ],
+} as const;
