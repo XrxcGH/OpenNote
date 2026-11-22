@@ -21,20 +21,41 @@ export type StructureChange =
       readonly at: number;
       readonly count: number;
     }
-  | { readonly kind: 'moveRows' | 'moveCols'; readonly from: number; readonly count: number; readonly to: number };
+  | { readonly kind: 'moveRows' | 'moveCols'; readonly from: number; readonly count: number; readonly to: number }
+  /** Deletes many rows at once: `rows` are zero-based, ascending, with no repeats. One pass, not one per run. */
+  | { readonly kind: 'deleteRowSet'; readonly rows: readonly number[] };
 
 const REF_ERROR = '#REF!';
 
 /** True when every index of the change is a whole number at or above 0 and it changes at least one row or column. */
 export function wholeChange(change: StructureChange): boolean {
   const whole = (n: number): boolean => Number.isInteger(n) && n >= 0;
+  if (change.kind === 'deleteRowSet') {
+    return change.rows.length > 0 && change.rows.every((r, k) => whole(r) && (k === 0 || r > change.rows[k - 1]));
+  }
   if (!whole(change.count) || change.count < 1) return false;
   return 'at' in change ? whole(change.at) : whole(change.from) && whole(change.to);
 }
 
 /** Where an index goes, or null when it was deleted. `to` of a move is where the block starts afterwards. */
+/** How many of the ascending `rows` are below `i`. */
+function below(rows: readonly number[], i: number): number {
+  let lo = 0;
+  let hi = rows.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (rows[mid] < i) lo = mid + 1;
+    else hi = mid;
+  }
+  return lo;
+}
+
 function mapIndex(change: StructureChange, i: number): number | null {
   switch (change.kind) {
+    case 'deleteRowSet': {
+      const gone = below(change.rows, i);
+      return change.rows[gone] === i ? null : i - gone;
+    }
     case 'insertRows':
     case 'insertCols':
       return i >= change.at ? i + change.count : i;
@@ -52,11 +73,18 @@ function mapIndex(change: StructureChange, i: number): number | null {
   }
 }
 
-const isRowChange = (change: StructureChange): boolean => change.kind.endsWith('Rows');
+const isRowChange = (change: StructureChange): boolean =>
+  change.kind.endsWith('Rows') || change.kind === 'deleteRowSet';
 
 /** A range's first and last index after the change, or null when nothing of it is left. */
 function mapSpan(change: StructureChange, first: number, last: number): [number, number] | null {
   if (last === Infinity) return [first, last];
+  if (change.kind === 'deleteRowSet') {
+    // The survivors of first..last keep their order, so the span runs from the first survivor to the last.
+    const a = first - below(change.rows, first);
+    const b = last + 1 - below(change.rows, last + 1) - 1;
+    return b < a ? null : [a, b];
+  }
   if (change.kind === 'insertRows' || change.kind === 'insertCols') {
     // Inserting at the first row of a range moves it; inserting inside or just below its first row grows it.
     const a = first >= change.at ? first + change.count : first;
