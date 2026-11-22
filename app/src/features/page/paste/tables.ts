@@ -5,6 +5,7 @@ import type { Node as PMNode } from '@tiptap/pm/model';
 import { TITLE } from '../../../editor/markdown/escape';
 import { serializeInline } from '../../../editor/markdown/inline';
 import { textSchema } from '../../../editor/schema/schema';
+import { spreadsheetTableData } from '../../tables';
 import { DEFAULT_COLUMN_WIDTH } from './types';
 import type { TableData } from './types';
 
@@ -112,4 +113,12 @@ export function extractTables(body: HTMLElement, newId: () => string): TableData
 export function tableMarker(node: PMNode): number | null {
   const match = node.type.name === 'paragraph' ? MARKER.exec(node.textContent) : null;
   return match ? Number(match[1]) : null;
+}
+
+/**
+ * Table data with its sheet from a spreadsheet's clipboard HTML (Excel, Google Sheets, LibreOffice, or an OpenNote
+ * table copy), or null for any other HTML, which keeps today's reading through `extractTables` (ADR 0067).
+ */
+export function spreadsheetTable(html: string, newId: () => string): TableData | null {
+  return spreadsheetTableData(html, newId);
 }

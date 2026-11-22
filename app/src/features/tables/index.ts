@@ -21,3 +21,5 @@ export { readSheet, tableName } from './sheet/model';
 export { canvasMeasure } from './sheet/structure/fit';
 export { rowHeight } from './sheet/structure/lines';
 export * from './tools';
+// A pasted spreadsheet table with its formulas and styles, for the page's paste (ADR 0067).
+export { spreadsheetTableData } from './clipboard/newTable';
