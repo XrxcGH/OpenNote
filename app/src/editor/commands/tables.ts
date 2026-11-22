@@ -3,7 +3,7 @@
 // doesn't apply. New rows and columns get fresh IDs; a moved row keeps its own, so later merges can match rows.
 import type { ResolvedPos } from '@tiptap/pm/model';
 import type { EditorState } from '@tiptap/pm/state';
-import { CellSelection } from '@tiptap/pm/tables';
+import { CellSelection, TableMap } from '@tiptap/pm/tables';
 import { clampColumnWidth, newColumn, newRow, normalizeTableData } from '../table/mapping';
 import { DEFAULT_COLUMN_WIDTH, type TableData } from '../schema/specs';
 
@@ -22,6 +22,8 @@ export interface TableChange {
    * and rules that follow inserted, deleted, and moved lines, or the settings a structure command sets.
    */
   extra?: Record<string, unknown>;
+  /** Set by a merge that removes text: how many values go. The block asks before it applies the change (ADR 0064). */
+  warn?: { lost: number };
   /** The data patches of other tables on the page whose formulas read this one (Sales!B2) and follow the change. */
   also?: { block: string; data: Record<string, unknown> }[];
 }
@@ -78,7 +80,15 @@ export type StructureOp =
   | { op: 'collapse' | 'expand'; axis: 'rows' | 'columns'; index?: number }
   | { op: 'showLevel'; axis: 'rows' | 'columns'; level: number }
   | { op: 'insertCells'; shift: 'down' | 'right'; box?: Block }
-  | { op: 'deleteCells'; shift: 'up' | 'left'; box?: Block };
+  | { op: 'deleteCells'; shift: 'up' | 'left'; box?: Block }
+  /**
+   * Merged cells (ADR 0064). `merge` keeps the top-left text, `keep` joins all the text with line breaks, `center` also
+   * centers (and unmerges a box that is one merge already), `across` merges each row of the box, `vertical` each column.
+   */
+  | { op: 'mergeCells'; mode: 'merge' | 'keep' | 'center' | 'across' | 'vertical'; box?: Block }
+  | { op: 'unmergeCells'; box?: Block }
+  /** Split cell: unmerges a merged cell, else splits a plain cell into `columns` by `rows` cells. */
+  | { op: 'splitCell'; columns: number; rows: number };
 
 /**
  * A change of rows or columns, in the formulas' coordinates: zero-based, and A1's row 1 is the first body row.
@@ -93,6 +103,8 @@ export interface TableHooks {
   structure(data: TableData, at: CellAt, op: StructureOp, sheet: unknown, book?: TableBook): TableChange | null;
   /** The change with formulas, names, rules, merges, and ranges brought up to date for `change`. */
   follow(before: TableData, applied: TableChange, change: LineChange, sheet: unknown, book?: TableBook): TableChange;
+  /** Whether moving the row at `row` to `to` must be refused because it would cut a merge (ADR 0064). */
+  cutsMerge?(data: TableData, row: number, to: number, sheet: unknown): boolean;
 }
 
 let hooks: TableHooks | null = null;
@@ -127,6 +139,9 @@ const STRUCTURE_NAMES: ReadonlySet<string> = new Set<StructureOp['op']>([
   'showLevel',
   'insertCells',
   'deleteCells',
+  'mergeCells',
+  'unmergeCells',
+  'splitCell',
 ]);
 
 export const isStructureOp = (op: { op: string }): op is StructureOp => STRUCTURE_NAMES.has(op.op);
@@ -135,9 +150,20 @@ export const isStructureOp = (op: { op: string }): op is StructureOp => STRUCTUR
 function cellOf($pos: ResolvedPos): CellAt | null {
   for (let depth = $pos.depth; depth > 0; depth--) {
     const role = $pos.node(depth).type.spec.tableRole as string | undefined;
-    if (role === 'row') return { row: $pos.index(depth - 1), column: $pos.index(depth) };
+    if (role === 'row') {
+      // At a cell boundary (a cell selection's anchor and head), the table's map gives the slot past merged cells.
+      const next = $pos.nodeAfter?.type.spec.tableRole as string | undefined;
+      if (next === 'cell' || next === 'header_cell') {
+        const found = TableMap.get($pos.node(depth - 1)).findCell($pos.pos - $pos.start(depth - 1));
+        return { row: found.top, column: found.left };
+      }
+      return { row: $pos.index(depth - 1), column: $pos.index(depth) };
+    }
     if (role === 'cell' || role === 'header_cell') {
-      return { row: $pos.index(depth - 2), column: $pos.index(depth - 1) };
+      const table = $pos.node(depth - 2);
+      // A merged cell leaves slots out of its row, so the column comes from the table's map (ADR 0064).
+      const found = TableMap.get(table).findCell($pos.before(depth) - $pos.start(depth - 2));
+      return { row: found.top, column: found.left };
     }
   }
   if ($pos.depth === 0 && $pos.nodeAfter?.type.spec.tableRole === 'row') return { row: $pos.index(0), column: 0 };
@@ -188,22 +214,23 @@ const BOX_OPS: ReadonlySet<string> = new Set([
   'ungroupColumns',
   'insertCells',
   'deleteCells',
+  'mergeCells',
+  'unmergeCells',
 ]);
 
 /** The position inside the paragraph of a cell, at its start or end, in a table document. */
 export function cellTextPos(doc: EditorState['doc'], at: CellAt, end = false): number | null {
   const table = doc.firstChild;
   if (!table || at.row >= table.childCount) return null;
-  const row = table.child(at.row);
-  if (at.column >= row.childCount) return null;
-  let pos = 1; // inside the table
-  for (let r = 0; r < at.row; r++) pos += table.child(r).nodeSize;
-  pos += 1; // inside the row
-  for (let c = 0; c < at.column; c++) pos += row.child(c).nodeSize;
-  const cell = row.child(at.column);
+  const map = TableMap.get(table);
+  if (at.row >= map.height || at.column >= map.width) return null;
+  // The slot's cell: a merged cell answers for every slot it covers. Offsets count from inside the table.
+  const offset = map.map[at.row * map.width + at.column];
+  const cell = typeof offset === 'number' ? table.nodeAt(offset) : null;
+  if (!cell) return null;
   const paragraph = cell.firstChild;
-  // Inside the cell, then inside its paragraph.
-  return pos + 2 + (end && paragraph ? paragraph.content.size : 0);
+  // Inside the table, then the cell, then its paragraph.
+  return 1 + offset + 2 + (end && paragraph ? paragraph.content.size : 0);
 }
 
 const clampCell = (data: TableData, at: CellAt): CellAt => ({
@@ -244,7 +271,8 @@ export function canApply(data: TableData, at: CellAt, op: TableOp, sheet?: unkno
     case 'moveRowDown': {
       const to = op.op === 'moveRowUp' ? row - 1 : row + 1;
       const first = header ? 1 : 0;
-      return !(row < first || to < first || to >= rows);
+      if (row < first || to < first || to >= rows) return false;
+      return !hooks?.cutsMerge?.(data, row, to, sheet);
     }
     case 'columnWidth':
       return clampColumnWidth(op.width) !== clampColumnWidth(data.columns?.[column]?.width ?? DEFAULT_COLUMN_WIDTH);
@@ -285,6 +313,10 @@ export function applyTableOp(
   const data = normalizeTableData(input);
   const cell = clampCell(data, at);
   if (isStructureOp(op)) return hooks?.structure(data, cell, op, sheet, book) ?? null;
+  if ((op.op === 'moveRowUp' || op.op === 'moveRowDown') && hooks?.cutsMerge) {
+    const to = op.op === 'moveRowUp' ? cell.row - 1 : cell.row + 1;
+    if (hooks.cutsMerge(data, cell.row, to, sheet)) return null;
+  }
   const applied = applyGridOp(data, cell, op);
   if (!applied) return null;
   const change = referenceChange(data, cell, op);
