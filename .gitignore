@@ -26,3 +26,4 @@ tests/nvda/results/
 tests/crosscheck/.tools/
 tests/crosscheck/.corpus/
 tests/ui/audit/out/
+tests/perf/codeStudio/results/
