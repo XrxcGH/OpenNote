@@ -142,6 +142,7 @@ fn collect_tables(
     plan: &plan::Plan,
     control: &Control,
     report: &mut Report,
+    format: TableFormat,
 ) -> Result<Vec<Table>> {
     let mut tables = Vec::new();
     for (page_at, planned) in plan.pages.iter().enumerate() {
@@ -198,10 +199,26 @@ fn collect_tables(
             page_report.came_over(format!("table of {} rows", rows.len()));
             let data = data.filter(|d| d.rows.len() == rows.len());
             let sheet = data.as_ref().and_then(crate::sheet::read);
-            if sheet.as_ref().is_some_and(|s| s.stale) {
+            let excel = format == TableFormat::Xlsx;
+            if excel && sheet.as_ref().is_some_and(|s| s.stale) {
                 page_report.simplified(
                     "formula results",
                     "Some formula results were out of date, so those formulas go without results and Excel calculates them on opening. Open the page in OpenNote once to refresh them.",
+                );
+            }
+            let huge = |s: &TableSheet| {
+                let big = |style: &crate::doc::cell_style::CellStyle| {
+                    style
+                        .font
+                        .size
+                        .is_some_and(|size| size > crate::sheet::styles::MAX_FONT_SIZE)
+                };
+                s.styles.iter().flatten().flatten().any(big)
+            };
+            if excel && sheet.as_ref().is_some_and(huge) {
+                page_report.simplified(
+                    "font sizes over 409 points",
+                    "Excel's largest font size is 409 points, so larger text is written at 409 points.",
                 );
             }
             tables.push(Table {
@@ -277,7 +294,7 @@ pub fn export_tables(
         TableFormat::Tsv => "TSV",
     };
     let mut report = Report::new(ReportKind::Export, format!("tables of {} as {label}", plan.title));
-    let tables = collect_tables(source, &plan, control, &mut report)?;
+    let tables = collect_tables(source, &plan, control, &mut report, format)?;
     if tables.is_empty() {
         return Err(InteropError::NoTables(plan.title.clone()));
     }
@@ -327,14 +344,8 @@ fn cell_text(inlines: &[Inline]) -> String {
     out
 }
 
-/// CSV with a byte order mark, so Excel reads the text as UTF-8. A cell that a spreadsheet would run as a formula
-/// gets a leading apostrophe.
-fn csv_bytes(rows: &[Vec<String>]) -> Vec<u8> {
-    delimited_bytes(rows, TableFormat::Csv)
-}
-
-/// CSV or TSV with a byte order mark and the formula guard. A cell is quoted only when it holds the separator, a
-/// quote, or a line break.
+/// CSV or TSV with a byte order mark, so Excel reads the text as UTF-8. A cell that a spreadsheet would run as a
+/// formula gets a leading apostrophe. A cell is quoted only when it holds the separator, a quote, or a line break.
 fn delimited_bytes(rows: &[Vec<String>], format: TableFormat) -> Vec<u8> {
     let separator = if format == TableFormat::Tsv { '\t' } else { ',' };
     let mut out = String::from('\u{feff}');
@@ -657,12 +668,15 @@ mod tests {
 
     #[test]
     fn csv_quotes_and_guards_cells() {
-        let bytes = csv_bytes(&[vec![
-            "a,b".to_owned(),
-            "say \"hi\"".to_owned(),
-            "=1+2".to_owned(),
-            "-5".to_owned(),
-        ]]);
+        let bytes = delimited_bytes(
+            &[vec![
+                "a,b".to_owned(),
+                "say \"hi\"".to_owned(),
+                "=1+2".to_owned(),
+                "-5".to_owned(),
+            ]],
+            TableFormat::Csv,
+        );
         let text = String::from_utf8(bytes).expect("utf8");
         assert_eq!(text, "\u{feff}\"a,b\",\"say \"\"hi\"\"\",'=1+2,-5\r\n");
     }

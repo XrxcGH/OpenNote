@@ -8,6 +8,8 @@ use crate::palette::color_hex;
 
 /// The first ID of a custom number format.
 const FIRST_CUSTOM: usize = 164;
+/// The largest font size Excel keeps, in points. A larger size is written as this one.
+pub const MAX_FONT_SIZE: f64 = 409.0;
 
 /// The parts of a style sheet, each written once.
 #[derive(Debug)]
@@ -80,7 +82,11 @@ fn font_xml(font: &CellFont, bold: bool, whole: bool) -> String {
         _ => {}
     }
     if whole || font.size.is_some() {
-        out.push_str(&format!("<sz val=\"{}\"/>", font.size.unwrap_or(11.0)));
+        // Excel's largest font size is 409 points.
+        out.push_str(&format!(
+            "<sz val=\"{}\"/>",
+            font.size.unwrap_or(11.0).min(MAX_FONT_SIZE)
+        ));
     }
     out.push_str(&color_element("color", font.color.as_deref()));
     let family = font.family.as_deref().filter(|f| !f.starts_with('+') && !f.is_empty());
