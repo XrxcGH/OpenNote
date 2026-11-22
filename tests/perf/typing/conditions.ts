@@ -16,6 +16,8 @@ export interface Condition {
   readonly gapMs?: number;
   /** Starts the browser with its accessibility tree on, as a UI Automation client such as Narrator does. */
   readonly accessibility?: boolean;
+  /** Feature flags to turn on before the app starts, as a build with the feature on has them. */
+  readonly flags?: readonly string[];
   /** Puts the caret where typing goes, after the page is open. */
   prepare(page: Page): Promise<void>;
 }
@@ -194,6 +196,23 @@ async function zoomTo(page: Page, target: number): Promise<void> {
 
 const inNote = (caret: Caret) => async (page: Page) => placeCaret(page, await longestBox(page), caret);
 
+/** Every text formatting flag (app/src/features/page/flags.ts): the formatted condition measures a build with them on. */
+const TEXT_FLAGS = [
+  'text.runFormats',
+  'text.paraFormats',
+  'text.fontPicker',
+  'text.styles2',
+  'text.formatPane',
+  'text.ruler',
+  'text.symbols',
+  'text.language',
+  'text.footnotes',
+  'text.review',
+  'text.layout',
+  'text.pasteFidelity',
+  'text.findFormat',
+];
+
 export const CONDITIONS: readonly Condition[] = [
   { id: 'short', description: 'A short note (control)', fixture: 'short', prepare: inNote('end') },
   {
@@ -213,6 +232,7 @@ export const CONDITIONS: readonly Condition[] = [
     id: 'formatted.middle',
     description: '20-page note with fonts, sizes, colors, tab stops, list formats, and borders, caret in the middle',
     fixture: 'twentyPageFormatted',
+    flags: TEXT_FLAGS,
     prepare: inNote('middle'),
   },
   {
