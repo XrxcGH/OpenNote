@@ -10,8 +10,7 @@ import type { Registry } from '../../registries/registry';
 import type { BlockId, EditorHost } from '../host';
 import * as marks from '../schema/marks';
 import * as nodes from '../schema/nodes';
-import { IdRow, OneParagraphCell, OneParagraphHeader, TableDoc } from '../schema/schema';
-import { Table } from '@tiptap/extension-table';
+import { IdRow, MergeTable, OneParagraphCell, OneParagraphHeader, TableDoc } from '../schema/schema';
 import { tableKitExtensions } from '../table/tableKit';
 import { autoChangeExtensions } from './autoChange';
 import { autocorrectExtensions } from './autocorrect';
@@ -136,7 +135,7 @@ function textKit(host: EditorHost): Extensions {
 function tableKit(host: EditorHost): Extensions {
   return [
     TableDoc,
-    Table.configure({ resizable: false }),
+    MergeTable.configure({ resizable: false }),
     IdRow,
     OneParagraphHeader,
     OneParagraphCell,

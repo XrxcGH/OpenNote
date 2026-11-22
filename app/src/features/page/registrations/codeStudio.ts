@@ -155,7 +155,9 @@ function installRelay(): void {
     channel.onmessage = null;
     void studio().then((loaded) => {
       loaded.serveRelay(channel, loaded.blockSource, (listener) => shownMounted.subscribe(listener));
-      channel.dispatchEvent(new MessageEvent('message', { data: event.data }));
+      // The same event again, not a new one: a MessageEvent made here can come from another realm than the channel's
+      // (a test's DOM next to the runtime's BroadcastChannel), and dispatchEvent refuses it.
+      channel.dispatchEvent(event);
     });
   };
 }

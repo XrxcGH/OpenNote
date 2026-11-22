@@ -27,7 +27,6 @@ import {
   contentOf,
   gridOf,
   hasHeader,
-  hasMerged,
   keysOn,
   modeOf,
   placedAt,
@@ -115,7 +114,7 @@ function applyMeta(tr: Transaction, value: SheetState, state: EditorState): Shee
   if (meta?.focused !== undefined) next.focused = meta.focused;
   // Typing maps the cells' numbers through the change, so a keystroke costs the same in a big table as in a small one.
   if (next.spreadsheet !== value.spreadsheet || (tr.docChanged && !insideOneCell(tr)))
-    next.indexes = indexesOf(state.doc, next.spreadsheet && !hasMerged(state.doc));
+    next.indexes = indexesOf(state.doc, next.spreadsheet);
   else if (tr.docChanged) next.indexes = value.indexes.map(tr.mapping, tr.doc);
   if (meta && 'active' in meta) next.active = meta.active ?? null;
   else if (tr.selectionSet) next.active = null;
@@ -133,7 +132,7 @@ function applyMeta(tr: Transaction, value: SheetState, state: EditorState): Shee
     state.selection instanceof TextSelection
   ) {
     const at = cellOfPos(state.doc, state.selection.head);
-    if (at && !hasMerged(state.doc)) next.entry = { ...at, before: contentOf(state.doc, at), mode: 'edit' };
+    if (at) next.entry = { ...at, before: contentOf(state.doc, at), mode: 'edit' };
   }
   return next;
 }
@@ -239,7 +238,7 @@ export function sheetKeysPlugin(options: SheetKeysOptions): Plugin<SheetState> {
         spreadsheet: options.spreadsheet,
         entry: null,
         active: null,
-        indexes: indexesOf(state.doc, options.spreadsheet && !hasMerged(state.doc)),
+        indexes: indexesOf(state.doc, options.spreadsheet),
         focused: false,
       }),
       apply: (tr, value, _old, state) => applyMeta(tr, value, state),
