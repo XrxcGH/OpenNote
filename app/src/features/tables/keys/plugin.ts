@@ -172,7 +172,16 @@ function decorationsOf(state: EditorState): DecorationSet | null {
     if (cell) extra.push(Decoration.node(cell.pos, cell.pos + cell.node.nodeSize, attrs));
   };
   const g = gridOf(state);
-  if (g && sheet.focused) for (const at of cellsIn(g.box)) mark(at, { 'aria-selected': 'true' });
+  if (g && sheet.focused) {
+    // A long table marks only the rows it draws: a range of thousands of rows stays as fast as one screen of them.
+    const drawn = drawnRows(state);
+    if (!drawn) for (const at of cellsIn(g.box)) mark(at, { 'aria-selected': 'true' });
+    else
+      for (const row of drawn)
+        if (row >= g.box.top && row <= g.box.bottom)
+          for (let column = g.box.left; column <= g.box.right; column += 1)
+            mark({ row, column }, { 'aria-selected': 'true' });
+  }
   const active = activeCell(state);
   if (active) mark(active, { class: mode === 'grid' ? styles.active : styles.editing });
   return indexes.add(state.doc, extra);
