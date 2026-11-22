@@ -1,23 +1,18 @@
 // Code block commands (ARCHITECTURE.md sections 10.2, 14, and 22.4; owner: WP6), as ProseMirror commands. Tab and
 // Shift+Tab indent and outdent the caret's line or the selected lines by the block's indent width. Enter keeps the
 // line's indent. Three Enters at the end, Arrow Down at the end of the last block, or Ctrl+Enter leave the block.
-import type { Node as PMNode } from '@tiptap/pm/model';
 import { TextSelection } from '@tiptap/pm/state';
 import type { EditorState, Transaction } from '@tiptap/pm/state';
 import type { EditorView } from '@tiptap/pm/view';
 import { findLanguage } from '../highlight/languages';
 import { META_COMMAND } from '../meta';
 import { LANGUAGE_PATTERN } from '../schema/constants';
+import { codeBlockAt } from './codeBlockAt';
 
 type Dispatch = ((tr: Transaction) => void) | undefined;
 export type Command = (state: EditorState, dispatch?: Dispatch, view?: EditorView) => boolean;
 
-/** The code block with the selection, and the position before it. Null outside code. */
-export function codeBlockAt(state: EditorState): { node: PMNode; pos: number } | null {
-  const { $from, $to } = state.selection;
-  if ($from.parent.type.name !== 'codeBlock' || !$from.sameParent($to)) return null;
-  return { node: $from.parent, pos: $from.before() };
-}
+export { codeBlockAt };
 
 /**
  * The block's indent: a tab when a line starts with one, else the smallest indent its lines use (2 or 4 spaces),

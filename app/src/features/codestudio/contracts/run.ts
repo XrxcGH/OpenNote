@@ -60,6 +60,14 @@ export interface TestHarness {
 }
 
 /** The page asks a worker to run a program. */
+/** The compile step's choices from Settings, then Code, for runtimes that compile (C and C++). */
+export interface CompileOptions {
+  /** The language standard, such as `c17` or `c++20`. A runtime that does not know it uses its default. */
+  standard?: string;
+  /** Compiler warnings (-Wall -Wextra). On unless false. */
+  warnings?: boolean;
+}
+
 export interface RunRequest {
   kind: 'run';
   runtime: RuntimeId;
@@ -73,6 +81,7 @@ export interface RunRequest {
   seed: number;
   trace?: TraceOptions;
   test?: TestHarness;
+  compile?: CompileOptions;
 }
 
 /** What else the page may send a running worker: a line of interactive input, or the end of input. */
@@ -99,6 +108,8 @@ export interface RuntimeDiagnostic {
 /** Every message a worker may send. The page checks each one before it reads it. */
 export type WorkerMessage =
   | { kind: 'loading'; percent: number }
+  /** The compile step (prepare) starts: the page times it with COMPILE_MS, not loadMs. */
+  | { kind: 'compiling' }
   | { kind: 'started'; version?: string; interactive?: boolean }
   | { kind: 'out'; stream: Stream; text: string }
   | { kind: 'input-wanted'; prompt: string }
@@ -184,6 +195,12 @@ export interface RuntimeAdapter {
    */
   prefilledOnly?: boolean;
   load(onProgress: (percent: number) => void): Promise<void>;
+  /**
+   * A step before the program starts, such as a compile (DESIGN 4.1). The worker sends `compiling` first, so it runs
+   * under the compile limit, not the load limit. Its output reaches the console as it comes, before `started`.
+   * A RunEnd ends the run there; null goes on to `run`.
+   */
+  prepare?(request: RunRequest, emit: Emit, context: RunContext): Promise<RunEnd | null>;
   /** Runs one request and sends everything but `started` and `done`; the worker sends those. */
   run(request: RunRequest, emit: Emit, context: RunContext): Promise<RunEnd>;
   /** Maps the error text of a run to project lines. */
