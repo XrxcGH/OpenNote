@@ -5,6 +5,7 @@
 export type { ArtProps } from './Art';
 export { Books } from './Books';
 export { Candle } from './Candle';
+export { DeskMotifs } from './DeskMotifs';
 export { DeskScene } from './DeskScene';
 export { EmptyArt } from './EmptyArt';
 export type { EmptyKind } from './EmptyArt';
