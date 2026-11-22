@@ -9,5 +9,5 @@ The table clipboard tests (ADR 0067) read hand-written clipboard HTML from `engi
 Each one holds only what the reader uses. The expected values come from the cells written in the fixture and from
 hand-worked arithmetic, never from the code's output.
 
-Real captures from Excel and Sheets (decision N5, captures X01 to X10 and GX01 to GX10) go in this folder once the
-owner saves them. Tests that need them are added then.
+Real captures from Excel and Sheets (decision N5) go in this folder once the owner saves them. They are X01 to X10
+from Excel and GX01 to GX10 from Sheets. Tests that need them are added then.
