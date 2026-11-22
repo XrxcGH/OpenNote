@@ -133,6 +133,27 @@ describe('the table mapping', () => {
     expect(next.rows[2].cells[next.columns[1].id]).toEqual({ markdown: '' });
   });
 
+  it('reads again only the rows that changed when typing edits a cell, with the result of a full read', () => {
+    const data = newTableData(3, 50, false);
+    const first = docToTableData(tableDataToDoc(data), data, cache);
+    const doc = tableDataToDoc(first);
+    const read = docToTableData(doc, first, cache);
+    // Typing in row 30, column 2: one text step inside the cell.
+    const table = doc.firstChild!;
+    let at = 1;
+    for (let r = 0; r < 30; r++) at += table.child(r).nodeSize;
+    at += 1 + table.child(30).child(0).nodeSize + 2;
+    const state = EditorState.create({ doc });
+    const typed = state.apply(state.tr.insertText('mitosis', at)).doc;
+    const next = docToTableData(typed, read, cache);
+    // Every other row is the very row it was: nothing re-read it.
+    expect(next.rows.filter((row, r) => row !== read.rows[r]).map((row) => next.rows.indexOf(row))).toEqual([30]);
+    expect(next.columns).toBe(read.columns);
+    expect(next.rows[30].cells[next.columns[1].id].markdown).toBe('mitosis');
+    // A full read, from data no read came from, finds the same table.
+    expect(docToTableData(typed, structuredClone(read), cache)).toEqual(next);
+  });
+
   it('reads a header row from the first row’s cells', () => {
     const data = { ...newTableData(2, 2, true) };
     data.rows[0].cells[data.columns[0].id].markdown = 'Stage';
