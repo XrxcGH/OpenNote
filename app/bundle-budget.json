@@ -1,6 +1,6 @@
 {
   "startup": {
-    "jsKb": 624,
+    "jsKb": 627,
     "cssKb": 30
   },
   "after": [
@@ -83,7 +83,7 @@
     "features/accounts/sendto/commands.ts": 95,
     "features/accounts/share/commands.ts": 89,
     "features/accounts/tasks/auto.ts": 208,
-    "features/accounts/tasks/commands.ts": 207,
+    "features/accounts/tasks/commands.ts": 209,
     "features/ink/index.ts": 67,
     "features/math/index.ts": 329,
     "features/math/solvers/ui/SolversTool.tsx": 61,
@@ -96,9 +96,13 @@
     "features/pages/ui/imageCommands.tsx": 79,
     "features/pages/ui/presentCommands.tsx": 80,
     "features/pdf/importPdf.ts": 69,
-    "features/tables/index.ts": 167,
+    "features/tables/index.ts": 169,
     "features/tables/ui/toolbar/CellFormatBar.tsx": 162,
-    "features/tables/ui/toolbar/actions.ts": 134,
+    "features/tables/ui/toolbar/actions.ts": 136,
+    "features/tables/ui/evaluate/EvaluateDialog.tsx": 125,
+    "features/tables/ui/formulaBar/FormulaBar.tsx": 137,
+    "features/tables/ui/formulaBar/attach.ts": 116,
+    "features/tables/ui/names/NameManager.tsx": 124,
     "features/tools/index.ts": 392,
     "features/engineering/control/ui/ControlKit.tsx": 328,
     "features/engineering/index.ts": 222,

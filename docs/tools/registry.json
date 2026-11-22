@@ -7473,6 +7473,15 @@
       "flag": "tables.sheetWrites"
     },
     {
+      "id": "table.insertFunction",
+      "title": "Insert function",
+      "category": "table",
+      "keys": [
+        "Shift+F3"
+      ],
+      "flag": "tables.sheetWrites"
+    },
+    {
       "id": "theme.toggle",
       "title": "Toggle dark mode",
       "category": "appearance",

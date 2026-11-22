@@ -10,7 +10,8 @@ import { RowsIcon } from '@phosphor-icons/react/dist/csr/Rows';
 import { RowsPlusBottomIcon } from '@phosphor-icons/react/dist/csr/RowsPlusBottom';
 import { RowsPlusTopIcon } from '@phosphor-icons/react/dist/csr/RowsPlusTop';
 import { TextHOneIcon } from '@phosphor-icons/react/dist/csr/TextHOne';
-import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { Component, lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import type { ComponentType, KeyboardEvent } from 'react';
 import type { CommandId } from '../../../commands/types';
 import type { TableOp } from '../../../editor/commands/tables';
@@ -25,6 +26,23 @@ import styles from './tables.module.css';
 const CellFormatBar = lazy(async () => ({
   default: (await (await import('../../tables')).loadCellFormatBar()).CellFormatBar,
 }));
+/** The formula bar (tables:formula-bar) loads the same way, under the cell format bar. */
+const FormulaBar = lazy(async () => ({
+  default: (await (await import('../../tables')).loadFormulaBar()).FormulaBar,
+}));
+
+/** Hides the formula bar when it fails, so a failure there never takes the cell format bar or the table with it. */
+class QuietBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+  override state = { failed: false };
+
+  static getDerivedStateFromError(): { failed: boolean } {
+    return { failed: true };
+  }
+
+  override render(): ReactNode {
+    return this.state.failed ? null : this.props.children;
+  }
+}
 
 export interface TableToolbarProps {
   /** The table block's ID, which the cell format bar uses to find the block's data. */
@@ -256,9 +274,16 @@ export function TableToolbar(props: TableToolbarProps) {
         </span>
       </div>
       {block ? (
-        <Suspense fallback={null}>
-          <CellFormatBar block={block} />
-        </Suspense>
+        <>
+          <Suspense fallback={null}>
+            <CellFormatBar block={block} />
+          </Suspense>
+          <QuietBoundary>
+            <Suspense fallback={null}>
+              <FormulaBar block={block} />
+            </Suspense>
+          </QuietBoundary>
+        </>
       ) : null}
       {widthOpen ? <WidthField width={width} close={closeWidth} /> : null}
       {props.heightOpen && props.closeHeight ? (
