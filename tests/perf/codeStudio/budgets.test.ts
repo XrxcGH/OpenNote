@@ -118,7 +118,13 @@ test('the model benchmark finds the program on Windows, and the 0.5B gate has th
   assert.equal(judgeModel(small, 400, 100, 1200).ok, true);
   assert.equal(judgeModel(small, 400, 100, 1201).ok, false);
   // Nearest rank: the 19th of 20 samples is the p95.
-  assert.equal(percentile(Array.from({ length: 20 }, (_, i) => i + 1), 95), 19);
+  assert.equal(
+    percentile(
+      Array.from({ length: 20 }, (_, i) => i + 1),
+      95,
+    ),
+    19,
+  );
   assert.equal(percentile([5], 95), 5);
 });
 

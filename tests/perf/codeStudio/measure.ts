@@ -205,12 +205,10 @@ await measure('run-quickjs', async () => {
     newVariant(releaseSync, { wasmMemory: cappedHeap(RUN_LIMITS.memoryBytes) }),
   );
   const request = order('typescript', 'main.ts', 'const name: string = "world";\nconsole.log(`Hello, ${name}!`);\n');
-  return warm('run-quickjs', () =>
-    {
-      const heard = hearing();
-      heard.check(runProgram({ quickjs, transform }, request, heard.emit, context(request)).status, 'Hello, world!');
-    },
-  );
+  return warm('run-quickjs', () => {
+    const heard = hearing();
+    heard.check(runProgram({ quickjs, transform }, request, heard.emit, context(request)).status, 'Hello, world!');
+  });
 });
 
 await measure('run-micropython', async () => {
