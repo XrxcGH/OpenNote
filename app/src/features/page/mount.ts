@@ -248,7 +248,7 @@ function showPage(mounted: Omit<MountedPage, 'destroy'>): () => void {
     objectCommand: (command) => mounted.objects.command(command),
     objectEnabled: (command) => mounted.objects.enabled(command),
   });
-  shownFitWidth.set(() => mounted.flow.fitWidth());
+  shownFitWidth.set(() => () => mounted.flow.fitWidth());
   shownQueue.set(mounted.sync);
   shownPool.set(mounted.pool);
   shownLayer.set(mounted.layer);

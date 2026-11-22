@@ -263,6 +263,37 @@ jobs:
           if-no-files-found: ignore
           retention-days: 90
 
+  perf-typing-gate:
+    # The typing benchmark with its 16 ms painted p95 gate on, formatted.middle included, so a regression in the
+    # formatted condition fails the night. A hosted runner is noisy: a failure here is a reason to look, then to
+    # confirm on the reference laptop (docs/perf/phase-4.md).
+    runs-on: windows-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    env:
+      OPENNOTE_TYPING_GATE: '1'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install tools
+        run: npm ci
+      - name: Typing benchmark with the gate
+        run: npm run perf:typing
+      - name: Keep the numbers
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: perf-typing-gate
+          path: tests/perf/typing/results
+          if-no-files-found: ignore
+          retention-days: 30
+
   e2e-full:
     # Builds the app with the test endpoints and runs every E2E spec on Windows, where the real window lives.
     runs-on: windows-latest
@@ -579,7 +610,7 @@ jobs:
   report:
     # Opens an issue when any job failed, or adds a comment to the issue that is already open. It is the only
     # job that can write, it can only write issues, and it never checks out the code.
-    needs: [plan, fuzz, kill, proptest, perf, e2e-full, bundles, soak, code-studio-perf, palm-sweep, nvda]
+    needs: [plan, fuzz, kill, proptest, perf, perf-typing-gate, e2e-full, bundles, soak, code-studio-perf, palm-sweep, nvda]
     if: ${{ always() && github.ref == 'refs/heads/main' && contains(needs.*.result, 'failure') }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -595,6 +626,7 @@ jobs:
           KILL_RESULT: ${{ needs.kill.result }}
           PROPTEST_RESULT: ${{ needs.proptest.result }}
           PERF_RESULT: ${{ needs.perf.result }}
+          TYPING_GATE_RESULT: ${{ needs.perf-typing-gate.result }}
           E2E_RESULT: ${{ needs.e2e-full.result }}
           BUNDLES_RESULT: ${{ needs.bundles.result }}
           SOAK_RESULT: ${{ needs.soak.result }}
@@ -611,6 +643,7 @@ jobs:
             [ "$KILL_RESULT" = failure ] && echo "- Crash safety: replay with seed $GITHUB_RUN_ID"
             [ "$PROPTEST_RESULT" = failure ] && echo "- Property tests: the log has the failing case"
             [ "$PERF_RESULT" = failure ] && echo "- Performance: the results are in the run's artifacts"
+            [ "$TYPING_GATE_RESULT" = failure ] && echo "- Typing gate (16 ms painted p95): the numbers are in the run's artifacts"
             [ "$E2E_RESULT" = failure ] && echo "- E2E specs: the logs are in the run's artifacts"
             [ "$BUNDLES_RESULT" = failure ] && echo "- The macOS dmg or the Linux AppImage didn't build"
             # checks-disable-next-line length: one shell line that writes one line of the run summary
