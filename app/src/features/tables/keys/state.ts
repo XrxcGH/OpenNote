@@ -104,9 +104,9 @@ export function hasMerged(doc: PMNode): boolean {
   return merged;
 }
 
-/** Whether the table's keys are spreadsheet keys now: chosen, and no merged cells. Otherwise document keys work. */
+/** Whether the table's keys are spreadsheet keys now: chosen. Merged cells count as one cell (moves.ts stepOver). */
 export function keysOn(state: EditorState): boolean {
-  return (sheetKeysKey.getState(state)?.spreadsheet ?? false) && !hasMerged(state.doc);
+  return sheetKeysKey.getState(state)?.spreadsheet ?? false;
 }
 
 export function textsOf(doc: PMNode): string[][] {
