@@ -1,6 +1,7 @@
 {
  "known": {
   "block | box-overlap | span.mathInline > div.holderInline > button.toggle x p > strong": "The Edit/Simplify/Solve holder opens as a popover laid over the text after the equation, by design; it is closed again by Escape or a click away.",
+  "block | scrollbar-occluded | div.column > div.body > div[data-scope=page].viewport <- other": "The Edit/Simplify/Solve holder opens as a popover laid over the page by design, anchored to the equation; with the page at its narrower desk width its buttons reach the page end edge and cover the end of the scroll bar while the popover is open.",
   "block | target-small | div.trace > label.slider > input": "The slider is the browser's own range input, 16 px tall with a 573 px wide hit line; its thumb is the target and it sits within the 24 px minimum spacing.",
   "block | target-small | li.task > span.taskBox > input": "A native checkbox drawn at the size of the text; making it 24 px would push the item's text and the ruled-paper alignment (a larger hit area needs a custom control).",
   "block | text-overlap | div.holderInline > div[role=group].actions > button x th[role=columnheader] > p": "The Edit/Simplify/Solve holder opens as a popover laid over the text after the equation, by design; it is closed again by Escape or a click away.",
@@ -282,6 +283,7 @@
   "block | text-overlap | tr > th > p x div[role=group].actions > button",
   "command | box-overlap | div.panel > div[role=group].filters > button[role=switch].labeled x div[role=group].filters > button[role=switch].labeled",
   "command | dead-space | div[data-scope=palette].panel > div.body > div[role=listbox].results (nested)",
+  "command | dead-space | div.body > div.main > div.editor (empty box)",
   "command | dead-space | div[role=tabpanel].panelBody > div.console > div[role=log].output (empty box)",
   "command | document-scroll | ",
   "command | offscreen | div.content > div.scroller > div[role=listbox].grid",
