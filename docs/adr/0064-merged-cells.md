@@ -17,7 +17,7 @@ We will keep the stored grid whole and record merges in `data.sheet.merges` as `
 - Merge asks first when it removes text. The command returns the count (`warn`), the block shows a dialog, and a yes applies the data and the patch of `data.sheet` as one undo step.
 - Spreadsheet keys treat a merged cell as one cell. An arrow leaves the far edge of the merge and keeps the row or column the merge starts in. It lands on the top-left slot of the cell it enters.
 - Split cell unmerges a merged cell; on a plain cell it inserts rows and columns and merges the neighbors in the new bands so the table looks unchanged around it.
-- Sorting a range that cuts through merges of different sizes is refused, as in Excel (`sortRefusal` in `sheet/merge/sort.ts`; `sortColumn` in `smart/ops.ts` calls it and announces the refusal).
+- Sorting a range that holds a merge across rows is refused, because rows sort one by one; merges inside one row are kept (`sortRefusal` in `sheet/merge/sort.ts`; `sortColumn` in `smart/ops.ts` calls it and announces the refusal).
 - Move row up and Move row down are refused when either row of the swap lies inside a merge that spans more than one row, as in Excel (`cutsMerge` hook). A merge inside one row moves with its row. A refused merge or move is announced.
 - Fill down, Fill right, and Clear skip the slots a merge covers, so the anchor keeps its own content.
 - The Split cell dialog takes columns and rows (2 to 64 cells in all).

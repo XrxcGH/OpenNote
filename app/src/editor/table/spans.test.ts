@@ -105,3 +105,37 @@ describe('the table document with merges', () => {
     expect(back.columns.map((column) => column.width)).toEqual([100, 101, 102, 103]);
   });
 });
+
+describe('the projection with merges', () => {
+  const cache = createMarkdownCache();
+  const ids = (d: TableData) => d.columns.map((c) => c.id);
+
+  it('keeps column IDs when the first row holds a merge across columns', () => {
+    const data = table(3, 3);
+    const spans = [{ row: 0, column: 0, rows: 1, columns: 3 }];
+    expect(ids(docToTableData(tableDataToDoc(data, tableSchema, spans), data, cache))).toEqual(['c1', 'c2', 'c3']);
+  });
+
+  it('keeps column IDs when only row 2 holds a merge across columns', () => {
+    const data = table(3, 3);
+    const spans = [{ row: 1, column: 0, rows: 1, columns: 3 }];
+    expect(ids(docToTableData(tableDataToDoc(data, tableSchema, spans), data, cache))).toEqual(['c1', 'c2', 'c3']);
+  });
+
+  it('keeps the Markdown of a covered cell', () => {
+    const data = table(2, 2, { B1: 'hidden', A1: 'shown' });
+    const spans = [{ row: 0, column: 0, rows: 1, columns: 2 }];
+    const back = docToTableData(tableDataToDoc(data, tableSchema, spans), data, cache);
+    expect(back.rows[0].cells.c2.markdown).toBe('hidden');
+    expect(back.rows[0].cells.c1.markdown).toBe('shown');
+  });
+
+  it('reads a large table with one merge in linear time', () => {
+    const data = table(1000, 20);
+    const doc = tableDataToDoc(data, tableSchema, [{ row: 5, column: 0, rows: 1, columns: 2 }]);
+    docToTableData(doc, data, cache);
+    const start = performance.now();
+    docToTableData(doc, data, cache);
+    expect(performance.now() - start).toBeLessThan(60);
+  });
+});

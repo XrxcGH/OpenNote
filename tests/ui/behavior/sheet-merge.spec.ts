@@ -97,3 +97,18 @@ test('an arrow key crosses a merged cell as one cell', async ({ page }) => {
   await page.keyboard.type('below');
   await expect(cellAt(page, 3, 1)).toContainText('below');
 });
+
+test('a merge in the first row survives an edit and a later merge', async ({ page }) => {
+  await openSmart(page);
+  await dragSelect(page, [0, 0], [0, 2]);
+  await runCommand(page, 'Merge across');
+  const dialog = page.getByRole('dialog', { name: 'Merge these cells?' });
+  if (await dialog.isVisible({ timeout: 1500 }).catch(() => false)) await confirmMerge(page);
+  await expect(page.locator('table [colspan="3"]')).toHaveCount(1);
+  await setCell(page, 3, 2, 'edit');
+  await dragSelect(page, [2, 0], [2, 1]);
+  await runCommand(page, 'Merge cells');
+  if (await dialog.isVisible({ timeout: 1500 }).catch(() => false)) await confirmMerge(page);
+  await expect(page.locator('table [colspan="2"]')).toHaveCount(1);
+  await expect(page.locator('table [colspan="3"]')).toHaveCount(1);
+});

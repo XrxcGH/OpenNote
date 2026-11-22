@@ -37,6 +37,6 @@ export const sheetMerge = {
     moveBlocked: 'Cannot move the row: it would cut through a merged cell.',
   },
   sort: {
-    refused: 'Cannot sort: the range has merged cells of different sizes.',
+    refused: 'Cannot sort: the range has cells merged across rows.',
   },
 } as const;

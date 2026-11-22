@@ -202,17 +202,25 @@ describe('unmerge and split cell', () => {
 });
 
 describe('sorting through merges', () => {
-  it('is refused when merges of different sizes touch the range, and allowed for equal merges or none', () => {
+  it('is allowed for merges inside one row, and for none', () => {
     const data = table(4, 3);
     const one = applyTableOp(data, at('A1'), { op: 'mergeCells', mode: 'merge', box: block('A1', 'B1') })!;
     const sheet1 = sheetAfter(undefined, one);
     const wide = { op: 'mergeCells', mode: 'merge', box: block('A2', 'C2') } as const;
-    const two = applyTableOp(one.data, at('A2'), wide, sheet1)!;
-    const sheet2 = sheetAfter(sheet1, two);
+    const sheet2 = sheetAfter(sheet1, applyTableOp(one.data, at('A2'), wide, sheet1)!);
     expect(sortRefusal(data, undefined, 0, 3)).toBe(false);
-    expect(sortRefusal(data, sheet2, 0, 3)).toBe(true);
     expect(sortRefusal(data, sheet1, 0, 3)).toBe(false);
-    expect(sortRefusal(data, sheet2, 2, 3)).toBe(false);
+    expect(sortRefusal(data, sheet2, 0, 3)).toBe(false);
+  });
+
+  it('is refused for equal merges across rows, because sorting would pull them apart', () => {
+    const data = table(4, 2);
+    const first = applyTableOp(data, at('A1'), { op: 'mergeCells', mode: 'vertical', box: block('A1', 'A2') })!;
+    const sheet1 = sheetAfter(undefined, first);
+    const next = { op: 'mergeCells', mode: 'vertical', box: block('A3', 'A4') } as const;
+    const sheet2 = sheetAfter(sheet1, applyTableOp(first.data, at('A3'), next, sheet1)!);
+    expect(sortRefusal(data, sheet2, 0, 3)).toBe(true);
+    expect(sortRefusal(data, sheet2, 0, 1)).toBe(true);
   });
 
   it('is refused when a merge reaches out of the range', () => {

@@ -66,7 +66,7 @@ export async function sortColumn(inst: SmartInstance, column: number, desc: bool
   const model = inst.model();
   const sort: SortSmart = { column: model.columnIds[column], ...(desc ? { desc: true } : {}) };
   const change = sortRows(model, inst.locale, sort);
-  // A range that cuts through merges of different sizes is not sorted (ADR 0064).
+  // A range that holds a merge across rows is not sorted (ADR 0064).
   if (change) {
     const data = inst.host.table();
     if (sortRefusal(data, inst.host.data().sheet, model.offset, data.rows.length - 1)) {

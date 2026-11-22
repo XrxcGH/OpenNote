@@ -685,7 +685,7 @@ describe('the settings a file gives', () => {
 });
 
 describe('sorting through merged cells', () => {
-  it('refuses to sort rows whose merged cells differ in size, and says so', async () => {
+  it('refuses to sort rows that hold a cell merged across rows, and says so', async () => {
     const sheet = {
       merges: {
         m1: { from: ['row1', 'item'], to: ['row2', 'item'] },
@@ -695,6 +695,6 @@ describe('sorting through merged cells', () => {
     const table = fake(TEXT, undefined, undefined, EMPTY_SMART, sheet);
     expect(await sortColumn(table.inst, 2, true)).toBe(false);
     expect(column(table.data(), 0)).toEqual(['Pen', 'Ink', 'Pad']);
-    expect(table.says()).toEqual(['Cannot sort: the range has merged cells of different sizes.']);
+    expect(table.says()).toEqual(['Cannot sort: the range has cells merged across rows.']);
   });
 });

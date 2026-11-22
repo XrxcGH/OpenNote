@@ -150,7 +150,15 @@ export const isStructureOp = (op: { op: string }): op is StructureOp => STRUCTUR
 function cellOf($pos: ResolvedPos): CellAt | null {
   for (let depth = $pos.depth; depth > 0; depth--) {
     const role = $pos.node(depth).type.spec.tableRole as string | undefined;
-    if (role === 'row') return { row: $pos.index(depth - 1), column: $pos.index(depth) };
+    if (role === 'row') {
+      // At a cell boundary (a cell selection's anchor and head), the table's map gives the slot past merged cells.
+      const next = $pos.nodeAfter?.type.spec.tableRole as string | undefined;
+      if (next === 'cell' || next === 'header_cell') {
+        const found = TableMap.get($pos.node(depth - 1)).findCell($pos.pos - $pos.start(depth - 1));
+        return { row: found.top, column: found.left };
+      }
+      return { row: $pos.index(depth - 1), column: $pos.index(depth) };
+    }
     if (role === 'cell' || role === 'header_cell') {
       const table = $pos.node(depth - 2);
       // A merged cell leaves slots out of its row, so the column comes from the table's map (ADR 0064).

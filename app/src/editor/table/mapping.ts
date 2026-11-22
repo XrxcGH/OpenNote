@@ -201,15 +201,21 @@ function slotReader(table: PMNode): { map: TableMap | null; at(row: number, colu
     };
   }
   const map = TableMap.get(table);
+  // One pass builds each cell by offset and its top-left slot, so every read is O(1).
+  const cells = new Map<number, PMNode>();
+  table.forEach((row, rowOffset) => row.forEach((cell, cellOffset) => cells.set(rowOffset + 1 + cellOffset, cell)));
+  const corners = new Map<number, { left: number; top: number }>();
+  map.map.forEach((offset, i) => {
+    if (!corners.has(offset)) corners.set(offset, { left: i % map.width, top: Math.floor(i / map.width) });
+  });
   return {
     map,
     at(row, column) {
       if (row >= map.height || column >= map.width) return null;
       const offset = map.map[row * map.width + column];
-      const cell = table.nodeAt(offset);
-      if (!cell) return null;
-      const rect = map.findCell(offset);
-      return { cell, left: rect.left, top: rect.top };
+      const cell = cells.get(offset);
+      const corner = corners.get(offset);
+      return cell && corner ? { cell, left: corner.left, top: corner.top } : null;
     },
   };
 }
@@ -249,7 +255,11 @@ export function docToTableData(doc: PMNode, previous: TableData, cache: Markdown
     const found = slots.at(0, c);
     const cell = found?.cell ?? null;
     let own: string | null = null;
-    table.forEach((_row, _offset, r) => (own ??= idOf(slots.at(r, c)?.cell, 'colId')));
+    table.forEach((_row, _offset, r) => {
+      // Only a cell anchored in this column names it: a slot a horizontal merge covers holds the anchor's ID.
+      const here = slots.at(r, c);
+      if (here && here.left === c) own ??= idOf(here.cell, 'colId');
+    });
     const id = pick(own, previous.columns[c]?.id);
     const before = columnsBefore.get(id);
     const colwidth = cell?.attrs.colwidth as unknown;
@@ -267,7 +277,12 @@ export function docToTableData(doc: PMNode, previous: TableData, cache: Markdown
     columns.forEach((column, c) => {
       const found = slots.at(r, c);
       const cell = found && found.left === c && found.top === r ? found.cell : null;
-      cells[column.id] = { ...before?.cells[column.id], markdown: cellMarkdown(cell?.firstChild ?? null, cache) };
+      // A covered slot keeps the Markdown it has: it is hidden, not erased (ADR 0064).
+      const kept = found && !cell ? (before?.cells[column.id]?.markdown ?? '') : null;
+      cells[column.id] = {
+        ...before?.cells[column.id],
+        markdown: kept ?? cellMarkdown(cell?.firstChild ?? null, cache),
+      };
     });
     rows.push({ ...before, id, cells });
   });
