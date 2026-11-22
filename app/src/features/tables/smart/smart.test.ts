@@ -517,6 +517,10 @@ describe('the worker and the menus', () => {
     expect(busy).toEqual([true, false]);
     // The same cells again: no second trip to the worker.
     expect(book.calculateNow(member)?.rows[2].cells[9].value).toBe(2);
+    // Once the results are written back, the cells are a new table: the worker's last results still answer.
+    member.raw = () => ({ ...raw });
+    expect(book.calculateNow(member)).toBeNull();
+    expect(book.lastCalculated(member)?.rows[2].cells[9].value).toBe(2);
     book.leave(member);
   });
 
