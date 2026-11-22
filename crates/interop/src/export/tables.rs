@@ -221,6 +221,26 @@ fn collect_tables(
                     "Excel's largest font size is 409 points, so larger text is written at 409 points.",
                 );
             }
+            if let Some(s) = sheet.as_ref().filter(|_| excel) {
+                if s.name.as_deref().is_some_and(|n| !excel_name_ok(n)) {
+                    page_report.simplified(
+                        "table names Excel does not allow",
+                        "Excel table names start with a letter and have no spaces, and they cannot look like a cell such as A1, so such a table is named TableN in Excel.",
+                    );
+                }
+                if s.names.iter().any(|n| !excel_name_ok(&n.name)) {
+                    page_report.simplified(
+                        "names Excel does not allow",
+                        "Excel names start with a letter and have no spaces, and they cannot look like a cell such as A1, so such names are left out.",
+                    );
+                }
+                if s.validation.iter().any(crate::sheet::xlsx::validation_is_lost) {
+                    page_report.simplified(
+                        "cell checks Excel cannot hold",
+                        "A list with no items or source, or a checkbox whose values hold a comma, cannot be written for Excel, so that check is left out.",
+                    );
+                }
+            }
             tables.push(Table {
                 name,
                 header,
@@ -418,6 +438,41 @@ fn fits_list_object(table: &Table) -> bool {
     table.header && table.rows.len() > 1 && distinct && table.sheet.as_ref().is_none_or(|s| s.merges.is_empty())
 }
 
+/// Whether Excel accepts `name` as a table name or a defined name. It starts with a letter, `_` or `\`, goes on with
+/// letters, digits, `_`, `.` or `\`, has at most 255 characters, and does not read as a cell reference such as `A1`,
+/// `R1C1` or `RC`, or as `R` or `C` alone (format spec `R-SHT-13`; ECMA-376 Part 1, 18.2.5).
+fn excel_name_ok(name: &str) -> bool {
+    let mut chars = name.chars();
+    let start = chars.next().is_some_and(|c| c.is_alphabetic() || c == '_' || c == '\\');
+    let rest = chars.all(|c| c.is_alphanumeric() || matches!(c, '_' | '.' | '\\'));
+    if !start || !rest || name.chars().count() > 255 {
+        return false;
+    }
+    let upper = name.to_ascii_uppercase();
+    let digits = |s: &str| s.chars().all(|c| c.is_ascii_digit());
+    let letters = upper.trim_end_matches(|c: char| c.is_ascii_digit());
+    let column = ((1..=3).contains(&letters.len()) && letters.len() < upper.len())
+        .then(|| {
+            letters.chars().try_fold(0u32, |n, c| {
+                c.is_ascii_uppercase()
+                    .then(|| n * 26 + (u32::from(c) - u32::from('A') + 1))
+            })
+        })
+        .flatten();
+    let a1 = column.is_some_and(|c| c <= 16_384);
+    let r1c1 = upper
+        .strip_prefix('R')
+        .map(|s| s.trim_start_matches(|c: char| c.is_ascii_digit()))
+        .is_some_and(|s| s.is_empty() || s.strip_prefix('C').is_some_and(digits));
+    let c_only = upper.strip_prefix('C').is_some_and(digits);
+    !(a1 || r1c1 || c_only)
+}
+
+/// Whether the table block has `data.sheet.v`, so its formulas follow Excel's rules (format spec `R-SHT-4`).
+fn has_sheet_version(data: &TableData) -> bool {
+    data.extra.get("sheet").and_then(|s| s.get("v")).is_some()
+}
+
 /// The tables as formulas see them: each one's OpenNote name, ListObject, sheet, and column names.
 fn table_refs(tables: &[Table], sheets: &[String]) -> Vec<TableRef> {
     let mut taken: Vec<String> = Vec::new();
@@ -445,10 +500,16 @@ fn table_refs(tables: &[Table], sheets: &[String]) -> Vec<TableRef> {
                 })
                 .collect();
             let excel = fits_list_object(table).then(|| {
-                let mut unique = name.clone();
+                // A name Excel does not allow would make the file need repair, so the ListObject takes TableN.
+                let base = if excel_name_ok(&name) {
+                    name.clone()
+                } else {
+                    format!("Table{place}")
+                };
+                let mut unique = base.clone();
                 let mut n = 2;
                 while taken.iter().any(|t| t.eq_ignore_ascii_case(&unique)) {
-                    unique = format!("{name}_{n}");
+                    unique = format!("{base}_{n}");
                     n += 1;
                 }
                 taken.push(unique.clone());
@@ -461,6 +522,7 @@ fn table_refs(tables: &[Table], sheets: &[String]) -> Vec<TableRef> {
                 header: table.header,
                 columns,
                 rows: table.rows.len(),
+                legacy: !table.data.as_ref().is_some_and(has_sheet_version),
             }
         })
         .collect()
@@ -491,7 +553,7 @@ fn defined_names(tables: &[Table], refs: &[TableRef]) -> String {
             let list = refs
                 .iter()
                 .any(|r| r.excel.as_deref().is_some_and(|e| e.eq_ignore_ascii_case(&name.name)));
-            if list || seen.contains(&key) {
+            if list || seen.contains(&key) || !excel_name_ok(&name.name) {
                 continue;
             }
             seen.push(key);
@@ -829,6 +891,142 @@ mod tests {
         );
         // A ListObject's header cells are text.
         assert!(part("xl/worksheets/sheet1.xml").contains("<c r=\"B1\" s=\"1\" t=\"inlineStr\">"));
+    }
+
+    #[test]
+    fn names_excel_does_not_allow_are_renamed_or_left_out() {
+        // Worked from the name rules of ECMA-376 Part 1, 18.2.5: no spaces, a letter, "_" or "\" first, and no cell
+        // reference look-alikes. XFD is the last column, so XFE1 is a name.
+        for ok in ["TaxRate", "_x", "\\base", "Tax.Rate", "Résumé", "XFE1", "AB", "Rate2C"] {
+            assert!(excel_name_ok(ok), "{ok}");
+        }
+        for bad in [
+            "",
+            "Tax Rate",
+            "1st",
+            "A1",
+            "xfd1048576",
+            "R1C1",
+            "RC",
+            "R",
+            "c",
+            "C12",
+            "R2",
+            "a-b",
+        ] {
+            assert!(!excel_name_ok(bad), "{bad}");
+        }
+        use crate::sheet::Name;
+        let name = |name: &str| Name {
+            name: name.to_owned(),
+            reference: "1".to_owned(),
+            table_scope: false,
+            comment: String::new(),
+        };
+        let sheet = TableSheet {
+            name: Some("My table".to_owned()),
+            names: vec![name("Tax Rate"), name("A1"), name("Good")],
+            ..TableSheet::default()
+        };
+        let table = Table {
+            name: "Prices".to_owned(),
+            header: true,
+            rows: vec![vec!["Item".to_owned()], vec!["Pens".to_owned()]],
+            lists: Vec::new(),
+            data: None,
+            sheet: Some(sheet),
+            page: 0,
+        };
+        let parts = crate::docx::read_parts(&workbook(&[table]).expect("a workbook"));
+        let part = |name: &str| {
+            parts
+                .iter()
+                .find(|(n, _)| n == name)
+                .map(|(_, b)| String::from_utf8_lossy(b).into_owned())
+                .unwrap_or_else(|| panic!("no part {name}"))
+        };
+        let book = part("xl/workbook.xml");
+        assert!(
+            book.contains("<definedNames><definedName name=\"Good\">1</definedName></definedNames>"),
+            "{book}"
+        );
+        let list = part("xl/tables/table1.xml");
+        assert!(list.contains("name=\"Table1\" displayName=\"Table1\""), "{list}");
+    }
+
+    #[test]
+    fn checkbox_values_are_quoted_and_lost_checks_are_found() {
+        let rule = |json: serde_json::Value| crate::sheet::Rule {
+            id: "r1".to_owned(),
+            boxes: vec![crate::sheet::Merge {
+                top: 1,
+                left: 1,
+                bottom: 1,
+                right: 1,
+            }],
+            rule: json.as_object().expect("an object").clone(),
+            style: None,
+        };
+        let quoted = rule(serde_json::json!({ "kind": "checkbox", "checked": "say \"yes\"", "unchecked": "no" }));
+        let comma = rule(serde_json::json!({ "kind": "checkbox", "checked": "yes, please", "unchecked": "no" }));
+        let empty = rule(serde_json::json!({ "kind": "list" }));
+        let fine = rule(serde_json::json!({ "kind": "list", "items": ["a", "b"] }));
+        let lost = crate::sheet::xlsx::validation_is_lost;
+        assert!(!lost(&quoted) && lost(&comma) && lost(&empty) && !lost(&fine));
+        let sheet = TableSheet {
+            validation: vec![quoted, comma],
+            ..TableSheet::default()
+        };
+        let table = Table {
+            name: "Tasks".to_owned(),
+            header: true,
+            rows: vec![
+                vec!["Item".to_owned(), "Done".to_owned()],
+                vec!["Pens".to_owned(), "no".to_owned()],
+            ],
+            lists: Vec::new(),
+            data: None,
+            sheet: Some(sheet),
+            page: 0,
+        };
+        let xml = sheet_part(table);
+        // A quote inside an Excel string is doubled, then escaped for XML.
+        assert!(
+            xml.contains("<formula1>&quot;say &quot;&quot;yes&quot;&quot;,no&quot;</formula1>"),
+            "{xml}"
+        );
+        assert!(xml.contains("<dataValidations count=\"1\">"), "{xml}");
+    }
+
+    /// A table of one header row and one data row whose second cell holds `formula`.
+    fn formula_table(formula: &str, sheet: Option<serde_json::Value>) -> Table {
+        let mut data = crate::sheet::xlsx::tests::table(&[&["A", "B"], &["3", formula]], &[80.0, 80.0]);
+        if let Some(sheet) = sheet {
+            data.extra.insert("sheet".to_owned(), sheet);
+        }
+        Table {
+            name: "Old".to_owned(),
+            header: true,
+            rows: vec![
+                vec!["A".to_owned(), "B".to_owned()],
+                vec!["3".to_owned(), formula.to_owned()],
+            ],
+            lists: Vec::new(),
+            sheet: crate::sheet::read(&data),
+            data: Some(data),
+            page: 0,
+        }
+    }
+
+    #[test]
+    fn a_table_without_a_sheet_version_keeps_its_textbook_meaning() {
+        // Worked by hand: under the textbook rules -A1^2 is -(A1^2) and 2^3^2 is 2^(3^2). A1 is the first data row,
+        // which is row 2 in Excel under the header row.
+        let old = sheet_part(formula_table("=-A1^2+2^3^2*E", None));
+        assert!(old.contains("<f>-(A2^2)+2^(3^2)*EXP(1)</f>"), "{old}");
+        // A table with data.sheet.v follows Excel's rules already, and E is a name there.
+        let new = sheet_part(formula_table("=-A1^2+2^3^2*E", Some(serde_json::json!({ "v": 1 }))));
+        assert!(new.contains("<f>-A2^2+2^3^2*E</f>"), "{new}");
     }
 
     #[test]

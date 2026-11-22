@@ -17,7 +17,7 @@ fn row_id(n: usize) -> String {
 }
 
 /// A table with a header row, the given cell Markdown, and column widths in page units.
-fn table(rows: &[&[&str]], widths: &[f64]) -> TableData {
+pub(crate) fn table(rows: &[&[&str]], widths: &[f64]) -> TableData {
     TableData {
         header: true,
         columns: widths
@@ -77,6 +77,7 @@ fn book(table: &TableData, excel: Option<&str>) -> Vec<TableRef> {
         header: true,
         columns: head,
         rows: table.rows.len(),
+        legacy: false,
     }]
 }
 

@@ -2,7 +2,12 @@
 // TypeScript twin of crates/interop/src/sheet/formula.rs, and both run the golden cases of fixtures/translate.json.
 // OpenNote's A1 rows count from the first data row, so rows move by one under a header row. A bare [Col] is the cell
 // in the formula's row, except as an argument of a function that takes a range, where it is the whole column.
-// E becomes EXP(1), and functions newer than Excel 2007 take the _xlfn. prefix of the file form.
+// Functions newer than Excel 2007 take the _xlfn. prefix of the file form. E is a name under the table rules (ADR
+// 0058), so it stays E. A table without data.sheet.v first takes the legacy rewrite (legacy.ts), where E becomes EXP(1).
+// A reference after a sheet the workbook does not hold keeps its rows.
+
+import { rewriteLegacy } from './legacy';
+import { STORED } from './lexer';
 
 /** A table as formulas see it, in the workbook being written or read. */
 export interface TableRef {
@@ -17,7 +22,12 @@ export interface TableRef {
   columns: readonly string[];
   /** Its rows, the header row included. */
   rows: number;
+  /** True when it has no data.sheet.v, so its formulas follow the textbook rules (format spec R-SHT-4). */
+  legacy?: boolean;
 }
+
+/** What a sheet or table qualifier names for the reference after it: a table of the book, or 'outside' it. */
+type Qualifier = number | 'outside' | null;
 
 /** Where a formula sits: the workbook, its own table, and its Excel row (null for a defined name). */
 export interface TranslateContext {
@@ -241,6 +251,30 @@ class Walker {
   rowRef(at: number): boolean {
     return this.prevIs(at, ':') || this.nextIs(at, ':');
   }
+
+  /** The table a reference after `target` points into, and the row shift it takes. */
+  place(target: Qualifier, toExcel: boolean): { table: number; by: number } {
+    if (target === 'outside') return { table: this.cx.own, by: 0 };
+    const table = target ?? this.cx.own;
+    return { table, by: this.shift(table, toExcel) };
+  }
+
+  /** The qualifier that carries on to the next token: the far end of a range is on the same sheet. */
+  carry(target: Qualifier, at: number): Qualifier {
+    const t = this.toks[at];
+    const colon = t.k === 'text' && t.t === ':';
+    const reference = (t.k === 'name' || t.k === 'num') && this.nextIs(at, ':');
+    return colon || reference ? target : null;
+  }
+}
+
+/** A formula of an old table, rewritten to keep its textbook meaning. Text the rewrite cannot read stays as it is. */
+function legacyText(formula: string): string {
+  try {
+    return rewriteLegacy(formula, STORED);
+  } catch {
+    return formula;
+  }
 }
 
 function structToExcel(w: Walker, raw: string, t: number, explicit: boolean): string {
@@ -267,28 +301,33 @@ function structToExcel(w: Walker, raw: string, t: number, explicit: boolean): st
 
 /** Translates an OpenNote formula, without its =, into Excel's file form. */
 export function toExcel(formula: string, cx: TranslateContext): string {
-  const w = new Walker(tokenize(formula, false), cx);
+  const source = cx.book[cx.own]?.legacy === true ? legacyText(formula) : formula;
+  const w = new Walker(tokenize(source, false), cx);
   let out = '';
-  let qualified: number | null = null;
-  const ownPrefix = (at: number, target: number | null): string =>
+  let qualified: Qualifier = null;
+  const ownPrefix = (at: number, target: Qualifier): string =>
     cx.row === null && target === null && !w.prevIs(at, ':') ? sheetPrefix(cx.book[cx.own].sheet) : '';
   w.toks.forEach((tok, at) => {
     const target = qualified;
     qualified = null;
-    const table = target ?? cx.own;
+    const { table, by } = w.place(target, true);
     const next = w.toks[at + 1];
     const prev = w.toks[at - 1];
     if (tok.k === 'name' && w.nextIs(at, '(')) {
       const upper = tok.t.toUpperCase();
       if (FUTURE_FUNCTIONS.has(upper)) out += WORKSHEET_PREFIXED.has(upper) ? '_xlfn._xlws.' : '_xlfn.';
       out += tok.t;
-    } else if (tok.k === 'name' && w.nextIs(at, '!')) {
-      const t = w.tableNamed(tok.t, false);
+    } else if ((tok.k === 'name' || tok.k === 'quoted') && w.nextIs(at, '!')) {
+      const bare = tok.k === 'quoted' ? tok.t.slice(1, -1).replaceAll("''", "'") : tok.t;
+      const t = w.tableNamed(bare, false);
       if (t >= 0) {
         out += sheetPrefix(cx.book[t].sheet);
         qualified = t;
-      } else out += `${tok.t}!`;
-    } else if (tok.k === 'text' && tok.t === '!' && prev?.k === 'name') {
+      } else {
+        out += `${tok.t}!`;
+        qualified = 'outside';
+      }
+    } else if (tok.k === 'text' && tok.t === '!' && (prev?.k === 'name' || prev?.k === 'quoted')) {
       qualified = target;
     } else if (tok.k === 'name' && next?.k === 'bracket') {
       const t = w.tableNamed(tok.t, false);
@@ -301,20 +340,19 @@ export function toExcel(formula: string, cx: TranslateContext): string {
       const cell = cellOf(tok.t);
       const row = rowNumber(tok.t);
       if (cell) {
-        const r = moved(cell.row, w.shift(table, true));
+        const r = moved(cell.row, by);
         out += ownPrefix(at, target) + (r === null ? '#REF!' : cellText(cell, r));
       } else if (row && w.rowRef(at)) {
-        out += ownPrefix(at, target) + rowText(row.abs, row.row, w.shift(table, true));
-      } else if (tok.t === 'E' || tok.t === 'e') {
-        out += 'EXP(1)';
+        out += ownPrefix(at, target) + rowText(row.abs, row.row, by);
       } else {
         if (w.rowRef(at) && /^\$?[A-Za-z]+$/.test(tok.t)) out += ownPrefix(at, target);
         out += tok.t;
       }
     } else if (tok.k === 'num' && w.rowRef(at) && rowNumber(tok.t)) {
       const row = rowNumber(tok.t)!;
-      out += ownPrefix(at, target) + rowText(row.abs, row.row, w.shift(table, true));
+      out += ownPrefix(at, target) + rowText(row.abs, row.row, by);
     } else out += tok.t;
+    qualified ??= w.carry(target, at);
     w.track(at);
   });
   return out;
@@ -351,11 +389,11 @@ function structFromExcel(w: Walker, raw: string, t: number): string {
 export function fromExcel(formula: string, cx: TranslateContext): string {
   const w = new Walker(tokenize(formula, true), cx);
   let out = '';
-  let qualified: number | null = null;
+  let qualified: Qualifier = null;
   w.toks.forEach((tok, at) => {
     const target = qualified;
     qualified = null;
-    const table = target ?? cx.own;
+    const { table, by } = w.place(target, false);
     if (tok.k === 'name' && w.nextIs(at, '(')) {
       out += stripPrefixes(tok.t);
     } else if ((tok.k === 'name' || tok.k === 'quoted') && w.nextIs(at, '!')) {
@@ -364,7 +402,10 @@ export function fromExcel(formula: string, cx: TranslateContext): string {
       if (t >= 0) {
         out += cx.book[t].name;
         qualified = t;
-      } else out += tok.t;
+      } else {
+        out += tok.t;
+        qualified = 'outside';
+      }
     } else if (tok.k === 'text' && tok.t === '!') {
       out += '!';
       qualified = target;
@@ -378,14 +419,15 @@ export function fromExcel(formula: string, cx: TranslateContext): string {
       const cell = cellOf(tok.t);
       const row = rowNumber(tok.t);
       if (cell) {
-        const r = moved(cell.row, w.shift(table, false));
+        const r = moved(cell.row, by);
         out += r === null ? '#REF!' : cellText(cell, r);
-      } else if (row && w.rowRef(at)) out += rowText(row.abs, row.row, w.shift(table, false));
+      } else if (row && w.rowRef(at)) out += rowText(row.abs, row.row, by);
       else out += stripPrefixes(tok.t);
     } else if (tok.k === 'num' && w.rowRef(at) && rowNumber(tok.t)) {
       const row = rowNumber(tok.t)!;
-      out += rowText(row.abs, row.row, w.shift(table, false));
+      out += rowText(row.abs, row.row, by);
     } else out += tok.t;
+    qualified ??= w.carry(target, at);
     w.track(at);
   });
   return out;

@@ -3,9 +3,13 @@
 //! OpenNote's A1 rows count from the first data row, so rows move by one when the table has a header row. A bare
 //! `[Col]` is the cell of that column in the formula's row, except as an argument of a function that takes a range,
 //! where it is the whole column. In Excel it becomes a structured reference to the table's ListObject, or plain A1
-//! references when the table has none. `E` becomes `EXP(1)`, and functions newer than Excel 2007 get the `_xlfn.`
-//! prefix the file format requires. Everything else is copied as it is. The same golden cases run in TypeScript
-//! (`app/src/features/tables/fixtures/translate.json`).
+//! references when the table has none. Functions newer than Excel 2007 get the `_xlfn.` prefix the file form
+//! requires. `E` is a name under the table rules (ADR 0058), so it stays `E`. A table without `data.sheet.v` was
+//! written with the textbook rules, so its formulas first take the legacy rewrite (`legacy.rs`). A reference after a
+//! sheet the workbook does not hold keeps its rows. Everything else is copied as it is. The same golden cases run in
+//! TypeScript (`app/src/features/tables/fixtures/translate.json`).
+
+mod legacy;
 
 /// A table as formulas see it, in the workbook being written or read.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -22,6 +26,35 @@ pub struct TableRef {
     pub columns: Vec<String>,
     /// Its rows, the header row included.
     pub rows: usize,
+    /// Whether it has no `data.sheet.v`, so its formulas follow the textbook rules (format spec `R-SHT-4`).
+    pub legacy: bool,
+}
+
+/// What a sheet or table qualifier names, for the reference after it.
+#[derive(Clone, Copy, Debug, PartialEq)]
+enum Qualifier {
+    /// A table of the workbook.
+    Table(usize),
+    /// A sheet or table the workbook does not hold, whose rows do not move.
+    Outside,
+}
+
+impl Qualifier {
+    /// The table a reference after `target` points into, and the row shift it takes.
+    fn place(target: Option<Self>, w: &Walker<'_>, to_excel: bool) -> (usize, isize) {
+        match target {
+            Some(Self::Table(t)) => (t, w.shift(t, to_excel)),
+            Some(Self::Outside) => (w.cx.own, 0),
+            None => (w.cx.own, w.shift(w.cx.own, to_excel)),
+        }
+    }
+
+    /// The qualifier that carries on to the next token: the far end of a range is on the same sheet.
+    fn carry(target: Option<Self>, w: &Walker<'_>, at: usize) -> Option<Self> {
+        let colon = matches!(&w.toks[at], Tok::Text(t) if t == ":");
+        let reference = matches!(&w.toks[at], Tok::Name(_) | Tok::Num(_));
+        target.filter(|_| colon || (reference && w.next_is(at, ":")))
+    }
 }
 
 /// Where a formula sits.
@@ -362,46 +395,67 @@ fn strip_prefixes(name: &str) -> &str {
     bare
 }
 
+/// Writes a function name, with the `_xlfn.` prefix (and `_xlws.` after it) that a newer function takes in the file.
+fn push_function(out: &mut String, name: &str) {
+    let upper = name.to_ascii_uppercase();
+    if listed(FUTURE_FUNCTIONS, &upper) {
+        out.push_str("_xlfn.");
+        if listed(WORKSHEET_PREFIXED, &upper) {
+            out.push_str("_xlws.");
+        }
+    }
+    out.push_str(name);
+}
+
+/// Writes a sheet qualifier for Excel. A table of the workbook takes the name of its sheet, and any other sheet stays
+/// as `written`. `bare` is the name without its quotes.
+fn qualifier_to_excel(w: &Walker<'_>, written: &str, bare: &str, out: &mut String) -> Qualifier {
+    match w.table_named(bare, false) {
+        Some(t) => {
+            out.push_str(&sheet_prefix(&w.cx.book[t].sheet));
+            Qualifier::Table(t)
+        }
+        None => {
+            out.push_str(written);
+            out.push('!');
+            Qualifier::Outside
+        }
+    }
+}
+
 /// Translates an OpenNote formula, without its `=`, into Excel's file form.
 /// A context whose own table is missing leaves the formula unchanged.
 pub fn to_excel(formula: &str, cx: &Context<'_>) -> String {
     if cx.own >= cx.book.len() {
         return formula.to_owned();
     }
+    let rewritten;
+    let formula = if cx.book[cx.own].legacy {
+        rewritten = legacy::rewrite(formula);
+        rewritten.as_str()
+    } else {
+        formula
+    };
     let mut w = Walker {
         toks: tokenize(formula, Dialect::OpenNote),
         cx: *cx,
         calls: Vec::new(),
     };
     let mut out = String::new();
-    // The table a sheet qualifier just named, for the reference after it.
-    let mut qualified: Option<usize> = None;
+    // What a sheet qualifier just named, for the reference after it.
+    let mut qualified: Option<Qualifier> = None;
     for at in 0..w.toks.len() {
         let target = qualified.take();
-        let table = target.unwrap_or(cx.own);
+        let (table, by) = Qualifier::place(target, &w, true);
         let tok = w.toks[at].clone();
         match tok {
-            Tok::Name(name) if w.next_is(at, "(") => {
-                let upper = name.to_ascii_uppercase();
-                if listed(FUTURE_FUNCTIONS, &upper) {
-                    out.push_str("_xlfn.");
-                    if listed(WORKSHEET_PREFIXED, &upper) {
-                        out.push_str("_xlws.");
-                    }
-                }
-                out.push_str(&name);
+            Tok::Name(name) if w.next_is(at, "(") => push_function(&mut out, &name),
+            Tok::Name(name) if w.next_is(at, "!") => qualified = Some(qualifier_to_excel(&w, &name, &name, &mut out)),
+            Tok::Quoted(quoted) if w.next_is(at, "!") => {
+                let bare = quoted.trim_matches('\'').replace("''", "'");
+                qualified = Some(qualifier_to_excel(&w, &quoted, &bare, &mut out));
             }
-            Tok::Name(name) if w.next_is(at, "!") => match w.table_named(&name, false) {
-                Some(t) => {
-                    out.push_str(&sheet_prefix(&cx.book[t].sheet));
-                    qualified = Some(t);
-                }
-                None => {
-                    out.push_str(&name);
-                    out.push('!');
-                }
-            },
-            Tok::Text(t) if t == "!" && at > 0 && matches!(w.toks[at - 1], Tok::Name(_)) => {
+            Tok::Text(t) if t == "!" && at > 0 && matches!(w.toks[at - 1], Tok::Name(_) | Tok::Quoted(_)) => {
                 // Written with the sheet name above.
                 if target.is_some() {
                     qualified = target;
@@ -409,7 +463,7 @@ pub fn to_excel(formula: &str, cx: &Context<'_>) -> String {
             }
             Tok::Name(name) if matches!(w.toks.get(at + 1), Some(Tok::Bracket(_))) => match w.table_named(&name, false)
             {
-                Some(t) => qualified = Some(t),
+                Some(t) => qualified = Some(Qualifier::Table(t)),
                 None => out.push_str(&name),
             },
             Tok::Bracket(raw) => {
@@ -430,15 +484,13 @@ pub fn to_excel(formula: &str, cx: &Context<'_>) -> String {
                 };
                 if let Some(cell) = cell_of(&name) {
                     prefix(&mut out);
-                    match moved(cell.row, w.shift(table, true)) {
+                    match moved(cell.row, by) {
                         Some(row) => out.push_str(&cell_text(&cell, row)),
                         None => out.push_str("#REF!"),
                     }
                 } else if let Some((abs, row)) = row_number(&name).filter(|_| w.row_ref(at)) {
                     prefix(&mut out);
-                    push_row(&mut out, abs, row, w.shift(table, true));
-                } else if name == "E" || name == "e" {
-                    out.push_str("EXP(1)");
+                    push_row(&mut out, abs, row, by);
                 } else {
                     if w.row_ref(at) && name.trim_start_matches('$').chars().all(|c| c.is_ascii_alphabetic()) {
                         prefix(&mut out);
@@ -451,12 +503,13 @@ pub fn to_excel(formula: &str, cx: &Context<'_>) -> String {
                     if cx.row.is_none() && target.is_none() && !w.prev_is(at, ":") {
                         out.push_str(&sheet_prefix(&cx.book[cx.own].sheet));
                     }
-                    push_row(&mut out, abs, row, w.shift(table, true));
+                    push_row(&mut out, abs, row, by);
                 }
                 None => out.push_str(&n),
             },
             Tok::Num(t) | Tok::Text(t) | Tok::Quoted(t) => out.push_str(&t),
         }
+        qualified = qualified.or(Qualifier::carry(target, &w, at));
         w.track(at);
     }
     out
@@ -549,10 +602,10 @@ pub fn from_excel(formula: &str, cx: &Context<'_>) -> String {
         calls: Vec::new(),
     };
     let mut out = String::new();
-    let mut qualified: Option<usize> = None;
+    let mut qualified: Option<Qualifier> = None;
     for at in 0..w.toks.len() {
         let target = qualified.take();
-        let table = target.unwrap_or(cx.own);
+        let (table, by) = Qualifier::place(target, &w, false);
         let tok = w.toks[at].clone();
         match tok {
             Tok::Name(name) if w.next_is(at, "(") => out.push_str(strip_prefixes(&name)),
@@ -564,9 +617,12 @@ pub fn from_excel(formula: &str, cx: &Context<'_>) -> String {
                 match w.table_on_sheet(&sheet) {
                     Some(t) => {
                         out.push_str(&cx.book[t].name);
-                        qualified = Some(t);
+                        qualified = Some(Qualifier::Table(t));
                     }
-                    None => out.push_str(&name),
+                    None => {
+                        out.push_str(&name);
+                        qualified = Some(Qualifier::Outside);
+                    }
                 }
             }
             Tok::Text(t) if t == "!" => {
@@ -575,29 +631,30 @@ pub fn from_excel(formula: &str, cx: &Context<'_>) -> String {
             }
             Tok::Name(name) if matches!(w.toks.get(at + 1), Some(Tok::Bracket(_))) => {
                 match w.table_named(&name, true) {
-                    Some(t) => qualified = Some(t),
+                    Some(t) => qualified = Some(Qualifier::Table(t)),
                     None => out.push_str(&name),
                 }
             }
             Tok::Bracket(raw) => out.push_str(&struct_from_excel(&w, &raw, table)),
             Tok::Name(name) => {
                 if let Some(cell) = cell_of(&name) {
-                    match moved(cell.row, w.shift(table, false)) {
+                    match moved(cell.row, by) {
                         Some(row) => out.push_str(&cell_text(&cell, row)),
                         None => out.push_str("#REF!"),
                     }
                 } else if let Some((abs, row)) = row_number(&name).filter(|_| w.row_ref(at)) {
-                    push_row(&mut out, abs, row, w.shift(table, false));
+                    push_row(&mut out, abs, row, by);
                 } else {
                     out.push_str(strip_prefixes(&name));
                 }
             }
             Tok::Num(n) if w.row_ref(at) => match row_number(&n) {
-                Some((abs, row)) => push_row(&mut out, abs, row, w.shift(table, false)),
+                Some((abs, row)) => push_row(&mut out, abs, row, by),
                 None => out.push_str(&n),
             },
             Tok::Num(t) | Tok::Text(t) | Tok::Quoted(t) => out.push_str(&t),
         }
+        qualified = qualified.or(Qualifier::carry(target, &w, at));
         w.track(at);
     }
     out

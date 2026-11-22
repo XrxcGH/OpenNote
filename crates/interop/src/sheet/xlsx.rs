@@ -403,6 +403,41 @@ fn validations_xml(input: &Input<'_>) -> String {
     )
 }
 
+/// An inline list as Excel holds it: one quoted string of items split by commas, at most 255 characters. Items that
+/// hold a comma cannot be written this way.
+fn inline_list(r: &Map<String, Value>) -> Option<String> {
+    let items: Vec<&str> = r
+        .get("items")
+        .and_then(Value::as_array)
+        .map(|a| a.iter().filter_map(Value::as_str).collect())
+        .unwrap_or_default();
+    let joined = items.join(",");
+    let fits = !items.is_empty() && joined.chars().count() <= 255 && items.iter().all(|i| !i.contains(','));
+    fits.then(|| format!("\"{}\"", joined.replace('"', "\"\"")))
+}
+
+/// The two values of a checkbox as an inline list. A quote is doubled inside the string; a comma would split a value
+/// in two, so such a checkbox cannot be written.
+fn checkbox_list(r: &Map<String, Value>) -> Option<String> {
+    let on = r.get("checked").and_then(Value::as_str).unwrap_or("TRUE");
+    let off = r.get("unchecked").and_then(Value::as_str).unwrap_or("FALSE");
+    if on.contains(',') || off.contains(',') {
+        return None;
+    }
+    Some(format!("\"{},{}\"", on.replace('"', "\"\""), off.replace('"', "\"\"")))
+}
+
+/// Whether a validation rule loses its check in Excel: a list with no inline items that fit and no source, or a
+/// checkbox whose values hold a comma. The export reports these.
+pub(crate) fn validation_is_lost(rule: &Rule) -> bool {
+    let r = &rule.rule;
+    match text_of(r, "kind") {
+        "list" => inline_list(r).is_none() && text_of(r, "source").is_empty(),
+        "checkbox" => checkbox_list(r).is_none(),
+        _ => false,
+    }
+}
+
 fn validation_xml(input: &Input<'_>, rule: &Rule) -> Option<String> {
     let r = &rule.rule;
     let cx = rule_context(input, rule);
@@ -416,15 +451,9 @@ fn validation_xml(input: &Input<'_>, rule: &Rule) -> Option<String> {
             two.then(|| operand(text_of(r, "b"), &cx)),
         ),
         "list" => {
-            let items: Vec<&str> = r
-                .get("items")
-                .and_then(Value::as_array)
-                .map(|a| a.iter().filter_map(Value::as_str).collect())
-                .unwrap_or_default();
-            let joined = items.join(",");
             let source = text_of(r, "source");
-            let f = if !items.is_empty() && joined.chars().count() <= 255 && items.iter().all(|i| !i.contains(',')) {
-                format!("\"{}\"", joined.replace('"', "\"\""))
+            let f = if let Some(inline) = inline_list(r) {
+                inline
             } else if !source.is_empty() {
                 to_excel(source.trim_start_matches('='), &cx)
             } else {
@@ -437,11 +466,7 @@ fn validation_xml(input: &Input<'_>, rule: &Rule) -> Option<String> {
             Some(to_excel(text_of(r, "a").trim_start_matches('='), &cx)),
             None,
         ),
-        "checkbox" => {
-            let on = r.get("checked").and_then(Value::as_str).unwrap_or("TRUE");
-            let off = r.get("unchecked").and_then(Value::as_str).unwrap_or("FALSE");
-            (" type=\"list\"".to_owned(), Some(format!("\"{on},{off}\"")), None)
-        }
+        "checkbox" => (" type=\"list\"".to_owned(), Some(checkbox_list(r)?), None),
         _ => (String::new(), None, None),
     };
     let mut attrs = kind_attr;

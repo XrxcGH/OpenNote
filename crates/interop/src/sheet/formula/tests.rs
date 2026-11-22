@@ -23,6 +23,7 @@ fn books(golden: &Value) -> std::collections::HashMap<String, Vec<TableRef>> {
                     .map(|c| c.as_str().expect("a column").to_owned())
                     .collect(),
                 rows: t["rows"].as_u64().expect("rows") as usize,
+                legacy: t["legacy"].as_bool().unwrap_or(false),
             })
             .collect();
         out.insert(key.clone(), refs);
