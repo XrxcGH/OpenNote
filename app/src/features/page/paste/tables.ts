@@ -5,7 +5,7 @@ import type { Node as PMNode } from '@tiptap/pm/model';
 import { TITLE } from '../../../editor/markdown/escape';
 import { serializeInline } from '../../../editor/markdown/inline';
 import { textSchema } from '../../../editor/schema/schema';
-import { spreadsheetTableData } from '../../tables';
+import { loadSpreadsheetPaste } from '../../tables';
 import { DEFAULT_COLUMN_WIDTH } from './types';
 import type { TableData } from './types';
 
@@ -119,6 +119,15 @@ export function tableMarker(node: PMNode): number | null {
  * Table data with its sheet from a spreadsheet's clipboard HTML (Excel, Google Sheets, LibreOffice, or an OpenNote
  * table copy), or null for any other HTML, which keeps today's reading through `extractTables` (ADR 0067).
  */
+type SpreadsheetReader = (html: string, newId: () => string) => TableData | null;
+
+let reader: SpreadsheetReader | null = null;
+
+/** Loads the sheet paste code once, off the start-up path. The paste pipeline awaits it before it reads. */
+export async function ensureSpreadsheetPaste(): Promise<void> {
+  reader ??= await loadSpreadsheetPaste();
+}
+
 export function spreadsheetTable(html: string, newId: () => string): TableData | null {
-  return spreadsheetTableData(html, newId);
+  return reader ? reader(html, newId) : null;
 }
