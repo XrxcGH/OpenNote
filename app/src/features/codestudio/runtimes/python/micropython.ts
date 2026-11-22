@@ -22,7 +22,7 @@ interface RuntimeTables {
 }
 
 /**
- * Leaves Python no JavaScript value to use, as code cells do (codecells/sandbox/python.ts). Python reaches one only
+ * Leaves Python no JavaScript value to use, as code cells do (the old code cell sandbox). Python reaches one only
  * through the runtime's table, where entry 0 is the global object (the js module) and every value it is given is
  * added. Entry 0 and every object or function added become one empty object, and the map from values to numbers
  * keeps nothing, so `js` and `jsffi` give nothing to call, read, or grow.

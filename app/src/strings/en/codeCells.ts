@@ -7,12 +7,32 @@ export const codeCells = {
   inserted: 'Code cell added. Write code, then press Run or Ctrl+Enter.',
   block: 'Code cell',
   language: 'Language',
-  languages: { python: 'Python', javascript: 'JavaScript' },
+  languages: {
+    python: 'Python',
+    javascript: 'JavaScript',
+    typescript: 'TypeScript',
+    sql: 'SQL',
+    lua: 'Lua',
+    c: 'C',
+    cpp: 'C++',
+  },
+  engine: 'Python engine',
+  engines: { 'python-quick': 'Quick (MicroPython)', 'python-full': 'Full (Pyodide)' },
+  openStudio: 'Open in Code studio',
+  openStudioCommand: 'Open code block in Code studio',
+  studioConfirm: {
+    title: 'Open this code in the Code studio?',
+    body: 'The code cell becomes a code project with the same text. You can undo the change.',
+    confirm: 'Open in Code studio',
+  },
+  studioOpened: 'Code cell converted to a code project. Opening the Code studio.',
+  studioNoBlock: 'Put the caret in a code cell or a code project first.',
   code: 'Code',
   newer: 'This code cell needs a newer version of OpenNote',
   storedLanguage: 'Language: {language}',
   codeHelp:
-    'Tab indents and Shift+Tab outdents. Press Escape, then Tab, to move on. Ctrl+Enter runs the cell, and Escape stops it.',
+    'Tab indents and Shift+Tab outdents. Ctrl+Tab accepts a suggestion. Press Escape, then Tab, to move on. ' +
+    'Ctrl+Enter runs the cell, and Escape stops it.',
   run: 'Run',
   stop: 'Stop',
   clear: 'Clear output',
@@ -29,6 +49,8 @@ export const codeCells = {
     memory: 'Stopped: the cell used more than {megabytes} MB, the memory limit.',
     stopped: 'Stopped.',
     failed: 'The cell could not run. Try again.',
+    runtime: 'This language cannot run in this version of OpenNote yet.',
+    pack: 'This language needs a download first. Open Settings, then Code, then Downloads.',
     truncated: 'Only the first part of the output is shown.',
   },
   blocked: {
@@ -48,6 +70,22 @@ for step in range(6):
 let x = 1;
 const next = (v) => v - (v * v - 2) / (2 * v);
 for (let step = 0; step < 6; step++) console.log(step, (x = next(x)));
+`,
+    typescript: `// Newton’s method for the square root of 2
+const next = (v: number): number => v - (v * v - 2) / (2 * v);
+let x = 1;
+for (let step = 0; step < 6; step++) console.log(step, (x = next(x)));
+`,
+    sql: `-- The squares of 1 to 5, and their sum
+WITH n(i) AS (VALUES (1), (2), (3), (4), (5))
+SELECT i, i * i AS square, SUM(i * i) OVER () AS total FROM n;
+`,
+    lua: `-- Newton’s method for the square root of 2
+local x = 1.0
+for step = 0, 5 do
+  x = x - (x * x - 2) / (2 * x)
+  print(step, x)
+end
 `,
   },
 } as const;
