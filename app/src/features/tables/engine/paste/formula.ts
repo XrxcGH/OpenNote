@@ -7,9 +7,11 @@
 // `absRows` is that offset. Relative references need no offset, since both sides count the same steps.
 //
 // Text in double quotes, sheet names in single quotes, OpenNote's [Column] names, and {id} references are never
-// changed. A reference that would leave the sheet (above row 1 or left of column A) becomes #REF!.
+// changed. A reference that would leave the sheet (above row 1, left of column A, or past the engine's last row or
+// column) becomes #REF!.
 
 import { columnFromLetters, lettersFromColumn } from '../../../../core/expr';
+import { MAX_COLS, MAX_ROWS } from '../formula/fn/lookupRefs';
 
 /** Strings and quoted sheet names, which never hold references. R1C1 brackets stay outside this pattern. */
 const QUOTED = /("(?:[^"]|"")*"|'(?:[^']|'')*')/;
@@ -78,14 +80,15 @@ export function staysInBox(formula: string, rows: number, cols: number): boolean
 
 /**
  * R1C1 text to A1 text for the cell at `at`. `absRows` is taken off absolute row numbers (the header row offset when
- * pasting into a table with a header row). A reference above the first row or left of column A becomes #REF!.
+ * pasting into a table with a header row). A reference outside the sheet (above the first row, left of column A, or
+ * past the engine's MAX_ROWS or MAX_COLS) becomes #REF!.
  */
 export function r1c1ToA1(formula: string, at: At, absRows = 0): string {
   return outside(formula.replace(PREFIX, ''), QUOTED, (part) =>
     part.replace(RC, (_whole, rowStep?: string, rowAbs?: string, colStep?: string, colAbs?: string) => {
       const row = rowAbs !== undefined ? Number(rowAbs) - 1 - absRows : at.row + Number(rowStep ?? 0);
       const col = colAbs !== undefined ? Number(colAbs) - 1 : at.col + Number(colStep ?? 0);
-      if (row < 0 || col < 0) return '#REF!';
+      if (!(row >= 0 && col >= 0 && row < MAX_ROWS && col < MAX_COLS)) return '#REF!';
       return `${colAbs !== undefined ? '$' : ''}${lettersFromColumn(col)}${rowAbs !== undefined ? '$' : ''}${row + 1}`;
     }),
   );

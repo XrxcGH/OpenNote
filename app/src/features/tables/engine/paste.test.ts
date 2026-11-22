@@ -292,6 +292,14 @@ describe('clipboard formulas in R1C1 form', () => {
   it('gives #REF! for a reference above the first row', () => {
     expect(r1c1ToA1('=R[-2]C[0]', { row: 0, col: 0 })).toBe('=#REF!');
   });
+
+  it('gives #REF! for a reference past the last row or column (1,048,576 rows, 16,384 columns)', () => {
+    expect(r1c1ToA1('=R[99999999]C[0]', { row: 0, col: 0 })).toBe('=#REF!');
+    expect(r1c1ToA1('=RC[20000]', { row: 0, col: 0 })).toBe('=#REF!');
+    expect(r1c1ToA1('=R1048577C1', { row: 0, col: 0 })).toBe('=#REF!');
+    // The last cell itself is XFD1048576.
+    expect(r1c1ToA1('=R1048576C16384', { row: 0, col: 0 })).toBe('=$XFD$1048576');
+  });
 });
 
 describe('clipboard styles', () => {

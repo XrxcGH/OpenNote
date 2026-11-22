@@ -34,9 +34,9 @@ export function gridTexts(doc: PMNode): string[][] {
   return rows;
 }
 
-export function gridOf(doc: PMNode, header: boolean, columnIds: readonly string[]): Grid {
+export function gridOf(doc: PMNode, header: boolean, columnIds: readonly string[], rowIds?: readonly string[]): Grid {
   const texts = gridTexts(doc).map((row) => columnIds.map((_, c) => row[c] ?? ''));
-  return { header, columnIds, texts };
+  return rowIds ? { header, columnIds, texts, rowIds } : { header, columnIds, texts };
 }
 
 /**

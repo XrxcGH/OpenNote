@@ -5,7 +5,6 @@
 import { commandContext } from '../../../commands/registry';
 import type { ClipboardClient } from '../../../platform/types';
 import { DOMSerializer } from '@tiptap/pm/model';
-import type { Selection } from '@tiptap/pm/state';
 import { fileBlockRenderer } from '../blocks/fileBlock';
 import { imageBlockRenderer } from '../blocks/imageBlock';
 import type { MountedPage } from '../mount';
@@ -55,20 +54,7 @@ function inEditor(mounted: MountedPage, target: EventTarget | null): boolean {
 function ownPaste(mounted: MountedPage, target: EventTarget | null): 'code' | 'table' | null {
   if (target instanceof Element && target.closest('td, th')) return 'table';
   const editor = mounted.pool.active()?.editor;
-  // The table clipboard (ADR 0067) is a sheet write behind its flag; with it off, today's paste runs.
-  if (editor && mounted.host.flag('tables.sheetWrites') && inTableCells(editor.state.selection)) return 'table';
   return editor?.state.selection.$from.parent.type.name === 'codeBlock' ? 'code' : null;
-}
-
-/** Whether a selection is whole cells or a caret in a cell: the table's own clipboard handles those. */
-function inTableCells(selection: Selection): boolean {
-  if ('$anchorCell' in selection) return true;
-  const { $from } = selection;
-  for (let depth = $from.depth; depth > 0; depth--) {
-    const role = $from.node(depth).type.spec.tableRole;
-    if (role === 'cell' || role === 'header_cell') return true;
-  }
-  return false;
 }
 
 /** Copies the editor's selection as HTML and as plain text, which keeps its list markers and drops the Markdown marks. */
@@ -123,8 +109,6 @@ export function attachPageMedia(mounted: MountedPage, container: HTMLElement, sh
   const onCopy = (event: ClipboardEvent, cut: boolean) => {
     if (!event.clipboardData || editingTextField(event.target)) return;
     const editor = mounted.pool.active()?.editor;
-    // Whole cells copy through the table's own clipboard (tables clipboard, ADR 0067).
-    if (editor && mounted.host.flag('tables.sheetWrites') && '$anchorCell' in editor.state.selection) return;
     if (editor && container.contains(document.activeElement) && editor.view.dom.contains(document.activeElement)) {
       if (!copyText(mounted, event.clipboardData)) return;
       event.preventDefault();

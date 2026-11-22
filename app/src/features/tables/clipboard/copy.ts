@@ -14,9 +14,9 @@ import type { Locale } from '../engine/locale';
 import { generalText, render } from '../engine/numfmt';
 import { OWN_ATTRIBUTE, type ClipSpan, type OwnCell, type OwnForm } from '../engine/paste/clip';
 import { a1ToR1C1, isFormula, r1c1ToA1 } from '../engine/paste/formula';
-import { activeMerges, gridOf, layer, readableText, resolve, valueAt } from '../sheet/model';
+import { activeMerges, gridOf, layer, readableText, resolve, validationAt, valueAt } from '../sheet/model';
 import type { Box, CachedValue, CellStyle, Sheet } from '../sheet/model';
-import { own, ownObject } from '../sheet/model/json';
+import { own, ownObject, type JsonObject } from '../sheet/model/json';
 import { cssLine } from '../sheet/render/borders';
 import { colorOf } from '../sheet/render/color';
 
@@ -224,6 +224,9 @@ export function copyCells(input: CopyInput): CopyOutput {
   const rowsHtml: string[] = [];
   const lines: string[] = [];
   const ownRows: OwnCell[][] = [];
+  // Each validation rule of the copied cells once, without its ranges; a cell names its rule by index.
+  const rules: JsonObject[] = [];
+  const ruleIndex = new Map<string, number>();
   for (let gr = box.top; gr <= box.bottom; gr++) {
     const tds: string[] = [];
     const fields: string[] = [];
@@ -232,7 +235,18 @@ export function copyCells(input: CopyInput): CopyOutput {
       const at = { row: gr - box.top, col: gc - box.left };
       const cell = readCell(input, gr, gc);
       const note = own(ownObject(ownObject(ownObject(sheet, 'notes'), grid.rows[gr]), grid.cols[gc]), 'markdown');
-      ownRow.push(ownCell(cell, typeof note === 'string' ? note : undefined));
+      const mine = ownCell(cell, typeof note === 'string' ? note : undefined);
+      const rule = validationAt(sheet, table, gr, gc);
+      if (rule) {
+        let index = ruleIndex.get(rule.id);
+        if (index === undefined) {
+          const { ranges: _ranges, ...rest } = rule.rule;
+          index = rules.push(rest) - 1;
+          ruleIndex.set(rule.id, index);
+        }
+        mine.r = index;
+      }
+      ownRow.push(mine);
       fields.push(tsvField(cell.shown));
       if (!covered.has(`${at.row}:${at.col}`)) tds.push(cellHtml(cell, at, anchors.get(`${at.row}:${at.col}`)));
     }
@@ -251,6 +265,7 @@ export function copyCells(input: CopyInput): CopyOutput {
     rows: ownRows,
     spans,
     widths,
+    ...(rules.length > 0 ? { rules } : {}),
     ...(input.block ? { block: input.block } : {}),
     ...(input.name ? { name: input.name } : {}),
     ...(input.page ? { page: input.page } : {}),

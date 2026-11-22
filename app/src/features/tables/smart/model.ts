@@ -25,7 +25,8 @@ import type {
   TableName,
 } from '../engine';
 import { ITERATE_MAX_PASSES } from '../engine/model';
-import { namesOf, tableName } from '../sheet/model';
+import { namesOf, styleById, tableName } from '../sheet/model';
+import { own, ownObject } from '../sheet/model/json';
 import { t } from '../../../strings/t';
 import type { Sheet } from '../sheet/model';
 import type { SmartData } from './data';
@@ -35,6 +36,8 @@ export interface Grid {
   header: boolean;
   columnIds: readonly string[];
   texts: readonly (readonly string[])[];
+  /** The row IDs, header row first, so a cell's own number format is found. Without them no cell is text-only. */
+  rowIds?: readonly string[];
 }
 
 export interface SmartModel {
@@ -106,6 +109,32 @@ export interface Prepared {
   grid: Grid;
   /** The type each column was given from its cells, or undefined for a column whose type was picked. */
   inferred: readonly (ColumnType | undefined)[];
+  /** For each body row, the columns whose cells have the text format "@", as a key ('' for none). */
+  textKeys?: readonly string[];
+}
+
+/**
+ * For each body row, the columns whose cell has the number format "@" (Text). As in a spreadsheet, text in such a
+ * cell is never a formula, even when it starts with "=". Null when no cell has it.
+ */
+function textOnlyCells(grid: Grid, sheet: Sheet | undefined, offset: number): (Set<number> | undefined)[] | null {
+  const cells = sheet ? ownObject(sheet, 'cells') : undefined;
+  if (!sheet || !cells || !grid.rowIds) return null;
+  const out: (Set<number> | undefined)[] = [];
+  let any = false;
+  for (let r = offset; r < grid.texts.length; r++) {
+    const byCol = ownObject(cells, grid.rowIds[r] ?? '');
+    let set: Set<number> | undefined;
+    if (byCol) {
+      grid.columnIds.forEach((id, c) => {
+        if (styleById(sheet, own(byCol, id))?.fmt !== '@') return;
+        (set ??= new Set()).add(c);
+      });
+    }
+    any ||= set !== undefined;
+    out.push(set);
+  }
+  return any ? out : null;
 }
 
 /**
@@ -151,12 +180,25 @@ export function prepareModel(grid: Grid, smart: SmartData, locale: Locale, sheet
   const columns: Column[] = inits.map((init, i) => ({ id: `c${i}`, type: 'text', ...init }));
   const kept = before && reusable(before, grid, columns, rules) ? before : null;
   const keptBody = kept?.grid.texts.slice(offset);
+  const textOnly = textOnlyCells(grid, sheet, offset);
+  const textKeys = textOnly ? textOnly.map((set) => (set ? [...set].join() : '')) : undefined;
   const rows: Row[] = body.map((line, r) => {
     const old = kept?.raw.rows[r];
-    if (old && keptBody && sameLine(keptBody[r], line)) return old;
-    return { id: `r${r}`, cells: columns.map((column, c) => makeCell(column, line[c] ?? '', locale, true, version)) };
+    const sameText = (kept?.textKeys?.[r] ?? '') === (textKeys?.[r] ?? '');
+    if (old && keptBody && sameText && sameLine(keptBody[r], line)) return old;
+    const text = textOnly?.[r];
+    const cells = columns.map((column, c) => makeCell(column, line[c] ?? '', locale, !text?.has(c), version));
+    return { id: `r${r}`, cells };
   });
-  return { raw: { columns, rows, ...rules }, offset, columnIds: grid.columnIds, names, grid, inferred };
+  return {
+    raw: { columns, rows, ...rules },
+    offset,
+    columnIds: grid.columnIds,
+    names,
+    grid,
+    inferred,
+    ...(textKeys ? { textKeys } : {}),
+  };
 }
 
 /** For each column, true when no body cell changed since `before`; null when the tables cannot be compared. */

@@ -12,6 +12,7 @@
 // text that the engine parses like typed text.
 
 import type { CellStyle } from '../../sheet/model/types';
+import type { JsonObject } from '../../sheet/model/json';
 import { validStyle } from '../../sheet/model/styles';
 import { cellDeclarations, cssPoints, dropShared, styleOf, styleRules } from './css';
 import { parseDelimited } from './delimited';
@@ -45,6 +46,10 @@ export interface ClipCell {
   note?: string;
   /** A th cell, or bold text. */
   header?: boolean;
+  /** The source marks the cell as text (a Sheets string value), so text that starts with "=" stays text. */
+  textOnly?: boolean;
+  /** The index of the cell's validation rule in `Clip.rules` (OpenNote's own form). */
+  rule?: number;
 }
 
 /** A merged block of the clip, by position. */
@@ -78,6 +83,8 @@ export interface Clip {
   dropped?: { rows: number; cols: number };
   /** Formulas that could not be translated (an Excel copy that did not begin at A1), so their values came instead. */
   asValues?: boolean;
+  /** The validation rules of the copied cells, without their ranges (OpenNote's own form). */
+  rules?: JsonObject[];
 }
 
 const BLANK = (): ClipCell => ({ text: '' });
@@ -111,7 +118,10 @@ function readValue(cell: ClipCell, attrs: Map<string, string>): void {
   if (attrs.has('x:err')) cell.error = attrs.get('x:err') || cell.text;
   const sheets = attrs.get('data-sheets-value');
   if (sheets) Object.assign(cell, sheetsValue(sheets));
-  if (sheets && sheetsJson(sheets)?.['1'] === 5) cell.error = cell.text;
+  const kind = sheets ? sheetsJson(sheets)?.['1'] : undefined;
+  if (kind === 5) cell.error = cell.text;
+  // Type 2 is a string value: the cell holds text, even text that starts with "=".
+  if (kind === 2) cell.textOnly = true;
 }
 
 /** Reads a Sheets formula (already R1C1), or returns an Excel A1 formula for the box check after layout. */
@@ -305,9 +315,11 @@ export function readClip(input: { html?: string | null; text?: string | null }):
   return (html ? clipFromHtml(html) : null) ?? (input.text ? clipFromText(input.text) : null);
 }
 
-// OpenNote's own form. Version 1:
+// OpenNote's own form, version 1, is this JSON object
 // {"v":1, "block", "name", "header", "top", "left",
-//  "rows": [[{"m": markdown, "f": R1C1, "s": style, "v": value, "n": note}]], "spans": [...], "widths": [...]}
+//  "rows": [[{"m": markdown, "f": R1C1, "s": style, "v": value, "n": note, "r": rule}]], "spans": [...],
+//  "widths": [...], "rules": [validation rule without its ranges]}.
+// The keys "r" and "rules" are optional, so a reader that does not know them still reads the cells.
 
 export interface OwnCell {
   m: string;
@@ -316,6 +328,8 @@ export interface OwnCell {
   v?: number | string | boolean | { e: string };
   n?: string;
   t?: string;
+  /** The index of the cell's validation rule in `OwnForm.rules`. */
+  r?: number;
 }
 
 export interface OwnForm {
@@ -330,12 +344,17 @@ export interface OwnForm {
   rows: OwnCell[][];
   spans: ClipSpan[];
   widths: (number | null)[];
+  rules?: JsonObject[];
 }
+
+/** The most validation rules, and the longest rule, that a paste reads from OpenNote's own form. */
+export const CLIP_RULES = 64;
+const RULE_TEXT_LIMIT = 4_096;
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   value !== null && typeof value === 'object' && !Array.isArray(value);
 
-function ownCell(value: unknown): ClipCell {
+function ownCell(value: unknown, rules: number): ClipCell {
   if (!isRecord(value) || typeof value.m !== 'string') return BLANK();
   const cell: ClipCell = { text: typeof value.t === 'string' ? value.t : value.m, markdown: value.m };
   if (typeof value.f === 'string' && value.f.startsWith('=')) cell.formula = value.f;
@@ -348,11 +367,22 @@ function ownCell(value: unknown): ClipCell {
     if (Object.keys(style).length > 0) cell.style = style;
   }
   if (typeof value.n === 'string' && value.n !== '') cell.note = value.n;
+  if (whole(value.r, 0, rules - 1)) cell.rule = value.r;
   return cell;
 }
 
 const whole = (n: unknown, min: number, max: number): n is number =>
   typeof n === 'number' && Number.isInteger(n) && n >= min && n <= max;
+
+/** The validation rules of an own form: objects of bounded size, without ranges. A bad rule becomes an empty one. */
+function ownRules(value: unknown): JsonObject[] {
+  if (!Array.isArray(value)) return [];
+  return value.slice(0, CLIP_RULES).map((rule): JsonObject => {
+    if (!isRecord(rule) || JSON.stringify(rule).length > RULE_TEXT_LIMIT) return {};
+    const { ranges: _ranges, ...rest } = rule;
+    return rest as JsonObject;
+  });
+}
 
 /** Reads OpenNote's own form, or null when it is not one this version knows. */
 export function readOwn(json: string): Clip | null {
@@ -366,7 +396,8 @@ export function readOwn(json: string): Clip | null {
   const rows = data.rows.slice(0, CLIP_ROWS).map((row) => (Array.isArray(row) ? row.slice(0, CLIP_COLUMNS) : []));
   const width = Math.max(...rows.map((row) => row.length));
   if (width === 0) return null;
-  const cells = rows.map((row) => Array.from({ length: width }, (_, c) => ownCell(row[c])));
+  const rules = ownRules(data.rules);
+  const cells = rows.map((row) => Array.from({ length: width }, (_, c) => ownCell(row[c], rules.length)));
   const spans = (Array.isArray(data.spans) ? data.spans : []).filter(
     (s): s is ClipSpan =>
       isRecord(s) &&
@@ -379,6 +410,7 @@ export function readOwn(json: string): Clip | null {
     .slice(0, width)
     .map((w) => (typeof w === 'number' && w > 0 && w < 10_000 ? w : null));
   const clip: Clip = { source: 'opennote', rows: cells, spans, widths };
+  if (rules.length > 0) clip.rules = rules;
   if (typeof data.block === 'string' && whole(data.top, 0, 1e6) && whole(data.left, 0, 1e6)) {
     clip.link = {
       block: data.block,

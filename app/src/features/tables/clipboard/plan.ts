@@ -29,6 +29,7 @@ import {
 } from '../sheet/model';
 import type { Box, CellStyle, JsonObject, Sheet } from '../sheet/model';
 import { clone, own, ownObject, put } from '../sheet/model/json';
+import { pasteRules, type RuleCell } from './rules';
 import { OPERATOR, operate, partsOf, transposeClip, type PasteSpecial } from './special';
 
 export interface PasteTarget {
@@ -43,7 +44,8 @@ export interface PasteTarget {
 }
 
 /** Things the paste could not do, or did differently, for the announcement. */
-export type PasteReport = 'link' | 'styles' | 'merges' | 'header' | 'asValues' | 'dropped' | 'equalsText';
+export type PasteReport =
+  'link' | 'styles' | 'merges' | 'header' | 'asValues' | 'dropped' | 'equalsText' | 'validation' | 'divide';
 
 export interface PastePlan {
   table: TableData;
@@ -75,6 +77,9 @@ export function textMarkdown(text: string): string {
     });
   return serializeInline(nodes.paragraph.create(null, inline), TITLE).trim();
 }
+
+/** The source marks the cell as text: a Sheets string value, or the text number format "@" (Excel's \@). */
+const isTextCell = (cell: ClipCell): boolean => cell.textOnly === true || cell.style?.fmt === '@';
 
 const isBlank = (cell: ClipCell): boolean =>
   cell.text.trim() === '' && !cell.formula && cell.num === undefined && cell.bool === undefined && !cell.markdown;
@@ -189,8 +194,9 @@ function contentFor(ctx: Context, cell: ClipCell, at: { row: number; col: number
   }
   if (parts.formulas && cell.markdown !== undefined) return cell.markdown;
   const value = valueText(cell);
-  // The table has no text marker, so a value that starts with "=" works as a formula; the paste says so.
-  if (isFormula(value.trim())) ctx.report.add('equalsText');
+  // A cell the source marks as text keeps such a value as text (planPaste gives it the "@" format). Any other value
+  // that starts with "=" works as a formula, as typed text does; the paste says so.
+  if (isFormula(value.trim()) && !isTextCell(cell)) ctx.report.add('equalsText');
   return textMarkdown(value);
 }
 
@@ -204,7 +210,19 @@ function operated(ctx: Context, cell: ClipCell, before: string): string | null {
   const old = text === '' ? 0 : numberOf(text);
   if (old === null) return null;
   const out = operate(op, old, pasted);
-  return out === null ? textMarkdown('#DIV/0!') : textMarkdown(String(out));
+  if (out !== null) return textMarkdown(String(out));
+  ctx.report.add('divide');
+  return textMarkdown('#DIV/0!');
+}
+
+/**
+ * Whether a pasted cell must keep its text as text: the source marks it as text and the text starts with "=". The
+ * cell then gets the "@" number format, which the engine never reads as a formula (smart/model.ts).
+ */
+function keepsText(special: PasteSpecial, cell: ClipCell, markdown: string | undefined): boolean {
+  if (special.link || special.operation !== 'none' || cell.formula || markdown === undefined) return false;
+  if (!partsOf(special.what).content || !isTextCell(cell)) return false;
+  return isFormula(readableText(markdown).trim());
 }
 
 /** Plans the paste of `clip` into the target with the paste special choice. Returns null when the clip is empty. */
@@ -245,6 +263,11 @@ export function planPaste(target: PasteTarget, input: Clip, special: PasteSpecia
   const grid = gridOf(table);
   const rows = table.rows.map((row) => ({ ...row, cells: { ...row.cells } }));
   const now = deps.now ?? new Date().toISOString();
+  // Validation rules land only from an OpenNote copy on this page; the transposed clip has no link, so read the input.
+  const rulesHere = parts.validation && clip.source === 'opennote';
+  const samePage = input.link?.page !== undefined && input.link.page === target.page;
+  if (rulesHere && clip.rules && !samePage) report.add('validation');
+  const ruleCells: RuleCell[] = [];
   try {
     for (let gr = area.top; gr <= area.bottom; gr++) {
       for (let gc = area.left; gc <= area.right; gc++) {
@@ -267,6 +290,10 @@ export function planPaste(target: PasteTarget, input: Clip, special: PasteSpecia
         if (parts.style !== 'none') {
           setStyle(sheet, rowId, colId, styleFor(parts.style, cell.style, cellStyle(sheet, rowId, colId)));
         }
+        if (keepsText(special, cell, row.cells[colId]?.markdown)) {
+          setStyle(sheet, rowId, colId, { ...cellStyle(sheet, rowId, colId), fmt: '@' });
+        }
+        if (rulesHere && samePage) ruleCells.push({ row: gr, col: gc, rule: cell.rule });
         if (parts.notes && (clip.source === 'opennote' || cell.note)) setNote(sheet, rowId, colId, cell.note, now);
       }
     }
@@ -275,6 +302,7 @@ export function planPaste(target: PasteTarget, input: Clip, special: PasteSpecia
     return { table: target.table, patch: null, box: area, report: ['styles'] };
   }
   const out: TableData = { ...table, rows };
+  if (ruleCells.length > 0 && !pasteRules(sheet, out, clip.rules ?? [], ruleCells)) report.add('validation');
   if (parts.merges) pasteMerges(sheet, out, clip, area, height, width, report);
   if (parts.widths) widen(out, clip, area);
   tidy(sheet, out);

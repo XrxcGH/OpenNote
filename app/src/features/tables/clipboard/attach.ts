@@ -1,5 +1,6 @@
 // Copy, cut, and paste in a table block's editor (ADR 0067). The table extra (register.ts) loads this when the
-// block's editor mounts and adds a plugin that runs before the table's own clipboard handling:
+// block's editor mounts. Its copy, cut, and paste listen on the document's capture phase (listenFirst), so they run
+// before the page's listeners and the editor's, and the page's code needs no table-cell hook:
 // - Copy and cut of selected cells write the three forms of copy.ts. Cut then clears the cells, formats included.
 // - A paste of cells (an HTML table, tab-separated text, or OpenNote's own form) lands at the selected cells with
 //   values, formulas, formats, and merges. With the caret in a cell (Edit mode), a paste stays ordinary text.
@@ -125,57 +126,95 @@ export async function pasteSpecial(host: TableExtraHost): Promise<void> {
   if (!host.editor.isDestroyed) host.editor.view.focus();
 }
 
-export function sheetClipboardPlugin(host: TableExtraHost): Plugin {
-  let valuesNext = false;
+type ClipboardKind = 'copy' | 'cut' | 'paste';
+
+/**
+ * Listens for copy, cut, and paste on the document's capture phase, so a handler runs before the page's own
+ * listeners (on the page's container) and before the editor. A handler that takes the event (returns true) ends it
+ * there: the page and the editor do not see it. So the page's code needs no table-cell hook. Returns a function that
+ * stops listening.
+ */
+export function listenFirst(
+  doc: Document,
+  owns: (target: EventTarget | null) => boolean,
+  handlers: Partial<Record<ClipboardKind, (event: ClipboardEvent) => boolean>>,
+): () => void {
+  const stops: (() => void)[] = [];
+  for (const [kind, handle] of Object.entries(handlers)) {
+    const listener = (event: Event) => {
+      if (event.defaultPrevented || !owns(event.target)) return;
+      if (!handle(event as ClipboardEvent)) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    };
+    doc.addEventListener(kind, listener, true);
+    stops.push(() => doc.removeEventListener(kind, listener, true));
+  }
+  return () => stops.forEach((stop) => stop());
+}
+
+/** The table's copy, cut, and paste. Each returns true when it took the event. */
+function clipboardHandlers(host: TableExtraHost, valuesNext: () => boolean) {
+  const view = (): EditorView => host.editor.view;
+  return {
+    copy(event: ClipboardEvent): boolean {
+      const box = copySelection(host, view(), event.clipboardData);
+      if (!box) return false;
+      host.announce(t('sheetClipboard.announce.copied', { count: cellCount(box) }));
+      return true;
+    },
+    cut(event: ClipboardEvent): boolean {
+      if (!view().editable) return false;
+      const box = copySelection(host, view(), event.clipboardData);
+      if (!box) return false;
+      clearBox(host, box);
+      host.announce(t('sheetClipboard.announce.cut', { count: cellCount(box) }));
+      return true;
+    },
+    paste(event: ClipboardEvent): boolean {
+      const values = valuesNext();
+      const data = event.clipboardData;
+      const v = view();
+      if (!data || !v.editable) return false;
+      const clip = readClip({ html: data.getData('text/html'), text: data.getData('text/plain') });
+      if (!clip) return false;
+      if (!takesPaste(v.state.selection instanceof CellSelection, modeOf(v.state), clip)) return false;
+      if (!boxOfSelection(v.state, host.table())) return false;
+      void pasteClip(host, v, clip, values ? PASTE_VALUES : PASTE_ALL);
+      return true;
+    },
+  };
+}
+
+/** Notes Ctrl+Shift+V, so the paste that follows pastes values only. */
+export function sheetClipboardPlugin(state: { valuesNext: boolean }): Plugin {
   return new Plugin({
     key,
     props: {
       handleKeyDown(_view, event) {
         const v = event.key.toLowerCase() === 'v' && (event.ctrlKey || event.metaKey);
-        valuesNext = v && event.shiftKey && !event.altKey;
+        state.valuesNext = v && event.shiftKey && !event.altKey;
         return false;
-      },
-      handleDOMEvents: {
-        copy(view, event) {
-          const box = copySelection(host, view, event.clipboardData);
-          if (!box) return false;
-          event.preventDefault();
-          host.announce(t('sheetClipboard.announce.copied', { count: cellCount(box) }));
-          return true;
-        },
-        cut(view, event) {
-          if (!view.editable) return false;
-          const box = copySelection(host, view, event.clipboardData);
-          if (!box) return false;
-          event.preventDefault();
-          clearBox(host, box);
-          host.announce(t('sheetClipboard.announce.cut', { count: cellCount(box) }));
-          return true;
-        },
-        paste(view, event) {
-          const values = valuesNext;
-          valuesNext = false;
-          const data = event.clipboardData;
-          if (!data || !view.editable) return false;
-          const clip = readClip({ html: data.getData('text/html'), text: data.getData('text/plain') });
-          if (!clip) return false;
-          if (!takesPaste(view.state.selection instanceof CellSelection, modeOf(view.state), clip)) return false;
-          if (!boxOfSelection(view.state, host.table())) return false;
-          event.preventDefault();
-          void pasteClip(host, view, clip, values ? PASTE_VALUES : PASTE_ALL);
-          return true;
-        },
       },
     },
   });
 }
 
 export function attachSheetClipboard(host: TableExtraHost): TableExtraHandle {
-  const plugin = sheetClipboardPlugin(host);
+  const keys = { valuesNext: false };
+  const plugin = sheetClipboardPlugin(keys);
   host.editor.registerPlugin(plugin, (added, plugins) => [added, ...plugins]);
+  const valuesNext = () => {
+    const values = keys.valuesNext;
+    keys.valuesNext = false;
+    return values;
+  };
+  const owns = (target: EventTarget | null) => target instanceof Node && host.editor.view.dom.contains(target);
+  const stop = listenFirst(host.element.ownerDocument, owns, clipboardHandlers(host, valuesNext));
   return {
     update() {},
     destroy() {
+      stop();
       if (!host.editor.isDestroyed) host.editor.unregisterPlugin(key);
     },
   };

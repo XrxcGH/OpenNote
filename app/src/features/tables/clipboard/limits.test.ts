@@ -182,8 +182,8 @@ describe('cut (G9)', () => {
 });
 
 describe('Paste special (G6)', () => {
-  it('offers no Validation choice, since rules do not travel yet', () => {
-    expect(PASTE_WHATS as readonly string[]).not.toContain('validation');
+  it('offers the Validation choice of DESIGN 13.7', () => {
+    expect(PASTE_WHATS as readonly string[]).toContain('validation');
   });
 
   it('writes a link to another table only when the copy came from this page', () => {

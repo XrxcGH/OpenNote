@@ -18,6 +18,7 @@ export const sheetClipboard = {
     values: 'Values',
     formats: 'Formats',
     notes: 'Notes',
+    validation: 'Validation',
     widths: 'Column widths',
     noBorders: 'All except borders',
     valuesAndNumberFormats: 'Values and number formats',
@@ -41,6 +42,8 @@ export const sheetClipboard = {
     asValues: 'The copy did not say where it began, so its formulas were pasted as values.',
     dropped: 'The paste was larger than a table can be, so the cells past the limit were left out.',
     equalsText: 'Some pasted text starts with an equals sign, so it now works as a formula.',
+    validation: 'Validation rules paste only from a table on this page, so some rules were left out.',
+    divide: 'Some cells were divided by zero, so they now show a division error.',
   },
   commands: {
     keywords: 'table paste special values formats transpose operation skip blanks link',
