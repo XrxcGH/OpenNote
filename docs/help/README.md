@@ -32,6 +32,8 @@ Every picture is a real screenshot of the app, and most pages have one. [The scr
 - [Math solvers](math-solvers.md): integrals, differential equations, transforms, series, roots, uncertainty, probability, matrices, and projectiles, with worked steps.
 - [3D graphs, vectors, and motion](3d-graphs-vectors-and-motion.md): surfaces, curves, vectors, solids, and projectiles.
 - [Tables and charts](tables-and-charts.md): smart tables, formulas, views, and charts.
+- [Table formatting](table-formatting.md): cell formats and number format codes.
+- [Table function reference](table-functions.md): every formula function, generated from the registry.
 - [Language and spelling](language-and-spelling.md): American English by default, the other dialects and languages, and what the choice sets.
 - [Engineering tools](engineering-tools.md): free-body diagrams, beams, trusses, circuits, and units in tables.
 - [Economics and finance](economics-and-finance.md): money over time, markets, firms, macroeconomics, measurement, accounting, and investment calculators.

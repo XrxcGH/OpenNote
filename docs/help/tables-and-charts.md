@@ -4,6 +4,21 @@ A smart table holds typed columns, formulas, and several views of the same rows.
 
 ![A smart table with its formula cell selected, showing =B2*0.6, and the bar chart made from it with its summary in words](../screens/table-chart-light.png)
 
+## Contents
+
+- [Make a table](#make-a-table)
+- [Analyze](#analyze)
+- [Formulas](#formulas)
+- [Views](#views)
+- [Charts](#charts)
+- [Take a table out](#take-a-table-out)
+- [Choices](#choices)
+- [Analyze: statistics, regression, and matrices](#analyze-statistics-regression-and-matrices)
+- [Saved views](#saved-views)
+- [Format cells](#format-cells)
+- [Spreadsheet keys](#spreadsheet-keys)
+- [Conditional formatting](#conditional-formatting)
+
 ## Make a table
 
 - Open Insert, then Smart table.
@@ -29,7 +44,7 @@ Formulas follow Excel's rules. Beyond math, text, and dates, they have these fam
 - Arrays: FILTER, SORT, SORTBY, UNIQUE, SEQUENCE, TAKE, DROP, VSTACK, HSTACK, MMULT, MINVERSE, and the LAMBDA helpers MAP, REDUCE, SCAN, BYROW, BYCOL, and MAKEARRAY. An array result spills into the cells beside it.
 - Statistics: averages, deviations, ranks, percentiles, distributions such as NORM.DIST and T.DIST, regression such as LINEST, and FORECAST.ETS. These load the first time a formula uses one, so the cell shows #BUSY! for a moment.
 
-The places where OpenNote's answers differ from Excel's are listed in the engine's DIFFERENCES.md.
+Every function has a line in the [function reference](table-functions.md). The places where OpenNote's answers differ from Excel's are listed in the engine's DIFFERENCES.md.
 
 ## Views
 
@@ -81,7 +96,7 @@ When a table is current, a second row of tools sits under the table tools. It se
 
 Select whole cells and a tool formats the cells. Select text inside one cell and the same tool formats only that text. Each change is one undo step.
 
-The Borders button draws the last border you used. Its arrow opens all 16 borders, the line style, and the line color. In a narrow window, the least used tools move into a More menu. Press Ctrl+K and type "Cell:" to find every format by name.
+The Borders button draws the last border you used. Its arrow opens all 16 borders, the line style, and the line color. In a narrow window, the least used tools move into a More menu. Press Ctrl+K and type "Cell:" to find every format by name. Number format codes are described in [Table formatting](table-formatting.md).
 
 ## Spreadsheet keys
 
