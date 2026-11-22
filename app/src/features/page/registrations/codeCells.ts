@@ -4,18 +4,23 @@
 import { isEnabled } from '../../../app/flags';
 import { t } from '../../../strings/t';
 import { announce, confirm } from '../../../ui';
+import { focusedPanel } from '../panels/focused';
 import { PANEL_TYPES, panelRenderer } from '../panels/kinds';
+import type { PanelProps } from '../panels/kinds';
 import { blockRenderers } from '../registries';
 import { addCommand } from './qolStudy';
+
+interface StudioCell {
+  language: string;
+  engine: string;
+  source: string;
+}
 
 /**
  * Turns a code cell into a code project with the same text (after the person confirms), in one edit so one undo
  * takes it back, and opens the Code studio on it. Returns false when the person cancels or no page is shown.
  */
-async function openCellInStudio(
-  block: string,
-  current?: { language: string; engine: string; source: string },
-): Promise<boolean> {
+async function openCellInStudio(block: string, current?: StudioCell): Promise<boolean> {
   const [{ shownLayer }, { shownQueue }] = await Promise.all([import('../mount'), import('../sync/shown')]);
   const layer = shownLayer.get();
   const queue = shownQueue.get();
@@ -26,7 +31,7 @@ async function openCellInStudio(
     body: t('codeCells.studioConfirm.body'),
     confirmLabel: t('codeCells.studioConfirm.confirm'),
   });
-  if (!ok) return false;
+  if (!ok || layer.block(block)?.type !== PANEL_TYPES.codeCell) return false;
   const [{ loadCodeProjects }, cells, { newId }] = await Promise.all([
     import('../../codestudio'),
     import('../../codecells'),
@@ -63,30 +68,31 @@ async function openCellInStudio(
   return true;
 }
 
+/** Open in Code studio shows only while the studio is on. */
+function withStudio(props: PanelProps): PanelProps & { openStudio?: (cell: StudioCell) => void } {
+  if (!isEnabled('code.studio')) return props;
+  return { ...props, openStudio: (cell: StudioCell) => void openCellInStudio(props.block, cell) };
+}
+
+async function loadCodeCell() {
+  const { mountCodeCell } = await import('../../codecells');
+  return {
+    mount: (container: HTMLElement, props: PanelProps) => {
+      const handle = mountCodeCell(container, withStudio(props) as Parameters<typeof mountCodeCell>[1]);
+      return {
+        update: (next: PanelProps) => handle.update(withStudio(next) as Parameters<typeof mountCodeCell>[1]),
+        destroy: handle.destroy,
+      };
+    },
+  };
+}
+
 blockRenderers.register(
   panelRenderer({
     type: PANEL_TYPES.codeCell,
     label: 'codeCells.block',
     flag: 'math.codeCells',
-    load: async () => {
-      const { mountCodeCell } = await import('../../codecells');
-      return {
-        mount: (container, props) => {
-          // Open in Code studio shows only while the studio is on.
-          const studio = (next: typeof props) => ({
-            ...next,
-            ...(isEnabled('code.studio')
-              ? {
-                  openStudio: (cell: { language: string; engine: string; source: string }) =>
-                    void openCellInStudio(next.block, cell),
-                }
-              : {}),
-          });
-          const handle = mountCodeCell(container, studio(props));
-          return { update: (next) => handle.update(studio(next)), destroy: handle.destroy };
-        },
-      };
-    },
+    load: loadCodeCell,
   }),
 );
 
@@ -97,10 +103,14 @@ addCommand({
   icon: 'Terminal',
   flag: 'code.studio',
   run: async () => {
-    const [{ shownLayer }, { shownPool }] = await Promise.all([import('../mount'), import('../pool/shown')]);
-    const id = shownPool.get()?.active()?.block;
+    const { shownLayer } = await import('../mount');
+    // A code cell is a panel block with no text editor, so the pool's active block never names it.
+    const focus = focusedPanel();
+    const id = focus?.block;
     const block = id ? shownLayer.get()?.block(id) : null;
-    if (id && block?.type === PANEL_TYPES.codeCell) {
+    if (focus?.readOnly) {
+      announce(t('codeCells.studioReadOnly'));
+    } else if (id && block?.type === PANEL_TYPES.codeCell) {
       await openCellInStudio(id);
     } else if (id && block?.type === PANEL_TYPES.codeProject) {
       const { setStudioTarget } = await (await import('../../codestudio')).loadCodeProjects();

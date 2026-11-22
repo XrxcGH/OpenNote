@@ -28,11 +28,6 @@ function host(): Promise<RunHost> {
   return hosting;
 }
 
-/** Loads the runtime's worker in idle time, so the first Run starts quickly. */
-export function warmRuntime(language: CodeLanguage, engine?: PythonEngine): void {
-  void host().then((one) => one.warm(runtimeOf(language, engine)));
-}
-
 export function runCode(
   language: CodeLanguage,
   source: string,

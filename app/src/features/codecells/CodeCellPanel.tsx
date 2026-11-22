@@ -8,6 +8,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { Play } from '@phosphor-icons/react/dist/csr/Play';
 import { Stop } from '@phosphor-icons/react/dist/csr/Stop';
+import { codeStudioPython } from '../../strings/en/codeStudio/python';
 import { t } from '../../strings/t';
 import { Button } from '../../ui';
 import type { CodeEditor, Stream } from '../codestudio';
@@ -59,7 +60,9 @@ function statusText(result: RunResult): string {
     case 'memory':
       return t('codeCells.status.memory', { megabytes: MEGABYTES });
     case 'failed':
-      return result.message === 'runtime' ? t('codeCells.status.runtime') : t('codeCells.status.failed');
+      if (result.message === 'runtime') return t('codeCells.status.runtime');
+      if (result.message === codeStudioPython.fullMissing) return t('codeCells.status.pack');
+      return t('codeCells.status.failed');
     default:
       return t(`codeCells.status.${result.status}`);
   }
@@ -93,6 +96,7 @@ export function CodeCellPanel({
   const [output, setOutput] = useState<Piece[]>([]);
   const [status, setStatus] = useState('');
   const [truncated, setTruncated] = useState(false);
+  const [failed, setFailed] = useState(false);
   const [running, setRunning] = useState<RunHandle | null>(null);
   const sent = useRef(source);
   const helpId = useId();
@@ -128,6 +132,7 @@ export function CodeCellPanel({
         },
       });
       editor.current = made;
+      host.current.querySelector('.cm-content')?.setAttribute('aria-describedby', helpId);
       cleanup = () => made.destroy();
       const [{ attachCompletion }, { createDiagnostics }] = await Promise.all([
         studio.loadCompletion(),
@@ -153,7 +158,7 @@ export function CodeCellPanel({
       editor.current = null;
       cleanup();
     };
-  }, []);
+  }, [helpId]);
 
   useEffect(() => {
     void editor.current?.setLanguage(language);
@@ -194,6 +199,7 @@ export function CodeCellPanel({
     const pieces: Piece[] = [];
     setOutput([]);
     setTruncated(false);
+    setFailed(false);
     setStatus(t('codeCells.status.starting', { language: t(`codeCells.languages.${language}`) }));
     const handle = runCode(
       language,
@@ -212,6 +218,7 @@ export function CodeCellPanel({
     const result = await handle.done;
     setRunning(null);
     setTruncated(result.truncated);
+    setFailed(result.status === 'failed');
     const said = statusText(result);
     setStatus(said);
     announce(said);
@@ -285,6 +292,7 @@ export function CodeCellPanel({
             setOutput([]);
             setStatus('');
             setTruncated(false);
+            setFailed(false);
           }}
         >
           {t('codeCells.clear')}
@@ -307,7 +315,7 @@ export function CodeCellPanel({
       <p className={styles.status} role="status">
         {status}
       </p>
-      {output.length > 0 || (status !== '' && !running) ? (
+      {output.length > 0 || (status !== '' && !running && !failed) ? (
         <pre className={styles.output} role="log" aria-live="off" aria-label={t('codeCells.output')} tabIndex={0}>
           {output.length === 0
             ? t('codeCells.noOutput')

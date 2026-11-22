@@ -26,6 +26,7 @@ export const codeCells = {
     confirm: 'Open in Code studio',
   },
   studioOpened: 'Code cell converted to a code project. Opening the Code studio.',
+  studioReadOnly: 'This page is read-only, so the code cannot be moved into a project.',
   studioNoBlock: 'Put the caret in a code cell or a code project first.',
   code: 'Code',
   newer: 'This code cell needs a newer version of OpenNote',
@@ -38,8 +39,7 @@ export const codeCells = {
   clear: 'Clear output',
   output: 'Output',
   noOutput: 'The cell ran and printed nothing.',
-  safety:
-    'Runs on this device with no network, no files, and no access to your notes, for up to {seconds} seconds and {megabytes} MB.',
+  safety: 'Runs on this device with no network, files, or notes, for up to {seconds} seconds and {megabytes} MB.',
   status: {
     starting: 'Starting {language}…',
     running: 'Running…',
