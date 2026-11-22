@@ -6,6 +6,7 @@ import { createMemoryPageService } from '../../../services/pages/memory';
 import { mountPage } from '../mount';
 import type { MountedPage } from '../mount';
 import { textPageFixture } from '../test/fixtures';
+import { canFitPageWidth, fitPageWidth } from '../zoom';
 
 const shown: { mounted: MountedPage; main: HTMLElement }[] = [];
 
@@ -48,5 +49,24 @@ describe('Fit width with the desk gutter', () => {
     const plain = mounted.flow.fitWidth();
     main.dataset.deskGutter = '0';
     expect(mounted.flow.fitWidth()).toBe(plain);
+  });
+});
+
+describe('the Fit page to width command', () => {
+  it('zooms the shown page to the zoom that fits it', async () => {
+    initFlags('dev', { 'page.editor': true });
+    const fixture = textPageFixture('A short page.');
+    const service = createMemoryPageService([fixture]);
+    const page = await service.open(fixture.page.id, { viewport: null });
+    const main = document.body.appendChild(document.createElement('main'));
+    Object.assign(main.style, { position: 'fixed', left: '0', top: '0', width: '1000px', height: '500px' });
+    const mounted = mountPage(main, page, { classNames: { viewport: '', world: '', underlay: '' }, shown: true });
+    shown.push({ mounted, main });
+    // The store holds the function, not what it returned when the page was mounted.
+    expect(canFitPageWidth()).toBe(true);
+    const expected = mounted.flow.fitWidth();
+    expect(expected).toBeGreaterThan(1);
+    fitPageWidth();
+    expect(mounted.viewport.camera().zoom).toBeCloseTo(expected, 2);
   });
 });

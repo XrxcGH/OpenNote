@@ -95,6 +95,11 @@ export function startDeskGutter(main: HTMLElement): () => void {
 
   const resize = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => update());
   resize?.observe(main);
+  // The column's width in the reading font: a change of note size or font moves the probe's box, and a web font that
+  // loads late changes what 72ch measures. Either runs the rule again.
+  resize?.observe(probe);
+  const fonts = doc.fonts;
+  fonts?.addEventListener?.('loadingdone', update);
   // A page pane opening or closing; the test switch.
   // Typing changes the subtree all the time, so only a pane's own arrival or departure, or the switch, runs the rule.
   const isPane = (node: Node) => node instanceof Element && (node.matches(PAGE_PANE) || node.querySelector(PAGE_PANE));
@@ -188,6 +193,7 @@ export function startDeskGutter(main: HTMLElement): () => void {
     stopLayout();
     stopShown();
     resize?.disconnect();
+    fonts?.removeEventListener?.('loadingdone', update);
     mutations?.disconnect();
     themes?.disconnect();
     forced?.removeEventListener('change', update);

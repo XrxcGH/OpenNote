@@ -7,7 +7,7 @@ import { test, expect } from '../fixtures';
 import { VIEWPORTS } from '../screens';
 import type { SizeClass } from '../screens';
 import { runCommand } from './smart';
-import { quiet, boxes, columnWidth, expectGutter, gutter, openPage, zoomTo } from './deskGutterKit';
+import { quiet, boxes, columnWidth, expectGutter, gutter, openPage, zoomPercent, zoomTo } from './deskGutterKit';
 
 for (const theme of ['light', 'dark'] as const) {
   for (const mode of ['Document flow', 'Infinite canvas'] as const) {
@@ -47,6 +47,26 @@ test.describe('the column never narrows', () => {
     await runCommand(page, 'Reading order');
     await expect(page.getByRole('complementary', { name: 'Reading order' })).toBeVisible();
     await expectGutter(page, 0);
+    await page.waitForTimeout(400);
+    const withGutter = await columnWidth(page);
+    await page.evaluate(() => document.querySelector('main')!.setAttribute('data-desk-gutter-test', 'off'));
+    await expectGutter(page, 0);
+    await page.waitForTimeout(400);
+    expect(Math.abs((await columnWidth(page)) - withGutter)).toBeLessThanOrEqual(0.5);
+  });
+
+  test('when the note size grows, the gutter gives way at once', async ({ page }) => {
+    await openPage(page, { width: 1280, height: 800 });
+    await expectGutter(page, 24);
+    // A larger reading size makes 72ch wider than the region leaves: the rule runs again without a resize.
+    await page.evaluate(() => document.documentElement.style.setProperty('--type-note-size', '21px'));
+    await expectGutter(page, 0);
+    await page.waitForTimeout(400);
+    const withGutter = await columnWidth(page);
+    await page.evaluate(() => document.querySelector('main')!.setAttribute('data-desk-gutter-test', 'off'));
+    await expectGutter(page, 0);
+    await page.waitForTimeout(400);
+    expect(Math.abs((await columnWidth(page)) - withGutter)).toBeLessThanOrEqual(0.5);
   });
 });
 
@@ -56,6 +76,20 @@ test('shrinks with the zoom: 19 px at 125 percent and none at 150 at 1,440', asy
   await expectGutter(page, 19);
   await zoomTo(page, 150);
   await expectGutter(page, 0);
+});
+
+test('is 0 beside a docked 360 px tool window at 1,440, and the column keeps its width', async ({ page }) => {
+  await openPage(page);
+  await expectGutter(page, 24);
+  // The dock takes its width from the page region (dock.ts): 360 px leaves the column no spare width.
+  await page.evaluate(() => document.documentElement.style.setProperty('--dock-inset-right', '360px'));
+  await expectGutter(page, 0);
+  await page.waitForTimeout(400);
+  const withGutter = await columnWidth(page);
+  await page.evaluate(() => document.querySelector('main')!.setAttribute('data-desk-gutter-test', 'off'));
+  await expectGutter(page, 0);
+  await page.waitForTimeout(400);
+  expect(Math.abs((await columnWidth(page)) - withGutter)).toBeLessThanOrEqual(0.5);
 });
 
 test('gives way to a docked tool window at 1,600 without narrowing the column', async ({ page }) => {
@@ -156,7 +190,33 @@ test('holds the gutter through a Ctrl+wheel zoom until it settles', async ({ pag
   expect(seen.slice(0, firstZero).every((value) => value === '24')).toBe(true);
 });
 
-// Fit width (flow.fitWidth measuring the viewport plus both strips) is covered by features/page/layout/fitWidthGutter.test.tsx.
+// Fit page to width measures the viewport plus both strips (flow.fitWidth); the gutter then settles to 0 and the
+// content ends at the viewport's right edge, to within the whole-percent step of the zoom.
+test('Fit page to width at 1,440 settles the gutter to 0 and the content to the right edge', async ({ page }) => {
+  await openPage(page);
+  await expectGutter(page, 24);
+  const before = await zoomPercent(page);
+  await page.locator('[contenteditable] p').first().click();
+  await runCommand(page, 'Fit page to width');
+  await expect.poll(() => zoomPercent(page)).toBeGreaterThan(before);
+  await expectGutter(page, 0);
+  await page.waitForTimeout(500);
+  const gap = await page.evaluate(() => {
+    const viewport = document.querySelector<HTMLElement>('main div[data-scope=page]')!;
+    const flow = viewport.querySelector<HTMLElement>('[data-layout]')!;
+    const right = viewport.getBoundingClientRect().left + viewport.clientLeft + viewport.clientWidth;
+    return { gap: right - flow.getBoundingClientRect().right, scrolls: viewport.scrollWidth > viewport.clientWidth };
+  });
+  // The fit leaves the flow's own left margin on the right as well, and rounds the zoom down by under one percent.
+  expect(gap.scrolls).toBe(false);
+  const margin = await page.evaluate(() => {
+    const flow = document.querySelector<HTMLElement>('main [data-layout]')!;
+    return (
+      flow.getBoundingClientRect().left - flow.closest<HTMLElement>('[data-scope="page"]')!.getBoundingClientRect().left
+    );
+  });
+  expect(Math.abs(gap.gap - margin)).toBeLessThanOrEqual(10);
+});
 
 test.describe('input in the strips reaches the page', () => {
   test('a wheel scrolls the page viewport, not main', async ({ page }) => {
@@ -198,6 +258,24 @@ test.describe('input in the strips reaches the page', () => {
     await expect
       .poll(() => page.evaluate(() => document.querySelector<HTMLElement>('main div[data-scope="page"]')!.scrollTop))
       .toBeGreaterThan(0);
+  });
+
+  test('a Ctrl+wheel in a strip zooms the page', async ({ page }) => {
+    await openPage(page, { width: 1440, height: 500 });
+    await expectGutter(page, 24);
+    const before = await zoomPercent(page);
+    const main = (await boxes(page)).main;
+    await page.mouse.move(main.right - 12, main.top + 200);
+    await page.keyboard.down('Control');
+    await page.mouse.wheel(0, -100);
+    await page.keyboard.up('Control');
+    await expect.poll(() => zoomPercent(page)).toBeGreaterThan(before);
+  });
+
+  test('a strip takes touch input as a pan, not as the browser scrolling or zooming', async ({ page }) => {
+    await openPage(page, { width: 1440, height: 500 });
+    await expectGutter(page, 24);
+    expect(await page.evaluate(() => getComputedStyle(document.querySelector('main')!).touchAction)).toBe('none');
   });
 
   test('a click in a strip leaves the caret in the page text', async ({ page }) => {
