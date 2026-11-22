@@ -140,9 +140,22 @@ export const OneParagraphHeader = TableHeader.extend({
   },
 });
 
+/**
+ * The table node carries the merged cells its block declares (editor/table/spans.ts), so the normalizer keeps those
+ * spans and splits any other. Never written to HTML or Markdown and never read from them.
+ */
+export const MergeTable = Table.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      merges: { default: null, rendered: false, parseHTML: () => null, keepOnSplit: false },
+    };
+  },
+});
+
 export const tableExtensions: Extensions = [
   TableDoc,
-  Table.configure({ resizable: false }),
+  MergeTable.configure({ resizable: false }),
   IdRow,
   OneParagraphHeader,
   OneParagraphCell,
