@@ -2,6 +2,7 @@
 //! finds the active merges, and takes the cached results of formula cells when they are fresh. The page-to-document
 //! conversion calls it, so the Word and HTML tables draw the cells as the spreadsheet does.
 
+pub mod formula;
 mod numfmt;
 mod read;
 
