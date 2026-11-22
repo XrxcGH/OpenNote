@@ -12,6 +12,7 @@ import type { EditorState, Transaction } from '@tiptap/pm/state';
 import { CellSelection } from '@tiptap/pm/tables';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import type { EditorView } from '@tiptap/pm/view';
+import { drawnRows, isVirtualDoc } from '../../page';
 import { clearActiveSheet, setActiveSheet } from './active';
 import type { SheetRunner } from './active';
 import { cellsIn, runSheetCommand, shownText, typeOver } from './actions';
@@ -47,11 +48,13 @@ export { dateText, runSheetCommand, setSheetKeys, timeText } from './actions';
  * spreadsheet keys each cell is a "gridcell" or a "columnheader" of the grid that markGrid makes the table, so Grid
  * mode's aria-selected is allowed.
  */
-function indexesOf(doc: PMNode, spreadsheet: boolean): DecorationSet {
+function indexesOf(doc: PMNode, spreadsheet: boolean, only?: readonly number[]): DecorationSet {
   const decorations: Decoration[] = [];
   const done = new Set<number>();
-  cellsOf(doc).forEach((row, r) =>
-    row.forEach((cell, c) => {
+  const all = cellsOf(doc);
+  const rows = only ?? all.map((_, r) => r);
+  rows.forEach((r) =>
+    all[r]?.forEach((cell, c) => {
       if (done.has(cell.pos)) return;
       done.add(cell.pos);
       const attrs: Record<string, string> = { 'aria-rowindex': String(r + 1), 'aria-colindex': String(c + 1) };
@@ -60,6 +63,20 @@ function indexesOf(doc: PMNode, spreadsheet: boolean): DecorationSet {
     }),
   );
   return DecorationSet.create(doc, decorations);
+}
+
+/** The cell numbers of a virtual table (more than 2,000 rows): only on the rows it draws, made once per document. */
+const drawnIndexes = new WeakMap<PMNode, { key: string; set: DecorationSet }>();
+
+function indexesFor(state: EditorState, sheet: SheetState): DecorationSet {
+  if (!isVirtualDoc(state.doc)) return sheet.indexes;
+  const rows = drawnRows(state);
+  const key = `${sheet.spreadsheet}:${rows ? rows.join(',') : 'all'}`;
+  const known = drawnIndexes.get(state.doc);
+  if (known?.key === key) return known.set;
+  const set = indexesOf(state.doc, sheet.spreadsheet, rows ?? undefined);
+  drawnIndexes.set(state.doc, { key, set });
+  return set;
 }
 
 /** Whether each step changed only the inside of one cell, so every cell keeps its row and column. */
@@ -113,7 +130,9 @@ function applyMeta(tr: Transaction, value: SheetState, state: EditorState): Shee
   if (meta?.spreadsheet !== undefined) next.spreadsheet = meta.spreadsheet;
   if (meta?.focused !== undefined) next.focused = meta.focused;
   // Typing maps the cells' numbers through the change, so a keystroke costs the same in a big table as in a small one.
-  if (next.spreadsheet !== value.spreadsheet || (tr.docChanged && !insideOneCell(tr)))
+  // A virtual table numbers only the rows it draws, when the editor draws them (indexesFor).
+  if (isVirtualDoc(state.doc)) next.indexes = DecorationSet.empty;
+  else if (next.spreadsheet !== value.spreadsheet || (tr.docChanged && !insideOneCell(tr)))
     next.indexes = indexesOf(state.doc, next.spreadsheet);
   else if (tr.docChanged) next.indexes = value.indexes.map(tr.mapping, tr.doc);
   if (meta && 'active' in meta) next.active = meta.active ?? null;
@@ -144,8 +163,9 @@ function applyMeta(tr: Transaction, value: SheetState, state: EditorState): Shee
 function decorationsOf(state: EditorState): DecorationSet | null {
   const sheet = sheetKeysKey.getState(state);
   if (!sheet) return null;
+  const indexes = indexesFor(state, sheet);
   const mode = modeOf(state);
-  if (!mode) return sheet.indexes;
+  if (!mode) return indexes;
   const extra: Decoration[] = [];
   const mark = (at: GridCell, attrs: Record<string, string>) => {
     const cell = placedAt(state.doc, at);
@@ -155,7 +175,7 @@ function decorationsOf(state: EditorState): DecorationSet | null {
   if (g && sheet.focused) for (const at of cellsIn(g.box)) mark(at, { 'aria-selected': 'true' });
   const active = activeCell(state);
   if (active) mark(active, { class: mode === 'grid' ? styles.active : styles.editing });
-  return sheet.indexes.add(state.doc, extra);
+  return indexes.add(state.doc, extra);
 }
 
 /** Notes when the editor gains or loses focus, so a cell isn't announced as selected while focus is elsewhere. */
@@ -238,7 +258,7 @@ export function sheetKeysPlugin(options: SheetKeysOptions): Plugin<SheetState> {
         spreadsheet: options.spreadsheet,
         entry: null,
         active: null,
-        indexes: indexesOf(state.doc, options.spreadsheet),
+        indexes: isVirtualDoc(state.doc) ? DecorationSet.empty : indexesOf(state.doc, options.spreadsheet),
         focused: false,
       }),
       apply: (tr, value, _old, state) => applyMeta(tr, value, state),

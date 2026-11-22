@@ -48,6 +48,8 @@ import { currentTable } from '../tables/current';
 import type { TableHandle } from '../tables/current';
 import type { InnerView } from '../tables/lazyView';
 import { attachColumnHandles } from '../tables/columnResize';
+import { staticDocOf } from '../tables/virtual/rows';
+import '../tables/virtual/register';
 import '../tables/commands';
 import { TableToolbar } from '../tables/TableToolbar';
 import tableStyles from '../tables/tables.module.css';
@@ -187,7 +189,9 @@ class TableView implements InnerView {
   }
 
   private showStatic(doc: PMNode): void {
-    renderStatic(doc, this.editRoot, undefined, staticOptions(this.ctx.host));
+    // A table of thousands of rows shows its first rows until the editor, made in the same task, draws the rest.
+    const shown = this.editor || this.ctx.page.readOnly ? doc : staticDocOf(doc);
+    renderStatic(shown, this.editRoot, undefined, staticOptions(this.ctx.host));
     this.editRoot.querySelectorAll('th').forEach((th) => th.setAttribute('scope', 'col'));
     this.editRoot.querySelector('table')?.setAttribute('aria-label', tableName(doc));
     this.name(doc);
@@ -456,12 +460,16 @@ class TableView implements InnerView {
     editor.registerPlugin(this.edgeKeys());
     handles.set(editor, this.handle);
     this.pool.adopt?.(block, editor);
+    // The sync reads the same document more than once in a row; a long table is read once (DESIGN.md section 18).
+    let read: { doc: PMNode; data: TableData } | null = null;
     this.sync = attachTableSync(
       editor,
       block,
       this.ctx.sync,
       (doc) => {
+        if (read?.doc === doc && read.data === this.data) return this.data;
         this.data = docToTableData(doc, this.data, this.ctx.cache);
+        read = { doc, data: this.data };
         return this.data;
       },
       (data) => {

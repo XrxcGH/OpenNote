@@ -39,8 +39,15 @@ function eachTextblock(
   to: number,
   visit: (element: Element, pos: number, node: PMNode) => void,
 ): void {
-  view.state.doc.nodesBetween(from, to, (node, pos) => {
+  let rows: NodeListOf<ChildNode> | null | undefined;
+  view.state.doc.nodesBetween(from, to, (node, pos, _parent, index) => {
     if (node.type.spec.code) return false;
+    if (node.type.name === 'tableRow') {
+      // A row that a long table does not draw is a placeholder comment (features/page/tables/virtual). It has no
+      // text to check. Asking the view for each of its cells would cost a walk over every row.
+      rows ??= view.dom.querySelector('tbody')?.childNodes ?? null;
+      return rows?.[index]?.nodeType !== Node.COMMENT_NODE;
+    }
     if (!node.isTextblock) return true;
     const element = view.nodeDOM(pos);
     if (element instanceof Element && isCheckable(element)) visit(element, pos, node);
