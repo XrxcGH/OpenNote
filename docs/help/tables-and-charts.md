@@ -130,6 +130,6 @@ A table holds at most 256 rules. Use Circle invalid data to ring every cell that
 
 ## Arrays and spills
 
-A formula can return a list or a grid. FILTER, SORT, UNIQUE, SEQUENCE, and the LAMBDA helpers spill their answer into the cells below and to the right. The spill is blocked, and the cell shows #SPILL!, when a cell in its way is not empty. Arrays have a limit of 1,000,000 values, and MINVERSE and MDETERM take up to 500 rows. A bigger request shows "Too many values". Every function has a line in the [function reference](table-functions.md).
+A formula can return a list or a grid. FILTER, SORT, UNIQUE, SEQUENCE, and the LAMBDA helpers spill their answer into the cells below and to the right. The spill is blocked, and the cell shows #SPILL! when a cell in its way is not empty. Point at the error to read "No room to spill". Arrays have a limit of 1,000,000 values, and MINVERSE and MDETERM take up to 500 rows. A bigger request shows "Too many values". Every function has a line in the [function reference](table-functions.md).
 
-The pages on data tools, formulas in depth, and import and export grow with the releases that add those features (B11.2, B13.2, and B14.2). Until then, this page holds the short versions.
+The pages on data tools, formulas in depth, and import and export grow as those features ship. Until then, this page holds the short versions.
