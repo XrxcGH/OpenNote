@@ -12,6 +12,7 @@ import {
 import type { TableData } from '../../../../editor/schema/specs';
 import { adjustFormula } from '../../engine/refactor';
 import { readSheet } from '../model/sheet';
+import { applyMergeOp, isMergeOp } from '../merge/ops';
 import { applyStructureOp } from './ops';
 import { followInOthers } from './others';
 import { reflowSheet, rewriteCells } from './reflow';
@@ -41,6 +42,13 @@ export function followReferences(
   };
 }
 
-export const structureHooks: TableHooks = { structure: applyStructureOp, follow: followReferences };
+export const structureHooks: TableHooks = {
+  // Merge, unmerge, and split cell are structure ops of the merge lane (ADR 0064); split inserts lines, so it follows.
+  structure: (data, at, op, sheet, book) =>
+    isMergeOp(op)
+      ? applyMergeOp(data, at, op, sheet, book, followReferences)
+      : applyStructureOp(data, at, op, sheet, book),
+  follow: followReferences,
+};
 
 setTableHooks(structureHooks);

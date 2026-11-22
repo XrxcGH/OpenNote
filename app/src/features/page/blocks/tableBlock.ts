@@ -28,11 +28,12 @@ import { META_REMOTE } from '../../../editor/meta';
 import { renderStatic, staticOptions } from '../../../editor/schema/dom';
 import type { TableData } from '../../../editor/schema/specs';
 import { docToTableData, normalizeTableData, sameTableData, tableDataToDoc } from '../../../editor/table/mapping';
+import { spansOf } from '../../../editor/table/spans';
 import { tableName } from '../../../editor/table/tableKit';
 import type { BlockJson } from '../../../services/pages/types';
 import { t } from '../../../strings/t';
 import type { MessageKey } from '../../../strings/t';
-import { openMenu } from '../../../ui';
+import { confirm, openMenu } from '../../../ui';
 import { shownLayer } from '../mount';
 import type { StaticPool } from '../pool/pool';
 import { blockLaidOut } from '../seams/geometry';
@@ -65,6 +66,8 @@ const ANNOUNCE: Partial<Record<TableOp['op'], MessageKey>> = {
 
 /** What a screen reader hears after a table command. */
 function announcement(op: TableOp, change: TableChange): string {
+  if (op.op === 'mergeCells' || op.op === 'unmergeCells' || op.op === 'splitCell')
+    return t(`sheetMerge.announce.${op.op}` as MessageKey);
   if (isStructureOp(op)) return t(`sheetStructure.announce.${op.op}` as MessageKey);
   const key = ANNOUNCE[op.op];
   if (key) return t(key);
@@ -124,6 +127,8 @@ class TableView implements InnerView {
   private widthOpen = false;
   private heightOpen = false;
   private extras: TableExtraHandle[] = [];
+  /** The merged cells the table shows now, as JSON, to tell a merge from outside from no change. */
+  private spanKey = '[]';
   private gone = false;
   private stopOverflow = () => {};
   private stopHandles = () => {};
@@ -156,7 +161,7 @@ class TableView implements InnerView {
     };
     this.watchOverflow();
     // Static first: the same DOM the editor will show, so nothing moves when it mounts.
-    this.showStatic(tableDataToDoc(this.data));
+    this.showStatic(this.docOf(this.data));
     this.mountEditor();
   }
 
@@ -192,6 +197,26 @@ class TableView implements InnerView {
     return (this.editor && cellAt(this.editor.state)) || { row: 0, column: 0 };
   }
 
+  /**
+   * The table's document for `data`, with the merged cells `data.sheet` declares (ADR 0064). `extra` is the patch
+   * of a change that is not stored yet, so a merge shows as soon as the command runs.
+   */
+  private docOf(
+    data: TableData,
+    schema?: Parameters<typeof tableDataToDoc>[1],
+    extra?: Record<string, unknown>,
+  ): PMNode {
+    const spans = this.spansFor(data, extra);
+    this.spanKey = JSON.stringify(spans);
+    return tableDataToDoc(data, schema, spans);
+  }
+
+  private spansFor(data: TableData, extra?: Record<string, unknown>) {
+    const base = { sheet: this.sheetData() };
+    const next = extra ? applyMergePatch(base, extra) : base;
+    return spansOf(data, next.sheet);
+  }
+
   /** The data with the editor's latest typing. */
   private latest(): TableData {
     if (this.editor) this.data = docToTableData(this.editor.state.doc, this.data, this.ctx.cache);
@@ -199,12 +224,12 @@ class TableView implements InnerView {
   }
 
   /** Shows `next` in the editor without sending it, with the caret in `caret`. */
-  private show(next: TableData, caret: CellAt | null): void {
+  private show(next: TableData, caret: CellAt | null, extra?: Record<string, unknown>): void {
     this.data = next;
     const editor = this.editor;
-    if (!editor) return this.showStatic(tableDataToDoc(next));
+    if (!editor) return this.showStatic(this.docOf(next, undefined, extra));
     const { state } = editor;
-    const doc = tableDataToDoc(next, editor.schema);
+    const doc = this.docOf(next, editor.schema, extra);
     const tr = state.tr.replaceWith(0, state.doc.content.size, doc.content).setMeta(META_REMOTE, true);
     const pos = caret ? cellTextPos(tr.doc, caret) : null;
     if (pos !== null) tr.setSelection(TextSelection.create(tr.doc, pos));
@@ -290,6 +315,7 @@ class TableView implements InnerView {
       this.sheetData(),
       this.book(),
     );
+    if (applied?.warn && !(await this.confirmLoss(applied.warn))) return false;
     if (!applied) {
       if (op.op === 'insertCells' || op.op === 'deleteCells')
         this.ctx.host.announce(t('sheetStructure.announce.mergeBlocked'));
@@ -298,11 +324,22 @@ class TableView implements InnerView {
     const adds = op.op === 'columnLeft' || op.op === 'columnRight';
     // The scroller is the page's width; its border takes a pixel on each side.
     const change = adds ? fitAddedColumn(before, applied, this.scroller.clientWidth - 2) : applied;
-    this.show(change.data, change.caret);
+    this.show(change.data, change.caret, change.extra);
+    // The block's data holds the new `data.sheet` from now on, so the next command reads merges this one wrote.
+    if (change.extra) this.echo(change.extra);
     this.editor?.commands.focus();
     this.ctx.host.announce(announcement(op, change));
     await this.send(change.data, undefined, change.extra, change.also);
     return true;
+  }
+
+  /** Asks before a merge removes text, as Excel does. The change is one undo step, so Undo brings the text back. */
+  private confirmLoss(warn: NonNullable<TableChange['warn']>): Promise<boolean> {
+    return confirm({
+      title: t('sheetMerge.warn.title'),
+      body: t('sheetMerge.warn.body', { count: warn.lost }),
+      confirmLabel: t('sheetMerge.warn.confirm'),
+    });
   }
 
   private async deleteTable(): Promise<void> {
@@ -405,7 +442,7 @@ class TableView implements InnerView {
   private mountEditor(): void {
     if (this.editor || this.ctx.page.readOnly) return;
     const block = this.current.id;
-    const editor = createBlockEditor(this.editRoot, tableDataToDoc(this.data), {
+    const editor = createBlockEditor(this.editRoot, this.docOf(this.data), {
       kind: 'table',
       block,
       host: this.ctx.host,
@@ -478,7 +515,7 @@ class TableView implements InnerView {
         if (this.sync) await this.sync.flush('command');
         const next = change(this.latest());
         if (!next) return false;
-        this.show(next, this.caretCell());
+        this.show(next, this.caretCell(), extra);
         if (extra) this.echo(extra);
         await this.send(next, undefined, extra);
         return true;
@@ -570,7 +607,7 @@ class TableView implements InnerView {
     placeBlock(this.element, next);
     for (const extra of this.extras) extra.update(next);
     const incoming = normalizeTableData(next.data);
-    if (sameTableData(incoming, this.latest())) return;
+    if (sameTableData(incoming, this.latest()) && JSON.stringify(this.spansFor(incoming)) === this.spanKey) return;
     const caret = this.editor ? this.caretCell() : null;
     const rows = incoming.rows.length - 1;
     const columns = incoming.columns.length - 1;

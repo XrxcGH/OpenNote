@@ -213,6 +213,11 @@ export function applyStructureOp(
     case 'expand':
     case 'showLevel':
       return outlineOp(op, c);
+    case 'mergeCells':
+    case 'unmergeCells':
+    case 'splitCell':
+      // The merge lane runs these (merge/ops.ts, through hooks.ts).
+      return null;
     default:
       return hideOp(op, c);
   }
