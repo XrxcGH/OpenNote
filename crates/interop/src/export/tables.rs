@@ -206,6 +206,16 @@ fn collect_tables(
                     "Some formula results were out of date, so those formulas go without results and Excel calculates them on opening. Open the page in OpenNote once to refresh them.",
                 );
             }
+            let too_long = |text: &String| {
+                text.strip_prefix('=')
+                    .is_some_and(|f| f.chars().count() > crate::sheet::formula::MAX_FORMULA_CHARS)
+            };
+            if excel && rows.iter().flatten().any(too_long) {
+                page_report.simplified(
+                    "long formulas",
+                    "Excel takes formulas of up to 8,192 characters, so a longer formula goes as its text.",
+                );
+            }
             let huge = |s: &TableSheet| {
                 let big = |style: &crate::doc::cell_style::CellStyle| {
                     style
@@ -274,7 +284,7 @@ fn planned_files(
         }
         TableFormat::Csv | TableFormat::Tsv if tables.len() == 1 => {
             let path = unique_file(out_dir, &tables[0].name, format.extension())?;
-            vec![(path, delimited_bytes(&tables[0].rows, format))]
+            vec![(path, delimited_bytes(&shown_rows(&tables[0]), format))]
         }
         TableFormat::Csv | TableFormat::Tsv => {
             let root = new_folder(out_dir, title)?;
@@ -290,7 +300,7 @@ fn planned_files(
                     n += 1;
                 }
                 names.push(file.to_lowercase());
-                files.push((root.join(file), delimited_bytes(&table.rows, format)));
+                files.push((root.join(file), delimited_bytes(&shown_rows(table), format)));
             }
             files
         }
@@ -362,6 +372,22 @@ fn cell_text(inlines: &[Inline]) -> String {
         }
     }
     out
+}
+
+/// The text each cell shows: a formula's cached result when it is fresh, else the stored text (DESIGN.md section 16).
+fn shown_rows(table: &Table) -> Vec<Vec<String>> {
+    let result = |r: usize, c: usize| table.sheet.as_ref()?.results.get(r)?.get(c)?.clone();
+    table
+        .rows
+        .iter()
+        .enumerate()
+        .map(|(r, row)| {
+            row.iter()
+                .enumerate()
+                .map(|(c, text)| result(r, c).unwrap_or_else(|| text.clone()))
+                .collect()
+        })
+        .collect()
 }
 
 /// CSV or TSV with a byte order mark, so Excel reads the text as UTF-8. A cell that a spreadsheet would run as a
@@ -1016,6 +1042,44 @@ mod tests {
             data: Some(data),
             page: 0,
         }
+    }
+
+    #[test]
+    fn delimited_files_carry_a_fresh_formula_result_and_a_stale_formula_text() {
+        // A fresh cache shows 6 for =A1*2 with A1 = 3, by hand. A cell with no fresh result keeps its guarded text.
+        let mut fresh = formula_table("=A1*2", None);
+        let data = fresh.data.as_mut().expect("data");
+        let fingerprint = crate::sheet::fingerprint(data);
+        let (row, col) = (data.rows[1].id.to_string(), data.columns[1].id.to_string());
+        data.extra.insert(
+            "sheet".to_owned(),
+            serde_json::json!({ "v": 1, "values": { row: { col: 6 } }, "valuesOf": fingerprint }),
+        );
+        fresh.sheet = crate::sheet::read(data);
+        let out = std::env::temp_dir().join("opennote-interop-tsv-test");
+        let files = planned_files(TableFormat::Tsv, &[fresh], "Old", &out).expect("files");
+        let text = String::from_utf8(files[0].1.clone()).expect("utf8");
+        assert_eq!(text, "\u{feff}A\tB\r\n3\t6\r\n");
+        let stale = formula_table("=A1*2", None);
+        let text = String::from_utf8(delimited_bytes(&shown_rows(&stale), TableFormat::Tsv)).expect("utf8");
+        assert_eq!(text, "\u{feff}A\tB\r\n3\t'=A1*2\r\n");
+    }
+
+    #[test]
+    fn a_hostile_legacy_formula_exports_without_crashing() {
+        // Deep brackets, a long sign chain, and a long power chain in a table without data.sheet.v.
+        for deep in [
+            format!("={}1{}", "(".repeat(1500), ")".repeat(1500)),
+            format!("={}1", "-".repeat(4000)),
+            format!("={}1", "1^".repeat(4000)),
+        ] {
+            let part = sheet_part(formula_table(&deep, None));
+            assert!(part.contains(&format!("<f>{}</f>", &deep[1..])), "{deep}");
+        }
+        // Past Excel's 8,192 characters the formula goes as text.
+        let long = format!("={}1", "1^".repeat(100_000));
+        let part = sheet_part(formula_table(&long, None));
+        assert!(!part.contains("<f>") && part.contains("inlineStr"));
     }
 
     #[test]

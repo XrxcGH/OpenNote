@@ -200,7 +200,9 @@ fn cell_xml(input: &Input<'_>, styles: &mut StyleSheet, r: usize, c: usize, text
             format!("<c r=\"{at}\"{s_attr}/>")
         };
     }
-    if let Some(formula) = formula_of(input.table, r, c).filter(|_| !header_row) {
+    // A formula longer than Excel takes would make the file unreadable, so it goes as text. The export reports it.
+    let fits = |f: &String| f.chars().count() <= super::formula::MAX_FORMULA_CHARS;
+    if let Some(formula) = formula_of(input.table, r, c).filter(|f| !header_row && fits(f)) {
         let cx = Context {
             book: input.book,
             own: input.own,

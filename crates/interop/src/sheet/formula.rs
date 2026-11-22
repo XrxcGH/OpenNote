@@ -104,6 +104,9 @@ fn listed(list: &str, name: &str) -> bool {
 }
 
 /// The largest column of a worksheet, `XFD`.
+/// The longest formula Excel takes, in characters (Excel's specifications and limits).
+pub const MAX_FORMULA_CHARS: usize = 8_192;
+
 const MAX_COLUMN: usize = 16_384;
 /// The largest row of a worksheet.
 const MAX_ROW: usize = 1_048_576;
@@ -424,9 +427,9 @@ fn qualifier_to_excel(w: &Walker<'_>, written: &str, bare: &str, out: &mut Strin
 }
 
 /// Translates an OpenNote formula, without its `=`, into Excel's file form.
-/// A context whose own table is missing leaves the formula unchanged.
+/// A context whose own table is missing, or a formula longer than Excel takes, leaves the formula unchanged.
 pub fn to_excel(formula: &str, cx: &Context<'_>) -> String {
-    if cx.own >= cx.book.len() {
+    if cx.own >= cx.book.len() || formula.chars().count() > MAX_FORMULA_CHARS {
         return formula.to_owned();
     }
     let rewritten;

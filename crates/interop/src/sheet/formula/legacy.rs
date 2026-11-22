@@ -22,7 +22,12 @@ struct Parser<'a> {
     close: Vec<usize>,
     /// The tokens that are the constant `E`.
     constant: Vec<bool>,
+    /// How deep the parse is nested, so a hostile formula cannot overflow the stack.
+    depth: usize,
 }
+
+/// The deepest nesting of brackets, signs, and powers the rewrite reads. A deeper formula is left as it is.
+const MAX_DEPTH: usize = 256;
 
 fn text(tok: &Tok) -> &str {
     match tok {
@@ -100,8 +105,23 @@ impl Parser<'_> {
         self.binary(&["*", "/"], Self::unary)
     }
 
-    /// Under the textbook rules a leading sign binds looser than `^`.
+    /// Runs `step` one level deeper, or gives up past `MAX_DEPTH`.
+    fn nested(&mut self, step: fn(&mut Self) -> Option<Node>) -> Option<Node> {
+        if self.depth >= MAX_DEPTH {
+            return None;
+        }
+        self.depth += 1;
+        let node = step(self);
+        self.depth -= 1;
+        node
+    }
+
     fn unary(&mut self) -> Option<Node> {
+        self.nested(Self::sign)
+    }
+
+    /// Under the textbook rules a leading sign binds looser than `^`.
+    fn sign(&mut self) -> Option<Node> {
         if self.peek_text(&["-", "+"]) {
             let start = self.bump();
             let arg = self.unary()?;
@@ -145,6 +165,10 @@ impl Parser<'_> {
     }
 
     fn primary(&mut self) -> Option<Node> {
+        self.nested(Self::operand)
+    }
+
+    fn operand(&mut self) -> Option<Node> {
         let start = self.at_next()?;
         let tok = self.toks[start].clone();
         match &tok {
@@ -250,6 +274,9 @@ impl Parser<'_> {
 /// The text of a formula from a table without `data.sheet.v`, rewritten to mean under Excel's rules what it meant
 /// under the textbook rules. Text the rewrite cannot read comes back as it is.
 pub(super) fn rewrite(formula: &str) -> String {
+    if formula.chars().count() > super::MAX_FORMULA_CHARS {
+        return formula.to_owned();
+    }
     let toks = tokenize(formula, Dialect::OpenNote);
     let n = toks.len();
     let mut p = Parser {
@@ -258,6 +285,7 @@ pub(super) fn rewrite(formula: &str) -> String {
         open: vec![0; n],
         close: vec![0; n],
         constant: vec![false; n],
+        depth: 0,
     };
     if p.expr().is_none() || p.peek().is_some() {
         return formula.to_owned();
@@ -295,5 +323,23 @@ mod tests {
         }
         // Text the rewrite cannot read is not touched.
         assert_eq!(rewrite("-E^(2"), "-E^(2");
+    }
+
+    #[test]
+    fn a_formula_nested_too_deep_stays_as_it_is_without_overflowing_the_stack() {
+        // Each of these would overflow the stack of a parser with no depth limit.
+        for deep in [
+            format!("{}1{}", "(".repeat(1500), ")".repeat(1500)),
+            format!("{}1", "-".repeat(4000)),
+            format!("{}1", "1^".repeat(4000)),
+            format!("{}1", "1^".repeat(100_000)),
+        ] {
+            assert_eq!(rewrite(&deep), deep);
+        }
+        // Shallow nesting still gets its brackets.
+        assert_eq!(
+            rewrite(&format!("{}-2^2{}", "(".repeat(50), ")".repeat(50))),
+            format!("{}-(2^2){}", "(".repeat(50), ")".repeat(50))
+        );
     }
 }
