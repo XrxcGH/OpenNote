@@ -16,7 +16,7 @@ describe('the formatted twenty-page note fixture', () => {
     const formatted = paragraphs.filter((piece) => piece.startsWith('<span data-font="Georgia">'));
     expect(formatted.length / paragraphs.length).toBeCloseTo(0.3, 1);
     expect(formatted[0]).toContain('data-size="12"');
-    expect(formatted[0]).toContain('data-color="#2f5496"');
+    expect(formatted[0]).toContain('data-color="indigo"');
   });
 
   it('has 50 paragraphs with tab stops, 10 formatted lists, and 20 bordered paragraphs', () => {

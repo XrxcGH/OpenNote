@@ -248,13 +248,13 @@ function formattedNote(order: number): BlockJson {
         ];
       }
       if (n % 7 === 3 && n < 140) {
-        const side = { style: 'single', width: 0.5, space: 4, color: '#888888' };
+        const side = { style: 'single', width: 0.5, space: 4, color: 'theme:accent1' };
         entry.border = { top: side, bottom: side, start: side, end: side };
       }
       if (Object.keys(entry).length > 0) paras[id] = entry;
       const body = n < 50 ? piece.replace(/^(\S+ \S+ \S+) /, '$1\t') : piece;
       return n % 10 < 3
-        ? `<span data-font="Georgia"><span data-size="12"><span data-color="#2f5496">${body}</span></span></span>`
+        ? `<span data-font="Georgia"><span data-size="12"><span data-color="indigo">${body}</span></span></span>`
         : body;
     });
   return block('text', order, { markdown: pieces.join('\n\n'), ids, paras, lists });
