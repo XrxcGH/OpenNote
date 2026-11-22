@@ -1,6 +1,6 @@
 {
   "startup": {
-    "jsKb": 635,
+    "jsKb": 642,
     "cssKb": 30
   },
   "after": [
@@ -92,7 +92,7 @@
     "features/accounts/tasks/auto.ts": 208,
     "features/accounts/tasks/commands.ts": 209,
     "features/ink/index.ts": 67,
-    "features/math/index.ts": 337,
+    "features/math/index.ts": 343,
     "features/math/solvers/ui/SolversTool.tsx": 61,
     "features/page/audio/exportVideo.ts": 99,
     "features/pages/host/shareRender.ts": 75,
@@ -104,11 +104,13 @@
     "features/pages/ui/presentCommands.tsx": 80,
     "features/pdf/importPdf.ts": 69,
     "features/tables/index.ts": 190,
-    "features/tables/ui/toolbar/CellFormatBar.tsx": 165,
+    "features/tables/ui/formatCells/open.tsx": 160,
+    "features/tables/ui/styles/open.tsx": 165,
+    "features/tables/ui/toolbar/CellFormatBar.tsx": 172,
     "features/tables/ui/toolbar/actions.ts": 138,
-    "features/tables/ui/evaluate/EvaluateDialog.tsx": 127,
+    "features/tables/ui/evaluate/EvaluateDialog.tsx": 133,
     "features/tables/ui/formulaBar/FormulaBar.tsx": 139,
-    "features/tables/ui/formulaBar/attach.ts": 117,
+    "features/tables/ui/formulaBar/attach.ts": 123,
     "features/tables/ui/names/NameManager.tsx": 126,
     "features/tools/index.ts": 392,
     "features/engineering/control/ui/ControlKit.tsx": 328,
@@ -143,7 +145,7 @@
     "features/updates": 40,
     "features/tools/statinfer": 367,
     "features/tools/humanities/timeline": 363,
-    "features/tools/signals/spectrum/SpectrumTool.tsx": 348,
+    "features/tools/signals/spectrum/SpectrumTool.tsx": 354,
     "features/tools": 321,
     "features/engineering/fluidheat/ui/FluidHeatKit.tsx": 317,
     "features/engineering/mechdyn/ui/MechDynKit.tsx": 125,
@@ -151,7 +153,7 @@
     "features/engineering/mechdyn": 12,
     "features/engineering/aero/ui/KitAeroTool.tsx": 230,
     "features/engineering/solids/ui/SolidsKit.tsx": 119,
-    "features/engineering/thermo/ui/ThermoKit.tsx": 514,
+    "features/engineering/thermo/ui/ThermoKit.tsx": 520,
     "features/study/ui/exam/ExamResults.tsx": 43,
     "features/codestudio/runtimes/lua/adapter.ts": 42,
     "features/codestudio/runtimes/sql/adapter.ts": 70
