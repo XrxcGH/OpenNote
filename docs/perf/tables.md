@@ -44,6 +44,8 @@ The times are from one unthrottled run on the development machine and show only 
 - **First paint.** From the click on the page in the tree to the second animation frame after the long table's editor appears.
 - **Scrolling.** 240 frames of 80 pixels each, about 600 rows. Each frame's work runs from the start of its animation frame to the first task after it. Ten jumps of 4,000 pixels follow, as a scroll bar drag does. They must show the rows they land on. Each draws a whole new screen of rows, so the frame budget does not apply to them.
 - **Scale.** The fixed benchmark of `tree.perf.spec.ts` tells how fast the machine is. A faster machine is throttled to the laptop's speed. A slower one, such as a CI runner, scales both budgets by how much slower it is.
+- **Each jump.** Three frames after each jump, a drawn row must cover the middle of the screen, unless the table does not reach it.
+- **Typing (report).** Forty keys typed into a cell, 120 ms apart, with the typing benchmark's key timer. It reports the script time per key (p95) and the frames over 50 ms. It becomes a gate once typing in a long table meets the 16 ms budget.
 - **Keys.** Ctrl+End selects the last cell. The cell has `aria-rowindex` 10,001, the table has `aria-rowcount` 10,001, and the live region says its address.
 - **Threshold.** A 1,999-row table draws all 1,999 rows.
 
@@ -58,7 +60,19 @@ Development machine, 2026-11-22, CPU load about 6% before the run, scale about 1
 
 Before this work, the same table took about 1.7 s to first paint, and the page laid out all 10,000 rows on each change.
 
+## Sheet styles in a long table
+
+- **Measuring.** The measuring pass of the sheet styles (`features/tables/sheet/render/measure.ts`) finds each drawn row's number in its `aria-rowindex`, so its values land on the right row. When the window moves, the rows it now draws are measured.
+- **Decorations.** Only the drawn rows get the sheet style decorations. ProseMirror would wrap a placeholder comment that gets attributes in an element.
+- **Frozen rows.** The frozen leading rows stay drawn wherever the window is (`setPinnedRows`, up to 200 rows). The padding above holds only the rows between them and the window.
+- **Range selection.** The spreadsheet keys mark `aria-selected` on the drawn rows only.
+- **Sync.** Reading the table back to its data redoes only the rows that changed since the last read, when no row was added, removed, or merged.
+
 ## What is left
+
+- Table find is not built yet. When it lands, it must call `revealRow` for each match in a long table, so the row is drawn before it is scrolled to or marked.
+- Typing in a 10,000-row table is still above the 16 ms budget. The spreadsheet keys and prosemirror-tables still walk every cell of a new document once per key.
+- A large range selection still costs one prosemirror-tables decoration per selected cell.
 
 - A read-only page shows a long table's every row; it has no editor to virtualize.
 - The scroll frames still walk all 10,000 row views once per window move, inside ProseMirror. That is about 3 ms on the development machine.

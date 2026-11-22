@@ -8,6 +8,7 @@
 // runner, scales the budgets by how much slower it is. Performance checks never retry.
 import type { CDPSession, Page } from '@playwright/test';
 import { expect, test } from '../fixtures';
+import { installKeyTimer, percentile, readKeys, recordKeys } from '../../perf/typing/keyTimer';
 
 const FIRST_PAINT_MS = 250;
 const FRAME_MS = 8;
@@ -123,17 +124,37 @@ test('a 10,000-row table paints within 250 ms of opening its page, and no scroll
         let frame = 0;
         const step = () => {
           const start = performance.now();
-          const smooth = frame < 240;
-          if (smooth) element.scrollTop += 80;
-          else element.scrollTop = Math.max(0, element.scrollTop - 4000);
-          if (smooth) setTimeout(() => timing.frames.push(performance.now() - start), 0);
+          element.scrollTop += 80;
+          setTimeout(() => timing.frames.push(performance.now() - start), 0);
           frame += 1;
-          if (frame < 250) requestAnimationFrame(step);
+          if (frame < 240) requestAnimationFrame(step);
           else setTimeout(resolve, 100);
         };
         requestAnimationFrame(step);
       }),
   );
+  // Each jump shows its rows within two frames: a drawn row covers the middle of the screen, unless the table does
+  // not reach it. A blank gap there fails.
+  const blank = await scroller.evaluate(async (element) => {
+    const frame = () => new Promise((resolve) => requestAnimationFrame(resolve));
+    const table = document.querySelector('main table')!;
+    const misses: number[] = [];
+    for (let jump = 0; jump < 10; jump += 1) {
+      element.scrollTop = Math.max(0, element.scrollTop - 4000);
+      await frame();
+      await frame();
+      await frame();
+      const middle = window.innerHeight / 2;
+      const box = table.getBoundingClientRect();
+      if (box.top > middle || box.bottom <= middle) continue;
+      const covered = [...table.querySelectorAll('tbody > tr')].some((tr) => {
+        const row = tr.getBoundingClientRect();
+        return row.top <= middle && row.bottom > middle;
+      });
+      if (!covered) misses.push(element.scrollTop);
+    }
+    return misses;
+  });
   const frames = await page.evaluate(() => (window as unknown as Win).__timing.frames);
   await client.send('Emulation.setCPUThrottlingRate', { rate: 1 });
   const worst = Math.max(...frames);
@@ -148,16 +169,43 @@ test('a 10,000-row table paints within 250 ms of opening its page, and no scroll
   console.log(`sheet tables: ${summary}, scale ${scale.toFixed(2)}`);
   expect.soft(paint).toBeLessThanOrEqual(FIRST_PAINT_MS * scale);
   expect.soft(worst).toBeLessThanOrEqual(FRAME_MS * scale);
-  // The rows now in view are drawn.
-  const visible = await table(page).evaluate((element) => {
-    const middle = window.innerHeight / 2;
-    const row = [...element.querySelectorAll('tbody > tr')].find((tr) => {
-      const box = tr.getBoundingClientRect();
-      return box.top <= middle && box.bottom > middle;
-    });
-    return row ? row.querySelectorAll('td').length : -1;
-  });
-  expect(visible === 3 || visible === -1).toBe(true);
+  // Every jump landed on drawn rows.
+  expect(blank).toEqual([]);
+});
+
+test('typing in a cell of a 10,000-row table: script time per key (report)', async ({ page }) => {
+  // A report first (docs/perf/tables.md): it becomes a gate once typing in a long table meets the 16 ms budget.
+  test.setTimeout(120_000);
+  await installKeyTimer(page);
+  await openLibrary(page, 'tenThousandRows');
+  await openPage(page, 'Membranes');
+  const cell = table(page).locator('tr[aria-rowindex="2"] td').first();
+  await expect(cell).toHaveAttribute('aria-rowindex', '2', { timeout: 30_000 });
+  await cell.locator('p').click();
+  const { scale, client } = await calibrate(page);
+  await recordKeys(page, true);
+  // Forty keys, 120 ms apart, as the typing benchmark types them.
+  for (const key of 'cells divide in the long table of stages.'.slice(0, 40)) {
+    await page.keyboard.type(key);
+    await page.waitForTimeout(120);
+  }
+  await recordKeys(page, false);
+  await client.send('Emulation.setCPUThrottlingRate', { rate: 1 });
+  const { script, painted, longFrames } = await readKeys(page);
+  const p95 = percentile(script, 95);
+  test
+    .info()
+    .annotations.push(
+      { type: 'typing script p95', description: `${p95.toFixed(1)} ms of ${script.length} keys` },
+      { type: 'typing painted p95', description: `${percentile(painted, 95).toFixed(1)} ms` },
+      { type: 'frames over 50 ms', description: String(longFrames) },
+      { type: 'scale', description: scale.toFixed(2) },
+    );
+  console.log(
+    `sheet tables: typing script p95 ${p95.toFixed(1)} ms, ${longFrames} long frames, scale ${scale.toFixed(2)}`,
+  );
+  expect(script.length).toBeGreaterThanOrEqual(30);
+  await expect(cell).toContainText('cells divide');
 });
 
 test('Ctrl+End in a virtualized table selects the last cell and a screen reader hears row 10,001', async ({ page }) => {
