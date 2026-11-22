@@ -51,11 +51,18 @@
       "entry": "features/engineering/thermo/ui/ThermoKit"
     },
     {
-      "within": ["features/engineering/", "features/math/solvers/ui/SolversTool"],
+      "within": [
+        "features/engineering/",
+        "features/math/solvers/ui/SolversTool"
+      ],
       "entry": "features/tools/ui/host"
     },
     {
-      "within": ["@codemirror/lang-", "@codemirror/legacy-modes", "@codemirror/language"],
+      "within": [
+        "@codemirror/lang-",
+        "@codemirror/legacy-modes",
+        "@codemirror/language"
+      ],
       "entry": "features/codestudio/editor/index.ts"
     }
   ],
@@ -85,7 +92,7 @@
     "features/accounts/tasks/auto.ts": 208,
     "features/accounts/tasks/commands.ts": 209,
     "features/ink/index.ts": 67,
-    "features/math/index.ts": 334,
+    "features/math/index.ts": 337,
     "features/math/solvers/ui/SolversTool.tsx": 61,
     "features/page/audio/exportVideo.ts": 99,
     "features/pages/host/shareRender.ts": 75,
@@ -96,13 +103,13 @@
     "features/pages/ui/imageCommands.tsx": 79,
     "features/pages/ui/presentCommands.tsx": 80,
     "features/pdf/importPdf.ts": 69,
-    "features/tables/index.ts": 172,
+    "features/tables/index.ts": 175,
     "features/tables/ui/toolbar/CellFormatBar.tsx": 165,
-    "features/tables/ui/toolbar/actions.ts": 137,
+    "features/tables/ui/toolbar/actions.ts": 138,
     "features/tables/ui/evaluate/EvaluateDialog.tsx": 127,
-    "features/tables/ui/formulaBar/FormulaBar.tsx": 138,
+    "features/tables/ui/formulaBar/FormulaBar.tsx": 139,
     "features/tables/ui/formulaBar/attach.ts": 117,
-    "features/tables/ui/names/NameManager.tsx": 125,
+    "features/tables/ui/names/NameManager.tsx": 126,
     "features/tools/index.ts": 392,
     "features/engineering/control/ui/ControlKit.tsx": 328,
     "features/engineering/index.ts": 222,
@@ -110,7 +117,7 @@
     "node_modules/mermaid": 600,
     "@mermaid-js/parser": 130,
     "features/pages/live": 40,
-    "features/pages/ui": 60,
+    "features/pages/ui": 61,
     "editor/markdown/worker": 45,
     "editor/highlight": 20,
     "highlight.js/lib/languages": 5,
@@ -121,7 +128,7 @@
     "features/page/PageBody": 276,
     "@observablehq/plot": 135,
     "features/math": 185,
-    "features/tables/keys/attach.ts": 117,
+    "features/tables/keys/attach.ts": 118,
     "features/tables": 86,
     "features/search/links": 195,
     "features/search/lineTags": 160,
@@ -134,17 +141,17 @@
     "features/shortcuts": 40,
     "features/trash": 40,
     "features/updates": 40,
-    "features/tools/statinfer": 362,
-    "features/tools/humanities/timeline": 359,
-    "features/tools/signals/spectrum/SpectrumTool.tsx": 345,
+    "features/tools/statinfer": 367,
+    "features/tools/humanities/timeline": 363,
+    "features/tools/signals/spectrum/SpectrumTool.tsx": 348,
     "features/tools": 321,
     "features/engineering/fluidheat/ui/FluidHeatKit.tsx": 317,
-    "features/engineering/mechdyn/ui/MechDynKit.tsx": 124,
+    "features/engineering/mechdyn/ui/MechDynKit.tsx": 125,
     "features/engineering/electrical/KitElectricalTool.tsx": 30,
     "features/engineering/mechdyn": 12,
     "features/engineering/aero/ui/KitAeroTool.tsx": 230,
     "features/engineering/solids/ui/SolidsKit.tsx": 119,
-    "features/engineering/thermo/ui/ThermoKit.tsx": 510,
+    "features/engineering/thermo/ui/ThermoKit.tsx": 514,
     "features/study/ui/exam/ExamResults.tsx": 43,
     "features/codestudio/runtimes/lua/adapter.ts": 42,
     "features/codestudio/runtimes/sql/adapter.ts": 70

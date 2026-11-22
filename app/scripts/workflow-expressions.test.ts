@@ -35,3 +35,13 @@ describe('workflow expressions', () => {
     });
   }
 });
+
+describe('nightly typing gate', () => {
+  it('runs perf:typing with the 16 ms gate on and reports its failure', () => {
+    const text = readFileSync(join(DIR, 'nightly.yml'), 'utf8');
+    const job = text.slice(text.indexOf('  perf-typing-gate:'), text.indexOf('  e2e-full:'));
+    expect(job).toContain("OPENNOTE_TYPING_GATE: '1'");
+    expect(job).toContain('npm run perf:typing');
+    expect(text).toMatch(/needs: \[[^\]]*perf-typing-gate/);
+  });
+});
