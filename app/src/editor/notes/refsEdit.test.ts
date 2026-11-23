@@ -24,6 +24,42 @@ describe('editKeepsRefs', () => {
   });
 });
 
+describe('editKeepsRefs indentation', () => {
+  const id = '[^0abcdefghjkmnpqrstvwxyz123]';
+  it('rejects a space that makes a line an indented code block', () => {
+    const before = `a
+
+   ${'x'.repeat(40)}${id}`;
+    const after = `a
+
+    ${'x'.repeat(40)}${id}`;
+    expect(refs.refIdsInMarkdown(before)).toEqual(['0abcdefghjkmnpqrstvwxyz123']);
+    expect(refs.refIdsInMarkdown(after)).toEqual([]);
+    expect(editKeepsRefs(before, after)).toBe(false);
+  });
+
+  it('never says unchanged when a full parse finds different references (fuzz)', () => {
+    let seed = 7;
+    const next = (n: number) => {
+      seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+      return seed % n;
+    };
+    const pieces = [' ', '  ', 'w', 'word ', `
+`, `	`, '    ', id, '`', 'x'.repeat(40)];
+    for (let i = 0; i < 4000; i += 1) {
+      let text = '';
+      for (let k = 0; k < 1 + next(6); k += 1) text += pieces[next(pieces.length)];
+      const at = next(text.length + 1);
+      const put = pieces[next(pieces.length)] ?? '';
+      const cut = next(3);
+      const after = text.slice(0, at) + put + text.slice(at + cut);
+      if (editKeepsRefs(text, after)) {
+        expect(refs.refIdsInMarkdown(after), JSON.stringify([text, after])).toEqual(refs.refIdsInMarkdown(text));
+      }
+    }
+  });
+});
+
 describe('NotesModel.rider', () => {
   it('parses the block once for a run of plain keystrokes', () => {
     const model = new NotesModel();

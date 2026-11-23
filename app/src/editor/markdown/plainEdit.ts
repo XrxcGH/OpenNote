@@ -26,8 +26,9 @@ function plainEdit(before: string, after: string): { start: number; cutEnd: numb
   const cut = before.slice(start, cutEnd);
   const put = after.slice(start, putEnd);
   if (STRUCTURAL.test(cut) || STRUCTURAL.test(put)) return null;
-  const atLineStart = start === 0 || before[start - 1] === '\n';
-  if (atLineStart && (/^[ \t]/.test(cut) || /^[ \t]/.test(put))) return null;
+  // A space or tab inside a line's leading whitespace can make 4 spaces: an indented code block.
+  const lineStart = before.lastIndexOf('\n', start - 1) + 1;
+  if (/^[ \t]*$/.test(before.slice(lineStart, start)) && /[ \t]/.test(cut + put)) return null;
   return { start, cutEnd, putEnd };
 }
 
