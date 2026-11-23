@@ -17,6 +17,7 @@ import { cellAt, cellTextPos } from '../commands/tables';
 import type { EditorHost } from '../host';
 import { newId } from '../ids';
 import { META_REMOTE } from '../meta';
+import { onlyInsideCells } from './cellEdits';
 import { extraTableKeys } from './keySeam';
 import type { TableKeyCommand } from './keySeam';
 import { headerNames, tableOf } from './mapping';
@@ -245,12 +246,20 @@ function sourceRows(transactions: readonly Transaction[], old: PMNode, doc: PMNo
 
 const normalizeKey = new PluginKey('opennote.tableNormalize');
 
+/** Documents known to be a whole grid with IDs, so a change inside one of their cells keeps them so. */
+const normalized = new WeakSet<PMNode>();
+
 /** Keeps the table a grid with IDs after any change, such as a paste of cells, in the same undo step. */
 function normalizePlugin(): Plugin {
   return new Plugin({
     key: normalizeKey,
     appendTransaction(transactions: readonly Transaction[], old: EditorState, state: EditorState) {
       if (!transactions.some((tr) => tr.docChanged)) return null;
+      // Typing in a cell of a table already whole keeps it whole: no walk over every row on each key.
+      if (normalized.has(old.doc) && transactions.every(onlyInsideCells)) {
+        normalized.add(state.doc);
+        return null;
+      }
       const table = tableOf(state.doc);
       if (!table) return null;
       const allowed = allowedSpans(table);
@@ -259,6 +268,7 @@ function normalizePlugin(): Plugin {
       if (!whole) tr.replaceWith(0, state.doc.content.size, wholeTable(table, allowed));
       const sources = sourceRows(transactions, old.doc, state.doc);
       const stamped = stampIds(tr, whole ? allowed : allowedSpans(tableOf(tr.doc) ?? table), sources);
+      normalized.add(tr.doc);
       if (whole && !stamped) return null;
       if (transactions.some((one) => one.getMeta(META_REMOTE))) tr.setMeta(META_REMOTE, true);
       return tr;

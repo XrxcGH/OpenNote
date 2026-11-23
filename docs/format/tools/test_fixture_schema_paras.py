@@ -204,7 +204,7 @@ class VersionOneBytesTest(unittest.TestCase):
                     old_cases = json.loads(old)["cases"]
                     new_cases = json.loads(new)["cases"]
                     self.assertEqual(new_cases[: len(old_cases)], old_cases, "documents/cases.json may only gain cases")
-                elif name.endswith(("fixtures/README.md", "markdown/documents/README.md")):
+                elif name.endswith(("fixtures/README.md", "markdown/documents/README.md", "table-sheet/README.md")):
                     continue  # the prose indexes of the folders may grow
                 else:
                     self.assertEqual(hashlib.sha256(new).hexdigest(), hashlib.sha256(old).hexdigest())

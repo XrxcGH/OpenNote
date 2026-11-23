@@ -6,6 +6,7 @@ import { Table, TableCell, TableHeader, TableRow } from '@tiptap/extension-table
 import type { Schema } from '@tiptap/pm/model';
 import type { MarkName } from './constants';
 import { FootnoteRef } from '../extensions/footnoteRef';
+import { tableRowView } from '../table/rowViewSeam';
 import * as marks from './marks';
 import * as nodes from './nodes';
 
@@ -123,6 +124,10 @@ const ID_ATTR = { default: null, rendered: false, parseHTML: () => null, keepOnS
 export const IdRow = TableRow.extend({
   addAttributes() {
     return { ...this.parent?.(), rowId: ID_ATTR };
+  },
+  // Row virtualization's row view when it is registered (editor/table/rowViewSeam.ts), else ProseMirror's rows.
+  addNodeView() {
+    return tableRowView();
   },
 });
 

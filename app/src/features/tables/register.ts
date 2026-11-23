@@ -2,4 +2,7 @@
 // adds one import here. The rest of the feature loads when a table first shows.
 import './ui/toolbar/register';
 import './keys/register';
+import './pointer/register';
+import './ui/formatCells/register';
 import './ui/formulaBar/register';
+import './clipboard/register';

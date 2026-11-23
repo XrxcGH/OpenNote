@@ -241,7 +241,7 @@ export function gridOfData(data: TableData): Grid {
   const texts = data.rows.map((row) =>
     columnIds.map((id) => textOf(Object.hasOwn(row.cells, id) ? row.cells[id].markdown : '')),
   );
-  return { header: data.header, columnIds, texts };
+  return { header: data.header, columnIds, texts, rowIds: data.rows.map((row) => row.id) };
 }
 
 /** True when two grids hold the same text in every cell. */

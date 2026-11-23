@@ -193,6 +193,7 @@ class SmartTable implements SmartInstance, TableExtraHandle, BookMember {
       doc,
       data.header,
       data.columns.map((column) => column.id),
+      data.rows.map((row) => row.id),
     );
     return this.readFrom(doc, grid, stored, this.sheet());
   }

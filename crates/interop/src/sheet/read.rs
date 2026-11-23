@@ -23,6 +23,8 @@ pub fn read(table: &TableData) -> Option<TableSheet> {
     let mut out = TableSheet {
         styles: vec![vec![None; columns]; rows],
         results: vec![vec![None; columns]; rows],
+        formats: vec![vec![None; columns]; rows],
+        cached: vec![vec![None; columns]; rows],
         name: settings
             .and_then(|t| t.get("name"))
             .and_then(Value::as_str)
@@ -65,6 +67,7 @@ pub fn read(table: &TableData) -> Option<TableSheet> {
                 .get("fmt")
                 .and_then(Value::as_str)
                 .filter(|f| (1..=255).contains(&f.len()));
+            out.formats[r][c] = fmt.map(str::to_owned);
             let markdown = row.cells.get(&column.id).map_or("", |cell| cell.markdown.as_str());
             let stored = values
                 .and_then(|v| v.get(row_id.as_str()))
@@ -72,6 +75,7 @@ pub fn read(table: &TableData) -> Option<TableSheet> {
             // The readable text decides what a formula is (R-SHT-5), so a bold `=A1*2` is one.
             if readable_text(markdown).starts_with('=') {
                 if fresh {
+                    out.cached[r][c] = stored.cloned();
                     // An entry a reader cannot use is ignored (R-SHT-17): the cell keeps its formula text.
                     out.results[r][c] = stored.map_or(Some(String::new()), |v| result_text(v, fmt));
                 } else {
@@ -83,6 +87,7 @@ pub fn read(table: &TableData) -> Option<TableSheet> {
         }
     }
     out.merges = merges(sheet, table);
+    super::layout::fill(&mut out, sheet, table);
     Some(out)
 }
 
@@ -134,7 +139,7 @@ fn get<'a>(m: Option<&'a Obj>, k: &str) -> Option<&'a Value> {
     m?.get(k)
 }
 
-fn style_of(style: &Obj) -> CellStyle {
+pub(super) fn style_of(style: &Obj) -> CellStyle {
     let font = obj(style.get("font"));
     let align = obj(style.get("align"));
     let border = obj(style.get("border"));

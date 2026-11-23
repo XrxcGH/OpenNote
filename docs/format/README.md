@@ -988,6 +988,7 @@ A cell of a choice column stores the name of its choice as plain Markdown text, 
 | `cols` | map from a column ID to settings | `{}` | | Column styles and outline (`R-SHT-11`) |
 | `rows` | map from a row ID to settings | `{}` | | Row styles, heights, and outline (`R-SHT-11`) |
 | `cells` | map from a row ID to a map from a column ID to a style ID | `{}` | 1,000,000 cells per table | The style of each cell |
+| `named` | map from a style name to a style | `{}` | 1,024 styles, names of 1 to 60 characters | Named cell styles that cells follow (`R-SHT-7`) |
 | `merges` | map from a merge ID to `{from, to}` | `{}` | 10,000 merges | Merged cells (`R-SHT-12`) |
 | `names` | map from a name to `{ref, scope, comment}` | `{}` | 1,024 names | Named ranges, constants, formulas, and LAMBDAs (`R-SHT-13`) |
 | `validation` | map from a rule ID to a rule | `{}` | 256 rules | Data validation (`R-SHT-14`) |
@@ -2221,7 +2222,7 @@ This is the one stamping table for every part of the app:
 | `R-STAMP-3` | Version 2 style keys, a page style sheet, a page or notebook `theme`, or `stylesChanged` | 1 | Edits it, and draws the styles with the version 1 keys |
 | `R-STAMP-4` | `view.text` or `view.print` | 1 | Edits it. Its print has no saved headers or footers |
 | `R-STAMP-5` | Version 1 tags with version 1 values only, including spaces kept inside them (`R-WS-3`) | 1 | Edits it |
-| `R-STAMP-6` | `data.sheet` with only `styles`, `table`, `cols`, `rows`, `cells`, `notes`, `links`, or `valuesOf`, and no `v` beside a formula cell | 1 | Edits it. Cell formats are not drawn but are kept (`R-SHT-20`) |
+| `R-STAMP-6` | `data.sheet` with only `styles`, `table`, `cols`, `rows`, `cells`, `named`, `notes`, `links`, or `valuesOf`, and no `v` beside a formula cell | 1 | Edits it. Cell formats are not drawn but are kept (`R-SHT-20`) |
 | `R-STAMP-7` | Any code project block or code cell, of any data version (`R-CODE-1`) | 1 | Edits the page. The blocks follow their own `minEditor` |
 | `R-STAMP-8` | A tag that pairs (section 7.9) and is not a version 1 tag with a version 1 value: any mark of section 7.10 beyond version 1, including `weight` and `charStyle`, a version 1 tag with a value of version 2 such as `<span data-size="12">`, and any foreign mark | 2 | Read-only with the newer-version banner. Nothing is lost |
 | `R-STAMP-9` | A footnote reference `[^ID]` | 2 | Read-only |
