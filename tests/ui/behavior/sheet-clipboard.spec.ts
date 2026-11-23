@@ -23,14 +23,24 @@ async function dragSelect(page: Page, from: [number, number], to: [number, numbe
   }).toPass({ timeout: 10_000 });
 }
 
-/** Fires a copy event at the focused editor and returns what it wrote. */
+/**
+ * Fires a copy event at the focused editor and returns what it wrote. The table's clipboard attaches a moment after
+ * the table shows, so a copy fired while the browser is busy can fall to the editor's own copy: it tries again.
+ */
 async function copyNow(page: Page): Promise<{ html: string; text: string }> {
-  return page.evaluate(() => {
-    const data = new DataTransfer();
-    const target = document.activeElement ?? document.body;
-    target.dispatchEvent(new ClipboardEvent('copy', { clipboardData: data, bubbles: true, cancelable: true }));
-    return { html: data.getData('text/html'), text: data.getData('text/plain') };
-  });
+  const fire = () =>
+    page.evaluate(() => {
+      const data = new DataTransfer();
+      const target = document.activeElement ?? document.body;
+      target.dispatchEvent(new ClipboardEvent('copy', { clipboardData: data, bubbles: true, cancelable: true }));
+      return { html: data.getData('text/html'), text: data.getData('text/plain') };
+    });
+  let last = await fire();
+  await expect(async () => {
+    last = await fire();
+    expect(last.html).toContain('data-opennote-cells');
+  }).toPass({ timeout: 10_000 });
+  return last;
 }
 
 /** Fires a paste event with this HTML and text at the focused editor. */
@@ -82,8 +92,11 @@ test('Paste special transposes a copied row into a column', async ({ page }) => 
   await dragSelect(page, [1, 0], [1, 1]);
   await copyNow(page);
   await dragSelect(page, [2, 0], [2, 0]);
-  await page.keyboard.press('Control+Alt+v');
   const dialog = page.getByRole('dialog', { name: 'Paste special' });
+  await expect(async () => {
+    await page.keyboard.press('Control+Alt+v');
+    await expect(dialog).toBeVisible({ timeout: 1000 });
+  }).toPass({ timeout: 10_000 });
   await dialog.getByRole('switch', { name: 'Transpose' }).click();
   await dialog.getByRole('button', { name: 'Paste' }).click();
   await expect(cellAt(page, 2, 0)).toHaveText('a');

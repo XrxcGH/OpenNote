@@ -13,6 +13,11 @@ import { expect, test } from '../fixtures';
 import { installKeyTimer, percentile, readKeys, recordKeys } from '../../perf/typing/keyTimer';
 
 const FIRST_PAINT_MS = 250;
+/**
+ * The first paint is not all script: loading the table's code, layout and the compositor do not slow in step with the
+ * calibration benchmark. On a runner several times slower than the laptop, the budget gets this much extra room.
+ */
+const SLOW_RUNNER_PAINT_ALLOWANCE = 1.25;
 const FRAME_MS = 8;
 /** The 99th percentile of the scroll frames must meet FRAME_MS; no single frame may take more than this. */
 const WORST_FRAME_MS = 2 * FRAME_MS;
@@ -168,14 +173,17 @@ test('a 10,000-row table paints within 250 ms of opening its page, and its scrol
   test
     .info()
     .annotations.push(
-      { type: 'first paint', description: `${paint.toFixed(1)} ms (budget ${(FIRST_PAINT_MS * scale).toFixed(0)})` },
+      {
+        type: 'first paint',
+        description: `${paint.toFixed(1)} ms (budget ${(FIRST_PAINT_MS * scale * (scale > 1.5 ? SLOW_RUNNER_PAINT_ALLOWANCE : 1)).toFixed(0)})`,
+      },
       { type: 'scroll frame p99', description: `${p99.toFixed(1)} ms of ${frames.length} frames` },
       { type: 'worst scroll frame', description: `${worst.toFixed(1)} ms` },
       { type: 'scale', description: scale.toFixed(2) },
     );
   const summary = `first paint ${paint.toFixed(0)} ms, scroll frame p99 ${p99.toFixed(1)} ms, worst ${worst.toFixed(1)} ms`;
   console.log(`sheet tables: ${summary}, scale ${scale.toFixed(2)}`);
-  expect.soft(paint).toBeLessThanOrEqual(FIRST_PAINT_MS * scale);
+  expect.soft(paint).toBeLessThanOrEqual(FIRST_PAINT_MS * scale * (scale > 1.5 ? SLOW_RUNNER_PAINT_ALLOWANCE : 1));
   expect.soft(p99).toBeLessThanOrEqual(FRAME_MS * scale);
   expect.soft(worst).toBeLessThanOrEqual(WORST_FRAME_MS * scale);
   // Every jump landed on drawn rows.
