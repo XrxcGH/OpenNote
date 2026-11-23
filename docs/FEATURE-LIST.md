@@ -97,6 +97,7 @@ The app registers 1178 commands and 48 tool windows. 24 of the windows are subje
 - **Code completion without a model.** A ranked list from names in scope, members, keywords, snippets, and words in the project, plus one-line ghost text from patterns, and an explicit request key.
 - **Quick fixes and explanations.** Ctrl+. on a problem in the Code studio offers its quick fixes, plus Fix all.
 - **Code tests and test cases.** The Tests panel runs input and output cases, function calls with JSON arguments, and SQL result sets.
+- **Code studio accessibility and help checks.** The studio's editor, console, and Problems panel pass axe at every size in both themes, and the layout audit visits them.
 - **Code cells on the run core.** Code cells use the Code studio editor, checks, and completion.
 - **Code studio speed gates.** 18 speed budgets for the Code studio, from completion to model speed.
 
