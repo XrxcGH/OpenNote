@@ -40,6 +40,7 @@ import { factsFor } from './facts';
 import { imageKind } from './images';
 import { readBlockPayload, pasteBlocks } from './blocks';
 import { sanitizePaste } from './sanitize';
+import { ensureSpreadsheetPaste } from './tables';
 import { offerPasteOptions } from './offer';
 import type { PasteOffer } from './offer';
 import type { ImageRequest, PasteChoice, PasteOptions, PasteResult, PastedPiece } from './types';
@@ -442,6 +443,7 @@ async function pasteContent(
   const facts = request.origin === 'drop' ? null : (request.facts ?? (await factsFor(clipboard, request.text ?? null)));
   const fidelity = mounted.host.flag('text.pasteFidelity');
   const formatting = fidelity ? { fidelity, defaults: getSettings().text.paste } : {};
+  await ensureSpreadsheetPaste();
   const result = resultFor(request, facts, editor ? 'text' : 'page', formatting);
   if (result.plainFallback) showToast({ message: t('paste.tooLarge') });
   const { pieces, joinsEditor } = fitTextBlocks(splitImages(result.pieces), editor);

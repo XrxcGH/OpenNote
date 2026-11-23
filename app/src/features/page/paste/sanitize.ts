@@ -18,7 +18,7 @@ import { choiceFor, isOpenNoteCopy, mergeOpenNote, OPENNOTE_SOURCE } from './opt
 import { joinBrokenLines } from './pdf';
 import { detectSource } from './sources';
 import { looksLikeMarkdown, parsePastedMarkdown, plainTextPieces } from '../../../editor/markdown/paste';
-import { extractTables, tabTableData, tableMarker } from './tables';
+import { extractTables, spreadsheetTable, tabTableData, tableMarker } from './tables';
 import { tidyDoc } from './tidy';
 import { MAX_HTML_LENGTH } from './types';
 import type { ImageRequest, PasteChoice, PasteInput, PasteOptions, PasteResult, PastedPiece, TableData } from './types';
@@ -101,6 +101,17 @@ function fromHtml(html: string, input: PasteInput, newId: () => string, options:
     ? (options.mode ?? choiceFor(source, options.defaults))
     : 'mergeFormatting';
   if (choice === 'textOnly') return textOnly(input, body, source);
+  // A spreadsheet's table keeps its formulas, formats, and styles (tables clipboard, ADR 0067).
+  const sheet = spreadsheetTable(html, newId);
+  if (sheet)
+    return {
+      source,
+      pieces: [{ kind: 'table', data: sheet }],
+      images: [],
+      plainFallback: false,
+      joinedText: null,
+      choice,
+    };
   // Paragraph formatting never comes from the HTML itself, except OpenNote's own copy.
   if (!own) body.querySelectorAll(`[${PARA_DATA}]`).forEach((element) => element.removeAttribute(PARA_DATA));
   // A highlight color on a mark comes only from the Keep source pass below, never from the pasted markup.

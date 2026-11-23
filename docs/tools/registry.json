@@ -7537,6 +7537,15 @@
       "flag": "tables.sheetWrites"
     },
     {
+      "id": "table.pasteSpecial",
+      "title": "Paste special…",
+      "category": "table",
+      "keys": [
+        "Ctrl+Alt+V"
+      ],
+      "flag": "tables.sheetWrites"
+    },
+    {
       "id": "theme.toggle",
       "title": "Toggle dark mode",
       "category": "appearance",

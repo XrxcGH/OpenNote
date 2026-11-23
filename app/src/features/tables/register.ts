@@ -5,3 +5,4 @@ import './keys/register';
 import './pointer/register';
 import './ui/formatCells/register';
 import './ui/formulaBar/register';
+import './clipboard/register';
