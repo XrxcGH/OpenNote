@@ -49,4 +49,22 @@ describe('attachRowHandles', () => {
     expect(edge.hidden).toBe(true);
     stop();
   });
+
+  it('fits the table row, not the drawn row, in a virtual table', () => {
+    // Only rows 6000 to 6099 are drawn; each carries its row in aria-rowindex, counted from 1.
+    const { host } = tableHost(100);
+    host.querySelectorAll('tr').forEach((tr, i) => tr.setAttribute('aria-rowindex', String(6001 + i)));
+    const fitted: number[] = [];
+    const stop = attachRowHandles(
+      host,
+      {} as PageViewportApi,
+      () => {},
+      (row) => fitted.push(row),
+    );
+    move(host, 2, 20 * 10 + 20);
+    expect(host.querySelector<HTMLElement>('[data-row]')!.dataset.row).toBe('6010');
+    host.dispatchEvent(new MouseEvent('dblclick', { clientX: 2, clientY: 20 * 10 + 20, bubbles: true }));
+    expect(fitted).toEqual([6010]);
+    stop();
+  });
 });

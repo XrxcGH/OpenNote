@@ -14,6 +14,8 @@ export interface Point {
 export interface Lines {
   xs: readonly number[];
   ys: readonly number[];
+  /** The table row of each span of `ys`, when the drawn rows are not all the rows (a virtual table). */
+  rows?: readonly number[];
 }
 
 export interface Edge {
@@ -56,7 +58,7 @@ export function edgesAlong(stroke: readonly Point[], lines: Lines, slop = 4): Ed
     const key = `${row},${column},${side}`;
     if (seen.has(key)) return;
     seen.add(key);
-    edges.push({ cell: { row, column }, side });
+    edges.push({ cell: { row: lines.rows?.[row] ?? row, column }, side });
   };
   // Group the stroke into runs that go the same way, so a corner makes two lines.
   let run: Point[] = [];

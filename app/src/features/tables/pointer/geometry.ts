@@ -37,6 +37,15 @@ function nearest(items: readonly Element[], at: number, axis: 'x' | 'y'): number
   return best;
 }
 
+/**
+ * The table row of a drawn row. Above 2,000 rows only the rows near the view are drawn, so a row's place among the
+ * drawn rows is not its row; each drawn row of a virtual table carries its row in aria-rowindex, counted from 1.
+ */
+function rowOf(tr: Element, index: number): number {
+  const number = Number(tr.getAttribute('aria-rowindex'));
+  return number > 0 ? number - 1 : index;
+}
+
 export function createGeometry(view: EditorView, scroller: HTMLElement): Geometry {
   // The page's zoom: a client pixel over a layout pixel.
   const scale = () =>
@@ -60,7 +69,7 @@ export function createGeometry(view: EditorView, scroller: HTMLElement): Geometr
       const row = nearest(list, y, 'y');
       if (row < 0) return null;
       const column = nearest(Array.from(list[row].children), x, 'x');
-      return column < 0 ? null : { row, column };
+      return column < 0 ? null : { row: rowOf(list[row], row), column };
     },
     gridLines() {
       const list = rows();
@@ -69,6 +78,7 @@ export function createGeometry(view: EditorView, scroller: HTMLElement): Geometr
       return {
         xs: [first[0].left, ...first.map((r) => r.right)],
         ys: [list[0].getBoundingClientRect().top, ...list.map((tr) => tr.getBoundingClientRect().bottom)],
+        rows: list.map(rowOf),
       };
     },
   };

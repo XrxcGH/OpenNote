@@ -8,6 +8,17 @@ const sides = (edges: ReturnType<typeof edgesAlong>, side: string) =>
   edges.filter((e) => e.side === side).map((e) => `${e.cell.row},${e.cell.column}`);
 
 describe('edgesAlong', () => {
+  it('names the table rows of a virtual table, where the drawn rows start at row 5000', () => {
+    const edges = edgesAlong(
+      [
+        { x: 105, y: 60 },
+        { x: 195, y: 60 },
+      ],
+      { ...lines, rows: [5000, 5001, 5002] },
+    );
+    expect(sides(edges, 'b')).toEqual(['5001,1']);
+    expect(sides(edges, 't')).toEqual(['5002,1']);
+  });
   it('sets the bottom of B2, C2, and D2 for a stroke along their bottom edge, and the top of the cells below', () => {
     // Row 2 is index 1, its bottom edge is y = 60; columns B to D are indices 1 to 3.
     const edges = edgesAlong(

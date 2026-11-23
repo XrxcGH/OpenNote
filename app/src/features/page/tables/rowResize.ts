@@ -34,6 +34,12 @@ export function attachRowHandles(
   edge.hidden = true;
   let dragging = false;
   let lastTap = Number.NEGATIVE_INFINITY;
+  // Above 2,000 rows only the rows near the view are drawn (virtual/plugin.ts), so a drawn row's place in
+  // table.rows is not its row in the table. Each drawn row of a virtual table carries its row in aria-rowindex.
+  const rowOf = (index: number): number => {
+    const number = Number(table.rows[index]?.getAttribute('aria-rowindex'));
+    return number > 0 ? number - 1 : index;
+  };
 
   const scale = () => {
     const base = host.getBoundingClientRect();
@@ -68,7 +74,7 @@ export function attachRowHandles(
     if (!row) return;
     const { base, k } = scale();
     const top = (row.getBoundingClientRect().top - base.top) / k + host.scrollTop;
-    edge.dataset.row = String(index);
+    edge.dataset.row = String(rowOf(index));
     edge.style.insetBlockStart = `${top + (height ?? row.offsetHeight)}px`;
     edge.hidden = false;
   };
@@ -94,7 +100,7 @@ export function attachRowHandles(
     event.stopPropagation();
     if (event.pointerType === 'touch' && event.timeStamp - lastTap < DOUBLE_TAP_MS) {
       lastTap = Number.NEGATIVE_INFINITY;
-      fit?.(index);
+      fit?.(rowOf(index));
       return;
     }
     lastTap = event.timeStamp;
@@ -122,7 +128,7 @@ export function attachRowHandles(
       release();
       if (u.pointerType === 'touch') hide();
       // A press with no drag is not a resize: the double click that follows fits the row.
-      if (u.type === 'pointerup' && height !== start) resize(index, height);
+      if (u.type === 'pointerup' && height !== start) resize(rowOf(index), height);
     };
     edge.addEventListener('pointermove', move);
     edge.addEventListener('pointerup', up);
@@ -133,7 +139,7 @@ export function attachRowHandles(
     const index = ruleAt(event.clientX, event.clientY);
     if (index < 0) return;
     event.preventDefault();
-    fit?.(index);
+    fit?.(rowOf(index));
   };
 
   // Capture phase: the edge's area belongs to the edge, as it did when each row had an element of its own.
