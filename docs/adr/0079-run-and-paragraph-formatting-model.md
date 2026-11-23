@@ -1,6 +1,6 @@
 # ADR 0079: Run formatting lives in the Markdown, paragraph formatting beside it by element ID, in points
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-11-01
 
 ## Context

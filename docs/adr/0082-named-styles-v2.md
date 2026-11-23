@@ -1,6 +1,6 @@
 # ADR 0082: Named styles move to notebook.json, gain inheritance and user styles, and pages can carry their own sheet
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-11-01
 
 ## Context
