@@ -31,4 +31,32 @@ test.describe('the Beta 12 surfaces @forced', () => {
     await expect(page.getByRole('dialog', { name: 'Header, footer, and page numbers' })).toBeVisible();
     await expectAxeClean(page);
   });
+
+  test('a footnote reference is exposed with the name "Footnote N" in the browser accessibility tree', async ({
+    page,
+  }) => {
+    await reviewed(page);
+    const ref = page.locator('[data-footnote]').first();
+    await expect(ref).toBeAttached();
+    await expect(ref).toHaveAttribute('role', 'doc-noteref');
+    await expect(ref).toHaveAttribute('href', /^#note-/);
+    // What Narrator and NVDA read comes from Chromium's accessibility tree, so ask it, not the CSS.
+    const cdp = await page.context().newCDPSession(page);
+    const { nodes } = await cdp.send('Accessibility.getFullAXTree');
+    const named = nodes.filter((one) => /^Footnote \d+$/.test(String(one.name?.value ?? '')) && !one.ignored);
+    expect(named.length).toBeGreaterThan(0);
+    expect(named.map((one) => String(one.role?.value))).toContain('doc-noteref');
+  });
+
+  test('the Comments pane opens from the command palette and has no axe violations', async ({ page }) => {
+    const box = await reviewed(page);
+    await box.click({ position: { x: 8, y: 8 } });
+    await expect(box).toHaveAttribute('contenteditable', 'true', { timeout: 15_000 });
+    await box.locator('[data-comment]').first().click();
+    await runCommand(page, 'Show comments', /^Show comments/);
+    const pane = page.locator('[data-comments-pane]');
+    await expect(pane).toBeVisible();
+    await expect(pane).toContainText('Check paragraph');
+    await expectAxeClean(page);
+  });
 });

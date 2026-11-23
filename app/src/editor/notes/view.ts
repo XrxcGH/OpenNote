@@ -9,6 +9,7 @@ import type { Editor } from '@tiptap/core';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import { NodeSelection } from '@tiptap/pm/state';
 import { t } from '../../strings/t';
+import { noteTarget } from '../extensions/footnoteRef';
 import { createBlockEditor } from '../extensions/kit';
 import type { EditorHost } from '../host';
 import { renderStatic } from '../static';
@@ -61,15 +62,23 @@ export interface NotesView {
 
 const cssString = (text: string) => `"${text.replace(/["\\]/g, (char) => `\\${char}`).replace(/\n/g, ' ')}"`;
 
+function refName(note: NumberedNote): string {
+  return t(note.kind === 'foot' ? 'textNotes.footnoteName' : 'textNotes.endnoteName', { label: note.label });
+}
+
 /** The rule that draws a reference's number. noteMarks keeps only valid element IDs (D.9), so none needs escaping. */
 function numberRule(note: NumberedNote): string {
-  const name = t(note.kind === 'foot' ? 'textNotes.footnoteName' : 'textNotes.endnoteName', { label: note.label });
+  const name = refName(note);
   return `[data-footnote="${note.id}"]::after{content:${cssString(note.label)} / ${cssString(name)}}`;
 }
 
 /** The style sheet that numbers every reference of the page. */
 export function numberSheet(numbering: Numbering): string {
   return [...numbering.byId.values()].map(numberRule).join('\n');
+}
+
+function setAttr(element: Element, name: string, value: string): void {
+  if (element.getAttribute(name) !== value) element.setAttribute(name, value);
 }
 
 interface Item {
@@ -97,6 +106,7 @@ class View implements NotesView {
   private current: Numbering = { byId: new Map(), foot: [], end: [] };
   private frame = 0;
   private readonly stopModel: () => void;
+  private readonly watch: MutationObserver | null;
 
   constructor(private readonly deps: NotesViewDeps) {
     const doc = deps.after.ownerDocument;
@@ -134,9 +144,26 @@ class View implements NotesView {
     this.element.append(this.options);
     deps.after.after(this.element);
     this.element.before(this.sheet);
+    deps.root.addEventListener('click', this.onClick);
     deps.root.addEventListener('dblclick', this.onDoubleClick);
     deps.root.addEventListener('keydown', this.onKey, true);
     this.stopModel = deps.model.onChange(() => this.refresh());
+    // References that appear later (an editor mounts, a block scrolls in) get their names too. Typing adds only text.
+    const Observer = doc.defaultView?.MutationObserver;
+    this.watch = Observer
+      ? new Observer((records) => {
+          for (const record of records) {
+            for (const added of record.addedNodes) {
+              if (
+                added instanceof Element &&
+                (added.matches('a[data-footnote]') || added.querySelector('a[data-footnote]'))
+              )
+                return this.nameRefs(deps.root);
+            }
+          }
+        })
+      : null;
+    this.watch?.observe(deps.root, { childList: true, subtree: true });
     this.refreshNow();
   }
 
@@ -162,8 +189,21 @@ class View implements NotesView {
     this.current = numberNotes(blocks, model.settings());
     const sheet = numberSheet(this.current);
     if (this.sheet.textContent !== sheet) this.sheet.textContent = sheet;
+    this.nameRefs(this.deps.root);
     this.draw();
     return this.current;
+  }
+
+  /**
+   * Gives each reference under `scope` its name, such as "Footnote 3". The style sheet's alternative text is not
+   * enough: axe and some screen readers need the name in the element (link-name). The editor ignores attribute
+   * changes on an atom, so this does not touch the text.
+   */
+  private nameRefs(scope: ParentNode): void {
+    for (const ref of scope.querySelectorAll('a[data-footnote]')) {
+      const note = this.current.byId.get(ref.getAttribute('data-footnote') ?? '');
+      if (note) setAttr(ref, 'aria-label', refName(note));
+    }
   }
 
   focusNote(id: string): boolean {
@@ -183,6 +223,8 @@ class View implements NotesView {
   destroy(): void {
     if (this.frame) this.element.ownerDocument.defaultView?.cancelAnimationFrame(this.frame);
     this.stopModel();
+    this.watch?.disconnect();
+    this.deps.root.removeEventListener('click', this.onClick);
     this.deps.root.removeEventListener('dblclick', this.onDoubleClick);
     this.deps.root.removeEventListener('keydown', this.onKey, true);
     for (const item of this.items.values()) this.unmount(item, true);
@@ -218,6 +260,7 @@ class View implements NotesView {
     const doc = this.element.ownerDocument;
     const li = doc.createElement('li');
     li.dataset.note = note.id;
+    li.id = noteTarget(note.id);
     const wrap = li.appendChild(doc.createElement('div'));
     wrap.className = styles.item!;
     const number = wrap.appendChild(doc.createElement('button'));
@@ -240,16 +283,17 @@ class View implements NotesView {
   private update(item: Item, note: NumberedNote): void {
     item.note = note;
     // DPUB has an endnote role only as a deprecated one, so an endnote is just its list item.
-    if (note.kind === 'foot') item.wrap.setAttribute('role', 'doc-footnote');
+    if (note.kind === 'foot') setAttr(item.wrap, 'role', 'doc-footnote');
     else item.wrap.removeAttribute('role');
-    item.number.textContent = note.label;
-    item.number.setAttribute('aria-label', t('textNotes.backTo', { label: note.label }));
-    const name = t(note.kind === 'foot' ? 'textNotes.footnoteName' : 'textNotes.endnoteName', { label: note.label });
-    item.text.setAttribute('aria-label', name);
-    if (item.editor) item.editor.view.dom.setAttribute('aria-label', name);
+    // Writes that change nothing still cost style work on each key, so each waits for a real change.
+    if (item.number.textContent !== note.label) item.number.textContent = note.label;
+    setAttr(item.number, 'aria-label', t('textNotes.backTo', { label: note.label }));
+    const name = refName(note);
+    setAttr(item.text, 'aria-label', name);
+    if (item.editor) setAttr(item.editor.view.dom, 'aria-label', name);
     // A reference whose note is missing still gets its number (R-FN-5).
-    if (note.markdown === null) item.wrap.dataset.missing = '';
-    else delete item.wrap.dataset.missing;
+    if (note.markdown === null) setAttr(item.wrap, 'data-missing', '');
+    else item.wrap.removeAttribute('data-missing');
     const markdown = note.markdown ?? '';
     if (item.editor) {
       // An undo or another window changed the note while its editor is open: show the new text.
@@ -397,6 +441,15 @@ class View implements NotesView {
       }
     }
   }
+
+  /** A reference is an anchor, so a click must not change the address. In static text it goes to the note. */
+  private readonly onClick = (event: MouseEvent) => {
+    const ref = (event.target as Element | null)?.closest?.('a[data-footnote]');
+    if (!ref) return;
+    event.preventDefault();
+    const id = ref.getAttribute('data-footnote');
+    if (id && !ref.closest('[contenteditable="true"]') && this.items.has(id)) this.focusNote(id);
+  };
 
   private readonly onDoubleClick = (event: MouseEvent) => {
     const ref = (event.target as Element | null)?.closest?.('[data-footnote]');

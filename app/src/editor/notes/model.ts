@@ -5,6 +5,7 @@
 // both. A reference that leaves its block takes its note along. A reference that comes into a block brings its
 // note back: a new reference from Insert footnote, or one that was cut, moved to another block, or deleted and then
 // typed back. Writers drop notes that no reference names (R-NOTE-2), so the rider does that too.
+import { editKeepsRefs } from '../markdown/plainEdit';
 import { refIdsInMarkdown } from './refs';
 import type { NoteJson, NoteKind } from './refs';
 import { DEFAULT_NOTE_SETTINGS, readNoteSettings } from './numbering';
@@ -33,6 +34,8 @@ export class NotesModel {
   private readonly pending = new Map<string, NoteJson>();
   private settingsNow: NotesSettings = DEFAULT_NOTE_SETTINGS;
   private readonly listeners = new Set<() => void>();
+  /** Each block's last Markdown and its references, so typing plain words does not parse the block again. */
+  private readonly parsed = new Map<string, { markdown: string; refs: Set<string> }>();
 
   /** The notes of a block, as the core has them. */
   of(block: string): Readonly<Record<string, NoteJson>> {
@@ -72,6 +75,7 @@ export class NotesModel {
     if (!notes) return;
     for (const [id, note] of Object.entries(notes)) this.keepLeft(id, note);
     this.notes.delete(block);
+    this.parsed.delete(block);
     this.changed();
   }
 
@@ -106,7 +110,10 @@ export class NotesModel {
     const ids = Object.keys(have);
     if (ids.length === 0 && !after.includes('[^') && this.pending.size === 0) return [];
     if (before === after && this.pending.size === 0) return [];
-    const refs = new Set(refIdsInMarkdown(after));
+    const last = this.parsed.get(block);
+    const refs =
+      last && last.markdown === before && editKeepsRefs(before, after) ? last.refs : new Set(refIdsInMarkdown(after));
+    this.parsed.set(block, { markdown: after, refs });
     const patch: NotesPatch = {};
     for (const id of ids) {
       if (refs.has(id)) continue;
