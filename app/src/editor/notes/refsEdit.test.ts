@@ -44,8 +44,19 @@ describe('editKeepsRefs indentation', () => {
       seed = (seed * 1103515245 + 12345) & 0x7fffffff;
       return seed % n;
     };
-    const pieces = [' ', '  ', 'w', 'word ', `
-`, `	`, '    ', id, '`', 'x'.repeat(40)];
+    const pieces = [
+      ' ',
+      '  ',
+      'w',
+      'word ',
+      `
+`,
+      `	`,
+      '    ',
+      id,
+      '`',
+      'x'.repeat(40),
+    ];
     for (let i = 0; i < 4000; i += 1) {
       let text = '';
       for (let k = 0; k < 1 + next(6); k += 1) text += pieces[next(pieces.length)];
