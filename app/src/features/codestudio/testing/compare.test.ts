@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import type { CompareSpec } from '../contracts';
 import { compareJson, compareText, firstDifferentLine, showJson } from './compare';
 import { diffLines, firstDifferentToken } from './diff';
-import { compareResultSets, parseCsv } from './resultSets';
+import { compareResultSets, parseCsv, tableCsv } from './resultSets';
 
 const pass = (actual: string, expected: string, spec: CompareSpec) => compareText(actual, expected, spec).pass;
 const NUMBER: CompareSpec = { mode: 'number' };
@@ -191,5 +191,33 @@ describe('deep JSON', () => {
     expect(compareJson(nest(100), nest(100), { mode: 'exact' }).pass).toBe(true);
     expect(compareJson(nest(5000), nest(5000), { mode: 'exact' }).pass).toBe(false);
     expect(showJson(nest(5000)).length).toBeGreaterThan(0);
+  });
+});
+
+describe('SQL table output as CSV', () => {
+  it('turns the runtime table into CSV that compares with the expected rows', () => {
+    const data = JSON.stringify({
+      columns: ['id', 'name'],
+      rows: [
+        [1, 'Ada, L.'],
+        [2, null],
+        [3, 'say "hi"'],
+      ],
+    });
+    const csv = tableCsv(data);
+    const expected = 'id,name\n1,"Ada, L."\n2,\n3,"say ""hi"""\n';
+    expect(csv).toBe(expected);
+    expect(parseCsv(csv!)).toEqual([
+      ['id', 'name'],
+      ['1', 'Ada, L.'],
+      ['2', ''],
+      ['3', 'say "hi"'],
+    ]);
+    expect(compareResultSets(csv!, expected, true, { mode: 'exact' }).pass).toBe(true);
+  });
+
+  it('gives null for text that is not a table', () => {
+    expect(tableCsv('not json')).toBeNull();
+    expect(tableCsv('{"columns":["a"]}')).toBeNull();
   });
 });

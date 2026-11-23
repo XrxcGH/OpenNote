@@ -6,17 +6,22 @@ import type { CompareSpec } from '../contracts';
 import { asNumber, closeEnough } from './compare';
 import type { Comparison } from './compare';
 
-/** CSV text as rows of cells (RFC 4180: quotes, doubled quotes, line breaks inside quotes). Blank lines are skipped. */
+/**
+ * CSV text as rows of cells (RFC 4180: quotes, doubled quotes, line breaks inside quotes). Blank lines are skipped;
+ * a line that is only "" is one empty cell (a NULL in a one-column result).
+ */
 export function parseCsv(text: string): string[][] {
   const rows: string[][] = [];
   let row: string[] = [];
   let cell = '';
   let quoted = false;
+  let sawQuote = false;
   const endRow = () => {
     row.push(cell);
-    if (row.length > 1 || row[0] !== '') rows.push(row);
+    if (row.length > 1 || row[0] !== '' || sawQuote) rows.push(row);
     row = [];
     cell = '';
+    sawQuote = false;
   };
   for (let at = 0; at < text.length; at++) {
     const c = text[at]!;
@@ -26,8 +31,10 @@ export function parseCsv(text: string): string[][] {
         cell += '"';
         at++;
       } else quoted = false;
-    } else if (c === '"') quoted = true;
-    else if (c === ',') {
+    } else if (c === '"') {
+      quoted = true;
+      sawQuote = true;
+    } else if (c === ',') {
       row.push(cell);
       cell = '';
     } else if (c === '\n' || c === '\r') {
@@ -35,8 +42,31 @@ export function parseCsv(text: string): string[][] {
       endRow();
     } else cell += c;
   }
-  if (cell !== '' || row.length > 0) endRow();
+  if (cell !== '' || row.length > 0 || sawQuote) endRow();
   return rows;
+}
+
+const csvCell = (value: unknown, _at: number, cells: unknown[]): string => {
+  const text = value === null || value === undefined ? '' : String(value);
+  // A lone empty cell is written "", so the line is not read back as a blank line and skipped.
+  if (text === '' && cells.length === 1) return '""';
+  return /[",\r\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+};
+
+/**
+ * The SQL runtime's table (`application/vnd.opennote.table+json`: columns and rows) as CSV text, so a sql case
+ * compares the rows a query showed. NULL is an empty cell. Null when the text is not such a table.
+ */
+export function tableCsv(data: string): string | null {
+  try {
+    const table = JSON.parse(data) as { columns?: unknown; rows?: unknown };
+    if (!Array.isArray(table.columns) || !Array.isArray(table.rows)) return null;
+    const line = (cells: unknown[]) => cells.map(csvCell).join(',');
+    const rows = (table.rows as unknown[]).filter((row): row is unknown[] => Array.isArray(row));
+    return [table.columns as unknown[], ...rows].map(line).join('\n') + '\n';
+  } catch {
+    return null;
+  }
 }
 
 function sameCell(a: string, e: string, spec: CompareSpec): boolean {

@@ -1,6 +1,7 @@
 // Running a program to its end and collecting what it printed, for the test runners.
 import type { RunCallbacks, RunHandle, RunOrder, RunResult } from '../run/host';
 import type { Runner } from '../window/runner';
+import { tableCsv } from './resultSets';
 
 /** What one program run printed and how it ended. */
 export interface Captured {
@@ -25,7 +26,9 @@ export function capture(
       else got.err += text;
     },
     onRich: (mime, data) => {
+      // The SQL runtime shows a query's rows as a table; a runtime may also send CSV. The last result set counts.
       if (mime === 'text/csv') got.csv = data;
+      else if (mime === 'application/vnd.opennote.table+json') got.csv = tableCsv(data) ?? got.csv;
     },
   });
   current(handle);
