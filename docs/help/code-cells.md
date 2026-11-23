@@ -15,7 +15,7 @@ Write a short program on a page and run it there. Use it to check a worked probl
 
 ## Open it in the Code studio
 
-- Press Open in Code studio, or run Open code block in Code studio from the command palette. OpenNote asks first, then turns the cell into a code project with the same text and opens the studio. One undo takes the change back.
+- Press Open in Code studio, or run Open code cell in Code studio from the command palette. OpenNote asks first, then turns the cell into a code project with the same text and opens the studio. One undo takes the change back.
 
 ## Run it
 

@@ -95,7 +95,7 @@ test('the palette command opens the cell the caret is in, and one undo brings th
   await setCode(page, 'print("wombat")');
   test.skip((await page.getByRole('button', { name: 'Open in Code studio' }).count()) === 0, 'The Code studio is off.');
   // The caret is in the cell's editor; the palette takes focus when it opens.
-  await runCommand(page, 'Open code block in Code studio');
+  await runCommand(page, 'Open code cell in Code studio');
   const dialog = page.getByRole('dialog', { name: 'Open this code in the Code studio?' });
   await expect(dialog).toBeVisible();
   await dialog.getByRole('button', { name: 'Open in Code studio' }).click();

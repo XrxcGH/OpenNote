@@ -19,7 +19,7 @@ export const codeCells = {
   engine: 'Python engine',
   engines: { 'python-quick': 'Quick (MicroPython)', 'python-full': 'Full (Pyodide)' },
   openStudio: 'Open in Code studio',
-  openStudioCommand: 'Open code block in Code studio',
+  openStudioCommand: 'Open code cell in Code studio',
   studioConfirm: {
     title: 'Open this code in the Code studio?',
     body: 'The code cell becomes a code project with the same text. You can undo the change.',

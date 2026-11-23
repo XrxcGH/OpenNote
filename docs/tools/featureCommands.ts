@@ -571,7 +571,7 @@ export const COMMAND_TEXT: Readonly<Record<string, string>> = {
   'pages.presentPage': 'Presents the page full screen with a laser pointer.',
   'code.setLanguage': 'Sets the programming language of the code block.',
   'code.exit': 'Leaves the code block and starts a new line below it.',
-  'code.openBlockInStudio': 'Opens the code block in the Code studio as a project.',
+  'code.openBlockInStudio': 'Opens the code cell in the Code studio as a project.',
   'table.rowAbove': 'Adds a row above the current one.',
   'table.rowBelow': 'Adds a row below the current one.',
   'table.moveRowUp': 'Moves the current row up one place.',
