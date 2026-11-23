@@ -290,6 +290,7 @@
   "command | box-overlap | div.panel > div[role=group].filters > button[role=switch].labeled x div[role=group].filters > button[role=switch].labeled",
   "command | dead-space | div[data-scope=palette].panel > div.body > div[role=listbox].results (nested)",
   "command | dead-space | div.body > div.main > div.editor (empty box)",
+  "tool.code | dead-space | div.body > div.main > div.editor (empty box)",
   "command | dead-space | div[role=tabpanel].panelBody > div.console > div[role=log].output (empty box)",
   "command | document-scroll | ",
   "command | offscreen | div.content > div.scroller > div[role=listbox].grid",
