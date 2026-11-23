@@ -55,7 +55,7 @@ You keep notebooks, sections, and pages in a notes folder you choose, as plain f
 
 The Word-level text, Excel-level table, and code studio foundations are on the beta branch behind flags that are off. The text work so far adds a Format pane with every font and paragraph field, a ruler for indents and tab stops, a language and a direction for each passage, and comments and suggested changes.
 
-The table work so far adds a cell format bar, spreadsheet keys, merge, unmerge, and split cell, conditional formatting, styled tables in Word and HTML exports, Excel exports with formulas, styles, and sheet settings, TSV export, and the logic, lookup, array, statistics, and financial functions. Tables also get a fill handle with series (and Fill series commands for the keyboard), row edges that fit on a double click, touch handles, and pen borders.
+The table work so far adds a cell format bar, Format cells (Ctrl+1), cell styles, table looks, the format painter, spreadsheet keys, merge, unmerge, and split cell, and conditional formatting. It adds a fill handle with series, row edges that fit on a double click, touch handles, and pen borders. Copy and paste with Excel and Google Sheets keeps formulas and formats, with Paste special. Excel exports keep formulas, styles, and sheet settings, and TSV export joins CSV. Tables of more than 2,000 rows draw only the rows in view. The logic, lookup, array, statistics, and financial functions are in.
 
 The code studio work so far adds the Code studio window, with Python, JavaScript, TypeScript, SQL, Lua, C, and C++ runs, tests, error detection as you type, and completion without a model. Sync can merge a page by block once a block type has a merger.
 
