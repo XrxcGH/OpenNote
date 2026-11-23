@@ -5,7 +5,6 @@ import type { Node as PMNode } from '@tiptap/pm/model';
 import { TITLE } from '../../../editor/markdown/escape';
 import { serializeInline } from '../../../editor/markdown/inline';
 import { textSchema } from '../../../editor/schema/schema';
-import { loadSpreadsheetPaste } from '../../tables';
 import { DEFAULT_COLUMN_WIDTH } from './types';
 import type { TableData } from './types';
 
@@ -125,7 +124,8 @@ let reader: SpreadsheetReader | null = null;
 
 /** Loads the sheet paste code once, off the start-up path. The paste pipeline awaits it before it reads. */
 export async function ensureSpreadsheetPaste(): Promise<void> {
-  reader ??= await loadSpreadsheetPaste();
+  // The tables index is a large chunk, so it loads here and not with the paste pipeline.
+  reader ??= await (await import('../../tables')).loadSpreadsheetPaste();
 }
 
 export function spreadsheetTable(html: string, newId: () => string): TableData | null {
