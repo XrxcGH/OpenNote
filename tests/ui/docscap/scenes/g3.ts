@@ -1,6 +1,6 @@
 // Capture scenes of group g3 (see docs/tools/screens.json for the names, categories, and captions).
 // Each one opens the real kit window from the palette over a typed page, picks a tool, and shows a worked example.
-import type { Locator, Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 import type { Helpers, Scene } from '../more';
 
 interface Kit {
@@ -267,6 +267,38 @@ export const scenes: (h: Helpers) => Scene[] = (h) => {
           .first()
           .evaluate((e) => e.scrollIntoView({ block: 'center' }));
         await p.waitForTimeout(800);
+      },
+    },
+    {
+      name: 'code-studio',
+      run: async (p) => {
+        await h.typeNotes(p);
+        await p.keyboard.press('Enter');
+        await h.command(p, 'New code project', 'New code project');
+        const studio = p.getByRole('dialog', { name: 'Code studio' });
+        await studio.waitFor({ timeout: 20_000 });
+        const editor = studio.getByRole('textbox', { name: 'Code editor, main.py' });
+        await editor.click();
+        await p.keyboard.press('Control+a');
+        await p.keyboard.insertText('for hour in range(4):\n    print(hour, 100 * 2 ** hour)\n');
+        await studio.getByRole('button', { name: 'Run', exact: true }).click();
+        await expect(studio.getByRole('log', { name: 'Console output' })).toContainText('3 800', { timeout: 60_000 });
+      },
+    },
+    {
+      name: 'code-studio-problems',
+      run: async (p) => {
+        await h.typeNotes(p);
+        await p.keyboard.press('Enter');
+        await h.command(p, 'New code project', 'New code project');
+        const studio = p.getByRole('dialog', { name: 'Code studio' });
+        await studio.waitFor({ timeout: 20_000 });
+        const editor = studio.getByRole('textbox', { name: 'Code editor, main.py' });
+        await editor.click();
+        await p.keyboard.press('Control+a');
+        await p.keyboard.insertText('total = 3\nprint(totl)\n');
+        await studio.getByRole('tab', { name: /Problems/ }).click();
+        await expect(studio.getByRole('tabpanel')).toContainText('totl', { timeout: 30_000 });
       },
     },
   ];

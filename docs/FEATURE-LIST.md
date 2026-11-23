@@ -102,6 +102,7 @@ The app registers 1187 commands and 48 tool windows. 24 of the windows are subje
 - **Code completion without a model.** A ranked list from names in scope, members, keywords, snippets, and words in the project, plus one-line ghost text from patterns, and an explicit request key.
 - **Quick fixes and explanations.** Ctrl+. on a problem in the Code studio offers its quick fixes, plus Fix all.
 - **Code tests and test cases.** The Tests panel runs input and output cases, function calls with JSON arguments, and SQL result sets.
+- **Code studio accessibility and help checks.** The studio's editor, console, and Problems panel pass axe at every size in both themes, and the layout audit visits them.
 - **Code cells on the run core.** Code cells use the Code studio editor, checks, and completion.
 - **Code studio speed gates.** 18 speed budgets for the Code studio, from completion to model speed.
 
@@ -411,6 +412,14 @@ Open it with the command "Open the code studio".
 **code-cell.** A Python code cell that has run, with its output below the code. ([dark](screens/code-cell-dark.png))
 
 ![A Python code cell that has run, with its output below the code.](screens/code-cell-light.png)
+
+**code-studio.** The Code studio with a Python project that has run, its output in the console below the editor. ([dark](screens/code-studio-dark.png))
+
+![The Code studio with a Python project that has run, its output in the console below the editor.](screens/code-studio-light.png)
+
+**code-studio-problems.** The Code studio's Problems panel listing an undefined name that the editor underlines. ([dark](screens/code-studio-problems-dark.png))
+
+![The Code studio's Problems panel listing an undefined name that the editor underlines.](screens/code-studio-problems-light.png)
 
 **page-templates.** The new page chooser with the Problem set, Cornell notes, and Lab report templates. ([dark](screens/page-templates-dark.png))
 

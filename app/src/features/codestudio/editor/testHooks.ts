@@ -1,7 +1,7 @@
-// Test hooks for the code editor's behavior specs. Only `vite build --mode test` builds have them:
-// window.__OPENNOTE_TEST__.codeEditorMount mounts an editor on top of the app (the studio window comes in B12), and
-// its `suggest` option gives it a fake suggestion source that completes a fixed prefix. codeEditorText and
-// codeEditorHead read its text and caret.
+// Test hooks for the code editor's behavior specs. Only `vite build --mode test` builds have them.
+// window.__OPENNOTE_TEST__.codeEditorMount mounts an editor on top of the app. Its `suggest` option gives it a fake
+// suggestion source that completes a fixed prefix. codeEditorText and codeEditorHead read its text and caret.
+// codeEditorProblem puts one problem on it.
 import type { CodeEditor } from './create';
 
 interface MountOptions {
@@ -47,6 +47,13 @@ export function installCodeEditorTestHooks(): void {
       host.remove();
     };
     return true;
+  };
+  // Shows one problem on the first `length` characters from `from`, as the studio's checks would.
+  hooks.codeEditorProblem = (from: number, length: number, message: string) => {
+    current?.showProblems([
+      { file: 'main', from, to: from + length, severity: 'error', code: 'test', message, source: 'test' },
+    ]);
+    return current !== null;
   };
   hooks.codeEditorText = () => current?.getText() ?? null;
   hooks.codeEditorHead = () => current?.view.state.selection.main.head ?? null;

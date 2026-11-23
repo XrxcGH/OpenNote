@@ -22,10 +22,10 @@ export function ProblemsPanel({ controller }: { controller: StudioController }) 
     <div className={styles.problems}>
       {groups.map((group) => (
         <section key={group.file} className={styles.group} aria-label={group.file}>
-          <h4 className={styles.file}>
+          <h2 className={styles.file}>
             <span>{group.file}</span>
             <span className={styles.counts}>{countsText(group.counts)}</span>
-          </h4>
+          </h2>
           <ul className={styles.list}>
             {group.problems.map((problem, index) => (
               <li key={index}>

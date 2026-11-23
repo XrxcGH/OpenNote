@@ -71,6 +71,8 @@ Every name below has two files, one ending in `-light.png` and one in `-dark.png
 - [insert-mind-map](insert-mind-map-light.png) ([dark](insert-mind-map-dark.png)): A mind map on a page, with a main idea and branches added under and beside it.
 - [insert-diagram](insert-diagram-light.png) ([dark](insert-diagram-dark.png)): A flowchart written as text, drawn below its source.
 - [code-cell](code-cell-light.png) ([dark](code-cell-dark.png)): A Python code cell that has run, with its output below the code.
+- [code-studio](code-studio-light.png) ([dark](code-studio-dark.png)): The Code studio with a Python project that has run, its output in the console below the editor.
+- [code-studio-problems](code-studio-problems-light.png) ([dark](code-studio-problems-dark.png)): The Code studio's Problems panel listing an undefined name that the editor underlines.
 - [page-templates](page-templates-light.png) ([dark](page-templates-dark.png)): The new page chooser with the Problem set, Cornell notes, and Lab report templates.
 - [page-history](page-history-light.png) ([dark](page-history-dark.png)): The page history panel with earlier versions and the compare view of one of them.
 - [canvas-view](canvas-view-light.png) ([dark](canvas-view-dark.png)): The canvas view, with pages and notes as cards joined by arrows.
