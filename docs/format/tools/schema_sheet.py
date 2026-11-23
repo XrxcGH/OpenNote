@@ -201,6 +201,7 @@ SHEET_KEYS = {
     "cols": mapping(is_id, COL, 100_000, "a column ID"),
     "rows": mapping(is_id, ROW, 1_000_000, "a row ID"),
     "cells": by_cell(STYLE_REF, 1_000_000),
+    "named": mapping(lambda k: isinstance(k, str) and 1 <= len(k) <= 60, CELL_STYLE, 1024, "a style name"),
     "merges": mapping(is_short, MERGE, 10_000, "a merge ID"),
     "names": mapping(is_name, NAMED, 1024, "a name (R-SHT-13)"),
     "validation": mapping(is_short, VALIDATION, 256, "a rule ID"),

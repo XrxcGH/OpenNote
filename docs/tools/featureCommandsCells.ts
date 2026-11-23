@@ -1,6 +1,10 @@
 // One sentence for each cell format command of the table toolbar (featureCommands.ts adds these).
 
 export const CELL_COMMAND_TEXT: Readonly<Record<string, string>> = {
+  'table.cell.formatCells': 'Opens the Format cells dialog: number, alignment, font, border, and fill.',
+  'table.cell.cellStyles': 'Opens the cell styles, a named look you apply to the selected cells.',
+  'table.cell.formatAsTable': 'Opens the gallery of 21 table looks and its banding options.',
+  'table.cell.formatPainter': 'Copies the format of the selected cell onto the cells you select next.',
   'table.cell.fill': 'Opens the fill colors for the selected cells.',
   'table.cell.textColor': 'Opens the text colors for the selected cells.',
   'table.cell.borders': 'Draws the last border preset again on the selected cells.',
