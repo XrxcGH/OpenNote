@@ -18,6 +18,8 @@ A smart table holds typed columns, formulas, and several views of the same rows.
 - [Format cells](#format-cells)
 - [Spreadsheet keys](#spreadsheet-keys)
 - [Conditional formatting](#conditional-formatting)
+- [Data validation](#data-validation)
+- [Arrays and spills](#arrays-and-spills)
 
 ## Make a table
 
@@ -113,4 +115,22 @@ A rule can color a cell by its value, its text, a date, blanks, errors, top or b
 
 To manage rules, run Cell: Conditional formatting rules from the command palette (Ctrl+K) or the table's context menu. A window lists the rules of the selection, the table, or the page. You can raise or lower a rule, turn Stop if true on or off, or delete it. Undo takes each change back. Making a new rule from a window is not built yet.
 
-The pages on data tools, formulas in depth, and import and export grow with the releases that add those features (B11.2, B13.2, and B14.2). Until then, this page holds the short versions.
+## Data validation
+
+A rule can limit what a cell takes. Select cells, open the Data menu, and choose Data validation. Or press Ctrl+K and type "Data validation".
+
+- **Allow** any value, a whole number, a decimal, a date, a time, a text length, a list, a custom formula, or a checkbox.
+- **Data** picks a test, such as between, not between, equal to, or greater than, with a minimum, a maximum, or one value. A value can be a formula.
+- **List** takes typed items, one per line, or the cells that hold the items. Show the list in the cell and a drop-down opens with Alt+Down.
+- **Checkbox** stores one value when checked and another when not. You choose both.
+- **Ignore blank** lets an empty cell pass.
+- **Input message** shows a title and a note when the cell is selected.
+- **Alert style** decides what a bad value does. Stop refuses it. Warning asks first. Information notes it and keeps it. You can write your own alert title and text, or use the default words.
+
+A table holds at most 256 rules. Use Circle invalid data to ring every cell that breaks a rule, and Clear validation circles to remove the rings. Rules are saved in the file.
+
+## Arrays and spills
+
+A formula can return a list or a grid. FILTER, SORT, UNIQUE, SEQUENCE, and the LAMBDA helpers spill their answer into the cells below and to the right. The spill is blocked, and the cell shows #SPILL! when a cell in its way is not empty. Point at the error to read "No room to spill". Arrays have a limit of 1,000,000 values, and MINVERSE and MDETERM take up to 500 rows. A bigger request shows "Too many values". Every function has a line in the [function reference](table-functions.md).
+
+The pages on data tools, formulas in depth, and import and export grow as those features ship. Until then, this page holds the short versions.
