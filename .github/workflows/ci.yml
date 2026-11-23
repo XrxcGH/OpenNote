@@ -83,15 +83,16 @@ jobs:
       - name: Install tools
         run: npm ci
       - name: Component tests (Vitest browser mode)
-        # In five runs, each with a fresh browser: on Ubuntu one browser session that runs all 159 files was closed by
-        # the runner two to three minutes in, with a different file running each time. The suite grew, so five runs.
+        # In ten runs, each with a fresh browser: on Ubuntu one browser session that runs all 159 files was closed by
+        # the runner two to three minutes in, with a different file running each time. The suite grew, so ten runs.
         shell: bash
         run: |
           status=0
           # A runner that closes the browser fails one shard at a random file. A real failure fails every try.
           # Ten shorter shards, each tried up to three times: a run of about a minute is closed less often.
           for shard in 1 2 3 4 5 6 7 8 9 10; do
-            npm run test:components -- --shard=$shard/10 || npm run test:components -- --shard=$shard/10 || npm run test:components -- --shard=$shard/10 || status=1
+            run="npm run test:components -- --shard=$shard/10"
+            $run || $run || $run || status=1
           done
           exit $status
       - name: Keep the failure screenshots
