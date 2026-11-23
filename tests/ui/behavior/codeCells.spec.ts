@@ -100,9 +100,9 @@ test('the palette command opens the cell the caret is in, and one undo brings th
   await expect(dialog).toBeVisible();
   await dialog.getByRole('button', { name: 'Open in Code studio' }).click();
   await expect(page.getByRole('region', { name: 'Untitled project' })).toBeVisible();
-  await expect(page.getByRole('textbox', { name: 'Code' })).toHaveCount(0);
+  await expect(page.getByRole('textbox', { name: 'Code', exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: 'Undo', exact: true }).click();
-  await expect(page.getByRole('textbox', { name: 'Code' })).toBeVisible();
+  await expect(page.getByRole('textbox', { name: 'Code', exact: true })).toBeVisible();
   await expect(page.getByRole('region', { name: 'Untitled project' })).toHaveCount(0);
 });
 
