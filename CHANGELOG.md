@@ -34,7 +34,12 @@ The current build is beta 8. The block below lists Beta 9 to 12 work on the beta
 - Beta 11 table work: merged cells, Format Cells (Ctrl+1) with number format codes, conditional formats, data validation, and the fill handle. Copy and paste keep formats and formulas for Excel and Google Sheets. There are 55 financial functions, the statistical and compatibility functions, and array and LAMBDA helpers. Large tables load rows as they scroll into view. Excel (.xlsx) export keeps formats, names, validation, and conditional rules.
 - Beta 11 code studio work: the code editor on CodeMirror 6, code projects as a page block with save, export, and import, the run core with lockdown and limits, and runtime packs for Python, C and C++, and Ruby that download only after the person agrees. The studio stays off until the `code.studio` flag is on.
 - Help pages for text formatting, table formatting, and the code studio, and an accessibility and performance end-to-end check for the text editor.
-- ADRs 0056 to 0088 record these designs. Records 0056 to 0058, 0060, 0079 to 0085, 0087, and 0088 are Accepted. Record 0069 is Accepted, pending a hand test.
+- Beta 12 code studio work: the studio window with a console, a Problems panel, and a Tests panel. Runtimes cover Python (quick and full), JavaScript and TypeScript, SQL, Lua, and C and C++.
+- Beta 12 code help: live error checks, completion without a model, quick fixes with Ctrl+., and plain error explanations. Code cells now use the studio editor and support more languages.
+- Beta 12 text work: page layout with breaks, headers and footers, columns, and line numbers. Comments, suggesting mode, and accept and reject also arrive.
+- Beta 12 Word work: import reads theme colors, outline levels, and numbering links. Export embeds bundled fonts.
+- Block-level merge on sync, with a merger and a conflict view per block type.
+- ADRs 0056 to 0089 record these designs. Records 0056 to 0058, 0060, 0063, 0064, 0067, 0068, 0070, 0074, 0075, and 0079 to 0089 are Accepted. Record 0069 is Accepted, pending a hand test.
 
 ### Changed
 

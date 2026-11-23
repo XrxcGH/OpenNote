@@ -1,6 +1,6 @@
 # ADR 0089: Block-level merge on sync, with a merger and a conflict view per block type
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-11-07
 
 ## Context

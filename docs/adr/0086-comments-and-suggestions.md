@@ -1,6 +1,6 @@
 # ADR 0086: Comments and suggestions are stored in the page, anchored by inline tags, with local author names
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-11-01
 
 ## Context
