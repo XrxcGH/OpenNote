@@ -1,6 +1,6 @@
 # ADR 0057: Number formats are spreadsheet format codes
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-11-01
 
 ## Context

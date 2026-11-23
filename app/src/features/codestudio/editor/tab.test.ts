@@ -116,6 +116,26 @@ describe('Shift+Tab outdents', () => {
   });
 });
 
+// The cases of the code cells' old textarea indent (codecells/indent.test.ts), now run on the shared editor.
+describe('the cases code cells had before they used this editor', () => {
+  it('indents every line of a JavaScript selection by 2 and leaves the line after it alone', async () => {
+    const editor = await mount({ language: 'javascript', text: 'x\ny\nz' });
+    editor.view.dispatch({ selection: { anchor: 0, head: 3 } });
+    press(editor, 'Tab');
+    expect(text(editor)).toBe('  x\n  y\nz');
+  });
+
+  it('outdents six spaces by one Python unit, and a line indented less loses what it has', async () => {
+    withCodeSettings({ indent: { python: { tabSize: 4, insertSpaces: true } } });
+    const editor = await mount({ language: 'python', text: '      x', caret: 7 });
+    press(editor, 'Tab', { shift: true });
+    expect(text(editor)).toBe('  x');
+    const two = await mount({ language: 'python', text: '    a\n  b', caret: 9 });
+    press(two, 'Tab', { shift: true });
+    expect(text(two)).toBe('    a\nb');
+  });
+});
+
 describe('indent units', () => {
   it('gives Python 4 spaces and JavaScript 2', async () => {
     const python = await mount({ language: 'python', text: '' });

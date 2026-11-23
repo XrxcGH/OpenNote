@@ -28,7 +28,10 @@ The current build is beta 8. The block below lists Beta 9 to 12 work on the beta
 - The code studio's contracts, settings, flags, and strings. The code studio is off until the `code.studio` flag is on.
 - Tab indents in the code editor, and Ctrl+Page Down and Ctrl+Page Up change tabs. Ctrl+Tab will accept a suggestion when code lane L01 lands.
 - Calmer shell polish: Phosphor icons in the command bar, pens back on the bar at 1,280 px, and calm pressed and selected states.
-- ADRs 0056 to 0088 record these designs. Records 0081, 0084, and 0088 are Accepted. Record 0083 is Accepted for the writer.
+- Beta 10 text controls: a styles gallery with Ctrl+Shift+S, font pickers backed by the device's fonts, the Home tab controls, HTML and PDF export that keep formatting, and Word import and export at version 2 fidelity.
+- Beta 10 table work: Excel-style text, date, math, lookup, logic, and information functions, a formula bar, a table toolbar, spreadsheet keys, structure commands, and Word, HTML, and Markdown exports that keep cell styles. [Table function reference](docs/help/table-functions.md) lists every function.
+- Help pages for text formatting, table formatting, and the code studio, and an accessibility and performance end-to-end check for the text editor.
+- ADRs 0056 to 0088 record these designs. Records 0056 to 0058, 0060, 0079 to 0085, 0087, and 0088 are Accepted.
 
 ### Changed
 

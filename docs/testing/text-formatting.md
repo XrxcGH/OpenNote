@@ -27,6 +27,22 @@ Turn the text flags on first (Settings, Experimental), or use a build where they
 - [ ] The indent markers and tab stops are reachable by keyboard, and each says its position in the chosen unit.
 - [ ] Moving a marker with the arrow keys says the new value.
 
+## Find with format, language, and direction
+
+- [ ] Ctrl+F opens Find on page. The Format button opens the Find format group, and each switch says whether it is on.
+- [ ] A format criterion with no match says that nothing was found.
+- [ ] Review, Language opens a menu named for the selection or the paragraph. Arrow keys move through the languages and each is read by name.
+- [ ] Choosing a language says "Language set to" and the name. Do not check spelling says whether it is on or off.
+- [ ] Right-to-left text direction on a paragraph makes the caret and the arrow keys follow the new direction.
+
+## Symbol dialog and Alt+X
+
+- [ ] Insert, Symbol opens a dialog named Symbol. Focus lands in the search box.
+- [ ] The symbol grid is a list. Arrow keys move through it and each symbol is read by name and code (for example "euro sign, U+20AC").
+- [ ] Choosing a symbol says which one is chosen. Insert is off until one is chosen, and it puts the character at the caret.
+- [ ] Alt+X turns the hex code before the caret into its character, and turns a selected character back into its code.
+- [ ] With a high contrast theme on, the grid, the chosen symbol, and the focus outline are all visible.
+
 ## Text in the page
 
 - [ ] Browse mode reads a formatted note in order. Headings, lists, and links are found by their quick keys.

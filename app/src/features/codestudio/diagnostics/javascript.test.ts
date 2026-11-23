@@ -332,12 +332,9 @@ describe('JavaScript checker: scopes', () => {
     expect(lines(source, 'no-undef', true)).toEqual([]);
   });
 
-  it('knows every global the JavaScript sandbox injects', () => {
-    // The test reads the sandbox's source as text: the names it sets with setProp(vm.global, ...).
-    const sandboxSource = readFileSync(new URL('../../codecells/sandbox/javascript.ts', import.meta.url), 'utf8');
-    const injected = [...sandboxSource.matchAll(/setProp\(vm\.global,\s*'(\w+)'/g)].map((m) => m[1]);
-    expect(injected.sort()).toEqual(['console', 'print']);
-    for (const name of injected) {
+  it('knows the two globals the code cells’ old JavaScript sandbox injected', () => {
+    // The sandbox folder is gone (code cells run on the run core now); its two names stay known.
+    for (const name of ['console', 'print']) {
       expect(RUNTIME_GLOBALS).toContain(name);
       expect(JS_GLOBALS.has(name)).toBe(true);
     }

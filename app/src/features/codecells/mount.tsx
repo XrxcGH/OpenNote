@@ -4,14 +4,16 @@ import { createRoot } from 'react-dom/client';
 import { t } from '../../strings/t';
 import { CodeCellPanel } from './CodeCellPanel';
 import styles from './codecell.module.css';
-import { isLanguage } from './sandbox/protocol';
-import type { CodeLanguage } from './sandbox/protocol';
+import { isLanguage, isPythonEngine, needsNewerApp } from './model';
+import type { CodeLanguage, PythonEngine } from './model';
 
 export interface CodeCellBlockProps {
   data: Record<string, unknown>;
   readOnly: boolean;
   patch(data: Record<string, unknown>, fallback?: string): void;
   announce(text: string): void;
+  /** Converts the cell to a code project and opens the Code studio; absent when the studio is off. */
+  openStudio?(cell: { language: CodeLanguage; engine: PythonEngine; source: string }): void;
 }
 
 /** The block's fallback text: its code in a fence with the language. */
@@ -21,18 +23,7 @@ export function fallbackOf(language: CodeLanguage, source: string): string {
   return `${fence}${language}\n${source.replace(/\n$/, '')}\n${fence}`;
 }
 
-/** The newest cell format this app edits (a cell's `minEditor` above it came from a newer app). */
-const KNOWN_EDITOR = 1;
-
-/**
- * A cell from a newer app: a language this app does not run, or a format it does not know. It is shown as it is
- * stored and never changed, so an older app cannot relabel it as Python (docs/help/code-cells.md).
- */
-export function needsNewerApp(data: Record<string, unknown>): boolean {
-  const { language, minEditor } = data;
-  if (language !== undefined && !isLanguage(language)) return true;
-  return typeof minEditor === 'number' && minEditor > KNOWN_EDITOR;
-}
+export { needsNewerApp };
 
 function NewerCodeCell({ language, source }: { language: unknown; source: string }) {
   return (
@@ -66,13 +57,16 @@ export function mountCodeCell(container: HTMLElement, props: CodeCellBlockProps)
       return;
     }
     const language = isLanguage(next.data.language) ? next.data.language : 'python';
+    const engine = isPythonEngine(next.data.runtime) ? next.data.runtime : 'python-quick';
     root.render(
       <CodeCellPanel
         language={language}
+        engine={engine}
+        onOpenStudio={next.openStudio}
         source={source}
         readOnly={next.readOnly}
         announce={next.announce}
-        onChange={(cell) => next.patch(cell, fallbackOf(cell.language, cell.source))}
+        onChange={(cell) => next.patch({ ...cell }, fallbackOf(cell.language, cell.source))}
       />,
     );
   };

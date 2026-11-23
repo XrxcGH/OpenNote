@@ -59,7 +59,7 @@ describe('problems', () => {
     ]);
     const actions: { name: string; apply: (view: typeof editor.view, from: number, to: number) => void }[] = [];
     forEachDiagnostic(editor.view.state, (item) => actions.push(...(item.actions ?? [])));
-    expect(actions.map((action) => action.name)).toEqual(['fix 0']);
+    expect(actions.map((action) => action.name)).toEqual(['fix 0', 'Explain this problem']);
     // The text shrinks after the problems came in: the offered fix now reaches past the end.
     editor.setText('pr');
     expect(() => actions[0]?.apply(editor.view, 0, 0)).not.toThrow();
@@ -200,5 +200,49 @@ describe('the completion list host', () => {
     await new Promise((resolve) => setTimeout(resolve, 100));
     press(editor, 'Tab', { ctrl: true });
     expect(editor.getText()).toBe('total');
+  });
+});
+
+describe('quick fixes and explanations in the editor (lane code:L11)', () => {
+  const text = 'x = 1\nprint(totl)\n';
+  const undefinedName = {
+    file: 'main.py',
+    from: 12,
+    to: 16,
+    severity: 'error' as const,
+    code: 'F821',
+    message: "NameError: name 'totl' is not defined",
+    source: 'pyflakes',
+  };
+
+  it('shows a fix action on a problem that carries none, and Explain', async () => {
+    const editor = await mount({ language: 'python', text: 'x = 1\nprint(pritn)\n', caret: 12 });
+    editor.showProblems([{ ...undefinedName, message: "NameError: name 'pritn' is not defined" }]);
+    let names: string[] = [];
+    forEachDiagnostic(editor.view.state, (d) => {
+      names = (d.actions ?? []).map((a) => a.name);
+    });
+    expect(names).toContain('Change to `print`');
+    expect(names).toContain('Explain this problem');
+  });
+
+  it('Ctrl+. opens the fixes of the problem at the caret, and says so when there are none', async () => {
+    const editor = await mount({ language: 'python', text: 'x = 1\nprint(pritn)\n', caret: 12 });
+    editor.showProblems([{ ...undefinedName, message: "NameError: name 'pritn' is not defined" }]);
+    press(editor, '.', { ctrl: true });
+    expect(editor.view.dom.querySelector('.cm-panel-lint')).not.toBeNull();
+    unmountAll();
+    clearAnnouncements();
+    const other = await mount({ language: 'python', text, caret: 12 });
+    other.showProblems([{ ...undefinedName, message: 'Something odd' }]);
+    press(other, '.', { ctrl: true });
+    expect(announcements()).toContain('No quick fix for this problem');
+  });
+
+  it('the Explain command reads the explanation out', async () => {
+    const editor = await mount({ language: 'python', text, caret: 12 });
+    editor.showProblems([undefinedName]);
+    editor.run('problemExplain');
+    expect(announcements().join(' ')).toMatch(/totl/);
   });
 });

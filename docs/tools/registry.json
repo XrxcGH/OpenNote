@@ -459,6 +459,24 @@
       "palette": false
     },
     {
+      "id": "code.problem.fix",
+      "title": "Show quick fixes",
+      "category": "code",
+      "keys": [
+        "Ctrl+."
+      ],
+      "flag": "code.studio",
+      "palette": false
+    },
+    {
+      "id": "code.problem.explain",
+      "title": "Explain the problem",
+      "category": "code",
+      "keys": [],
+      "flag": "code.studio",
+      "palette": false
+    },
+    {
       "id": "code.editor.tabMovesFocus",
       "title": "Toggle Tab moves focus",
       "category": "code",
@@ -1141,6 +1159,13 @@
       "category": "insert",
       "keys": [],
       "flag": "math.diagrams"
+    },
+    {
+      "id": "code.openBlockInStudio",
+      "title": "Open code cell in Code studio",
+      "category": "insert",
+      "keys": [],
+      "flag": "code.studio"
     },
     {
       "id": "insert.codeCell",

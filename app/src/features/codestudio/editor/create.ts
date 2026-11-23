@@ -351,7 +351,7 @@ class Controller implements CodeEditor {
   }
 
   showProblems(items: readonly Diagnostic[]): void {
-    showProblems(this.view, items);
+    showProblems(this.view, items, { language: this.lang });
   }
 
   setBreakpoints(lines: readonly number[]): void {

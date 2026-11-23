@@ -23,6 +23,8 @@ interface Row {
   action: EditorAction;
   title: MessageKey;
   keys?: readonly string[];
+  /** Chords for the Docs shortcut set, where the default chord means something else. */
+  docsKeys?: readonly string[];
   refines?: CommandId;
   /** Runs only while this is true for the focused editor. */
   enabled?: (editor: CodeEditorHandle) => boolean;
@@ -244,6 +246,22 @@ export const CODE_EDITOR_ROWS: readonly Row[] = [
     keys: ['Shift+F8'],
     refines: 'history.previousChange',
   },
+  {
+    id: 'code.problem.fix',
+    action: 'problemFix',
+    panel: true,
+    title: 'codeStudio.editor.commands.problemFix',
+    keys: ['Ctrl+.'],
+    refines: 'block.bulletList',
+    // Google Docs gives Ctrl+. to superscript, so that set takes Alt+Enter, the quick-fix key of JetBrains editors.
+    docsKeys: ['Alt+Enter'],
+  },
+  {
+    id: 'code.problem.explain',
+    action: 'problemExplain',
+    panel: true,
+    title: 'codeStudio.editor.commands.problemExplain',
+  },
 ];
 
 function rowCommand(row: Row): CommandDef {
@@ -254,6 +272,7 @@ function rowCommand(row: Row): CommandDef {
     category: 'code',
     scope: 'codeEditor',
     keys: row.keys?.map(chord),
+    ...(row.docsKeys ? { presetKeys: { docs: row.docsKeys.map(chord) } } : {}),
     refines: row.refines,
     allowInTextInput: true,
     allowRepeat: row.action.startsWith('move') || row.action.startsWith('copy') || row.action.startsWith('cursor'),

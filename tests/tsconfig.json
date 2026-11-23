@@ -12,5 +12,5 @@
     "verbatimModuleSyntax": true,
     "types": ["node", "vite/client"]
   },
-  "include": ["./**/*.ts", "../app/src/globals.d.ts", "../app/src/features/codecells/sandbox/micropython.d.ts"]
+  "include": ["./**/*.ts", "../app/src/globals.d.ts", "../app/src/features/codestudio/runtimes/python/micropythonTypes.d.ts"]
 }
