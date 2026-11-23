@@ -170,20 +170,19 @@ test('a 10,000-row table paints within 250 ms of opening its page, and its scrol
   await client.send('Emulation.setCPUThrottlingRate', { rate: 1 });
   const worst = Math.max(...frames);
   const p99 = percentile(frames, 99);
-  test
-    .info()
-    .annotations.push(
-      {
-        type: 'first paint',
-        description: `${paint.toFixed(1)} ms (budget ${(FIRST_PAINT_MS * scale * (scale > 1.5 ? SLOW_RUNNER_PAINT_ALLOWANCE : 1)).toFixed(0)})`,
-      },
-      { type: 'scroll frame p99', description: `${p99.toFixed(1)} ms of ${frames.length} frames` },
-      { type: 'worst scroll frame', description: `${worst.toFixed(1)} ms` },
-      { type: 'scale', description: scale.toFixed(2) },
-    );
+  const paintBudget = FIRST_PAINT_MS * scale * (scale > 1.5 ? SLOW_RUNNER_PAINT_ALLOWANCE : 1);
+  test.info().annotations.push(
+    {
+      type: 'first paint',
+      description: `${paint.toFixed(1)} ms (budget ${paintBudget.toFixed(0)})`,
+    },
+    { type: 'scroll frame p99', description: `${p99.toFixed(1)} ms of ${frames.length} frames` },
+    { type: 'worst scroll frame', description: `${worst.toFixed(1)} ms` },
+    { type: 'scale', description: scale.toFixed(2) },
+  );
   const summary = `first paint ${paint.toFixed(0)} ms, scroll frame p99 ${p99.toFixed(1)} ms, worst ${worst.toFixed(1)} ms`;
   console.log(`sheet tables: ${summary}, scale ${scale.toFixed(2)}`);
-  expect.soft(paint).toBeLessThanOrEqual(FIRST_PAINT_MS * scale * (scale > 1.5 ? SLOW_RUNNER_PAINT_ALLOWANCE : 1));
+  expect.soft(paint).toBeLessThanOrEqual(paintBudget);
   expect.soft(p99).toBeLessThanOrEqual(FRAME_MS * scale);
   expect.soft(worst).toBeLessThanOrEqual(WORST_FRAME_MS * scale);
   // Every jump landed on drawn rows.
