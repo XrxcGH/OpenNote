@@ -25,3 +25,9 @@ export const loadDiagnostics = () => import('./diagnostics');
 
 /** Loads completion without a model (features/codestudio/complete, code:L12): attachCompletion for an editor. */
 export const loadCompletion = () => import('./complete');
+
+/** Loads quick fixes (features/codestudio/fixes, code:L11): fixesFor, attachFixes, and fixAll. */
+export const loadFixes = () => import('./fixes');
+
+/** Loads plain-language error explanations (features/codestudio/explain, code:L11): explain. */
+export const loadExplain = () => import('./explain');

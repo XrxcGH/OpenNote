@@ -2,7 +2,7 @@
 
 Every tool, action, and feature in OpenNote, grouped by category, with one sentence each. `npm run docs:features` makes this page. The commands, tool windows, title bar items, settings sections, and setup steps come from what the app registers, so a new one shows up here or fails the tests. The feature sentences come from [FEATURES.md](FEATURES.md), which also says what has been tested by hand and which flag turns each one on. The [help pages](help/README.md) explain how to use them. [docs/screens](screens/README.md) has every picture in light and dark.
 
-The app registers 1175 commands and 48 tool windows. 24 of the windows are subject and engineering kits. The count includes the ink commands, which register when a page first shows its ink, and the commands that register once start-up is done or with the first page: on-device intelligence, the second pass of page commands, and the code block and table commands. The command palette (Ctrl+K) runs every command not marked as left out of it. Some commands need a feature flag, which FEATURES.md names. The keys shown are the defaults of the standard shortcut set.
+The app registers 1177 commands and 48 tool windows. 24 of the windows are subject and engineering kits. The count includes the ink commands, which register when a page first shows its ink, and the commands that register once start-up is done or with the first page: on-device intelligence, the second pass of page commands, and the code block and table commands. The command palette (Ctrl+K) runs every command not marked as left out of it. Some commands need a feature flag, which FEATURES.md names. The keys shown are the defaults of the standard shortcut set.
 
 ## Contents
 
@@ -142,6 +142,8 @@ Open it with the command "Open the code studio".
 | Zoom out of code (not in the palette) | Makes the code text smaller. | Ctrl+- |
 | Go to the next problem (not in the palette) | Jumps to the next problem found in the code. | F8 |
 | Go to the previous problem (not in the palette) | Jumps to the previous problem found in the code. | Shift+F8 |
+| Show quick fixes (not in the palette) | Shows the quick fixes for the problem at the cursor, with Ctrl+. in the Code studio. | Ctrl+. |
+| Explain the problem (not in the palette) | Explains the problem at the cursor in plain language. |  |
 | Toggle Tab moves focus (not in the palette) | Makes Tab move focus out of the editor instead of indenting, for keyboard users. | Ctrl+M |
 | Insert mind map | Inserts a mind map to brainstorm ideas as branches. |  |
 | Insert diagram from text | Inserts a diagram drawn from text, such as a Mermaid flowchart or timeline. |  |

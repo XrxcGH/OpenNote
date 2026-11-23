@@ -32,6 +32,8 @@ export const codeStudioEditor = {
     zoomOut: 'Zoom out of code',
     problemNext: 'Go to the next problem',
     problemPrevious: 'Go to the previous problem',
+    problemFix: 'Show quick fixes',
+    problemExplain: 'Explain the problem',
   },
   label: 'Code editor',
   description: 'Tab indents. {accept} accepts a suggestion. Escape, then Tab, leaves the editor.',
@@ -59,6 +61,8 @@ export const codeStudioEditor = {
     tabMovesFocusOff: 'Tab moves focus, off',
     problem: 'Line {line}: {message}',
     noProblems: 'No problems',
+    noFix: 'No quick fix for this problem',
+    explained: 'Explanation: {text}',
   },
   // The editor's own panels, gutters, and read-outs. CodeMirror puts a count or line number where "$" stands.
   phrases: {

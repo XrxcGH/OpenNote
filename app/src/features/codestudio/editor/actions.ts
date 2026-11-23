@@ -17,7 +17,7 @@ import { gotoLine, openSearchPanel, selectNextOccurrence } from '@codemirror/sea
 import type { EditorView } from '@codemirror/view';
 import { cycleGhost, ghostOf } from './ghost';
 import { expandSelection, shrinkSelection } from './marks';
-import { goToProblem } from './problems';
+import { explainProblem, goToProblem, showFixes } from './problems';
 import type { Suggestions } from './suggest';
 import { ZOOM_STEP } from './touch';
 import type { EditorAction } from './views';
@@ -55,6 +55,8 @@ const VIEW_ACTIONS: Partial<Record<EditorAction, Run>> = {
   shrinkSelection,
   problemNext: (view) => goToProblem(view, 1),
   problemPrevious: (view) => goToProblem(view, -1),
+  problemFix: showFixes,
+  problemExplain: explainProblem,
 };
 
 function cycle(host: ActionHost, direction: 1 | -1): boolean {

@@ -35,5 +35,7 @@ export const CODE_COMMAND_TEXT: Readonly<Record<string, string>> = {
   'code.editor.zoomOut': 'Makes the code text smaller.',
   'code.problem.next': 'Jumps to the next problem found in the code.',
   'code.problem.previous': 'Jumps to the previous problem found in the code.',
+  'code.problem.fix': 'Shows the quick fixes for the problem at the cursor, with Ctrl+. in the Code studio.',
+  'code.problem.explain': 'Explains the problem at the cursor in plain language.',
   'code.editor.tabMovesFocus': 'Makes Tab move focus out of the editor instead of indenting, for keyboard users.',
 };

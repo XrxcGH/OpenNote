@@ -47,6 +47,7 @@ const KNOWN: readonly [string, string, CommandId][] = [
   ['Alt+[', 'editor.action.inlineSuggest.showPrevious', 'code.completion.previous'],
   ['F8', 'editor.action.marker.nextInFiles', 'code.problem.next'],
   ['Shift+F8', 'editor.action.marker.prevInFiles', 'code.problem.previous'],
+  ['Ctrl+.', 'editor.action.quickFix', 'code.problem.fix'],
   ['Ctrl+M', 'editor.action.toggleTabFocusMode', 'code.editor.tabMovesFocus'],
 ];
 
