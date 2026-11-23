@@ -20,6 +20,7 @@ The current build is beta 8. The block below lists Beta 9 to 12 work on the beta
 
 - Format version 2 for text, tables, and code. A file is stamped 2 only when it holds version 2 data, and an older OpenNote refuses a file it cannot keep intact.
 - Text formatting at Word and Google Docs level, behind the `text.v2Controls` flag. It covers font, size, weight, paragraph and list formats, footnotes and endnotes, the Symbol dialog, Alt+X, and formatting marks. Commands for each format are in the command catalog. The format painter, change case, repeat, and select similar are in the catalog too, and keys and buttons for them wait for the controls lane.
+- Footnotes and endnotes: insert a note at the caret, edit it at the page foot or document end, and keep numbering in order.
 - Copy writes formatting that Word and Google Docs keep, and paste keeps the source formatting, with Paste Options.
 - Word import reads styles, themes, lists, notes, comments, and tracked changes. Word export writes every version 2 format, can embed bundled fonts, and can remove personal information.
 - Carlito and Caladea load on demand as stand-ins for Calibri and Cambria, and the app lists the device's fonts with their metrics.

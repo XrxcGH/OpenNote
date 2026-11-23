@@ -30,10 +30,10 @@ File names join the number and a short lowercase title with hyphens, for example
 
 ## Statuses
 
-| Status     | Meaning                                                 |
-| ---------- | ------------------------------------------------------- |
-| Proposed   | Written and open for discussion, but not yet binding    |
-| Accepted   | Agreed, and the code should follow it                   |
+| Status | Meaning |
+|---|---|
+| Proposed | Written and open for discussion, but not yet binding |
+| Accepted | Agreed, and the code should follow it |
 | Superseded | Replaced by a later ADR, which the status line links to |
 
 A status can carry a short condition, such as "Accepted, pending the Phase 1 ink latency spike".
@@ -42,84 +42,84 @@ Accepted records aren't rewritten when plans change. Instead, write a new ADR fo
 
 ## Decisions
 
-| ADR                                                      | Decision                                                                                                                                                         | Status                                                                           | Date       |
-| -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | ---------- |
-| [0001](0001-app-stack.md)                                | Build the app with Tauri 2, a Rust core, and a TypeScript, React, and Vite interface                                                                             | Accepted, pending the camera check in ADR 0004                                   | 2026-09-30 |
-| [0002](0002-license.md)                                  | License OpenNote under Apache 2.0                                                                                                                                | Accepted                                                                         | 2026-09-30 |
-| [0003](0003-typescript-version.md)                       | Pin TypeScript to 6.0.x until typescript-eslint supports TypeScript 7                                                                                            | Accepted                                                                         | 2026-09-30 |
-| [0004](0004-ink-latency.md)                              | Keep WebView2 for ink: draw live strokes on a desynchronized canvas in the pointer handler, and try delegated ink trails and a native ink layer in Phase 5       | Accepted, pending the owner's camera check and budget review                     | 2026-09-30 |
-| [0005](0005-freeform-text.md)                            | Build each text container as its own Tiptap editor on one zoomable world, with contained blocks and ink in cached tiles                                          | Accepted, pending the owner's review of the typing budget                        | 2026-09-30 |
-| [0006](0006-pdf-export.md)                               | Export PDFs with WebView2 PrintToPdf from a hidden WebView, with print CSS and layout rules that keep the screen and paper in step                               | Accepted                                                                         | 2026-09-30 |
-| [0007](0007-audio-capture.md)                            | Record the microphone and system audio with cpal on WASAPI, align both to the performance counter, and store Opus in 1-second Ogg pages                          | Accepted                                                                         | 2026-09-30 |
-| [0008](0008-note-file-format.md)                         | Store a notebook as a folder of plain files, with `page.json` as the source of truth, in the open note format                                                    | Proposed                                                                         | 2026-09-30 |
-| [0010](0010-interface-components-and-state.md)           | Build the interface from hand-written accessible components, a small external store, registries, and a platform seam                                             | Proposed                                                                         | 2026-09-30 |
-| [0011](0011-self-updater.md)                             | Update with a Tauri-free updater: per-architecture files, signature checks, a staged swap, and rollback; move the app to the user's Programs folder              | Proposed                                                                         | 2026-09-30 |
-| [0012](0012-window-frame-and-appearance.md)              | Keep the native window frame, with the app's title bar below it, and read the Windows appearance in Rust                                                         | Accepted                                                                         | 2026-09-30 |
-| [0013](0013-settings-and-device-state.md)                | Keep personal settings and device state in two Rust-owned files, changed by validated merge patches, with atomic writes and `minWriterSchema` for safe rollbacks | Proposed                                                                         | 2026-09-30 |
-| [0014](0014-notes-service-contract.md)                   | Define a narrow notes service contract between the shell and storage, with a shared test suite, and the changes that let Phase 3's format serve it               | Proposed, to be accepted jointly by the Phase 2 and Phase 3 owners               | 2026-09-30 |
-| [0015](0015-app-lifecycle.md)                            | Hold one process per profile, start in a fixed order before Tauri, and send every close through one exit handshake                                               | Proposed                                                                         | 2026-09-30 |
-| [0016](0016-phase-2-test-stack.md)                       | Test in layers: Vitest, Vitest browser mode, Playwright, and WebdriverIO with tauri-driver, on installed browsers                                                | Proposed                                                                         | 2026-09-30 |
-| [0017](0017-custom-window-frame.md)                      | Draw the title bar and caption buttons in HTML behind the `shell.customFrame` flag, with a native overlay over Maximize for Snap Layouts                         | Proposed, pending manual checks                                                  | 2026-09-30 |
-| [0020](0020-typed-notes-editor.md)                       | Build each text block as its own Tiptap editor, render static DOM first, and mount editors in place                                                              | Proposed, pending the reference laptop run and the owner's approval              | 2026-10-02 |
-| [0021](0021-code-highlighting.md)                        | Highlight code blocks with lowlight and lazily loaded highlight.js grammars, not CodeMirror 6                                                                    | Proposed, pending the owner's approval of the change to DEVELOPMENT.md section 2 | 2026-10-02 |
-| [0022](0022-page-viewport.md)                            | Pan with a native scroll container, pan and pinch touch in the app, and zoom with one transform                                                                  | Proposed, pending spike S5 on real touch hardware                                | 2026-10-02 |
-| [0023](0023-spell-check-and-read-aloud.md)               | Check spelling with the Windows Spell Checking API from one Rust thread, and read aloud with the Web Speech API and local voices only                            | Proposed, pending a run with NVDA and Narrator                                   | 2026-10-03 |
-| [0024](0024-typed-notes-keyboard.md)                     | Keep Tab inside an editor, leave it with Escape, let AltGr text win, and move between blocks in reading order                                                    | Proposed, pending the owner's confirmation of the OneNote set's editor keys      | 2026-10-02 |
-| [0025](0025-paste-and-images.md)                         | Handle every paste and drop in one pipeline whose schema allowlists what reaches the page, and import images through it                                          | Proposed, pending real captures for spike S4                                     | 2026-10-03 |
-| [0026](0026-text-box-layout.md)                          | Size text boxes to their content, move boxes below an edited one to keep clear of it, and fix a page's reading order                                             | Proposed, pending the Phase 3 owner's agreement to P3-1 and P3-11                | 2026-10-02 |
-| [0027](0027-palm-rejection.md)                           | Classify each touch by evidence (size, growth, hand region, timing, motion), keep touch ink retractable, and manage touch on pen devices                         | Accepted                                                                         | 2026-10-03 |
-| [0030](0030-connectors-and-sign-in.md)                   | Sign in to connected accounts through the system browser with a loopback redirect, and keep every token in Windows Credential Manager                            | Proposed, pending a sign-in with real client IDs                                 | 2026-10-03 |
-| [0035](0035-share-as-a-file.md)                          | Share as a file is a ZIP of Markdown with a manifest, optionally locked with a password                                                                          | Accepted                                                                         | 2026-10-03 |
-| [0036](0036-object-groups.md)                            | Object groups live in the page view, so one drag moves them all                                                                                                  | Proposed                                                                         | 2026-10-07 |
-| [0037](0037-ink-layers.md)                               | Ink layers live in the page view and can be hidden, locked, renamed, and reordered                                                                               | Proposed                                                                         | 2026-10-14 |
-| [0038](0038-icloud-is-folder-based.md)                   | iCloud stays folder-based, with no iCloud sign-in                                                                                                                | Accepted                                                                         | 2026-10-07 |
-| [0040](0040-pdf-in-the-webview.md)                       | PDF files are read by pdf.js in the webview                                                                                                                      | Proposed                                                                         | 2026-10-15 |
-| [0041](0041-stamped-entry-lock.md)                       | A stamped entry lock lives in the page view, and the core enforces it                                                                                            | Proposed                                                                         | 2026-10-15 |
-| [0042](0042-protected-sections.md)                       | Protected sections are sealed file by file, and open only in memory                                                                                              | Proposed                                                                         | 2026-10-15 |
-| [0046](0046-one-command-registry.md)                     | One command registry for the local API, the opennote command, and MCP, with read-back commands, file roots, a per-instance key, and authors in page history      | Accepted                                                                         | 2026-10-15 |
-| [0047](0047-typed-hashtags-become-tags.md)               | Typed #words become page tags                                                                                                                                    | Proposed                                                                         | 2026-10-21 |
-| [0048](0048-choice-columns.md)                           | Choice columns keep their options in the column schema and their values as plain text                                                                            | Proposed                                                                         | 2026-10-21 |
-| [0049](0049-end-to-end-encrypted-sync.md)                | Optional end-to-end-encrypted sync over storage people already have                                                                                              | Proposed                                                                         | 2026-10-28 |
-| [0050](0050-ai-tutor.md)                                 | The tutor gives graded hints from what the person shows it, on this device unless they agree to more                                                             | Proposed                                                                         | 2026-10-29 |
-| [0051](0051-step-checking.md)                            | Check my work checks each step on the device, and says "I could not check this step" before "wrong"                                                              | Proposed                                                                         | 2026-10-29 |
-| [0052](0052-practice-exams.md)                           | Practice exams are made on the device, taken in a tool window, and saved as ordinary pages                                                                       | Proposed                                                                         | 2026-10-29 |
-| [0053](0053-notes-app-import.md)                         | Import from Goodnotes, Notability, and Samsung Notes reads what the packages show, and the PDF export is the dependable route                                    | Proposed                                                                         | 2026-10-29 |
-| [0054](0054-latex-export.md)                             | LaTeX export writes escaped text, checked math, and typeset code, and never compiles                                                                             | Proposed                                                                         | 2026-10-29 |
-| [0055](0055-macos-and-linux.md)                          | macOS and Linux builds degrade feature by feature and say what they lack                                                                                         | Proposed                                                                         | 2026-10-29 |
-| [0056](0056-cell-formatting-in-data-sheet.md)            | Cell formatting lives in a style sheet in the table block's `data.sheet`                                                                                         | Accepted                                                                         | 2026-11-01 |
-| [0057](0057-number-format-codes.md)                      | Number formats are spreadsheet format codes                                                                                                                      | Accepted                                                                         | 2026-11-01 |
-| [0058](0058-excel-compatible-formula-semantics.md)       | Table formulas follow Excel's semantics                                                                                                                          | Accepted                                                                         | 2026-11-01 |
-| [0059](0059-dynamic-arrays-and-spill.md)                 | Dynamic arrays and spill ranges in tables                                                                                                                        | Proposed                                                                         | 2026-11-01 |
-| [0060](0060-own-function-library-and-oracle-fixtures.md) | An in-repository function library tested against reference values                                                                                                | Accepted                                                                         | 2026-11-01 |
-| [0061](0061-cached-formula-results.md)                   | Tables cache formula results in the file                                                                                                                         | Proposed                                                                         | 2026-11-01 |
-| [0062](0062-names-and-cross-table-references.md)         | Names, structured references, and references to other tables and pages                                                                                           | Proposed                                                                         | 2026-11-01 |
-| [0063](0063-spreadsheet-keyboard-model.md)               | Tables use a spreadsheet keyboard model with grid and edit modes                                                                                                 | Accepted                                                                         | 2026-11-01 |
-| [0064](0064-merged-cells.md)                             | Merged cells are ranges by corner IDs over a whole grid                                                                                                          | Accepted                                                                         | 2026-11-01 |
-| [0065](0065-incremental-recalculation.md)                | Incremental recalculation, iterative calculation, and the worker                                                                                                 | Proposed                                                                         | 2026-11-01 |
-| [0066](0066-table-merge-on-sync.md)                      | Three-way merge of table blocks when two devices edit one page                                                                                                   | Proposed                                                                         | 2026-11-01 |
-| [0067](0067-spreadsheet-interchange.md)                  | Excel, Sheets, and clipboard interchange of formulas, formats, and styles                                                                                        | Accepted                                                                         | 2026-11-21 |
-| [0068](0068-code-editor.md)                              | CodeMirror 6 for the Code studio and code cells                                                                                                                  | Accepted                                                                         | 2026-11-01 |
-| [0069](0069-code-project-block.md)                       | Code projects as a page block, and code cell data version 2                                                                                                      | Accepted, pending hand test                                                      | 2026-11-01 |
-| [0070](0070-runtime-packs.md)                            | In-app language runtimes, bundled, or downloaded as packs                                                                                                        | Accepted                                                                         | 2026-11-01 |
-| [0071](0071-local-toolchain-runner.md)                   | Running code with the person's installed toolchains                                                                                                              | Proposed                                                                         | 2026-11-01 |
-| [0072](0072-code-intelligence-on-device.md)              | Code completion and fixes with on-device code models only                                                                                                        | Proposed                                                                         | 2026-11-01 |
-| [0073](0073-trace-replay-debugger.md)                    | Step debugging by recording and replaying, behind one Debug Adapter Protocol contract                                                                            | Proposed                                                                         | 2026-11-01 |
-| [0074](0074-code-diagnostics.md)                         | Error detection with own checkers first, and a code tools pack                                                                                                   | Accepted                                                                         | 2026-11-01 |
-| [0075](0075-code-tests.md)                               | Test cases stored with projects, with judge-style comparisons                                                                                                    | Accepted                                                                         | 2026-11-01 |
-| [0076](0076-reserved-inline-tags-and-foreign-marks.md)   | OpenNote Markdown 2 reserves one inline tag grammar, and readers keep tags they do not know                                                                      | Proposed                                                                         | 2026-11-02 |
-| [0077](0077-min-writer-version.md)                       | Files carry minWriterVersion, the oldest version that may edit them                                                                                              | Proposed                                                                         | 2026-11-02 |
-| [0078](0078-stamp-the-lowest-version.md)                 | Writers stamp the lowest format version a file needs                                                                                                             | Proposed                                                                         | 2026-11-02 |
-| [0079](0079-run-and-paragraph-formatting-model.md)       | Run formatting lives in the Markdown, paragraph formatting beside it by element ID, in points                                                                    | Accepted                                                                         | 2026-11-01 |
-| [0080](0080-font-discovery.md)                           | The Rust side lists the device's fonts with fontdb, and the list never leaves the device                                                                         | Accepted                                                                         | 2026-11-01 |
-| [0081](0081-bundled-fonts.md)                            | Bundle Carlito and Caladea as metric stand-ins, loaded on demand                                                                                                 | Accepted                                                                         | 2026-11-01 |
-| [0082](0082-named-styles-v2.md)                          | Named styles move to notebook.json, gain inheritance and user styles, and pages can carry their own sheet                                                        | Accepted                                                                         | 2026-11-01 |
-| [0083](0083-docx-writer-and-reader.md)                   | Keep the hand-written DOCX writer and reader, and extend them to full formatting fidelity                                                                        | Accepted                                                                         | 2026-11-01 |
-| [0084](0084-clipboard-fidelity.md)                       | Copy writes formatting other apps read, and paste keeps source formatting with Paste Options                                                                     | Accepted                                                                         | 2026-11-01 |
-| [0085](0085-text-shortcut-policy.md)                     | The default shortcut set follows Word, with a Google Docs preset beside the OneNote set                                                                          | Accepted                                                                         | 2026-11-01 |
-| [0086](0086-comments-and-suggestions.md)                 | Comments and suggestions are stored in the page, anchored by inline tags, with local author names                                                                | Accepted                                                                         | 2026-11-01 |
-| [0087](0087-footnotes-and-breaks.md)                     | Footnotes use `[^id]` with their text in data.notes, and page breaks are `break` blocks                                                                          | Accepted                                                                         | 2026-11-01 |
-| [0088](0088-symbol-data.md)                              | The symbol dialog searches a subset of Unicode names generated at build time                                                                                     | Accepted                                                                         | 2026-11-01 |
-| [0089](0089-block-level-merge-on-sync.md)                | Block-level merge on sync, with a merger and a conflict view per block type                                                                                      | Accepted                                                                         | 2026-11-07 |
+| ADR | Decision | Status | Date |
+|---|---|---|---|
+| [0001](0001-app-stack.md) | Build the app with Tauri 2, a Rust core, and a TypeScript, React, and Vite interface | Accepted, pending the camera check in ADR 0004 | 2026-09-30 |
+| [0002](0002-license.md) | License OpenNote under Apache 2.0 | Accepted | 2026-09-30 |
+| [0003](0003-typescript-version.md) | Pin TypeScript to 6.0.x until typescript-eslint supports TypeScript 7 | Accepted | 2026-09-30 |
+| [0004](0004-ink-latency.md) | Keep WebView2 for ink: draw live strokes on a desynchronized canvas in the pointer handler, and try delegated ink trails and a native ink layer in Phase 5 | Accepted, pending the owner's camera check and budget review | 2026-09-30 |
+| [0005](0005-freeform-text.md) | Build each text container as its own Tiptap editor on one zoomable world, with contained blocks and ink in cached tiles | Accepted, pending the owner's review of the typing budget | 2026-09-30 |
+| [0006](0006-pdf-export.md) | Export PDFs with WebView2 PrintToPdf from a hidden WebView, with print CSS and layout rules that keep the screen and paper in step | Accepted | 2026-09-30 |
+| [0007](0007-audio-capture.md) | Record the microphone and system audio with cpal on WASAPI, align both to the performance counter, and store Opus in 1-second Ogg pages | Accepted | 2026-09-30 |
+| [0008](0008-note-file-format.md) | Store a notebook as a folder of plain files, with `page.json` as the source of truth, in the open note format | Proposed | 2026-09-30 |
+| [0010](0010-interface-components-and-state.md) | Build the interface from hand-written accessible components, a small external store, registries, and a platform seam | Proposed | 2026-09-30 |
+| [0011](0011-self-updater.md) | Update with a Tauri-free updater: per-architecture files, signature checks, a staged swap, and rollback; move the app to the user's Programs folder | Proposed | 2026-09-30 |
+| [0012](0012-window-frame-and-appearance.md) | Keep the native window frame, with the app's title bar below it, and read the Windows appearance in Rust | Accepted | 2026-09-30 |
+| [0013](0013-settings-and-device-state.md) | Keep personal settings and device state in two Rust-owned files, changed by validated merge patches, with atomic writes and `minWriterSchema` for safe rollbacks | Proposed | 2026-09-30 |
+| [0014](0014-notes-service-contract.md) | Define a narrow notes service contract between the shell and storage, with a shared test suite, and the changes that let Phase 3's format serve it | Proposed, to be accepted jointly by the Phase 2 and Phase 3 owners | 2026-09-30 |
+| [0015](0015-app-lifecycle.md) | Hold one process per profile, start in a fixed order before Tauri, and send every close through one exit handshake | Proposed | 2026-09-30 |
+| [0016](0016-phase-2-test-stack.md) | Test in layers: Vitest, Vitest browser mode, Playwright, and WebdriverIO with tauri-driver, on installed browsers | Proposed | 2026-09-30 |
+| [0017](0017-custom-window-frame.md) | Draw the title bar and caption buttons in HTML behind the `shell.customFrame` flag, with a native overlay over Maximize for Snap Layouts | Proposed, pending manual checks | 2026-09-30 |
+| [0020](0020-typed-notes-editor.md) | Build each text block as its own Tiptap editor, render static DOM first, and mount editors in place | Proposed, pending the reference laptop run and the owner's approval | 2026-10-02 |
+| [0021](0021-code-highlighting.md) | Highlight code blocks with lowlight and lazily loaded highlight.js grammars, not CodeMirror 6 | Proposed, pending the owner's approval of the change to DEVELOPMENT.md section 2 | 2026-10-02 |
+| [0022](0022-page-viewport.md) | Pan with a native scroll container, pan and pinch touch in the app, and zoom with one transform | Proposed, pending spike S5 on real touch hardware | 2026-10-02 |
+| [0023](0023-spell-check-and-read-aloud.md) | Check spelling with the Windows Spell Checking API from one Rust thread, and read aloud with the Web Speech API and local voices only | Proposed, pending a run with NVDA and Narrator | 2026-10-03 |
+| [0024](0024-typed-notes-keyboard.md) | Keep Tab inside an editor, leave it with Escape, let AltGr text win, and move between blocks in reading order | Proposed, pending the owner's confirmation of the OneNote set's editor keys | 2026-10-02 |
+| [0025](0025-paste-and-images.md) | Handle every paste and drop in one pipeline whose schema allowlists what reaches the page, and import images through it | Proposed, pending real captures for spike S4 | 2026-10-03 |
+| [0026](0026-text-box-layout.md) | Size text boxes to their content, move boxes below an edited one to keep clear of it, and fix a page's reading order | Proposed, pending the Phase 3 owner's agreement to P3-1 and P3-11 | 2026-10-02 |
+| [0027](0027-palm-rejection.md) | Classify each touch by evidence (size, growth, hand region, timing, motion), keep touch ink retractable, and manage touch on pen devices | Accepted | 2026-10-03 |
+| [0030](0030-connectors-and-sign-in.md) | Sign in to connected accounts through the system browser with a loopback redirect, and keep every token in Windows Credential Manager | Proposed, pending a sign-in with real client IDs | 2026-10-03 |
+| [0035](0035-share-as-a-file.md) | Share as a file is a ZIP of Markdown with a manifest, optionally locked with a password | Accepted | 2026-10-03 |
+| [0036](0036-object-groups.md) | Object groups live in the page view, so one drag moves them all | Proposed | 2026-10-07 |
+| [0037](0037-ink-layers.md) | Ink layers live in the page view and can be hidden, locked, renamed, and reordered | Proposed | 2026-10-14 |
+| [0038](0038-icloud-is-folder-based.md) | iCloud stays folder-based, with no iCloud sign-in | Accepted | 2026-10-07 |
+| [0040](0040-pdf-in-the-webview.md) | PDF files are read by pdf.js in the webview | Proposed | 2026-10-15 |
+| [0041](0041-stamped-entry-lock.md) | A stamped entry lock lives in the page view, and the core enforces it | Proposed | 2026-10-15 |
+| [0042](0042-protected-sections.md) | Protected sections are sealed file by file, and open only in memory | Proposed | 2026-10-15 |
+| [0046](0046-one-command-registry.md) | One command registry for the local API, the opennote command, and MCP, with read-back commands, file roots, a per-instance key, and authors in page history | Accepted | 2026-10-15 |
+| [0047](0047-typed-hashtags-become-tags.md) | Typed #words become page tags | Proposed | 2026-10-21 |
+| [0048](0048-choice-columns.md) | Choice columns keep their options in the column schema and their values as plain text | Proposed | 2026-10-21 |
+| [0049](0049-end-to-end-encrypted-sync.md) | Optional end-to-end-encrypted sync over storage people already have | Proposed | 2026-10-28 |
+| [0050](0050-ai-tutor.md) | The tutor gives graded hints from what the person shows it, on this device unless they agree to more | Proposed | 2026-10-29 |
+| [0051](0051-step-checking.md) | Check my work checks each step on the device, and says "I could not check this step" before "wrong" | Proposed | 2026-10-29 |
+| [0052](0052-practice-exams.md) | Practice exams are made on the device, taken in a tool window, and saved as ordinary pages | Proposed | 2026-10-29 |
+| [0053](0053-notes-app-import.md) | Import from Goodnotes, Notability, and Samsung Notes reads what the packages show, and the PDF export is the dependable route | Proposed | 2026-10-29 |
+| [0054](0054-latex-export.md) | LaTeX export writes escaped text, checked math, and typeset code, and never compiles | Proposed | 2026-10-29 |
+| [0055](0055-macos-and-linux.md) | macOS and Linux builds degrade feature by feature and say what they lack | Proposed | 2026-10-29 |
+| [0056](0056-cell-formatting-in-data-sheet.md) | Cell formatting lives in a style sheet in the table block's `data.sheet` | Accepted | 2026-11-01 |
+| [0057](0057-number-format-codes.md) | Number formats are spreadsheet format codes | Accepted | 2026-11-01 |
+| [0058](0058-excel-compatible-formula-semantics.md) | Table formulas follow Excel's semantics | Accepted | 2026-11-01 |
+| [0059](0059-dynamic-arrays-and-spill.md) | Dynamic arrays and spill ranges in tables | Proposed | 2026-11-01 |
+| [0060](0060-own-function-library-and-oracle-fixtures.md) | An in-repository function library tested against reference values | Accepted | 2026-11-01 |
+| [0061](0061-cached-formula-results.md) | Tables cache formula results in the file | Proposed | 2026-11-01 |
+| [0062](0062-names-and-cross-table-references.md) | Names, structured references, and references to other tables and pages | Proposed | 2026-11-01 |
+| [0063](0063-spreadsheet-keyboard-model.md) | Tables use a spreadsheet keyboard model with grid and edit modes | Accepted | 2026-11-01 |
+| [0064](0064-merged-cells.md) | Merged cells are ranges by corner IDs over a whole grid | Accepted | 2026-11-01 |
+| [0065](0065-incremental-recalculation.md) | Incremental recalculation, iterative calculation, and the worker | Proposed | 2026-11-01 |
+| [0066](0066-table-merge-on-sync.md) | Three-way merge of table blocks when two devices edit one page | Proposed | 2026-11-01 |
+| [0067](0067-spreadsheet-interchange.md) | Excel, Sheets, and clipboard interchange of formulas, formats, and styles | Accepted | 2026-11-21 |
+| [0068](0068-code-editor.md) | CodeMirror 6 for the Code studio and code cells | Accepted | 2026-11-01 |
+| [0069](0069-code-project-block.md) | Code projects as a page block, and code cell data version 2 | Accepted, pending hand test | 2026-11-01 |
+| [0070](0070-runtime-packs.md) | In-app language runtimes, bundled, or downloaded as packs | Accepted | 2026-11-01 |
+| [0071](0071-local-toolchain-runner.md) | Running code with the person's installed toolchains | Proposed | 2026-11-01 |
+| [0072](0072-code-intelligence-on-device.md) | Code completion and fixes with on-device code models only | Proposed | 2026-11-01 |
+| [0073](0073-trace-replay-debugger.md) | Step debugging by recording and replaying, behind one Debug Adapter Protocol contract | Proposed | 2026-11-01 |
+| [0074](0074-code-diagnostics.md) | Error detection with own checkers first, and a code tools pack | Accepted | 2026-11-01 |
+| [0075](0075-code-tests.md) | Test cases stored with projects, with judge-style comparisons | Accepted | 2026-11-01 |
+| [0076](0076-reserved-inline-tags-and-foreign-marks.md) | OpenNote Markdown 2 reserves one inline tag grammar, and readers keep tags they do not know | Proposed | 2026-11-02 |
+| [0077](0077-min-writer-version.md) | Files carry minWriterVersion, the oldest version that may edit them | Proposed | 2026-11-02 |
+| [0078](0078-stamp-the-lowest-version.md) | Writers stamp the lowest format version a file needs | Proposed | 2026-11-02 |
+| [0079](0079-run-and-paragraph-formatting-model.md) | Run formatting lives in the Markdown, paragraph formatting beside it by element ID, in points | Accepted | 2026-11-01 |
+| [0080](0080-font-discovery.md) | The Rust side lists the device's fonts with fontdb, and the list never leaves the device | Accepted | 2026-11-01 |
+| [0081](0081-bundled-fonts.md) | Bundle Carlito and Caladea as metric stand-ins, loaded on demand | Accepted | 2026-11-01 |
+| [0082](0082-named-styles-v2.md) | Named styles move to notebook.json, gain inheritance and user styles, and pages can carry their own sheet | Accepted | 2026-11-01 |
+| [0083](0083-docx-writer-and-reader.md) | Keep the hand-written DOCX writer and reader, and extend them to full formatting fidelity | Accepted | 2026-11-01 |
+| [0084](0084-clipboard-fidelity.md) | Copy writes formatting other apps read, and paste keeps source formatting with Paste Options | Accepted | 2026-11-01 |
+| [0085](0085-text-shortcut-policy.md) | The default shortcut set follows Word, with a Google Docs preset beside the OneNote set | Accepted | 2026-11-01 |
+| [0086](0086-comments-and-suggestions.md) | Comments and suggestions are stored in the page, anchored by inline tags, with local author names | Accepted | 2026-11-01 |
+| [0087](0087-footnotes-and-breaks.md) | Footnotes use `[^id]` with their text in data.notes, and page breaks are `break` blocks | Accepted | 2026-11-01 |
+| [0088](0088-symbol-data.md) | The symbol dialog searches a subset of Unicode names generated at build time | Accepted | 2026-11-01 |
+| [0089](0089-block-level-merge-on-sync.md) | Block-level merge on sync, with a merger and a conflict view per block type | Accepted | 2026-11-07 |
 
 The numbers 0009, 0018, 0019, 0028, 0029, and 0031 to 0034 have no record. A number is never reused.
 
@@ -127,20 +127,20 @@ The numbers 0009, 0018, 0019, 0028, 0029, and 0031 to 0034 have no record. A num
 
 Most records are still Proposed, because each waits on a check by a person. Agents wrote the code to match every record. The ones below wait on the owner or on a hand test.
 
-| ADR                 | Waiting on                                                                                                                               |
-| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| 0001 and 0004       | The owner's camera check of ink latency, and the budget review                                                                           |
-| 0005                | The owner's review of the typing budget                                                                                                  |
-| 0017                | The manual checks of the custom title bar. Beta 4 turns it on (`shell.customFrame` and `window.snapLayouts`), so the hand test covers it |
-| 0020 and 0021       | A run on the reference laptop, and the owner's approval to change DEVELOPMENT.md section 2                                               |
-| 0022                | Touch checks on real hardware (spike S5)                                                                                                 |
-| 0023                | A run with NVDA and Narrator                                                                                                             |
-| 0024                | The owner's confirmation of the OneNote set's editor keys                                                                                |
-| 0025                | Real captures (spike S4)                                                                                                                 |
-| 0026                | The Phase 3 owner's agreement                                                                                                            |
-| 0030                | A sign-in with real client IDs for each service, which the owner registers (see [CONNECTORS.md](../CONNECTORS.md))                       |
-| 0036, 0037 and 0040 | The owner accepts or changes object groups, ink layers, and reading PDFs with pdf.js in the webview                                      |
-| 0041                | The owner's review of the stamped entry lock, which agents built behind `page.lockEntry`                                                 |
-| 0042                | The owner's review of protected sections, a Windows Hello sign-in on real hardware, and the `protected` field of the notes contract      |
-| 0049                | The owner's review of end-to-end-encrypted sync and its threat model, a pairing on two real devices, and the decision about a relay      |
-| 0054                | The owner compiles LaTeX exports of real notes with the TeX engine they use, since the build machine has none                            |
+| ADR | Waiting on |
+|---|---|
+| 0001 and 0004 | The owner's camera check of ink latency, and the budget review |
+| 0005 | The owner's review of the typing budget |
+| 0017 | The manual checks of the custom title bar. Beta 4 turns it on (`shell.customFrame` and `window.snapLayouts`), so the hand test covers it |
+| 0020 and 0021 | A run on the reference laptop, and the owner's approval to change DEVELOPMENT.md section 2 |
+| 0022 | Touch checks on real hardware (spike S5) |
+| 0023 | A run with NVDA and Narrator |
+| 0024 | The owner's confirmation of the OneNote set's editor keys |
+| 0025 | Real captures (spike S4) |
+| 0026 | The Phase 3 owner's agreement |
+| 0030 | A sign-in with real client IDs for each service, which the owner registers (see [CONNECTORS.md](../CONNECTORS.md)) |
+| 0036, 0037 and 0040 | The owner accepts or changes object groups, ink layers, and reading PDFs with pdf.js in the webview |
+| 0041 | The owner's review of the stamped entry lock, which agents built behind `page.lockEntry` |
+| 0042 | The owner's review of protected sections, a Windows Hello sign-in on real hardware, and the `protected` field of the notes contract |
+| 0049 | The owner's review of end-to-end-encrypted sync and its threat model, a pairing on two real devices, and the decision about a relay |
+| 0054 | The owner compiles LaTeX exports of real notes with the TeX engine they use, since the build machine has none |
