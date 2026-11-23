@@ -194,6 +194,15 @@ function bigTable(order: number): BlockJson {
 }
 
 /**
+ * A header and `count` rows of an item and two numbers, for row virtualization (docs/perf/tables.md). The numbers
+ * give the table spreadsheet keys; nothing is a formula, so the engine has nothing to calculate.
+ */
+function longTable(order: number, count: number): BlockJson {
+  const body = Array.from({ length: count }, (_, i) => [`Item ${i + 1}`, String(i + 1), String((i + 1) * 2)]);
+  return tableOf(order, [['Item', 'Qty', 'Cost'], ...body]);
+}
+
+/**
  * 1,500 rows of 10 cells with data.sheet, the last a formula: 15,000 cells, under the worker's threshold, so each
  * edit calculates the page on its own thread and writes the value cache with the edit (ADR 0061).
  */
@@ -406,6 +415,9 @@ function build(): Record<string, () => PageFixture> {
           { sheet: { v: 1, table: { grid: true } } },
         ),
       ]),
+    // Row virtualization: 10,001 rows (a header and 10,000), and 1,999 rows, one under the threshold.
+    tenThousandRows: () => page('Long table', [text(0, 'Start here.'), longTable(1, 10_000)]),
+    rows1999: () => page('Shorter table', [text(0, 'Start here.'), longTable(1, 1998)]),
   };
 }
 
@@ -427,7 +439,9 @@ export type PageFixtureName =
   | 'twentyPageFormatted'
   | 'twentyPageReviewed'
   | 'highlightedRuns'
-  | 'formulaTables';
+  | 'formulaTables'
+  | 'tenThousandRows'
+  | 'rows1999';
 
 const made = new Map<PageFixtureName, PageFixture>();
 const makers = build();

@@ -104,34 +104,112 @@ export function cellsOf(doc: PMNode): Placed[][] {
 }
 
 const merges = new WeakMap<PMNode, boolean>();
+/** Whether each row node has a merged cell. Rows a change leaves alone keep their node, so typing checks one row. */
+const rowMerges = new WeakMap<PMNode, boolean>();
+
+function rowHasMerged(row: PMNode): boolean {
+  let merged = rowMerges.get(row);
+  if (merged !== undefined) return merged;
+  merged = false;
+  row.forEach((cell) => {
+    if (Number(cell.attrs.colspan ?? 1) > 1 || Number(cell.attrs.rowspan ?? 1) > 1) merged = true;
+  });
+  rowMerges.set(row, merged);
+  return merged;
+}
 
 /** Whether a cell spans more than one row or column. Moves treat it as one cell, and fills and clears skip the slots it covers. */
 export function hasMerged(doc: PMNode): boolean {
   const known = merges.get(doc);
   if (known !== undefined) return known;
   let merged = false;
-  doc.firstChild?.forEach((row) =>
-    row.forEach((cell) => {
-      if (Number(cell.attrs.colspan ?? 1) > 1 || Number(cell.attrs.rowspan ?? 1) > 1) merged = true;
-    }),
-  );
+  doc.firstChild?.forEach((row) => {
+    if (!merged && rowHasMerged(row)) merged = true;
+  });
   merges.set(doc, merged);
   return merged;
 }
+
+/** Where each row of a table block's document starts, and where the last one ends, made once per document. */
+const rowStarts = new WeakMap<PMNode, Int32Array>();
+
+function startsOf(doc: PMNode): Int32Array {
+  let at = rowStarts.get(doc);
+  if (at) return at;
+  const table = doc.firstChild;
+  const count = table?.childCount ?? 0;
+  at = new Int32Array(count + 1);
+  // The table starts at 0, so its first row starts at 1.
+  at[0] = 1;
+  for (let i = 0; i < count; i++) at[i + 1] = at[i] + table!.child(i).nodeSize;
+  rowStarts.set(doc, at);
+  return at;
+}
+
+/**
+ * One row's grid slots. Without a merged cell a row's children are its slots. Only that row is read, so a key in a
+ * long table costs one row, not the whole grid of cellsOf.
+ */
+export function rowCells(doc: PMNode, row: number): Placed[] | undefined {
+  const table = doc.firstChild;
+  if (!table || row < 0 || row >= table.childCount) return undefined;
+  if (hasMerged(doc)) return cellsOf(doc)[row];
+  const known = layouts.get(doc);
+  if (known) return known[row];
+  const cells: Placed[] = [];
+  let cellAt = startsOf(doc)[row];
+  table.child(row).forEach((node) => {
+    cells.push({ pos: cellAt + 1, node });
+    cellAt += node.nodeSize;
+  });
+  return cells;
+}
+
+/** The texts of each row node's cells, for rows without a merged cell. */
+const rowTexts = new WeakMap<PMNode, readonly string[]>();
+const texts = new WeakMap<PMNode, string[][]>();
 
 /** Whether the table's keys are spreadsheet keys now: chosen. Merged cells count as one cell (moves.ts stepOver). */
 export function keysOn(state: EditorState): boolean {
   return sheetKeysKey.getState(state)?.spreadsheet ?? false;
 }
 
+/** Every grid slot's text, row by row. Rows a change left alone reuse their texts, so a key costs one row. */
 export function textsOf(doc: PMNode): string[][] {
-  return cellsOf(doc).map((row) => row.map((cell) => cell.node.textContent));
+  const known = texts.get(doc);
+  if (known) return known;
+  let out: string[][];
+  if (hasMerged(doc)) out = cellsOf(doc).map((row) => row.map((cell) => cell.node.textContent));
+  else {
+    out = [];
+    doc.firstChild?.forEach((row) => {
+      let cells = rowTexts.get(row);
+      if (!cells) {
+        const made: string[] = [];
+        row.forEach((cell) => made.push(cell.textContent));
+        rowTexts.set(row, made);
+        cells = made;
+      }
+      out.push(cells as string[]);
+    });
+  }
+  texts.set(doc, out);
+  return out;
 }
 
 export const hasHeader = (doc: PMNode) => doc.firstChild?.firstChild?.firstChild?.type.name === 'tableHeader';
 
 /** The grid cell of a position inside or before a cell. A merged cell's is its top left slot. */
 export function cellOfPos(doc: PMNode, pos: number): GridCell | null {
+  if (!hasMerged(doc) && doc.firstChild?.type.name === 'table') {
+    // Without a merged cell, the row is the position's index in the table. The column is its index in that row.
+    if (pos < 0 || pos > doc.content.size) return null;
+    const $pos = doc.resolve(pos);
+    if ($pos.depth < 2) return null;
+    const row = $pos.index(1);
+    const column = $pos.index(2);
+    return column < $pos.node(2).childCount ? { row, column } : null;
+  }
   const cells = cellsOf(doc);
   for (let row = 0; row < cells.length; row++)
     for (let column = 0; column < cells[row].length; column++) {
@@ -141,7 +219,7 @@ export function cellOfPos(doc: PMNode, pos: number): GridCell | null {
   return null;
 }
 
-export const placedAt = (doc: PMNode, at: GridCell): Placed | undefined => cellsOf(doc)[at.row]?.[at.column];
+export const placedAt = (doc: PMNode, at: GridCell): Placed | undefined => rowCells(doc, at.row)?.[at.column];
 
 /** Whether the slot only lies under a merged cell: the cell's anchor is a slot above or to the left of it. */
 export function isCovered(doc: PMNode, at: GridCell): boolean {

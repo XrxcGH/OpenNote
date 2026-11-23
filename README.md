@@ -53,7 +53,9 @@ You keep notebooks, sections, and pages in a notes folder you choose, as plain f
 
 ### Write and draw
 
-The Word-level text, Excel-level table, and code studio foundations are on the beta branch behind flags that are off. The text work so far adds a Format pane with every font and paragraph field, a ruler for indents and tab stops, a language and a direction for each passage, and comments and suggested changes. The table work so far adds a cell format bar, spreadsheet keys, merge, unmerge, and split cell, conditional formatting, styled tables in Word and HTML exports, and the logic, lookup, array, statistics, and financial functions.
+The Word-level text, Excel-level table, and code studio foundations are on the beta branch behind flags that are off. The text work so far adds a Format pane with every font and paragraph field, a ruler for indents and tab stops, a language and a direction for each passage, and comments and suggested changes.
+
+The table work so far adds a cell format bar, Format cells (Ctrl+1), cell styles, table looks, the format painter, spreadsheet keys, merge, unmerge, and split cell, and conditional formatting. It adds a fill handle with series, row edges that fit on a double click, touch handles, and pen borders. Copy and paste with Excel and Google Sheets keeps formulas and formats, with Paste special. Excel exports keep formulas, styles, and sheet settings, and TSV export joins CSV. Tables of more than 2,000 rows draw only the rows in view. The logic, lookup, array, statistics, and financial functions are in.
 
 The code studio work so far adds the Code studio window, with Python, JavaScript, TypeScript, SQL, Lua, C, and C++ runs. It has a Tests panel, error detection as you type, quick fixes, plain explanations of errors, and completion without a model. Speed budgets are checked every night. Sync can merge a page by block once a block type has a merger.
 
@@ -67,7 +69,7 @@ The code studio work so far adds the Code studio window, with Python, JavaScript
 - [Ink and palm rejection](docs/help/ink-and-palm-rejection.md): pens, a highlighter, erasers, the lasso, shapes, and gestures, with your palm resting on the screen.
 - [My handwriting](docs/help/my-handwriting.md): typed text and math written in your own hand, learned from a calibration page.
 - [Paper and page views](docs/help/paper-and-page-views.md): flow, paginated, and canvas pages, with lined, grid, and dot paper; slides, print, and PDF.
-- [Tables and charts](docs/help/tables-and-charts.md): smart tables with views, Excel-style formulas (logic, lookup, arrays, statistics, and finance), cell formats (colors, borders, number formats), conditional formatting, spreadsheet keys with Grid and Edit modes (a setting chooses them for new tables), and charts that update with them. A formula bar has a name box, autocomplete, argument hints, colored references, and error explanations. It also opens Insert function, the Name manager, and Evaluate formula.
+- [Tables and charts](docs/help/tables-and-charts.md): smart tables with views, Excel-style formulas, cell formats, Format cells (Ctrl+1), cell styles, conditional formatting, data validation, spreadsheet keys, a fill handle, pen borders, and charts that update with them. Copy and paste with Excel, Google Sheets, and LibreOffice keeps formulas, formats, and merged cells, and Paste special (Ctrl+Alt+V) pastes parts. Excel exports keep formulas, styles, and sheet settings. A formula bar has a name box, autocomplete, argument hints, and error explanations. Tables of more than 2,000 rows open and scroll fast.
 - [Language and spelling](docs/help/language-and-spelling.md): American English by default, and one choice for every part that reads or writes words. A passage can have its own language, or skip spell check.
 
 ### Organize and find

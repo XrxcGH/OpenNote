@@ -108,6 +108,8 @@ export const interop = {
       xlsxHint: 'One .xlsx file with a sheet for each table. Text outside tables is left out.',
       csv: 'Tables as CSV files',
       csvHint: 'One .csv file for a table, or a folder of them. Text outside tables is left out.',
+      tsv: 'Tables as TSV files',
+      tsvHint: 'One tab-separated .tsv file for a table, or a folder of them. Text outside tables is left out.',
     },
     removePersonal: 'Remove personal information',
     removePersonalHelp: 'Leaves the names of authors and the dates out of comments, suggestions, and the file details.',

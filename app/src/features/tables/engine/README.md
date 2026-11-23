@@ -27,6 +27,7 @@ This folder holds the core of Phase 7: typed tables, formulas, quick math, pasti
 | `quickMath.ts`                       | The "2.5*9.81=" evaluator, on the same engine                                                               |
 | `paste/`                             | Delimited text, Excel, Sheets, and LibreOffice tables, and type inference                                   |
 | `chart/`                             | The chart spec builder, palette slots, and two-click defaults                                               |
+| `arrays/`, `graph/`, `worker/`       | Spill ranges, the dependency graph with cycle detection, and the recalculation worker with its client       |
 
 ## How the pieces fit
 
@@ -48,6 +49,14 @@ A calculated column runs one formula on every row. `[Price]*[Qty]` reads this ro
 ## Function reference
 
 Each function is an `FnSpec2` in its family file under `formula/fn/`, with a signature and example in `meta`. Its description strings are in `app/src/strings/en/fn<Family>.ts`. `docs/help/table-functions.md` is generated from them. After adding a function, run `UPDATE_DOCS=1 npx vitest run --config app/vitest.config.ts --project unit app/src/features/tables/engine/formula/fn/functionReference.test.ts`. The test fails when the page is out of date.
+
+## Beyond the engine
+
+The grid features sit beside this folder, not inside it.
+
+- `../sheet/` holds the sheet model and its layers: `conditional/` (rules and what they draw), `validation/` (rules, checks, and lists), and `structure/` (rows, columns, and names).
+- `../ui/` holds the dialogs and bars: the formula bar, Insert function, the Name manager, Evaluate formula, the toolbar, the rule manager, and the validation dialog.
+- `../keys/` holds the spreadsheet key model (ADR 0063).
 
 ## Pasting
 

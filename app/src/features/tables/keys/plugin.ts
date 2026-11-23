@@ -12,6 +12,8 @@ import type { EditorState, Transaction } from '@tiptap/pm/state';
 import { CellSelection } from '@tiptap/pm/tables';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import type { EditorView } from '@tiptap/pm/view';
+import { onlyInsideCells } from '../../../editor/table/cellEdits';
+import { drawnRows, isVirtualDoc } from '../../page';
 import { clearActiveSheet, setActiveSheet } from './active';
 import type { SheetRunner } from './active';
 import { cellsIn, runSheetCommand, shownText, typeOver } from './actions';
@@ -25,15 +27,17 @@ import {
   cellOfPos,
   cellsOf,
   contentOf,
+  hasMerged,
   gridOf,
   hasHeader,
   keysOn,
   modeOf,
   placedAt,
+  rowCells,
   selectCells,
   sheetKeysKey,
 } from './state';
-import type { SheetKeysOptions, SheetMeta, SheetState } from './state';
+import type { Placed, SheetKeysOptions, SheetMeta, SheetState } from './state';
 import styles from './keys.module.css';
 
 export { activeCell, gridOf, modeOf, sheetKeysKey, textsOf } from './state';
@@ -42,41 +46,90 @@ export { dateText, runSheetCommand, setSheetKeys, timeText } from './actions';
 
 // ---- Decorations and announcements
 
+/** A cell number decoration's spec: the row it numbers. */
+interface IndexSpec {
+  readonly indexRow: number;
+}
+
 /**
- * aria-rowindex and aria-colindex on every cell, counted from 1. A merged cell takes its top left slot's. With
- * spreadsheet keys each cell is a "gridcell" or a "columnheader" of the grid that markGrid makes the table, so Grid
- * mode's aria-selected is allowed.
+ * aria-rowindex and aria-colindex on every cell of `rows`, counted from 1. A merged cell takes its top left slot's.
+ * With spreadsheet keys each cell is a "gridcell" or a "columnheader" of the grid that markGrid makes the table, so
+ * Grid mode's aria-selected is allowed. Without the whole grid (`all`), each row is read on its own.
  */
-function indexesOf(doc: PMNode, spreadsheet: boolean): DecorationSet {
+function indexDecorations(
+  doc: PMNode,
+  spreadsheet: boolean,
+  rows: readonly number[],
+  all: readonly (readonly Placed[])[] | null,
+): Decoration[] {
   const decorations: Decoration[] = [];
   const done = new Set<number>();
-  cellsOf(doc).forEach((row, r) =>
-    row.forEach((cell, c) => {
+  rows.forEach((r) =>
+    (all ? all[r] : rowCells(doc, r))?.forEach((cell, c) => {
       if (done.has(cell.pos)) return;
       done.add(cell.pos);
       const attrs: Record<string, string> = { 'aria-rowindex': String(r + 1), 'aria-colindex': String(c + 1) };
       if (spreadsheet) attrs.role = cell.node.type.name === 'tableHeader' ? 'columnheader' : 'gridcell';
-      decorations.push(Decoration.node(cell.pos, cell.pos + cell.node.nodeSize, attrs));
+      const spec: IndexSpec = { indexRow: r };
+      decorations.push(Decoration.node(cell.pos, cell.pos + cell.node.nodeSize, attrs, spec));
     }),
   );
-  return DecorationSet.create(doc, decorations);
+  return decorations;
+}
+
+/** The cell numbers on every cell, or on the rows `only`: a long table never builds its whole grid for one screen. */
+function indexesOf(doc: PMNode, spreadsheet: boolean, only?: readonly number[]): DecorationSet {
+  const all = only ? null : cellsOf(doc);
+  return DecorationSet.create(doc, indexDecorations(doc, spreadsheet, only ?? all!.map((_, r) => r), all));
+}
+
+interface DrawnIndexes {
+  readonly spreadsheet: boolean;
+  /** The drawn rows the set numbers, or null for every row. */
+  readonly rows: readonly number[] | null;
+  readonly key: string;
+  readonly set: DecorationSet;
+}
+
+/**
+ * The cell numbers of a virtual table (more than 2,000 rows): only on the rows it draws, made once per document. A
+ * change inside one cell maps the last document's numbers (mapDrawnIndexes). A window move numbers only the rows
+ * that come, and drops the rows that go (movedIndexes). Making a whole set walks every row of the table.
+ */
+const drawnIndexes = new WeakMap<PMNode, DrawnIndexes>();
+
+/** Carries a virtual table's cell numbers through a change inside one cell, so a key never makes them again. */
+function mapDrawnIndexes(tr: Transaction): void {
+  if (!tr.docChanged || drawnIndexes.has(tr.doc)) return;
+  const known = drawnIndexes.get(tr.before);
+  if (known && insideOneCell(tr)) drawnIndexes.set(tr.doc, { ...known, set: known.set.map(tr.mapping, tr.doc) });
+}
+
+/** The cell numbers after the window moved from `known.rows` to `rows`, or null when they must be made again. */
+function movedIndexes(doc: PMNode, known: DrawnIndexes, spreadsheet: boolean, rows: readonly number[]) {
+  if (known.spreadsheet !== spreadsheet || !known.rows || hasMerged(doc)) return null;
+  const was = new Set(known.rows);
+  const now = new Set(rows);
+  const gone = known.set.find(undefined, undefined, (spec: Partial<IndexSpec>) => !now.has(spec.indexRow ?? -1));
+  const come = rows.filter((r) => !was.has(r));
+  return known.set.remove(gone).add(doc, indexDecorations(doc, spreadsheet, come, null));
+}
+
+function indexesFor(state: EditorState, sheet: SheetState): DecorationSet {
+  if (!isVirtualDoc(state.doc)) return sheet.indexes;
+  const rows = drawnRows(state);
+  const key = `${sheet.spreadsheet}:${rows ? rows.join(',') : 'all'}`;
+  const known = drawnIndexes.get(state.doc);
+  if (known?.key === key) return known.set;
+  const set =
+    (known && rows && movedIndexes(state.doc, known, sheet.spreadsheet, rows)) ??
+    indexesOf(state.doc, sheet.spreadsheet, rows ?? undefined);
+  drawnIndexes.set(state.doc, { spreadsheet: sheet.spreadsheet, rows, key, set });
+  return set;
 }
 
 /** Whether each step changed only the inside of one cell, so every cell keeps its row and column. */
-export function insideOneCell(tr: Transaction): boolean {
-  return tr.steps.every((step, i) => {
-    const doc = tr.docs[i];
-    let inside = true;
-    step.getMap().forEach((from, to) => {
-      if (!inside) return;
-      const $from = doc.resolve(from);
-      const $to = doc.resolve(to);
-      // A cell's content sits at depth 3: the document, the table, the row, then the cell.
-      inside = $from.depth >= 3 && $to.depth >= 3 && $from.start(3) === $to.start(3);
-    });
-    return inside;
-  });
-}
+export const insideOneCell = (tr: Transaction): boolean => onlyInsideCells(tr);
 
 /** What a screen reader hears when the active cell or the range changes. */
 function speech(view: EditorView, options: SheetKeysOptions): string | null {
@@ -113,7 +166,11 @@ function applyMeta(tr: Transaction, value: SheetState, state: EditorState): Shee
   if (meta?.spreadsheet !== undefined) next.spreadsheet = meta.spreadsheet;
   if (meta?.focused !== undefined) next.focused = meta.focused;
   // Typing maps the cells' numbers through the change, so a keystroke costs the same in a big table as in a small one.
-  if (next.spreadsheet !== value.spreadsheet || (tr.docChanged && !insideOneCell(tr)))
+  // A virtual table numbers only the rows it draws, when the editor draws them (indexesFor).
+  if (isVirtualDoc(state.doc)) {
+    next.indexes = DecorationSet.empty;
+    mapDrawnIndexes(tr);
+  } else if (next.spreadsheet !== value.spreadsheet || (tr.docChanged && !insideOneCell(tr)))
     next.indexes = indexesOf(state.doc, next.spreadsheet);
   else if (tr.docChanged) next.indexes = value.indexes.map(tr.mapping, tr.doc);
   if (meta && 'active' in meta) next.active = meta.active ?? null;
@@ -144,18 +201,28 @@ function applyMeta(tr: Transaction, value: SheetState, state: EditorState): Shee
 function decorationsOf(state: EditorState): DecorationSet | null {
   const sheet = sheetKeysKey.getState(state);
   if (!sheet) return null;
+  const indexes = indexesFor(state, sheet);
   const mode = modeOf(state);
-  if (!mode) return sheet.indexes;
+  if (!mode) return indexes;
   const extra: Decoration[] = [];
   const mark = (at: GridCell, attrs: Record<string, string>) => {
     const cell = placedAt(state.doc, at);
     if (cell) extra.push(Decoration.node(cell.pos, cell.pos + cell.node.nodeSize, attrs));
   };
   const g = gridOf(state);
-  if (g && sheet.focused) for (const at of cellsIn(g.box)) mark(at, { 'aria-selected': 'true' });
+  if (g && sheet.focused) {
+    // A long table marks only the rows it draws: a range of thousands of rows stays as fast as one screen of them.
+    const drawn = drawnRows(state);
+    if (!drawn) for (const at of cellsIn(g.box)) mark(at, { 'aria-selected': 'true' });
+    else
+      for (const row of drawn)
+        if (row >= g.box.top && row <= g.box.bottom)
+          for (let column = g.box.left; column <= g.box.right; column += 1)
+            mark({ row, column }, { 'aria-selected': 'true' });
+  }
   const active = activeCell(state);
   if (active) mark(active, { class: mode === 'grid' ? styles.active : styles.editing });
-  return sheet.indexes.add(state.doc, extra);
+  return indexes.add(state.doc, extra);
 }
 
 /** Notes when the editor gains or loses focus, so a cell isn't announced as selected while focus is elsewhere. */
@@ -238,7 +305,7 @@ export function sheetKeysPlugin(options: SheetKeysOptions): Plugin<SheetState> {
         spreadsheet: options.spreadsheet,
         entry: null,
         active: null,
-        indexes: indexesOf(state.doc, options.spreadsheet),
+        indexes: isVirtualDoc(state.doc) ? DecorationSet.empty : indexesOf(state.doc, options.spreadsheet),
         focused: false,
       }),
       apply: (tr, value, _old, state) => applyMeta(tr, value, state),

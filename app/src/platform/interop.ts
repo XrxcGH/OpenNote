@@ -106,7 +106,7 @@ export interface ImportResult {
 }
 
 export type ExportFormat =
-  'markdown' | 'html' | 'htmlSingle' | 'docx' | 'pdf' | 'pptx' | 'xlsx' | 'csv' | 'latex' | 'share';
+  'markdown' | 'html' | 'htmlSingle' | 'docx' | 'pdf' | 'pptx' | 'xlsx' | 'csv' | 'tsv' | 'latex' | 'share';
 export type ExportScope = 'notebook' | 'section' | 'page';
 
 /** A source of the citation library with its BibTeX entry, for a LaTeX export's `\cite` commands and `.bib` file. */
