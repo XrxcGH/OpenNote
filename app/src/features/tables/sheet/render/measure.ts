@@ -10,11 +10,11 @@
 /** The properties measured for one cell: custom properties (`--cell-...`) and one data attribute. */
 export type CellProps = Record<string, string>;
 
-/** Measured cells by row position in the table, then by cell position in the row. A measured row has an entry. */
+/** Measured cells by row number, then by cell position in the row. A measured row has an entry. */
 export type Measured = Map<number, Map<number, CellProps>>;
 
 export interface MeasureOptions {
-  /** Row positions to measure (the frozen rows are always included); every row when unset. */
+  /** Row numbers to measure (the frozen rows are always included); every drawn row when unset. */
   rows?: ReadonlySet<number>;
   /** Write the properties to the cells. The default is on, for a table nobody else manages. */
   apply?: boolean;
@@ -32,7 +32,13 @@ export function measureTable(table: HTMLElement, options: MeasureOptions = {}): 
     '--cell-sticky-left',
     'data-fill-text',
   ];
-  const all = Array.from(table.querySelectorAll('tr'));
+  // The drawn rows by row number. A long table draws only some rows (row virtualization); each drawn row then says
+  // its number in aria-rowindex, counted from 1, and the array has holes for the rows not drawn.
+  const all: HTMLTableRowElement[] = [];
+  Array.from(table.querySelectorAll('tr')).forEach((tr, k) => {
+    const number = Number(tr.getAttribute('aria-rowindex'));
+    all[Number.isInteger(number) && number > 0 ? number - 1 : k] = tr;
+  });
   const lists = new Map<number, HTMLElement[]>();
   const listAt = (i: number): HTMLElement[] => {
     let list = lists.get(i);
