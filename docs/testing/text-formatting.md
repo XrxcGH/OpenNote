@@ -1,6 +1,10 @@
 # Text formatting: NVDA and Narrator checklist
 
-A person runs this checklist before each beta that changes text formatting, on Windows 11 with a mouse put away. The automated runs cover what they can: `npm run test:e2e:text` (axe over the Home tab, the Format pane, the font picker, the ruler, the notes area, the comment and suggestion marks, and the Header and footer dialog, and the forced-colors check), `npm run perf:typing` (the formatted 20-page note, with and without footnotes, comments, and suggestions), and the component tests of each control. The nightly run sets `OPENNOTE_TYPING_GATE=1` on `perf:typing`, so the formatted note fails the night at a painted p95 over 16 ms. The export-then-import flow is tested in `crates/interop/tests/word_round_trip.rs`. A native tauri-driver spec that drives it through the window is deferred to a later release. This list covers what needs a person and a real screen reader. File an issue for every item that fails, and record each run in the table at the end.
+A person runs this checklist before each beta that changes text formatting, on Windows 11 with a mouse put away. The automated runs cover what they can. `npm run test:e2e:text` runs axe over these surfaces and the forced-colors check. The surfaces are the Home tab, the Format pane, the font picker, the ruler, the notes area, the comment and suggestion marks, and the Header and footer dialog.
+
+`npm run perf:typing` times the formatted 20-page note, with and without footnotes, comments, and suggestions. The component tests cover each control. The nightly run sets `OPENNOTE_TYPING_GATE=1` on `perf:typing`, so the formatted note fails the night at a painted p95 over 16 ms.
+
+The export-then-import flow is tested in `crates/interop/tests/word_round_trip.rs`. A native tauri-driver spec that drives it through the window is deferred to a later release. This list covers what needs a person and a real screen reader. File an issue for every item that fails, and record each run in the table at the end.
 
 Turn the text flags on first (Settings, Experimental), or use a build where they are on.
 
@@ -49,7 +53,7 @@ Turn the text flags on first (Settings, Experimental), or use a build where they
 - [ ] The notes area is named "Notes". Each note is read with its number and its text, and a note with no text says so.
 - [ ] Review, Show comments opens the Comments pane. Each comment is read with its author, its text, and whether it is resolved. Reply, Resolve, and Delete are reachable by keyboard.
 - [ ] A suggested insertion or deletion is announced as such when the caret enters it, and Accept and Reject say how many changes they decided.
-- [ ] Layout, Header and footer opens a dialog named "Header, footer, and page numbers". Each field says its label, and the number format list reads each choice.
+- [ ] The Header and footer command on the Layout tab opens a dialog named "Header, footer, and page numbers". Each field says its label, and the number format list reads each choice.
 
 ## Text in the page
 
