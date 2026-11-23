@@ -268,6 +268,13 @@ export const CONDITIONS: readonly Condition[] = [
     prepare: inNote('middle'),
   },
   {
+    id: 'formatted.reviewed.middle',
+    description: 'The formatted 20-page note with footnotes, comments, and suggestions, caret in the middle',
+    fixture: 'twentyPageReviewed',
+    flags: TEXT_FLAGS,
+    prepare: inNote('middle'),
+  },
+  {
     id: 'outline',
     description: '20-page outline (about 1,200 items, 4 levels), middle',
     fixture: 'twentyPageOutline',
