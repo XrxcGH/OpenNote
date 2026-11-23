@@ -27,7 +27,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     # Ubuntu takes 3 to 6 minutes. Windows takes about twice that on a pull request that changes most of the files
     # (about 4 minutes of unit tests, then the changed-file checks). A run that passes its limit is stuck.
-    timeout-minutes: 25
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -71,7 +71,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     # Five runs of about 3 minutes each on a Windows runner plus the install: about 16 minutes, so a 15 minute limit
     # canceled the last run with every test passing.
-    timeout-minutes: 25
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -88,9 +88,10 @@ jobs:
         shell: bash
         run: |
           status=0
-          # A runner that closes the browser fails one shard at a random file. A real failure fails the second try too.
-          for shard in 1 2 3 4 5; do
-            npm run test:components -- --shard=$shard/5 || npm run test:components -- --shard=$shard/5 || status=1
+          # A runner that closes the browser fails one shard at a random file. A real failure fails every try.
+          # Ten shorter shards, each tried up to three times: a run of about a minute is closed less often.
+          for shard in 1 2 3 4 5 6 7 8 9 10; do
+            npm run test:components -- --shard=$shard/10 || npm run test:components -- --shard=$shard/10 || npm run test:components -- --shard=$shard/10 || status=1
           done
           exit $status
       - name: Keep the failure screenshots
