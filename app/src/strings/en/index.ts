@@ -102,6 +102,7 @@ import { fnLookup } from './fnLookup';
 import { fnMath } from './fnMath';
 import { fnText } from './fnText';
 import { sheetKeys } from './sheetKeys';
+import { sheetPointer } from './sheetPointer';
 import { sheetFormula } from './sheetFormula';
 import { sheetToolbar } from './sheetToolbar';
 import { textPaste } from './textPaste';
@@ -244,6 +245,7 @@ export const en = {
   fnMath,
   fnText,
   sheetKeys,
+  sheetPointer,
   sheetFormula,
   sheetToolbar,
   textPaste,

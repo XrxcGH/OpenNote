@@ -37,6 +37,31 @@ const TAP_SLOP = 4;
 /** A held press that moves farther than this is a drag, not a long press. */
 const HOLD_SLOP = 8;
 
+/** How long after a long press the click raised by lifting the finger is swallowed, in ms. */
+const RELEASE_CLICK_MS = 600;
+
+/**
+ * The lift that ends a long press raises a click on whatever is under the finger, and the menu it opened can be right
+ * there (a tall menu is clamped over the finger). That click must not choose a menu item, so the next one is dropped.
+ */
+function swallowReleaseClick(doc: Document): void {
+  const win = doc.defaultView;
+  if (!win) return;
+  const stop = () => {
+    clearTimeout(timer);
+    doc.removeEventListener('click', onClick, true);
+    doc.removeEventListener('pointerdown', stop, true);
+  };
+  const onClick = (event: MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    stop();
+  };
+  const timer = win.setTimeout(stop, RELEASE_CLICK_MS);
+  doc.addEventListener('click', onClick, true);
+  doc.addEventListener('pointerdown', stop, true);
+}
+
 export function createSelectTool(pool: EditorPool, options: SelectToolOptions): PointerToolDef {
   let empty: { x: number; y: number } | null = null;
   let hold: { id: number; x: number; y: number; timer: ReturnType<typeof setTimeout> } | null = null;
@@ -56,6 +81,7 @@ export function createSelectTool(pool: EditorPool, options: SelectToolOptions): 
       hold = null;
       held = true;
       requestContextMenu(doc, x, y, target);
+      swallowReleaseClick(doc);
     }, tokens.interaction.longPressMs);
     hold = { id, x, y, timer };
   };

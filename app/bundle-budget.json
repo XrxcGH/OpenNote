@@ -129,6 +129,7 @@
     "@observablehq/plot": 135,
     "features/math": 185,
     "features/tables/keys/attach.ts": 118,
+    "features/tables/pointer/plugin.ts": 132,
     "features/tables": 86,
     "features/search/links": 195,
     "features/search/lineTags": 160,

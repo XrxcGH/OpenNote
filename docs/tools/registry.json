@@ -7500,6 +7500,34 @@
       "flag": "tables.sheetWrites"
     },
     {
+      "id": "table.sheet.fillSeriesDown",
+      "title": "Fill series down",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.sheet.fillSeriesRight",
+      "title": "Fill series right",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.sheet.drawBorder",
+      "title": "Draw border",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.sheet.eraseBorder",
+      "title": "Erase border",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
       "id": "table.insertFunction",
       "title": "Insert function",
       "category": "table",

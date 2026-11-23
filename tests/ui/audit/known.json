@@ -275,6 +275,7 @@
   "block | box-overlap | span.group > div.box > input[role=combobox].field x div.band > p.changed",
   "block | box-overlap | span.mathInline > div.holderInline > button.toggle x div[role=toolbar].bar > button.button",
   "block | document-scroll | ",
+  "block | offscreen | span > span.wrapper > button[data-tool].iconButton",
   "block | target-gap | div.root > div[role=toolbar].bar > button.button x div.holderInline > button.toggle",
   "block | target-gap | span.group > div.box > input[role=combobox].field x div.box > input[role=combobox].field",
   "block | text-overlap | div > button.tape > span x th > p",

@@ -39,4 +39,12 @@ export const SHEET_COMMAND_TEXT: Readonly<Record<string, string>> = {
     'In Edit mode, switches between Enter mode, where arrows move to the next cell, and Edit mode.',
   'table.sheet.documentKeys':
     'Switches a table between spreadsheet keys and document keys, where Enter starts a new line.',
+  'table.sheet.drawBorder':
+    'Turns on a pen or mouse that draws cell borders along the lines of the table you drag over. Escape stops it.',
+  'table.sheet.eraseBorder':
+    'Turns on a pen or mouse that erases cell borders along the lines of the table you drag over. Escape stops it.',
+  'table.sheet.fillSeriesDown':
+    'Continues the first row of the selected cells down through the rest, as a series of numbers, dates, or names.',
+  'table.sheet.fillSeriesRight':
+    'Continues the first column of the selected cells to the right through the rest, as a series of numbers, dates, or names.',
 };

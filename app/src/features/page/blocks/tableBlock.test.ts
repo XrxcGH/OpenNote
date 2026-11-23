@@ -46,7 +46,10 @@ function tableData(): TableData {
   return data;
 }
 
-async function tablePage(data: TableData = tableData()): Promise<{ page: PageHarness; editor: Editor }> {
+async function tablePage(
+  data: TableData = tableData(),
+  flags: Record<string, boolean> = {},
+): Promise<{ page: PageHarness; editor: Editor }> {
   const fixture = textPageFixture('Before the table');
   const at = fixture.page.blocks[0].created;
   const block: BlockJson = {
@@ -58,7 +61,7 @@ async function tablePage(data: TableData = tableData()): Promise<{ page: PageHar
     data: data as unknown as Record<string, unknown>,
   };
   fixture.page.blocks.push(block);
-  const page = await renderPage({ fixture, flags: { 'page.tables': true } });
+  const page = await renderPage({ fixture, flags: { 'page.tables': true, ...flags } });
   await whenViewReady(page.wrapper(TABLE));
   const editor = page.mounted.pool.mount(TABLE, { kind: 'start' }, 'target');
   if (!editor) throw new Error('The table has no editor.');
@@ -283,5 +286,16 @@ describe('table extras', () => {
     } finally {
       stop.forEach((undo) => undo());
     }
+  });
+});
+
+describe('table size edges and the structure flag', () => {
+  it('has no row edges while tables.structureUi is off', async () => {
+    const { page } = await tablePage(tableData(), { 'tables.structureUi': false });
+    expect(page.wrapper(TABLE).querySelectorAll('[data-row]').length).toBe(0);
+  });
+  it('has the row edge while tables.structureUi is on', async () => {
+    const { page } = await tablePage(tableData(), { 'tables.structureUi': true });
+    expect(page.wrapper(TABLE).querySelectorAll('[data-row]').length).toBe(1);
   });
 });
