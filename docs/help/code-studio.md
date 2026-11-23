@@ -15,7 +15,7 @@ The Code studio is a tool window for writing, running, and testing code projects
 
 - The toolbar picks the language and the runtime, and has Run, Stop, Restart, Run tests, Snippets and examples, New project, and Settings. A runtime that needs a pack has a Get button.
 - Files show as tabs, or as a file tree when the window is wide. A dot marks a file the page has not saved yet.
-- The bottom panel has the Console, Problems, Tests, and Files.
+- The bottom panel has the Console, Problems, Tests, Debug, and Files written. Debug is a placeholder until the debugger lands (see Debugging).
 - The status bar shows the line and column, the runtime, and how many errors and warnings there are.
 
 ## Console
