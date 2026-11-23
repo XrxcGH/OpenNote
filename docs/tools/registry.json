@@ -1161,6 +1161,13 @@
       "flag": "math.diagrams"
     },
     {
+      "id": "code.openBlockInStudio",
+      "title": "Open code block in Code studio",
+      "category": "insert",
+      "keys": [],
+      "flag": "code.studio"
+    },
+    {
       "id": "insert.codeCell",
       "title": "Insert code cell",
       "category": "insert",

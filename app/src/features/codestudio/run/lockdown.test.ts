@@ -1,13 +1,50 @@
-// Lockdown parity with the code cells' sandbox: every name the code cells' lockdown probe checks is on the run
+// Lockdown parity with the code cells' sandbox: every name the code cells' old lockdown probe checked is on the run
 // lockdown's FORBIDDEN list, and no allowance can keep one. run.test.tsx checks the same in a real worker.
 
-import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { ALLOWANCES } from './adapters';
 import { FORBIDDEN, keptNames } from './lockdown';
 
-const probe = readFileSync(new URL('../../codecells/sandbox/lockdownProbe.ts', import.meta.url), 'utf8');
-const NAMES = [.../const NAMES = \[([^\]]*)\]/.exec(probe)![1]!.matchAll(/'([^']+)'/g)].map((match) => match[1]!);
+// The names the code cells' own lockdown probe checked before code cells moved to the run core (the probe went with
+// the old sandbox folder).
+const NAMES = [
+  'fetch',
+  'XMLHttpRequest',
+  'WebSocket',
+  'WebTransport',
+  'EventSource',
+  'importScripts',
+  'Worker',
+  'SharedWorker',
+  'indexedDB',
+  'caches',
+  'BroadcastChannel',
+  'navigator',
+  'location',
+  'postMessage',
+  'setTimeout',
+  'setInterval',
+  'eval',
+  'Function',
+  'self',
+  'close',
+  'Request',
+  'Response',
+  'Blob',
+  'FileReader',
+  'FileReaderSync',
+  'URL',
+  'OffscreenCanvas',
+  'Notification',
+  'addEventListener',
+  'MessageChannel',
+  'queueMicrotask',
+  'structuredClone',
+  'reportError',
+  'console',
+  'origin',
+  'onmessage',
+];
 
 describe('lockdown parity', () => {
   it('forbids every name in the code cells’ lockdown probe', () => {
