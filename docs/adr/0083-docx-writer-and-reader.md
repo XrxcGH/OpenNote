@@ -1,6 +1,6 @@
 # ADR 0083: Keep the hand-written DOCX writer and reader, and extend them to full formatting fidelity
 
-- Status: Accepted (writer in Beta 10, reader with the Word import lane).
+- Status: Accepted
 - Date: 2026-11-04
 
 ## Context

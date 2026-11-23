@@ -123,6 +123,15 @@ The app registers 1187 commands and 48 tool windows. 24 of the windows are subje
 - **Code projects.** A page block that holds files and tests, with Run, Open in Code studio, zip export and import, and a fallback mode when the native runtime is missing.
 - **Run core and runtime packs.** Runs code in sandboxed workers with lockdown and limits.
 
+#### Beta 12 additions
+
+- **Language runtimes.** Python (quick on MicroPython, full on a Pyodide pack), JavaScript and TypeScript on QuickJS, SQL on SQLite, Lua, and C and C++ through clang.
+- **Error help.** Live error checks, completion without a model, quick fixes with Ctrl+., and plain-language error explanations.
+- **Code tests.** Test cases with judge-style comparisons, framework tests, and a line diff of expected and actual output.
+- **Code cells.** Code cells use the studio editor and run core, support more languages, open in the Code studio as a project, and can carry tests.
+- **Page layout.** A Layout tab with page and column breaks, headers and footers, page number formats, columns, line numbers, and vertical text.
+- **Block merge on sync.** When two devices edit one page, each block type has its own merger and a conflict view.
+
 ### Tool windows
 
 #### Code studio

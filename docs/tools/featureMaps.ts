@@ -95,6 +95,7 @@ export const SECTION_CATEGORY: Readonly<Record<string, Category>> = {
   'Review, sync, and shell polish': 'Writing and typing',
   'Appearance and layout': 'Settings and accessibility',
   'Beta 11 additions': 'Writing and typing',
+  'Beta 12 additions': 'Writing and typing',
 };
 
 const named = (names: string) => new RegExp(`^- \\*\\*(${names})\\.\\*\\*`);
