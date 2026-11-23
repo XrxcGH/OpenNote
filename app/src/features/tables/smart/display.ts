@@ -10,6 +10,7 @@ import { CellSelection } from '@tiptap/pm/tables';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
 import type { EditorState } from '@tiptap/pm/state';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
+import type { EditorView } from '@tiptap/pm/view';
 import { t } from '../../../strings/t';
 import type { ErrorCode, Locale } from '../engine';
 import type { SmartData } from './data';
@@ -189,6 +190,31 @@ export const displayState = new PluginKey<DisplayState>('opennote.smartDisplaySt
 export const decorationsOf = (state: EditorState): DecorationSet =>
   displayState.getState(state)?.set ?? DecorationSet.empty;
 
+/** The views waiting for focus to leave their table block. */
+const waiting = new WeakSet<EditorView>();
+
+/**
+ * Focus that moves from the editor to the table's own tools (the toolbar, the format bar, the formula bar) keeps the
+ * edited cell's typed text until focus leaves the table block. Otherwise the cell's row shrinks as a tool is pressed,
+ * and tools placed below the table move away from the pointer before the click lands. Returns true when it waits.
+ */
+function keepWhileInBlock(view: EditorView, event: Event): boolean {
+  const block = view.dom.closest<HTMLElement>('[data-block-id]');
+  const to = (event as FocusEvent).relatedTarget;
+  if (!block || !(to instanceof Node) || !block.contains(to)) return false;
+  if (waiting.has(view)) return true;
+  waiting.add(view);
+  const leave = (out: FocusEvent) => {
+    const next = out.relatedTarget;
+    if (next instanceof Node && block.contains(next)) return;
+    block.removeEventListener('focusout', leave);
+    waiting.delete(view);
+    if (!view.isDestroyed && !view.hasFocus()) view.dispatch(view.state.tr.setMeta(displayState, false));
+  };
+  block.addEventListener('focusout', leave);
+  return true;
+}
+
 /** The plugin. The cell being edited always shows its typed text. */
 export function displayPlugin(): Plugin<DisplayState> {
   return new Plugin<DisplayState>({
@@ -221,7 +247,8 @@ export function displayPlugin(): Plugin<DisplayState> {
           view.dispatch(view.state.tr.setMeta(displayState, true));
           return false;
         },
-        blur(view) {
+        blur(view, event) {
+          if (keepWhileInBlock(view, event)) return false;
           view.dispatch(view.state.tr.setMeta(displayState, false));
           return false;
         },
