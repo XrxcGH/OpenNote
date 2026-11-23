@@ -14,7 +14,7 @@ import { installKeyTimer, percentile, readKeys, recordKeys } from '../../perf/ty
 
 const FIRST_PAINT_MS = 250;
 /**
- * The first paint is not all script: loading the table's code, layout and the compositor do not slow in step with the
+ * The first paint is not all script: loading the table's code, layout, and the compositor do not slow in step with the
  * calibration benchmark. On a runner several times slower than the laptop, the budget gets this much extra room.
  */
 const SLOW_RUNNER_PAINT_ALLOWANCE = 1.25;
