@@ -94,6 +94,7 @@ export const SECTION_CATEGORY: Readonly<Record<string, Category>> = {
   'Code studio program foundations': 'Writing and typing',
   'Review, sync, and shell polish': 'Writing and typing',
   'Appearance and layout': 'Settings and accessibility',
+  'Beta 11 additions': 'Writing and typing',
 };
 
 const named = (names: string) => new RegExp(`^- \\*\\*(${names})\\.\\*\\*`);

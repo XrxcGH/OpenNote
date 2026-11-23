@@ -112,6 +112,17 @@ The app registers 1187 commands and 48 tool windows. 24 of the windows are subje
 - **Block-level merge on sync.** When two devices change different blocks of one page, a block type with a merger merges both versions instead of keeping a conflict copy.
 - **Calm shell polish.** Phosphor icons in the command bar, pens back on the bar at 1,280 px, calm pressed and selected states, notebook accent roles, and group dividers.
 
+#### Beta 11 additions
+
+- **Merged cells.** Merge, merge and center, merge across, unmerge, and split a cell.
+- **Data validation and fill.** Validation rules on cells, and a fill handle that continues numbers, dates, and names in a series.
+- **Find with format.** Find and replace by bold, color, font, and other formats, by special characters such as ^p and ^t, and by wildcards or regular expressions with a time limit.
+- **Language and direction.** A Language menu per selection or paragraph, Do not check spelling, and left to right or right to left paragraphs.
+- **Ruler.** A ruler that follows zoom, with indent and tab stop markers.
+- **Code editor.** CodeMirror 6 with folding, multiple carets, search, and zoom.
+- **Code projects.** A page block that holds files and tests, with Run, Open in Code studio, zip export and import, and a fallback mode when the native runtime is missing.
+- **Run core and runtime packs.** Runs code in sandboxed workers with lockdown and limits.
+
 ### Tool windows
 
 #### Code studio

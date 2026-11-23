@@ -918,3 +918,18 @@ Settings, then Appearance, holds these choices. The title bar's moon button swit
 | Size of buttons and rows | Automatic follows the pointer you used last, Standard sizes them for a mouse, and Large gives every pointer touch-size targets.                    | Built, untested by hand |
 | Windows contrast themes  | When a Windows contrast theme is on, Windows sets the colors, and your theme choice applies again when it is off.                                  | Built, untested by hand |
 | Compact layout           | A narrow window or a tablet shows an app bar, one pane at a time, a drawer, and a notebooks rail.                                                  | Built, untested by hand |
+
+## Beta 11 additions
+
+(Beta 11 work on the `beta` branch, behind flags that are off in Stable. The earlier table above already lists merged-cell styling, Format cells, conditional formatting, large tables, the Excel export, and the table clipboard. Help: [Table formatting](help/table-formatting.md), [Table functions](help/table-functions.md), [Text formatting](help/text-formatting.md), and [Code studio](help/code-studio.md).)
+
+| Feature                                  | What it does                                                                                                                | Status                  |
+| ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| Merged cells                             | Merge, merge and center, merge across, unmerge, and split a cell. Arrow keys and Tab treat a merge as one cell.             | Built, untested by hand |
+| Data validation and fill                 | Validation rules on cells, and a fill handle that continues numbers, dates, and names in a series.                          | Built, untested by hand |
+| Find with format | Find and replace by bold, color, font, and other formats, by special characters such as ^p and ^t, and by wildcards or regular expressions with a time limit. | Built, untested by hand |
+| Language and direction                   | A Language menu per selection or paragraph, Do not check spelling, and left to right or right to left paragraphs.           | Built, untested by hand |
+| Ruler                                    | A ruler that follows zoom, with indent and tab stop markers.                                                                | Built, untested by hand |
+| Code editor | CodeMirror 6 with folding, multiple carets, search, and zoom. Tab indents, Ctrl+Tab accepts the autocomplete, and an Accept button and speech input also work. | Built, untested by hand |
+| Code projects | A page block that holds files and tests, with Run, Open in Code studio, zip export and import, and a fallback mode when the native runtime is missing. | Built, untested by hand |
+| Run core and runtime packs | Runs code in sandboxed workers with lockdown and limits. A Code group in Settings, Models, controls runtime pack downloads, which start only after the person agrees. | Built, untested by hand |

@@ -30,8 +30,11 @@ The current build is beta 8. The block below lists Beta 9 to 12 work on the beta
 - Calmer shell polish: Phosphor icons in the command bar, pens back on the bar at 1,280 px, and calm pressed and selected states.
 - Beta 10 text controls: a styles gallery with Ctrl+Shift+S, font pickers backed by the device's fonts, the Home tab controls, HTML and PDF export that keep formatting, and Word import and export at version 2 fidelity.
 - Beta 10 table work: Excel-style text, date, math, lookup, logic, and information functions, a formula bar, a table toolbar, spreadsheet keys, structure commands, and Word, HTML, and Markdown exports that keep cell styles. [Table function reference](docs/help/table-functions.md) lists every function.
+- Beta 11 text work: find and replace by format and by special characters, a language and text direction menu with Do not check spelling, and an end-to-end check of the Find bar and the language menu.
+- Beta 11 table work: merged cells, Format Cells (Ctrl+1) with number format codes, conditional formats, data validation, and the fill handle. Copy and paste keep formats and formulas for Excel and Google Sheets. There are 55 financial functions, the statistical and compatibility functions, and array and LAMBDA helpers. Large tables load rows as they scroll into view. Excel (.xlsx) export keeps formats, names, validation, and conditional rules.
+- Beta 11 code studio work: the code editor on CodeMirror 6, code projects as a page block with save, export, and import, the run core with lockdown and limits, and runtime packs for Python, C and C++, and Ruby that download only after the person agrees. The studio stays off until the `code.studio` flag is on.
 - Help pages for text formatting, table formatting, and the code studio, and an accessibility and performance end-to-end check for the text editor.
-- ADRs 0056 to 0088 record these designs. Records 0056 to 0058, 0060, 0079 to 0085, 0087, and 0088 are Accepted.
+- ADRs 0056 to 0088 record these designs. Records 0056 to 0058, 0060, 0079 to 0085, 0087, and 0088 are Accepted. Record 0069 is Accepted, pending a hand test.
 
 ### Changed
 

@@ -1,6 +1,6 @@
 # ADR 0069: Code projects as a page block, and code cell data version 2
 
-- Status: Proposed
+- Status: Accepted, pending hand test
 - Date: 2026-11-01
 
 ## Context
