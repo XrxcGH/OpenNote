@@ -219,3 +219,33 @@ fn the_example_report_is_clean_and_in_the_real_format() {
         assert!(!json.contains(leak), "{leak:?} in {json}");
     }
 }
+
+/// The code studio's privacy position: a report has fields for versions, positions, and names of the program's own
+/// functions, and none that could hold a page, a block, or a person's code. A new field must be added here on purpose.
+#[test]
+fn the_report_has_no_field_that_could_hold_block_data_or_code() {
+    let json = Report::build(capture(), &environment(), &scrubber()).to_json();
+    let value: serde_json::Value = serde_json::from_str(&json).expect("the report is JSON");
+    let mut keys: Vec<&str> = value
+        .as_object()
+        .expect("an object")
+        .keys()
+        .map(String::as_str)
+        .collect();
+    keys.sort_unstable();
+    assert_eq!(
+        keys,
+        [
+            "app_version",
+            "backtrace",
+            "exception_code",
+            "format",
+            "frames",
+            "kind",
+            "location",
+            "message",
+            "os",
+            "time_unix"
+        ]
+    );
+}

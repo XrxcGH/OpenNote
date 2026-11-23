@@ -48,6 +48,13 @@ export function installCodeEditorTestHooks(): void {
     };
     return true;
   };
+  // Shows one problem on the first `length` characters from `from`, as the studio's checks would.
+  hooks.codeEditorProblem = (from: number, length: number, message: string) => {
+    current?.showProblems([
+      { file: 'main', from, to: from + length, severity: 'error', code: 'test', message, source: 'test' },
+    ]);
+    return current !== null;
+  };
   hooks.codeEditorText = () => current?.getText() ?? null;
   hooks.codeEditorHead = () => current?.view.state.selection.main.head ?? null;
 }

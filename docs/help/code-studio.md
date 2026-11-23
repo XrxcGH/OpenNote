@@ -56,6 +56,46 @@ These keys work while the studio's editor has focus.
 | Ctrl+Shift+M          | Show the Problems panel |
 | Ctrl+.                | Show the quick fixes    |
 
+| Key                                        | What it does                                                          |
+| ------------------------------------------ | --------------------------------------------------------------------- |
+| Tab                                        | Indents. Shift+Tab outdents.                                          |
+| Ctrl+Tab                                   | Accepts the suggestion, or asks for one when none shows.              |
+| Ctrl+Right                                 | Accepts one word of the suggestion.                                   |
+| Escape                                     | Dismisses the suggestion.                                             |
+| Escape, then Tab                           | Leaves the editor. After that, Ctrl+Tab switches page tabs.           |
+| Ctrl+Shift+Tab, Ctrl+PageDown, Ctrl+PageUp | Switch page tabs from inside the editor.                              |
+| Ctrl+M                                     | Makes Tab move focus instead of indenting. Press it again to go back. |
+| Accept button                              | Accepts the suggestion by touch or pen.                               |
+
+Every chord can be changed in Settings, then Shortcuts.
+
+## Suggestions and privacy
+
+- Ghost text shows a gray suggestion at the caret. Ctrl+Tab accepts it. A screen reader says the suggestion and the Accept chord once, then says what was inserted.
+- Suggestions come from your own code and the language's names, made on this device. Your code is never sent anywhere to make them.
+- A code project runs in a sandbox with no network and no access to your files or notes. Crash reports hold code positions only. They never hold block data. They never hold your code.
+
+## What each language can and cannot do
+
+| Language                  | Can                                                  | Cannot                                           |
+| ------------------------- | ---------------------------------------------------- | ------------------------------------------------ |
+| Python (Quick)            | Most of the language, `math`, `random`, `json`, `re` | NumPy, `input`, tests that need the full runtime |
+| Python (Full)             | Full Python, `unittest`, standard library            | Network and files outside the project            |
+| JavaScript and TypeScript | Modern syntax, Jest-style tests                      | Network, `require` of outside packages           |
+| SQL (SQLite)              | Tables, queries, rows checked in tests               | Files outside the project                        |
+| Lua                       | Lua with a JSON reader for test calls                | Files and network                                |
+| C and C++                 | Compile and run with clang, failed asserts in tests  | Network, files outside the project               |
+
+Each run stops at its time and memory limit, which Settings, then Code, sets (up to 60 seconds and 256 MiB).
+
+## Runtime packs
+
+A runtime that is not built in needs a pack. The Get button in the toolbar downloads it once, shows its size first, and keeps it on this device. After that, the language works offline.
+
+## Debugging
+
+Stepping through a run is not in this version yet. Console output, Problems, and Tests are.
+
 ## Examples
 
 Examples come in each language, with tests of their own. Insert one into a project, then run its tests.

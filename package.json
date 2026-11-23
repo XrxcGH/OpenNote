@@ -58,7 +58,7 @@
     "extensions:build": "node extensions/build.mjs",
     "test:hardware": "node --test tests/hardware/kit.test.ts",
     "test:soak": "node --test tests/soak/plan.test.ts",
-    "test:nvda": "node --test tests/nvda/checklist.test.ts",
+    "test:nvda": "node --test tests/nvda/checklist.test.ts tests/nvda/codeStudioPhrases.test.ts",
     "nvda": "npm run app:build:test && playwright test --config tests/nvda/playwright.config.ts",
     "soak": "npm run app:build:test && playwright test --config tests/soak/playwright.config.ts",
     "hardware": "node tests/hardware/kit.ts"
