@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { test } from 'node:test';
 
 const read = (path: string): string => readFileSync(new URL(`../../${path}`, import.meta.url), 'utf8');
@@ -17,4 +17,13 @@ test('import and export has Word and paste text formatting sections', () => {
   const page = read('docs/help/import-and-export.md');
   assert.ok(page.includes('### Word files and text formatting'));
   assert.ok(page.includes('### Paste and text formatting'));
+});
+
+test('every help page is linked from the help index', () => {
+  const index = read('docs/help/README.md');
+  const pages = readdirSync(new URL('../../docs/help/', import.meta.url)).filter(
+    (name) => name.endsWith('.md') && name !== 'README.md',
+  );
+  const unlinked = pages.filter((name) => !index.includes(`(${name}`));
+  assert.deepEqual(unlinked, []);
 });

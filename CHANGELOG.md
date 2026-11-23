@@ -34,7 +34,7 @@ The current build is beta 8. The block below lists Beta 9 to 12 work on the beta
 - Beta 11 table work: merged cells, Format Cells (Ctrl+1) with number format codes, conditional formats, data validation, and the fill handle. Copy and paste keep formats and formulas for Excel and Google Sheets. There are 55 financial functions, the statistical and compatibility functions, and array and LAMBDA helpers. Large tables load rows as they scroll into view. Excel (.xlsx) export keeps formats, names, validation, and conditional rules.
 - Beta 11 code studio work: the code editor on CodeMirror 6, code projects as a page block with save, export, and import, the run core with lockdown and limits, and runtime packs for Python, C and C++, and Ruby that download only after the person agrees. The studio stays off until the `code.studio` flag is on.
 - Help pages for text formatting, table formatting, and the code studio, and an accessibility and performance end-to-end check for the text editor.
-- ADRs 0056 to 0088 record these designs. Records 0056 to 0058, 0060, 0069, 0079 to 0085, 0087, and 0088 are Accepted.
+- ADRs 0056 to 0088 record these designs. Records 0056 to 0058, 0060, 0079 to 0085, 0087, and 0088 are Accepted. Record 0069 is Accepted, pending a hand test.
 
 ### Changed
 
