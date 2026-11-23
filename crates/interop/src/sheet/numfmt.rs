@@ -219,3 +219,58 @@ fn date(value: f64, section: &str) -> Option<String> {
     }
     Some(out)
 }
+
+/// The built-in number formats of ECMA-376 Part 1, 18.8.30, that every locale shows the same way. The date and
+/// time IDs 14 to 22 follow the reader's locale, so a writer keeps those codes as custom formats.
+const BUILT_IN: [(u32, &str); 22] = [
+    (0, "General"),
+    (1, "0"),
+    (2, "0.00"),
+    (3, "#,##0"),
+    (4, "#,##0.00"),
+    (9, "0%"),
+    (10, "0.00%"),
+    (11, "0.00E+00"),
+    (12, "# ?/?"),
+    (13, "# ??/??"),
+    (37, "#,##0 ;(#,##0)"),
+    (38, "#,##0 ;[Red](#,##0)"),
+    (39, "#,##0.00;(#,##0.00)"),
+    (40, "#,##0.00;[Red](#,##0.00)"),
+    (45, "mm:ss"),
+    (46, "[h]:mm:ss"),
+    (47, "mmss.0"),
+    (48, "##0.0E+0"),
+    (49, "@"),
+    (20, "h:mm"),
+    (21, "h:mm:ss"),
+    (22, "m/d/yy h:mm"),
+];
+
+/// The built-in ID a writer gives `code`, or `None` when the code needs a custom `numFmt`.
+pub fn built_in_id(code: &str) -> Option<u32> {
+    if code.eq_ignore_ascii_case("general") {
+        return Some(0);
+    }
+    BUILT_IN
+        .iter()
+        .find(|(id, c)| *c == code && !(14..=22).contains(id))
+        .map(|(id, _)| *id)
+}
+
+/// The code of a built-in ID, as a reader expands it. The locale-dependent dates read as their United States form.
+pub fn built_in_code(id: u32) -> Option<&'static str> {
+    const DATES: [(u32, &str); 6] = [
+        (14, "m/d/yyyy"),
+        (15, "d-mmm-yy"),
+        (16, "d-mmm"),
+        (17, "mmm-yy"),
+        (18, "h:mm AM/PM"),
+        (19, "h:mm:ss AM/PM"),
+    ];
+    BUILT_IN
+        .iter()
+        .chain(DATES.iter())
+        .find(|(i, _)| *i == id)
+        .map(|(_, c)| *c)
+}
