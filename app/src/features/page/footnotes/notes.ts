@@ -8,6 +8,7 @@ import { parseTextBlock } from '../../../editor/markdown';
 import { caretAfterRef, conversionPatches, insertNote, refAtCaret } from '../../../editor/notes/commands';
 import { NotesModel } from '../../../editor/notes/model';
 import type { NotesPatch } from '../../../editor/notes/model';
+import { editKeepsRefs } from '../../../editor/markdown/plainEdit';
 import { readNotes } from '../../../editor/notes/refs';
 import type { NoteKind } from '../../../editor/notes/refs';
 import { createNotesView } from '../../../editor/notes/view';
@@ -127,7 +128,7 @@ export function attachNotes(mounted: MountedPage): PageNotes {
   const rider = (block: string, before: string, after: string) => {
     if (!layer.block(block)) return [];
     // A reference that moved inside its block changes no note, but it can change the numbers.
-    if (before.includes('[^') || after.includes('[^')) view.refresh();
+    if ((before.includes('[^') || after.includes('[^')) && !editKeepsRefs(before, after)) view.refresh();
     return model.rider(block, before, after);
   };
   const stops = [

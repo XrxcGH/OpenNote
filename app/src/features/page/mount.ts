@@ -412,6 +412,7 @@ export function mountPage(container: HTMLElement, page: OpenPage, options: Mount
     },
   };
   const detachMedia = attachPageMedia(result, container, options.shown !== false);
-  const detachHooks = options.shown === false ? () => undefined : attachMountedPageHooks(result);
+  // The hooks get the object the shown-page store holds, so a command that reads the store finds what a hook attached.
+  const detachHooks = options.shown === false ? () => undefined : attachMountedPageHooks(mounted as MountedPage);
   return result;
 }

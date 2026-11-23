@@ -3,6 +3,7 @@
 // that comes into a block brings its record. It may be a new one that a command or suggesting mode staged. It may
 // also be one that was cut, moved, or deleted and typed back. Writers drop records that no mark names (R-CMT-2, R-SUG-2), so the rider
 // does that too.
+import { editKeepsMarks } from '../../editor/markdown/plainEdit';
 import { markIdsInMarkdown, readRecords } from './records';
 import type { CommentJson, SuggestionJson } from './records';
 
@@ -77,6 +78,8 @@ export class ReviewModel {
   private readonly blocks = new Map<string, BlockRecords>();
   private readonly left = new Map<string, Staged>();
   private readonly listeners = new Set<() => void>();
+  /** Each block's last Markdown and its marks, so typing plain words does not parse the block again. */
+  private readonly parsed = new Map<string, { markdown: string; ids: ReturnType<typeof markIdsInMarkdown> }>();
 
   constructor() {
     models.add(this);
@@ -124,6 +127,7 @@ export class ReviewModel {
     for (const [id, record] of Object.entries(records.comments)) this.keepLeft(id, { kind: 'comment', record });
     for (const [id, record] of Object.entries(records.suggestions)) this.keepLeft(id, { kind: 'suggestion', record });
     this.blocks.delete(block);
+    this.parsed.delete(block);
     this.changed();
   }
 
@@ -158,7 +162,9 @@ export class ReviewModel {
   rider(block: string, before: string, after: string): ReviewEdit[] {
     const have = this.of(block);
     const known = Object.keys(have.comments).length + Object.keys(have.suggestions).length;
-    const ids = markIdsInMarkdown(after);
+    const last = this.parsed.get(block);
+    const ids = last && last.markdown === before && editKeepsMarks(before, after) ? last.ids : markIdsInMarkdown(after);
+    this.parsed.set(block, { markdown: after, ids });
     if (known === 0 && ids.comments.length === 0 && ids.suggestions.size === 0) return [];
     if (before === after && staged.size === 0) return [];
     const comments: CommentsPatch = {};

@@ -50,7 +50,8 @@ describe('the schema in the DOM', () => {
     expect(into.querySelector('u[data-line="wave"][data-line-color="brick"]')?.textContent).toBe('b');
     expect(into.querySelector('span[lang="fr-CA"]')?.textContent).toBe('c');
     expect(into.querySelector('span[data-foreign]')?.getAttribute('data-foreign')).toBe('<span data-glow="soft">');
-    expect(into.querySelector('span[data-footnote]')?.getAttribute('data-footnote')).toBe('01m3sbcmt0000000000000n001');
+    expect(into.querySelector('a[data-footnote]')?.getAttribute('data-footnote')).toBe('01m3sbcmt0000000000000n001');
+    expect(into.querySelector('a[data-footnote]')?.getAttribute('role')).toBe('doc-noteref');
   });
 
   it('reads data attributes, lang, and dir by their grammars, and never a style', () => {
