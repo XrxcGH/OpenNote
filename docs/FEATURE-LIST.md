@@ -407,6 +407,14 @@ Open it with the command "Open the code studio".
 
 ![A Python code cell that has run, with its output below the code.](screens/code-cell-light.png)
 
+**code-studio.** The Code studio with a Python project that has run, its output in the console below the editor. ([dark](screens/code-studio-dark.png))
+
+![The Code studio with a Python project that has run, its output in the console below the editor.](screens/code-studio-light.png)
+
+**code-studio-problems.** The Code studio's Problems panel listing an undefined name that the editor underlines. ([dark](screens/code-studio-problems-dark.png))
+
+![The Code studio's Problems panel listing an undefined name that the editor underlines.](screens/code-studio-problems-light.png)
+
 **page-templates.** The new page chooser with the Problem set, Cornell notes, and Lab report templates. ([dark](screens/page-templates-dark.png))
 
 ![The new page chooser with the Problem set, Cornell notes, and Lab report templates.](screens/page-templates-light.png)

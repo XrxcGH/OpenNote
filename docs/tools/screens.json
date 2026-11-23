@@ -140,6 +140,16 @@
     "caption": "A Python code cell that has run, with its output below the code."
   },
   {
+    "name": "code-studio",
+    "category": "Writing and page blocks",
+    "caption": "The Code studio with a Python project that has run, its output in the console below the editor."
+  },
+  {
+    "name": "code-studio-problems",
+    "category": "Writing and page blocks",
+    "caption": "The Code studio's Problems panel listing an undefined name that the editor underlines."
+  },
+  {
     "name": "page-templates",
     "category": "Writing and page blocks",
     "caption": "The new page chooser with the Problem set, Cornell notes, and Lab report templates."

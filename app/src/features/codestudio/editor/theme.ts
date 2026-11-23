@@ -97,6 +97,19 @@ const base = EditorView.theme({
   '.cm-thinking': { color: 'var(--color-text-muted)', animation: 'cm-thinking 400ms ease-in-out infinite alternate' },
   '@keyframes cm-thinking': { from: { opacity: '0.4' }, to: { opacity: '1' } },
   '@media (prefers-reduced-motion: reduce)': { '.cm-thinking': { animation: 'none' } },
+  // A Windows contrast theme replaces our colors (BRAND.md section 4). So the marks do not rely on them.
+  // The selection is Highlight, the ghost text has a dotted line, a problem has a wavy line, and focus is an outline.
+  '@media (forced-colors: active)': {
+    '&.cm-focused': { outline: 'var(--size-focus-ring-width) solid Highlight' },
+    '.cm-selectionBackground': { forcedColorAdjust: 'none', backgroundColor: 'Highlight', opacity: '0.5' },
+    '.cm-ghost-text': { textDecoration: 'underline dotted' },
+    '.cm-lintRange': {
+      backgroundImage: 'none',
+      textDecoration: 'underline wavy',
+      textDecorationThickness: '2px',
+    },
+    '.cm-lintRange-warning': { textDecorationStyle: 'dashed' },
+  },
   '.cm-breakpoint-gutter .cm-gutterElement': { cursor: 'pointer', minWidth: '1.2em' },
   '.cm-breakpoint': { color: 'var(--color-status-danger)' },
   '.cm-current-line-arrow': { color: 'var(--color-status-warning)' },

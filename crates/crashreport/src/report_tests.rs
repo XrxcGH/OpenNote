@@ -32,6 +32,11 @@ const BACKTRACE: &str = "   0: std::backtrace_rs::backtrace::win64::trace
 note: Some details are omitted, C:\\Users\\jdoe\\Holiday Plans
 ";
 
+/// The JSON of a report built from the shared capture, environment, and scrubber.
+fn built_json() -> String {
+    Report::build(capture(), &environment(), &scrubber()).to_json()
+}
+
 fn capture() -> Capture {
     Capture {
         kind: Kind::Panic,
@@ -92,7 +97,7 @@ fn builds_a_report_with_code_positions_only() {
 
 #[test]
 fn the_report_never_holds_names_folders_or_paths() {
-    let json = Report::build(capture(), &environment(), &scrubber()).to_json();
+    let json = built_json();
     for leak in [
         "jdoe",
         "Holiday",
@@ -220,11 +225,11 @@ fn the_example_report_is_clean_and_in_the_real_format() {
     }
 }
 
-/// The code studio's privacy position: a report has fields for versions, positions, and names of the program's own
-/// functions, and none that could hold a page, a block, or a person's code. A new field must be added here on purpose.
+/// The code studio's privacy position: a report has fields for versions, positions, and function names. It has none
+/// that could hold a page, a block, or code. A new field must be added here on purpose.
 #[test]
 fn the_report_has_no_field_that_could_hold_block_data_or_code() {
-    let json = Report::build(capture(), &environment(), &scrubber()).to_json();
+    let json = built_json();
     let value: serde_json::Value = serde_json::from_str(&json).expect("the report is JSON");
     let mut keys: Vec<&str> = value
         .as_object()
@@ -233,19 +238,6 @@ fn the_report_has_no_field_that_could_hold_block_data_or_code() {
         .map(String::as_str)
         .collect();
     keys.sort_unstable();
-    assert_eq!(
-        keys,
-        [
-            "app_version",
-            "backtrace",
-            "exception_code",
-            "format",
-            "frames",
-            "kind",
-            "location",
-            "message",
-            "os",
-            "time_unix"
-        ]
-    );
+    let expected = "app_version backtrace exception_code format frames kind location message os time_unix";
+    assert_eq!(keys.join(" "), expected);
 }

@@ -2,6 +2,8 @@
 
 The Code studio is a tool window for writing, running, and testing code projects. It is in testing and is on in Beta and Nightly builds only.
 
+![The Code studio with a Python project that has run, its output in the console below the editor](../screens/code-studio-light.png)
+
 ## Open it
 
 - Open Code studio is in the command palette (Ctrl+K).
@@ -19,7 +21,7 @@ The Code studio is a tool window for writing, running, and testing code projects
 ## Console
 
 - The console shows what the program prints, in color when the program asks for it.
-- Type a line of input in the console's input box while the program waits for it.
+- To give a program input, open Input at start, and type the lines before you run. A program cannot wait for typing during a run yet.
 - A file name and line in an error message is a link. It opens that line.
 - Copy the output, clear it, or insert it into the page.
 
@@ -29,10 +31,13 @@ The Code studio is a tool window for writing, running, and testing code projects
 - Problems lists them by file, with counts. Settings, then Code, chooses errors only, errors and warnings, or everything.
 - A run's errors join the list too.
 
+![The Code studio's Problems panel listing an undefined name that the editor underlines](../screens/code-studio-problems-light.png)
+
 ## Quick fixes and explanations
 
 - Point at a problem, or put the cursor on it and press Ctrl+., to see its fixes.
-- Fixes include a name you likely meant, a missing import or include, a closing bracket or quote, indents, a missing colon or semicolon, = in place of ==, a missing self, and SQL typos.
+- Fixes include a name you likely meant, a missing import or include, and a closing bracket or quote.
+- Other fixes add indents, a missing colon or semicolon, or a missing self. They also change = to == and fix SQL typos.
 - Fix all fixes every problem of one kind in the file.
 - Explain the problem says what the error means, in plain words. It works for Python, JavaScript, C, C++, SQLite, and Lua errors.
 
@@ -46,6 +51,8 @@ The Code studio is a tool window for writing, running, and testing code projects
 
 ## Keys
 
+### Run and problems
+
 These keys work while the studio's editor has focus.
 
 | Key                   | Action                  |
@@ -55,6 +62,8 @@ These keys work while the studio's editor has focus.
 | Ctrl+Shift+F5         | Restart the run         |
 | Ctrl+Shift+M          | Show the Problems panel |
 | Ctrl+.                | Show the quick fixes    |
+
+### Editor and suggestion keys
 
 | Key                                        | What it does                                                          |
 | ------------------------------------------ | --------------------------------------------------------------------- |
@@ -77,14 +86,14 @@ Every chord can be changed in Settings, then Shortcuts.
 
 ## What each language can and cannot do
 
-| Language                  | Can                                                  | Cannot                                           |
-| ------------------------- | ---------------------------------------------------- | ------------------------------------------------ |
-| Python (Quick)            | Most of the language, `math`, `random`, `json`, `re` | NumPy, `input`, tests that need the full runtime |
-| Python (Full)             | Full Python, `unittest`, standard library            | Network and files outside the project            |
-| JavaScript and TypeScript | Modern syntax, Jest-style tests                      | Network, `require` of outside packages           |
-| SQL (SQLite)              | Tables, queries, rows checked in tests               | Files outside the project                        |
-| Lua                       | Lua with a JSON reader for test calls                | Files and network                                |
-| C and C++                 | Compile and run with clang, failed asserts in tests  | Network, files outside the project               |
+| Language                  | Can                                                  | Cannot                                                                                                        |
+| ------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Python (Quick)            | Most of the language, `math`, `random`, `json`, `re` | NumPy, waiting for typed input during a run (type the input before the run), tests that need the full runtime |
+| Python (Full)             | Full Python, `unittest`, standard library            | Network and files outside the project                                                                         |
+| JavaScript and TypeScript | Modern syntax, Jest-style tests                      | Network, `require` of outside packages                                                                        |
+| SQL (SQLite)              | Tables, queries, rows checked in tests               | Files outside the project                                                                                     |
+| Lua                       | Lua, and test calls that pass JSON arguments         | Files and network                                                                                             |
+| C and C++                 | Compile and run with clang, failed asserts in tests  | Network, files outside the project                                                                            |
 
 Each run stops at its time and memory limit, which Settings, then Code, sets (up to 60 seconds and 256 MiB).
 
