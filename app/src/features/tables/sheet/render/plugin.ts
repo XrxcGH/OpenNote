@@ -11,6 +11,7 @@ import type { EditorState, Transaction } from '@tiptap/pm/state';
 import { TableMap } from '@tiptap/pm/tables';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import type { EditorView } from '@tiptap/pm/view';
+import { drawnRows, setPinnedRows, virtualRowsKey } from '../../../page';
 import { drawTable, styleText } from './draw';
 import type { Drawn, DrawInput, DrawnTable } from './draw';
 import { measureTable } from './measure';
@@ -233,6 +234,50 @@ function rowsChanged(before: PMNode, after: PMNode): Set<number> | 'all' {
   return changed;
 }
 
+/** The decorations of a long table's drawn rows, by the full set they come from. */
+const shownSets = new WeakMap<DecorationSet, { doc: PMNode; key: string; set: DecorationSet }>();
+
+/**
+ * The decorations to show. A long table (row virtualization) draws only some rows, the others are placeholder
+ * comments. ProseMirror wraps a comment that gets a node decoration's attributes in an element, so only the drawn
+ * rows get their decorations. That also keeps the set ProseMirror compares on each change small.
+ */
+function shownDecorations(state: EditorState): DecorationSet | undefined {
+  const set = sheetRenderKey.getState(state)?.set;
+  const rows = set && set !== DecorationSet.empty ? drawnRows(state) : null;
+  const table = state.doc.firstChild;
+  if (!set || !rows || !table) return set;
+  const own = virtualRowsKey.getState(state);
+  const key = own ? `${own.pinned}:${own.window.from}:${own.window.to}` : '';
+  const known = shownSets.get(set);
+  if (known?.doc === state.doc && known.key === key) return known.set;
+  const wanted = new Set(rows);
+  const last = rows.length > 0 ? rows[rows.length - 1] : -1;
+  const found: Decoration[] = set.find(0, 0, (spec) => spec?.sheetTable === true);
+  let from = 1;
+  for (let r = 0; r <= last && r < table.childCount; r += 1) {
+    const to = from + table.child(r).nodeSize;
+    if (wanted.has(r)) found.push(...set.find(from, to).filter((d) => d.from >= from && d.to <= to));
+    from = to;
+  }
+  const shown = DecorationSet.create(state.doc, found);
+  shownSets.set(set, { doc: state.doc, key, set: shown });
+  return shown;
+}
+
+/** The most leading rows a long table keeps drawn for its freeze. */
+const MAX_PINNED = 200;
+
+/** How many leading rows are frozen in a drawing, up to MAX_PINNED. */
+function frozenCount(drawn: DrawnTable | null): number {
+  let n = 0;
+  while (drawn && n < Math.min(drawn.cells.length, MAX_PINNED)) {
+    if (!drawn.cells[n].some((cell) => 'data-frozen-row' in cell.data)) break;
+    n += 1;
+  }
+  return n;
+}
+
 /** The plugin's view part: after a change it measures what changed in a frame and hands the values to the state. */
 function measuringView(view: EditorView) {
   let frame = 0;
@@ -242,11 +287,16 @@ function measuringView(view: EditorView) {
     frame = 0;
     const now = rows;
     rows = new Set();
-    const dom = view.dom.querySelector<HTMLElement>('table[data-sheet]');
+    // The table's decoration lands on the table, or on the element around it when a node view draws one.
+    const marked = view.dom.querySelector<HTMLElement>('[data-sheet]');
+    const dom = marked?.matches('table') ? marked : marked?.querySelector<HTMLElement>('table');
     const state = sheetRenderKey.getState(view.state);
     if (!dom || !state || view.isDestroyed) return;
-    const full = now === 'all';
-    const found = measureTable(dom, { rows: full ? undefined : now, apply: false });
+    // A long table keeps its frozen rows drawn wherever its window is, so they can stick and be measured.
+    if (virtualRowsKey.getState(view.state)?.virtual) setPinnedRows(view, frozenCount(state.drawn));
+    // A long table draws only some rows: what is measured joins what its other rows had when they were drawn.
+    const full = now === 'all' && drawnRows(view.state) === null;
+    const found = measureTable(dom, { rows: now === 'all' ? undefined : now, apply: false });
     if (changedRows(state.measured, found, full).size === 0) return;
     const meta: Meta = { measured: found, full };
     view.dispatch(view.state.tr.setMeta(sheetRenderKey, meta).setMeta('addToHistory', false));
@@ -264,6 +314,12 @@ function measuringView(view: EditorView) {
       const now = sheetRenderKey.getState(v.state);
       const before = sheetRenderKey.getState(prev);
       if (!now || !before) return;
+      // A long table's window moved: the rows it draws now are measured, as they were never measured in place.
+      if (virtualRowsKey.getState(v.state) !== virtualRowsKey.getState(prev)) {
+        const was = new Set(drawnRows(prev) ?? []);
+        const fresh = (drawnRows(v.state) ?? []).filter((r) => !was.has(r));
+        if (fresh.length > 0) schedule(new Set(fresh));
+      }
       // The values we just set can move other things (a turned cell grows its row), so look once more, a few times.
       if (now.measured !== before.measured) {
         chain += 1;
@@ -296,7 +352,7 @@ export function sheetRenderPlugin(options: SheetRenderOptions): Plugin<SheetRend
         return nextState(source, options.scheme(), tr, prev, state.doc);
       },
     },
-    props: { decorations: (state) => sheetRenderKey.getState(state)?.set },
+    props: { decorations: (state) => shownDecorations(state) },
     view: measuringView,
   });
 }

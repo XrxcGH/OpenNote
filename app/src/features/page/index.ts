@@ -25,6 +25,10 @@ export { readingLock } from './qol/stores';
 export type { TableExtraDef, TableExtraHandle, TableExtraHost } from './tables/extras';
 /** What features add to a table block, such as the spreadsheet keys (a light module). */
 export { tableExtras } from './tables/extras';
+export { requestContextMenu } from './viewport/menuRequests';
+// Row virtualization's state, for the spreadsheet keys (the plugin itself loads with the table block).
+export { drawnRows, setPinnedRows, virtualRowsKey } from './tables/virtual/key';
+export { isVirtualDoc } from './tables/virtual/rows';
 /** The table the table commands act on now. */
 export { currentTable } from './tables/current';
 export type { TableHandle } from './tables/current';

@@ -7525,11 +7525,78 @@
       "flag": "tables.sheetWrites"
     },
     {
+      "id": "table.sheet.fillSeriesDown",
+      "title": "Fill series down",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.sheet.fillSeriesRight",
+      "title": "Fill series right",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.sheet.drawBorder",
+      "title": "Draw border",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.sheet.eraseBorder",
+      "title": "Erase border",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.formatCells",
+      "title": "Format cells",
+      "category": "table",
+      "keys": [
+        "Ctrl+1"
+      ],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.cellStyles",
+      "title": "Cell styles",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.formatAsTable",
+      "title": "Format as table",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.formatPainter",
+      "title": "Format painter",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
       "id": "table.insertFunction",
       "title": "Insert function",
       "category": "table",
       "keys": [
         "Shift+F3"
+      ],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.pasteSpecial",
+      "title": "Paste special…",
+      "category": "table",
+      "keys": [
+        "Ctrl+Alt+V"
       ],
       "flag": "tables.sheetWrites"
     },

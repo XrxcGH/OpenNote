@@ -57,6 +57,7 @@ const BODY_COMMANDS: &[&str] = &[
     "newline",
     "relax",
     "medskip",
+    "nopagebreak",
     "bigskip",
     "midrule",
     "toprule",

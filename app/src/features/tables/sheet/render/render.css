@@ -146,17 +146,17 @@
     pointer-events: none;
   }
 
-  /* Row heights: a minimum, or an exact height that clips. */
-  table[data-sheet] tr[data-row-min] > :is(td, th) {
+  /* Row heights: a minimum, or an exact height that clips. In the page the marker is on the table's wrapper. */
+  [data-sheet] tr[data-row-min] > :is(td, th) {
     height: var(--row-h);
   }
 
-  table[data-sheet] tr[data-row-exact] > :is(td, th) {
+  [data-sheet] tr[data-row-exact] > :is(td, th) {
     height: var(--row-h);
     overflow: hidden;
   }
 
-  table[data-sheet] tr[data-row-exact] > :is(td, th) > * {
+  [data-sheet] tr[data-row-exact] > :is(td, th) > * {
     max-block-size: calc(var(--row-h) - var(--cell-pad-t, 2pt) - var(--cell-pad-b, 2pt));
     overflow: hidden;
   }

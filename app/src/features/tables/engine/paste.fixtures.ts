@@ -1,3 +1,4 @@
+// checks-disable-file brand-consistency: colors and sizes here are clipboard CSS for other apps or test inputs, not design values.
 // Clipboard HTML for the paste tests. These are small, hand-written copies of what each program puts on the
 // clipboard, so they hold only what the reader uses: real captures would add megabytes of styling.
 
@@ -95,3 +96,78 @@ export const CALC_TABLE = `<html><head><meta name="generator" content="LibreOffi
 <tr><td sdval="45565" sdnum="1033;1033;MM/DD/YYYY">09/30/2024</td><td sdval="12.5" sdnum="1033;0;0.00">12.50</td></tr>
 <tr><td sdval="45566" sdnum="1033;1033;MM/DD/YYYY">10/01/2024</td><td sdval="7" sdnum="1033;0;0.00">7.00</td></tr>
 </table></body></html>`;
+
+/**
+ * Excel with formats and a formula (tables clipboard, ADR 0067). Hand-written from the Office HTML clipboard format:
+ * a style block with the Normal style on `td` and one class per cell format, `x:num` raw numbers, and `x:fmla`
+ * formulas in A1 form. A1 is a bold red title, A2 and A3 use `#,##0.00`, and A4 is `=SUM(A2:A3)`.
+ */
+export const EXCEL_STYLED = `Version:0.9
+StartHTML:0000000105
+EndHTML:0000001500
+StartFragment:0000000400
+EndFragment:0000001400
+<html xmlns:o="urn:schemas-microsoft-com:office:office"
+xmlns:x="urn:schemas-microsoft-com:office:excel"
+xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta name=ProgId content=Excel.Sheet>
+<style>
+<!--table
+	{mso-displayed-decimal-separator:"\\.";
+	mso-displayed-thousand-separator:"\\,";}
+td
+	{padding-top:1px;
+	color:black;
+	font-size:11.0pt;
+	font-weight:400;
+	font-family:Calibri, sans-serif;
+	mso-number-format:General;
+	vertical-align:bottom;
+	border:none;
+	white-space:nowrap;}
+.xl65
+	{color:red;
+	font-weight:700;}
+.xl66
+	{mso-number-format:"\\#\\,\\#\\#0\\.00";}
+-->
+</style>
+</head>
+<body>
+<!--StartFragment-->
+<table border=0 cellpadding=0 cellspacing=0 width=64 style='border-collapse:collapse;width:48pt'>
+ <col width=64 style='width:48pt'>
+ <tr height=20 style='height:15.0pt'>
+  <td height=20 class=xl65 width=64 style='height:15.0pt;width:48pt'>Amount</td>
+ </tr>
+ <tr height=20 style='height:15.0pt'>
+  <td height=20 class=xl66 align=right x:num="1234.5">1,234.50</td>
+ </tr>
+ <tr height=20 style='height:15.0pt'>
+  <td height=20 class=xl66 align=right x:num="10">10.00</td>
+ </tr>
+ <tr height=20 style='height:15.0pt'>
+  <td height=20 class=xl66 align=right x:num="1244.5" x:fmla="=SUM(A2:A3)">1,244.50</td>
+ </tr>
+<!--EndFragment-->
+</table>
+</body>
+</html>`;
+
+/**
+ * Google Sheets with a formula (tables clipboard, ADR 0067): numbers in A1 and A2, and A3 holding `=A1+A2`, which
+ * Sheets writes in R1C1 form in `data-sheets-formula`. Hand-written from that attribute's documented form.
+ */
+export function sheetsFormulaTable(): string {
+  const style = 'style="overflow:hidden;padding:2px 3px;vertical-align:bottom;"';
+  const value = (n: number): string => `data-sheets-value="${quoted({ 1: 3, 3: n })}"`;
+  const num = (n: number): string => `<td ${style} ${value(n)}>${n}</td>`;
+  const sum = `<td ${style} ${value(5)} data-sheets-formula="=R[-2]C[0]+R[-1]C[0]">5</td>`;
+  return (
+    '<meta charset="utf-8"><google-sheets-html-origin><style type="text/css"><!--td {border: 1px solid #cccccc;}--></style>' +
+    `<table xmlns="http://www.w3.org/1999/xhtml" cellspacing="0" cellpadding="0" dir="ltr" border="1" data-sheets-root="1">` +
+    `<colgroup><col width="100"></colgroup><tbody><tr>${num(2)}</tr><tr>${num(3)}</tr><tr>${sum}</tr></tbody></table>` +
+    '</google-sheets-html-origin>'
+  );
+}

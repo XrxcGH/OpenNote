@@ -6,7 +6,7 @@ import { Plugin, PluginKey, TextSelection } from '@tiptap/pm/state';
 import type { EditorState, Transaction } from '@tiptap/pm/state';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import type { EditorView } from '@tiptap/pm/view';
-import { cellOfPos, cellsOf, hasHeader, textRange } from '../../keys/state';
+import { cellOfPos, cellsOf, hasHeader, placedAt, textRange } from '../../keys/state';
 import type { GridCell } from '../../keys/grid';
 import { canPick, coloredRefs, cycleAnchor, gridRange, insertRef, refCells } from './refs';
 import { refKey, scanFormula } from './scan';
@@ -110,7 +110,7 @@ function editedCell(state: EditorState): { at: GridCell; from: number; text: str
   if (!(state.selection instanceof TextSelection)) return null;
   const at = cellOfPos(state.doc, state.selection.head);
   if (!at) return null;
-  const placed = cellsOf(state.doc)[at.row]?.[at.column];
+  const placed = placedAt(state.doc, at);
   if (!placed) return null;
   const { from, to } = textRange(placed);
   const text = state.doc.textBetween(from, to, '\n');

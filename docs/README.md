@@ -121,6 +121,7 @@ The [help index](help/README.md) lists every page. Each one is short, and most h
 - [perf/phase-9-core.md](perf/phase-9-core.md): what recording costs in processor time, how well the timestamps hold over three hours, and how much a crash loses.
 - [perf/phase-11-core.md](perf/phase-11-core.md): how fast import and export run at 1,000 pages, and how much memory they use.
 - [perf/expr-engine.md](perf/expr-engine.md): what the shared expression engine for the calculator, the grapher, and table formulas costs.
+- [perf/tables.md](perf/tables.md): how a table of 10,000 rows opens and scrolls within budget, with row virtualization.
 
 ## Releasing
 

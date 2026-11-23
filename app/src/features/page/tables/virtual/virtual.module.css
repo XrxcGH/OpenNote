@@ -1,0 +1,6 @@
+/* Row virtualization (plugin.ts): the padding that holds the place of a long table's rows outside the window. The
+   heights are set on the element around the editor, outside it, so ProseMirror's DOM observer never sees them. */
+.host > :global(.ProseMirror) > :global(.tableWrapper) {
+  padding-block-start: var(--opennote-vrows-above, 0px);
+  padding-block-end: var(--opennote-vrows-below, 0px);
+}

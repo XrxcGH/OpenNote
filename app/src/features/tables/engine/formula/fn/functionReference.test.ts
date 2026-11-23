@@ -102,3 +102,15 @@ describe('function reference page', () => {
     expect(readdirSync(docs).length).toBeGreaterThan(0);
   });
 });
+
+describe('engine README', () => {
+  it('names every folder of the engine and links to the function reference', () => {
+    const engine = resolve(import.meta.dirname, '../..');
+    const readme = readFileSync(join(engine, 'README.md'), 'utf8');
+    for (const entry of readdirSync(engine, { withFileTypes: true })) {
+      if (entry.isDirectory() && readdirSync(join(engine, entry.name)).length > 0)
+        expect(readme, entry.name).toContain(`\`${entry.name}/\``);
+    }
+    expect(readme).toContain('table-functions.md');
+  });
+});

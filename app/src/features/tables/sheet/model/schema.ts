@@ -297,6 +297,7 @@ const SHEET = obj({
   cols: mapping(isId, COL, 100_000, 'a column ID'),
   rows: mapping(isId, ROW, 1_000_000, 'a row ID'),
   cells: byCell(STYLE_REF, 1_000_000),
+  named: mapping((k) => length(k) >= 1 && length(k) <= 60, CELL_STYLE, 1024, 'a style name'),
   merges: mapping(isShort, MERGE, 10_000, 'a merge ID'),
   names: mapping(isName, NAMED, 1024, 'a name (R-SHT-13)'),
   validation: mapping(isShort, VALIDATION, 256, 'a rule ID'),

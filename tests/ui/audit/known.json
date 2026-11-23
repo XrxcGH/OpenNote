@@ -278,7 +278,12 @@
   "code-studio | target-small | div[role=group].tabs > div.tab > button.tabButton": "The Code studio's controls are at the dense 28 to 32 px desktop height and are below 44 px in the touch density. The layout audit first reached the studio in code:L21; the touch sizes are for a studio polish pass, and the keyboard reaches each control.",
   "code-studio | target-small | div[role=log].output > div[data-kind=output].line > button.link": "An error location in the console is a link inside a line of output, so it is as tall as the line of text, as an inline link is exempt in WCAG 2.5.8.",
   "code-studio | target-small | div[role=toolbar].toolbar > label.picker > select": "The Code studio's controls are at the dense 28 to 32 px desktop height and are below 44 px in the touch density. The layout audit first reached the studio in code:L21; the touch sizes are for a studio polish pass, and the keyboard reaches each control.",
-  "code-studio | target-small | ul.list > li > button.row": "The Code studio's controls are at the dense 28 to 32 px desktop height and are below 44 px in the touch density. The layout audit first reached the studio in code:L21; the touch sizes are for a studio polish pass, and the keyboard reaches each control."
+  "code-studio | target-small | ul.list > li > button.row": "The Code studio's controls are at the dense 28 to 32 px desktop height and are below 44 px in the touch density. The layout audit first reached the studio in code:L21; the touch sizes are for a studio polish pass, and the keyboard reaches each control.",
+  "block | box-overlap | div.toolbarWrap > div[role=group].bar > input.nameBox x div[role=textbox][data-scope=editor][data-block=01k6f00000000000000000ygj0].tiptap > p": "The table formula bar (name box, argument hints, and tool buttons) shares one compact toolbar strip at the audit width, so its name box meets neighbors there. It comes from the formula bar on beta, not from this docs change, and is tracked for a later table layout pass.",
+  "block | box-overlap | span.group > div.box > input[role=combobox].field x h1.title > span[role=textbox][data-scope=editor].text": "The table formula bar (name box, argument hints, and tool buttons) shares one compact toolbar strip at the audit width, so its name box meets neighbors there. It comes from the formula bar on beta, not from this docs change, and is tracked for a later table layout pass.",
+  "block | target-gap | div.toolbarWrap > div[role=group].bar > input.nameBox x span.wrapper > button.iconButton": "The table formula bar (name box, argument hints, and tool buttons) shares one compact toolbar strip at the audit width, so its name box meets neighbors there. It comes from the formula bar on beta, not from this docs change, and is tracked for a later table layout pass.",
+  "block | target-gap | span.tools > span.wrapper > button.iconButton x div.entryWrap > textarea.entry": "The table formula bar (name box, argument hints, and tool buttons) shares one compact toolbar strip at the audit width, so its name box meets neighbors there. It comes from the formula bar on beta, not from this docs change, and is tracked for a later table layout pass.",
+  "block | target-gap | span.tools > span.wrapper > button.iconButton x span.wrapper > button.iconButton": "The table formula bar (name box, argument hints, and tool buttons) shares one compact toolbar strip at the audit width, so its name box meets neighbors there. It comes from the formula bar on beta, not from this docs change, and is tracked for a later table layout pass."
  },
  "intermittent": [
   "block | offscreen | span > span.wrapper > button[data-tool].iconButton",
@@ -289,6 +294,7 @@
   "block | box-overlap | span.group > div.box > input[role=combobox].field x div.band > p.changed",
   "block | box-overlap | span.mathInline > div.holderInline > button.toggle x div[role=toolbar].bar > button.button",
   "block | document-scroll | ",
+  "block | offscreen | span > span.wrapper > button[data-tool].iconButton",
   "block | target-gap | div.root > div[role=toolbar].bar > button.button x div.holderInline > button.toggle",
   "block | target-gap | span.group > div.box > input[role=combobox].field x div.box > input[role=combobox].field",
   "block | text-overlap | div > button.tape > span x th > p",
@@ -298,6 +304,7 @@
   "command | box-overlap | div.panel > div[role=group].filters > button[role=switch].labeled x div[role=group].filters > button[role=switch].labeled",
   "command | dead-space | div[data-scope=palette].panel > div.body > div[role=listbox].results (nested)",
   "command | dead-space | div.body > div.main > div.editor (empty box)",
+  "tool.code | dead-space | div.body > div.main > div.editor (empty box)",
   "command | dead-space | div[role=tabpanel].panelBody > div.console > div[role=log].output (empty box)",
   "command | document-scroll | ",
   "command | offscreen | div.content > div.scroller > div[role=listbox].grid",

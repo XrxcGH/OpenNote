@@ -2,7 +2,7 @@
 
 Every tool, action, and feature in OpenNote, grouped by category, with one sentence each. `npm run docs:features` makes this page. The commands, tool windows, title bar items, settings sections, and setup steps come from what the app registers, so a new one shows up here or fails the tests. The feature sentences come from [FEATURES.md](FEATURES.md), which also says what has been tested by hand and which flag turns each one on. The [help pages](help/README.md) explain how to use them. [docs/screens](screens/README.md) has every picture in light and dark.
 
-The app registers 1178 commands and 48 tool windows. 24 of the windows are subject and engineering kits. The count includes the ink commands, which register when a page first shows its ink, and the commands that register once start-up is done or with the first page: on-device intelligence, the second pass of page commands, and the code block and table commands. The command palette (Ctrl+K) runs every command not marked as left out of it. Some commands need a feature flag, which FEATURES.md names. The keys shown are the defaults of the standard shortcut set.
+The app registers 1187 commands and 48 tool windows. 24 of the windows are subject and engineering kits. The count includes the ink commands, which register when a page first shows its ink, and the commands that register once start-up is done or with the first page: on-device intelligence, the second pass of page commands, and the code block and table commands. The command palette (Ctrl+K) runs every command not marked as left out of it. Some commands need a feature flag, which FEATURES.md names. The keys shown are the defaults of the standard shortcut set.
 
 ## Contents
 
@@ -83,6 +83,11 @@ The app registers 1178 commands and 48 tool windows. 24 of the windows are subje
 - **Spreadsheet keys in tables.** Grid, Edit, and Enter modes use Excel's keys.
 - **Conditional formatting.** Rules color cells by value, text, date, blank, error, top and bottom, average, duplicate, or formula.
 - **Table styles in page exports.** Word, HTML, and Markdown exports write each table's last results.
+- **Fill handle and pen borders.** Drag the fill handle to copy cells or fill a series of numbers, dates, month and weekday names, or numbered text, with a menu after the drop.
+- **Format cells and cell styles.** Format cells (Ctrl+1) has Number, Alignment, Font, Border, and Fill tabs with a live preview and custom number codes that are checked as you type.
+- **Copy and paste with spreadsheets.** Copies give Excel, Google Sheets, and LibreOffice formulas, number formats, styles, merged cells, and widths.
+- **Excel and TSV table export.** Excel exports keep formulas with their last results, number formats, fonts, fills, borders, merges, widths, heights, frozen panes, outlines, named ranges, Excel tables, data validation, conditional formatting, and notes.
+- **Large tables.** A table of more than 2,000 rows draws only the rows near the view, so a 10,000-row table opens in under 250 ms and scrolls without long frames.
 
 #### Code studio program foundations
 
@@ -603,7 +608,16 @@ Open it with the command "Open the code studio".
 | Start a new line in the cell (not in the palette) | In Edit mode, starts a new line in the cell. | Alt+Enter |
 | Switch between Enter and Edit modes (not in the palette) | In Edit mode, switches between Enter mode, where arrows move to the next cell, and Edit mode. | F2 |
 | Use document keys in this table | Switches a table between spreadsheet keys and document keys, where Enter starts a new line. |  |
+| Fill series down | Continues the first row of the selected cells down through the rest, as a series of numbers, dates, or names. |  |
+| Fill series right | Continues the first column of the selected cells to the right through the rest, as a series of numbers, dates, or names. |  |
+| Draw border | Turns on a pen or mouse that draws cell borders along the lines of the table you drag over. Escape stops it. |  |
+| Erase border | Turns on a pen or mouse that erases cell borders along the lines of the table you drag over. Escape stops it. |  |
+| Format cells | Opens the Format cells dialog: number, alignment, font, border, and fill. | Ctrl+1 |
+| Cell styles | Opens the cell styles, a named look you apply to the selected cells. |  |
+| Format as table | Opens the gallery of 21 table looks and its banding options. |  |
+| Format painter | Copies the format of the selected cell onto the cells you select next. |  |
 | Insert function | Opens a searchable list of spreadsheet functions and puts the chosen one into the formula. | Shift+F3 |
+| Paste special… | Opens Paste special (Ctrl+Alt+V) to paste only values, formulas, formats, notes, validation, or widths. It can also add or multiply, transpose, or paste a link. | Ctrl+Alt+V |
 | Add row above | Adds a row above the current one. |  |
 | Add row below | Adds a row below the current one. | Ctrl+Enter |
 | Move row up | Moves the current row up one place. | Alt+Shift+Up |

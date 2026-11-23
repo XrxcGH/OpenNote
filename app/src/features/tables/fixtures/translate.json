@@ -1,0 +1,105 @@
+{
+  "about": "Golden cases of formula translation between OpenNote's stored form and Excel's file form (ADR 0067). Expected values are worked by hand from the rules of DESIGN section 16: rows move by one under a header row, a bare [Col] is this row except inside a range function, E is a name (an old table without data.sheet.v first takes the legacy rewrite, where E becomes EXP(1)), a reference after a sheet outside the book keeps its rows, newer functions take _xlfn. Formulas have no leading =. direction is both, toExcel, or fromExcel. Both the Rust (crates/interop/src/sheet/formula) and the TypeScript (engine/formula/excel.ts) tests read this file.",
+  "books": {
+    "header": [
+      {
+        "name": "Table1",
+        "excel": "Table1",
+        "sheet": "Prices",
+        "header": true,
+        "columns": ["Item", "Qty", "Price", "Unit price [EUR]"],
+        "rows": 4
+      },
+      {
+        "name": "Sales",
+        "excel": "Sales",
+        "sheet": "Sales sheet",
+        "header": true,
+        "columns": ["Region", "Amount"],
+        "rows": 3
+      }
+    ],
+    "plain": [
+      {
+        "name": "Table1",
+        "excel": null,
+        "sheet": "Data",
+        "header": false,
+        "columns": ["A", "B", "C"],
+        "rows": 3
+      }
+    ],
+    "multibyte": [
+      {
+        "name": "Table1",
+        "excel": "Table1",
+        "sheet": "Données",
+        "header": true,
+        "columns": ["Preis je Stück", "Größe"],
+        "rows": 3
+      }
+    ],
+    "legacy": [
+      {
+        "name": "Table1",
+        "excel": "Table1",
+        "sheet": "Prices",
+        "header": true,
+        "columns": ["Item", "Qty", "Price"],
+        "rows": 4,
+        "legacy": true
+      }
+    ],
+    "nolist": [
+      {
+        "name": "Table1",
+        "excel": null,
+        "sheet": "Prices",
+        "header": true,
+        "columns": ["Item", "Qty", "Price"],
+        "rows": 4
+      }
+    ]
+  },
+  "cases": [
+    { "name": "calculated column", "book": "header", "row": 2, "direction": "both", "opennote": "[Qty]*[Price]", "excel": "Table1[[#This Row],[Qty]]*Table1[[#This Row],[Price]]" },
+    { "name": "single cell under a header", "book": "header", "row": 3, "direction": "both", "opennote": "B2*C2", "excel": "B3*C3" },
+    { "name": "single cell without a header", "book": "plain", "row": 3, "direction": "both", "opennote": "B2*C2", "excel": "B2*C2" },
+    { "name": "whole column in an aggregate", "book": "header", "row": 4, "direction": "both", "opennote": "SUM([Qty])", "excel": "SUM(Table1[Qty])" },
+    { "name": "this row inside a scalar function", "book": "header", "row": 2, "direction": "both", "opennote": "ROUND([Price],0)", "excel": "ROUND(Table1[[#This Row],[Price]],0)" },
+    { "name": "explicit this row", "book": "header", "row": 2, "direction": "toExcel", "opennote": "[@Qty]*2", "excel": "Table1[[#This Row],[Qty]]*2" },
+    { "name": "this row inside an aggregate", "book": "header", "row": 2, "direction": "both", "opennote": "SUM([@Qty],1)", "excel": "SUM(Table1[[#This Row],[Qty]],1)" },
+    { "name": "E is a name under the table rules", "book": "header", "row": 2, "direction": "both", "opennote": "E^2", "excel": "E^2" },
+    { "name": "column E is a whole column, with no row shift", "book": "header", "row": 2, "direction": "both", "opennote": "SUM(E:E)", "excel": "SUM(E:E)" },
+    { "name": "a LET variable named e", "book": "header", "row": 2, "direction": "both", "opennote": "LET(e,5,e*2)", "excel": "_xlfn.LET(e,5,e*2)" },
+    { "name": "a sheet outside the book keeps its rows", "book": "header", "row": 2, "direction": "both", "opennote": "Other!A1+Sheet1!A1:A2", "excel": "Other!A1+Sheet1!A1:A2" },
+    { "name": "a quoted sheet outside the book keeps its rows", "book": "header", "row": 2, "direction": "both", "opennote": "'Old data'!B2:C3", "excel": "'Old data'!B2:C3" },
+    { "name": "both ends of another table's range move", "book": "header", "row": 2, "direction": "both", "opennote": "SUM(Sales!B1:B2)", "excel": "SUM('Sales sheet'!B2:B3)" },
+    { "name": "a sign binds tighter than a power under the table rules", "book": "header", "row": 2, "direction": "both", "opennote": "-A1^2", "excel": "-A2^2" },
+    { "name": "powers group left to right under the table rules", "book": "header", "row": 2, "direction": "both", "opennote": "2^3^2", "excel": "2^3^2" },
+    { "name": "old table: a sign binds looser than a power", "book": "legacy", "row": 2, "direction": "toExcel", "opennote": "-A1^2", "excel": "-(A2^2)" },
+    { "name": "old table: powers group right to left", "book": "legacy", "row": 2, "direction": "toExcel", "opennote": "2^3^2", "excel": "2^(3^2)" },
+    { "name": "old table: E is Euler's number", "book": "legacy", "row": 2, "direction": "toExcel", "opennote": "E^2", "excel": "EXP(1)^2" },
+    { "name": "newer function takes the prefix", "book": "header", "row": 2, "direction": "both", "opennote": "XLOOKUP(A1,B:B,C:C)", "excel": "_xlfn.XLOOKUP(A2,B:B,C:C)" },
+    { "name": "worksheet prefix too", "book": "plain", "row": 1, "direction": "both", "opennote": "FILTER(A1:A3,B1:B3>1)", "excel": "_xlfn._xlws.FILTER(A1:A3,B1:B3>1)" },
+    { "name": "absolute parts keep their dollar signs", "book": "header", "row": 2, "direction": "both", "opennote": "SUM($A$1:A$3)", "excel": "SUM($A$2:A$4)" },
+    { "name": "whole rows move", "book": "header", "row": 2, "direction": "both", "opennote": "SUM(2:3)+SUM($1:$1)", "excel": "SUM(3:4)+SUM($2:$2)" },
+    { "name": "text that looks like a reference stays", "book": "header", "row": 2, "direction": "both", "opennote": "\"B2\"&B2", "excel": "\"B2\"&B3" },
+    { "name": "another table's cell", "book": "header", "row": 2, "direction": "both", "opennote": "Sales!B2", "excel": "'Sales sheet'!B3" },
+    { "name": "another table's column", "book": "header", "row": 2, "direction": "both", "opennote": "SUM(Sales[Amount])", "excel": "SUM(Sales[Amount])" },
+    { "name": "brackets in a column name", "book": "header", "row": 2, "direction": "both", "opennote": "[Unit price [EUR]]]*2", "excel": "Table1[[#This Row],[Unit price '[EUR']]]*2" },
+    { "name": "unknown column", "book": "header", "row": 2, "direction": "toExcel", "opennote": "[Nope]+1", "excel": "#REF!+1" },
+    { "name": "the header row has no OpenNote row", "book": "header", "row": 2, "direction": "fromExcel", "opennote": "#REF!*2", "excel": "A1*2" },
+    { "name": "no ListObject: this row", "book": "nolist", "row": 3, "direction": "toExcel", "opennote": "[Qty]*2", "excel": "B3*2" },
+    { "name": "no ListObject: whole column", "book": "nolist", "row": 3, "direction": "toExcel", "opennote": "SUM([Qty])", "excel": "SUM($B$2:$B$4)" },
+    { "name": "errors and strings pass through", "book": "header", "row": 2, "direction": "both", "opennote": "IFERROR(1/0,#N/A)&\"a\"\"b\"", "excel": "IFERROR(1/0,#N/A)&\"a\"\"b\"" },
+    { "name": "spill reference", "book": "header", "row": 2, "direction": "both", "opennote": "SUM(A1#)", "excel": "SUM(A2#)" },
+    { "name": "lower case keeps its case", "book": "header", "row": 2, "direction": "both", "opennote": "sum(b2,1.5e3)", "excel": "sum(b3,1.5e3)" },
+    { "name": "a name that is not a cell", "book": "header", "row": 2, "direction": "both", "opennote": "TaxRate*Price_2", "excel": "TaxRate*Price_2" },
+    { "name": "Excel's short this-row form", "book": "header", "row": 2, "direction": "fromExcel", "opennote": "[Qty]*2", "excel": "Table1[@Qty]*2" },
+    { "name": "a defined name's column is the whole column", "book": "header", "row": null, "direction": "toExcel", "opennote": "[Qty]", "excel": "Table1[Qty]" },
+    { "name": "defined name refers to its sheet", "book": "header", "row": null, "direction": "toExcel", "opennote": "$B$1:$B$3", "excel": "Prices!$B$2:$B$4" },
+    { "name": "a non-ASCII function name and columns", "book": "multibyte", "row": 2, "direction": "both", "opennote": "ÉCARTÉ([Preis je Stück])+[Größe]", "excel": "ÉCARTÉ(Table1[[#This Row],[Preis je Stück]])+Table1[[#This Row],[Größe]]" },
+    { "name": "a non-ASCII column in an aggregate", "book": "multibyte", "row": null, "direction": "both", "opennote": "SUM([Preis je Stück])", "excel": "SUM(Table1[Preis je Stück])" }
+  ]
+}

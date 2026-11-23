@@ -231,6 +231,61 @@ function slotReader(table: PMNode): { map: TableMap | null; at(row: number, colu
 export function docToTableData(doc: PMNode, previous: TableData, cache: MarkdownCache): TableData {
   const table = tableOf(doc);
   if (!table || table.childCount === 0) return normalizeTableData(previous);
+  const quick = changedRowsOnly(table, previous, cache);
+  if (quick) return quick;
+  const data = fullRead(table, previous, cache);
+  madeFrom.set(data, table);
+  return data;
+}
+
+/** The table node each read came from, so the next read can redo only the rows that changed since. */
+const madeFrom = new WeakMap<TableData, PMNode>();
+
+/** Whether a row has a merged cell. */
+const hasSpan = (row: PMNode): boolean => {
+  let span = false;
+  row.forEach((cell) => (span ||= Number(cell.attrs.colspan ?? 1) > 1 || Number(cell.attrs.rowspan ?? 1) > 1));
+  return span;
+};
+
+/**
+ * The read of `table` when it differs from the table `previous` was read from only inside some rows below the first:
+ * the same row count, and in each changed row the same row ID, the same cells, and the same column IDs, with no
+ * merged cell. Then the columns, the header, and every other row stay as they were, and typing in a cell of a long
+ * table costs one row, not the whole table. Null when that does not hold, for a full read.
+ */
+function changedRowsOnly(table: PMNode, previous: TableData, cache: MarkdownCache): TableData | null {
+  const before = madeFrom.get(previous);
+  if (!before) return null;
+  if (before === table) return previous;
+  const count = table.childCount;
+  if (before.childCount !== count || previous.rows.length !== count || table.child(0) !== before.child(0)) return null;
+  let rows: TableRow[] | null = null;
+  for (let r = 1; r < count; r++) {
+    const row = table.child(r);
+    const old = before.child(r);
+    if (row === old) continue;
+    const kept = previous.rows[r];
+    const width = row.childCount;
+    if (width !== old.childCount || width !== previous.columns.length || idOf(row, 'rowId') !== kept.id) return null;
+    if (hasSpan(row) || hasSpan(old)) return null;
+    const cells: TableRow['cells'] = {};
+    for (let c = 0; c < width; c++) {
+      const cell = row.child(c);
+      if (idOf(cell, 'colId') !== idOf(old.child(c), 'colId')) return null;
+      const id = previous.columns[c].id;
+      cells[id] = { ...kept.cells[id], markdown: cellMarkdown(cell.firstChild, cache) };
+    }
+    rows ??= previous.rows.slice();
+    rows[r] = { ...kept, cells };
+  }
+  const data = rows ? { ...previous, rows } : previous;
+  madeFrom.set(data, table);
+  return data;
+}
+
+/** Reads the whole table. */
+function fullRead(table: PMNode, previous: TableData, cache: MarkdownCache): TableData {
   const slots = slotReader(table);
   let width = slots.map ? slots.map.width : 0;
   const carried = new Set<string>();

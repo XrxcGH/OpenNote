@@ -25,7 +25,7 @@ function leaf(text: string): CacheEntry {
 function fenceText(node: PMNode): string {
   const source = cleanText(node.textContent);
   const language = node.attrs.language as string | null;
-  const runs = source.split('\n').map((line) => /^ {0,3}(`+)/.exec(line)?.[1].length ?? 0);
+  const runs = source.split('\n').map((line) => /^[ \t]{0,3}(`+)/.exec(line)?.[1].length ?? 0);
   const fence = '`'.repeat(Math.max(3, ...runs.map((run) => run + 1)));
   const info = language && LANGUAGE_PATTERN.test(language) ? language : '';
   return source === '' ? `${fence}${info}\n${fence}` : `${fence}${info}\n${source}\n${fence}`;
