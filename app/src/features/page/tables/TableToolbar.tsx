@@ -194,18 +194,34 @@ function useRoomAbove(wrap: { current: HTMLDivElement | null }) {
       }
       return 0;
     };
+    // The block whose margin holds the room for tools below it.
+    let spaced: HTMLElement | null = null;
     const place = () => {
+      if (spaced) spaced.style.marginBlockEnd = '';
+      spaced = null;
       const room = owner.getBoundingClientRect().top - clipTop();
       const tall = node.getBoundingClientRect().height;
       if (tall > 0 && tall > room) node.setAttribute('data-below', '');
       else node.removeAttribute('data-below');
+      // Tools below the table would cover the block after it (a second table, whose cells could not be clicked), so
+      // the table keeps their room below it while they show.
+      const block = node.offsetParent instanceof HTMLElement ? node.offsetParent : null;
+      if (!block) return;
+      if (tall > 0 && node.getBoundingClientRect().top >= block.getBoundingClientRect().bottom - 1) {
+        const margin = parseFloat(getComputedStyle(block).marginBlockEnd) || 0;
+        block.style.marginBlockEnd = `${margin + tall}px`;
+        spaced = block;
+      }
     };
     place();
     // A surface with no ResizeObserver (a test document) keeps the first placement.
     if (typeof ResizeObserver === 'undefined') return undefined;
     const watch = new ResizeObserver(place);
     watch.observe(node);
-    return () => watch.disconnect();
+    return () => {
+      watch.disconnect();
+      if (spaced) spaced.style.marginBlockEnd = '';
+    };
   }, [wrap]);
 }
 
