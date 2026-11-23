@@ -396,6 +396,65 @@ jobs:
           if-no-files-found: ignore
           retention-days: 90
 
+  code-studio-perf:
+    # The code studio's budgets (docs/perf/code-studio.md, DESIGN section 15).
+    # They are studio open, typing in a 1,000-line file, completion, ghost text, and marks.
+    # They are also run start for every runtime, C and C++ compile, and idle memory.
+    # The language models' first token and speed count when a model file is on the machine.
+    # The job summary has the budget table, with a row for every gate.
+    # A hosted runner catches large regressions. The numbers that count are the reference laptop's.
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    env:
+      OPENNOTE_PERF_MACHINE: github-ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install tools
+        run: npm ci
+      - name: Check that every gate can fail
+        run: npm run test:perf-code-studio
+      - name: Browser gates
+        # TEMPORARY waiver, tracking item B12-TYPING-1000: typing-1000 is advisory (in the table, not a failure) until
+        # the editor's typing fix lands. Remove this setting with that fix; see
+        # docs/perf/code-studio.md. The other browser gates fail the job.
+        env:
+          OPENNOTE_PERF_ADVISORY: typing-1000
+        run: npm run perf:code-studio:browser
+        continue-on-error: true
+        id: browser
+      - name: Node gates and the budget table
+        if: always()
+        run: node tests/perf/codeStudio/run.ts --machine "$OPENNOTE_PERF_MACHINE"
+      - name: Model speed
+        # No model is downloaded: without OPENNOTE_LLM_MODEL or OPENNOTE_LLM_MODELS the table says "not measured".
+        if: always()
+        # bash with pipefail, so that a failing gate fails the step and not only tee.
+        shell: bash
+        run: |
+          set -o pipefail
+          node tests/perf/codeStudio/model.ts --machine "$OPENNOTE_PERF_MACHINE" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Fail when a browser gate failed
+        if: always() && steps.browser.outcome == 'failure'
+        run: |
+          echo "::error::A code studio browser gate failed. The budget table above has the numbers."
+          exit 1
+      - name: Keep the results
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: code-studio-perf
+          path: tests/perf/codeStudio/results/*.json
+          if-no-files-found: ignore
+          retention-days: 90
+
   palm-sweep:
     # The palm label oracle's full sweep (docs/testing/palm-sweep.md): 200,000 cases in four shards of 50,000. Each
     # shard fails on a failing case that tests/fixtures/palm/oracle-sweep.json does not record as open, and on an
@@ -551,7 +610,7 @@ jobs:
   report:
     # Opens an issue when any job failed, or adds a comment to the issue that is already open. It is the only
     # job that can write, it can only write issues, and it never checks out the code.
-    needs: [plan, fuzz, kill, proptest, perf, perf-typing-gate, e2e-full, bundles, soak, palm-sweep, nvda]
+    needs: [plan, fuzz, kill, proptest, perf, perf-typing-gate, e2e-full, bundles, soak, code-studio-perf, palm-sweep, nvda]
     if: ${{ always() && github.ref == 'refs/heads/main' && contains(needs.*.result, 'failure') }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -571,6 +630,7 @@ jobs:
           E2E_RESULT: ${{ needs.e2e-full.result }}
           BUNDLES_RESULT: ${{ needs.bundles.result }}
           SOAK_RESULT: ${{ needs.soak.result }}
+          CODE_STUDIO_PERF_RESULT: ${{ needs.code-studio-perf.result }}
           PALM_SWEEP_RESULT: ${{ needs.palm-sweep.result }}
           NVDA_RESULT: ${{ needs.nvda.result }}
         run: |
@@ -588,6 +648,7 @@ jobs:
             [ "$BUNDLES_RESULT" = failure ] && echo "- The macOS dmg or the Linux AppImage didn't build"
             # checks-disable-next-line length: one shell line that writes one line of the run summary
             [ "$SOAK_RESULT" = failure ] && echo "- Random-editing soak: the samples are in the run's artifacts; replay with the run number as the seed"
+            [ "$CODE_STUDIO_PERF_RESULT" = failure ] && echo "- Code studio budgets: the budget table is in the run summary"
             # checks-disable-next-line length: one shell line that writes one line of the run summary
             [ "$PALM_SWEEP_RESULT" = failure ] && echo "- Palm label oracle sweep: the cases that differ from the record are in the log and the run's artifacts"
             [ "$NVDA_RESULT" = failure ] && echo "- NVDA checklist: the spoken log is in the run's artifacts"
