@@ -7528,6 +7528,36 @@
       "flag": "tables.sheetWrites"
     },
     {
+      "id": "table.cell.formatCells",
+      "title": "Format cells",
+      "category": "table",
+      "keys": [
+        "Ctrl+1"
+      ],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.cellStyles",
+      "title": "Cell styles",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.formatAsTable",
+      "title": "Format as table",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.cell.formatPainter",
+      "title": "Format painter",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
       "id": "table.insertFunction",
       "title": "Insert function",
       "category": "table",

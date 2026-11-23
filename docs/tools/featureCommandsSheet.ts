@@ -47,4 +47,6 @@ export const SHEET_COMMAND_TEXT: Readonly<Record<string, string>> = {
     'Continues the first row of the selected cells down through the rest, as a series of numbers, dates, or names.',
   'table.sheet.fillSeriesRight':
     'Continues the first column of the selected cells to the right through the rest, as a series of numbers, dates, or names.',
+  'table.pasteSpecial':
+    'Opens Paste special (Ctrl+Alt+V) to paste only values, formulas, formats, notes, validation, or widths, with an operation, transpose, or a link.',
 };
