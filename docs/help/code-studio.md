@@ -29,6 +29,21 @@ The Code studio is a tool window for writing, running, and testing code projects
 - Problems lists them by file, with counts. Settings, then Code, chooses errors only, errors and warnings, or everything.
 - A run's errors join the list too.
 
+## Quick fixes and explanations
+
+- Point at a problem, or put the cursor on it and press Ctrl+., to see its fixes.
+- Fixes include a name you likely meant, a missing import or include, a closing bracket or quote, indents, a missing colon or semicolon, = in place of ==, a missing self, and SQL typos.
+- Fix all fixes every problem of one kind in the file.
+- Explain the problem says what the error means, in plain words. It works for Python, JavaScript, C, C++, SQLite, and Lua errors.
+
+## Tests
+
+- The Tests panel lists your test cases and the tests found in your code, grouped by class or describe block.
+- Add a case with Add. An input case gives the program input and checks what it prints. A call case calls a function with JSON arguments and checks the value it returns. An SQL case checks the rows a query returns, in order or in any order.
+- Each case picks how to compare: exact, trim spaces, words, numbers with a tolerance, lines in any order, or a pattern. Each case has its own time limit.
+- The panel also runs Python unittest tests (full Python), Jest-style tests in JavaScript and TypeScript, and failed asserts in C and C++.
+- Run all, Run one, or Run failed. A failed test shows its message, a link to its line, and a diff that marks each line Expected, Actual, or Same.
+
 ## Keys
 
 These keys work while the studio's editor has focus.
@@ -39,6 +54,7 @@ These keys work while the studio's editor has focus.
 | Shift+F5              | Stop the run            |
 | Ctrl+Shift+F5         | Restart the run         |
 | Ctrl+Shift+M          | Show the Problems panel |
+| Ctrl+.                | Show the quick fixes    |
 
 ## Examples
 
