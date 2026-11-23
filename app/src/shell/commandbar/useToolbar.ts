@@ -93,6 +93,7 @@ export function useOverflow(ref: RefObject<HTMLElement | null>, entries: readonl
   const [hidden, setHidden] = useState<ReadonlySet<string>>(() => new Set());
   const widths = useRef(new Map<string, number>());
   const latest = useRef(entries);
+  const watcher = useRef<ResizeObserver | null>(null);
   const density = useDensity();
   const sizeClass = useSizeClass();
   // A font that arrives after the first measure changes every width, so each font load measures again.
@@ -138,10 +139,20 @@ export function useOverflow(ref: RefObject<HTMLElement | null>, entries: readonl
       });
     });
     observer.observe(bar);
+    watcher.current = observer;
     return () => {
+      watcher.current = null;
       cancelAnimationFrame(frame);
       observer.disconnect();
     };
   }, [ref, fit]);
+  // A tool whose own width changes (a label that settles, an icon that arrives) with no render of the bar and no
+  // change to the bar's width is measured again. Without this, a fit taken on a transient width can stay.
+  useEffect(() => {
+    const observer = watcher.current;
+    for (const slot of ref.current?.querySelectorAll<HTMLElement>('[data-item-id], [data-more]') ?? []) {
+      observer?.observe(slot);
+    }
+  });
   return hidden;
 }
