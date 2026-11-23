@@ -179,6 +179,19 @@ function HeightField(props: {
 }
 
 /**
+ * Tools below the table would cover the block after it (a second table, whose cells could not be clicked), so the
+ * table keeps their room below it while they show. `tall` is the tools' height, 0 when they are hidden.
+ */
+function keepRoomBelow(tools: HTMLElement, tall: number): void {
+  const block = tools.offsetParent instanceof HTMLElement ? tools.offsetParent : tools.parentElement?.parentElement;
+  if (!block) return;
+  block.style.marginBlockEnd = '';
+  if (tall <= 0 || tools.getBoundingClientRect().top < block.getBoundingClientRect().bottom - 1) return;
+  const margin = parseFloat(getComputedStyle(block).marginBlockEnd) || 0;
+  block.style.marginBlockEnd = `${margin + tall}px`;
+}
+
+/**
  * The tools sit above the table. When they are taller than the room between the table and the top of the page (the
  * cell format bar adds rows, and touch targets are larger), they go below it instead, so no button is cut off.
  */
@@ -194,24 +207,12 @@ function useRoomAbove(wrap: { current: HTMLDivElement | null }) {
       }
       return 0;
     };
-    // The block whose margin holds the room for tools below it.
-    let spaced: HTMLElement | null = null;
     const place = () => {
-      if (spaced) spaced.style.marginBlockEnd = '';
-      spaced = null;
       const room = owner.getBoundingClientRect().top - clipTop();
       const tall = node.getBoundingClientRect().height;
       if (tall > 0 && tall > room) node.setAttribute('data-below', '');
       else node.removeAttribute('data-below');
-      // Tools below the table would cover the block after it (a second table, whose cells could not be clicked), so
-      // the table keeps their room below it while they show.
-      const block = node.offsetParent instanceof HTMLElement ? node.offsetParent : null;
-      if (!block) return;
-      if (tall > 0 && node.getBoundingClientRect().top >= block.getBoundingClientRect().bottom - 1) {
-        const margin = parseFloat(getComputedStyle(block).marginBlockEnd) || 0;
-        block.style.marginBlockEnd = `${margin + tall}px`;
-        spaced = block;
-      }
+      keepRoomBelow(node, tall);
     };
     place();
     // A surface with no ResizeObserver (a test document) keeps the first placement.
@@ -220,7 +221,7 @@ function useRoomAbove(wrap: { current: HTMLDivElement | null }) {
     watch.observe(node);
     return () => {
       watch.disconnect();
-      if (spaced) spaced.style.marginBlockEnd = '';
+      keepRoomBelow(node, 0);
     };
   }, [wrap]);
 }
