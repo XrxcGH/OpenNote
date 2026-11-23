@@ -95,6 +95,10 @@ The app registers 1178 commands and 48 tool windows. 24 of the windows are subje
 - **C and C++ runs.** Clang 22 from the clang pack compiles C (C17) and C++ (C++20) projects to WebAssembly, and a WASI runner runs them in the sandbox.
 - **Error detection in code.** Syntax errors for nine languages, and OpenNote's own checks for Python (Ruff rules), JavaScript and TypeScript (ESLint rules), C, C++, and Lua.
 - **Code completion without a model.** A ranked list from names in scope, members, keywords, snippets, and words in the project, plus one-line ghost text from patterns, and an explicit request key.
+- **Quick fixes and explanations.** Ctrl+. on a problem in the Code studio offers its quick fixes, plus Fix all.
+- **Code tests and test cases.** The Tests panel runs input and output cases, function calls with JSON arguments, and SQL result sets.
+- **Code cells on the run core.** Code cells use the Code studio editor, checks, and completion.
+- **Code studio speed gates.** 18 speed budgets for the Code studio, from completion to model speed.
 
 #### Review, sync, and shell polish
 
@@ -421,7 +425,7 @@ Open it with the command "Open the code studio".
 - **Draw a grid to make a table.** Draw a rough grid with the pen and choose "Snap shape" or "Convert to table".
 - **Board, calendar, and gallery views.** A smart table can also show as a board, a calendar, a gallery of cards, or a timeline.
 - **Diagrams from text.** A diagram block draws flowcharts, sequence diagrams, timelines, and class diagrams from a short text description in the Mermaid syntax, on the device.
-- **Code cells.** A code cell runs a short Python or JavaScript program on the page and shows what it prints, with errors in red.
+- **Code cells.** A code cell runs a short program in a Code studio language on the page and shows what it prints, with errors in red.
 - **Mind maps.** Type an outline and see it as a mind map, or build the map with the keyboard or the pen, and the outline updates.
 - **Shape libraries and text in shapes.** Shapes can hold text, and handwriting written inside a shape becomes its label when recognition is on (Phase 12).
 
