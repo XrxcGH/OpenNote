@@ -40,6 +40,17 @@
     border-radius: var(--radius-sm);
   }
 
+  .editor {
+    min-block-size: calc(var(--target-size) * 2.5);
+    max-block-size: 28rem;
+    overflow: auto;
+    font-family: var(--font-mono);
+    font-size: var(--type-small-size);
+    background: var(--color-surface-page);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+  }
+
   .source {
     padding: var(--space-3);
     font-family: var(--font-mono);

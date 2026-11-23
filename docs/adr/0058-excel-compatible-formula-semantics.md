@@ -1,6 +1,6 @@
 # ADR 0058: Table formulas follow Excel's semantics
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-11-01
 
 ## Context

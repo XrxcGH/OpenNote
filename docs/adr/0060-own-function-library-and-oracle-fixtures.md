@@ -1,6 +1,6 @@
 # ADR 0060: An in-repository function library tested against reference values
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-11-01
 
 ## Context

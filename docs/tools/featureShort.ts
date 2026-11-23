@@ -42,8 +42,8 @@ export const SHORT: Readonly<Record<string, string>> = {
     'The library adds a fountain pen, a brush, a calligraphy nib, and dashed and dotted line pens to the pens and pencil',
   'A smart table can also show as a board (':
     'A smart table can also show as a board, a calendar, a gallery of cards, or a timeline',
-  'A code cell block runs a short Python (M':
-    'A code cell runs a short Python or JavaScript program on the page and shows what it prints, with errors in red',
+  'A code cell block runs a short Python, J':
+    'A code cell runs a short program in a Code studio language on the page and shows what it prints, with errors in red',
   '"Create shortcut" makes a Windows shortc':
     '"Create shortcut" makes a Windows shortcut that opens a page, a section, or a notebook, and you can pin it to the taskbar',
   'Dropping an audio or video file, such as':

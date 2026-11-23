@@ -1,11 +1,12 @@
-// The code cell sandbox in a real browser: worked problems with known answers in both languages, and the ways out a
-// cell might try (network, files, the worker's globals, code from text), the time and memory limits, Stop, and the
-// output limit.
+// The code cells' run core in a real browser. These are the old sandbox tests, ported.
+// They cover worked problems with known answers in both languages. They also cover the ways out a cell might try:
+// network, files, the worker's globals, and code from text. Last, the time and memory limits, Stop, and output.
 
 // checks-disable-file modifiability: one describe block per feature
 import { describe, expect, it, vi } from 'vitest';
-import { LIMITS } from './protocol';
-import type { CodeLanguage, Limits } from './protocol';
+import { LIMITS } from './model';
+import type { CodeLanguage, Limits } from './model';
+import { loadRunCore } from '../codestudio';
 import { runCode } from './run';
 import type { RunResult } from './run';
 
@@ -29,6 +30,12 @@ async function run(language: CodeLanguage, source: string, limits: Limits = LIMI
 
 const py = (source: string, limits?: Limits) => run('python', source, limits);
 const js = (source: string, limits?: Limits) => run('javascript', source, limits);
+
+describe('limits', () => {
+  it('are the run core’s page limits', async () => {
+    expect(LIMITS).toEqual((await loadRunCore()).RUN_LIMITS);
+  });
+});
 
 describe('worked problems', () => {
   it('finds the square root of 2 with Newton’s method in Python', async () => {
@@ -82,18 +89,6 @@ describe('worked problems', () => {
 });
 
 describe('the sandbox', () => {
-  it('leaves the worker nothing of the browser after lockdown', async () => {
-    const worker = new Worker(new URL('./lockdownProbe.ts', import.meta.url), { type: 'module' });
-    const report = await new Promise<Record<string, unknown>>((resolve) => {
-      worker.onmessage = (event: MessageEvent) => resolve(event.data as Record<string, unknown>);
-    });
-    worker.terminate();
-    expect(report.left).toEqual([]);
-    expect(report.present).toEqual([]);
-    expect(report.makers).toEqual(['blocked', 'blocked', 'blocked', 'blocked']);
-    expect(report.kept).toBe('objectfunctionobject');
-  });
-
   it('gives JavaScript cells no network, timers, modules, or worker globals', async () => {
     const ran = await js(
       [

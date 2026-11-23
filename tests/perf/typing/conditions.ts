@@ -211,6 +211,7 @@ const TEXT_FLAGS = [
   'text.layout',
   'text.pasteFidelity',
   'text.findFormat',
+  'page.findReplace',
 ];
 /**
  * A 1,000-line program (the plan's typing gate G-U2) in a new Code studio project, the caret at its end; the console

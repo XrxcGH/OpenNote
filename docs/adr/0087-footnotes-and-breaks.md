@@ -1,6 +1,6 @@
 # ADR 0087: Footnotes use `[^id]` with their text in data.notes, and page breaks are `break` blocks
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-11-01
 
 ## Context

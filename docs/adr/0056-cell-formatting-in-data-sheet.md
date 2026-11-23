@@ -1,6 +1,6 @@
 # ADR 0056: Cell formatting lives in a style sheet in the table block's `data.sheet`
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-11-01
 
 ## Context

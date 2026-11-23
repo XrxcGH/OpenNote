@@ -1,4 +1,4 @@
-// Code cells: small Python and JavaScript programs that run on this device in a sandbox (features/codecells).
+// Code cells: small programs in several languages that run on this device in a sandbox (features/codecells).
 // Every interface string is a full sentence here, never joined from pieces (ARCHITECTURE.md section 19).
 
 export const codeCells = {
@@ -7,19 +7,39 @@ export const codeCells = {
   inserted: 'Code cell added. Write code, then press Run or Ctrl+Enter.',
   block: 'Code cell',
   language: 'Language',
-  languages: { python: 'Python', javascript: 'JavaScript' },
+  languages: {
+    python: 'Python',
+    javascript: 'JavaScript',
+    typescript: 'TypeScript',
+    sql: 'SQL',
+    lua: 'Lua',
+    c: 'C',
+    cpp: 'C++',
+  },
+  engine: 'Python engine',
+  engines: { 'python-quick': 'Quick (MicroPython)', 'python-full': 'Full (Pyodide)' },
+  openStudio: 'Open in Code studio',
+  openStudioCommand: 'Open code cell in Code studio',
+  studioConfirm: {
+    title: 'Open this code in the Code studio?',
+    body: 'The code cell becomes a code project with the same text. You can undo the change.',
+    confirm: 'Open in Code studio',
+  },
+  studioOpened: 'Code cell converted to a code project. Opening the Code studio.',
+  studioReadOnly: 'This page is read-only, so the code cannot be moved into a project.',
+  studioNoBlock: 'Put the caret in a code cell or a code project first.',
   code: 'Code',
   newer: 'This code cell needs a newer version of OpenNote',
   storedLanguage: 'Language: {language}',
   codeHelp:
-    'Tab indents and Shift+Tab outdents. Press Escape, then Tab, to move on. Ctrl+Enter runs the cell, and Escape stops it.',
+    'Tab indents and Shift+Tab outdents. Ctrl+Tab accepts a suggestion. Press Escape, then Tab, to move on. ' +
+    'Ctrl+Enter runs the cell, and Escape stops it.',
   run: 'Run',
   stop: 'Stop',
   clear: 'Clear output',
   output: 'Output',
   noOutput: 'The cell ran and printed nothing.',
-  safety:
-    'Runs on this device with no network, no files, and no access to your notes, for up to {seconds} seconds and {megabytes} MB.',
+  safety: 'Runs on this device with no network, files, or notes, for up to {seconds} seconds and {megabytes} MB.',
   status: {
     starting: 'Starting {language}…',
     running: 'Running…',
@@ -29,25 +49,13 @@ export const codeCells = {
     memory: 'Stopped: the cell used more than {megabytes} MB, the memory limit.',
     stopped: 'Stopped.',
     failed: 'The cell could not run. Try again.',
+    runtime: 'This language cannot run in this version of OpenNote yet.',
+    pack: 'This language needs a download first. Open Settings, then Code, then Downloads.',
     truncated: 'Only the first part of the output is shown.',
   },
   blocked: {
     files: 'The sandbox blocks this: a code cell cannot read or write files on this computer.',
     modules:
       'The sandbox blocks this: a code cell has no network and no installed packages, only the built-in modules.',
-  },
-  starter: {
-    python: `# Newton’s method for the square root of 2
-x = 1.0
-for step in range(6):
-    x = x - (x * x - 2) / (2 * x)
-    print(step, x)
-`,
-    javascript: `// Newton’s method for the square root of 2
-// No braces here: the message formatter reads them as placeholders.
-let x = 1;
-const next = (v) => v - (v * v - 2) / (2 * v);
-for (let step = 0; step < 6; step++) console.log(step, (x = next(x)));
-`,
   },
 } as const;

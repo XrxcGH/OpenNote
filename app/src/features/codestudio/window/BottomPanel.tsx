@@ -8,6 +8,7 @@ import { Button, IconButton } from '../../../ui';
 import { ConsolePanel } from '../console/ConsolePanel';
 import { countProblems } from '../problems/group';
 import { ProblemsPanel } from '../problems/ProblemsPanel';
+import { TestsPanel } from '../testing/TestsPanel';
 import type { PanelTab, StudioController } from './controller';
 import styles from './studio.module.css';
 
@@ -22,37 +23,6 @@ const TABS: readonly { id: PanelTab; title: MessageKey }[] = [
 const MIN_HEIGHT = 96;
 const MAX_HEIGHT = 640;
 const STEP = 24;
-
-function TestsPanel({ controller }: { controller: StudioController }) {
-  const project = controller.project()!;
-  const cases = Object.values(project.tests).sort((a, b) => a.order - b.order);
-  const results = new Map(controller.testResults.map((result) => [result.id, result]));
-  const extra = controller.testResults.filter((result) => !project.tests[result.id]);
-  if (cases.length === 0 && extra.length === 0)
-    return <p className={styles.empty}>{t('codeStudio.studio.tests.none')}</p>;
-  const passed = controller.testResults.filter((result) => result.status === 'pass').length;
-  return (
-    <div className={styles.testsPanel}>
-      {controller.testResults.length > 0 && (
-        <p role="status">{t('codeStudio.studio.tests.summary', { passed, total: controller.testResults.length })}</p>
-      )}
-      <ul className={styles.testList}>
-        {[...cases.map((one) => ({ id: one.id, name: one.name })), ...extra].map((one) => {
-          const result = results.get(one.id);
-          return (
-            <li key={one.id} data-status={result?.status ?? 'notRun'}>
-              <span className={styles.testStatus}>
-                {t(`codeStudio.studio.tests.status.${result?.status ?? 'notRun'}` as MessageKey)}
-              </span>
-              <span>{one.name}</span>
-              {result?.message && <span className={styles.testMessage}>{result.message}</span>}
-            </li>
-          );
-        })}
-      </ul>
-    </div>
-  );
-}
 
 function WrittenFiles({ controller }: { controller: StudioController }) {
   if (controller.written.length === 0) return <p className={styles.empty}>{t('codeStudio.studio.written.none')}</p>;

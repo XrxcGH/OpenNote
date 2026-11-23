@@ -20,6 +20,7 @@ export const TEXT_FLAGS = [
   'text.layout',
   'text.pasteFidelity',
   'text.findFormat',
+  'page.findReplace',
 ] as const;
 
 export const test = base.extend({

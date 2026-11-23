@@ -1,6 +1,6 @@
 {
   "startup": {
-    "jsKb": 635,
+    "jsKb": 638,
     "cssKb": 30
   },
   "after": [
@@ -69,6 +69,7 @@
   "lazyKb": {
     "features/codestudio/window": 190,
     "features/codestudio/editor": 190,
+    "features/codestudio/complete": 125,
     "features/page/symbols": 80,
     "@codemirror/lang-": 44,
     "@codemirror/legacy-modes": 40,
