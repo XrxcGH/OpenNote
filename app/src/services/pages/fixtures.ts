@@ -222,13 +222,18 @@ function highlightedRuns(order: number): BlockJson {
  * font, size, and color; 50 paragraphs with tab stops; 10 lists with their own number formats; 20 bordered paragraphs.
  * Every element gets an ID, because `paras` is keyed by element ID.
  */
-function formattedNote(order: number): BlockJson {
+function formattedNote(order: number, reviewed = false): BlockJson {
   const formats = ['decimal', 'lowerLetter', 'upperRoman', 'lowerRoman', 'upperLetter', 'decimalZero', 'ordinal'];
   const ids: string[] = [];
   const paras: Record<string, Record<string, unknown>> = {};
   const lists: Record<string, unknown> = {};
   let paragraph = 0;
   let list = 0;
+  // The reviewed variant (B12): footnotes, comments, and suggestions among the formatted paragraphs.
+  const notes: Record<string, unknown> = {};
+  const comments: Record<string, unknown> = {};
+  const suggestions: Record<string, unknown> = {};
+  const author = { author: 'Avery Quinn', time: AT };
   const pieces = longNoteMarkdown()
     .split('\n\n')
     .map((piece) => {
@@ -267,11 +272,30 @@ function formattedNote(order: number): BlockJson {
       }
       if (Object.keys(entry).length > 0) paras[id] = entry;
       const body = n < 50 ? piece.replace(/^(\S+ \S+ \S+) /, '$1\t') : piece;
-      return n % 10 < 3
-        ? `<span data-font="Georgia"><span data-size="12"><span data-color="indigo">${body}</span></span></span>`
-        : body;
+      const styled =
+        n % 10 < 3
+          ? `<span data-font="Georgia"><span data-size="12"><span data-color="indigo">${body}</span></span></span>`
+          : body;
+      if (!reviewed || n >= 150) return styled;
+      if (n % 12 === 5) {
+        const note = fixtureId();
+        notes[note] = { kind: 'foot', markdown: `Note on paragraph ${n}.` };
+        return `${styled}[^${note}]`;
+      }
+      if (n % 12 === 8) {
+        const mark = fixtureId();
+        comments[mark] = { ...author, markdown: `Check paragraph ${n}.`, replies: [], resolved: false };
+        return `<span data-comment="${mark}">${styled}</span>`;
+      }
+      if (n % 12 === 10) {
+        const mark = fixtureId();
+        suggestions[mark] = { kind: 'ins', ...author };
+        return `${styled}<span data-ins="${mark}"> Added words.</span>`;
+      }
+      return styled;
     });
-  return block('text', order, { markdown: pieces.join('\n\n'), ids, paras, lists });
+  const review = reviewed ? { notes, comments, suggestions } : {};
+  return block('text', order, { markdown: pieces.join('\n\n'), ids, paras, lists, ...review });
 }
 
 function build(): Record<string, () => PageFixture> {
@@ -354,6 +378,8 @@ function build(): Record<string, () => PageFixture> {
     bigTable: () => page('Big table', [text(0, 'Start here.'), bigTable(1)]),
     largeSheetTable: () => page('Large sheet', [text(0, 'Start here.'), largeSheetTable(1)]),
     twentyPageFormatted: () => page('A formatted twenty-page note', [formattedNote(0)]),
+    // The formatted note with footnotes, comments, and suggestions (B12 a11y-perf-e2e).
+    twentyPageReviewed: () => page('A reviewed twenty-page note', [formattedNote(0, true)]),
     // Highlight, shading, and a border: the runs that can clash in forced colors (a11y-perf-e2e).
     highlightedRuns: () => page('Highlighted runs', [highlightedRuns(0)]),
     // Two tables with Excel's formula rules, for the formula bar: references, errors, and page names across tables.
@@ -399,6 +425,7 @@ export type PageFixtureName =
   | 'bigTable'
   | 'largeSheetTable'
   | 'twentyPageFormatted'
+  | 'twentyPageReviewed'
   | 'highlightedRuns'
   | 'formulaTables';
 

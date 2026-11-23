@@ -76,7 +76,8 @@
   }
 
   .number {
-    min-inline-size: 2ch;
+    min-inline-size: max(2ch, 24px);
+    min-block-size: 24px;
     padding: 0;
     border: 0;
     background: none;
@@ -94,7 +95,7 @@
   .text {
     flex: 1;
     min-inline-size: 0;
-    min-block-size: 1.5em;
+    min-block-size: max(1.5em, 24px);
   }
 
   .text p {
