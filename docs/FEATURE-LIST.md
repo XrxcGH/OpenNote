@@ -601,7 +601,7 @@ Open it with the command "Open the code studio".
 | Format as table | Opens the gallery of 21 table looks and its banding options. |  |
 | Format painter | Copies the format of the selected cell onto the cells you select next. |  |
 | Insert function | Opens a searchable list of spreadsheet functions and puts the chosen one into the formula. | Shift+F3 |
-| Paste special… | Opens Paste special (Ctrl+Alt+V) to paste only values, formulas, formats, notes, validation, or widths, with an operation, transpose, or a link. | Ctrl+Alt+V |
+| Paste special… | Opens Paste special (Ctrl+Alt+V) to paste only values, formulas, formats, notes, validation, or widths. It can also add or multiply, transpose, or paste a link. | Ctrl+Alt+V |
 | Add row above | Adds a row above the current one. |  |
 | Add row below | Adds a row below the current one. | Ctrl+Enter |
 | Move row up | Moves the current row up one place. | Alt+Shift+Up |
