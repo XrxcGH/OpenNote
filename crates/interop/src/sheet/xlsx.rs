@@ -89,6 +89,88 @@ pub fn is_plain_number(text: &str) -> bool {
         && whole.len() + fraction.map_or(0, str::len) <= 15
 }
 
+/// A cell's text that Excel holds as a typed value, not as a string (walk 9, T4-D11-2).
+#[derive(Debug, PartialEq)]
+pub(crate) enum Typed {
+    /// A number as `<v>` text, with the number format code it needs, if any.
+    Number(String, Option<&'static str>),
+    /// A number with a percent format whose digits follow the text's.
+    Percent(String, String),
+    /// A boolean.
+    Bool(bool),
+}
+
+/// The days from 1899-12-30 to an ISO date, which is Excel's date serial. `None` for a date that does not exist.
+fn date_serial(text: &str) -> Option<i64> {
+    let b = text.as_bytes();
+    if b.len() != 10 || b[4] != b'-' || b[7] != b'-' {
+        return None;
+    }
+    let num = |range: std::ops::Range<usize>| -> Option<i64> {
+        let part = text.get(range)?;
+        part.bytes().all(|d| d.is_ascii_digit()).then(|| part.parse().ok())?
+    };
+    let (y, m, d) = (num(0..4)?, num(5..7)?, num(8..10)?);
+    let leap = (y % 4 == 0 && y % 100 != 0) || y % 400 == 0;
+    let last = match m {
+        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
+        4 | 6 | 9 | 11 => 30,
+        2 => 28 + i64::from(leap),
+        _ => return None,
+    };
+    if !(1..=last).contains(&d) || y < 1900 {
+        return None;
+    }
+    // Days since 1970-01-01 (the civil-from-days algorithm), then the offset of Excel's day zero.
+    let (yy, mm) = if m <= 2 { (y - 1, m + 9) } else { (y, m - 3) };
+    let era = yy.div_euclid(400);
+    let yoe = yy - era * 400;
+    let doy = (153 * mm + 2) / 5 + d - 1;
+    let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+    Some(era * 146_097 + doe - 719_468 + 25_569)
+}
+
+/// What a cell's text is as a typed value: a boolean, an ISO date, a percent, or a number written in scientific
+/// notation. Plain numbers are handled by [`is_plain_number`]. Anything else stays text.
+pub(crate) fn typed_value(text: &str) -> Option<Typed> {
+    let t = text.trim();
+    if t.eq_ignore_ascii_case("true") || t.eq_ignore_ascii_case("false") {
+        return Some(Typed::Bool(t.eq_ignore_ascii_case("true")));
+    }
+    if let Some(serial) = date_serial(t) {
+        return Some(Typed::Number(serial.to_string(), Some("yyyy-mm-dd")));
+    }
+    if let Some(number) = t.strip_suffix('%') {
+        let digits = number.strip_prefix('-').unwrap_or(number);
+        let (whole, fraction) = digits.split_once('.').map_or((digits, ""), |(w, f)| (w, f));
+        let all = |s: &str| s.bytes().all(|b| b.is_ascii_digit());
+        if !whole.is_empty() && all(whole) && all(fraction) && whole.len() + fraction.len() <= 15 {
+            // "12.5e-2" parses to the nearest number to 0.125, with no rounding from dividing.
+            let value: f64 = format!("{number}e-2").parse().ok()?;
+            let code = if fraction.is_empty() {
+                "0%".to_owned()
+            } else {
+                format!("0.{}%", "0".repeat(fraction.len()))
+            };
+            return Some(Typed::Percent(value.to_string(), code));
+        }
+    }
+    let exponent = t.find(['e', 'E'])?;
+    let (mantissa, power) = (&t[..exponent], &t[exponent + 1..]);
+    let digits = mantissa.strip_prefix(['-', '+']).unwrap_or(mantissa);
+    let power_digits = power.strip_prefix(['-', '+']).unwrap_or(power);
+    let all = |s: &str| !s.is_empty() && s.bytes().all(|b| b.is_ascii_digit());
+    let mantissa_ok = match digits.split_once('.') {
+        Some((w, f)) => (w.is_empty() || all(w)) && all(f) || all(w) && f.is_empty(),
+        None => all(digits),
+    };
+    if !mantissa_ok || !all(power_digits) {
+        return None;
+    }
+    let value: f64 = t.parse().ok().filter(|v: &f64| v.is_finite())?;
+    Some(Typed::Number(format!("{value:e}"), None))
+}
+
 /// Writes the worksheet of `input`, adding its looks to `styles`.
 pub fn worksheet(input: &Input<'_>, styles: &mut StyleSheet) -> Written {
     let sheet = input.sheet;
@@ -190,7 +272,19 @@ fn cell_xml(input: &Input<'_>, styles: &mut StyleSheet, r: usize, c: usize, text
     let header_row = input.header && r == 0;
     let style = sheet.and_then(|s| s.styles.get(r)?.get(c)?.as_ref());
     let fmt = sheet.and_then(|s| s.formats.get(r)?.get(c)?.as_deref());
-    let s = styles.cell(style, fmt, header_row, text.contains('\n'));
+    // A table that becomes an Excel list object keeps its header cells as text.
+    let as_text = header_row && input.book.get(input.own).is_some_and(|t| t.excel.is_some());
+    let typed = if as_text || formula_of(input.table, r, c).is_some() || is_plain_number(text) {
+        None
+    } else {
+        typed_value(text)
+    };
+    let from_type = match &typed {
+        Some(Typed::Number(_, code)) => *code,
+        Some(Typed::Percent(_, code)) => Some(code.as_str()),
+        _ => None,
+    };
+    let s = styles.cell(style, fmt.or(from_type), header_row, text.contains('\n'));
     let at = address(r, c);
     let s_attr = if s == 0 { String::new() } else { format!(" s=\"{s}\"") };
     if matches!(index.slot(r, c), Some(Slot::Covered(_))) {
@@ -233,7 +327,12 @@ fn cell_xml(input: &Input<'_>, styles: &mut StyleSheet, r: usize, c: usize, text
             format!("<c r=\"{at}\"{s_attr}/>")
         };
     }
-    let as_text = header_row && input.book.get(input.own).is_some_and(|t| t.excel.is_some());
+    if let Some(typed) = typed {
+        return match typed {
+            Typed::Number(v, _) | Typed::Percent(v, _) => format!("<c r=\"{at}\"{s_attr}><v>{v}</v></c>"),
+            Typed::Bool(b) => format!("<c r=\"{at}\"{s_attr} t=\"b\"><v>{}</v></c>", u8::from(b)),
+        };
+    }
     if is_plain_number(text) && !as_text {
         format!("<c r=\"{at}\"{s_attr}><v>{}</v></c>", text.trim())
     } else {
