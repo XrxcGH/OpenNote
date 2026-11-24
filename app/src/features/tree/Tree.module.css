@@ -225,9 +225,10 @@
 
   /* The kebab takes no room while it is hidden, so a name uses the whole row and ends at its edge. When it shows
      it lies over the end of the row, on the row's own fill, and only then hides the last of the name. */
+  /* It stays inside the row's focus ring, which it would otherwise paint over. */
   .more {
     position: absolute;
-    inset-block: 0;
+    inset-block: var(--size-focus-ring-width);
     inset-inline-end: var(--space-1);
     display: grid;
     align-items: center;
