@@ -96,6 +96,18 @@ describe('tooltip keyboard', () => {
   });
 });
 
+describe('tooltip after a menu closes (VB-187)', () => {
+  it('doesn’t show when a script returns focus to a control after a click', async () => {
+    const { settings } = renderButtons();
+    await userEvent.click(settings);
+    settings.blur();
+    await userEvent.unhover(settings);
+    settings.focus();
+    await wait(700);
+    expect(tooltip()).toBeNull();
+  });
+});
+
 describe('tooltip pointer', () => {
   it('waits 500 ms of hover before it shows', async () => {
     const { dark } = renderButtons();

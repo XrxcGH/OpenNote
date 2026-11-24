@@ -66,7 +66,9 @@ function ActionButton({ action }: { action: BottomAction }) {
       onClick={() => void executeCommand(action.command, undefined, 'commandBar')}
     >
       <Icon aria-hidden weight={open ? 'fill' : 'regular'} />
-      <span className={styles.bottomLabel}>{label}</span>
+      <span className={styles.bottomLabel} title={label}>
+        {label}
+      </span>
     </button>
   );
   // The button shows its label, so a tooltip only earns its place when it adds the shortcut.

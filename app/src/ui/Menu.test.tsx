@@ -53,6 +53,17 @@ async function open(options: OpenOptions = {}) {
 
 const item = (name: string) => screen.getByRole('menuitem', { name });
 
+describe('Menu width', () => {
+  it('wraps a long label when the menu hits its width cap, with no sideways scroll (VA-4)', async () => {
+    const long = 'Move this page to another notebook and keep its links '.repeat(12).trim();
+    const { menu } = await open({
+      items: [{ id: 'long', label: long, shortcut: 'Ctrl+Shift+Alt+M', onSelect: vi.fn() }],
+    });
+    await settle();
+    expect(menu.scrollWidth).toBeLessThanOrEqual(menu.clientWidth);
+  });
+});
+
 describe('menu rendering', () => {
   it('shows each item with its role, state, and shortcut', async () => {
     const { menu } = await open();

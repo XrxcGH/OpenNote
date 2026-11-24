@@ -163,6 +163,18 @@ const sheetOf = (control: HTMLElement) => () => {
 
 // checks-disable-next-line modifiability: one test group that shares its fixtures; split it when it grows again
 describe('PrintDialog', () => {
+  it('lets the form and preview stack in a narrow window (T1-C03-1)', async () => {
+    render(<PrintDialog source={printSource()} platform={createTestPlatform()} mode="export" close={vi.fn()} />);
+    const include = await screen.findByRole('switch', { name: 'Include the page title' });
+    let node: HTMLElement | null = include.parentElement;
+    let container = false;
+    while (node) {
+      if (getComputedStyle(node).containerType === 'inline-size') container = true;
+      node = node.parentElement;
+    }
+    expect(container).toBe(true);
+  });
+
   it('shows the page with its title by default, and without it when the switch goes off', async () => {
     render(<PrintDialog source={printSource()} platform={createTestPlatform()} mode="export" close={vi.fn()} />);
     const include = await screen.findByRole('switch', { name: 'Include the page title' });

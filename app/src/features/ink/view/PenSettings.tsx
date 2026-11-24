@@ -306,9 +306,9 @@ export default function PenSettings() {
   const shapesOn = useFlag('ink.shapes');
   const hovering = useStore(inkPrefs, (state) => state.hover);
   const fields = useStore(inkPrefs, (state) => state.penFields);
+  // The Settings page already shows this name as its heading, so the section only carries it as a label (VA-1).
   return (
-    <section className={styles.section} aria-labelledby="ink-settings">
-      <h2 id="ink-settings">{t('ink.settings.title')}</h2>
+    <section className={styles.section} aria-label={t('ink.settings.title')}>
       {/* Each choice group has a visible name, not only an accessible one (full walk VA-50). */}
       <h3>{t('ink.settings.handedness')}</h3>
       <RadioGroup<Handedness>

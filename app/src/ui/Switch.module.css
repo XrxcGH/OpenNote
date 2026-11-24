@@ -12,6 +12,8 @@
     /* The hover area hangs out by its padding and border on both sides, so the label lines up with the text
        above and below it and the track with the controls' end edge. */
     margin-inline: calc(-1 * (var(--space-3) + 1px));
+    /* In a narrow column the label wraps, and the hover area never runs past the column (full walk VA-2). */
+    max-inline-size: calc(100% + 2 * (var(--space-3) + 1px));
     border: 1px solid transparent;
     border-radius: var(--radius-md);
     background: transparent;
@@ -19,6 +21,11 @@
     font: inherit;
     text-align: start;
     cursor: pointer;
+  }
+
+  .labeled > span:first-child {
+    min-inline-size: 0;
+    overflow-wrap: anywhere;
   }
 
   .labeled:hover {
