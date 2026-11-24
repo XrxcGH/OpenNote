@@ -208,7 +208,7 @@
     font-family: var(--font-mono);
     font-size: var(--type-small-size);
     line-height: var(--type-small-line);
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
   }
 
   .chip {

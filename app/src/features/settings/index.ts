@@ -5,3 +5,4 @@ export { SettingsView } from './SettingsView';
 // For the sections that other features register in Settings.
 export { host as settingsHost } from './host';
 export { default as settingsStyles } from './SettingsView.module.css';
+export { useNotesFolderInUse } from './notesFolder';

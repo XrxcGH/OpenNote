@@ -11,6 +11,7 @@ export { Dialog, confirm } from './Dialog';
 export { useDismiss } from './dismiss';
 export type { DialogAction, DialogProps } from './Dialog';
 export { FocusScope } from './FocusScope';
+export { PathText, displayPath } from './PathText';
 export {
   Books,
   Candle,

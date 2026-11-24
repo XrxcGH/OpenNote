@@ -230,7 +230,8 @@
   }
 
   .path {
-    overflow-wrap: anywhere;
+    /* A path breaks after a separator, and inside a name only when one name is wider than the line. */
+    overflow-wrap: break-word;
     font-family: var(--font-mono);
   }
 

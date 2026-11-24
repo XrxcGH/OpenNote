@@ -100,6 +100,15 @@ describe('the Settings page', () => {
 });
 
 describe('the Settings sections and screens', () => {
+  it('shows the default notes folder when none is chosen (T1-D05-7, W9-VA-16)', async () => {
+    await renderApp({ settings: { storage: { notesFolder: null } } });
+    await openSettings();
+    const path = await screen.findByText(/Documents.OpenNote/);
+    expect(path.textContent).toContain('\\');
+    expect(path.textContent).not.toContain('/');
+    expect(screen.queryByText(/No notes folder is chosen/)).toBeNull();
+  });
+
   it('leaves with Escape when focus is on the page body (T1-D05-2)', async () => {
     await renderApp();
     await openSettings();
