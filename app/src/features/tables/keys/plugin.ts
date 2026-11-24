@@ -235,8 +235,8 @@ function noteFocus(view: EditorView, focused: boolean): boolean {
 
 /**
  * A click on a cell's padding, not its text, selects the cell in Grid mode. So does one click on the text of a cell
- * that shows something other than what it holds, as a formula shows its result: the caret would show the raw formula
- * and a typed key would add to it. A double click, or F2, edits the formula.
+ * that shows more than it holds, as a formula shows its result. A caret there would show the raw formula, and a typed
+ * key would add to it. A double click, or F2, edits the formula.
  */
 function clickPadding(view: EditorView, event: MouseEvent, options: SheetKeysOptions): boolean {
   const target = event.target;
