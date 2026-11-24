@@ -24,7 +24,7 @@
 
   .field select,
   .field input {
-    min-block-size: 2.25rem;
+    min-block-size: var(--target-size);
     min-inline-size: 12rem;
     padding-inline: var(--space-2);
     color: var(--color-text-primary);

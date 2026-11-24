@@ -17,6 +17,8 @@ import { syncOf } from '../blocks/textBlock';
 import { shownLayer } from '../mount';
 import { shownPool } from '../pool/shown';
 import { acceptRemoteText, shownQueue } from '../sync';
+// eslint-disable-next-line opennote/feature-boundaries -- The barrel pulls the whole engine into this chunk.
+import { SHEET_VERSION } from '../../tables/smart/version';
 import { whenViewReady } from './lazyView';
 
 /** Splits a text block's document after the top-level block with the caret. An empty paragraph there goes. */
@@ -41,13 +43,15 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
 /** A new table stores the setting "New tables use spreadsheet keys" as data.sheet.table.keys (ADR 0063). */
-function withKeys(data: TableData): Record<string, unknown> {
+export function withKeys(data: TableData): Record<string, unknown> {
   const own = data as unknown as Record<string, unknown>;
   if (!isEnabled('tables.sheetWrites')) return own;
   const sheet = isRecord(own.sheet) ? own.sheet : {};
   const table = isRecord(sheet.table) ? sheet.table : {};
-  if (table.keys !== undefined) return own;
-  return { ...own, sheet: { ...sheet, table: { ...table, keys: getSettings().tables.newTableKeys } } };
+  if (table.keys !== undefined && sheet.v !== undefined) return own;
+  const keys = table.keys ?? getSettings().tables.newTableKeys;
+  // data.sheet.v makes the table follow Excel's rules (2^3^2 is 64, -2^2 is 4) instead of the textbook ones.
+  return { ...own, sheet: { ...sheet, v: sheet.v ?? SHEET_VERSION, table: { ...table, keys } } };
 }
 
 /**

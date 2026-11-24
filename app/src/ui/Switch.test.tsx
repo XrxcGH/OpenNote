@@ -16,6 +16,18 @@ function Fixture(props: Partial<SwitchProps>) {
 const toggle = () => screen.getByRole('switch');
 
 describe('Switch rendering', () => {
+  it('wraps a long label inside a narrow column instead of scrolling sideways (VA-2)', () => {
+    const label = 'x'.repeat(90);
+    renderUi(
+      <div data-testid="column" style={{ inlineSize: 200, padding: 16, boxSizing: 'border-box', overflow: 'auto' }}>
+        <Switch label={label} checked={false} onChange={() => {}} />
+      </div>,
+    );
+    const column = screen.getByTestId('column');
+    expect(column.scrollWidth).toBeLessThanOrEqual(column.clientWidth);
+    expect(toggle().getBoundingClientRect().right).toBeLessThanOrEqual(column.getBoundingClientRect().right);
+  });
+
   it('is a switch named by its label, with its state in aria-checked', () => {
     renderUi(<Fixture checked />);
     expect(toggle().getAttribute('aria-checked')).toBe('true');

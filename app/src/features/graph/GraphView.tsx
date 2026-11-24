@@ -303,7 +303,7 @@ export default function GraphView({ onClose }: OverlayProps) {
             ))}
           </>
         )}
-        <details>
+        <details className={styles.unlinked}>
           <summary>{t('qolSearch.graph.unlinked', { count: lonely.length })}</summary>
           <ul className={styles.list}>
             {lonely.map((page) => (

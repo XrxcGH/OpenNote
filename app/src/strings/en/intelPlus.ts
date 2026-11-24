@@ -38,6 +38,7 @@ export const intelPlus = {
     state: {
       notInstalled: 'Not downloaded',
       partial: '{done} of {size} downloaded. You can resume.',
+      partialLeft: '{left} left to download. You can resume.',
       downloading: 'Downloading, {done} of {size}',
       installed: 'Downloaded',
       failed: 'Stopped: {reason}',

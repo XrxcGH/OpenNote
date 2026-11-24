@@ -6,6 +6,7 @@ A code project can hold JavaScript (.js) and TypeScript (.ts) files and run them
 
 - The main file runs as a script. The value of its last line is shown after an arrow, as in code cells.
 - Use `console.log` or `print`. `console.warn` and `console.error` write to standard error. `readline()` and `prompt()` read standard input, and `process.argv` holds the arguments.
+- `console.table`, `console.dir`, and `console.groupCollapsed` work as in Node. `setTimeout`, `setInterval`, and `setImmediate` run on virtual time, so a run does not wait for real seconds. The time limit still applies.
 - Each run has a time limit and a memory limit. A run that passes one ends with a clear status.
 
 ## Modules

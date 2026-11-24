@@ -24,4 +24,11 @@ describe('the Tables settings section', () => {
     await waitFor(() => expect(getSettings().tables.newTableKeys).toBe('spreadsheet'));
     await expectNoAxeViolations(document.body);
   });
+
+  it('shows its name once, as the page heading (VA-1)', async () => {
+    await renderApp();
+    navigate({ view: 'settings', section: 'tables' });
+    await screen.findByRole('radiogroup', { name: 'New tables use spreadsheet keys' });
+    expect(screen.getAllByRole('heading', { name: 'Tables' })).toHaveLength(1);
+  });
 });

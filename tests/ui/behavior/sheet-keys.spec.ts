@@ -19,7 +19,14 @@ const inText = (page: Page, row: number, column: number): Locator => cell(page, 
 async function gridAt(page: Page, row: number, column: number): Promise<void> {
   await expect(async () => {
     await inText(page, row, column).click();
-    await page.keyboard.press('Escape');
+    // One click on a formula's result selects the cell already; Esc would then leave Grid mode. Other text needs Esc.
+    const done = await expect(cell(page, row, column))
+      .toHaveAttribute('aria-selected', 'true', { timeout: 400 })
+      .then(
+        () => true,
+        () => false,
+      );
+    if (!done) await page.keyboard.press('Escape');
     await expect(cell(page, row, column)).toHaveAttribute('aria-selected', 'true', { timeout: 2000 });
   }).toPass({ timeout: 20_000 });
 }

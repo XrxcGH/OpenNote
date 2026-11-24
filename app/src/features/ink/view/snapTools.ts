@@ -142,7 +142,7 @@ export function setRulerUnits(choice: 'auto' | LengthUnits): void {
 const SVG = 'http://www.w3.org/2000/svg';
 
 /** The ruler's tick marks and numbers as SVG, in page units across its length from the left end. */
-function tickMarks(doc: Document, ruler: Ruler, units: LengthUnits): SVGSVGElement {
+export function tickMarks(doc: Document, ruler: Ruler, units: LengthUnits): SVGSVGElement {
   const svg = doc.createElementNS(SVG, 'svg');
   svg.setAttribute('viewBox', `0 0 ${ruler.length} ${ruler.width}`);
   svg.setAttribute('aria-hidden', 'true');
@@ -169,16 +169,20 @@ function tickMarks(doc: Document, ruler: Ruler, units: LengthUnits): SVGSVGEleme
     node.setAttribute('y', String(long.major + 2.8 * mm));
     node.setAttribute('text-anchor', anchor);
     node.setAttribute('font-size', String(size * mm));
-    node.setAttribute('fill', 'currentColor');
+    // The ruler is see-through, so its numbers take the strongest text color to stay readable over the page.
+    node.setAttribute('fill', 'var(--color-text-primary)');
     node.textContent = text;
     svg.append(node);
   };
   for (const tick of ticks) if (tick.label && tick.at > 0) label(tick.at, tick.label, 'middle', 2.6);
-  label(1.2 * mm, units === 'imperial' ? 'in' : 'cm', 'start', 2.2);
+  label(1.2 * mm, units === 'imperial' ? 'in' : 'cm', 'start', 2.6);
   return svg;
 }
 
 type Which = 'ruler' | 'protractor';
+
+/** A turn handle's size: the target size, so touch density gets 44 px, and never less than 28 px. */
+const HANDLE = 'max(28px, var(--target-size, 28px))';
 
 /** The part of the page the view shows, in page units. */
 export interface View {
@@ -188,8 +192,8 @@ export interface View {
   readonly h: number;
 }
 
-/** Room kept clear around a widget, in screen pixels: its Turn handle reaches 34 px past its end. */
-const WIDGET_PAD_PX = 48;
+/** Room kept clear around a widget, in screen pixels: its Turn handle reaches up to 50 px past its end. */
+const WIDGET_PAD_PX = 56;
 /** The shortest ruler a narrow view gets, in page units. */
 const MIN_RULER = 40 * gridSize(1);
 
@@ -278,8 +282,8 @@ function make(doc: Document, which: Which): Widget {
   handle.setAttribute('aria-label', t('ink.snap.turn'));
   Object.assign(handle.style, {
     position: 'absolute',
-    width: '28px',
-    height: '28px',
+    width: HANDLE,
+    height: HANDLE,
     borderRadius: '50%',
     border: '1px solid var(--color-accent-primary)',
     background: 'var(--color-surface-page)',
@@ -456,7 +460,10 @@ class SnapLayer {
       backgroundPosition: `${w % (mm * 10)}px 0, ${w % (mm * 10)}px 0`,
       borderRadius: 'var(--radius-sm)',
     });
-    Object.assign(this.ruler.handle.style, { right: '-34px', top: `${h / 2 - 14}px` });
+    Object.assign(this.ruler.handle.style, {
+      right: `calc(-6px - ${HANDLE})`,
+      top: `calc(${h / 2}px - ${HANDLE} / 2)`,
+    });
 
     const pEl = this.protractor.element;
     const pw = protractor.radius * 2 * zoom;
@@ -477,7 +484,7 @@ class SnapLayer {
       backgroundSize: '100% 100%',
       maskImage: 'none',
     });
-    Object.assign(this.protractor.handle.style, { right: '-34px', bottom: '-14px' });
+    Object.assign(this.protractor.handle.style, { right: `calc(-6px - ${HANDLE})`, bottom: `calc(${HANDLE} / -2)` });
   }
 
   private readonly onKey = (event: KeyboardEvent) => {

@@ -19,6 +19,10 @@ describe('conduction form', () => {
     const o = solve({ layers: '200 mm, 0.72 W/(m·K), 0.002\n50 mm, 0.04 W/(m·K), 0' });
     expect(row(o, 'resistance')).toBeCloseTo(row(solve(), 'resistance') + 0.002 / 10, 12);
   });
+  it('a layer line may leave out the contact resistance (walk T3-C06-2)', () => {
+    const o = solve({ layers: '200 mm, 0.72 W/(m·K)\n50 mm, 0.04 W/(m·K), 0' });
+    expect(row(o, 'resistance')).toBeCloseTo(row(solve(), 'resistance'), 12);
+  });
   it('a tube with insulation uses the logarithmic resistance', () => {
     const o = solve({
       geometry: 'cylinder',
@@ -77,7 +81,8 @@ describe('conduction form', () => {
   it('refuses impossible input', () => {
     expect(refuses(conductionSpec, { layers: '0 mm, 1 W/(m·K), 0' })).toBe(true);
     expect(refuses(conductionSpec, { layers: '' })).toBe(true);
-    expect(refuses(conductionSpec, { layers: '10 mm, 1 W/(m·K)' })).toBe(true);
+    expect(refuses(conductionSpec, { layers: '10 mm' })).toBe(true);
+    expect(refuses(conductionSpec, { layers: '10 mm, 1 W/(m·K), 0, 5' })).toBe(true);
     expect(refuses(conductionSpec, { geometry: 'cylinder', innerRadius: '50 mm', layers: '30 mm, 1 W/(m·K), 0' })).toBe(
       true,
     );

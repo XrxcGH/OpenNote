@@ -9,6 +9,7 @@ import {
   handwritingSentences,
   hyphenationLanguage,
   languageFor,
+  localeName,
   normalizeLocale,
   ocrLanguage,
   recognitionLanguage,
@@ -128,5 +129,22 @@ describe('the handwriting sentences', () => {
     expect(text).toMatch(/\bGray\b/);
     expect(text).toMatch(/\bcolor\b/);
     expect(text).not.toMatch(/\b(grey|colour|favourite|organise)\b/i);
+  });
+});
+
+describe('localeName with numeric regions', () => {
+  it('names a UN M49 region instead of printing its number', () => {
+    class FakeNames {
+      of(tag: string): string {
+        return tag === 'fr-015' ? 'French (015)' : tag === 'fr-029' ? 'French (029)' : tag;
+      }
+    }
+    vi.stubGlobal('Intl', { ...Intl, DisplayNames: FakeNames });
+    try {
+      expect(localeName('fr-015')).toBe('French (Northern Africa)');
+      expect(localeName('fr-029')).toBe('French (Caribbean)');
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });

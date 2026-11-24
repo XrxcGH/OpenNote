@@ -31,8 +31,15 @@ use crate::connectors::{platform_store, Secret, SecretStore};
 use crate::ipc::{codes, IpcError, IpcResult};
 use crate::paths::Paths;
 
+/// The credential names of this device's key and the server password. Each profile of one system user shares the
+/// credential store, so a name ends with the device's tag; the bare name is where a version before that kept it.
 const DEVICE_SECRET: &str = "OpenNote/sync/device";
 const WEBDAV_PASSWORD: &str = "OpenNote/sync/webdav";
+
+/// The credential name of a secret for one device.
+fn secret_name(base: &str, tag: &str) -> String {
+    format!("{base}/{tag}")
+}
 /// How often a round runs in the background.
 const EVERY: Duration = Duration::from_secs(5 * 60);
 /// How long after start the first background round waits, so start-up stays quick.
@@ -256,11 +263,7 @@ impl SyncService {
                 let password = match password {
                     Some(password) => password,
                     None => Zeroizing::new(
-                        self.inner
-                            .secrets
-                            .get(WEBDAV_PASSWORD)
-                            .ok()
-                            .flatten()
+                        self.saved_secret(WEBDAV_PASSWORD)
                             .map(|s| s.expose().to_owned())
                             .unwrap_or_default(),
                     ),
@@ -275,13 +278,29 @@ impl SyncService {
         }
     }
 
+    /// A secret of this device: under its own name, or under the bare name an older version used.
+    fn saved_secret(&self, base: &str) -> Option<Secret> {
+        let get = |name: &str| self.inner.secrets.get(name).ok().flatten();
+        let own = self.config().and_then(|config| get(&secret_name(base, &config.device)));
+        own.or_else(|| get(base))
+    }
+
+    /// Deletes a secret of this device. The bare name goes only when this device kept it there.
+    fn delete_secret(&self, base: &str) {
+        let own = self.config().map(|config| secret_name(base, &config.device));
+        match own {
+            Some(name) if self.inner.secrets.get(&name).ok().flatten().is_some() => {
+                let _ = self.inner.secrets.delete(&name);
+            }
+            _ => {
+                let _ = self.inner.secrets.delete(base);
+            }
+        }
+    }
+
     fn device_secret(&self) -> IpcResult<DeviceSecret> {
         let secret = self
-            .inner
-            .secrets
-            .get(DEVICE_SECRET)
-            .ok()
-            .flatten()
+            .saved_secret(DEVICE_SECRET)
             .ok_or_else(|| fail(SyncError::Removed))?;
         let bytes = unhex(secret.expose()).ok_or_else(|| fail(SyncError::Removed))?;
         Ok(DeviceSecret(Zeroizing::new(bytes)))
@@ -334,7 +353,7 @@ impl SyncService {
         let name = if name.is_empty() { "This PC" } else { name };
         vault::add_device(store.as_ref(), &keys, &tag, &secret, name, now_ms()).map_err(fail)?;
         let stored = self.inner.secrets.put(
-            DEVICE_SECRET,
+            &secret_name(DEVICE_SECRET, &tag),
             &Secret::new(opennote_sync::crypto::hex(secret.0.as_ref())),
         );
         if stored.is_err() {
@@ -348,7 +367,7 @@ impl SyncService {
             && self
                 .inner
                 .secrets
-                .put(WEBDAV_PASSWORD, &Secret::new(password.as_str()))
+                .put(&secret_name(WEBDAV_PASSWORD, &tag), &Secret::new(password.as_str()))
                 .is_err()
         {
             return Err(bad(&format!(
@@ -567,8 +586,8 @@ impl SyncService {
             .lock()
             .unwrap_or_else(PoisonError::into_inner)
             .take();
-        let _ = self.inner.secrets.delete(DEVICE_SECRET);
-        let _ = self.inner.secrets.delete(WEBDAV_PASSWORD);
+        self.delete_secret(DEVICE_SECRET);
+        self.delete_secret(WEBDAV_PASSWORD);
         let _ = fs::remove_file(self.config_path());
         let _ = fs::remove_file(self.state_path());
         self.set_status(|s| {

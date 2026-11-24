@@ -30,6 +30,7 @@ import { own, ownObject } from '../sheet/model/json';
 import { t } from '../../../strings/t';
 import type { Sheet } from '../sheet/model';
 import type { SmartData } from './data';
+import { SHEET_VERSION } from './version';
 
 /** Cell text as typed, one list per row. The header row, when there is one, comes first. */
 export interface Grid {
@@ -53,8 +54,7 @@ export interface SmartModel {
 
 const NUMBER_SHARE = 0.9;
 
-/** The newest data.sheet.v this engine knows (ADR 0058). */
-export const SHEET_VERSION = 1;
+export { SHEET_VERSION };
 
 /** The type of a column nobody picked: numbers, percents, or dates when nine in ten cells read as one. */
 export function inferType(cells: readonly string[], locale: Locale): ColumnType {

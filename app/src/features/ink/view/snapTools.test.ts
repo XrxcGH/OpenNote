@@ -4,7 +4,7 @@ import { createStore } from '../../../state/store';
 import type { InkHost, InkPointerTool, InkRouterContext } from './host';
 import { DEFAULT_PROTRACTOR, DEFAULT_RULER } from '../snap';
 import { drawState } from './state';
-import { installSnapTools, protractorInView, rulerInView, snapGeometry } from './snapTools';
+import { installSnapTools, protractorInView, rulerInView, snapGeometry, tickMarks } from './snapTools';
 import type { InkSurface } from './surface';
 
 const ctx = {
@@ -112,5 +112,17 @@ describe('a pen at the ruler edge (full walk 2, A1-A10-8)', () => {
     drawState.set({ tool: 'select', previous: 'select', slot: 'p1' });
     expect(tool!.accepts(press('pen', top + 4), ctx)).toBe(true);
     stop();
+  });
+});
+
+describe("the measuring ruler's numbers (VA-16)", () => {
+  it('draws the units as large as the numbers, in the primary text color', () => {
+    for (const units of ['metric', 'imperial'] as const) {
+      const texts = [...tickMarks(document, DEFAULT_RULER, units).querySelectorAll('text')];
+      const unit = texts.find((text) => text.textContent === (units === 'metric' ? 'cm' : 'in'))!;
+      const number = texts.find((text) => /^\d+$/.test(text.textContent ?? ''))!;
+      expect(Number(unit.getAttribute('font-size'))).toBeGreaterThanOrEqual(Number(number.getAttribute('font-size')));
+      for (const text of [unit, number]) expect(text.getAttribute('fill')).toBe('var(--color-text-primary)');
+    }
   });
 });

@@ -33,6 +33,11 @@
     gap: var(--space-3);
   }
 
+  /* The narrow-window query below needs an ancestor that is a size container. */
+  .splitBox {
+    container-type: inline-size;
+  }
+
   .split {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 15rem);

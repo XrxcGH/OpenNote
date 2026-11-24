@@ -164,7 +164,7 @@ export function showMarks(mounted: MountedPage, check: ShownCheck, recheck: () =
     item.dataset.verdict = result.verdict;
     item.tabIndex = -1;
     const name = doc.createElement('strong');
-    name.textContent = t('stepCheck.panel.line', { number: i + 1 });
+    name.textContent = t('stepCheck.panel.lineNamed', { number: i + 1 });
     const why = doc.createElement('span');
     why.textContent = ` ${reasonText(result)}`;
     item.append(name, why);

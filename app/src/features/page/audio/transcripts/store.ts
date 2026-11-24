@@ -4,7 +4,7 @@
 // text: it is what search indexes. A fallback can't change either, so a change that should reach search puts a new
 // block, with the new text, where the old one was.
 import { newId } from '../../../../editor/ids';
-import type { BlockId, BlockJson, Edit, NewBlock, OpenPage } from '../../../../services/pages/types';
+import type { BlockId, BlockJson, Edit, EditBatch, NewBlock, OpenPage } from '../../../../services/pages/types';
 import { createStore } from '../../../../state/store';
 import { t } from '../../../../strings/t';
 import { shownPage } from '../../history/shown';
@@ -116,9 +116,13 @@ function viewEdit(previous: TranscriptData | null, next: TranscriptData): Edit {
 }
 
 /** Adds a transcript after the recording's block. */
-export async function addTranscript(data: TranscriptData, after: BlockId): Promise<BlockId> {
+export async function addTranscript(
+  data: TranscriptData,
+  after: BlockId,
+  coalesce?: EditBatch['coalesce'],
+): Promise<BlockId> {
   const spec = { type: TRANSCRIPT_TYPE, data: { recording: data.recording }, fallback: fallbackOf(data) };
-  const id = await insertExtBlock(spec, after, [viewEdit(null, data)]);
+  const id = await insertExtBlock(spec, after, [viewEdit(null, data)], coalesce);
   hold([data]);
   return id;
 }
@@ -132,6 +136,7 @@ export async function saveTranscript(
   previous: TranscriptData,
   next: TranscriptData,
   refresh = true,
+  coalesce?: EditBatch['coalesce'],
 ): Promise<void> {
   const queue = shownQueue.get();
   const layer = shownLayer.get();
@@ -139,8 +144,9 @@ export async function saveTranscript(
   hold([next]);
   const edits: Edit[] = [viewEdit(previous, next)];
   const old = layer.block(block);
+  const group = coalesce ? { coalesce } : {};
   if (!refresh || !old) {
-    await queue.send({ edits });
+    await queue.send({ edits, ...group });
     return;
   }
   const id = newId();
@@ -158,6 +164,7 @@ export async function saveTranscript(
       { edit: 'deleteBlocks', blocks: [block] },
       ...edits,
     ],
+    ...group,
   });
   const now = new Date().toISOString();
   layer.upsert({ ...made, order: ack.orderKeys[id] ?? old.order, created: now, modified: now } as unknown as BlockJson);

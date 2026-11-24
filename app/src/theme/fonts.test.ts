@@ -16,6 +16,8 @@ const PACKAGES = {
   mono: '@fontsource/atkinson-hyperlegible-mono',
 } as const;
 const ROLES = Object.keys(PACKAGES) as (keyof typeof PACKAGES)[];
+/** The reading font's italic faces, which the same package ships in a file of its own. */
+const READING_ITALIC = '@fontsource-variable/literata/wght-italic.css';
 
 /** The families a package registers, read from the same CSS file the app imports. */
 function registeredFamilies(pkg: string): string[] {
@@ -36,7 +38,17 @@ describe('bundled fonts', () => {
   it('covers every package fonts.ts imports', () => {
     const source = readFileSync(require.resolve('./fonts.ts'), 'utf8');
     const imported = [...source.matchAll(/^import '([^']+)';/gm)].map((match) => match[1]);
-    expect(imported.sort()).toEqual(Object.values(PACKAGES).sort());
+    expect(imported.sort()).toEqual([...Object.values(PACKAGES), READING_ITALIC].sort());
+  });
+
+  // A face with no italic file is slanted by the browser, and the slanted letters run into the next word (VA-56).
+  it('loads a real italic for the reading font', () => {
+    const source = readFileSync(require.resolve('./fonts.ts'), 'utf8');
+    const imported = [...source.matchAll(/^import '([^']+)';/gm)].map((match) => match[1]);
+    const italic = imported.map((pkg) => readFileSync(require.resolve(pkg), 'utf8')).join('\n');
+    const faces = italic.match(/@font-face\s*{[^}]*}/g) ?? [];
+    const family = firstFamily(tokens.font.reading);
+    expect(faces.some((face) => face.includes(family) && /font-style:\s*italic/.test(face))).toBe(true);
   });
 
   it.each(ROLES)('font.%s starts with the family its package registers', (role) => {

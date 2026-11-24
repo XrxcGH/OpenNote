@@ -197,3 +197,34 @@ describe('the lasso handles on a thin selection (A2-A09-5)', () => {
     selection = { blocks: [], strokes: [] };
   });
 });
+
+describe('the lasso corner handles (VA-54)', () => {
+  it('keep their small look but take a press a target size wide', () => {
+    chrome.style.cssText = 'position:absolute;left:0;top:0;width:600px;height:400px;--space-5:16px;--target-size:32px';
+    document.body.append(chrome);
+    const box = makeStroke('box', [
+      { x: 150, y: 150 },
+      { x: 400, y: 300 },
+    ]);
+    const wide = {
+      ...surface,
+      strokes: (ids: readonly string[]) => (ids.includes('box') ? [box] : []),
+    } as unknown as InkSurface;
+    selection = { blocks: [], strokes: ['box'] };
+    const frame = attachSelectionFrame(host, wide);
+    chrome.querySelector<HTMLElement>('[data-ink-selection-bar]')!.style.display = 'none';
+    for (const corner of ['nw', 'ne', 'se', 'sw']) {
+      const handle = chrome.querySelector<HTMLElement>(`[data-ink-corner="${corner}"]`)!;
+      const rect = handle.getBoundingClientRect();
+      expect(rect.width, corner).toBeLessThanOrEqual(17);
+      // 12 px out from the middle, away from the frame: inside a 32 px target, outside the 16 px dot.
+      const out = corner.includes('w') ? -12 : 12;
+      const hit = document.elementFromPoint(rect.left + rect.width / 2 + out, rect.top + rect.height / 2);
+      expect(hit, corner).toBe(handle);
+    }
+    frame.stop();
+    chrome.remove();
+    chrome.style.cssText = '';
+    selection = { blocks: [], strokes: [] };
+  });
+});

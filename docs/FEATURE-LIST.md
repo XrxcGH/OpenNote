@@ -95,7 +95,7 @@ The app registers 1187 commands and 48 tool windows. 24 of the windows are subje
 - **Code editor keys.** Tab indents in the code editor, and Ctrl+Page Down and Ctrl+Page Up change tabs, so the tab bar stays reachable.
 - **Code studio window.** A tool window that pops out, with tabs or a file tree, a console, Problems and Tests panels, and a status bar.
 - **Python in code projects.** Quick Python (MicroPython, bundled) and full Python (CPython 3.14 through Pyodide, from a pack) run projects in the run sandbox.
-- **JavaScript and TypeScript runs.** QuickJS runs JavaScript and TypeScript projects (Sucrase removes the types) with relative imports, a seeded Math.random, Node-style console output, and a Jest-compatible test API.
+- **JavaScript and TypeScript runs.** QuickJS runs JavaScript and TypeScript projects (Sucrase removes the types) with relative imports, a seeded Math.random, and a Jest-compatible test API.
 - **SQL and Lua runs.** SQLite 3.54 runs SQL projects in memory: schema and seed files first, `.import` for CSV files, results as tables, and query plans as a tree.
 - **C and C++ runs.** Clang 22 from the clang pack compiles C (C17) and C++ (C++20) projects to WebAssembly, and a WASI runner runs them in the sandbox.
 - **Error detection in code.** Syntax errors for nine languages, and OpenNote's own checks for Python (Ruff rules), JavaScript and TypeScript (ESLint rules), C, C++, and Lua.

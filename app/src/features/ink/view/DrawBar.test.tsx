@@ -159,6 +159,15 @@ describe('Settings, Pen and touch', () => {
     await expectNoAxeViolations(document.body);
   });
 
+  it('does not repeat the section name as a second heading (VA-1)', () => {
+    renderUi(
+      <main>
+        <PenSettings />
+      </main>,
+    );
+    expect(screen.queryByRole('heading', { level: 2, name: 'Pen and touch' })).toBeNull();
+  });
+
   it('names each choice group on the page, not only to a screen reader (full walk VA-50)', () => {
     renderUi(
       <main>

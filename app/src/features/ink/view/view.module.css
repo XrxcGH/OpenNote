@@ -86,7 +86,9 @@
   }
 
   /* The lasso's frame and its bar, over the page in screen space. */
+  /* Its own stacking context, so the handles' hit areas can sit under every part of the frame. */
   :global(.ink-selection-frame) {
+    isolation: isolate;
     border: 1px dashed var(--color-accent-primary);
     border-radius: var(--radius-sm);
   }
@@ -100,6 +102,8 @@
   :global(.ink-selection-frame) [data-ink-move] {
     position: absolute;
     inset: 0;
+    /* Under the corners' hit circles, so a finger just inside a corner resizes instead of moving. */
+    z-index: calc(var(--layer-base) - 2);
     border: none;
     background: transparent;
     cursor: move;
@@ -117,6 +121,15 @@
     border: 1px solid var(--color-accent-primary);
     border-radius: 50%;
     background: var(--color-surface-page);
+  }
+
+  /* The dot stays small, but a press anywhere in a target-size square around it takes the handle. The circle lies
+     over the move area and under every dot, so a dot always wins over a neighbor's circle. */
+  :global(.ink-selection-frame) [data-ink-corner]::before {
+    content: '';
+    position: absolute;
+    z-index: calc(var(--layer-base) - 1);
+    inset: calc((var(--space-5) - var(--target-size, 32px)) / 2 - 1px);
   }
 
   :global(.ink-selection-frame) [data-ink-corner='nw'] {

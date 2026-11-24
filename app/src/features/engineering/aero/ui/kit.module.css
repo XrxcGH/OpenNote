@@ -120,6 +120,7 @@
 
   .unit {
     flex: 0 0 auto;
+    min-inline-size: var(--target-size);
     max-inline-size: 9rem;
   }
 

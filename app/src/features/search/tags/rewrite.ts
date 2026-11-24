@@ -15,7 +15,9 @@ export function normalTag(tag: string): string {
     .join('/');
 }
 
-const TAG = /(^|\s)#([\p{L}\p{N}_/-]+)/gu;
+// A word start, an optional escape, `#`, and the tag. The editor writes a typed tag's `#` escaped (`\#tag`), and a
+// space at the end of the text as `&#32;`, so both count; the rewrite keeps the escape.
+const TAG = /(^|\s|&#32;|&#160;|&nbsp;)(\\?)#([\p{L}\p{N}_/-]+)/gu;
 
 /** The Markdown with each `#tag` that the plan changes rewritten. Code spans keep their text. */
 export function rewriteTags(markdown: string, plan: Pick<TagPlan, 'changes'>): string {
@@ -25,11 +27,11 @@ export function rewriteTags(markdown: string, plan: Pick<TagPlan, 'changes'>): s
     .map((part, at) =>
       at % 2 === 1
         ? part
-        : part.replace(TAG, (all, lead: string, tag: string) => {
+        : part.replace(TAG, (all, lead: string, escape: string, tag: string) => {
             const changed = map.get(normalTag(tag));
             if (changed === undefined) return all;
             // A deleted tag leaves its words, without the hash, so the sentence still reads.
-            return changed === null ? `${lead}${tag}` : `${lead}#${changed}`;
+            return changed === null ? `${lead}${tag}` : `${lead}${escape}#${changed}`;
           }),
     )
     .join('');

@@ -454,6 +454,10 @@ export function measureLayout(options: MeasureOptions): RawFinding[] {
       if (apart && gap < 4 && Math.min(gapX, gapY) < 0) {
         // Rows of a list, tabs of a tab strip, and the segments of a group touch by design.
         if (gap <= 0.5 && joined(a.el, b.el)) continue;
+        // A control in one row of a tree sits inside the row's outline, so it is a few px from the next row (a ring wide).
+        const rowA = a.el.closest('[role=treeitem]');
+        const rowB = b.el.closest('[role=treeitem]');
+        if (rowA && rowB && rowA !== rowB && gap <= 3 && joined(a.el, b.el)) continue;
         add('target-gap', a.el, `${round(gap)} px from ${describe(b.el, 1)}`, ` x ${describe(b.el, 2)}`);
       }
     }

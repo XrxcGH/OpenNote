@@ -131,6 +131,14 @@ const MATH_COMMANDS: &[&str] = &[
     "iff",
 ];
 
+/// Commands the exporter's Unicode map writes for a letter or symbol in text (`export::latex::escape`).
+const ESCAPE_COMMANDS: &str = "\
+    Delta Gamma Lambda Leftarrow Leftrightarrow Phi Pi Psi Rightarrow Sigma Theta Upsilon Xi angle \
+    approx cap cdots chi cup delta div downarrow emptyset epsilon equiv eta exists forall geq gg iota \
+    kappa lambda ldots leftarrow leftrightarrow ll mapsto mp mu nabla neg neq notin nu omega oplus \
+    otimes phi pi propto psi rho sigma sim subset subseteq surd tau theta uparrow upsilon varepsilon \
+    varphi varsigma vee wedge";
+
 /// Reads a `.tex` file the way TeX would at the level of braces and environments, and panics at the first thing that
 /// would stop a compile or reach outside the document. Returns the text after `\begin{document}`.
 fn check_tex(tex: &str) -> String {
@@ -177,7 +185,9 @@ fn check_tex(tex: &str) -> String {
                         }
                     }
                     other => {
-                        if !(BODY_COMMANDS.contains(&other) || MATH_COMMANDS.contains(&other))
+                        if !(BODY_COMMANDS.contains(&other)
+                            || MATH_COMMANDS.contains(&other)
+                            || ESCAPE_COMMANDS.split_whitespace().any(|word| word == other))
                             && !unknown.contains(&other.to_owned())
                         {
                             unknown.push(other.to_owned());
