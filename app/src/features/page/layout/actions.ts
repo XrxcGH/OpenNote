@@ -20,7 +20,7 @@ import styles from './layout.module.css';
 import type { PageViewport } from '../viewport/viewport';
 import type { TitleBand } from '../title/title';
 import type { Flow } from './flow';
-import { belowTitle, clearOfBlocks } from './freeSpot';
+import { belowTitle, clearOfBlocks, insideView } from './freeSpot';
 import { snapY } from './rules';
 
 /** An RFC 7396 merge patch over a view: null removes a key, an object merges, anything else replaces. */
@@ -136,7 +136,9 @@ export function createPageLayout(parts: LayoutParts): PageLayout {
     const id = newId();
     // On ruled paper a new text box starts on a rule, so its first line is on the rules.
     const top = Math.max(0, Math.round(at.y));
-    const frame = floating ? { x: Math.max(0, Math.round(at.x)), y: Math.round(snapY(top, flow.rules())) } : undefined;
+    // A box pressed near the right edge moves left, so the edge never cuts its smallest width off (VB-185).
+    const x = Math.max(0, Math.round(insideView(parts, at.x, TEXT_BOX.w)));
+    const frame = floating ? { x, y: Math.round(snapY(top, flow.rules())) } : undefined;
     const block: BlockJson = { id, type: 'text', order: '~', created: now, modified: now, data: { markdown: '' } };
     if (frame) block.frame = frame;
     const after = floating ? insertAfter() : layer.blocks().at(-1)?.id;

@@ -34,3 +34,19 @@ export function belowTitle(mounted: Pick<MountedPage, 'title' | 'viewport'>): nu
   if (!band || band.height === 0) return 0;
   return mounted.viewport.toWorld(band.left, band.bottom).y + KEEP_BELOW;
 }
+
+/** The gap kept between a new box and the right edge of the page area. */
+const EDGE_GAP = 8;
+
+/**
+ * `x`, moved left so a new box at least `w` wide ends inside the page area the viewport shows. A press near the
+ * right edge would otherwise start a box that the edge cuts off. It never goes left of the area's left edge.
+ */
+export function insideView(mounted: Pick<MountedPage, 'viewport'>, x: number, w: number): number {
+  const { viewport } = mounted.viewport;
+  if (viewport.clientWidth === 0) return x;
+  const rect = viewport.getBoundingClientRect();
+  const left = mounted.viewport.toWorld(rect.left, rect.top).x;
+  const right = mounted.viewport.toWorld(rect.left + viewport.clientWidth, rect.top).x;
+  return Math.max(left, Math.min(x, right - w - EDGE_GAP));
+}
