@@ -301,6 +301,8 @@
   "block | text-overlap | div[role=group].block > div > p.muted x button.tape > span",
   "block | text-overlap | td > p > strong x div[role=group].actions > button",
   "block | text-overlap | tr > th > p x div[role=group].actions > button",
+  "block | text-overlap | tr > th[role=columnheader] > p x div[role=group].actions > button",
+  "block | text-overlap | td[role=gridcell] > p > strong x div[role=group].actions > button",
   "command | box-overlap | div.panel > div[role=group].filters > button[role=switch].labeled x div[role=group].filters > button[role=switch].labeled",
   "command | dead-space | div[data-scope=palette].panel > div.body > div[role=listbox].results (nested)",
   "command | dead-space | div.body > div.main > div.editor (empty box)",
