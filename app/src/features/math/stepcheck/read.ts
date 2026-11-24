@@ -736,9 +736,27 @@ function readStatement(line: string, ctx: Context): Statement {
     return c.rels.map((rel, i) => ({ left: sides[i], rel, right: sides[i + 1] }));
   };
   const all = groups.map(atomsOf);
+  if (join === 'and' && isRootList(all)) join = 'or';
   const statement: Statement = { kind: 'relations', groups: join === 'or' ? all : [all.flat()], text };
   remember(statement, ctx);
   return statement;
+}
+
+/**
+ * "x = -4, x = 1" lists the solutions of one variable. As a system it could never hold (x is not both), so it reads
+ * as "x = -4 or x = 1" (R-VB-184): two or more lines, each one variable set equal to a number, all the same variable.
+ */
+function isRootList(groups: Atom[][]): boolean {
+  if (groups.length < 2) return false;
+  const names = new Set<string>();
+  for (const group of groups) {
+    if (group.length !== 1 || group[0].rel !== '=') return false;
+    const [{ left, right }] = group;
+    const own = variables(left.node);
+    if (own.length !== 1 || variables(right.node).length > 0) return false;
+    names.add(own[0]);
+  }
+  return names.size === 1;
 }
 
 /**
