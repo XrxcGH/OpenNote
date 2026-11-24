@@ -15,8 +15,9 @@ const SUSTAIN: usize = 3;
 const BLOCK_NS: u64 = 20_000_000;
 
 /// The positions of the first and last sound in the recording, with a margin, or none if it is silent.
-/// The room's noise is the 10th percentile of the loudness of blocks of 20 ms. Sound is three times that,
-/// but never more than a third of the loudest block.
+/// The room's noise is the 10th percentile of the loudness of blocks of 20 ms, and speech is the 90th.
+/// Sound is three times the noise, but never more than halfway (on a log scale) from the noise to the
+/// speech. A loud word or a click does not raise the bar, so quiet speech in a noisy room is kept.
 pub fn find_sound(player: &mut Player) -> Result<Option<Range>> {
     player.set_speed(1.0);
     player.set_skip_silence(false);
@@ -25,7 +26,16 @@ pub fn find_sound(player: &mut Player) -> Result<Option<Range>> {
     let mut levels = Vec::new();
     let mut block = vec![0f32; FRAME_SAMPLES];
     loop {
-        let count = player.render(&mut block)?;
+        // A short read is not the end: only a read of nothing is. Fill each block, so that block `n`
+        // always starts at `n` times 20 ms.
+        let mut count = 0;
+        while count < block.len() {
+            let got = player.render(&mut block[count..])?;
+            if got == 0 {
+                break;
+            }
+            count += got;
+        }
         if count == 0 {
             break;
         }
@@ -40,8 +50,8 @@ pub fn find_sound(player: &mut Player) -> Result<Option<Range>> {
     }
     let mut sorted = levels.clone();
     sorted.sort_by(f32::total_cmp);
-    let (floor, loudest) = (sorted[sorted.len() / 10], sorted[sorted.len() - 1]);
-    let threshold = (floor * 3.0).min(loudest * 0.35).max(MIN_THRESHOLD);
+    let (floor, speech) = (sorted[sorted.len() / 10], sorted[sorted.len() * 9 / 10]);
+    let threshold = (floor * 3.0).min((floor * speech).sqrt()).max(MIN_THRESHOLD);
     let loud = |from: usize| levels[from..].iter().take(SUSTAIN).all(|level| *level >= threshold);
     let first = (0..levels.len().saturating_sub(SUSTAIN - 1)).find(|&at| loud(at));
     let last = (0..levels.len().saturating_sub(SUSTAIN - 1)).rev().find(|&at| loud(at));
