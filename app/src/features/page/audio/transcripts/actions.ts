@@ -4,7 +4,7 @@
 import { extrasOf, playable } from '../../../../core/audio';
 import type { RecordingEntry } from '../../../../core/audio';
 import type { ActionItem, Chapter as IntelChapter } from '../../../../services/intel';
-import type { BlockJson } from '../../../../services/pages/types';
+import type { BlockJson, EditBatch } from '../../../../services/pages/types';
 import { t } from '../../../../strings/t';
 import { announce, showToast } from '../../../../ui';
 import { dataOf as recordingData, recordingBlocks } from '../blocks';
@@ -380,11 +380,12 @@ export async function afterSplit(
   secondRecording: string,
   atNs: number,
   secondBlock: string,
+  coalesce?: EditBatch['coalesce'],
 ): Promise<void> {
   const block = transcriptOf(recording);
   const data = block && dataOf(block);
   if (!block || !data) return;
   const [first, second] = splitAt(data, atNs / 1e6);
-  await saveTranscript(block.id, data, first);
-  if (second.lines.length > 0) await addTranscript({ ...second, recording: secondRecording }, secondBlock);
+  await saveTranscript(block.id, data, first, true, coalesce);
+  if (second.lines.length > 0) await addTranscript({ ...second, recording: secondRecording }, secondBlock, coalesce);
 }

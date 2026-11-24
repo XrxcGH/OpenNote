@@ -6,7 +6,7 @@ import { commandContext } from '../../../commands/registry';
 import { enhancedTracks } from '../../../core/audio';
 import type { RecordingEntry } from '../../../core/audio';
 import { newId } from '../../../editor/ids';
-import type { BlockId, BlockJson, Edit, Frame, NewBlock, TxnAck } from '../../../services/pages/types';
+import type { BlockId, BlockJson, Edit, EditBatch, Frame, NewBlock, TxnAck } from '../../../services/pages/types';
 import { shownPage as shownOpenPage } from '../history/shown';
 import { shownLayer } from '../mount';
 import { shownPool } from '../pool/shown';
@@ -152,19 +152,24 @@ const recordingSpec = (entry: RecordingEntry): ExtSpec => ({
 });
 
 /** Adds a block of another type of ours, such as a transcript, after a block, with other steps in the same change. */
-export async function insertExtBlock(spec: ExtSpec, after?: BlockId, also: Edit[] = []): Promise<BlockId> {
+export async function insertExtBlock(
+  spec: ExtSpec,
+  after?: BlockId,
+  also: Edit[] = [],
+  coalesce?: EditBatch['coalesce'],
+): Promise<BlockId> {
   const queue = shownQueue.get();
   if (!queue || !shownLayer.get()) throw new Error('No page is shown.');
   const id: BlockId = newId();
   let edit = insertEdit(id, spec, after);
   try {
-    showBlock(id, edit, await queue.send({ edits: [edit, ...also] }));
+    showBlock(id, edit, await queue.send({ edits: [edit, ...also], ...(coalesce ? { coalesce } : {}) }));
   } catch (error) {
     // The block with the caret may be a placeholder the core hasn't heard of (an empty page): put this at the end.
     if ((error as { code?: string }).code !== 'notFound' || edit.after === undefined) throw error;
     const { after: _unknown, ...atEnd } = edit;
     edit = atEnd;
-    showBlock(id, edit, await queue.send({ edits: [edit, ...also] }));
+    showBlock(id, edit, await queue.send({ edits: [edit, ...also], ...(coalesce ? { coalesce } : {}) }));
   }
   return id;
 }
@@ -197,6 +202,7 @@ export async function writeSplit(
   entry: RecordingEntry,
   [one, two]: readonly [RecordingEntry, RecordingEntry],
   also: readonly Edit[] = [],
+  coalesce?: EditBatch['coalesce'],
 ): Promise<BlockId> {
   const queue = shownQueue.get();
   if (!queue || !shownLayer.get() || pageId() !== page) throw new Error('No page is shown.');
@@ -205,7 +211,7 @@ export async function writeSplit(
   const insert = insertEdit(id, recordingSpec(two), block);
   edits.push(insert, ...(await entryEdits(page, two, { track: 'finished' })), ...also);
   setEntries([one, two]);
-  showBlock(id, insert, await queue.send({ edits }));
+  showBlock(id, insert, await queue.send({ edits, ...(coalesce ? { coalesce } : {}) }));
   return id;
 }
 

@@ -56,6 +56,9 @@ function moveMarks(from: string, halves: readonly SplitHalf[]): Edit[] {
   return edits;
 }
 
+/** Counts splits, so each one is its own undo step. */
+let splits = 0;
+
 /**
  * Splits the recording at `positionNs`. The first half stays in its block with the recording's ID, and the second
  * is a new recording in a new block after it. Flags and the marks of typed text go to the half they were made in.
@@ -77,8 +80,10 @@ export async function splitRecording(
     flags.moveToSplit(entry.id, [first.entry, second.entry]);
     const [one, two] = [first.entry, second.entry].map((half) => flags.into(withoutEnhanced(half)));
     const marks = moveMarks(entry.id, [first.entry, second.entry]);
-    const secondBlock = await writeSplit(pageId, block, entry, [one, two], marks);
-    await withTranscripts((module) => module.afterSplit(entry.id, two.id, positionNs, secondBlock));
+    // The transcript's changes join the split's undo step, so one undo takes all of it back.
+    const coalesce = { kind: 'drag' as const, target: `split-${entry.id}-${(splits += 1)}` };
+    const secondBlock = await writeSplit(pageId, block, entry, [one, two], marks, coalesce);
+    await withTranscripts((module) => module.afterSplit(entry.id, two.id, positionNs, secondBlock, coalesce));
     await shownOpenPage.get()?.saveNow();
     announce(t('audioMore.split.done', { first: lengthNs(first.durationNs), second: lengthNs(second.durationNs) }));
   } catch (error) {
