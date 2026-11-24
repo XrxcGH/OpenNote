@@ -258,7 +258,7 @@ export const scenes: (h: Helpers) => Scene[] = (h) => {
         await d.getByRole('tab', { name: 'Graphing 2D' }).click();
         await d.getByRole('button', { name: 'Add a function' }).click();
         await d.getByRole('textbox', { name: 'Function 2' }).fill('y = x / 3');
-        const plot = d.getByRole('application', { name: /^Graph of 2 functions/ });
+        const plot = d.getByRole('application', { name: /^Graph of .+; y = x \/ 3, x from/ });
         await expect(plot).toBeVisible();
         const box = (await plot.boundingBox())!;
         await p.mouse.move(box.x + box.width / 2 + 40, box.y + box.height / 2);
