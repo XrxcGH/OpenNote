@@ -5,6 +5,7 @@ import { t } from '../../../strings/t';
 import { Button, announce } from '../../../ui';
 import { useStore } from '../../../state/store';
 import { cardsFromText, parseCards, planImport } from '../deck/exchange';
+import { plainTextOf } from '../io/plainText';
 import type { ImportPlan, Skipped } from '../deck/exchange';
 import { createDeck, decksStore } from '../deck/library';
 import type { Card } from '../deck/types';
@@ -42,7 +43,12 @@ export function ImportView({ onDone }: { onDone(deckId: string | null): void }) 
         const result = await readAnkiPackage(new Uint8Array(await file.arrayBuffer()));
         return show(result.cards, result.skipped, result.media, result.name || base);
       }
-      const parsed = parseCards(await file.text(), file.name);
+      const body = plainTextOf(new Uint8Array(await file.arrayBuffer()));
+      if (body === null) {
+        setRead(null);
+        return setProblem(t('study.io.notText'));
+      }
+      const parsed = parseCards(body, file.name);
       show(parsed.cards, parsed.skipped, 0, base);
     } catch (error) {
       setRead(null);
