@@ -236,6 +236,14 @@ impl Bridge {
         migrate::seed_sample(self, &folder);
     }
 
+    /// Opens the notebooks that arrived in the notes folder since it was opened, such as those a sync round brought
+    /// from another device. Without this they showed only after a restart.
+    pub(crate) fn open_arrived_notebooks(&mut self) {
+        if let Some(folder) = self.notes.folder.clone() {
+            self.open_folder_notebooks(&folder);
+        }
+    }
+
     /// Opens every notebook of the library whose folder is there.
     fn open_library(&mut self) {
         for notebook in self.core.library().notebooks {
