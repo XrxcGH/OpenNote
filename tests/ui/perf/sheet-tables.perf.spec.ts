@@ -255,6 +255,6 @@ test('a 1,999-row table draws every row', async ({ page }) => {
   const cells = await rows(page).evaluateAll((all) => all.map((tr) => tr.querySelectorAll('td, th').length));
   expect(cells.every((count) => count === 3)).toBe(true);
   await expect(rows(page).nth(1998)).toHaveText('Item 1998' + '1998' + '3996');
-  await expect(table(page)).not.toHaveAttribute('aria-rowcount', /.*/);
+  await expect(table(page)).toHaveAttribute('aria-rowcount', '1999');
   expect(await rowNodes(page)).toBe(1999);
 });

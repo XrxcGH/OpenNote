@@ -433,6 +433,37 @@ mod tests {
         <si><t>Pens</t></si><si><r><t>Ink</t></r></si></sst>";
     const STYLES: &str = r#"<styleSheet><cellXfs><xf numFmtId="0"/><xf numFmtId="14"/></cellXfs></styleSheet>"#;
 
+    /// A first row that holds a formula is data, so the formula stays a formula (walk 9, T4-D11-6).
+    #[test]
+    fn a_formula_in_the_first_row_means_there_is_no_header_row() {
+        let sheet = r#"<worksheet><sheetData>
+            <row r="1"><c r="A1"><v>5</v></c><c r="B1"><f>A1*2</f></c></row>
+            <row r="2"><c r="A2"><v>6</v></c><c r="B2"><v>12</v></c></row>
+            </sheetData></worksheet>"#;
+        let workbook = r#"<workbook xmlns:r="r"><sheets><sheet name="S" sheetId="1" r:id="rId1"/></sheets></workbook>"#;
+        let bytes = zip_bytes(&[
+            ("xl/workbook.xml", workbook.as_bytes()),
+            ("xl/_rels/workbook.xml.rels", RELS.as_bytes()),
+            ("xl/worksheets/sheet1.xml", sheet.as_bytes()),
+        ]);
+        let mut parts = Parts::from_reader(Cursor::new(bytes)).expect("opens");
+        let world = TestEnv::new();
+        let done = convert_parts(&mut parts, "book", &world.env()).expect("converts");
+        let table = done.pages[0]
+            .page
+            .page
+            .blocks
+            .iter()
+            .find_map(|b| match &b.data {
+                opennote_core::model::BlockData::Table(t) => Some(t.clone()),
+                _ => None,
+            })
+            .expect("a table");
+        assert!(!table.header, "no header row when row 1 has a formula");
+        let first = &table.rows[0];
+        assert_eq!(first.cells[&table.columns[1].id].markdown.replace("\\", ""), "=A1*2");
+    }
+
     #[test]
     fn a_workbook_becomes_a_table_page_for_each_visible_sheet() {
         let bytes = zip_bytes(&[

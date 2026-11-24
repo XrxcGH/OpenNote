@@ -328,10 +328,22 @@ impl PageSession {
             .backend
             .classify_change(&loaded.page.revision, st.base, &st.page.revision, true);
         st.stamp = Some(loaded.stamp);
-        if matches!(decision, ExternalDecision::Unchanged | ExternalDecision::OlderOfOurs) {
+        // Another program can change the text and keep the revision fields. The revision then reads as ours,
+        // but the bytes differ, so the outside edit is kept under a revision of its own (T2-D04-6).
+        let same_revision = loaded.page.revision.id == st.page.revision.id || loaded.page.revision.id == st.base;
+        let outside_edit = same_revision && loaded.bytes[..] != snapshot.base[..];
+        let theirs: Arc<[u8]> = if outside_edit {
+            let mut page = loaded.page.clone();
+            page.revision.parents = vec![loaded.page.revision.id];
+            page.revision.ancestors.insert(0, loaded.page.revision.id);
+            page.revision.id = crate::id::RevisionId::generate(self.ctx.clock.as_ref());
+            self.ctx.codec.write_page(&page).into()
+        } else if matches!(decision, ExternalDecision::Unchanged | ExternalDecision::OlderOfOurs) {
             return Ok(());
-        }
-        if let Ok(revision) = self.ctx.backend.keep_conflict(&snapshot.dir, &loaded.bytes) {
+        } else {
+            loaded.bytes.clone()
+        };
+        if let Ok(revision) = self.ctx.backend.keep_conflict(&snapshot.dir, &theirs) {
             if !st.conflicts.contains(&revision) {
                 st.conflicts.push(revision);
             }

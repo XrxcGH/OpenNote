@@ -2,6 +2,7 @@
 // them by the columns' types, runs the formulas, and says what each cell shows, which rows the filters leave, and
 // what a chart or a total reads. It is pure, so tests run it without an editor.
 import {
+  checkFormulaInput,
   columnLetter,
   ERROR_TOKENS,
   filterIndices,
@@ -9,6 +10,7 @@ import {
   isError,
   makeCell,
   parseDate,
+  parseFormula,
   parseLocaleNumber,
   recalculate,
 } from '../engine';
@@ -28,6 +30,7 @@ import { ITERATE_MAX_PASSES } from '../engine/model';
 import { namesOf, styleById, tableName } from '../sheet/model';
 import { own, ownObject } from '../sheet/model/json';
 import { t } from '../../../strings/t';
+import type { Node } from '../../../core/expr';
 import type { Sheet } from '../sheet/model';
 import type { SmartData } from './data';
 import { SHEET_VERSION } from './version';
@@ -261,6 +264,51 @@ export interface Shown {
   error?: ErrorCode;
   /** The value comes from a formula above or to the left that spills over this cell. */
   spill?: true;
+  /** Typed text that starts with "=" but is not a formula: what is wrong with it, for the tooltip. */
+  problem?: string;
+}
+
+/** The functions whose result is a date serial. */
+const DATE_FUNCTIONS = new Set(['DATE', 'DATEVALUE', 'EDATE', 'EOMONTH', 'TODAY', 'NOW', 'WORKDAY', 'WORKDAY.INTL']);
+
+/** Whether a formula's result is a date: a date function, or a date plus or minus a number of days. */
+function givesDate(node: Node): boolean {
+  if (node.type === 'call') return DATE_FUNCTIONS.has(node.name.toUpperCase());
+  if (node.type !== 'binary' || (node.op !== '+' && node.op !== '-')) return false;
+  const left = givesDate(node.left);
+  const right = givesDate(node.right);
+  // A date minus a date is a count of days.
+  return node.op === '+' ? left !== right : left && !right;
+}
+
+const dateFormulas = new Map<string, boolean>();
+
+/** Whether a stored formula gives a date, remembered by its text, since cells are drawn often. */
+function isDateFormula(formula: string): boolean {
+  let found = dateFormulas.get(formula);
+  if (found === undefined) {
+    const parsed = parseFormula(formula, undefined, { legacy: false });
+    found = parsed.ok && givesDate(parsed.node);
+    if (dateFormulas.size >= 5000) dateFormulas.clear();
+    dateFormulas.set(formula, found);
+  }
+  return found;
+}
+
+/** What a cell shows for a formula with a syntax error, as Google Sheets shows it. */
+export const SYNTAX_ERROR_TOKEN = '#ERROR!';
+
+/**
+ * What a cell shows for typed text that starts with "=" but does not read as a formula, or null for other text. A
+ * spreadsheet never shows such a formula as plain text (walk 9 T4-D07-1). A reference that a deleted row or column
+ * took reads #REF!, so that formula shows the reference error, as Excel does.
+ */
+function brokenFormula(raw: string, locale: Locale, table: Table): Shown | null {
+  const typed = raw.trim();
+  if (!typed.startsWith('=') || typed.length < 2) return null;
+  if (typed.toUpperCase().includes(ERROR_TOKENS.REF)) return { text: ERROR_TOKENS.REF, kind: 'error', error: 'REF' };
+  const problem = checkFormulaInput(typed.slice(1), locale, table);
+  return typeof problem === 'string' ? null : { text: SYNTAX_ERROR_TOKEN, kind: 'error', problem: problem.message };
 }
 
 /** What an error shows in its cell: Excel's token, or Circular for a cell in a circle of formulas. */
@@ -293,8 +341,14 @@ export function shownFor(
     const text = cell.value === null ? '' : formatValue(cell.value, col, locale);
     return { text, kind: typeof cell.value === 'number' ? 'number' : 'text', spill };
   }
+  const broken = cell.formula === undefined ? brokenFormula(cell.raw, locale, model.table) : null;
+  if (broken) return broken;
   if (cell.formula === undefined && !(formatted && cell.value !== null && typeof cell.value !== 'string')) return null;
-  const text = formatValue(cell.value, col, locale);
+  // A date formula's result shows as a date unless the person picked a format, as spreadsheets carry the date format
+  // from DATE and date arithmetic to the cell (walk 9 T3-D06-1).
+  const dated =
+    cell.formula !== undefined && !formatted && typeof cell.value === 'number' && isDateFormula(cell.formula);
+  const text = formatValue(cell.value, dated ? { ...col, type: 'date' } : col, locale);
   if (cell.formula === undefined && text === cell.raw.trim()) return null;
   return { text, kind: isError(cell.value) ? 'error' : typeof cell.value === 'number' ? 'number' : 'text' };
 }

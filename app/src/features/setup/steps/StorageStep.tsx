@@ -8,7 +8,7 @@ import type { FolderCheck, InstallStatus } from '../../../platform/types';
 import type { SetupStepProps } from '../../../registries';
 import { getSettings } from '../../../state/settings';
 import { t } from '../../../strings/t';
-import { Button, RadioCard, RadioGroup, Switch, TextField, announce } from '../../../ui';
+import { Button, PathText, RadioCard, RadioGroup, Switch, TextField, announce } from '../../../ui';
 import { CloudNotice, useCloud } from '../../qol';
 import { getHost } from '../runtime';
 import styles from '../SetupView.module.css';
@@ -93,7 +93,7 @@ function NotesFolder({ props, message }: { props: SetupStepProps; message: strin
         {t('setup.storage.notes.label')}
       </h2>
       <p id={ids.path} className={styles.path}>
-        {storage.notesFolder}
+        <PathText path={storage.notesFolder} />
       </p>
       <div>
         <Button onClick={() => void change()} aria-describedby={`${ids.path} ${ids.status}`}>

@@ -5,6 +5,8 @@
 
 import { children, lettersFromColumn, type CellAbs, type Node } from '../../../../core/expr';
 import { parseFormula } from '../../engine/formula/parser';
+import { escapeParagraphText } from '../../../../editor/markdown';
+import { readableText } from '../model/cache';
 import { clone, isObject, ownObject, put, type JsonObject } from '../model/json';
 import { sheetPatch, tidy } from '../model/sheet';
 import type { Sheet, TableLike } from '../model/types';
@@ -20,6 +22,23 @@ function viaEquals(text: string, rewrite: Rewrite): string {
   return text.startsWith('=') ? `=${rewrite(text.slice(1))}` : rewrite(text);
 }
 
+/**
+ * A cell's formula in stored form (without "="), or null when the cell holds none. A cell typed on the page keeps
+ * its text as Markdown, where "=" is escaped (\=A1+1), so the formula is read from the cell's readable text, as the
+ * engine reads it (walk 9 T4-D07-2).
+ */
+export function cellFormula(markdown: string): string | null {
+  if (isFormula(markdown)) return markdown.slice(1);
+  if (!/[=&]/.test(markdown)) return null;
+  const text = readableText(markdown);
+  return isFormula(text) ? text.slice(1) : null;
+}
+
+/** A formula cell's Markdown with `formula` in place of its formula, in the form the cell had: plain or escaped. */
+export function withCellFormula(markdown: string, formula: string): string {
+  return isFormula(markdown) ? `=${formula}` : escapeParagraphText(`=${formula}`);
+}
+
 /** The rows of `data` with every formula cell rewritten; rows without formulas keep their identity. */
 export function rewriteCells<T extends { cells: Record<string, { markdown: string }> }>(
   rows: readonly T[],
@@ -28,9 +47,11 @@ export function rewriteCells<T extends { cells: Record<string, { markdown: strin
   return rows.map((row) => {
     let cells: Record<string, { markdown: string }> | null = null;
     for (const [col, cell] of Object.entries(row.cells)) {
-      if (!isFormula(cell.markdown)) continue;
-      const next = `=${rewrite(cell.markdown.slice(1))}`;
-      if (next === cell.markdown) continue;
+      const formula = cellFormula(cell.markdown);
+      if (formula === null) continue;
+      const rewritten = rewrite(formula);
+      if (rewritten === formula) continue;
+      const next = withCellFormula(cell.markdown, rewritten);
       cells ??= { ...row.cells };
       cells[col] = { ...cell, markdown: next };
     }

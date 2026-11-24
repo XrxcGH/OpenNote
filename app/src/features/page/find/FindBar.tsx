@@ -274,6 +274,9 @@ function FindRow(props: RowProps) {
         <span className={styles.findCount} role="status">
           {status}
         </span>
+        <Button variant="quiet" onClick={close}>
+          {t('pageExtras.find.close')}
+        </Button>
       </div>
       <div className={styles.findOptions}>
         <SearchSwitches options={options} onOptions={props.onOptions} />
@@ -295,9 +298,6 @@ function FindRow(props: RowProps) {
         </Button>
         <Button aria-expanded={formatOpen} onClick={() => setFormatOpen(!formatOpen)}>
           {formatOpen ? t('textFind.formatHide') : t('textFind.formatShow')}
-        </Button>
-        <Button variant="quiet" onClick={close}>
-          {t('pageExtras.find.close')}
         </Button>
       </div>
       {formatOpen && (

@@ -18,9 +18,9 @@ vi.mock('./run', () => ({
   },
 }));
 
-async function runFailing(message: string, language: 'python' | 'c' = 'python') {
+async function runFailing(message: string, language: 'python' | 'c' = 'python', status = 'failed') {
   failure.message = message;
-  failure.status = 'failed';
+  failure.status = status;
   render(
     <CodeCellPanel
       language={language}
@@ -37,6 +37,12 @@ async function runFailing(message: string, language: 'python' | 'c' = 'python') 
 }
 
 describe('a failed run', () => {
+  it('prints no empty-output line after a time-limit stop (walk fix T4-D09-8)', async () => {
+    await runFailing('', 'python', 'time');
+    expect(screen.getByRole('status').textContent).toMatch(/^Stopped after/);
+    expect(screen.queryByText('The cell ran and printed nothing.')).toBeNull();
+  });
+
   it('names the missing Python download and prints no empty-output line', async () => {
     await runFailing(codeStudioPython.fullMissing);
     expect(screen.getByRole('status').textContent).toBe(

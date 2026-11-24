@@ -225,6 +225,19 @@ impl Bridge {
         order
     }
 
+    /// How many notebooks of the library have no folder where the library last saw them. When the notes folder was
+    /// moved or renamed, the tree says so instead of only "No notebooks yet".
+    fn missing_notebooks(&self) -> u32 {
+        let missing = self
+            .core
+            .library()
+            .notebooks
+            .iter()
+            .filter(|notebook| !notebook.available)
+            .count();
+        u32::try_from(missing).unwrap_or(u32::MAX)
+    }
+
     pub(crate) fn load_initial(&self, path: &[String]) -> IpcResult<InitialTree> {
         let mut resolved: Vec<(String, NodeSummary)> = Vec::new();
         for id in path {
@@ -257,6 +270,7 @@ impl Bridge {
             library: LibraryOut {
                 folder,
                 read_only: false,
+                missing: self.missing_notebooks(),
             },
             notebooks: self.list_notebooks(),
             children,

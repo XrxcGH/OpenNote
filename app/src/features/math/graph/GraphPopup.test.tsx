@@ -24,7 +24,9 @@ describe('the graph beside an equation', () => {
     const inserted: string[] = [];
     const graph = graphOfLatex('y = x^2')!;
     openGraphPopup({ source: graph.source, anchor: anchor(), equation: 'y = x^2', insert: (s) => inserted.push(s) });
-    expect(await screen.findByRole('application', { name: 'Graph of 1 function' })).toBeTruthy();
+    expect(
+      await screen.findByRole('application', { name: /^Graph of .*, x from -?[\d.]+ to -?[\d.]+, y from/ }),
+    ).toBeTruthy();
     await userEvent.click(screen.getByRole('button', { name: 'Insert graph' }));
     expect(inserted).toEqual(['y = x^2']);
     await waitFor(() => expect(document.querySelector('[data-graph-popup]')).toBeNull());
@@ -41,7 +43,7 @@ describe('the graph beside an equation', () => {
 
   it('has no axe violations', async () => {
     openGraphPopup({ source: 'y = sin(x)', anchor: anchor(), equation: 'y = sin(x)' });
-    await screen.findByRole('application', { name: 'Graph of 1 function' });
+    await screen.findByRole('application', { name: /^Graph of .*, x from -?[\d.]+ to -?[\d.]+, y from/ });
     await expectNoAxeViolations(document.body);
   });
 });

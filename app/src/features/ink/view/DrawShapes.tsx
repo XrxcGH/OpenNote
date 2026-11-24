@@ -34,16 +34,26 @@ function shownGroups(): LibraryGroup[] {
 }
 
 /**
+ * Where the library opens when no anchor is given. A More menu item or a palette row closes as the library opens.
+ * A detached anchor puts the menu at the top-left corner, so those open at the More button or a point.
+ */
+function focusAnchor(): MenuAnchor {
+  const point = { x: Math.round(window.innerWidth / 2), y: 96 };
+  const focused = document.activeElement;
+  if (!(focused instanceof HTMLElement) || focused === document.body || !focused.isConnected) return point;
+  if (focused.closest('[role="menu"]')) {
+    const more = document.querySelector<HTMLElement>('[data-more]:not([data-measure]) button');
+    return more ?? point;
+  }
+  return focused.closest('[role="dialog"]') ? point : focused;
+}
+
+/**
  * Opens the shape library. The Draw tab's Shapes button opens it under itself; More and the command palette open it
  * at the control that has focus, so a narrow window still reaches every shape (full walk 2, A1-A10-2).
  */
 export async function openShapeLibrary(anchor?: MenuAnchor): Promise<void> {
-  const focused = document.activeElement;
-  const at: MenuAnchor =
-    anchor ??
-    (focused instanceof HTMLElement && focused !== document.body
-      ? focused
-      : { x: Math.round(window.innerWidth / 2), y: 96 });
+  const at: MenuAnchor = anchor ?? focusAnchor();
   await openMenu({
     label: t('ink.library.menu'),
     anchor: at,

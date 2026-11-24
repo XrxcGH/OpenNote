@@ -15,16 +15,18 @@ import type { Choice } from '../ui/prompts';
 import { pickFile } from '../ui/pickFile';
 import { listGoogleEvents } from './google';
 import { eventsFromIcs } from './ics';
-import { makeMeetingNote, whenText } from './note';
+import { blankEvent, makeMeetingNote, whenText } from './note';
 import { listOutlookEvents } from './outlook';
 import { windowAround } from './types';
 import type { MeetingEvent, MeetingSource } from './types';
 
+type SourceChoice = MeetingSource | 'blank';
+
 const SERVICE: Record<MeetingSource, string> = { outlook: 'Outlook', google: 'Google', ics: '' };
 
-async function chooseSource(): Promise<MeetingSource | null> {
+async function chooseSource(): Promise<SourceChoice | null> {
   await refreshConnectors();
-  const choices: Choice<MeetingSource>[] = [];
+  const choices: Choice<SourceChoice>[] = [];
   if (isConnectorConnected('microsoft')) {
     choices.push({ id: 'outlook', label: t('accounts.meetings.source.outlook'), value: 'outlook' });
   }
@@ -32,13 +34,12 @@ async function chooseSource(): Promise<MeetingSource | null> {
     choices.push({ id: 'google', label: t('accounts.meetings.source.google'), value: 'google' });
   }
   choices.push({ id: 'ics', label: t('accounts.meetings.source.ics'), value: 'ics' });
-  if (choices.length === 1) {
-    showToast({ message: t('accounts.meetings.source.connectHint') });
-    return 'ics';
-  }
+  choices.push({ id: 'blank', label: t('accounts.meetings.source.blank'), value: 'blank' });
+  // With no account connected, the picker still offers a blank note and says how to connect a calendar.
+  const none = choices.length === 2;
   return pickOne({
     title: t('accounts.meetings.source.title'),
-    description: t('accounts.meetings.source.description'),
+    description: none ? t('accounts.meetings.source.connectHint') : t('accounts.meetings.source.description'),
     choices,
     confirmLabel: t('accounts.meetings.source.confirm'),
   });
@@ -85,9 +86,20 @@ async function targetNotebook(): Promise<NodeId | null> {
   return (await services().notes.listNotebooks())[0]?.id ?? null;
 }
 
+/** A note with no calendar: the date, a line for the people, and actions to fill in. */
+async function makeBlankNote(): Promise<void> {
+  const notebook = await targetNotebook();
+  if (!notebook) return;
+  const { notes, pages } = services();
+  const made = await makeMeetingNote(notes, pages, notebook, blankEvent(new Date()));
+  showToast({ message: t('accounts.meetings.done', { title: made.page.title }) });
+  await openPage(notes, made.page.id);
+}
+
 export async function newMeetingNote(): Promise<void> {
   const source = await chooseSource();
   if (!source) return;
+  if (source === 'blank') return makeBlankNote();
   const service = SERVICE[source] || t('accounts.meetings.source.ics');
   await attempt(service, async () => {
     announce(t('accounts.meetings.fetching'));

@@ -90,35 +90,53 @@
   }
 
   /* Find and replace. */
-  /* Two columns: the field, and the buttons that go with it. The options sit in a row of their own beneath. */
+  /* The field, then the buttons that go with it, on one line when they fit. When they do not, the buttons wrap to
+     a line of their own beneath the field and never sit over it (walk 9 VA-1). The options take a line of their
+     own. */
   .find {
-    display: grid;
-    grid-template-columns: minmax(8rem, 20rem) auto;
-    justify-content: start;
-    gap: var(--space-3) var(--space-4);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-4);
     align-items: end;
-    padding: var(--space-3) var(--space-5);
+    padding: var(--space-2) var(--space-5);
     border-block-end: 1px solid var(--color-border-subtle);
     background: var(--color-surface-raised);
   }
 
+  .find > [role='group'] {
+    flex: 1 0 100%;
+  }
+
   .findField {
+    flex: 1 1 12rem;
+    min-inline-size: 0;
+    max-inline-size: 20rem;
+  }
+
+  /* A text input keeps its own preferred width; the field's width is the one that counts. */
+  .findField :global(input) {
+    box-sizing: border-box;
+    inline-size: 100%;
     min-inline-size: 0;
   }
 
+  /* A switch's hover area hangs out past its edges by its padding and border (Switch.module.css), so the gap
+     between two switches makes room for both hang-outs, and the areas never overlap (walk 9 VA-2). */
   .findOptions {
     display: flex;
+    flex: 1 0 100%;
     flex-wrap: wrap;
-    grid-column: 1 / -1;
-    gap: var(--space-3) var(--space-5);
+    gap: var(--space-2) calc(var(--space-4) + 2 * (var(--space-3) + 1px));
     align-items: center;
   }
 
   .findRow {
     display: flex;
+    flex: 0 1 auto;
     flex-wrap: wrap;
     gap: var(--space-2);
     align-items: center;
+    min-inline-size: 0;
   }
 
   .findCount {

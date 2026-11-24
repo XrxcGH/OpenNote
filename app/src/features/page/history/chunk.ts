@@ -30,9 +30,11 @@ export function openHistory(given = ''): void {
   stopWatching ??= shownPage.subscribe(() => closeHistory());
   if (!panel?.host.isConnected) {
     panel?.root.unmount();
-    const host = parent.appendChild(document.createElement('div'));
-    host.className = styles.host;
-    // The panel lies over the page's end edge, so the Properties chip (search/properties/mount.tsx) stays left of it.
+    // Beside the page in its row, so the page narrows to make room for the panel and nothing is covered. Where there
+    // is no row, the panel lies over the page's end edge instead (W9-VA-5).
+    const row = parent.closest<HTMLElement>('[data-page-row]');
+    const host = (row ?? parent).appendChild(document.createElement('div'));
+    host.className = row ? styles.host : styles.hostOverlay;
     host.dataset.pagePane = '';
     const returnTo = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     panel = { host, root: createRoot(host), returnTo };

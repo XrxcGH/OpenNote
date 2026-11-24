@@ -301,7 +301,10 @@ function useScientific(basic: boolean) {
       keep(recordConversion(session, source, converted.value, unit));
       setAnswer({ text, note: t('smart.tools.calculator.converted', { input: source, value: text }) });
       setProblem('');
-    } else setProblem(t('smart.tools.calculator.convertFailed'));
+    } else {
+      setAnswer(null);
+      setProblem(t('smart.tools.calculator.convertFailed'));
+    }
     return true;
   };
   // The last operation of a basic calculation, so pressing = again repeats it on the answer (12.5×8−3 = 97, = 94).
@@ -313,7 +316,11 @@ function useScientific(basic: boolean) {
     }
     if (source === '' || convert(source)) return;
     const done = submit(session, source.replace(/−/g, '-'));
-    if (!done.result.ok) return setProblem(t(`smart.tools.calculator.errors.${done.result.error.code}`));
+    if (!done.result.ok) {
+      // The earlier answer goes, so Copy answer and Insert answer never offer text the result no longer shows.
+      setAnswer(null);
+      return setProblem(t(`smart.tools.calculator.errors.${done.result.error.code}`));
+    }
     const { value } = done.result;
     keep(done.session);
     if (basic) repeat.current = /([+\-−×÷*/])\s*(\d*\.?\d+%?)\s*$/.exec(source)?.slice(1).join('') ?? '';

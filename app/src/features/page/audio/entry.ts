@@ -1,5 +1,5 @@
 // What a recording block stands for, read without the page (Phase 9): its entry, and how long it ran.
-import type { RecordingEntry } from '../../../core/audio';
+import type { RecordingEntry, Timeline } from '../../../core/audio';
 import type { BlockJson } from '../../../services/pages/types';
 import { t } from '../../../strings/t';
 import { entryOf } from './entries';
@@ -25,12 +25,32 @@ export function activeNs(entry: RecordingEntry): number {
  * flag dropped after a pause would otherwise point past the end of the recording.
  */
 export function positionOfCapture(entry: RecordingEntry, captureNs: number): number {
+  const timeline = entry.tracks.find((track) => track.timeline.anchors.length > 0)?.timeline;
+  if (timeline) return timelinePosition(timeline, captureNs);
   let paused = 0;
   for (const hole of entry.pauses) {
     if (hole.pausedNs >= captureNs) continue;
     paused += Math.max(0, Math.min(hole.resumedNs, captureNs) - hole.pausedNs);
   }
   return Math.max(0, captureNs - entry.startedNs - paused);
+}
+
+const NS_PER_FRAME = 1e9 / 48_000;
+
+/**
+ * A capture time's place in the track. Each anchor starts a stretch of frames at a capture time, and the gap before the
+ * next anchor is a pause or a removed part. A time in a gap sits where the audio goes on, and one past the end at the
+ * end, so a flag never points past the clip after a part is removed.
+ */
+function timelinePosition(timeline: Timeline, captureNs: number): number {
+  const { anchors, frames } = timeline;
+  let frame = 0;
+  anchors.forEach((anchor, index) => {
+    if (anchor.timeNs > captureNs) return;
+    const end = anchors[index + 1]?.frame ?? frames;
+    frame = Math.min(anchor.frame + (captureNs - anchor.timeNs) / NS_PER_FRAME, end);
+  });
+  return Math.round(Math.min(frame, frames) * NS_PER_FRAME);
 }
 
 /** The name the person gave a recording, or null. */

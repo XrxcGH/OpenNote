@@ -96,10 +96,10 @@ Press Ctrl+K and choose Calculator or Unit converter. Each opens in its own smal
 The calculator has seven tabs, and the arrow keys move between them:
 
 - Basic is a four-function keypad.
-- Scientific takes typed expressions. Choose the notation (normal, scientific, or engineering) and the significant figures, or match the fewest figures you typed.
+- Scientific takes typed expressions. `deg`, `degree`, and `degrees` work like the degree sign, as in `sin(30 deg)`. Choose the notation (normal, scientific, or engineering) and the significant figures, or match the fewest figures you typed.
 - Graphing 2D and Graphing 3D are the grapher.
 - Programmer works in hexadecimal, decimal, octal, or binary, with AND, OR, XOR, NOT, and shifts, in 8 to 64 bits.
-- Statistics gives the mean, median, mode, quartiles, and standard deviations of a list. Put x and y on each line to get a line of best fit.
+- Statistics gives the mean, median, mode, quartiles, and standard deviations of a list. Put x and y on each line to get a line of best fit, with the statistics of x and of y labeled.
 - Matrix adds, multiplies, inverts, and row-reduces matrices, and solves A x = B.
 
 Each tab keeps its history on this device, with Copy and Insert. Open a tab straight from Ctrl+K, such as Programmer calculator.

@@ -5,6 +5,7 @@
 import { TrashIcon } from '@phosphor-icons/react/dist/csr/Trash';
 import { lazy, Suspense, useEffect } from 'react';
 import { useFlag } from '../../app/flags';
+import { navigate, useLocation } from '../../app/location';
 import { formatChord, useKeysFor } from '../../commands/keymap';
 import { executeCommand } from '../../commands/registry';
 import { useStore } from '../../state/store';
@@ -51,13 +52,26 @@ function TrashButton({ plant }: { plant: boolean }) {
 }
 
 function NotebooksEmpty() {
+  const missing = useStore(treeStore, (state) => state.library?.missing ?? 0);
   return (
     <>
       <EmptyArt kind="notebooks" className={styles.emptyArt} />
-      <p>{t('tree.empty.notebooks')}</p>
+      {missing > 0 ? (
+        <>
+          <p role="status">{`${t('tree.empty.missing', { count: missing })} ${t('tree.empty.missingFix')}`}</p>
+          <Button variant="quiet" onClick={openStorage}>
+            {t('tree.empty.missingAction')}
+          </Button>
+        </>
+      ) : (
+        <p>{t('tree.empty.notebooks')}</p>
+      )}
     </>
   );
 }
+
+/** Storage settings, where the notes folder is chosen again after it moved. */
+const openStorage = () => navigate({ view: 'settings', section: 'storage' });
 
 export function NotebooksPane() {
   useTreeStart();
@@ -98,6 +112,19 @@ function PagesEmpty() {
   );
 }
 
+/** A notebook with no section yet: say what to do next, and offer it (walk 9, T1-D05-5). */
+function NoSections() {
+  return (
+    <div className={styles.pane}>
+      <EmptyArt kind="page" className={styles.emptyArt} />
+      <p className={styles.empty}>{t('tree.empty.noSections')}</p>
+      <Button variant="primary" onClick={() => void executeCommand('notes.newSection', undefined, 'menu')}>
+        {t('tree.empty.addSection')}
+      </Button>
+    </div>
+  );
+}
+
 export function PagesPane() {
   useTreeStart();
   useRegionMain('pages');
@@ -122,6 +149,14 @@ export function PagesPane() {
   useEffect(() => {
     if (sectionId && known && status === 'ready') void ensureChildren(sectionId);
   }, [sectionId, known, status]);
+  const location = useLocation();
+  const notebookId = location.view === 'workspace' ? location.notebookId : null;
+  const emptyNotebook = useStore(
+    treeStore,
+    (state) =>
+      notebookId !== null && state.children[notebookId] !== undefined && state.children[notebookId].length === 0,
+  );
+  if (!sectionId && emptyNotebook) return <NoSections />;
   if (!sectionId) {
     return (
       <div className={styles.pane}>

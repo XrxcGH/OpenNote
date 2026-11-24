@@ -3,7 +3,7 @@
 // today's table keys.
 import { chord } from '../../../commands/chords';
 import { commands } from '../../../registries';
-import type { CommandDef } from '../../../commands/types';
+import type { CommandDef, CommandId } from '../../../commands/types';
 import { contribute } from '../sheet/registry';
 import type { SheetContribution } from '../sheet/registry';
 import { activeSheet } from './active';
@@ -13,10 +13,16 @@ import type { SheetKeyDef } from './bindings';
 export const SHEET_KEYS_FLAG = 'tables.sheetWrites' as const;
 const FLAG = SHEET_KEYS_FLAG;
 
-/** A sheet command applies to the table that had focus last, and only while it uses spreadsheet keys. */
-function applies(id: string): boolean {
+/**
+ * A sheet command applies to the table that had focus last, only while it uses spreadsheet keys, and only when it
+ * does something there now. Fill entry (Ctrl+Enter) needs a range, so with one cell its key adds a row below, as the
+ * context menu says (walk 9 T4-D07-11).
+ */
+function applies(id: CommandId): boolean {
   const sheet = activeSheet();
-  return sheet !== null && (id === DOCUMENT_KEYS_COMMAND || !sheet.documentKeys());
+  if (sheet === null) return false;
+  if (id === DOCUMENT_KEYS_COMMAND) return true;
+  return !sheet.documentKeys() && (sheet.canRun?.(id) ?? true);
 }
 
 /**

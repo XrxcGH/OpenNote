@@ -9,6 +9,7 @@ import { useLayout } from '../../state/layout';
 import { qolStore } from '../../state/qol';
 import { sessionStore } from '../../state/session';
 import { shallowEqual, useStore } from '../../state/store';
+import { t } from '../../strings/t';
 import { DeskMotifs, StarField } from '../../ui';
 import { useRegion } from '../regions';
 import { NotebooksColumn, PagesColumn } from './Panes';
@@ -75,6 +76,7 @@ export function Workspace(props: WorkspaceSlots) {
       </NotebooksColumn>
       <PagesColumn layout={layout.pages}>{props.pages}</PagesColumn>
       <main
+        aria-label={t('layout.regions.page')}
         className={styles.page}
         tabIndex={-1}
         hidden={compact && compactScreen !== 'page'}

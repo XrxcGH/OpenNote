@@ -469,6 +469,8 @@ export function measureLayout(options: MeasureOptions): RawFinding[] {
     const s = style(el);
     const rect = el.getBoundingClientRect();
     if (rect.width < 4 || rect.height < 4) continue;
+    // A closed details element's content is not painted, so nothing of it is there to cover.
+    if (inClosedDetails(el)) continue;
     const scrollsY = (s.overflowY === 'auto' || s.overflowY === 'scroll') && el.scrollHeight > el.clientHeight + 1;
     const scrollsX = (s.overflowX === 'auto' || s.overflowX === 'scroll') && el.scrollWidth > el.clientWidth + 1;
     if (!scrollsY && !scrollsX) continue;

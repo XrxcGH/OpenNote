@@ -202,3 +202,48 @@ fn links_to_scripts_files_and_other_apps_keep_only_their_text() {
     let text = report.to_markdown();
     assert!(text.contains("5 links that cannot be followed"), "{text}");
 }
+
+/// A note with flow-style tags and a table with GFM alignment colons (walk 9, T4-D11-1).
+fn odd_note() -> (MemorySink, Report) {
+    let world = TestEnv::new();
+    let root = tempfile::tempdir().expect("a temp folder");
+    let note = "---\ntitle: Odd\ntags: [a,b]\n---\n# Odd heading\n\nText.\n\n\
+        | A | B | C | D |\n|:--|:-:|--:|---|\n| 1 | 2 | 3 | 4 |\n";
+    write(root.path(), "odd.md", note.as_bytes());
+    let mut sink = MemorySink::default();
+    let report = import_markdown_folder(root.path(), &world.env(), &mut sink).expect("imports");
+    (sink, report)
+}
+
+#[test]
+fn flow_style_front_matter_tags_become_page_tags() {
+    let (sink, report) = odd_note();
+    assert_eq!(page_named(&sink, "Odd").tags, vec!["a", "b"]);
+    assert!(report.to_markdown().contains("2 tags"), "{}", report.to_markdown());
+}
+
+#[test]
+fn table_alignment_colons_become_column_alignment() {
+    let (sink, _) = odd_note();
+    let page = page_named(&sink, "Odd");
+    let table = page
+        .blocks
+        .iter()
+        .find_map(|b| match &b.data {
+            BlockData::Table(t) => Some(t),
+            _ => None,
+        })
+        .expect("a table block");
+    let sheet = table.extra.get("sheet").expect("a sheet with styles").clone();
+    let ids: Vec<String> = table.columns.iter().map(|c| c.id.to_string()).collect();
+    let styles = &sheet["styles"];
+    let align = |i: usize| {
+        sheet["cols"][&ids[i]]["style"]
+            .as_str()
+            .map(|style| styles[style]["align"]["h"].as_str().unwrap_or("").to_owned())
+    };
+    assert_eq!(align(0).as_deref(), Some("left"));
+    assert_eq!(align(1).as_deref(), Some("center"));
+    assert_eq!(align(2).as_deref(), Some("right"));
+    assert_eq!(align(3), None, "no colon means the default alignment");
+}

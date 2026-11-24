@@ -16,12 +16,29 @@ interface SlotProps {
   generation: number;
 }
 
+/** Gives an editor the ranked completion list; resolves to the undo, or null when the slot is already gone. */
+async function withCompletion(
+  controller: StudioController,
+  id: string,
+  editor: CodeEditor,
+  gone: () => boolean,
+): Promise<(() => void) | null> {
+  const { attachCompletion } = await import('../complete');
+  if (gone()) return null;
+  const others = () =>
+    Object.entries(controller.project()?.files ?? {})
+      .filter(([other]) => other !== id)
+      .map(([, file]) => file.text);
+  return attachCompletion(editor, { otherTexts: others });
+}
+
 function EditorSlot({ controller, id, shown, generation }: SlotProps) {
   const host = useRef<HTMLDivElement>(null);
   const path = controller.pathOf(id);
   useEffect(() => {
     let editor: CodeEditor | null = null;
     let gone = false;
+    let detach: (() => void) | null = null;
     const cursor = () => {
       if (!editor) return;
       const head = editor.view.state.selection.main.head;
@@ -49,9 +66,12 @@ function EditorSlot({ controller, id, shown, generation }: SlotProps) {
       });
       for (const type of ['keyup', 'pointerup', 'focusin'] as const) editor.view.dom.addEventListener(type, cursor);
       controller.attachEditor(id, editor);
+      // The ranked completion list and ghost text (code:L12), as the code cells attach them (T4-D09-7).
+      void withCompletion(controller, id, editor, () => gone).then((undo) => (detach = undo));
     });
     return () => {
       gone = true;
+      detach?.();
       if (editor && controller.detachEditor(id, editor)) editor.destroy();
     };
   }, [controller, id, path, generation]);

@@ -754,6 +754,36 @@ mod tests {
         String::from_utf8_lossy(&sheet.1).into_owned()
     }
 
+    /// Dates, booleans, percents, and numbers in scientific notation are typed Excel values, not strings
+    /// (walk 9, T4-D11-2).
+    #[test]
+    fn typed_cells_are_written_as_values_with_number_formats() {
+        let cells = ["2024-02-29", "TRUE", "12.5%", "1E+3", "2024-02-30", "7%"];
+        let table = Table {
+            name: "Typed".to_owned(),
+            header: false,
+            rows: vec![cells.iter().map(|c| (*c).to_owned()).collect()],
+            lists: Vec::new(),
+            data: None,
+            sheet: None,
+            page: 0,
+        };
+        let xml = sheet_part(table);
+        assert!(xml.contains("<v>45351</v>"), "the date serial of 2024-02-29: {xml}");
+        assert!(xml.contains("<c r=\"B1\" t=\"b\"><v>1</v></c>"), "{xml}");
+        assert!(xml.contains("<v>0.125</v>"), "{xml}");
+        assert!(xml.contains("<v>1e3</v>"), "{xml}");
+        assert!(
+            xml.contains("t=\"inlineStr\"><is><t xml:space=\"preserve\">2024-02-30<"),
+            "{xml}"
+        );
+        assert!(xml.contains("<v>0.07</v>"), "{xml}");
+        assert!(
+            !xml.contains(">2024-02-29<") && !xml.contains(">TRUE<") && !xml.contains(">12.5%<"),
+            "{xml}"
+        );
+    }
+
     #[test]
     fn csv_quotes_and_guards_cells() {
         let bytes = delimited_bytes(

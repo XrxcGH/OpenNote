@@ -6,7 +6,9 @@ use serde::{Deserialize, Serialize};
 
 use super::NotebookHandle;
 use crate::error::CoreError;
-use crate::id::{PageId, SectionId};
+use crate::id::{PageId, RevisionId, SectionId};
+use crate::store::layout::{NotebookLayout, PAGE_JSON};
+use crate::store::page_store::LoadError;
 
 /// Which pages "Delete history" reaches.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -31,6 +33,42 @@ pub struct HistoryDeleted {
 }
 
 impl NotebookHandle {
+    /// Puts back the newest saved version of a page whose `page.json` is damaged, so the page opens again (spec
+    /// 14.5). The damaged file goes into `.damaged/` first, so nothing is lost. Returns the revision put back, or
+    /// `None` when the file reads fine or the page has no saved version.
+    pub fn recover_damaged_page(&self, page: PageId) -> Result<Option<RevisionId>, CoreError> {
+        let shared = &self.inner;
+        shared.check_open()?;
+        let dir = shared
+            .tree()
+            .store
+            .page_dir(page)
+            .ok_or_else(|| CoreError::NotFound(format!("page {page}")))?;
+        let backend = &shared.ctx.backend;
+        if !matches!(backend.load(&dir), Err(LoadError::Damaged(_))) {
+            return Ok(None);
+        }
+        let Some(newest) = backend.list_versions(&dir)?.versions.last().map(|v| v.revision) else {
+            return Ok(None);
+        };
+        let read = backend.open_version(&dir, newest)?;
+        backend.move_damaged(&dir, PAGE_JSON)?;
+        let bytes = shared.ctx.codec.write_page(&read.page);
+        shared.ctx.fs.create_durable(&NotebookLayout::page_json(&dir), &bytes)?;
+        Ok(Some(newest))
+    }
+
+    /// Drops every client's undo history of an open page. A change that deleted files the old content names, such
+    /// as removing part of a recording, can't be undone: an undo would point the page at files that are gone, and
+    /// every save after it would fail. A page that isn't open has no undo history.
+    pub fn forget_undo(&self, page: PageId) {
+        let session = self.inner.pages().get(&page).cloned();
+        if let Some(session) = session {
+            let mut st = session.state();
+            session.clear_undo(&mut st);
+        }
+    }
+
     /// Deletes the saved versions of the pages in `scope`. With `keep_named`, versions that have a name or are
     /// marked to keep stay. The current content of a page is untouched. Ink and assets that only history used
     /// are collected when the page is tidied after it closes. Pages of encrypted sections keep no history, so

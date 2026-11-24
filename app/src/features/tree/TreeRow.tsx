@@ -133,7 +133,17 @@ function TreeRowView(props: TreeRowProps) {
         {renaming ? (
           <RenameField tree={tree} renaming={renaming} title={title} />
         ) : (
-          <span id={`${id}-title`} className={styles.title} onDoubleClick={() => props.onRename(row)}>
+          <span
+            id={`${id}-title`}
+            className={styles.title}
+            onDoubleClick={() => props.onRename(row)}
+            // A name cut short by the row shows whole in a tooltip (walk 9).
+            onPointerEnter={(event) => {
+              const el = event.currentTarget;
+              if (el.scrollWidth > el.clientWidth) el.title = title;
+              else el.removeAttribute('title');
+            }}
+          >
             {title}
           </span>
         )}

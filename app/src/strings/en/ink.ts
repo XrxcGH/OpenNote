@@ -100,6 +100,7 @@ export const ink = {
     recolor: 'Recolor the selection',
     thicker: 'Make ink thicker',
     thinner: 'Make ink thinner',
+    rotate: 'Rotate 90 degrees',
     exportSelection: 'Export selection',
     copyImage: 'Copy as image',
   },

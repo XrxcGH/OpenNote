@@ -22,6 +22,8 @@ export interface PythonState {
   exit: number;
   kind: string;
   wantedInput: boolean;
+  /** True once the program read any of the input text. */
+  readInput?: boolean;
   /** True when the program failed before it ran: compile() itself gave up, as on a parser stack overflow. */
   compiling?: boolean;
 }
@@ -142,11 +144,13 @@ def _on_run():
             self.text = text
             self.at = 0
         def read(self, size=-1):
+            state['readInput'] = True
             end = len(self.text) if size is None or size < 0 else min(len(self.text), self.at + size)
             piece = self.text[self.at:end]
             self.at = end
             return piece
         def readline(self, size=-1):
+            state['readInput'] = True
             i = self.text.find('\n', self.at)
             end = len(self.text) if i < 0 else i + 1
             if size is not None and size >= 0:

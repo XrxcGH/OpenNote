@@ -116,6 +116,7 @@
     "allow-history-restore-blocks",
     "allow-history-name",
     "allow-history-delete",
+    "allow-page-recover-damaged",
     "allow-page-add-strokes",
     "allow-page-read-strokes",
     "allow-search-call",

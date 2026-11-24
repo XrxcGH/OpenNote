@@ -86,7 +86,9 @@ export type MathDrawing = { ok: true; html: string } | { ok: false; message: str
 
 /** What an action did to some LaTeX: new LaTeX, or why it could not. */
 export type MathActionResult =
-  { ok: true; latex: string } | { ok: false; reason: 'unsupported' | 'unchanged' | 'none' | 'letters' };
+  | { ok: true; latex: string }
+  | { ok: false; reason: 'unsupported' | 'unchanged' | 'none' | 'letters' }
+  | { ok: false; reason: 'unfinished' | 'unclosed' | 'emptySide'; near: string };
 
 /** A visual equation field: the page's math editor with its own keyboard, which reads and writes LaTeX. */
 export interface VisualMathField {

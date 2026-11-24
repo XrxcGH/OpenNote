@@ -106,6 +106,28 @@ pub async fn history_delete(
     bridge.delete_history(&notebook, &scope, keep_named)
 }
 
+/// Puts back the newest saved version of a page whose `page.json` is damaged (`page_recover_damaged`). Answers
+/// whether a version was put back.
+#[tauri::command]
+pub async fn page_recover_damaged(bridge: State<'_, CoreBridge>, page: String) -> IpcResult<bool> {
+    let id = PageId::parse(&page).map_err(|_| IpcError::invalid("page", "isn't a page ID"))?;
+    let notebook = bridge
+        .run(move |bridge| {
+            bridge.with(|bridge| {
+                bridge
+                    .core
+                    .find_node(id.0)
+                    .map(|(notebook, _)| notebook)
+                    .ok_or_else(|| IpcError::new("notFound", "That page isn't in a notebook."))
+            })
+        })
+        .await?;
+    tauri::async_runtime::spawn_blocking(move || notebook.recover_damaged_page(id).map(|put| put.is_some()))
+        .await
+        .map_err(|error| IpcError::new(crate::ipc::codes::INTERNAL, error.to_string()))?
+        .map_err(core_error)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

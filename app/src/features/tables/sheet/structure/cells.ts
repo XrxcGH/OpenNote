@@ -12,7 +12,15 @@ import type { Sheet } from '../model/types';
 import { dropEmpty } from './edit';
 import type { TableBook, TableChange } from '../../../../editor/commands/tables';
 import { followInOthers } from './others';
-import { mapSpan, moveEntries, rewriteSheetText, shiftFormula, type Shift } from './reflow';
+import {
+  cellFormula,
+  mapSpan,
+  moveEntries,
+  rewriteSheetText,
+  shiftFormula,
+  withCellFormula,
+  type Shift,
+} from './reflow';
 
 /** A block of cells by index into `data.rows` and `data.columns`, both ends included. */
 export interface CellBox {
@@ -235,9 +243,11 @@ function build(
   const out = next.map((row) => {
     let cells = row.cells;
     for (const [id, cell] of Object.entries(row.cells)) {
-      if (!cell.markdown.startsWith('=') || cell.markdown.length < 2) continue;
-      const text = `=${rewrite(cell.markdown.slice(1))}`;
-      if (text !== cell.markdown) cells = { ...cells, [id]: { ...cell, markdown: text } };
+      const formula = cellFormula(cell.markdown);
+      if (formula === null) continue;
+      const rewritten = rewrite(formula);
+      if (rewritten !== formula)
+        cells = { ...cells, [id]: { ...cell, markdown: withCellFormula(cell.markdown, rewritten) } };
     }
     return cells === row.cells ? row : { ...row, cells };
   });

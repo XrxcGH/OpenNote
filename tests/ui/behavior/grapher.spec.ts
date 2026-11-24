@@ -16,7 +16,7 @@ async function addGraph(page: import('@playwright/test').Page): Promise<void> {
 
 test('draws a graph from a slash command and shows its functions as text', async ({ page }) => {
   await addGraph(page);
-  await expect(page.getByRole('application', { name: /^Graph of 1 function/ })).toBeVisible();
+  await expect(page.getByRole('application', { name: /^Graph of .*, x from/ })).toBeVisible();
   await expect(page.getByRole('textbox', { name: 'Function 1' })).toHaveValue('y = sin(x)');
   await expect(page.locator('pre', { hasText: 'y = sin(x)' }).last()).toBeVisible();
 });
@@ -57,7 +57,7 @@ test('says what is wrong with a function and still draws the others', async ({ p
   await page.getByRole('button', { name: 'Add a function' }).click();
   await page.getByRole('textbox', { name: 'Function 2' }).fill('y = 2 +');
   await expect(page.getByRole('textbox', { name: 'Function 2' })).toHaveAttribute('aria-invalid', 'true');
-  await expect(page.getByRole('application', { name: /^Graph of 2 functions/ })).toBeVisible();
+  await expect(page.getByRole('application', { name: /^Graph of y = sin\(x\); y = 2 \+, x from/ })).toBeVisible();
 });
 
 test('inserts a graph from the Insert tab before the page is clicked into (Beta 5 walk W2-17)', async ({ page }) => {

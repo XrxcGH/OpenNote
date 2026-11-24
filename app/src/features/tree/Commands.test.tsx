@@ -5,10 +5,12 @@ import { fireEvent, screen, within } from '@testing-library/react';
 import { userEvent } from 'vitest/browser';
 import { afterEach, describe, expect, it } from 'vitest';
 import { getLocation } from '../../app/location';
+import { executeCommand } from '../../commands/registry';
 import { announcements, expectFocus, pressChord, renderApp } from '../../test';
 import type { NodeId } from '../../services/notes';
 import { act } from '@testing-library/react';
 import { multiStore } from './multi';
+import styles from './Tree.module.css';
 import { getSettings, updateSettings } from '../../state/settings';
 import { setViewport } from '../../test';
 
@@ -23,8 +25,8 @@ const names = (tree: HTMLElement) =>
     .map((item) => item.getAttribute('aria-labelledby'))
     .map((id) => document.getElementById(id ?? '')?.textContent);
 
-async function renderTree() {
-  const app = await renderApp();
+async function renderTree(options: Parameters<typeof renderApp>[0] = {}) {
+  const app = await renderApp(options);
   await findRow(notebooksTree, 'Biology 101');
   return app;
 }
@@ -132,7 +134,30 @@ describe('creating', () => {
   });
 });
 
+describe('an empty notebook', () => {
+  it('says to add a section and offers the action (T1-D05-5)', async () => {
+    await renderTree();
+    await executeCommand('notes.newNotebook', undefined, 'menu');
+    await screen.findByRole('textbox', { name: /Rename/ });
+    await userEvent.keyboard('{Enter}');
+    expect(await screen.findByText(/has no sections yet/)).toBeTruthy();
+    const add = screen.getByRole('button', { name: 'Add a section' });
+    await userEvent.click(add);
+    await screen.findByRole('textbox', { name: /Rename/ });
+  });
+});
+
 describe('renaming', () => {
+  it('shows a field as tall as a touch row that the kebab does not cover (W9-VA-10)', async () => {
+    await renderTree({ density: 'touch' });
+    await focusRow(notebooksTree, 'Labs');
+    await pressChord('F2');
+    const field = await screen.findByRole('textbox', { name: 'Rename Labs' });
+    expect(field.offsetHeight).toBeGreaterThanOrEqual(44);
+    const more = field.closest('[role="treeitem"]')!.querySelector<HTMLElement>(`.${styles.more}`)!;
+    expect(getComputedStyle(more).display).toBe('none');
+  });
+
   it('keeps an empty name in the field with the message, then commits a good one', async () => {
     await renderTree();
     await focusRow(notebooksTree, 'Labs');

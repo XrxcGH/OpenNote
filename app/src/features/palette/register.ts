@@ -16,6 +16,9 @@ commands.register(
     keywords: 'commands.keywords.palette',
     category: 'general',
     keys: [chord('Ctrl+K')],
+    // OneNote's Ctrl+K inserts a link wherever the caret is, so the OneNote set opens the palette with Ctrl+Shift+P,
+    // and Ctrl+K has one meaning there (walk 9 T2-D04-2).
+    presetKeys: { onenote: [chord('Ctrl+Shift+P')] },
     allowInTextInput: true,
     allowInModal: true,
     // Opening the palette from the palette would do nothing.

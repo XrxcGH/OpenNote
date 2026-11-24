@@ -12,6 +12,7 @@ import { lineParameters } from '../grapher/curves';
 import { CurveDot, CurveTraceControls, useCurveTrace } from './curveTrace';
 import styles from './graph.module.css';
 import { useSvgScale } from '../svgScale';
+import { plotLabel } from './plotLabel';
 import { FunctionBoxes, PlotLayers, SIZE, Sliders, ZoomButtons, keyEffect, readoutText, traceAt } from './parts';
 import { readGraph, writeGraph } from './source';
 import type { GraphSource } from './source';
@@ -168,7 +169,7 @@ function Graph2DView({ graph, source, editable, onSource }: GraphViewProps & { g
         viewBox={`0 0 ${SIZE.width} ${SIZE.height}`}
         role="application"
         tabIndex={0}
-        aria-label={t('smart.grapher.label', { count: graph.functions.length })}
+        aria-label={plotLabel(graph.functions, view)}
         aria-roledescription={t('smart.grapher.role')}
         aria-description={t('smart.grapher.keys')}
         onPointerDown={onPointerDown}

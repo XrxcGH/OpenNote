@@ -46,7 +46,7 @@ test('graphs in the calculator’s Graphing tab', async ({ page }) => {
   await openSmart(page);
   await runCommand(page, 'Open calculator');
   await page.getByRole('tab', { name: 'Graphing 2D' }).click();
-  await expect(page.getByRole('application', { name: /^Graph of 1 function/ })).toBeVisible();
+  await expect(page.getByRole('application', { name: /^Graph of .*, x from/ })).toBeVisible();
 });
 
 test('switches the calculator between its modes with the mouse and the keyboard', async ({ page }) => {

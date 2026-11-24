@@ -12,8 +12,10 @@ import type { EditorView } from '@tiptap/pm/view';
 import { CellSelection } from '@tiptap/pm/tables';
 import { newId } from '../../../editor/ids';
 import { t } from '../../../strings/t';
+import { showToast } from '../../../ui/toast';
 import type { TableExtraHandle, TableExtraHost } from '../../page';
 import { readClip } from '../engine/paste/clip';
+import { MAX_COLUMNS, MAX_ROWS } from '../engine/paste/infer';
 import type { Clip } from '../engine/paste/clip';
 import { boxOfSelection, selectBox } from '../sheet/formatTarget';
 import { readSheet, tableName } from '../sheet/model';
@@ -21,7 +23,7 @@ import type { Box } from '../sheet/model';
 import { appLocale } from '../smart/locale';
 import { copyCells } from './copy';
 import { modeOf, type SheetMode } from '../keys/state';
-import { planCut, planPaste, type PasteReport } from './plan';
+import { planCut, planPaste, type PastePlan, type PasteReport } from './plan';
 import { PASTE_ALL, PASTE_VALUES, type PasteSpecial } from './special';
 
 const key = new PluginKey('sheetClipboard');
@@ -78,6 +80,15 @@ function announceReport(host: TableExtraHost, report: readonly PasteReport[]): v
   for (const item of report) host.announce(t(`sheetClipboard.announce.${item}`));
 }
 
+/** The message for the rows and columns a paste left out past the table's limits, or null when it kept them all. */
+export function leftOutText(left: PastePlan['left']): string | null {
+  const parts = [
+    left.cols > 0 ? t('sheetClipboard.announce.leftColumns', { count: left.cols, max: MAX_COLUMNS }) : '',
+    left.rows > 0 ? t('sheetClipboard.announce.leftRows', { count: left.rows, max: MAX_ROWS }) : '',
+  ].filter((part) => part !== '');
+  return parts.length > 0 ? parts.join(' ') : null;
+}
+
 /** Pastes a clip at the selection. Returns false when there is no table selection to paste into. */
 async function pasteClip(host: TableExtraHost, view: EditorView, clip: Clip, special: PasteSpecial): Promise<boolean> {
   const table = host.table();
@@ -86,7 +97,11 @@ async function pasteClip(host: TableExtraHost, view: EditorView, clip: Clip, spe
   const target = { table, sheet: readSheet(host.data()), box, block: host.block, page: host.page };
   const plan = planPaste(target, clip, special, { newId });
   if (!plan) return false;
-  announceReport(host, plan.report);
+  // What was left out shows in a toast with the counts, so a large paste never loses cells without a word (walk 9
+  // T4-D07-13). The toast speaks it too, so the general sentence is not announced as well.
+  const leftOut = leftOutText(plan.left);
+  if (leftOut) showToast({ id: 'sheet-paste-left-out', message: leftOut });
+  announceReport(host, leftOut ? plan.report.filter((item) => item !== 'dropped') : plan.report);
   if (plan.report.includes('styles')) return true;
   const done = await host.apply(() => plan.table, plan.patch ?? undefined);
   if (done && !host.editor.isDestroyed) {

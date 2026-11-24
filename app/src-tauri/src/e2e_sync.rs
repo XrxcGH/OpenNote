@@ -432,6 +432,7 @@ impl SyncService {
             } else {
                 let report = engine.sync().map_err(fail)?;
                 self.collect_daily(&engine);
+                self.open_arrived_notebooks();
                 Ok(json!({ "summary": report.summary, "deferred": report.deferred }))
             }
         });
@@ -460,6 +461,21 @@ impl SyncService {
             value["view"] = self.view();
             value
         })
+    }
+
+    /// Opens the notebooks this round brought from another device, so they show in the tree now. A device that
+    /// joined a sync otherwise showed only its own notebooks until a restart.
+    fn open_arrived_notebooks(&self) {
+        let app = self.inner.app.lock().unwrap_or_else(PoisonError::into_inner).clone();
+        let Some(app) = app else { return };
+        let bridge = app.state::<crate::core_bridge::CoreBridge>();
+        let opened = crate::core_bridge::run_notes_named(&app, &bridge, "sync_arrived", |bridge| {
+            bridge.open_arrived_notebooks();
+            Ok(())
+        });
+        if let Err(error) = opened {
+            ::log::warn!("Couldn't open the notebooks sync brought: {}", error.message);
+        }
     }
 
     /// Removes chunks nothing uses any more, at most once a day and only after a round that finished: otherwise

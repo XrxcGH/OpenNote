@@ -271,6 +271,10 @@ class Parser implements Cursor {
       const op = token.text as PostfixOp;
       return this.made({ type: 'postfix', op, arg: left, start: left.start, end: token.end, pos: token.start });
     }
+    if (token.kind === 'name' && dialect.degreeWords?.has(token.text.toLowerCase()) && this.peek(1).kind !== 'lparen') {
+      this.next();
+      return this.made({ type: 'postfix', op: '°', arg: left, start: left.start, end: token.end, pos: token.start });
+    }
     if (dialect.excelRefs === true) {
       const reference = this.referenceInfix(left, token, minPower);
       if (reference !== undefined) return reference;

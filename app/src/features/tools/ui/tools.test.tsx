@@ -142,7 +142,7 @@ describe('the calculator', () => {
     scientific.focus();
     fireEvent.keyDown(scientific, { key: 'ArrowRight' });
     expect(screen.getByRole('tab', { name: 'Graphing 2D' }).getAttribute('aria-selected')).toBe('true');
-    expect(await screen.findByRole('application', { name: /Graph of 1 function/ })).toBeTruthy();
+    expect(await screen.findByRole('application', { name: /^Graph of .*, x from/ })).toBeTruthy();
     fireEvent.keyDown(screen.getByRole('tab', { name: 'Graphing 2D' }), { key: 'ArrowRight' });
     expect(await screen.findByRole('application', { name: '3D graph of 1 function' })).toBeTruthy();
     fireEvent.keyDown(screen.getByRole('tab', { name: 'Graphing 3D' }), { key: 'End' });
@@ -195,13 +195,29 @@ describe('the calculator modes', () => {
     expect((screen.getByRole('textbox', { name: 'Expression' }) as HTMLInputElement).value).toBe('100000000');
   });
 
+  it('hides the answer buttons while the result is an error (walk 9, T4-D07-4)', async () => {
+    localStorage.setItem('opennote.tools.calculator.tab', JSON.stringify('scientific'));
+    renderUi(<CalculatorTool />);
+    const field = screen.getByRole('textbox', { name: 'Expression' });
+    await userEvent.fill(field, '2+2');
+    await userEvent.click(screen.getByRole('button', { name: 'Calculate' }));
+    expect(screen.getByRole('button', { name: 'Copy answer' })).toBeTruthy();
+    await userEvent.fill(field, 'integral(x^2,0,3)');
+    await userEvent.click(screen.getByRole('button', { name: 'Calculate' }));
+    expect(screen.queryByRole('button', { name: 'Copy answer' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Insert answer into page' })).toBeNull();
+  });
+
   it('summarizes data and fits a line on the statistics tab', async () => {
     localStorage.setItem('opennote.tools.calculator.tab', JSON.stringify('statistics'));
     renderUi(<CalculatorTool />);
     await userEvent.fill(screen.getByRole('textbox', { name: 'Data' }), '1 3\n2 5\n3 7');
     await userEvent.click(screen.getByRole('button', { name: 'Calculate' }));
     const table = screen.getByRole('table', { name: 'Statistics of the data' });
-    expect(within(table).getByRole('row', { name: /Mean/ }).textContent).toBe('Mean2');
+    // With x and y pairs, each column has its own statistics, labeled (walk 9, T3-D08-2).
+    expect(within(table).getByRole('row', { name: /Mean \(x\)/ }).textContent).toBe('Mean (x)2');
+    expect(within(table).getByRole('row', { name: /Mean \(y\)/ }).textContent).toBe('Mean (y)5');
+    expect(within(table).getByRole('row', { name: /Median \(y\)/ }).textContent).toBe('Median (y)5');
     expect(within(table).getByRole('row', { name: /Line of best fit/ }).textContent).toContain('y = 2x + 1');
     expect(screen.getByRole('button', { name: /Use 1 3/ })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Copy answer' })).toBeTruthy();

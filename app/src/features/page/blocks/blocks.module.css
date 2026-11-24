@@ -386,9 +386,12 @@
   }
 
   .text :global(.ProseMirror) pre {
-    /* The language button sits in the top corner (editor/highlight/code.module.css): its room is kept clear, so it
-       never covers the end of a line. A line longer than that scrolls. */
-    padding: var(--space-3) calc(var(--space-4) + 4.5rem) var(--space-3) var(--space-4);
+    /* The Copy and language buttons sit in the top corner (editor/highlight/code.module.css): a row of their height
+       stays clear above the code, so they never cover a line, however narrow the page (walk 9 VA-8). A long line
+       scrolls. */
+    --code-tools-row: calc(2 * var(--space-1) + var(--type-small-line) + 2px);
+
+    padding: calc(var(--space-3) + var(--code-tools-row)) var(--space-4) var(--space-3);
     overflow-x: auto;
   }
 
@@ -537,7 +540,10 @@
    * one more rule (some of it padding, the rest margin), so the text after it is back on a rule.
    */
   :global([data-ruled]) .text :global(.ProseMirror) pre {
+    /* On ruled paper the buttons keep the end of the first line's room, not a row above: a row would shift the code
+       off its rules where a sheet break pushes it. */
     padding-block: calc(1lh - 1cap - var(--rule-lift)) calc(1lh - 1cap + var(--rule-lift));
+    padding-inline: var(--space-4) calc(var(--space-4) + 4.5rem);
     margin-block-end: 1cap;
     line-height: var(--rule-line);
     text-box: trim-both cap alphabetic;

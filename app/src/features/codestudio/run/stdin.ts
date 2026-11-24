@@ -29,6 +29,8 @@ export class Stdin implements RunInput {
   private ended = false;
   /** True once the program read past the end of the input, so the console can say it wanted more. */
   askedPastEnd = false;
+  /** True once the program read any input, so the console only explains missing prompts when it asked for some. */
+  wasRead = false;
 
   constructor(
     private text: string,
@@ -37,6 +39,7 @@ export class Stdin implements RunInput {
   ) {}
 
   line(): string | null {
+    this.wasRead = true;
     if (this.at >= this.text.length) return this.end();
     const next = this.text.indexOf('\n', this.at);
     const stop = next === -1 ? this.text.length : next;
@@ -46,6 +49,7 @@ export class Stdin implements RunInput {
   }
 
   read(count?: number): string | null {
+    this.wasRead = true;
     if (this.at >= this.text.length) return this.end();
     const stop = count === undefined ? this.text.length : Math.min(this.text.length, this.at + Math.max(0, count));
     const piece = this.text.slice(this.at, stop);

@@ -15,7 +15,7 @@ function sources(dir: string): string[] {
 }
 
 // Registered from id tables (a prefix plus a row id) that a text scan cannot see.
-const FROM_TABLES = new Set(['tools.upcoming', 'tools.timers', 'object.delete', 'notes.newPage']);
+const FROM_TABLES = new Set(['tools.upcoming', 'tools.timers', 'object.delete', 'notes.newPage', 'notes.newSection']);
 
 describe('command ids', () => {
   const files = sources(src).map((path) => ({ path, text: readFileSync(path, 'utf8') }));

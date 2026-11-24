@@ -7,6 +7,8 @@ export interface SheetRunner {
   run(id: CommandId): boolean;
   /** Whether this table uses document keys. */
   documentKeys(): boolean;
+  /** Whether a sheet command does something here now; when it does not, its key goes on to the next command. */
+  canRun?(id: CommandId): boolean;
 }
 
 let current: SheetRunner | null = null;

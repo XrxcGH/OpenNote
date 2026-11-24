@@ -6,6 +6,8 @@ export const layout = {
     commands: 'Commands',
     notebooks: 'Notebooks',
     pages: 'Pages',
+    titleBar: 'Title bar',
+    page: 'Page',
   },
   commands: {
     toggleNotebooks: 'Notebooks pane',

@@ -87,4 +87,18 @@ describe('Settings, then Storage', () => {
     await userEvent.click(toggle);
     expect(patches).toEqual([{ renameNotebookFolders: false }]);
   });
+
+  it('settles a copies box on blur: out of range clamps, text gives way to the saved value (T1-D05-3)', async () => {
+    setFakeShell((name) => (name === 'backup.config' ? { daily: 7, weekly: 4, monthly: 6 } : null));
+    await renderApp({ settings: { storage: { notesFolder: 'D:\\Notes' } } });
+    navigate({ view: 'settings', section: 'storage' });
+    const box = (await screen.findByRole('textbox', { name: 'Daily copies to keep' })) as HTMLInputElement;
+    await userEvent.fill(box, 'abc');
+    await userEvent.tab();
+    await expect.poll(() => box.value).toBe('7');
+    expect(screen.getAllByText('Enter a whole number from 1 to 60.').length).toBeGreaterThan(0);
+    await userEvent.fill(box, '99999');
+    await userEvent.tab();
+    await expect.poll(() => box.value).toBe('60');
+  });
 });

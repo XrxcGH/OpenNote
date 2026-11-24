@@ -391,6 +391,10 @@ describe('the grid that screen readers read', () => {
     );
     const dom = sheet.editor.view.dom;
     expect(dom.querySelector('table')?.getAttribute('role')).toBe('grid');
+    // A named grid that says its size (walk 9 T4-D07-12).
+    expect(dom.querySelector('table')?.getAttribute('aria-label')).toBe('Table, 3 rows by 2 columns');
+    expect(dom.querySelector('table')?.getAttribute('aria-rowcount')).toBe('3');
+    expect(dom.querySelector('table')?.getAttribute('aria-colcount')).toBe('2');
     expect(dom.querySelector('th')?.getAttribute('role')).toBe('columnheader');
     expect(dom.querySelector('td')?.getAttribute('role')).toBe('gridcell');
     sheet.select('A1', 'B2');

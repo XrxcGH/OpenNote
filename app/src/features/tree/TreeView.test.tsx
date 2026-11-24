@@ -3,6 +3,7 @@
 
 import { fireEvent, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import { userEvent } from 'vitest/browser';
 import { getLocation } from '../../app/location';
 import { expectFocus, expectNoAxeViolations, pressChord, renderApp } from '../../test';
 import { sessionStore } from '../../state/session';
@@ -184,6 +185,19 @@ describe('the middle button', () => {
     expect(press(page, 'mousedown')).toBe(false);
     press(page, 'auxclick');
     await expect.poll(tabs).toBeGreaterThan(before);
+  });
+});
+
+describe('long names', () => {
+  it('shows a name the row cuts short in a tooltip (T2-D04-5)', async () => {
+    await renderTree();
+    const title = row(notebooksTree(), 'Biology 101').querySelector<HTMLElement>('[id$="-title"]')!;
+    await userEvent.hover(title);
+    expect(title.hasAttribute('title')).toBe(false);
+    title.style.maxInlineSize = '20px';
+    await userEvent.unhover(title);
+    await userEvent.hover(title);
+    expect(title.getAttribute('title')).toBe('Biology 101');
   });
 });
 

@@ -253,6 +253,7 @@ export const mathTools = {
       r2: 'Fit (r squared)',
       line: 'Line of best fit',
       historyLine: '{count} values, mean {mean}',
+      of: '{name} ({column})',
     },
     matrix: {
       a: 'Matrix A',

@@ -14,6 +14,9 @@ export const smart = {
     noEquation: 'Edit an equation first, then use this.',
     done: 'The equation was changed. Press Enter to keep it, or Escape to put the old one back.',
     unsupported: 'This uses LaTeX the action cannot read yet.',
+    unfinished: 'The equation ends too soon. Something is missing after “{near}”.',
+    unclosed: 'A bracket is not closed in “{near}”. Add the closing bracket.',
+    emptySide: 'There is nothing on one side of the equals sign in “{near}”. Write it, then try again.',
     unchanged: 'It is already as simple as this action can make it.',
     none: 'No real solution was found between -1000 and 1000.',
     letters: 'Solve needs an equation with exactly one letter in it.',
@@ -24,6 +27,9 @@ export const smart = {
     function: 'Function {number}',
     add: 'Add a function',
     label: 'Graph of {count, plural, one {# function} other {# functions}}',
+    labelNamed: 'Graph of {functions}, x from {xLo} to {xHi}, y from {yLo} to {yHi}.',
+    labelMore: '{names} and {count} more',
+    labelEmpty: 'Empty graph, x from {xLo} to {xHi}, y from {yLo} to {yHi}.',
     keys: 'Arrow keys move the view. Plus and minus zoom. Zero resets. Shift with the left or right arrow reads values.',
     role: 'graph',
     parameter: 'Value of {name}',
@@ -178,6 +184,9 @@ export const smart = {
       BUSY: 'Still calculating',
       CYCLE: 'Circular',
     },
+    // A formula with a syntax error shows #ERROR!, and its tooltip says what is wrong (walk 9 T4-D07-1).
+    syntaxWords: 'Formula error: {problem}',
+    syntaxDescription: 'Formula error. {problem}',
     // What a screen reader says for a cell that shows an error token (decision 3). The tooltip gives the short words.
     errorDescriptions: {
       DIV0: 'Divide by zero error',

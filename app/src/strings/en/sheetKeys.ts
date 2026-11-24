@@ -60,6 +60,9 @@ export const sheetKeys = {
     documentKeysOn: 'This table now uses document keys. Enter starts a new line.',
     documentKeysOff: 'This table now uses spreadsheet keys. Enter finishes the entry and moves down.',
   },
+  grid: {
+    label: 'Table, {rows, plural, one {# row} other {# rows}} by {columns, plural, one {# column} other {# columns}}',
+  },
   // How a formula is read aloud: "=B4*2" is "equals B4 times 2".
   words: {
     equals: 'equals',
