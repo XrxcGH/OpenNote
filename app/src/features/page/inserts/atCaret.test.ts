@@ -3,7 +3,9 @@
 // is an undo step of its own.
 import type { Transaction } from '@tiptap/pm/state';
 import { afterEach, describe, expect, it } from 'vitest';
-import { mountEditor } from '../../../editor/commands/testing';
+import { mountEditor, testHost } from '../../../editor/commands/testing';
+import { createBlockEditor } from '../../../editor/extensions/kit';
+import { newTableData, tableDataToDoc } from '../../../editor/table/mapping';
 import type { TestEditor } from '../../../editor/commands/testing';
 import { META_COMMAND } from '../../../editor/meta';
 import { insertMathAtCaret, insertTextAtCaret } from './atCaret';
@@ -108,6 +110,35 @@ describe('after worked steps', () => {
     expect(kinds(mounted)).toEqual(['heading', 'paragraph']);
     expect(mounted.editor.state.doc.firstChild?.textContent).toBe('Saturday, October 31, 2026');
     expect(mounted.editor.state.doc.lastChild?.textContent).toBe('4');
+  });
+
+  it('starts a result in its own paragraph when the caret ends a line of text (T4-D07-8)', () => {
+    mounted = mountEditor('A = pi r^2');
+    mounted.editor.commands.focus('end');
+    expect(insertTextAtCaret(mounted.editor, 'Projectile: range 10 m')).toBe(true);
+    expect(kinds(mounted)).toEqual(['paragraph', 'paragraph']);
+    expect(mounted.editor.state.doc.firstChild?.textContent).toBe('A = pi r^2');
+    expect(mounted.editor.state.doc.lastChild?.textContent).toBe('Projectile: range 10 m');
+  });
+
+  it('keeps a result in the table cell, after a line break (T4-D07-6)', () => {
+    const data = newTableData(1, 2, true);
+    data.rows[0].cells[data.columns[0].id] = { markdown: 'Results' };
+    const root = document.body.appendChild(document.createElement('div'));
+    const editor = createBlockEditor(root, tableDataToDoc(data), { kind: 'table', block: 'b1', host: testHost() });
+    let end = 0;
+    editor.state.doc.descendants((node, pos) => {
+      if (end === 0 && node.isText && node.text === 'Results') end = pos + node.nodeSize;
+    });
+    editor.commands.setTextSelection(end);
+    expect(insertTextAtCaret(editor, 'C2H6O (molar mass 46.069 g/mol)')).toBe(true);
+    const cell = editor.state.doc.firstChild?.firstChild?.firstChild;
+    expect(cell?.type.name).toBe('tableHeader');
+    expect(cell?.childCount).toBe(1);
+    expect(cell?.firstChild?.textContent).toBe('ResultsC2H6O (molar mass 46.069 g/mol)');
+    expect(cell?.firstChild?.child(1).type.name).toBe('hardBreak');
+    editor.destroy();
+    root.remove();
   });
 
   it('puts a display equation below a heading', () => {

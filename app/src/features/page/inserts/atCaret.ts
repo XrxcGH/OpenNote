@@ -56,6 +56,19 @@ function inHeading(editor: Editor): boolean {
   return selection.empty && !('node' in selection) && selection.$from.parent.type.name === 'heading';
 }
 
+/**
+ * Whether the caret (with nothing selected) ends a line of text that does not end in a space. A result put there
+ * would be glued to the last word ("A = pi r^2Projectile: ..."), so it starts its own paragraph instead.
+ */
+function endsLine(editor: Editor): boolean {
+  const { selection } = editor.state;
+  if (!selection.empty || 'node' in selection) return false;
+  const { $from } = selection;
+  const parent = $from.parent;
+  if (!parent.isTextblock || $from.parentOffset !== parent.content.size) return false;
+  return /\S$/.test(parent.textContent);
+}
+
 /** Each insert is a command, so it is an undo step of its own and never joins the typing before it. */
 function asCommand(
   editor: Editor,
@@ -79,8 +92,20 @@ function asCommand(
 /** Puts text (or the HTML of the worked steps) at the caret. False when the editor takes nothing. */
 export function insertTextAtCaret(editor: Editor, text: string): boolean {
   // In a heading the answer is its own line below it: appended, it would change the title ("2026" became "20264").
-  if (inHeading(editor) && !isBlocks(text)) {
-    const end = afterTopLevel(editor, editor.state.selection.to);
+  if (!isBlocks(text) && (inHeading(editor) || endsLine(editor))) {
+    const { $to } = editor.state.selection;
+    // A table cell holds one paragraph, so the result goes after a line break inside it.
+    const name = $to.node($to.depth - 1)?.type.name;
+    if (name === 'tableCell' || name === 'tableHeader') {
+      const { hardBreak } = editor.schema.nodes;
+      if (hardBreak) {
+        const range = { from: $to.pos, to: $to.pos };
+        return asCommand(editor, [{ type: hardBreak.name }, { type: 'text', text }], range);
+      }
+    }
+    // Below a heading it is after the whole block; below a line of text, right after that paragraph, which keeps the
+    // result in the same list item.
+    const end = inHeading(editor) ? afterTopLevel(editor, $to.pos) : $to.after();
     return asCommand(editor, `<p>${text}</p>`, { from: end, to: end });
   }
   return asCommand(editor, text, insertRange(editor, isBlocks(text) ? 'blocks' : 'word'));
