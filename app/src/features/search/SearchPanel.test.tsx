@@ -4,14 +4,40 @@ import { userEvent } from 'vitest/browser';
 import { getLocation } from '../../app/location';
 import { closeOverlay } from '../../shell/commandbar/overlays';
 import { qolStore } from '../../state/qol';
-import { announcements, expectNoAxeViolations, pressChord, renderApp } from '../../test';
+import { announcements, expectNoAxeViolations, pressChord, renderApp, setViewport } from '../../test';
 
-afterEach(() => closeOverlay());
+afterEach(async () => {
+  closeOverlay();
+  document.documentElement.style.fontSize = '';
+  await setViewport(1280, 800);
+});
 
 async function openPanel() {
   await pressChord('Ctrl+Shift+F');
   return screen.findByRole('combobox', { name: 'Search notes' });
 }
+
+describe('the search panel in a small window', () => {
+  it.each([
+    ['touch', 1],
+    ['mouse', 2],
+  ] as const)(
+    'keeps its results inside the window in %s density with text at %i x (W9-VA-9)',
+    async (density, scale) => {
+      await setViewport(900, 700);
+      document.documentElement.style.fontSize = `${scale * 100}%`;
+      await renderApp({ density });
+      await openPanel();
+      await userEvent.keyboard('*');
+      const list = await screen.findByRole('listbox', { name: 'Results' });
+      await expect.poll(() => list.querySelectorAll('[role="option"]').length).toBeGreaterThan(3);
+      const dialog = screen.getByRole('dialog', { name: 'Search' });
+      expect(dialog.getBoundingClientRect().bottom).toBeLessThanOrEqual(window.innerHeight + 1);
+      const rows = list.querySelectorAll('[role="option"]');
+      expect(rows[1].getBoundingClientRect().top - rows[0].getBoundingClientRect().bottom).toBeGreaterThanOrEqual(3);
+    },
+  );
+});
 
 describe('the search panel', () => {
   it('offers archived pages and the transcript and image description scopes', async () => {

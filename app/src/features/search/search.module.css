@@ -109,8 +109,10 @@
   .results {
     display: grid;
     align-content: start;
-    gap: var(--space-1);
-    max-block-size: 50vh;
+    gap: var(--space-2);
+    /* The list gives up height in a short window or at large text, so the panel fits the window and one scroll
+       bar is enough. The floor keeps a few rows in view (W9-VA-9). */
+    max-block-size: max(12rem, min(50vh, calc(100vh - 28rem)));
     overflow-y: auto;
     overscroll-behavior: contain;
   }
@@ -118,6 +120,8 @@
   .option {
     display: grid;
     gap: var(--space-1);
+    align-content: center;
+    min-block-size: var(--target-size);
     padding: var(--space-2) var(--space-4);
     border-radius: var(--radius-md);
     color: var(--color-text-primary);
