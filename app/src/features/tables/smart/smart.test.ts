@@ -188,6 +188,18 @@ describe('the typed table', () => {
     expect(shownFor(model, EMPTY_SMART, 1, 3, EN_US)).toBeNull();
   });
 
+  it('shows the result of a date formula as a date, as spreadsheets do (walk 9 T3-D06-1)', () => {
+    const texts = [...TEXT.slice(0, 1), ['x', '=DATE(2024,2,29)+1', '=DATE(2024,3,1)-DATE(2024,2,1)', '=TODAY()']];
+    const model = buildModel(gridOf(dataOf(texts)), EMPTY_SMART, EN_US);
+    const asDate = (value: unknown) => formatValue(value as number, { id: 'd', name: 'D', type: 'date' }, EN_US);
+    expect(model.table.rows[0].cells[1].value).toBe(45352);
+    expect(shownFor(model, EMPTY_SMART, 0, 1, EN_US)).toEqual({ text: asDate(45352), kind: 'number' });
+    expect(asDate(45352)).toContain('2024');
+    // A date minus a date is a count of days, not a date.
+    expect(shownFor(model, EMPTY_SMART, 0, 2, EN_US)?.text).toBe('29');
+    expect(shownFor(model, EMPTY_SMART, 0, 3, EN_US)?.text).toBe(asDate(model.table.rows[0].cells[3].value));
+  });
+
   it('formats a column the person picked, and only the cells that change', () => {
     const smart = withColumn(EMPTY_SMART, 'price', { type: 'currency', currency: 'USD', decimals: 2 });
     const model = buildModel(gridOf(dataOf(TEXT)), smart, EN_US);
