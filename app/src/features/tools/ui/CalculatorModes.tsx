@@ -282,7 +282,8 @@ interface StatsRow {
 }
 
 /** The label of a row, with its column when the data has two. */
-const rowLabel = (row: StatsRow) => (row.column ? t('mathTools.calc.stats.of', { name: t(row.label), column: row.column }) : t(row.label));
+const rowLabel = (row: StatsRow) =>
+  row.column ? t('mathTools.calc.stats.of', { name: t(row.label), column: row.column }) : t(row.label);
 
 const num = (value: number) => (Number.isFinite(value) ? formatNumber(value) : '—');
 
