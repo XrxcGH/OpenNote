@@ -223,6 +223,9 @@
     margin: 0;
     max-block-size: 20rem;
     overflow: auto;
+    /* The scroll bar keeps its own strip inside the box, and the text never runs under it (W9-VA-17). */
+    scrollbar-gutter: stable;
+    padding-inline-end: var(--space-3);
     white-space: pre-wrap;
     overflow-wrap: anywhere;
     color: var(--color-text-secondary);
