@@ -102,6 +102,8 @@ describe('text fields, dialogs, repeats, and flags', () => {
         reachesCommandsInText,
       ),
     ).toEqual([true, true, true, false, false]);
+    // Ctrl+Shift+A selects nothing in a text field, so All caps (format.allCaps) reaches the page editor.
+    expect([chord('Ctrl+A'), chord('Ctrl+Shift+A')].map(reachesCommandsInText)).toEqual([false, true]);
     add('palette', { keys: [chord('Ctrl+Alt+K')], allowInTextInput: true });
     add('newPage', { keys: [chord('Ctrl+Alt+N')] });
     add('undo', { keys: [chord('Ctrl+Z')], allowInTextInput: true });

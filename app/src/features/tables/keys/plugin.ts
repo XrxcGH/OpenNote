@@ -9,10 +9,11 @@
 import type { Node as PMNode } from '@tiptap/pm/model';
 import { Plugin, TextSelection } from '@tiptap/pm/state';
 import type { EditorState, Transaction } from '@tiptap/pm/state';
-import { CellSelection } from '@tiptap/pm/tables';
+import { CellSelection, TableMap } from '@tiptap/pm/tables';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import type { EditorView } from '@tiptap/pm/view';
 import { onlyInsideCells } from '../../../editor/table/cellEdits';
+import { t } from '../../../strings/t';
 import { drawnRows, isVirtualDoc } from '../../page';
 import { clearActiveSheet, setActiveSheet } from './active';
 import type { SheetRunner } from './active';
@@ -267,9 +268,30 @@ function scopeOf(state: EditorState): Record<string, string> {
  */
 function markGrid(view: EditorView, on: boolean): void {
   const table = view.dom.querySelector('table');
-  if (!table || (table.getAttribute('role') === 'grid') === on) return;
-  if (on) table.setAttribute('role', 'grid');
-  else table.removeAttribute('role');
+  if (!table) return;
+  if (!on) {
+    for (const name of ['role', 'aria-label', 'aria-rowcount', 'aria-colcount']) table.removeAttribute(name);
+    return;
+  }
+  // The grid has a name and says its size, so a screen reader reads "Table, 3 rows by 2 columns" (walk 9 T4-D07-12).
+  const node = view.state.doc.firstChild;
+  const rows = node?.childCount ?? 0;
+  const columns = node ? TableMap.get(node).width : 0;
+  const set = (name: string, value: string) => {
+    if (table.getAttribute(name) !== value) table.setAttribute(name, value);
+  };
+  set('role', 'grid');
+  set('aria-label', t('sheetKeys.grid.label', { rows, columns }));
+  set('aria-rowcount', String(rows));
+  set('aria-colcount', String(columns));
+}
+
+const FILL_ENTRY = 'table.sheet.fillEntry';
+
+/** Whether the grid selection is one cell, so fill entry has nothing to fill. */
+function singleCell(state: EditorState): boolean {
+  const box = gridOf(state)?.box;
+  return box !== undefined && box.top === box.bottom && box.left === box.right;
 }
 
 /** Makes this table the one commands act on while it has focus, marks it a grid, and says each move. */
@@ -277,6 +299,7 @@ function sheetView(view: EditorView, options: SheetKeysOptions) {
   const runner: SheetRunner = {
     run: (command) => runSheetCommand(view, options, command),
     documentKeys: () => !keysOn(view.state),
+    canRun: (command) => command !== FILL_ENTRY || !singleCell(view.state),
   };
   const focus = () => setActiveSheet(runner);
   view.dom.addEventListener('focusin', focus);

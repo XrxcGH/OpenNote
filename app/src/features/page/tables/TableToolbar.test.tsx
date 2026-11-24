@@ -111,4 +111,25 @@ describe('the toolbar of a table', () => {
     if (!wrapper) throw new Error('The table is not on the page.');
     expect(toolbar().getBoundingClientRect().top).toBeGreaterThanOrEqual(wrapper.getBoundingClientRect().bottom);
   });
+
+  it('never covers the text above the table, and keeps room below it for the tools (walk 9 T1-D01-1)', () => {
+    renderUi(
+      <div data-layout="" style={{ marginBlockStart: 200 }}>
+        <p data-testid="above">A heading and a paragraph above the table.</p>
+        <div className={styles.wrapper} data-current="" style={{ blockSize: 100 }}>
+          <TableToolbar {...props()} />
+        </div>
+        <p data-testid="after">The text after the table.</p>
+      </div>,
+    );
+    const tools = toolbar().getBoundingClientRect();
+    const above = screen.getByTestId('above').getBoundingClientRect();
+    const after = screen.getByTestId('after').getBoundingClientRect();
+    expect(tools.top).toBeGreaterThanOrEqual(above.bottom);
+    expect(after.top).toBeGreaterThanOrEqual(tools.bottom);
+    // The buttons of a group keep a gap of 4 px or more between them.
+    const group = toolbar().querySelector('[data-tool-slot]')?.parentElement;
+    if (!group) throw new Error('The toolbar has no group of buttons.');
+    expect(Number.parseFloat(getComputedStyle(group).columnGap)).toBeGreaterThanOrEqual(4);
+  });
 });

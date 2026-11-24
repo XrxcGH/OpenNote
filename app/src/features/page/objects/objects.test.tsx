@@ -288,3 +288,38 @@ describe('a study tape', () => {
       .toEqual<Edit>({ edit: 'moveBlock', block: ids[1], frame: { x: 100, y: 108, w: 260, h: 34 } });
   });
 });
+
+describe('deleting every block', () => {
+  // A page keeps one text block to type in (walk 9 T2-D02-1): deleting them all empties the first text block in the
+  // same undo step, and the caret goes into it.
+  it('keeps one empty text block, in one batch, with the caret in it', async () => {
+    const { mounted, batches } = await open(
+      boxes([
+        { markdown: 'First', x: 40, y: 40 },
+        { markdown: 'Second', x: 300, y: 40 },
+      ]),
+    );
+    const before = batches().length;
+    mounted.objects.select([ids[0], ids[1]], { focus: true });
+    await userEvent.keyboard('{Delete}');
+    await expect.poll(() => batches().length).toBe(before + 1);
+    expect(batches().at(-1)?.edits).toEqual([
+      { edit: 'deleteBlocks', blocks: [ids[1]] },
+      { edit: 'setText', block: ids[0], markdown: '' },
+    ]);
+    expect(mounted.layer.block(ids[1])).toBeNull();
+    expect(mounted.layer.block(ids[0])).not.toBeNull();
+    await expect.poll(() => root(mounted, ids[0]).contains(document.activeElement)).toBe(true);
+    expect(root(mounted, ids[0]).textContent).toBe('');
+  });
+
+  it('leaves the only empty text block where it is', async () => {
+    const { mounted, batches } = await open(boxes([{ markdown: '', x: 40, y: 40 }]));
+    const before = batches().length;
+    mounted.objects.select([ids[0]], { focus: true });
+    await userEvent.keyboard('{Delete}');
+    await expect.poll(() => root(mounted, ids[0]).contains(document.activeElement)).toBe(true);
+    expect(batches().length).toBe(before);
+    expect(mounted.layer.block(ids[0])).not.toBeNull();
+  });
+});

@@ -178,6 +178,9 @@ export const smart = {
       BUSY: 'Still calculating',
       CYCLE: 'Circular',
     },
+    // A formula with a syntax error shows #ERROR!, and its tooltip says what is wrong (walk 9 T4-D07-1).
+    syntaxWords: 'Formula error: {problem}',
+    syntaxDescription: 'Formula error. {problem}',
     // What a screen reader says for a cell that shows an error token (decision 3). The tooltip gives the short words.
     errorDescriptions: {
       DIV0: 'Divide by zero error',

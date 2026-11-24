@@ -106,39 +106,19 @@
     text-box: trim-both cap alphabetic;
   }
 
+  /* The tools go below the table, in room the table keeps for them (TableToolbar.tsx keepRoomBelow). Above it they
+     covered the text there: the title, a heading, a paragraph, or another table's scroll bar (walk 9 T1-D01-1,
+     Beta 8 walk VA-5, VA-6). */
   .toolbarWrap {
     position: absolute;
-    inset-block-end: 100%;
+    inset-block-start: 100%;
     inset-inline-start: 0;
     max-inline-size: 100%;
     z-index: var(--layer-page-chrome);
     display: none;
     flex-direction: column;
     gap: var(--space-1);
-    padding-block-end: var(--space-1);
-  }
-
-  /* A table at the very top of the flow has the page title above it, so its tools go below it instead of over the
-     title and the date. */
-  :global([data-layout]) > .wrapper:first-child .toolbarWrap {
-    inset-block-end: auto;
-    inset-block-start: 100%;
-    padding-block: var(--space-1) 0;
-  }
-
-  /* A table straight after another has that table's sideways scroll bar just above it, which the tools would cover, so
-     its tools go below it too (Beta 8 walk VA-5, VA-6). */
-  :global([data-layout]) > .wrapper + .wrapper .toolbarWrap {
-    inset-block-end: auto;
-    inset-block-start: 100%;
-    padding-block: var(--space-1) 0;
-  }
-
-  /* Too tall for the room above the table (set from the toolbar's own measure): the tools go below it. */
-  .toolbarWrap[data-below] {
-    inset-block-end: auto;
-    inset-block-start: 100%;
-    padding-block: var(--space-1) 0;
+    padding-block-start: var(--space-1);
   }
 
   .wrapper[data-current] .toolbarWrap {
@@ -162,7 +142,7 @@
 
   .group {
     display: flex;
-    gap: var(--space-1);
+    gap: var(--space-2);
   }
 
   .group + .group {

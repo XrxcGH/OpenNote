@@ -129,7 +129,8 @@ export function defaultPlacement(mounted: MountedPage): Placement {
   const current = currentBlock(mounted);
   if (isFlow(mounted.page)) return { kind: 'after', block: current };
   const below = current ? mounted.layer.view(current)?.measure() : null;
-  if (below) return { kind: 'point', x: below.x, y: below.y + below.h + KEEP_BELOW };
+  // Below the caret's block, and below any block already there, such as a table under the text (walk 9 T1-D01-2).
+  if (below) return { kind: 'point', x: below.x, y: clearOfBlocks(mounted, below.x, below.y + below.h + KEEP_BELOW) };
   const box = mounted.viewport.viewport.getBoundingClientRect();
   const corner = mounted.viewport.toWorld(box.left + 48, box.top + 48);
   const x = Math.max(0, corner.x);

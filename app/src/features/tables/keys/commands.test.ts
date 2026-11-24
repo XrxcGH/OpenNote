@@ -78,3 +78,17 @@ describe('the sheet commands', () => {
     expect(ran).toEqual(['table.sheet.fillDown']);
   });
 });
+
+describe('Ctrl+Enter in Grid mode', () => {
+  // The context menu lists Ctrl+Enter for Add row below. Fill entry needs a range, so with one cell selected the
+  // key goes on to Add row below (walk 9 T4-D07-11).
+  it('fills a range, and adds a row below when one cell is selected', () => {
+    stops.push(registerSheetKeyCommands());
+    add('rowBelow', { keys: [chord('Ctrl+Enter')], scope: 'editor.table', allowInTextInput: true });
+    let single = true;
+    setActiveSheet({ ...sheet, canRun: (id) => id !== 'table.sheet.fillEntry' || !single });
+    expect(press(GRID, 'Enter', 'Enter', 'ctrl')).toBe('test.rowBelow');
+    single = false;
+    expect(press(GRID, 'Enter', 'Enter', 'ctrl')).toBe('table.sheet.fillEntry');
+  });
+});
