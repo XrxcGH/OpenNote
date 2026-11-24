@@ -243,6 +243,12 @@
     opacity: 1;
   }
 
+  /* With touch density the kebab always shows, so it takes its own room and the name ends before it. */
+  :global(:root[data-density='touch']) .more {
+    position: static;
+    flex: none;
+  }
+
   .rename {
     position: relative;
     display: flex;
