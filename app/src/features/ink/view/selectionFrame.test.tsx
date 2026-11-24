@@ -104,6 +104,37 @@ describe('the lasso bar and the drawing aids', () => {
   });
 });
 
+describe('Rotate 90 degrees on the lasso bar', () => {
+  it('turns the selection a quarter turn about its center (walk 9, T1-D03-4)', async () => {
+    document.body.append(chrome);
+    const transform = vi.fn((..._args: unknown[]) => Promise.resolve(true));
+    const turning = {
+      ...surface,
+      transform,
+      endPreview: () => undefined,
+      index: { all: () => [stroke], query: () => [stroke] },
+    } as unknown as InkSurface;
+    selection = { blocks: [], strokes: ['s1'] };
+    const frame = attachSelectionFrame(host, turning);
+    const rotate = chrome.querySelector<HTMLButtonElement>('[data-ink-action="rotate"]');
+    expect(rotate?.textContent).toBe('Rotate 90 degrees');
+    rotate!.click();
+    await vi.waitFor(() => expect(transform).toHaveBeenCalled());
+    const [ids, matrix] = transform.mock.calls[0]! as [string[], number[]];
+    expect(ids).toEqual(['s1']);
+    // A quarter turn about the center of the box from (10, 10) to (60, 40), which is (35, 25).
+    const [a, b, c, d, e, f] = matrix;
+    const turn = (x: number, y: number) => ({ x: a! * x + c! * y + e!, y: b! * x + d! * y + f! });
+    expect(turn(35, 25).x).toBeCloseTo(35);
+    expect(turn(35, 25).y).toBeCloseTo(25);
+    expect(turn(60, 25).x).toBeCloseTo(35);
+    expect(Math.abs(turn(60, 25).y - 25)).toBeCloseTo(25);
+    frame.stop();
+    chrome.remove();
+    selection = { blocks: [], strokes: [] };
+  });
+});
+
 describe('a text box selected alone (Beta 6, owner bugs 5 and 8)', () => {
   const box = document.createElement('div');
   const boxHost = {

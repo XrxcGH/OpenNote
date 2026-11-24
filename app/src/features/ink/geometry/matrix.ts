@@ -1,6 +1,6 @@
 // Affine transforms as six-number matrices (spec 9.3). Every function returns a new matrix.
 
-import type { Matrix, Vec } from './types';
+import type { Bounds, Matrix, Vec } from './types';
 
 export const IDENTITY: Matrix = [1, 0, 0, 1, 0, 0];
 
@@ -27,6 +27,11 @@ export function rotation(radians: number, about: Vec = ORIGIN): Matrix {
   const cos = Math.cos(radians);
   const sin = Math.sin(radians);
   return [cos, sin, -sin, cos, about.x - cos * about.x + sin * about.y, about.y - sin * about.x - cos * about.y];
+}
+
+/** A quarter turn clockwise about the center of a box: the lasso bar's Rotate 90 degrees. No box, no turn. */
+export function quarterTurn(box: Bounds | null): Matrix {
+  return box ? rotation(Math.PI / 2, { x: (box.minX + box.maxX) / 2, y: (box.minY + box.maxY) / 2 }) : IDENTITY;
 }
 
 export function isIdentity(m: Matrix): boolean {
