@@ -166,6 +166,8 @@ export interface PageHistory {
 export type HistoryScope = { kind: 'page' | 'section' | 'notebook'; id: string };
 export interface HistoryAdmin {
   deleteHistory(notebook: string, scope: HistoryScope, keepNamed: boolean): Promise<void>;
+  /** Puts back the newest saved version of a page whose page.json is damaged (page_recover_damaged). */
+  recoverDamaged?(page: string): Promise<boolean>;
 }
 
 export type ImageSource =
@@ -220,6 +222,10 @@ export type PageErrorCode =
   | 'downloadFailed'
   | 'staleToken'
   | 'notImplemented'
+  /** The page's page.json can't be read. */
+  | 'damaged'
+  /** A newer OpenNote wrote the page, so this one leaves it unchanged. */
+  | 'newerFormat'
   /** The command gave up waiting for the core, which another command has held for too long. */
   | 'coreBusy';
 

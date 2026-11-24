@@ -332,6 +332,7 @@ fn commands() -> impl Fn(Invoke) -> bool + Send + Sync + 'static {
         core_bridge::history_restore_blocks,
         core_bridge::history_name,
         core_bridge::admin::history_delete,
+        core_bridge::admin::page_recover_damaged,
         ink_bridge::page_add_strokes,
         ink_bridge::page_read_strokes,
         core_bridge::search::search_call,

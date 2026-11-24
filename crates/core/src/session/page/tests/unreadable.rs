@@ -42,3 +42,34 @@ fn a_file_that_cant_be_read_now_is_not_replaced() {
     s.kit.fs.inner.set_placeholder(&path, false);
     assert_eq!(s.kit.fs.inner.get(&path).unwrap(), b"saved elsewhere");
 }
+
+#[test]
+fn a_damaged_page_opens_again_from_its_newest_saved_version() {
+    let s = setup();
+    let c = client("main-1");
+    let handle = s.notebook.open_page(s.page, c.clone()).unwrap();
+    handle
+        .commit_for_tests(&retitle(s.kit.clock.as_ref(), &c, "Photosynthesis", "Kept"))
+        .unwrap();
+    handle.clone().close(&c).unwrap();
+    let dir = s.notebook.inner.tree().store.page_dir(s.page).unwrap();
+    s.kit.fs.inner.put(&NotebookLayout::page_json(&dir), b"{\"half a pa");
+    assert!(matches!(
+        s.notebook.open_page(s.page, c.clone()),
+        Err(CoreError::Format(_))
+    ));
+    assert!(s.notebook.recover_damaged_page(s.page).unwrap().is_some());
+    let again = s.notebook.open_page(s.page, c.clone()).unwrap();
+    assert_eq!(again.page_for_tests().title, "Kept");
+    let damaged = s
+        .kit
+        .fs
+        .inner
+        .read_dir(&dir.join(crate::store::layout::DAMAGED_DIR))
+        .unwrap();
+    assert_eq!(damaged.len(), 1, "the damaged file is kept aside");
+    assert!(
+        s.notebook.recover_damaged_page(s.page).unwrap().is_none(),
+        "a page that reads fine is left alone"
+    );
+}

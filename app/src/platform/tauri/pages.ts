@@ -40,6 +40,7 @@ export function createTauriPages(images: ImagesClient): PagesClient {
     admin: {
       deleteHistory: async (notebook, scope, keepNamed) =>
         void (await coreInvoke('history_delete', { notebook, scope, keepNamed })),
+      recoverDamaged: async (page) => (await coreInvoke('page_recover_damaged', { page })) === true,
     },
     open(pageId, options) {
       service ??= load();
