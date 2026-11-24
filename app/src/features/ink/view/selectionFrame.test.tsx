@@ -200,8 +200,7 @@ describe('the lasso handles on a thin selection (A2-A09-5)', () => {
 
 describe('the lasso corner handles (VA-54)', () => {
   it('keep their small look but take a press a target size wide', () => {
-    chrome.style.cssText =
-      'position:absolute;left:0;top:0;width:600px;height:400px;--space-5:16px;--target-size:32px';
+    chrome.style.cssText = 'position:absolute;left:0;top:0;width:600px;height:400px;--space-5:16px;--target-size:32px';
     document.body.append(chrome);
     const box = makeStroke('box', [
       { x: 150, y: 150 },

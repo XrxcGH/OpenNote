@@ -70,7 +70,9 @@ vi.mock('../pool/shown', () => ({ shownPool: { get: () => null } }));
 vi.mock('../runtime', () => ({ pagesClient: vi.fn() }));
 vi.mock('../sync/shown', () => ({ shownQueue: { get: () => ({ send }) } }));
 const flags = vi.hoisted(() => ({ transcripts: false }));
-vi.mock('../../../app/flags', () => ({ isEnabled: (flag: string) => flag === 'transcripts.block' && flags.transcripts }));
+vi.mock('../../../app/flags', () => ({
+  isEnabled: (flag: string) => flag === 'transcripts.block' && flags.transcripts,
+}));
 
 const { splitRecording } = await import('./edits');
 const { hold } = await import('./transcripts/store');
