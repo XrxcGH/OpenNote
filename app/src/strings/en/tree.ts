@@ -68,6 +68,8 @@ export const tree = {
     pages: 'No pages yet. Press {shortcut} or choose New page to start one.',
     pagesNoShortcut: 'No pages yet. Choose New page to start one.',
     noSection: 'Choose a section to see its pages.',
+    noSections: 'This notebook has no sections yet. Add a section, then add pages to it.',
+    addSection: 'Add a section',
   },
   loading: {
     notebooks: 'Loading notebooks',

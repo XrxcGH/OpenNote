@@ -5,6 +5,7 @@ import { fireEvent, screen, within } from '@testing-library/react';
 import { userEvent } from 'vitest/browser';
 import { afterEach, describe, expect, it } from 'vitest';
 import { getLocation } from '../../app/location';
+import { executeCommand } from '../../commands/registry';
 import { announcements, expectFocus, pressChord, renderApp } from '../../test';
 import type { NodeId } from '../../services/notes';
 import { act } from '@testing-library/react';
@@ -130,6 +131,19 @@ describe('creating', () => {
     await screen.findByRole('textbox', { name: 'Rename Untitled page' });
     await expect.poll(() => seen.length).toBe(1);
     unregister();
+  });
+});
+
+describe('an empty notebook', () => {
+  it('says to add a section and offers the action (T1-D05-5)', async () => {
+    await renderTree();
+    await executeCommand('notes.newNotebook', undefined, 'menu');
+    await screen.findByRole('textbox', { name: /Rename/ });
+    await userEvent.keyboard('{Enter}');
+    expect(await screen.findByText(/has no sections yet/)).toBeTruthy();
+    const add = screen.getByRole('button', { name: 'Add a section' });
+    await userEvent.click(add);
+    await screen.findByRole('textbox', { name: /Rename/ });
   });
 });
 
