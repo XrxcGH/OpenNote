@@ -46,6 +46,18 @@ export function selectObject(host: InkHost, id: string): void {
   host.select({ blocks: [id], strokes: [] }, { announce: true });
 }
 
+/**
+ * Floating controls over the page: a table's toolbar, a menu, a dialog, and the ink selection bar. A press there clicks
+ * the control in every tool; a draw tool never takes it as ink (walk 9, T1-D03-2).
+ */
+export const PAGE_CHROME =
+  '[data-ink-selection-bar], [role="toolbar"], [role="menu"], [role="menubar"], [role="dialog"]';
+
+/** Whether a press landed on a floating control over the page. */
+export function onPageChrome(event: PointerEvent): boolean {
+  return event.target instanceof Element && event.target.closest(PAGE_CHROME) !== null;
+}
+
 /** True for a press on the grip or width handle of a block the person selected or is editing. */
 export function onObjectHandle(host: InkHost, event: PointerEvent): boolean {
   const handle = event.target instanceof Element ? event.target.closest<HTMLElement>('[data-handle]') : null;

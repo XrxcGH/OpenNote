@@ -4,7 +4,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { BlockJson } from '../../../services/pages/types';
 import type { InkHost, InkSelection } from './host';
-import { DWELL_MS, editTextAt, isDwellTap, objectAt, onObjectHandle, TAP_SLOP_PX } from './objectTaps';
+import { DWELL_MS, editTextAt, isDwellTap, objectAt, onObjectHandle, onPageChrome, TAP_SLOP_PX } from './objectTaps';
 
 interface Placed {
   block: Partial<BlockJson> & { id: string; type: string };
@@ -92,5 +92,23 @@ describe('the grips of a text box in a draw tool', () => {
     expect(select).toHaveBeenCalledWith({ blocks: [], strokes: [] });
     expect(text.select).toHaveBeenCalledWith('a', 4, 4);
     expect(await editTextAt(host, 10, 10, ['other'])).toBe(false);
+  });
+});
+
+describe('floating controls over the page in a draw tool', () => {
+  const pressOn = (target: Element) => ({ target }) as unknown as PointerEvent;
+
+  it("leaves a press on a table's toolbar, a menu, or a dialog to the control (walk 9, T1-D03-2)", () => {
+    const page = document.createElement('div');
+    const toolbar = document.createElement('div');
+    toolbar.setAttribute('role', 'toolbar');
+    const button = document.createElement('button');
+    toolbar.append(button);
+    const cell = document.createElement('td');
+    page.append(toolbar, cell);
+    document.body.append(page);
+    expect(onPageChrome(pressOn(button))).toBe(true);
+    expect(onPageChrome(pressOn(cell))).toBe(false);
+    page.remove();
   });
 });
