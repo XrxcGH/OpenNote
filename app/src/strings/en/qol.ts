@@ -341,6 +341,7 @@ export const qol = {
     issues: {
       imageAlt: 'An image has no description for screen readers.',
       headingSkip: 'A heading jumps from level {from} to level {to}.',
+      emptyHeading: 'A heading has no text, so a screen reader announces an empty heading.',
       tableHeader: 'A table has no header row.',
       lowContrast: 'Text in the color {color} is hard to read, with a contrast of {ratio} to 1.',
       colorOnly: 'Text uses {count} colors, and color may be the only sign of its meaning.',
@@ -349,6 +350,7 @@ export const qol = {
     fixes: {
       imageAlt: 'Add description',
       headingSkip: 'Use the next heading level',
+      emptyHeading: 'Remove the empty heading',
       tableHeader: 'Make the first row a header',
       lowContrast: 'Use the normal text color',
       colorOnly: 'Also make the colored text bold',
