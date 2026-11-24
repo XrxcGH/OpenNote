@@ -43,7 +43,7 @@
 
   .picker select,
   .nameForm input {
-    min-block-size: 2rem;
+    min-block-size: var(--target-size);
     padding-inline: var(--space-2);
     color: var(--color-text-primary);
     font: inherit;
@@ -107,7 +107,7 @@
     align-items: center;
     gap: var(--space-2);
     min-inline-size: 0;
-    min-block-size: 2rem;
+    min-block-size: var(--target-size);
     padding-inline: var(--space-2);
     color: inherit;
     font: inherit;
@@ -290,7 +290,7 @@
     display: inline-flex;
     align-items: center;
     gap: var(--space-1);
-    min-block-size: 2rem;
+    min-block-size: var(--target-size);
     padding-inline: var(--space-2);
     color: var(--color-text-secondary);
     font: inherit;
@@ -380,6 +380,7 @@
   }
 
   .statusButton {
+    min-block-size: var(--target-size);
     padding: 0;
     color: inherit;
     font: inherit;
