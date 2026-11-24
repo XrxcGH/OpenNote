@@ -235,7 +235,7 @@ function Backups() {
   );
 }
 
-/** A copies box. Text that is not a whole number in range stays in the box with a message, and is not saved. */
+/** A copies box. Text that is not a whole number in range stays in the box with a message, and is not saved. Leaving the box settles it. */
 function CopiesField(props: {
   label: string;
   value: number;
@@ -244,17 +244,34 @@ function CopiesField(props: {
 }) {
   const { label, value, range, onSave } = props;
   const [draft, setDraft] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const bad = draft !== null && parseCopies(draft, range) === null;
+  const rangeText = t('qol.backup.copiesRange', { min: range[0], max: range[1] });
+  // Leaving the field settles it: a number outside the range is clamped to it, and anything else gives way to the
+  // saved value. Either way the box shows a valid number and a short note names the range (walk 9, T1-D05-3).
+  const settle = () => {
+    if (draft === null) return;
+    const trimmed = draft.trim();
+    if (/^\d+$/.test(trimmed)) {
+      const clamped = Math.min(range[1], Math.max(range[0], Number(trimmed)));
+      if (clamped !== value) onSave(clamped);
+    }
+    setDraft(null);
+    setNotice(rangeText);
+  };
   return (
     <TextField
       label={label}
       value={draft ?? String(value)}
-      error={bad ? t('qol.backup.copiesRange', { min: range[0], max: range[1] }) : undefined}
+      error={bad ? rangeText : undefined}
+      help={bad ? undefined : (notice ?? undefined)}
       onChange={(text) => {
         const parsed = parseCopies(text, range);
         setDraft(parsed === null ? text : null);
+        setNotice(null);
         if (parsed !== null && parsed !== value) onSave(parsed);
       }}
+      onBlur={settle}
       onCancel={() => setDraft(null)}
     />
   );
