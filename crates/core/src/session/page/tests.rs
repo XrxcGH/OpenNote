@@ -9,6 +9,7 @@ use crate::session::notebook::{NodePlacement, NodeRef, NotebookHandle, ParentRef
 use crate::store::layout::NotebookLayout;
 use crate::wire::envelope;
 
+mod outside;
 mod unreadable;
 
 fn secs(s: u64) -> Duration {
