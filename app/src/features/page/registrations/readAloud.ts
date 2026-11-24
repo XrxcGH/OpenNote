@@ -1,5 +1,6 @@
 // WP7's read-aloud registrations: Ctrl+Shift+U, next and previous paragraph, stop, and the Read aloud settings part.
 // The engine, the reader, and the bar load on first use.
+import { featureOn } from '../intel/switches';
 import { registerPageCommand } from '../keys';
 import { editingSettingsParts } from '../registries';
 import { shownQueue } from '../sync/shown';
@@ -21,7 +22,7 @@ registerPageCommand({
   keywords: 'readAloud.commands.keywords',
   category: 'view',
   flag: 'editor.readAloud',
-  when: shown,
+  when: () => shown() && (reading() || featureOn('readAloud')),
   run: () => load().then((readAloud) => readAloud.toggleReadAloud()),
 });
 registerPageCommand({

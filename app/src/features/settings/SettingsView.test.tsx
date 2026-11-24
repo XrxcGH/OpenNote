@@ -99,7 +99,35 @@ describe('the Settings page', () => {
   });
 });
 
+// checks-disable-next-line modifiability: one test group that shares its fixtures; split it when it grows again
 describe('the Settings sections and screens', () => {
+  it('keeps the scroll bar of the notices box in its own strip (W9-VA-17)', async () => {
+    await renderApp();
+    await openSettings();
+    await userEvent.click(screen.getByRole('link', { name: 'About' }));
+    const box = await screen.findByLabelText('Copyright lines and license text of the bundled fonts');
+    expect(getComputedStyle(box).scrollbarGutter).toContain('stable');
+  });
+
+
+  it('shows the default notes folder when none is chosen (T1-D05-7, W9-VA-16)', async () => {
+    await renderApp({ settings: { storage: { notesFolder: null } } });
+    await openSettings();
+    const path = await screen.findByText(/Documents.OpenNote/);
+    expect(path.textContent).toContain('\\');
+    expect(path.textContent).not.toContain('/');
+    expect(screen.queryByText(/No notes folder is chosen/)).toBeNull();
+  });
+
+  it('leaves with Escape when focus is on the page body (T1-D05-2)', async () => {
+    await renderApp();
+    await openSettings();
+    (document.activeElement as HTMLElement | null)?.blur();
+    expect(document.activeElement).toBe(document.body);
+    await userEvent.keyboard('{Escape}');
+    await waitFor(() => expect(getLocation().view).toBe('workspace'));
+  });
+
   it('keeps Escape for fields and popups: it never leaves from inside one', async () => {
     await renderApp();
     await openSettings();

@@ -98,6 +98,12 @@
     break-inside: avoid;
   }
 
+  /* A drop-down is as wide as its longest option, which can be wider than a narrow window (R-VA-2). */
+  .main :is(select, input, textarea) {
+    max-inline-size: 100%;
+    min-inline-size: 0;
+  }
+
   .main > * + * {
     margin-block-start: var(--space-6);
   }
@@ -129,6 +135,8 @@
   /* One setting: a label, what it says, and the control. */
   .block {
     display: grid;
+    /* One column that may shrink, so a wide control wraps in a narrow window and never scrolls the page (R-VA-2). */
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--space-2);
     max-inline-size: var(--size-reading-measure);
   }
@@ -215,6 +223,9 @@
     margin: 0;
     max-block-size: 20rem;
     overflow: auto;
+    /* The scroll bar keeps its own strip inside the box, and the text never runs under it (W9-VA-17). */
+    scrollbar-gutter: stable;
+    padding-inline-end: var(--space-3);
     white-space: pre-wrap;
     overflow-wrap: anywhere;
     color: var(--color-text-secondary);
@@ -222,7 +233,8 @@
   }
 
   .path {
-    overflow-wrap: anywhere;
+    /* A path breaks after a separator, and inside a name only when one name is wider than the line. */
+    overflow-wrap: break-word;
     font-family: var(--font-mono);
   }
 

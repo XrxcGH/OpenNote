@@ -20,10 +20,12 @@ export interface TextFieldProps {
   autoSelect?: boolean;
   onCommit?(): void;
   onCancel?(): void;
+  /** Focus left the field. */
+  onBlur?(): void;
 }
 
 export function TextField(props: TextFieldProps) {
-  const { label, value, onChange, error, help, readOnly, secret, autoSelect, onCommit, onCancel } = props;
+  const { label, value, onChange, error, help, readOnly, secret, autoSelect, onCommit, onCancel, onBlur } = props;
   const id = useId();
   const input = useRef<HTMLInputElement>(null);
   useEffect(() => {
@@ -51,6 +53,7 @@ export function TextField(props: TextFieldProps) {
         aria-invalid={error ? true : undefined}
         aria-describedby={describedBy}
         onChange={(event) => onChange(event.target.value)}
+        onBlur={onBlur}
         onKeyDown={(event) => {
           if (event.nativeEvent.isComposing) return;
           if (event.key === 'Enter') onCommit?.();

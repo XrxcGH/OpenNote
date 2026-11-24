@@ -7,6 +7,7 @@ import { commandBar, commands } from '../../../registries';
 import { oneImageSelected } from '../images/shown';
 import { pageSelection } from '../seams/selectionStore';
 import { shownQueue } from '../sync/shown';
+import { featureOn } from './switches';
 
 commands.register(
   defineCommand({
@@ -27,7 +28,7 @@ commands.register(
     keywords: 'intel.commands.summarizePageKeywords',
     category: 'view',
     flag: 'intel.summaries',
-    when: () => shownQueue.get() !== null,
+    when: () => shownQueue.get() !== null && featureOn('summaries'),
     run: () => import('./summarize').then((module) => module.summarizePage()),
   }),
 );

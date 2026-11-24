@@ -125,7 +125,7 @@ export default function PageBody({ pageId, title, treeTitle, changed, band }: Pa
       )}
       {mounted && <StillClosingNotice readOnly={mounted.page.readOnly} />}
       {mounted && <SaveBlockedNotice page={mounted.page} />}
-      <div className={paneStyles.row}>
+      <div className={paneStyles.row} data-page-row="">
         <div className={extrasStyles.column}>
           {mounted && <Extras mounted={mounted} slot="top" />}
           {mounted && <Extras mounted={mounted} slot="source" />}

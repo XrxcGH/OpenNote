@@ -195,6 +195,11 @@
     min-inline-size: 0;
   }
 
+  /* The field takes the row's full height, so it is as tall as the row's target (W9-VA-10). */
+  .text:has(> .rename) {
+    align-self: stretch;
+  }
+
   .title,
   .meta {
     overflow: hidden;
@@ -253,14 +258,23 @@
   .rename {
     position: relative;
     display: flex;
+    flex: 1;
     flex-direction: column;
     inline-size: 100%;
     min-inline-size: 0;
   }
 
+  /* While a name is edited the row's own buttons give way, so the field never lies under the kebab (W9-VA-10). */
+  .row:has(.rename) .more {
+    display: none;
+  }
+
   .renameInput {
     inline-size: 100%;
     min-inline-size: 0;
+    /* As tall as the row, which is a touch target with large buttons. */
+    flex: 1;
+    min-block-size: var(--target-size);
     box-sizing: border-box;
     padding-inline: var(--space-3);
     border: 1px solid var(--color-border-control);

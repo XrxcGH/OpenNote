@@ -46,6 +46,17 @@ describe('TabStrip', () => {
     openInNewTab(place('c'));
   });
 
+  it('keeps a long title from running under the close button (W9-VB-3)', async () => {
+    treeStore.set((state) => ({
+      ...state,
+      nodes: { ...state.nodes, b: page('b', 'A very long page title that cannot fit inside one tab of the strip') },
+    }));
+    renderUi(<TabStrip />);
+    const tab = (await screen.findAllByRole('tab'))[1];
+    const close = tab.parentElement!.querySelector<HTMLElement>('button:not([role="tab"])')!;
+    expect(tab.getBoundingClientRect().right).toBeLessThanOrEqual(close.getBoundingClientRect().left + 0.5);
+  });
+
   it('keeps every tab wide enough to read when many are open (walk bug N1-N03-7)', async () => {
     const extra = Array.from({ length: 24 }, (_, at) => page(`x${at}`, `Extra page ${at}`));
     treeStore.set((state) => ({

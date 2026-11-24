@@ -4,12 +4,13 @@ import { useEffect, useState } from 'react';
 import type { InstallStatus } from '../../platform/types';
 import { updateSettings, useSettings } from '../../state/settings';
 import { t } from '../../strings/t';
-import { Button, Switch, showToast } from '../../ui';
+import { Button, PathText, Switch, showToast } from '../../ui';
 import { host } from './host';
+import { useNotesFolderInUse } from './notesFolder';
 import styles from './SettingsView.module.css';
 
 function NotesFolder() {
-  const folder = useSettings((settings) => settings.storage.notesFolder);
+  const folder = useNotesFolderInUse();
   const open = () => {
     host()
       .shell.openExternal({ kind: 'folder', which: 'notes' })
@@ -18,7 +19,9 @@ function NotesFolder() {
   return (
     <section className={styles.block} aria-labelledby="settings-folder">
       <h2 id="settings-folder">{t('settings.general.folderTitle')}</h2>
-      <p className={folder ? styles.path : styles.help}>{folder ?? t('settings.general.folderNone')}</p>
+      <p className={folder ? styles.path : styles.help}>
+        {folder ? <PathText path={folder} /> : t('settings.general.folderNone')}
+      </p>
       {folder && (
         <div className={styles.actions}>
           <Button onClick={open}>{t('settings.general.openFolder')}</Button>

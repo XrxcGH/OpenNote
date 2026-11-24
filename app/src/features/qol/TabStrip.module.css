@@ -25,6 +25,11 @@
     color: var(--color-text-secondary);
   }
 
+  /* The close button keeps its own width, so a long title is clipped before it and never runs under it (W9-VB-3). */
+  .tab > :not(.title) {
+    flex: none;
+  }
+
   .tab[data-drop='before'] {
     box-shadow: inset var(--size-focus-ring-width) 0 0 var(--color-focus-ring);
   }

@@ -9,6 +9,7 @@ import { isEnabled } from '../../app/flags';
 import { commandContext } from '../../commands/registry';
 import type { SearchHit, SearchResponse, Snippet, TagNode } from '../../services/search/types';
 import type { OverlayProps } from '../../shell/commandbar/overlays';
+import { qolStore } from '../../state/qol';
 import { formatDate } from '../../strings/format';
 import { t } from '../../strings/t';
 import { Button, Dialog, EmptyArt, Switch, TextField, announce } from '../../ui';
@@ -286,6 +287,8 @@ function useResultKeys(hits: SearchHit[], onClose: () => void, text: string) {
     if (!hit) return;
     const { notes } = commandContext('palette');
     onClose();
+    // Opening the page already selected under Home fires no navigation, so Home leaves here (walk 9).
+    qolStore.set((state) => (state.homeOpen ? { ...state, homeOpen: false } : state));
     // A result that points at a block jumps to it and marks it for a moment.
     if (isEnabled('search.paragraphLinks') && hit.snippet) void openAndReveal(notes, hit.page, hit.snippet.block);
     else void openPage(notes, hit.page);
