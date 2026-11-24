@@ -3,6 +3,7 @@
   .section,
   .section > div[role='group'] {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--space-3);
     /* One column width with the other panels, so a switch stays next to its label. */
     max-inline-size: var(--size-reading-measure);
