@@ -371,7 +371,11 @@
   .moreList {
     display: grid;
     gap: var(--space-1);
-    min-inline-size: var(--size-menu-min-width);
+    /* A minimum beats a maximum, so the minimum is capped too: the list never runs past the window, like
+       Menu.module.css (full walk VA-31). */
+    --more-cap: calc((100vw - 4 * var(--space-3)) / var(--fit-zoom, 1));
+    min-inline-size: min(var(--size-menu-min-width), var(--more-cap));
+    max-inline-size: var(--more-cap);
     margin: 0;
     padding: 0;
     list-style: none;
