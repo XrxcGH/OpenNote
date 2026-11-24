@@ -348,6 +348,9 @@ describe('JavaScript checker: scopes', () => {
     const source = read('environment.ts') + read('engine.ts');
     const injected = [...new Set([...source.matchAll(/globalThis\.(\w+)\s*=/g)].map((m) => m[1]))];
     expect(injected.sort()).toEqual([
+      'clearImmediate',
+      'clearInterval',
+      'clearTimeout',
       'console',
       'exports',
       'module',
@@ -356,6 +359,9 @@ describe('JavaScript checker: scopes', () => {
       'prompt',
       'readline',
       'require',
+      'setImmediate',
+      'setInterval',
+      'setTimeout',
     ]);
     for (const name of injected) {
       expect(RUNTIME_GLOBALS).toContain(name);

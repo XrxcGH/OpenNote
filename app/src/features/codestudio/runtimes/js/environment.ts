@@ -112,7 +112,8 @@ export const ENVIRONMENT = String.raw`(function (write, readLine, exit, random, 
     },
     table: function (data, columns) {
       if (data === null || typeof data !== 'object') return log(data);
-      const rows = data instanceof Map ? Array.from(data.keys()).map(function (k) { return [k, data.get(k)]; }) : Object.keys(data).map(function (k) { return [k, data[k]]; });
+      const keys = data instanceof Map ? Array.from(data.keys()) : Object.keys(data);
+      const rows = keys.map(function (k) { return [k, data instanceof Map ? data.get(k) : data[k]]; });
       const names = [];
       let hasValues = false;
       const cells = rows.map(function (row) {
