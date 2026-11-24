@@ -192,3 +192,15 @@ fn the_csp_lets_workers_fetch_packs_and_adds_nothing_else() {
     ];
     assert_eq!(csp_sources("connect-src "), expected);
 }
+
+#[test]
+fn the_csp_lets_the_page_import_pyodide_from_its_pack() {
+    // Code studio imports pyodide/pyodide.mjs from the pack and compiles its WebAssembly (T4-C07-4).
+    let expected = [
+        "'self'",
+        "'wasm-unsafe-eval'",
+        "opennote-pack:",
+        "http://opennote-pack.localhost",
+    ];
+    assert_eq!(csp_sources("script-src "), expected);
+}
