@@ -99,6 +99,7 @@ describe('the Settings page', () => {
   });
 });
 
+// checks-disable-next-line modifiability: one test group that shares its fixtures; split it when it grows again
 describe('the Settings sections and screens', () => {
   it('keeps the scroll bar of the notices box in its own strip (W9-VA-17)', async () => {
     await renderApp();

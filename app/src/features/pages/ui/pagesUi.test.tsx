@@ -161,7 +161,6 @@ const sheetOf = (control: HTMLElement) => () => {
   return frame.srcdoc;
 };
 
-// checks-disable-next-line modifiability: one test group that shares its fixtures; split it when it grows again
 describe('SlidePlayer digits', () => {
   it('jumps to a typed slide number on Enter (T2-D02-10)', async () => {
     render(<SlidePlayer source={slideSource()} startBlock={null} close={vi.fn()} />);
@@ -174,6 +173,7 @@ describe('SlidePlayer digits', () => {
   });
 });
 
+// checks-disable-next-line modifiability: one test group that shares its fixtures; split it when it grows again
 describe('PrintDialog', () => {
   it('lets the form and preview stack in a narrow window (T1-C03-1)', async () => {
     render(<PrintDialog source={printSource()} platform={createTestPlatform()} mode="export" close={vi.fn()} />);
