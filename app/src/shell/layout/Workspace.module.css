@@ -136,9 +136,13 @@
       var(--color-surface-sunken);
   }
 
-  /* The linked pages pane (search/backlinks) is a sheet at the window's end: the page leaves room for it. */
+  /* The linked pages pane (search/backlinks) is a sheet at the window's end: the page leaves room for it. In a
+     window under 40rem the page keeps its width and the sheet lies over it, so large text never squeezes the page
+     to a sliver (full walk VA-38). */
   :global(body[data-linked-pages]) .page {
-    margin-inline-end: calc(var(--dock-inset-right, 0px) + min(24rem, 90vw) + var(--space-4));
+    margin-inline-end: calc(
+      var(--dock-inset-right, 0px) + clamp(0px, 100vw - 40rem, min(24rem, 90vw) + var(--space-4))
+    );
   }
 
   :global(:root[data-theme='dark']) .page {
