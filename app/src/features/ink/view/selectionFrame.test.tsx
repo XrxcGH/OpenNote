@@ -86,6 +86,24 @@ describe('the lasso bar and the page title', () => {
   });
 });
 
+describe('the lasso bar and the drawing aids', () => {
+  it('stays above a protractor shown after it (walk 9, T1-D03-9)', () => {
+    document.body.append(chrome);
+    selection = { blocks: [], strokes: ['s1'] };
+    const frame = attachSelectionFrame(host, surface);
+    const aid = document.createElement('div');
+    aid.style.cssText = 'position:absolute;inset:0';
+    chrome.append(aid);
+    const bar = chrome.querySelector<HTMLElement>('[data-ink-selection-bar]')!;
+    const action = bar.querySelector<HTMLElement>('[data-ink-action]:not([hidden])')!;
+    const box = action.getBoundingClientRect();
+    expect(document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2)).toBe(action);
+    frame.stop();
+    chrome.remove();
+    selection = { blocks: [], strokes: [] };
+  });
+});
+
 describe('a text box selected alone (Beta 6, owner bugs 5 and 8)', () => {
   const box = document.createElement('div');
   const boxHost = {

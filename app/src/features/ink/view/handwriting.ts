@@ -163,7 +163,13 @@ function refuse(host: InkHost, surface: InkSurface, count: number, noQueue: bool
 
 /** Reads the selected handwriting and adds the words as text below it, or inside the shape it was written in. */
 export async function convertSelection(host: InkHost, surface: InkSurface): Promise<void> {
-  const strokes = surface.strokes(host.selection.get().strokes);
+  const selected = surface.strokes(host.selection.get().strokes);
+  // A shape is not handwriting: the recognizer would read a rectangle as a letter (walk 9, T1-D03-9).
+  const strokes = selected.filter((stroke) => strokeKind(stroke) !== 'shape');
+  if (selected.length > 0 && strokes.length === 0) {
+    showToast({ message: t('ink.handwriting.none') });
+    return;
+  }
   const queue = host.queue.get();
   if (strokes.length > 0 && !surface.readOnly) await offerHandwriting(host);
   if (refuse(host, surface, strokes.length, !queue) || !queue) return;

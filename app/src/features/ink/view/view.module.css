@@ -88,6 +88,8 @@
   /* The lasso's frame and its bar, over the page in screen space. */
   /* Its own stacking context, so the handles' hit areas can sit under every part of the frame. */
   :global(.ink-selection-frame) {
+    /* Over the ruler and protractor, which join the chrome later, so the bar's actions stay reachable. */
+    z-index: calc(var(--layer-base) + 1);
     isolation: isolate;
     border: 1px dashed var(--color-accent-primary);
     border-radius: var(--radius-sm);
