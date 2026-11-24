@@ -142,7 +142,7 @@ export function setRulerUnits(choice: 'auto' | LengthUnits): void {
 const SVG = 'http://www.w3.org/2000/svg';
 
 /** The ruler's tick marks and numbers as SVG, in page units across its length from the left end. */
-function tickMarks(doc: Document, ruler: Ruler, units: LengthUnits): SVGSVGElement {
+export function tickMarks(doc: Document, ruler: Ruler, units: LengthUnits): SVGSVGElement {
   const svg = doc.createElementNS(SVG, 'svg');
   svg.setAttribute('viewBox', `0 0 ${ruler.length} ${ruler.width}`);
   svg.setAttribute('aria-hidden', 'true');
@@ -169,12 +169,13 @@ function tickMarks(doc: Document, ruler: Ruler, units: LengthUnits): SVGSVGEleme
     node.setAttribute('y', String(long.major + 2.8 * mm));
     node.setAttribute('text-anchor', anchor);
     node.setAttribute('font-size', String(size * mm));
-    node.setAttribute('fill', 'currentColor');
+    // The ruler is see-through, so its numbers take the strongest text color to stay readable over the page.
+    node.setAttribute('fill', 'var(--color-text-primary)');
     node.textContent = text;
     svg.append(node);
   };
   for (const tick of ticks) if (tick.label && tick.at > 0) label(tick.at, tick.label, 'middle', 2.6);
-  label(1.2 * mm, units === 'imperial' ? 'in' : 'cm', 'start', 2.2);
+  label(1.2 * mm, units === 'imperial' ? 'in' : 'cm', 'start', 2.6);
   return svg;
 }
 
