@@ -152,6 +152,16 @@ describe('steps that jump', () => {
 });
 
 describe('angles', () => {
+  it('accepts the words deg, degree, and degrees as the degree sign (walk 9, T3-D08-1)', () => {
+    for (const word of ['deg', 'degree', 'degrees']) {
+      expect(value(`sin(30 ${word})`, DEG)).toBe(0.5);
+      expect(value(`sin(30 ${word})`, RAD)).toBeCloseTo(0.5, 12);
+      expect(value(`sin(30${word})`, RAD)).toBeCloseTo(0.5, 12);
+    }
+    expect(value('2 deg(pi)')).toBeCloseTo(360, 9);
+    expect(failure('sin 30 deg')).toMatchObject({ code: 'needs-parens', detail: 'sin' });
+  });
+
   it('gives exact answers at familiar degrees', () => {
     expect(value('sin(30)')).toBe(0.5);
     expect(value('sin(180)')).toBe(0);
