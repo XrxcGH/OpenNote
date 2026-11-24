@@ -90,7 +90,7 @@ describe('Settings, then Storage', () => {
 
   it('settles a copies box on blur: out of range clamps, text gives way to the saved value (T1-D05-3)', async () => {
     setFakeShell((name) => (name === 'backup.config' ? { daily: 7, weekly: 4, monthly: 6 } : null));
-    await renderApp({ settings: { storage: { notesFolder: 'D:\Notes' } } });
+    await renderApp({ settings: { storage: { notesFolder: 'D:\\Notes' } } });
     navigate({ view: 'settings', section: 'storage' });
     const box = (await screen.findByRole('textbox', { name: 'Daily copies to keep' })) as HTMLInputElement;
     await userEvent.fill(box, 'abc');
