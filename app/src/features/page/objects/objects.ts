@@ -7,6 +7,7 @@ import type { BlockId, BlockJson, Edit, EditBatch, Frame, OpenPage } from '../..
 import { t } from '../../../strings/t';
 import { announce, confirm, showToast } from '../../../ui';
 import type { PageBlockLayer } from '../blocks/blockLayer';
+import { showSentText } from '../blocks/showText';
 import { hasGrip, isFloating } from '../blocks/textBlock';
 import type { DeletePrompt } from '../blocks/types';
 import { snapY, stepY } from '../layout/rules';
@@ -323,6 +324,8 @@ export class Objects {
   }
 
   private remove(blocks: BlockId[], done?: string): void {
+    const keep = this.keptText(blocks);
+    if (keep) return this.removeKeepingText(blocks, keep, done);
     const order = this.parts.layer.blocks().map((block) => block.id);
     const next = order.slice(order.indexOf(blocks.at(-1)!) + 1).find((id) => !blocks.includes(id));
     this.clear();
@@ -335,6 +338,37 @@ export class Objects {
     showToast({
       message,
       action: { label: t('page.object.undo'), run: () => this.parts.sync.undo() },
+    });
+  }
+
+  /**
+   * A page keeps one text block to type in (walk 9 T2-D02-1). When `blocks` holds every text block on the page,
+   * the first of them stays and is emptied instead; otherwise none does.
+   */
+  private keptText(blocks: readonly BlockId[]): BlockId | null {
+    const texts = this.parts.layer.blocks().filter((block) => block.type === 'text');
+    if (texts.length === 0 || texts.some((block) => !blocks.includes(block.id))) return null;
+    return texts[0].id;
+  }
+
+  /** Deletes the blocks but `keep`, and empties `keep`, as one undo step; the caret goes into it. */
+  private removeKeepingText(blocks: BlockId[], keep: BlockId, done?: string): void {
+    const { layer, pool, sync } = this.parts;
+    const gone = blocks.filter((id) => id !== keep);
+    const editor = pool.editor(keep);
+    const empty = editor ? editor.isEmpty : !layer.block(keep)?.data.markdown;
+    const edits: Edit[] = [];
+    if (gone.length > 0) edits.push({ edit: 'deleteBlocks', blocks: gone });
+    if (!empty) edits.push({ edit: 'setText', block: keep, markdown: '' });
+    this.clear();
+    if (edits.length > 0) void sync.send({ edits }).catch(() => undefined);
+    gone.forEach((id) => layer.remove(id));
+    if (!empty) showSentText(pool, layer, keep, '');
+    pool.mount(keep, { kind: 'end' }, 'target')?.commands.focus();
+    if (edits.length === 0) return;
+    showToast({
+      message: done ?? t('page.object.deleted', { count: blocks.length }),
+      action: { label: t('page.object.undo'), run: () => sync.undo() },
     });
   }
 
