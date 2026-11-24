@@ -272,11 +272,20 @@ function markGrid(view: EditorView, on: boolean): void {
   else table.removeAttribute('role');
 }
 
+const FILL_ENTRY = 'table.sheet.fillEntry';
+
+/** Whether the grid selection is one cell, so fill entry has nothing to fill. */
+function singleCell(state: EditorState): boolean {
+  const box = gridOf(state)?.box;
+  return box !== undefined && box.top === box.bottom && box.left === box.right;
+}
+
 /** Makes this table the one commands act on while it has focus, marks it a grid, and says each move. */
 function sheetView(view: EditorView, options: SheetKeysOptions) {
   const runner: SheetRunner = {
     run: (command) => runSheetCommand(view, options, command),
     documentKeys: () => !keysOn(view.state),
+    canRun: (command) => command !== FILL_ENTRY || !singleCell(view.state),
   };
   const focus = () => setActiveSheet(runner);
   view.dom.addEventListener('focusin', focus);
