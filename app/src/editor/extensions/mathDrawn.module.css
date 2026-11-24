@@ -199,6 +199,8 @@
 
   .holderBlock {
     margin-block-start: var(--space-3);
+    /* Room under the row, so tall touch buttons stay inside the clipped page sizer (walk VB-6). */
+    padding-block-end: var(--space-2);
   }
 
   .holderInline {

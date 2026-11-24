@@ -191,7 +191,7 @@ export function RateMode() {
   );
   const fields = (
     <Fields>
-      <Field label={t('kitSignals.systems.x')} value={state.x} onChange={(x) => set({ x })} wide />
+      <Field label={t('kitSignals.systems.x')} value={state.x} onChange={(x) => set({ x })} wide lines={2} />
       <Field label={t('kitSignals.systems.up')} value={state.up} onChange={(up) => set({ up })} />
       <Field label={t('kitSignals.systems.down')} value={state.down} onChange={(down) => set({ down })} />
     </Fields>

@@ -70,12 +70,22 @@
     user-select: none;
   }
 
+  /* The two header actions stay on one line each; the title gives way first (walk VB-189). */
+  .header > button {
+    flex: none;
+    white-space: nowrap;
+  }
+
   .header:focus {
     outline: none;
   }
 
   .title {
     flex: 1;
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     margin: 0;
     font-size: var(--type-subtitle-size);
     line-height: var(--type-subtitle-line);
@@ -348,6 +358,7 @@
     flex: none;
     white-space: nowrap;
     min-block-size: var(--target-size);
+    min-inline-size: var(--target-size);
     padding-inline: var(--space-4);
     font: inherit;
     color: var(--color-text-secondary);

@@ -54,7 +54,7 @@ export function SymbolsTool() {
     <div className={styles.toolFill}>
       <TextField label={t('study.symbols.search')} value={query} onChange={setQuery} />
       <p className={styles.empty}>{t('study.symbols.searchHelp')}</p>
-      <Button variant="quiet" aria-pressed={copying} onClick={() => setCopying(!copying)}>
+      <Button variant="quiet" className={sym.copyMode} aria-pressed={copying} onClick={() => setCopying(!copying)}>
         {t('study.symbols.copyMode')}
       </Button>
       <div className={sym.categories} role="group" aria-label={t('study.symbols.groups')}>

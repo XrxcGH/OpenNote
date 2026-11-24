@@ -97,6 +97,10 @@
     border-radius: var(--radius-sm);
   }
 
+  .field input[type='file'] {
+    min-block-size: var(--target-size);
+  }
+
   .field textarea {
     resize: vertical;
     min-block-size: calc(var(--target-size) * 2);

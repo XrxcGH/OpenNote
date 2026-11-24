@@ -28,6 +28,7 @@ import { greatCircle, parseGeoJson, parsePoints, sphericalArea, toGeoJson } from
 import type { ClassMethod, Feature, Position } from './geometry';
 import { FORMULA, PROJECTIONS, project } from './projections';
 import type { ProjectionId } from './projections';
+import styles from '../ui/kit.module.css';
 
 const k = 'kitHumanities.maps';
 const fail = (code: string) => <Problem text={errorText('maps', code)} />;
@@ -275,7 +276,7 @@ function MapResult({
           figure: { tool: 'maps', inputs, svg: map.svg, alt, summary: inputs.title || alt },
         }}
       />
-      <details>
+      <details className={styles.plainDetails}>
         <summary>{t(`${k}.export`)}</summary>
         <Field label={t(`${k}.exportField`)} value={geojson} onChange={() => undefined} rows={6} mono />
       </details>
