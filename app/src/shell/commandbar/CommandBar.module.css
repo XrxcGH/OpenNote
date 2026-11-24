@@ -370,6 +370,8 @@
 
   .moreList {
     display: grid;
+    /* One column that may shrink, so a long page title wraps instead of widening the list (R-VA-31). */
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--space-1);
     /* A minimum beats a maximum, so the minimum is capped too: the list never runs past the window, like
        Menu.module.css (full walk VA-31). */
@@ -391,6 +393,7 @@
     color: var(--color-text-primary);
     font: inherit;
     text-align: start;
+    overflow-wrap: anywhere;
     cursor: pointer;
   }
 
