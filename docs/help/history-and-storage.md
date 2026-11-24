@@ -47,6 +47,8 @@ Choose Check notebook in a notebook's menu, in the command palette, or in Settin
 - Write page.md again writes the page's readable copy afresh. If someone edited it in another app, that copy is kept aside first.
 - Open the page takes you to a page with a broken link, so you can fix the link.
 
+When a page you open is damaged, the page says so and offers Put back the last saved version. It sets the damaged file aside and writes the newest version from the page history. A page written by a newer OpenNote is left unchanged and says so. If a page can't save, for example because its file is read-only, a notice on the page says why and how to fix it.
+
 Each repair has Undo in the same window, until you close OpenNote. If OpenNote closed unexpectedly, the next start shows a short note with a Check notebook button.
 
 ## Lock an entry

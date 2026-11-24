@@ -14,6 +14,7 @@ Choose **Check accessibility** on the View tab, in the command palette (Ctrl+K),
 |---|---|
 | An image has no description for screen readers. | Type a description and choose **Add description**, or choose **Mark as decorative**. |
 | A heading jumps from one level to a lower one, such as 1 to 3. | Use the next heading level. |
+| A heading has no text. | Remove the empty heading. |
 | A table has no header row. | Make the first row a header. |
 | Text is in a color that is hard to read. The report gives the contrast ratio. | Use the normal text color. |
 | Color may be the only sign of a text's meaning. | Also make the colored text bold. |
