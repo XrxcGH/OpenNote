@@ -151,6 +151,19 @@ describe('page layout', () => {
 });
 
 describe('a new text box', () => {
+  it('moves a caret pressed near the right edge left, so its box stays inside the page area (VB-185)', async () => {
+    const { mounted } = await open(textPageFixture('First'));
+    await expect.poll(() => mounted.viewport.viewport.clientWidth).toBeGreaterThan(0);
+    const { viewport } = mounted.viewport;
+    const rect = viewport.getBoundingClientRect();
+    const edge = mounted.viewport.toWorld(rect.left + viewport.clientWidth - 20, rect.top + 300);
+    mounted.layout.pressEmpty(edge);
+    const caret = mounted.layer.blocks().find((block) => block.frame?.x !== undefined && block.data.markdown === '')!;
+    const box = mounted.layer.view(caret.id)!.element.getBoundingClientRect();
+    expect(box.right).toBeLessThanOrEqual(rect.left + viewport.clientWidth);
+    expect(caret.frame!.x).toBeLessThan(edge.x);
+  });
+
   it('goes under the title, not on it (A1-A07-5)', async () => {
     const { mounted } = await open(textPageFixture('First'), 800, {
       title: { text: 'A long page title', changed: null },

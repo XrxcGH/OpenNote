@@ -42,6 +42,10 @@ describe('tag rewriting', () => {
     );
   });
 
+  it('renames a typed tag that the editor wrote with an escaped hash (T2-C02-2)', () => {
+    expect(rewriteTags('\\#school and \\#old&#32;\\#school/bio', plan)).toBe('\\#uni and old&#32;\\#uni/bio');
+  });
+
   it('leaves a heading and a hash that does not start a word', () => {
     expect(rewriteTags('# school\nissue#school and #school2', plan)).toBe('# school\nissue#school and #school2');
   });

@@ -3,6 +3,8 @@
 // Markdown. So this plugin loads the attributes from the block data and shows each tag as a badge with an icon and a
 // name. After a change it writes the IDs, tags, checked boxes, and paragraph formatting (`paras`) back with
 // `patchBlock`. A block that has no IDs, tags, or links stays as it was, because the plugin writes nothing for it.
+// A paragraph command's patch goes at once, through the page's sync queue, so it is one undo step in its place
+// among the text edits; each undo and redo step puts the block's data back on the editor (T2-C02-4).
 import { Extension } from '@tiptap/core';
 import { Plugin, PluginKey, TextSelection } from '@tiptap/pm/state';
 import type { EditorState } from '@tiptap/pm/state';
@@ -12,7 +14,7 @@ import { getLocation } from '../../../app/location';
 import type { EditorHost } from '../../../editor/host';
 import { LISTS_META } from '../../../editor/extensions/listItem';
 import { newId } from '../../../editor/ids';
-import { META_ELEMENT_DATA, META_HIGHLIGHT } from '../../../editor/meta';
+import { META_ELEMENT_DATA, META_HIGHLIGHT, META_REMOTE } from '../../../editor/meta';
 import { t } from '../../../strings/t';
 import { shownMounted } from '../../page';
 import { copyLinkText } from '../deeplink/copy';
@@ -56,7 +58,8 @@ function pageOf(): { id: string; send: (patch: Record<string, unknown>, block: s
   if (!mounted) return null;
   return {
     id: mounted.page.id,
-    send: (data, block) => mounted.page.send({ edits: [{ edit: 'patchBlock', block, data }] }),
+    // Through the sync queue, so the patch reaches the core after the text edits made before it.
+    send: (data, block) => mounted.sync.send({ edits: [{ edit: 'patchBlock', block, data }] }),
   };
 }
 
@@ -178,6 +181,10 @@ class ElementLayer {
   private dead = false;
   private stopFrames: () => void = () => undefined;
   private lastDoc: unknown;
+  /** A command changed element data: the next update writes it at once. */
+  private urgent = false;
+  /** Whether the last change was made here, not a frame's text put in (another window, an undo, or a redo). */
+  private local = false;
 
   constructor(
     private readonly view: EditorView,
@@ -209,6 +216,16 @@ class ElementLayer {
       const changed = frame.blocks.find((candidate) => candidate.id === block);
       if (changed) setTimeout(() => this.reload(changed.data), FRAME_DELAY_MS);
     });
+    // This window's own undo and redo frames do not come through onFrame. The frame is applied by now.
+    const stopSteps = mounted.sync.onStep((frame) => {
+      const changed = frame.blocks.find((candidate) => candidate.id === block);
+      if (changed) this.reload(changed.data);
+    });
+    const stopFrames = this.stopFrames;
+    this.stopFrames = () => {
+      stopFrames();
+      stopSteps();
+    };
   }
 
   private reload(data: Record<string, unknown>): void {
@@ -243,12 +260,24 @@ class ElementLayer {
     this.tracked = true;
     const lists = typeof meta === 'object' && meta !== null ? (meta as { lists?: unknown }).lists : undefined;
     if (typeof lists === 'object' && lists !== null) Object.assign(this.pendingLists, lists);
+    this.urgent = true;
+  }
+
+  /** Notes whether a change was made here. A frame's text carries no element data to write back. */
+  noteChange(local: boolean): void {
+    this.local = local;
   }
 
   update(): void {
     if (this.view.state.doc === this.lastDoc) return;
     this.lastDoc = this.view.state.doc;
     if (!this.tracked || this.suspended) return;
+    if (this.urgent) {
+      this.urgent = false;
+      this.saveNow();
+      return;
+    }
+    if (!this.local) return;
     if (this.timer) clearTimeout(this.timer);
     this.timer = setTimeout(() => this.saveNow(), SAVE_DELAY_MS);
   }
@@ -317,13 +346,20 @@ function elementsPlugin(host: EditorHost, options: ElementOptions): Plugin<Decor
       apply: (tr, old, _before, state) =>
         options.tags && (tr.docChanged || tr.getMeta(REFRESH)) ? badges(state, view) : old,
     },
-    appendTransaction(transactions) {
+    appendTransaction(transactions, _old, state) {
       const layer = current ? layers.get(current) : undefined;
+      let command = false;
       for (const tr of transactions) {
         const meta: unknown = tr.getMeta(META_ELEMENT_DATA);
         if (meta !== undefined) layer?.noteElementData(meta);
+        command ||= meta !== undefined;
       }
-      return null;
+      const changes = transactions.filter((tr) => tr.docChanged);
+      if (changes.length > 0) layer?.noteChange(changes.some((tr) => !tr.getMeta(META_REMOTE)));
+      // A command's elements get their IDs in the same change, so its patch can go before the view updates end.
+      if (!command || !layer) return null;
+      const tr = state.tr;
+      return ensureIds(tr, newId) ? tr.setMeta(META_HIGHLIGHT, true).setMeta('addToHistory', false) : null;
     },
     props: {
       decorations: (state) => key.getState(state),
