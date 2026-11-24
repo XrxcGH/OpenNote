@@ -43,3 +43,19 @@ fn an_outside_edit_that_keeps_the_revision_is_kept_as_a_conflict() {
     });
     assert!(told, "the app is told so it can offer the outside version");
 }
+
+#[test]
+fn forgetting_undo_leaves_nothing_to_undo() {
+    let s = setup();
+    let c = client("main-1");
+    let handle = s.notebook.open_page(s.page, c.clone()).unwrap();
+    handle
+        .commit_for_tests(&retitle(s.kit.clock.as_ref(), &c, "Photosynthesis", "Removed part"))
+        .unwrap();
+    s.notebook.forget_undo(s.page);
+    assert!(
+        handle.undo(&c).unwrap().is_none(),
+        "a change that deleted files can't be undone"
+    );
+    assert_eq!(handle.page_for_tests().title, "Removed part");
+}

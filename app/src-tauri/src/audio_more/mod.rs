@@ -228,8 +228,8 @@ fn recordings_of(page_dir: &Path) -> Vec<RecordingEntry> {
         .unwrap_or_default()
 }
 
-/// Deletes a page's saved versions, so audio taken out of the page can't be brought back from them. Named versions go
-/// too, because one of them may hold the part that was removed.
+/// Deletes a page's saved versions and its undo history, so audio taken out of the page can't be brought back. Named
+/// versions go too, because one of them may hold the part that was removed.
 #[tauri::command]
 pub async fn audio_purge_history(bridge: State<'_, CoreBridge>, page: String) -> IpcResult<u32> {
     let id = PageId::parse(&page).map_err(|_| IpcError::invalid("page", "That isn't a page ID."))?;
@@ -245,6 +245,8 @@ pub async fn audio_purge_history(bridge: State<'_, CoreBridge>, page: String) ->
         })
         .await?;
     tauri::async_runtime::spawn_blocking(move || {
+        // An undo could bring the removed part back too, and would point the page at deleted files.
+        notebook.forget_undo(id);
         notebook
             .delete_history(HistoryScope::Page(id), false)
             .map(|deleted| deleted.versions)

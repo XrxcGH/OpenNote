@@ -31,6 +31,17 @@ pub struct HistoryDeleted {
 }
 
 impl NotebookHandle {
+    /// Drops every client's undo history of an open page. A change that deleted files the old content names, such
+    /// as removing part of a recording, can't be undone: an undo would point the page at files that are gone, and
+    /// every save after it would fail. A page that isn't open has no undo history.
+    pub fn forget_undo(&self, page: PageId) {
+        let session = self.inner.pages().get(&page).cloned();
+        if let Some(session) = session {
+            let mut st = session.state();
+            session.clear_undo(&mut st);
+        }
+    }
+
     /// Deletes the saved versions of the pages in `scope`. With `keep_named`, versions that have a name or are
     /// marked to keep stay. The current content of a page is untouched. Ink and assets that only history used
     /// are collected when the page is tidied after it closes. Pages of encrypted sections keep no history, so
