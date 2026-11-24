@@ -9,7 +9,9 @@ import type { InkSurface } from './surface';
 const toast = vi.hoisted(() => vi.fn());
 vi.mock('../../../ui', async (original) => ({ ...(await original<object>()), showToast: toast }));
 
-const surface = (readOnly = false) => ({ readOnly, strokes: () => [{ id: 's', points: [] }] }) as unknown as InkSurface;
+/** A drawn stroke has point times; a shape's points have none. */
+const written = { id: 's', points: [{ x: 0, y: 0, time: 0 }] };
+const surface = (readOnly = false) => ({ readOnly, strokes: () => [written] }) as unknown as InkSurface;
 const hostWith = (ensure: () => Promise<boolean>, selected = ['s']) =>
   ({
     selection: { get: () => ({ strokes: selected }) },
@@ -44,5 +46,16 @@ describe('Convert to text when it cannot run', () => {
       surface(true),
     );
     expect(toast).toHaveBeenCalledWith(expect.objectContaining({ message: t('ink.handwriting.readOnly') }));
+  });
+
+  it('reads no shape as text, and says no handwriting was found (walk 9, T1-D03-9)', async () => {
+    vi.spyOn(flags, 'isEnabled').mockReturnValue(true);
+    const ensure = vi.fn(() => Promise.resolve(true));
+    const host = hostWith(ensure);
+    const rectangle = { id: 's', points: [0, 1, 2, 3, 4].map((i) => ({ x: i % 2, y: i > 1 ? 1 : 0 })) };
+    await convertSelection(host, { ...surface(), strokes: () => [rectangle] } as never);
+    expect(host.handwriting!.recognize).not.toHaveBeenCalled();
+    expect(ensure).not.toHaveBeenCalled();
+    expect(toast).toHaveBeenCalledWith(expect.objectContaining({ message: t('ink.handwriting.none') }));
   });
 });

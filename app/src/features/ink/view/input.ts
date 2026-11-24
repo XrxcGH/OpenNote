@@ -57,7 +57,7 @@ import { activeSlot, chooseTool, drawState, penSlots, styleOf, writesInk } from 
 import type { PenStyle } from './state';
 import type { InkSurface } from './surface';
 import { focusPage } from './touch';
-import { isDwellTap, objectAt, onObjectHandle, selectObject, TAP_SLOP_PX } from './objectTaps';
+import { isDwellTap, objectAt, onObjectHandle, onPageChrome, selectObject, TAP_SLOP_PX } from './objectTaps';
 
 /** The stroke eraser's reach, in screen pixels. */
 const STROKE_ERASER_PX = 6;
@@ -277,6 +277,8 @@ export function createPenTool(
       if (event.pointerType === 'mouse' && event.button !== 0) return false;
       // The grip and width handle of a selected or edited text box move and resize it in every tool.
       if (onObjectHandle(host, event)) return false;
+      // A table's toolbar, a menu, or a dialog over the page takes its own presses.
+      if (onPageChrome(event)) return false;
       const buttons = isEnabled('ink.penButtons') ? resolvePenAction(event, buttonsOf(penKeyOf(event))) : null;
       if (buttons && buttons.action !== null) return modeFor(buttons.action) !== null;
       return DRAW_TOOLS.has(drawState.get().tool) && ctx.activeTool !== 'select';

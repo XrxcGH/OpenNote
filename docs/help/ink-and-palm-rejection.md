@@ -24,7 +24,7 @@ The Draw tab has pens, a highlighter, two erasers, the lasso, and shapes. In a w
 
 - The stroke eraser removes a whole stroke. The partial eraser cuts a stroke where you rub.
 - Turn the pen over to use its eraser end.
-- The lasso selects strokes. Drag them to move them. Ctrl+Z and Ctrl+Y undo and redo.
+- The lasso selects strokes. Drag them to move them, or choose Rotate 90 degrees on the bar to turn them a quarter turn. Ctrl+C copies them, and Ctrl+V pastes them on any page with their colors. Ctrl+Z and Ctrl+Y undo and redo.
 - Filters let the eraser or lasso touch only highlighter, or only ink.
 
 ![The Draw tab with the tools, the pen slots, a color, and a width](../screens/tab-draw-light.png)

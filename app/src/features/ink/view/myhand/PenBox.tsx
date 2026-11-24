@@ -165,7 +165,7 @@ export function PenBox(props: PenBoxProps) {
       data-written={written}
       data-myhand-box={props.index}
       className={styles.box}
-      style={{ inlineSize: width, blockSize: height }}
+      style={{ inlineSize: width, aspectRatio: `${width} / ${height}` }}
       {...handlers}
       onKeyDown={onKeyDown}
       onFocus={props.onFocus}
