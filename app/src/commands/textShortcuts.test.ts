@@ -64,6 +64,14 @@ describe('the text shortcut table', () => {
     for (const set of ['default', 'docs', 'onenote'] as const) expect(defaultConflicts(set), set).toEqual([]);
   });
 
+  // OneNote's Ctrl+K inserts a link wherever the caret is, so in that set the palette takes Ctrl+Shift+P, and the
+  // shortcut list says so (walk 9 T2-D04-2). The other sets keep Ctrl+K for both, the link winning in text.
+  it('gives Ctrl+K one meaning in the OneNote set: the link, with the palette on Ctrl+Shift+P', () => {
+    expect(candidates('Ctrl+K', 'onenote')).toEqual(['format.link']);
+    expect(candidates('Ctrl+Shift+P', 'onenote')).toEqual(['app.palette']);
+    expect(candidates('Ctrl+K', 'default')).toEqual(['format.link', 'app.palette']);
+  });
+
   it('keeps the OneNote set free of the text keys it gives another meaning', () => {
     for (const chord of ['Ctrl+E', 'Ctrl+1', 'Ctrl+Enter', 'Ctrl+T']) {
       expect(candidates(chord, 'onenote'), chord).not.toContain('para.alignCenter');

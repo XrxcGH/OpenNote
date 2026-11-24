@@ -24,7 +24,7 @@ Press Ctrl+, to open Settings. A list of sections is on the left. Choose a secti
 | Connectors | Accounts that some features use. See [Connectors](connectors.md). |
 | Sync | Optional encrypted sync. See [Sync](sync.md). |
 | Help | This copy of OpenNote and the ways to get help. |
-| Shortcuts | Two shortcut sets and the list of commands you can rebind. |
+| Shortcuts | Two shortcut sets and the list of commands you can rebind. In the OneNote set, Ctrl+K adds a link. Ctrl+Shift+P opens the command palette there. |
 | About | The version, the channel, the license, and the list of feature flags. |
 
 ## Appearance
