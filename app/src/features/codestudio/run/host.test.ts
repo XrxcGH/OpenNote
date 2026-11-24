@@ -315,6 +315,22 @@ describe('the run end', () => {
     expect((await handle.done).notes).toEqual(['input-ended', 'interactive-unavailable']);
   });
 
+  it('adds no input note for a program that never read input (T3-D08-5)', async () => {
+    const runs = host();
+    const handle = runs.run({ ...order, stdin: { mode: 'interactive', text: '' } });
+    workers[0]!.say({ kind: 'started', interactive: false });
+    workers[0]!.say({ kind: 'done', status: 'ok', message: '' });
+    expect((await handle.done).notes).toEqual([]);
+  });
+
+  it('explains the missing prompt when the program read the input box', async () => {
+    const runs = host();
+    const handle = runs.run({ ...order, stdin: { mode: 'interactive', text: 'Ada' } });
+    workers[0]!.say({ kind: 'started', interactive: false });
+    workers[0]!.say({ kind: 'done', status: 'ok', message: '', inputRead: true });
+    expect((await handle.done).notes).toEqual(['interactive-unavailable']);
+  });
+
   it('ends every worker on dispose', () => {
     const runs = host();
     runs.warm('lua');

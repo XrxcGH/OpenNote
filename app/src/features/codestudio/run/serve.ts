@@ -119,7 +119,7 @@ function seededSource(random: ReturnType<typeof seeded>): Pick<RunContext, 'rand
 }
 
 /** The run's last message. */
-function doneMessage(end: RunEnd, written: RunFile[], inputEnded: boolean): WorkerMessage {
+function doneMessage(end: RunEnd, written: RunFile[], inputEnded: boolean, inputRead: boolean): WorkerMessage {
   return {
     kind: 'done',
     status: end.status,
@@ -127,6 +127,7 @@ function doneMessage(end: RunEnd, written: RunFile[], inputEnded: boolean): Work
     ...(end.exitCode === undefined ? {} : { exitCode: end.exitCode }),
     ...(written.length > 0 ? { written } : {}),
     ...(inputEnded ? { inputEnded: true } : {}),
+    ...(inputRead ? { inputRead: true } : {}),
   };
 }
 
@@ -201,7 +202,7 @@ export function serve(registry: AdapterRegistry, scope: WorkerScope = globalThis
     }
     const items = mapDiagnostics(adapter.diagnostics, output.errorText, request.files);
     if (items.length > 0) send({ kind: 'diagnostic', items });
-    send(doneMessage(end, files.written(), stdin.askedPastEnd));
+    send(doneMessage(end, files.written(), stdin.askedPastEnd, stdin.wasRead));
   };
 
   const fail = (error: unknown) =>

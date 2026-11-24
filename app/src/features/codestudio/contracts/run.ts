@@ -117,7 +117,7 @@ export type WorkerMessage =
   | { kind: 'diagnostic'; items: RuntimeDiagnostic[] }
   | { kind: 'trace'; chunk: TraceEvent[] }
   | { kind: 'test'; result: TestResult }
-  | { kind: 'done'; status: RunStatus; exitCode?: number; message: string; written?: RunFile[]; inputEnded?: boolean };
+  | { kind: 'done'; status: RunStatus; exitCode?: number; message: string; written?: RunFile[]; inputEnded?: boolean; inputRead?: boolean };
 
 /** Sends one message from inside the worker to the page. */
 export type Emit = (message: WorkerMessage) => void;

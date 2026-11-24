@@ -175,6 +175,7 @@ export const study = {
     addDeck: 'Add as a new deck',
     imported: 'Added {count, plural, one {# card} other {# cards}} as the deck {name}.',
     failed: 'This file could not be read as cards.',
+    notText: 'This file is not a text file, so it cannot hold cards. Choose a CSV, TSV, or text file.',
     unsupported:
       'This Anki package is in a newer format than this app reads. ' +
       'Export it from Anki as a package with older versions supported, then try again.',

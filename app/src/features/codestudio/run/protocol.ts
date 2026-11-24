@@ -169,7 +169,7 @@ export function readFiles(value: unknown): RunFile[] | null {
 }
 
 function readDone(message: Fields): WorkerMessage | null {
-  const { status, exitCode, written, inputEnded } = message;
+  const { status, exitCode, written, inputEnded, inputRead } = message;
   if (!STATUSES.includes(status as RunStatus)) return null;
   if (exitCode !== undefined && !(Number.isInteger(exitCode) && Math.abs(exitCode as number) <= 2 ** 31)) return null;
   const text = isText(message.message, MESSAGE_LIMITS.shortChars) ? message.message : '';
@@ -182,6 +182,7 @@ function readDone(message: Fields): WorkerMessage | null {
     ...(exitCode === undefined ? {} : { exitCode: exitCode as number }),
     ...(files ? { written: files } : {}),
     ...(inputEnded === true ? { inputEnded: true } : {}),
+    ...(inputRead === true ? { inputRead: true } : {}),
   };
 }
 

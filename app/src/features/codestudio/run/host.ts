@@ -318,7 +318,13 @@ export class RunHost {
       finish = () => undefined;
       if (cut) notes.add('output-cut');
       if (end?.inputEnded) notes.add('input-ended');
-      if (request.stdin.mode === 'interactive' && started !== null && !interactive)
+      // Only a program that read input has anything to explain (T3-D08-5).
+      if (
+        request.stdin.mode === 'interactive' &&
+        started !== null &&
+        !interactive &&
+        (end?.inputRead || end?.inputEnded)
+      )
         notes.add('interactive-unavailable');
       finished({
         status,

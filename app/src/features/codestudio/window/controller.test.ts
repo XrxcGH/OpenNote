@@ -227,6 +227,20 @@ describe('the window closing or reloading (gap V2-3)', () => {
     studio.stop();
   });
 
+  it('names the new runtime in the status bar after a language change (T4-D09-6)', () => {
+    const controller = new StudioController();
+    const unmount = controller.mount();
+    controller.open(scratchSource());
+    controller.setLanguage('lua');
+    const lua = controller.project()!.runtime;
+    // A finished Lua run reported its version.
+    Object.assign(controller, { runtimeVersion: 'Lua 5.4 (test)', versionRuntime: lua });
+    expect(controller.statusRuntime()).toBe('Lua 5.4 (test)');
+    controller.setLanguage('c');
+    expect(controller.statusRuntime()).not.toContain('Lua');
+    unmount();
+  });
+
   it('keeps scratch text typed just before a reload', () => {
     localStorage.removeItem('opennote.codestudio.scratch');
     const controller = new StudioController();

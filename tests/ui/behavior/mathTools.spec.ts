@@ -70,7 +70,7 @@ test('a selected equation offers Graph, which opens a graph beside it that Inser
   const blocks = await page.locator('[data-graph]').count();
   await graph.click();
   const popup = page.locator('[data-graph-popup]');
-  await expect(popup.getByRole('application', { name: 'Graph of 1 function' })).toBeVisible();
+  await expect(popup.getByRole('application', { name: /^Graph of .*, x from/ })).toBeVisible();
   await popup.getByRole('button', { name: 'Insert graph' }).click();
   await expect(popup).toHaveCount(0);
   await expect(page.locator('[data-graph]')).toHaveCount(blocks + 1);

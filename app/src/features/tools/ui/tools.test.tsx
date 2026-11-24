@@ -142,7 +142,7 @@ describe('the calculator', () => {
     scientific.focus();
     fireEvent.keyDown(scientific, { key: 'ArrowRight' });
     expect(screen.getByRole('tab', { name: 'Graphing 2D' }).getAttribute('aria-selected')).toBe('true');
-    expect(await screen.findByRole('application', { name: /Graph of 1 function/ })).toBeTruthy();
+    expect(await screen.findByRole('application', { name: /^Graph of .*, x from/ })).toBeTruthy();
     fireEvent.keyDown(screen.getByRole('tab', { name: 'Graphing 2D' }), { key: 'ArrowRight' });
     expect(await screen.findByRole('application', { name: '3D graph of 1 function' })).toBeTruthy();
     fireEvent.keyDown(screen.getByRole('tab', { name: 'Graphing 3D' }), { key: 'End' });

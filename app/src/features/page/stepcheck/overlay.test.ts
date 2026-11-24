@@ -37,6 +37,14 @@ afterEach(() => {
 });
 
 describe('the Check my work card wording (walk VB-184)', () => {
+  it('says one equation has no step to check and points to Solve (T2-D02-6)', () => {
+    setUp([{ ...result(0, 'ok'), reason: 'start', method: 'given' }]);
+    const text = document.querySelector('[data-step-check-panel]')!.textContent!;
+    expect(text).toContain('one line');
+    expect(text).toContain('Solve');
+    expect(text).not.toContain('no math here');
+  });
+
   it('says a line could not be checked and separates the line name from its reason', () => {
     setUp([result(0, 'ok'), result(1, 'unchecked')]);
     const text = document.querySelector('[data-step-check-panel]')!.textContent!;

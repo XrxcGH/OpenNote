@@ -47,7 +47,7 @@ describe('simplify', () => {
   it('says when there is nothing to do or it cannot read the LaTeX', () => {
     expect(simplifyLatex('x')).toEqual({ ok: false, reason: 'unchanged' });
     expect(simplifyLatex(String.raw`\int x`)).toEqual({ ok: false, reason: 'unsupported' });
-    expect(simplifyLatex('2 +')).toEqual({ ok: false, reason: 'unsupported' });
+    expect(simplifyLatex('2 +')).toEqual({ ok: false, reason: 'unfinished', near: '2 +' });
   });
 });
 
@@ -159,5 +159,17 @@ describe('equation steps', () => {
     const found = stepsLatex('x^2-4=0');
     expect(found.ok && found.result).toBe(String.raw`x = -2,\ x = 2`);
     expect(stepsLatex('x^2+1=0')).toMatchObject({ ok: false, reason: 'noRealSolution' });
+  });
+});
+
+describe('an unfinished equation says what is missing (T3-D08-6)', () => {
+  it.each([
+    ['(2+', 'unfinished'],
+    ['(2+3', 'unclosed'],
+    ['2x+3=', 'emptySide'],
+    ['=5', 'emptySide'],
+  ])('names the problem of %s', (latex, reason) => {
+    expect(simplifyLatex(latex)).toMatchObject({ ok: false, reason });
+    expect(solveLatex(latex)).toMatchObject({ ok: false, reason });
   });
 });

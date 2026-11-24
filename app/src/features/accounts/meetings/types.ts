@@ -17,6 +17,8 @@ export interface MeetingEvent {
   /** The invitation's text, without HTML or the join boilerplate. */
   agenda: string;
   joinLink: string;
+  /** True for a note made with no calendar: it has places to fill in, not an invitation's details. */
+  blank?: boolean;
 }
 
 /** What a meeting note and its recordings keep to name the meeting (page view key `meetingEvent`). */

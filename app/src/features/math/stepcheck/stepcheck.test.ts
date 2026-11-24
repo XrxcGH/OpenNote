@@ -752,3 +752,14 @@ describe('verification gaps, round 6', () => {
     expect(marks(['log_2 x^3 = 6'])).toEqual(['unchecked/unreadable']);
   });
 });
+
+describe('a list of roots on one line (R-VB-184)', () => {
+  it('reads "x = -4, x = 1" as both solutions of the equation before it', () => {
+    expect(verdicts(checkSteps(['x^2+3x-4=0', 'x=-4, x=1']))).toEqual(['ok', 'ok']);
+    expect(at(['x^2+3x-4=0', 'x=1, x=-4'], 1).reason).toBe('sameSolutions');
+  });
+
+  it('marks a list with a wrong root as broken', () => {
+    expect(at(['x^2+3x-4=0', 'x=-4, x=2'], 1).verdict).toBe('broken');
+  });
+});
