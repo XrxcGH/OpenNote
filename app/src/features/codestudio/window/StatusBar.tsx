@@ -7,7 +7,7 @@ import { countProblems } from '../problems/group';
 import { countsText } from '../problems/ProblemsPanel';
 import { engineKey } from '../settings/model';
 import type { StudioController } from './controller';
-import { fileLanguage, languageName, runtimeName } from './languages';
+import { fileLanguage, languageName } from './languages';
 import styles from './studio.module.css';
 
 /** Line and column, redrawn on its own as the caret moves. */
@@ -18,10 +18,9 @@ function Position({ controller }: { controller: StudioController }) {
 
 export function StatusBar({ controller }: { controller: StudioController }) {
   const code = useSettings((settings) => settings.code);
-  const project = controller.project()!;
   const counts = countProblems(controller.problems());
   const active = controller.activeFile ? controller.pathOf(controller.activeFile) : null;
-  const version = controller.runtimeVersion ?? runtimeName(project.runtime);
+  const version = controller.statusRuntime();
   return (
     <footer className={styles.status} aria-label={t('codeStudio.studio.status.label')}>
       <button type="button" className={styles.statusButton} onClick={() => controller.showPanel('problems')}>

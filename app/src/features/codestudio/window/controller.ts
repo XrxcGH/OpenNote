@@ -33,7 +33,7 @@ import type { Example } from '../snippets/examples';
 import { exampleCollisions, examplePatch, exampleTitle } from '../snippets/menu';
 import { tableText } from '../run/tableText';
 import { helloText } from '../snippets/examples';
-import { MAIN_FILES, RUNTIMES } from './languages';
+import { MAIN_FILES, RUNTIMES, runtimeName } from './languages';
 import { LiveChecks } from './liveChecks';
 import { rememberCurrent } from './relay';
 import { orderFor, studioRunner } from './runner';
@@ -73,6 +73,8 @@ export class StudioController {
   cursor: Cursor = { line: 1, column: 1 };
   runState: RunState = 'idle';
   runtimeVersion: string | null = null;
+  /** The runtime that reported `runtimeVersion`, so a version never shows beside a language it was not run for. */
+  private versionRuntime: string | null = null;
   lastResult: RunResult | null = null;
   runProblems: Problem[] = [];
   /** The live checks' problems by file (liveChecks.ts). */
@@ -456,6 +458,13 @@ export class StudioController {
     return this.after(this.store?.apply({ runtime }));
   }
 
+  /** The runtime for the status bar: the last run's version while the project still uses that runtime, else its name. */
+  statusRuntime(): string {
+    const runtime = this.project()?.runtime;
+    if (this.runtimeVersion && this.versionRuntime === runtime) return this.runtimeVersion;
+    return runtimeName(runtime ?? 'toolchain');
+  }
+
   setLanguage(language: ProjectLanguage): boolean {
     const runtime = language === 'python' && getSettings().code.pythonRuntime === 'full' ? 'python-full' : undefined;
     const patch: Record<string, unknown> = { language, runtime: runtime ?? RUNTIMES[language]?.[0] ?? 'toolchain' };
@@ -607,7 +616,10 @@ export class StudioController {
       if (this.handle !== handle) return;
       this.handle = null;
       this.lastResult = result;
-      if (result.version) this.runtimeVersion = result.version;
+      if (result.version) {
+        this.runtimeVersion = result.version;
+        this.versionRuntime = this.project()?.runtime ?? null;
+      }
       this.written = result.written;
       this.runState = 'idle';
       this.inputPrompt = null;
