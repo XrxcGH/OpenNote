@@ -5,7 +5,6 @@ export { openSearchPanel } from './open';
 export { SAVED_SEARCHES_EVENT } from './saved';
 export { SEARCH_FLAGS } from './flags';
 export { indexMediaText } from './media/indexer';
-export { elementExtensions } from './elements/plugin';
 export { FIELD_TYPES, compareValues, displayValue, fieldNamed, readFields, viewPatch } from './properties/model';
 export type { Field, FieldType } from './properties/model';
 export { locationOfPage, openPage } from './locate';

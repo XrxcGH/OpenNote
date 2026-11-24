@@ -17,7 +17,8 @@ import { syncOf } from '../blocks/textBlock';
 import { shownLayer } from '../mount';
 import { shownPool } from '../pool/shown';
 import { acceptRemoteText, shownQueue } from '../sync';
-import { SHEET_VERSION } from '../../tables';
+// eslint-disable-next-line opennote/feature-boundaries -- The tables barrel pulls the whole smart-table engine into this chunk; the version is a one-line file.
+import { SHEET_VERSION } from '../../tables/smart/version';
 import { whenViewReady } from './lazyView';
 
 /** Splits a text block's document after the top-level block with the caret. An empty paragraph there goes. */

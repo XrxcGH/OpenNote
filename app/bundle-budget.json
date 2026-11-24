@@ -83,7 +83,7 @@
     "node_modules/sucrase": 46,
     "core/audio/index.ts": 117,
     "features/accounts/googleOffice/commands.ts": 96,
-    "features/accounts/lms/commands.ts": 297,
+    "features/accounts/lms/commands.ts": 298,
     "features/accounts/meetings/commands.ts": 211,
     "features/accounts/onenote/commands.ts": 71,
     "features/accounts/penSync/auto.ts": 66,
