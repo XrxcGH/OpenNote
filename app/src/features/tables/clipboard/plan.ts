@@ -54,6 +54,8 @@ export interface PastePlan {
   /** Where the clip landed. */
   box: Box;
   report: PasteReport[];
+  /** How many rows and columns of the clip were past the table's limits and left out. */
+  left: { rows: number; cols: number };
 }
 
 export interface PasteDeps {
@@ -250,8 +252,12 @@ export function planPaste(target: PasteTarget, input: Clip, special: PasteSpecia
     right: Math.min(box.left + width * across - 1, lastCol),
   };
   if (area.bottom < box.top + height * down - 1 || area.right < box.left + width * across - 1) report.add('dropped');
+  const left = {
+    rows: (clip.dropped?.rows ?? 0) + box.top + height * down - 1 - Math.max(area.bottom, box.top - 1),
+    cols: (clip.dropped?.cols ?? 0) + box.left + width * across - 1 - Math.max(area.right, box.left - 1),
+  };
   if (area.bottom < area.top || area.right < area.left)
-    return { table: target.table, patch: null, box, report: [...report] };
+    return { table: target.table, patch: null, box, report: [...report], left };
   const table =
     parts.content || parts.style !== 'none' || parts.notes || special.link
       ? grown(target.table, area.bottom + 1, area.right + 1, deps.newId)
@@ -299,14 +305,14 @@ export function planPaste(target: PasteTarget, input: Clip, special: PasteSpecia
     }
   } catch (error) {
     if (!(error instanceof StyleLimitError)) throw error;
-    return { table: target.table, patch: null, box: area, report: ['styles'] };
+    return { table: target.table, patch: null, box: area, report: ['styles'], left };
   }
   const out: TableData = { ...table, rows };
   if (ruleCells.length > 0 && !pasteRules(sheet, out, clip.rules ?? [], ruleCells)) report.add('validation');
   if (parts.merges) pasteMerges(sheet, out, clip, area, height, width, report);
   if (parts.widths) widen(out, clip, area);
   tidy(sheet, out);
-  return { table: out, patch: sheetPatch(before, sheet), box: area, report: [...report] };
+  return { table: out, patch: sheetPatch(before, sheet), box: area, report: [...report], left };
 }
 
 /**

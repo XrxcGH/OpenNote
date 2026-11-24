@@ -12,7 +12,7 @@ import { EXCEL_STYLED } from '../engine/paste.fixtures';
 import { addMerge, gridOf, intern, mergeSet, readSheet } from '../sheet/model';
 import type { Sheet } from '../sheet/model';
 import { applyPatch, clone, put, type Json } from '../sheet/model/json';
-import { takesPaste } from './attach';
+import { leftOutText, takesPaste } from './attach';
 import { spreadsheetTableData } from './newTable';
 import { planCut, planPaste } from './plan';
 import { PASTE_ALL, PASTE_VALUES, PASTE_WHATS } from './special';
@@ -139,6 +139,30 @@ describe('caps (G8)', () => {
     expect(clip?.dropped).toEqual({ rows: 0, cols: 20 });
     const target = { table: tableOf([['']]), sheet: {}, box: { top: 0, left: 0, bottom: 0, right: 0 } };
     expect(clip && planPaste(target, clip, PASTE_ALL, { newId: ids() })?.report).toContain('dropped');
+  });
+
+  it('says in a message how many columns and rows past the limit were left out (walk 9 T4-D07-13)', () => {
+    const line = Array.from({ length: 500 }, (_, i) => `v${i}`).join('	');
+    const clip = readClip({
+      text: `${line}
+${line}
+${line}
+`,
+    });
+    const target = { table: tableOf([['']]), sheet: {}, box: { top: 0, left: 0, bottom: 0, right: 0 } };
+    const plan = clip && planPaste(target, clip, PASTE_ALL, { newId: ids() });
+    expect(plan?.left).toEqual({ rows: 0, cols: 400 });
+    expect(plan && leftOutText(plan.left)).toBe(
+      `A table holds at most ${MAX_COLUMNS} columns, so 400 pasted columns were left out.`,
+    );
+    const rowsClip: Clip = { source: 'delimited', rows: [[{ text: 'a' }], [{ text: 'b' }]], spans: [], widths: [] };
+    const table = tableOf(Array.from({ length: MAX_ROWS }, () => ['']));
+    const box = { top: MAX_ROWS - 1, left: 0, bottom: MAX_ROWS - 1, right: 0 };
+    const rowsPlan = planPaste({ table, sheet: {}, box }, rowsClip, PASTE_ALL, { newId: ids() });
+    expect(rowsPlan?.left).toEqual({ rows: 1, cols: 0 });
+    expect(rowsPlan && leftOutText(rowsPlan.left)).toBe(
+      `A table holds at most ${MAX_ROWS.toLocaleString('en-US')} rows, so 1 pasted row was left out.`,
+    );
   });
 
   it('grows a table no further than the row limit', () => {

@@ -41,6 +41,10 @@ export const sheetClipboard = {
     header: 'A formula landed in the header row, so its value was pasted instead.',
     asValues: 'The copy did not say where it began, so its formulas were pasted as values.',
     dropped: 'The paste was larger than a table can be, so the cells past the limit were left out.',
+    leftColumns:
+      'A table holds at most {max} columns, so {count, plural, one {# pasted column was} other {# pasted columns were}} left out.',
+    leftRows:
+      'A table holds at most {max} rows, so {count, plural, one {# pasted row was} other {# pasted rows were}} left out.',
     equalsText: 'Some pasted text starts with an equals sign, so it now works as a formula.',
     validation: 'Validation rules paste only from a table on this page, so some rules were left out.',
     divide: 'Some cells were divided by zero, so they now show a division error.',
