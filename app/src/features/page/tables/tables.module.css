@@ -121,6 +121,13 @@
     padding-block-start: var(--space-1);
   }
 
+  /* A table taller than the window keeps its tools above it (TableToolbar.tsx). */
+  .toolbarWrap[data-above] {
+    inset-block-start: auto;
+    inset-block-end: 100%;
+    padding-block: 0 var(--space-1);
+  }
+
   .wrapper[data-current] .toolbarWrap {
     display: flex;
   }

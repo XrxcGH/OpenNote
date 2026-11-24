@@ -201,9 +201,15 @@ function useRoomBelow(wrap: { current: HTMLDivElement | null }) {
     if (!node) return undefined;
     let shown = false;
     const place = () => {
+      // A table taller than the window has its end far from where the person works: its tools stay above it, and the
+      // view never jumps to its end.
+      const owner = node.offsetParent;
+      const long = owner instanceof HTMLElement && owner.getBoundingClientRect().height > window.innerHeight;
+      if (long) node.setAttribute('data-above', '');
+      else node.removeAttribute('data-above');
       const tall = node.getBoundingClientRect().height;
       keepRoomBelow(node, tall);
-      if (tall > 0 && !shown) node.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+      if (tall > 0 && !shown && !long) node.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
       shown = tall > 0;
     };
     place();

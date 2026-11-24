@@ -540,9 +540,10 @@
    * one more rule (some of it padding, the rest margin), so the text after it is back on a rule.
    */
   :global([data-ruled]) .text :global(.ProseMirror) pre {
-    /* The buttons' row above the code takes whole rules, so the lines stay on them. */
-    padding-block: calc(1lh - 1cap - var(--rule-lift) + round(up, var(--code-tools-row), 1lh))
-      calc(1lh - 1cap + var(--rule-lift));
+    /* On ruled paper the buttons keep the end of the first line's room, not a row above: a row would shift the code
+       off its rules where a sheet break pushes it. */
+    padding-block: calc(1lh - 1cap - var(--rule-lift)) calc(1lh - 1cap + var(--rule-lift));
+    padding-inline: var(--space-4) calc(var(--space-4) + 4.5rem);
     margin-block-end: 1cap;
     line-height: var(--rule-line);
     text-box: trim-both cap alphabetic;
