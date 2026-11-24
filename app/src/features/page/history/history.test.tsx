@@ -8,6 +8,7 @@ import { expectNoAxeViolations } from '../../../test';
 import { cleanupPages, renderPage } from '../test/harness';
 import type { PageHarness } from '../test/harness';
 import { textPageFixture } from '../test/fixtures';
+import { shownViewport } from '../viewport/viewport';
 import { moveThroughChanges, openHistory, resetHistory } from './chunk';
 
 const TEXT = '01k6f0000000000000000t0001';
@@ -47,6 +48,29 @@ function olderVersion(page: PageHarness, markdown: string): PageJson {
 afterEach(async () => {
   resetHistory();
   await cleanupPages();
+});
+
+describe('page history layout (W9-VA-5)', () => {
+  it('docks beside the page in its row, and spaces the versions and buttons', async () => {
+    const page = await renderPage({
+      fixture: textPageFixture('The quick fox.'),
+      flags: { 'page.history': true },
+    });
+    withHistory(page, olderVersion(page, 'The slow fox.'));
+    const row = document.createElement('div');
+    row.dataset.pageRow = '';
+    row.style.display = 'flex';
+    const body = shownViewport.get()!.viewport.parentElement!;
+    body.parentElement!.insertBefore(row, body);
+    row.append(body);
+    openHistory('Biology');
+    const panel = await screen.findByRole('complementary', { name: 'Page history' });
+    expect(panel.parentElement!.parentElement).toBe(row);
+    expect(getComputedStyle(panel.parentElement!).position).toBe('relative');
+    const list = await screen.findByRole('list', { name: 'Versions' });
+    expect(parseFloat(getComputedStyle(list).rowGap)).toBeGreaterThanOrEqual(6);
+    row.replaceWith(body);
+  });
 });
 
 describe('page history', () => {
