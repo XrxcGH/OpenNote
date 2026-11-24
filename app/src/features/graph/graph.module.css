@@ -94,6 +94,14 @@
     margin-block-start: var(--space-3);
   }
 
+  /* The summary is a target: at least the density's target height (full walk VB-102). */
+  .unlinked > summary {
+    display: flex;
+    align-items: center;
+    min-block-size: var(--target-size);
+    cursor: pointer;
+  }
+
   .heading {
     margin: 0;
     font-size: var(--type-subtitle-size);
