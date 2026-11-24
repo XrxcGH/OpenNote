@@ -3,8 +3,9 @@
 // which the core edits and keeps (crates/media/src/README.md, "What the note format needs"). This store holds those
 // entries for the screens, and follows the page's own changes, such as an undo.
 import type { RecordingEntry } from '../../../core/audio';
-import type { OpenPage } from '../../../services/pages/types';
+import type { AppliedFrame, OpenPage } from '../../../services/pages/types';
 import { createStore } from '../../../state/store';
+import { shownQueue } from '../sync/shown';
 
 export const recordingEntries = createStore<ReadonlyMap<string, RecordingEntry>>(new Map(), 'audio recording entries');
 
@@ -54,7 +55,7 @@ export function adoptPage(page: OpenPage): void {
   if (adopted?.page === page.id) return;
   adopted?.stop();
   recordingEntries.set(new Map(entriesOf(page.initial.view).map((entry) => [entry.id, entry])));
-  const stop = page.onFrame((frame) => {
+  const follow = (frame: AppliedFrame) => {
     const changed = entriesOf(frame.page?.view);
     if (changed.length === 0) return;
     setEntries(changed);
@@ -63,7 +64,19 @@ export function adoptPage(page: OpenPage): void {
     if (changed.some((entry) => entry.state === 'recording')) {
       void import('./recover').then((module) => module.recoverEntries(page, changed));
     }
+  };
+  // Another window's changes come through the page, and this window's undo and redo through its sync queue.
+  let stopSteps = shownQueue.get()?.onStep(follow);
+  const stopQueue = shownQueue.subscribe(() => {
+    stopSteps?.();
+    stopSteps = shownQueue.get()?.onStep(follow);
   });
+  const stopFrames = page.onFrame(follow);
+  const stop = () => {
+    stopFrames();
+    stopQueue();
+    stopSteps?.();
+  };
   adopted = { page: page.id, stop };
 }
 
