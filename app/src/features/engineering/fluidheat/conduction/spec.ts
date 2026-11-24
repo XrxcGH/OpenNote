@@ -23,7 +23,7 @@ const shapeIs =
 const HANDLERS: Record<Mode, (values: Values, system: System) => Outcome> = {
   wall: (values, system) => {
     const geometry = values.geometry as Geometry;
-    const layers = readLines(String(values.layers), ['length', 'conductivity', 'contact'], system).map(
+    const layers = readLines(String(values.layers), ['length', 'conductivity', 'contact'], system, 2).map(
       ([size, k, contact]) => ({ size, k, ...(contact > 0 ? { contactAfter: contact } : {}) }),
     );
     const r = solveWall({
