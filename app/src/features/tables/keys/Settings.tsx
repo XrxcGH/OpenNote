@@ -10,8 +10,7 @@ import styles from './keys.module.css';
 export default function TablesSettings() {
   const keys = useSettings((settings) => settings.tables.newTableKeys);
   return (
-    <section className={styles.settings} aria-labelledby="settings-tables">
-      <h2 id="settings-tables">{t('sheetKeys.settings.title')}</h2>
+    <section className={styles.settings} aria-label={t('sheetKeys.settings.title')}>
       <RadioGroup<TableKeys>
         label={t('sheetKeys.settings.newTableKeys')}
         value={keys}
