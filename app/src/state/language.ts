@@ -55,11 +55,49 @@ export function languageOf(tag: string): string {
 export const isEnglish = (tag: string): boolean => languageOf(tag) === 'en';
 
 /** A language's name in English, such as "English (United Kingdom)" or "German (Germany)". */
+/** UN M49 numeric regions some engines print as "(015)". These are the names a reader expects. */
+const NUMERIC_REGIONS: Record<string, string> = {
+  '001': 'World',
+  '002': 'Africa',
+  '003': 'North America',
+  '005': 'South America',
+  '009': 'Oceania',
+  '011': 'Western Africa',
+  '013': 'Central America',
+  '014': 'Eastern Africa',
+  '015': 'Northern Africa',
+  '017': 'Middle Africa',
+  '018': 'Southern Africa',
+  '019': 'Americas',
+  '021': 'Northern America',
+  '029': 'Caribbean',
+  '030': 'Eastern Asia',
+  '034': 'Southern Asia',
+  '035': 'Southeast Asia',
+  '039': 'Southern Europe',
+  '142': 'Asia',
+  '143': 'Central Asia',
+  '145': 'Western Asia',
+  '150': 'Europe',
+  '151': 'Eastern Europe',
+  '154': 'Northern Europe',
+  '155': 'Western Europe',
+  '419': 'Latin America',
+};
+
+const withRegionNames = (name: string): string =>
+  name.replace(/\((\d{3})\)/g, (whole, code: string) => {
+    const region = NUMERIC_REGIONS[code];
+    return region ? `(${region})` : whole;
+  });
+
 export function localeName(tag: string): string {
   const known = ENGLISH_DIALECTS.find((choice) => choice.tag.toLowerCase() === tag.toLowerCase());
   if (known) return known.name;
   try {
-    return new Intl.DisplayNames('en-US', { type: 'language', languageDisplay: 'standard' }).of(tag) ?? tag;
+    return withRegionNames(
+      new Intl.DisplayNames('en-US', { type: 'language', languageDisplay: 'standard' }).of(tag) ?? tag,
+    );
   } catch {
     return tag;
   }
