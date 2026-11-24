@@ -159,3 +159,19 @@ describe('names, rules, and merges follow', () => {
     expect(run(prices(), 1, 0, { op: 'rowAbove' }).extra).toBeUndefined();
   });
 });
+
+describe('formulas typed in a cell, stored with the "=" escaped', () => {
+  // A cell typed on the page keeps its text as Markdown, so =A2+1 is stored as \=A2+1 (walk 9 T4-D07-2).
+  it('deleting column A turns references to it into #REF! and shrinks ranges', () => {
+    const before = table([['5', '\\=A1+1', '\\=SUM(A1:B1)', '\\=B1\\*2']]);
+    const after = run(before, 0, 0, { op: 'deleteColumn' }).data;
+    expect(text(after, 0, 0)).toBe('\\=#REF!+1');
+    expect(text(after, 0, 1)).toBe('\\=SUM(A1:A1)');
+    expect(text(after, 0, 2)).toBe('\\=A1\\*2');
+  });
+
+  it('inserting a column moves the references and keeps the stored form', () => {
+    const after = run(table([['5', '\\=A1+1']]), 0, 0, { op: 'columnLeft' }).data;
+    expect(text(after, 0, 2)).toBe('\\=B1+1');
+  });
+});
