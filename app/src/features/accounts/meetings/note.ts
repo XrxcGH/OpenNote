@@ -25,6 +25,24 @@ export function whenText(event: Pick<MeetingEvent, 'start' | 'end' | 'allDay'>):
     : t('accounts.meetings.event.at', { date, start });
 }
 
+/** A meeting with no calendar behind it: now, no people yet. The ID is the time, so each one makes its own note. */
+export function blankEvent(now: Date): MeetingEvent {
+  const start = now.toISOString();
+  return {
+    source: 'ics',
+    id: `blank-${start}`,
+    title: '',
+    start,
+    end: null,
+    allDay: false,
+    location: '',
+    attendees: [],
+    agenda: '',
+    joinLink: '',
+    blank: true,
+  };
+}
+
 export function noteTitle(event: MeetingEvent): string {
   const title = event.title.trim() || t('accounts.meetings.event.untitled');
   return cleanTitle(t('accounts.meetings.note.title', { title, date: formatDate(event.start) }), title);
@@ -42,13 +60,16 @@ export function noteBlocks(event: MeetingEvent): string[] {
   const details = [t('accounts.meetings.note.when', { when: whenText(event) })];
   if (event.location) details.push(t('accounts.meetings.note.where', { place: event.location }));
   if (event.attendees.length > 0) details.push(peopleLine(event.attendees));
+  else if (event.blank) details.push(t('accounts.meetings.note.withBlank'));
   if (event.joinLink) details.push(t('accounts.meetings.note.join', { link: event.joinLink }));
-  const agenda = event.agenda || t('accounts.meetings.note.noAgenda');
-  return [
+  const agenda = event.agenda || (event.blank ? '' : t('accounts.meetings.note.noAgenda'));
+  const blocks = [
     details.join('\n\n'),
     `## ${t('accounts.meetings.note.agenda')}\n\n${agenda}`,
     `## ${t('accounts.meetings.note.notes')}\n\n`,
   ];
+  if (event.blank) blocks.push(`## ${t('accounts.meetings.note.actions')}\n\n`);
+  return blocks;
 }
 
 export interface MadeNote {

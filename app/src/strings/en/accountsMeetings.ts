@@ -12,7 +12,8 @@ export const accountsMeetings = {
     outlook: 'Outlook calendar',
     google: 'Google Calendar',
     ics: 'A calendar file (.ics)',
-    connectHint: 'To pick from Outlook or Google, connect it in Settings, then Connectors.',
+    blank: 'A blank meeting note',
+    connectHint: 'No calendar is connected. To pick from Outlook or Google, connect it in Settings, then Connectors.',
   },
   event: {
     title: 'Which meeting?',
@@ -32,6 +33,8 @@ export const accountsMeetings = {
     withMore: '{people}, and {count} more',
     join: 'Join: {link}',
     agenda: 'Agenda',
+    actions: 'Actions',
+    withBlank: 'With: add the people here',
     notes: 'Notes',
     noAgenda: 'The invitation has no agenda.',
     title: '{title}, {date}',
