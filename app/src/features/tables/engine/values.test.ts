@@ -203,3 +203,28 @@ describe('value kinds and errors', () => {
     expect(toScalar(lambda)).toEqual(err('CALC'));
   });
 });
+
+describe('a typed unknown name and the space operator (walk bug T3-C04-2)', () => {
+  const typed = (raw: string, version?: number): Table =>
+    setCellInput(
+      createTable([{ name: 'A' }], [[''], [''], [''], [''], ['']], EN_US, undefined, version),
+      { row: 0, col: 0, raw },
+      EN_US,
+    );
+
+  it('makes =foo a formula that shows #NAME? in a table with data.sheet.v', () => {
+    const cell = typed('=foo', 1).rows[0].cells[0];
+    expect(cell.formula).toBe('foo');
+    expect(cell.value).toEqual(err('NAME'));
+  });
+
+  it('makes =A2:A3 A5 a formula that shows #NULL! for ranges that do not meet', () => {
+    const cell = typed('=A2:A3 A5', 1).rows[0].cells[0];
+    expect(cell.formula).toBe('A2:A3 A5');
+    expect(cell.value).toEqual(err('NULL'));
+  });
+
+  it('keeps the old rules in a table without data.sheet.v', () => {
+    expect(typed('=foo').rows[0].cells[0].formula).toBeUndefined();
+  });
+});
