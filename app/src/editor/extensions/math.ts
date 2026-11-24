@@ -570,7 +570,8 @@ class MathView implements NodeView {
       this.host.announce(t('smart.math.done'));
     } else {
       // The sentence shows under the field too, so a press that changes nothing still answers.
-      const message = t(`smart.math.${result.reason}`);
+      const message =
+        'near' in result ? t(`smart.math.${result.reason}`, { near: result.near }) : t(`smart.math.${result.reason}`);
       if (this.problem) this.problem.textContent = message;
       this.host.announce(message);
     }
