@@ -212,6 +212,9 @@ export function runPython(engine: PythonEngine, request: RunRequest, emit: Emit,
     // The program read past the end of the input: the run's Stdin records it for the console's note.
     context.stdin.read();
     context.stdin.line();
+  } else if (state?.readInput && request.stdin.text.length > 0) {
+    // The run's Stdin records that the program read its input, so the console can explain a missing prompt.
+    context.stdin.line();
   }
   if (failure) return failure;
   if (!state) return { status: 'error', exitCode: 1, message: '' };
