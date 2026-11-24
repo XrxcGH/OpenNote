@@ -31,6 +31,7 @@ import { fromDiagnostic, fromRuntime } from '../problems/group';
 import type { Problem } from '../problems/group';
 import type { Example } from '../snippets/examples';
 import { exampleCollisions, examplePatch, exampleTitle } from '../snippets/menu';
+import { helloText } from '../snippets/examples';
 import { MAIN_FILES, RUNTIMES } from './languages';
 import { LiveChecks } from './liveChecks';
 import { rememberCurrent } from './relay';
@@ -456,7 +457,41 @@ export class StudioController {
 
   setLanguage(language: ProjectLanguage): boolean {
     const runtime = language === 'python' && getSettings().code.pythonRuntime === 'full' ? 'python-full' : undefined;
-    return this.after(this.store?.apply({ language, runtime: runtime ?? RUNTIMES[language]?.[0] ?? 'toolchain' }));
+    const patch: Record<string, unknown> = { language, runtime: runtime ?? RUNTIMES[language]?.[0] ?? 'toolchain' };
+    const renamed = this.mainFollowsLanguage(language, patch);
+    const ok = this.after(this.store?.apply(patch));
+    if (ok && renamed) {
+      // The editor's language follows the new name.
+      this.editors.get(renamed)?.destroy();
+      this.editors.delete(renamed);
+      this.changed();
+    }
+    return ok;
+  }
+
+  /**
+   * Gives the main file the new language's extension, as a new project does: the file keeps its name and its text,
+   * except an untouched starter, which becomes the new language's starter. A file already named so becomes the main
+   * file instead. Returns the id of a renamed file.
+   */
+  private mainFollowsLanguage(language: ProjectLanguage, patch: Record<string, unknown>): string | null {
+    const project = this.project();
+    const file = project?.files[project.main];
+    if (!project || !file) return null;
+    const target = MAIN_FILES[language];
+    const dot = (path: string) => (path.lastIndexOf('.') < 0 ? path.length : path.lastIndexOf('.'));
+    const extension = (path: string) => path.slice(dot(path));
+    if (extension(file.path) === extension(target)) return null;
+    const path = file.path.slice(0, dot(file.path)) + extension(target);
+    const taken = Object.entries(project.files).find(([, other]) => other.path === path);
+    if (taken) {
+      patch.main = taken[0];
+      return null;
+    }
+    const untouched = file.text === helloText(project.language) || file.text === t('codeStudio.project.starterMain');
+    const next = untouched ? helloText(language) : null;
+    patch.files = { [project.main]: next === null ? { path } : { path, text: next } };
+    return project.main;
   }
 
   setStdin(stdin: string): boolean {
