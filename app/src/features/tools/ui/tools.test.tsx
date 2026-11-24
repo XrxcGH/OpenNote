@@ -201,7 +201,10 @@ describe('the calculator modes', () => {
     await userEvent.fill(screen.getByRole('textbox', { name: 'Data' }), '1 3\n2 5\n3 7');
     await userEvent.click(screen.getByRole('button', { name: 'Calculate' }));
     const table = screen.getByRole('table', { name: 'Statistics of the data' });
-    expect(within(table).getByRole('row', { name: /Mean/ }).textContent).toBe('Mean2');
+    // With x and y pairs, each column has its own statistics, labeled (walk 9, T3-D08-2).
+    expect(within(table).getByRole('row', { name: /Mean \(x\)/ }).textContent).toBe('Mean (x)2');
+    expect(within(table).getByRole('row', { name: /Mean \(y\)/ }).textContent).toBe('Mean (y)5');
+    expect(within(table).getByRole('row', { name: /Median \(y\)/ }).textContent).toBe('Median (y)5');
     expect(within(table).getByRole('row', { name: /Line of best fit/ }).textContent).toContain('y = 2x + 1');
     expect(screen.getByRole('button', { name: /Use 1 3/ })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Copy answer' })).toBeTruthy();

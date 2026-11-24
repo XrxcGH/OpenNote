@@ -277,21 +277,17 @@ function Entry({ value, label, placeholder, invalid, onChange, onRun }: EntryPro
 interface StatsRow {
   label: MessageKey;
   value: string;
+  /** For x and y pairs: the column the row describes. */
+  column?: 'x' | 'y';
 }
+
+/** The label of a row, with its column when the data has two. */
+const rowLabel = (row: StatsRow) => (row.column ? t('mathTools.calc.stats.of', { name: t(row.label), column: row.column }) : t(row.label));
 
 const num = (value: number) => (Number.isFinite(value) ? formatNumber(value) : '—');
 
-function statsRows(text: string): { rows: StatsRow[]; line: string | null } | { problem: string } {
-  const read = readData(text);
-  if (!read.ok) {
-    return {
-      problem:
-        read.error === 'empty'
-          ? t('mathTools.calc.stats.empty')
-          : t('mathTools.calc.stats.notNumber', { text: read.text }),
-    };
-  }
-  const summary = summarize(read.data.xs)!;
+/** The descriptive statistics of one column. With x and y pairs, each row says which column it describes. */
+function describeColumn(summary: NonNullable<ReturnType<typeof summarize>>, column: 'x' | 'y' | null): StatsRow[] {
   const rows: StatsRow[] = [
     { label: 'mathTools.calc.stats.count', value: String(summary.count) },
     { label: 'mathTools.calc.stats.sum', value: num(summary.sum) },
@@ -311,6 +307,25 @@ function statsRows(text: string): { rows: StatsRow[]; line: string | null } | { 
     { label: 'mathTools.calc.stats.populationSd', value: num(summary.populationSd) },
     { label: 'mathTools.calc.stats.sampleVariance', value: num(summary.sampleVariance) },
   ];
+  return column ? rows.map((row) => ({ ...row, column })) : rows;
+}
+
+function statsRows(text: string): { rows: StatsRow[]; line: string | null } | { problem: string } {
+  const read = readData(text);
+  if (!read.ok) {
+    return {
+      problem:
+        read.error === 'empty'
+          ? t('mathTools.calc.stats.empty')
+          : t('mathTools.calc.stats.notNumber', { text: read.text }),
+    };
+  }
+  const paired = read.data.ys !== undefined;
+  const rows: StatsRow[] = describeColumn(summarize(read.data.xs)!, paired ? 'x' : null);
+  if (read.data.ys) {
+    const ySummary = summarize(read.data.ys);
+    if (ySummary) rows.push(...describeColumn(ySummary, 'y'));
+  }
   let line: string | null = null;
   if (read.data.ys) {
     const fit = regress(read.data.xs, read.data.ys);
@@ -342,7 +357,7 @@ export function Statistics() {
   };
   const summaryText =
     shown && 'rows' in shown
-      ? [...shown.rows.map((row) => `${t(row.label)}: ${row.value}`), ...(shown.line ? [shown.line] : [])].join('; ')
+      ? [...shown.rows.map((row) => `${rowLabel(row)}: ${row.value}`), ...(shown.line ? [shown.line] : [])].join('; ')
       : '';
   return (
     <>
@@ -371,8 +386,8 @@ export function Statistics() {
           <table className={own.table} aria-label={t('mathTools.calc.stats.results')}>
             <tbody>
               {shown.rows.map((row) => (
-                <tr key={row.label}>
-                  <th scope="row">{t(row.label)}</th>
+                <tr key={`${row.column ?? ''}${row.label}`}>
+                  <th scope="row">{rowLabel(row)}</th>
                   <td>{row.value}</td>
                 </tr>
               ))}
