@@ -8,11 +8,8 @@ import { commands, contextMenus } from '../../../registries';
 import { t } from '../../../strings/t';
 import { mountedPageHooks, shownMounted } from '../pagesApi';
 import type { MountedPage, MountedPageHook } from '../pagesApi';
-import { isExtraOn, loadExtras } from '../../intel/extras';
 import { hasTextSelection } from './selection';
-
-// A command of a feature stays out of the palette while its switch in Settings is off (walk 9, T1-D05-4).
-void loadExtras();
+import { extraOn } from './switches';
 
 const api = () => import('../../intel').then((module) => module.loadApi());
 
@@ -45,7 +42,7 @@ commands.register(
     keywords: 'intelPlus.meaning.findKeywords',
     category: 'navigation',
     flag: 'intel.meaning',
-    when: () => isExtraOn('meaning'),
+    when: () => extraOn('meaning'),
     run: () => api().then((module) => module.openFindByMeaning()),
   }),
 );
@@ -57,7 +54,7 @@ commands.register(
     keywords: 'intelPlus.meaning.relatedKeywords',
     category: 'view',
     flag: 'intel.meaning',
-    when: () => isExtraOn('meaning'),
+    when: () => extraOn('meaning'),
     run: () => api().then((module) => module.toggleRelatedPages()),
   }),
 );
@@ -69,7 +66,7 @@ commands.register(
     keywords: 'intelPlus.ask.keywords',
     category: 'navigation',
     flag: 'intel.ask',
-    when: () => isExtraOn('ask'),
+    when: () => extraOn('ask'),
     run: () => api().then((module) => module.openAsk()),
   }),
 );
