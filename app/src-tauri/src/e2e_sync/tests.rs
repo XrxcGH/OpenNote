@@ -351,3 +351,27 @@ fn starting_the_keyring_lets_sync_be_set_up_without_a_restart() {
     let made = ok(&service, None, "setUp", setup);
     assert_eq!(made["unfinished"], true, "the keyring started since is used");
 }
+
+#[test]
+fn two_profiles_of_one_user_keep_their_own_device_keys() {
+    // Two OpenNote profiles of one system user share one credential store (T4-C07-1).
+    let dir = tempfile::tempdir().expect("temp");
+    let shared: Arc<dyn SecretStore> = Arc::new(MemoryStore::default());
+    let backend = json!({ "kind": "folder", "path": dir.path().join("storage").to_string_lossy() });
+    let first = SyncService::with_store(dir.path().join("a"), shared.clone());
+    let setup = json!({ "backend": backend, "passphrase": "correct horse battery", "deviceName": "A" });
+    ok(&first, None, "setUp", setup);
+    ok(&first, None, "finishSetUp", Value::Null);
+    let second = SyncService::with_store(dir.path().join("b"), shared);
+    let join = json!({ "backend": backend, "passphrase": "correct horse battery", "deviceName": "B" });
+    ok(&second, None, "join", join);
+    let notes_a = dir.path().join("notes-a");
+    let notes_b = dir.path().join("notes-b");
+    fs::create_dir_all(&notes_a).expect("dirs");
+    fs::create_dir_all(&notes_b).expect("dirs");
+    ok(&first, Some(&notes_a), "syncNow", Value::Null);
+    ok(&second, Some(&notes_b), "syncNow", Value::Null);
+    // Turning sync off in one profile leaves the other one's key alone.
+    ok(&second, None, "turnOff", Value::Null);
+    ok(&first, Some(&notes_a), "syncNow", Value::Null);
+}
