@@ -165,8 +165,11 @@ describe('equation steps', () => {
 describe('an unfinished equation says what is missing (T3-D08-6)', () => {
   it.each([
     ['(2+', 'unfinished'],
-    ['(2+3', 'unclosed'],
+    // The editor closes the bracket as it is typed, so the operator ends against a closing bracket (the real repro).
+    ['(2+)', 'unfinished'],
+    [String.raw`\left(2+\right)`, 'unfinished'],
     ['2x+3=', 'emptySide'],
+    ['(2+3', 'unclosed'],
     ['=5', 'emptySide'],
   ])('names the problem of %s', (latex, reason) => {
     expect(simplifyLatex(latex)).toMatchObject({ ok: false, reason });

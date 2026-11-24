@@ -18,6 +18,12 @@ function firstProblem(latex: string): ParseProblem | null {
     if (parsed.ok) return null;
     const { code } = parsed.error;
     if (code === 'unexpected-end') return 'unfinished';
+    // An operator against a closing bracket or equals sign has nothing after it: the editor closes brackets as one
+    // types, so "(2+" arrives as "(2+)".
+    const { detail, expected } = parsed.error;
+    if (code === 'unexpected-token' && expected === 'operand' && [')', ']', '}', '='].includes(detail ?? '')) {
+      return 'unfinished';
+    }
     return code === 'unclosed-paren' || code === 'unclosed-bracket' ? 'unclosed' : null;
   } catch (error) {
     if (error instanceof Unsupported) return null;
