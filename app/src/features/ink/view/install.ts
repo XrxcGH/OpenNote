@@ -1,5 +1,6 @@
 // Installs the ink view on the page view's seams: the pointer tools, the Draw tab, the commands, and one ink
 // surface for the page that is shown. features/page/registrations/ink.ts calls it once, after start-up.
+import { installInkClipboard } from './inkClipboard';
 import { isEnabled } from '../../../app/flags';
 import type { CommandDef } from '../../../commands/types';
 import { commandBar, commands } from '../../../registries';
@@ -113,6 +114,7 @@ export function installInk(host: InkHost): () => void {
     follow(host, () => touch.pageSwitch()),
     installMore({ host, surface: () => current?.surface ?? null, surfaces: surfaceStore }),
     registerExportStrokes(() => current?.surface ?? null),
+    installInkClipboard(host, () => current?.surface ?? null),
     // A settings change reconfigures the live palm filter at once.
     settingsStore.subscribe(() => touch.reset()),
   ];
