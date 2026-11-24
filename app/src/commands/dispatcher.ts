@@ -42,8 +42,8 @@ export function reachesCommandsInText(chord: Chord): boolean {
   const parts = parseChord(chord);
   if (!parts) return false;
   if (keyKind(parts.key) === 'function') return true;
-  // Ctrl+Shift+A, Ctrl+Shift+C and Ctrl+Shift+X edit nothing in a text field, so the text formatting keys (all
-  // caps, copy formatting and the Mac strikethrough, ADR 0085) may use them.
+  // Ctrl+Shift+A, Ctrl+Shift+C, and Ctrl+Shift+X edit nothing in a text field, so the text formatting keys (all
+  // caps, copy formatting, and the Mac strikethrough, ADR 0085) may use them.
   if (parts.ctrl && !parts.alt && parts.shift && FREE_WITH_SHIFT.has(parts.key)) return true;
   if (parts.ctrl && !parts.alt && TEXT_FIELD_KEYS.has(parts.key)) return false;
   return parts.ctrl || parts.alt;
