@@ -6,6 +6,9 @@ import { sessionStore } from '../../state/session';
 import { treeStore } from '../tree';
 import {
   closeActiveTab,
+  followTabsSaved,
+  restoreTabs,
+  savedTabsOf,
   closeOtherTabs,
   closeTab,
   moveTab,
@@ -135,5 +138,49 @@ describe('tabs', () => {
     expect(state.tabs.map((tab) => tab.id)).toEqual([middle.id]);
     expect(getLocation()).toMatchObject({ pageId: 'b' });
     expect(state.closedTabs).toHaveLength(2);
+  });
+});
+
+describe('saved tabs (T2-D04-3)', () => {
+  beforeEach(() => {
+    qolStore.set(INITIAL_QOL);
+  });
+
+  it('keeps nothing for one tab, and each place and the active one for several', () => {
+    expect(savedTabsOf([], null)).toBeNull();
+    const tabs = [
+      { id: 'a', location: place('p1') },
+      { id: 'b', location: place('p2') },
+      { id: 'c', location: place('p3') },
+    ];
+    expect(savedTabsOf(tabs.slice(0, 1), 'a')).toBeNull();
+    expect(savedTabsOf(tabs, 'b')).toEqual({ list: tabs.map((tab) => tab.location), active: 1 });
+  });
+
+  it('puts the tabs back with the same active one, and skips junk', () => {
+    sessionStore.set((state) => ({ ...state, location: place('p3') }));
+    const saved = { list: [place('p1'), place('p2'), place('p3'), { nope: 1 }], active: 2 };
+    expect(restoreTabs(saved)).toBe(true);
+    const { tabs, activeTab } = qolStore.get();
+    expect(tabs.map((tab) => tab.location.pageId)).toEqual(['p1', 'p2', 'p3']);
+    expect(tabs.find((tab) => tab.id === activeTab)?.location.pageId).toBe('p3');
+    expect(restoreTabs({ list: [place('p1')], active: 0 })).toBe(false);
+    expect(restoreTabs(undefined)).toBe(false);
+  });
+
+  it('saves a change to the tabs once, after a moment', async () => {
+    const saved: unknown[] = [];
+    const stop = followTabsSaved((patch) => saved.push(patch));
+    qolStore.set((state) => ({
+      ...state,
+      tabs: [
+        { id: 'a', location: place('p1') },
+        { id: 'b', location: place('p2') },
+      ],
+      activeTab: 'b',
+    }));
+    await new Promise((done) => setTimeout(done, 450));
+    stop();
+    expect(saved).toEqual([{ tabs: { list: [place('p1'), place('p2')], active: 1 } }]);
   });
 });

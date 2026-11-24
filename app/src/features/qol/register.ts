@@ -29,7 +29,17 @@ import { followExternal } from './externalStore';
 import { followPower, setFocusMode, toggleDock, toggleFocusMode, toggleMiniWindow } from './modes';
 import { readPrefs } from './prefs';
 import { openQuickCapture } from './quickCaptureControls';
-import { closeActiveTab, duplicateTab, openInNewTab, openInWindow, reopenClosed, stepTab, trackTabs } from './tabs';
+import {
+  closeActiveTab,
+  duplicateTab,
+  followTabsSaved,
+  openInNewTab,
+  openInWindow,
+  reopenClosed,
+  restoreTabs,
+  stepTab,
+  trackTabs,
+} from './tabs';
 
 const register = (...defs: readonly CommandDef[]) => defs.forEach((def) => commands.register(def));
 
@@ -489,6 +499,9 @@ if (typeof window !== 'undefined' && isMainWindow()) {
   void shellCall('external.start').catch(() => undefined);
   void readPrefs().then((prefs) => {
     if (prefs.startOnHome === true && isEnabled('qol.home')) qolStore.set((state) => ({ ...state, homeOpen: true }));
+    // The tabs of the last session come back, then every change to them is saved.
+    restoreTabs(prefs.tabs);
+    followTabsSaved();
   });
   // Escape leaves focus mode when nothing else uses it.
   document.addEventListener('keydown', (event) => {

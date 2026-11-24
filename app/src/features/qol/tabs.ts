@@ -1,7 +1,7 @@
 // Tabs and recently closed (docs/FEATURES.md, "Tabs and windows" and "Recently closed"). A tab is a place in the
 // workspace. The active tab follows the location, as a browser tab follows its address, so following a link in a
 // tab changes that tab. Closing a tab keeps its place on the recently closed list, and Ctrl+Shift+T reopens it.
-// Tabs are not saved: a new start begins with one place, as before.
+// The open tabs and the active one are saved in qol.json and come back at the next start (walk 9, T2-D04-3).
 
 import { getLocation, navigate, onNavigate } from '../../app/location';
 import type { Location } from '../../app/location';
@@ -12,6 +12,7 @@ import type { ClosedTab, Tab } from '../../state/qol';
 import { t } from '../../strings/t';
 import { announce } from '../../ui';
 import { getNode } from '../tree';
+import { writePrefs } from './prefs';
 
 type Workspace = Extract<Location, { view: 'workspace' }>;
 
@@ -164,4 +165,64 @@ export function trackTabs(): () => void {
       return { ...state, tabs };
     });
   });
+}
+
+/** What qol.json keeps of the tabs: each place, and which one is active. Nothing is kept for fewer than two tabs. */
+export interface SavedTabs {
+  readonly list: readonly Workspace[];
+  readonly active: number;
+}
+
+export function savedTabsOf(tabs: readonly Tab[], activeTab: string | null): SavedTabs | null {
+  if (tabs.length < 2) return null;
+  return {
+    list: tabs.map((tab) => tab.location),
+    active: Math.max(
+      0,
+      tabs.findIndex((tab) => tab.id === activeTab),
+    ),
+  };
+}
+
+const asId = (value: unknown): NodeId | null => (typeof value === 'string' ? (value as NodeId) : null);
+
+function workspaceOf(value: unknown): Workspace | null {
+  if (typeof value !== 'object' || value === null) return null;
+  const one = value as Record<string, unknown>;
+  const pageId = asId(one.pageId);
+  if (pageId === null) return null;
+  return { view: 'workspace', notebookId: asId(one.notebookId), sectionId: asId(one.sectionId), pageId };
+}
+
+/** Puts back the tabs from qol.json, and goes to the active one when the window did not already open there. */
+export function restoreTabs(saved: unknown): boolean {
+  if (typeof saved !== 'object' || saved === null) return false;
+  const { list, active } = saved as { list?: unknown; active?: unknown };
+  if (!Array.isArray(list)) return false;
+  const places = list.map(workspaceOf).filter((one): one is Workspace => one !== null);
+  if (places.length < 2) return false;
+  const tabs: Tab[] = places.map((location) => ({ id: newTabId(), location }));
+  const chosen = tabs[typeof active === 'number' && active >= 0 && active < tabs.length ? active : 0];
+  qolStore.set((state) => ({ ...state, tabs, activeTab: chosen.id }));
+  const here = workspaceNow();
+  if (!here || !sameWorkspace(here, chosen.location)) navigate(chosen.location);
+  return true;
+}
+
+/** Saves the tabs a moment after they change. Returns a function that stops. */
+export function followTabsSaved(save: (patch: Record<string, unknown>) => unknown = writePrefs): () => void {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let last = JSON.stringify(savedTabsOf(qolStore.get().tabs, qolStore.get().activeTab));
+  const stop = qolStore.subscribe(() => {
+    const { tabs, activeTab } = qolStore.get();
+    const next = JSON.stringify(savedTabsOf(tabs, activeTab));
+    if (next === last) return;
+    last = next;
+    clearTimeout(timer);
+    timer = setTimeout(() => void save({ tabs: savedTabsOf(tabs, activeTab) }), 300);
+  });
+  return () => {
+    clearTimeout(timer);
+    stop();
+  };
 }
