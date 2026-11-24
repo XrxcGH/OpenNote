@@ -10,6 +10,8 @@
     border-radius: var(--radius-lg);
     background: var(--color-surface-raised);
     color: var(--color-text-primary);
+    /* Brought into view, the panel's footer stays clear of a toast such as "The transcript is ready". */
+    scroll-margin-block-end: var(--toast-clearance);
   }
 
   .transcript {
@@ -73,6 +75,8 @@
     list-style: none;
     max-block-size: 24rem;
     overflow-y: auto;
+    /* A line that gets focus scrolls clear of a toast, as in every scroll container (styles/base.css). */
+    scroll-padding-block-end: var(--toast-clearance);
   }
 
   /* The checkbox, the time, and the words sit on one baseline. */
