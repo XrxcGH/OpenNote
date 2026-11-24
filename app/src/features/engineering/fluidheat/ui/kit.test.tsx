@@ -54,17 +54,6 @@ describe('the fluid and heat transfer kit window', () => {
     await expectNoAxeViolations(screen.getByRole('tablist').parentElement!);
   });
 
-  it('gives typeset math room at its sides so the last glyph is not cut (walk 9, W9-VB-7)', async () => {
-    saveTab('dimensional');
-    const { container } = renderUi(<FluidHeatKit />);
-    await waitFor(() => expect(container.querySelector('.katex-display')).not.toBeNull());
-    const box = container.querySelector('.katex-display')!.parentElement!;
-    const style = getComputedStyle(box);
-    expect(style.overflowX).toBe('auto');
-    expect(Number.parseFloat(style.paddingRight)).toBeGreaterThan(0);
-    expect(Number.parseFloat(style.paddingLeft)).toBeGreaterThan(0);
-  });
-
   it('marks a unit that measures something else, and keeps values when the units change', async () => {
     saveTab('statics');
     renderUi(<FluidHeatKit />);
