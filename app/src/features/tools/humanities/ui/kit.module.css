@@ -94,6 +94,8 @@
   }
 
   .field small {
+    /* A hint is already small text; the browser's default for <small> would shrink it again (walk VB-12). */
+    font-size: inherit;
     color: var(--color-text-secondary);
   }
 
@@ -147,7 +149,8 @@
     color: var(--color-text-secondary);
   }
 
-  .details summary {
+  .details summary,
+  .plainDetails summary {
     min-block-size: var(--target-size);
     display: flex;
     align-items: center;

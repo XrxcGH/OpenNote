@@ -17,7 +17,8 @@
 
   .table {
     display: grid;
-    grid-template-columns: repeat(18, minmax(1.5rem, 1fr));
+    /* A column is never narrower than its cell, which is square and at least 2rem or one touch target. */
+    grid-template-columns: repeat(18, minmax(max(2rem, var(--target-size)), 1fr));
     grid-template-rows: repeat(7, auto) var(--space-2) repeat(2, auto);
     gap: 2px;
   }

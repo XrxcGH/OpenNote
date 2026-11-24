@@ -1,5 +1,6 @@
 // Reads a text field of one item per line, each line with the same number of quantities separated by commas or
-// semicolons, such as "13600, -0.2". Quantities after the first `required` may be left out. A bare number is in the unit the kind shows in for the chosen system.
+// semicolons, such as "13600, -0.2". Quantities after the first `required` may be left out.
+// A bare number is in the unit the kind shows in for the chosen system.
 import { FluidHeatError, fail } from './types';
 import { readQuantity, type Kind, type System } from './units';
 
