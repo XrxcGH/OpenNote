@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import { getLocation } from '../../app/location';
 import { closeOverlay } from '../../shell/commandbar/overlays';
+import { qolStore } from '../../state/qol';
 import { announcements, expectNoAxeViolations, pressChord, renderApp } from '../../test';
 
 afterEach(() => closeOverlay());
@@ -53,6 +54,20 @@ describe('the search panel', () => {
     const here = getLocation();
     expect(here.view === 'workspace' && here.pageId !== null).toBe(true);
     expect(await screen.findByRole('heading', { level: 1, name: 'Mitosis' })).toBeTruthy();
+  });
+
+  it('closes the Home page when a result opens, even for the page already selected (T2-D04-1)', async () => {
+    await renderApp();
+    // The second round opens the page that is already selected, which fires no navigation.
+    for (const round of [1, 2]) {
+      qolStore.set((state) => ({ ...state, homeOpen: true }));
+      await openPanel();
+      await userEvent.keyboard('mitosis');
+      await screen.findByRole('option', { name: /Mitosis/ });
+      await userEvent.keyboard('{Enter}');
+      await waitFor(() => expect(qolStore.get().homeOpen, `round ${round}`).toBe(false));
+    }
+    qolStore.set((state) => ({ ...state, homeOpen: false }));
   });
 
   it('says when nothing matches, and shows the filters as named controls', async () => {
