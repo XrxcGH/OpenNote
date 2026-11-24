@@ -101,8 +101,49 @@ export const ENVIRONMENT = String.raw`(function (write, readLine, exit, random, 
       if (arguments.length) log.apply(null, arguments);
       indent += '  ';
     },
+    groupCollapsed: function () {
+      console.group.apply(null, arguments);
+    },
     groupEnd: function () {
       indent = indent.slice(2);
+    },
+    dir: function (value) {
+      log(value === null || typeof value !== 'object' ? inspect(value, 1) : value);
+    },
+    table: function (data, columns) {
+      if (data === null || typeof data !== 'object') return log(data);
+      const rows = data instanceof Map ? Array.from(data.keys()).map(function (k) { return [k, data.get(k)]; }) : Object.keys(data).map(function (k) { return [k, data[k]]; });
+      const names = [];
+      let hasValues = false;
+      const cells = rows.map(function (row) {
+        const cell = Object.create(null);
+        const value = row[1];
+        if (value !== null && typeof value === 'object' && !(value instanceof Date)) {
+          Object.keys(value).forEach(function (key) {
+            if (Array.isArray(columns) && columns.indexOf(key) < 0) return;
+            if (names.indexOf(key) < 0) names.push(key);
+            cell[key] = inspect(value[key], 1);
+          });
+        } else {
+          hasValues = true;
+          cell.Values = inspect(value, 1);
+        }
+        return { index: String(row[0]), cell: cell };
+      });
+      const head = ['(index)'].concat(Array.isArray(columns) ? columns.map(String) : names, hasValues ? ['Values'] : []);
+      const body = cells.map(function (item) {
+        return [item.index].concat(head.slice(1).map(function (name) { return name in item.cell ? item.cell[name] : ''; }));
+      });
+      const widths = head.map(function (name, i) {
+        return body.reduce(function (most, line) { return Math.max(most, line[i].length); }, name.length) + 2;
+      });
+      const rule = function (left, mid, right) {
+        return left + widths.map(function (w) { return '─'.repeat(w); }).join(mid) + right;
+      };
+      const line = function (parts) {
+        return '│' + parts.map(function (text, i) { return ' ' + text + ' '.repeat(widths[i] - text.length - 1); }).join('│') + '│';
+      };
+      log([rule('┌', '┬', '┐'), line(head), rule('├', '┼', '┤')].concat(body.map(line), [rule('└', '┴', '┘')]).join('\n'));
     },
     count: function (label) {
       const key = label === undefined ? 'default' : String(label);
@@ -121,6 +162,39 @@ export const ENVIRONMENT = String.raw`(function (write, readLine, exit, random, 
       delete timers[key];
     },
   };
+  // Timers run on virtual time, after the script, in time order. The host calls inspect.nextTimer() until it
+  // returns false, and settles promise jobs between calls. Nothing waits in real time.
+  const queue = [];
+  let nextId = 1;
+  let clock = 0;
+  function addTimer(repeat, fn, delay) {
+    if (typeof fn !== 'function') throw new TypeError('The "callback" argument must be of type function');
+    const wait = Math.max(1, Number(delay) || 0);
+    const entry = { id: nextId++, at: clock + wait, wait: wait, repeat: repeat, fn: fn, args: Array.prototype.slice.call(arguments, 3) };
+    queue.push(entry);
+    return entry.id;
+  }
+  function clearTimer(id) {
+    const at = queue.findIndex(function (entry) { return entry.id === id; });
+    if (at >= 0) queue.splice(at, 1);
+  }
+  inspect.nextTimer = function () {
+    if (queue.length === 0) return false;
+    let first = 0;
+    for (let i = 1; i < queue.length; i++) if (queue[i].at < queue[first].at) first = i;
+    const entry = queue[first];
+    clock = entry.at;
+    if (entry.repeat) entry.at = clock + entry.wait;
+    else queue.splice(first, 1);
+    entry.fn.apply(undefined, entry.args);
+    return true;
+  };
+  globalThis.setTimeout = function (fn, delay) { return addTimer.apply(null, [false].concat(Array.prototype.slice.call(arguments))); };
+  globalThis.setInterval = function (fn, delay) { return addTimer.apply(null, [true].concat(Array.prototype.slice.call(arguments))); };
+  globalThis.setImmediate = function (fn) { return addTimer.apply(null, [false, fn, 0].concat(Array.prototype.slice.call(arguments, 1))); };
+  globalThis.clearTimeout = clearTimer;
+  globalThis.clearInterval = clearTimer;
+  globalThis.clearImmediate = clearTimer;
   globalThis.console = console;
   globalThis.print = log;
   globalThis.readline = function () { return readLine(); };

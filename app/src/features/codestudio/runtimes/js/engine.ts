@@ -388,8 +388,29 @@ class Run {
     if (compiled.shift > 0) this.shifts.set(main, compiled.shift);
     const result = this.vm.evalCode(compiled.code, main, { type: 'global' });
     if (result.error) return this.failure(this.dumpError(result.error));
-    // Promises the program made settle now, inside the same limits.
-    const jobs = this.runtime.executePendingJobs();
+    // Promises the program made settle now, inside the same limits. Then the timers run, one at a time on virtual
+    // time, with the promise jobs settled after each.
+    let jobs = this.runtime.executePendingJobs();
+    let late: Thrown | null = null;
+    while (!jobs.error && this.limit === null && this.exitCode === undefined) {
+      if (performance.now() > this.context.deadline) {
+        this.limit = 'time';
+        break;
+      }
+      const next = this.callMethod(this.inspect!, 'nextTimer');
+      if (!('value' in next)) {
+        late = this.limit === null && this.exitCode === undefined ? next : null;
+        break;
+      }
+      const more = this.vm.dump(next.value) === true;
+      next.value.dispose();
+      if (!more) break;
+      jobs = this.runtime.executePendingJobs();
+    }
+    if (late) {
+      result.value.dispose();
+      return this.failure(late);
+    }
     if (this.limit === null && this.overMemory()) this.limit = 'memory';
     if (this.limit !== null || this.exitCode !== undefined) {
       if (jobs.error) jobs.error.dispose();

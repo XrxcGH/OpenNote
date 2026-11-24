@@ -8,7 +8,11 @@ const settings = readFileSync(join(import.meta.dirname, '..', 'settings', 'setti
 
 /** The declaration block of the first rule whose selector list contains `selector`. */
 function rule(source: string, selector: string): string {
-  const at = [`${selector} {`, `${selector},`].map((s) => source.indexOf(s)).filter((i) => i >= 0).sort((a, b) => a - b)[0] ?? -1;
+  const at =
+    [`${selector} {`, `${selector},`]
+      .map((s) => source.indexOf(s))
+      .filter((i) => i >= 0)
+      .sort((a, b) => a - b)[0] ?? -1;
   expect(at, selector).toBeGreaterThan(-1);
   return source.slice(source.indexOf('{', at), source.indexOf('}', at));
 }
