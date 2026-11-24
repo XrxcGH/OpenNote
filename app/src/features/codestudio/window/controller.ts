@@ -31,6 +31,7 @@ import { fromDiagnostic, fromRuntime } from '../problems/group';
 import type { Problem } from '../problems/group';
 import type { Example } from '../snippets/examples';
 import { exampleCollisions, examplePatch, exampleTitle } from '../snippets/menu';
+import { tableText } from '../run/tableText';
 import { helloText } from '../snippets/examples';
 import { MAIN_FILES, RUNTIMES } from './languages';
 import { LiveChecks } from './liveChecks';
@@ -585,6 +586,7 @@ export class StudioController {
         this.changed();
       },
       onOutput: (stream, text) => this.console.write(stream, text),
+      onRich: (mime, data) => this.console.write('out', tableText(mime, data)),
       onInputWanted: (prompt) => {
         this.runState = 'waiting';
         this.inputPrompt = prompt;
