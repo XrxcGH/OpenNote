@@ -233,13 +233,20 @@ function noteFocus(view: EditorView, focused: boolean): boolean {
   return false;
 }
 
-/** A click on a cell's padding, not its text, selects the cell in Grid mode. */
-function clickPadding(view: EditorView, event: MouseEvent): boolean {
+/**
+ * A click on a cell's padding, not its text, selects the cell in Grid mode. So does one click on the text of a cell
+ * that shows something other than what it holds, as a formula shows its result: the caret would show the raw formula
+ * and a typed key would add to it. A double click, or F2, edits the formula.
+ */
+function clickPadding(view: EditorView, event: MouseEvent, options: SheetKeysOptions): boolean {
   const target = event.target;
-  if (!keysOn(view.state) || event.button !== 0 || event.shiftKey) return false;
-  if (!(target instanceof HTMLTableCellElement) || !view.dom.contains(target)) return false;
-  const at = cellOfPos(view.state.doc, view.posAtDOM(target, 0));
-  const tr = at && selectCells(view.state, at);
+  if (!keysOn(view.state) || event.button !== 0 || event.shiftKey || !(target instanceof Element)) return false;
+  const cell = target.closest('td, th');
+  if (!(cell instanceof HTMLTableCellElement) || !view.dom.contains(cell)) return false;
+  const at = cellOfPos(view.state.doc, view.posAtDOM(cell, 0));
+  if (!at) return false;
+  if (target !== cell && (event.detail > 1 || shownText(view, options, at) === (cell.textContent ?? ''))) return false;
+  const tr = selectCells(view.state, at);
   if (!tr) return false;
   event.preventDefault();
   view.focus();
@@ -319,7 +326,7 @@ export function sheetKeysPlugin(options: SheetKeysOptions): Plugin<SheetState> {
         return typeOver(ctx, text);
       },
       handleDOMEvents: {
-        mousedown: clickPadding,
+        mousedown: (view, event) => clickPadding(view, event, options),
         focus: (view) => noteFocus(view, true),
         blur: (view) => noteFocus(view, false),
       },

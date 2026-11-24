@@ -547,3 +547,46 @@ describe('focus', () => {
     expect(sheet.editor.view.dom.querySelectorAll('[aria-selected]')).toHaveLength(0);
   });
 });
+
+describe('a click on a formula cell (walk bug T3-C04-3)', () => {
+  // jsdom has no layout, and scrolling the new selection into view asks for a rectangle.
+  const range = Range.prototype as unknown as Record<string, unknown>;
+  const doc = document as unknown as Record<string, unknown>;
+  const kept = { rects: range.getClientRects, box: range.getBoundingClientRect, at: doc.elementFromPoint };
+  beforeAll(() => {
+    range.getClientRects = () => [];
+    range.getBoundingClientRect = () => new DOMRect();
+    doc.elementFromPoint = () => null;
+  });
+  afterAll(() => {
+    range.getClientRects = kept.rects;
+    range.getBoundingClientRect = kept.box;
+    doc.elementFromPoint = kept.at;
+  });
+
+  const click = (sheet: Harness, text: string, detail = 1) => {
+    const paragraph = [...sheet.editor.view.dom.querySelectorAll('td p')].find((p) => p.textContent === text)!;
+    paragraph.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 0, detail }));
+  };
+  const rows = [
+    ['=1+1', 'plain'],
+    ['', ''],
+  ];
+  const shown = (_view: unknown, at: { row: number; column: number }) => (at.row === 0 && at.column === 0 ? '2' : null);
+
+  it('selects the cell, so a typed key replaces the formula', () => {
+    const sheet = mount(rows, { shown });
+    click(sheet, '=1+1');
+    expect(modeOf(sheet.editor.state)).toBe('grid');
+    sheet.type('7');
+    expect(sheet.texts()[0][0]).toBe('7');
+  });
+
+  it('leaves a click on a plain cell, and a double click on a formula cell, to the caret', () => {
+    const sheet = mount(rows, { shown });
+    click(sheet, 'plain');
+    expect(modeOf(sheet.editor.state)).not.toBe('grid');
+    click(sheet, '=1+1', 2);
+    expect(modeOf(sheet.editor.state)).not.toBe('grid');
+  });
+});
