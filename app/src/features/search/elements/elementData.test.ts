@@ -33,6 +33,7 @@ beforeEach(() => {
   send = vi.fn<(sent: Sent) => Promise<unknown>>(() => Promise.resolve());
   shownMounted.set({
     page: { id: 'p-elements', send, onFrame: () => () => undefined },
+    sync: { send, onStep: () => () => undefined },
     layer: { block: () => ({ data: undefined }) },
   } as unknown as MountedPage);
 });
