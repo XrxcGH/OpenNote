@@ -1002,3 +1002,69 @@ describe('module edges', () => {
     expect(ran.out).toBe('3 tool\n');
   });
 });
+
+describe('timers and console helpers (walk fix T3-C04-6, T3-C04-7)', () => {
+  it('runs setTimeout callbacks after the script, in time order', () => {
+    const ran = run({
+      'main.js': 'setTimeout(() => console.log("c"), 300); setTimeout(() => console.log("b"), 100); console.log("a");',
+    });
+    expect(ran.err).toBe('');
+    expect(ran.out).toBe('a\nb\nc\n');
+    expect(ran.status).toBe('ok');
+  });
+
+  it('passes extra arguments, supports clearTimeout and setInterval', () => {
+    const ran = run({
+      'main.js': [
+        'setTimeout((x, y) => console.log(x + y), 10, 1, 2);',
+        'const gone = setTimeout(() => console.log("never"), 20); clearTimeout(gone);',
+        'let n = 0; const id = setInterval(() => { console.log("tick", ++n); if (n === 3) clearInterval(id); }, 50);',
+      ].join('\n'),
+    });
+    expect(ran.err).toBe('');
+    expect(ran.out).toBe('3\ntick 1\ntick 2\ntick 3\n');
+  });
+
+  it('settles promises between timers', () => {
+    const ran = run({
+      'main.js': 'const wait = (ms) => new Promise((r) => setTimeout(r, ms)); wait(5).then(() => console.log("done"));',
+    });
+    expect(ran.out).toBe('done\n');
+  });
+
+  it('stops an endless interval at the time limit', () => {
+    const ran = run({ 'main.js': 'setInterval(() => {}, 1);' }, { timeMs: 300 });
+    expect(ran.status).toBe('time');
+  });
+
+  it('reports an error thrown in a timer callback', () => {
+    const ran = run({ 'main.js': 'setTimeout(() => { throw new Error("late"); }, 1);' });
+    expect(ran.status).toBe('error');
+    expect(ran.err).toContain('late');
+  });
+
+  it('prints console.table like Node', () => {
+    const ran = run({ 'main.js': 'console.table([{ a: 1, b: "x" }, { a: 2 }]);' });
+    expect(ran.err).toBe('');
+    expect(ran.out).toBe(
+      [
+        '┌─────────┬───┬─────┐',
+        '│ (index) │ a │ b   │',
+        '├─────────┼───┼─────┤',
+        "│ 0       │ 1 │ 'x' │",
+        '│ 1       │ 2 │     │',
+        '└─────────┴───┴─────┘',
+        '',
+      ].join('\n'),
+    );
+  });
+
+  it('prints a Values column for primitives and has groupCollapsed and dir', () => {
+    const ran = run({
+      'main.js': 'console.table([5, 6]); console.groupCollapsed("g"); console.dir({ a: 1 }); console.groupEnd();',
+    });
+    expect(ran.err).toBe('');
+    expect(ran.out).toContain('│ (index) │ Values │');
+    expect(ran.out).toContain('g\n  { a: 1 }\n');
+  });
+});

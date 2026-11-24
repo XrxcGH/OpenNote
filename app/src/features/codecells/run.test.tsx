@@ -89,11 +89,11 @@ describe('worked problems', () => {
 });
 
 describe('the sandbox', () => {
-  it('gives JavaScript cells no network, timers, modules, or worker globals', async () => {
+  it('gives JavaScript cells no network, modules, or worker globals (timers run on virtual time inside the sandbox)', async () => {
     const ran = await js(
       [
         'const names = ["fetch", "XMLHttpRequest", "WebSocket", "importScripts", "indexedDB", "caches", "navigator",',
-        '  "postMessage", "setTimeout", "Worker", "self", "location", "document", "window", "__TAURI_INTERNALS__"];',
+        '  "postMessage", "Worker", "self", "location", "document", "window", "__TAURI_INTERNALS__"];',
         'console.log(names.filter((name) => typeof globalThis[name] !== "undefined").join(",") || "none");',
         'console.log(typeof Function("return this")().fetch);',
         'import("https://example.com/x.js").then(() => console.log("loaded"), () => console.log("no import"));',

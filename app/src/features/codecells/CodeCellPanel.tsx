@@ -8,6 +8,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { Play } from '@phosphor-icons/react/dist/csr/Play';
 import { Stop } from '@phosphor-icons/react/dist/csr/Stop';
+import { getSettings, useSettings } from '../../state/settings';
 import { codeStudioPython } from '../../strings/en/codeStudio/python';
 import { t } from '../../strings/t';
 import { Button } from '../../ui';
@@ -48,20 +49,25 @@ interface Piece {
   text: string;
 }
 
-const SECONDS = String(LIMITS.timeMs / 1000);
 const MEGABYTES = String(LIMITS.memoryBytes / (1024 * 1024));
 
-function statusText(result: RunResult): string {
+/** The cell's limits: the time limit is Settings, then Code, as in the studio. */
+function limitsNow(): typeof LIMITS {
+  return { ...LIMITS, timeMs: getSettings().code.timeLimitSeconds * 1000 };
+}
+
+function statusText(result: RunResult, seconds: string): string {
   switch (result.status) {
     case 'ok':
       return t('codeCells.status.ok', { seconds: (result.elapsedMs / 1000).toFixed(2) });
     case 'time':
-      return t('codeCells.status.time', { seconds: SECONDS });
+      return t('codeCells.status.time', { seconds });
     case 'memory':
       return t('codeCells.status.memory', { megabytes: MEGABYTES });
     case 'failed':
       if (result.message === 'runtime') return t('codeCells.status.runtime');
       if (result.message === codeStudioPython.fullMissing) return t('codeCells.status.pack');
+      if (result.message === 'pack-missing') return t('codeStudio.cpp.packMissing');
       return t('codeCells.status.failed');
     default:
       return t(`codeCells.status.${result.status}`);
@@ -93,6 +99,7 @@ export function CodeCellPanel({
   // checks-disable-next-line modifiability: one component whose parts share the run's state
 }: Props) {
   const [text, setText] = useState(source);
+  const seconds = String(useSettings((all) => all.code.timeLimitSeconds));
   const [output, setOutput] = useState<Piece[]>([]);
   const [status, setStatus] = useState('');
   const [truncated, setTruncated] = useState(false);
@@ -213,7 +220,7 @@ export function CodeCellPanel({
           else pieces.push({ stream, text: chunk });
           setOutput([...pieces]);
         },
-        LIMITS,
+        limitsNow(),
         () => setStatus(t('codeCells.status.running')),
         engine,
       );
@@ -222,7 +229,7 @@ export function CodeCellPanel({
       setRunning(null);
       setTruncated(result.truncated);
       setFailed(result.status === 'failed');
-      const said = statusText(result);
+      const said = statusText(result, String(limitsNow().timeMs / 1000));
       setStatus(said);
       announce(said);
     } finally {
@@ -315,8 +322,7 @@ export function CodeCellPanel({
       {/* The editor draws itself into this box; its own label names it for assistive technology. */}
       <div ref={host} className={styles.editor} onKeyDownCapture={onKeyDownCapture} />
       <p className={styles.help}>
-        <span id={helpId}>{t('codeCells.codeHelp')}</span>{' '}
-        {t('codeCells.safety', { seconds: SECONDS, megabytes: MEGABYTES })}
+        <span id={helpId}>{t('codeCells.codeHelp')}</span> {t('codeCells.safety', { seconds, megabytes: MEGABYTES })}
       </p>
       <p className={styles.status} role="status">
         {status}

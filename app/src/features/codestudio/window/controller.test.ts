@@ -310,3 +310,40 @@ describe('the popped studio told why its block is read-only (gap V2-5)', () => {
     stop();
   });
 });
+
+describe('changing the language (walk fix T3-C04-5)', () => {
+  function scratch() {
+    localStorage.removeItem('opennote.codestudio.scratch');
+    const controller = new StudioController();
+    const unmount = controller.mount();
+    controller.open(scratchSource());
+    return { controller, unmount };
+  }
+
+  it('renames the main file to the new extension and swaps an untouched starter', () => {
+    const { controller, unmount } = scratch();
+    const id = controller.project()!.main;
+    expect(controller.project()!.files[id]!.path).toBe('main.py');
+    expect(controller.setLanguage('javascript')).toBe(true);
+    const project = controller.project()!;
+    expect(project.language).toBe('javascript');
+    expect(project.files[id]!.path).toBe('main.js');
+    expect(project.files[id]!.text).not.toContain('print(');
+    unmount();
+  });
+
+  it('keeps text the person wrote and uses a file of the new name as the main file', () => {
+    const { controller, unmount } = scratch();
+    const id = controller.project()!.main;
+    controller.edited(id, 'x = 1');
+    controller.newFile('main.ts', 'let y = 2');
+    const other = Object.keys(controller.project()!.files).find((key) => key !== id)!;
+    controller.setMain(id);
+    expect(controller.setLanguage('typescript')).toBe(true);
+    const project = controller.project()!;
+    expect(project.files[id]!.text).toBe('x = 1');
+    expect(project.files[id]!.path).toBe('main.py');
+    expect(project.main).toBe(other);
+    unmount();
+  });
+});
