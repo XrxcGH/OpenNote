@@ -150,8 +150,8 @@
   }
 
   .json > summary {
-    display: flex;
-    align-items: center;
+    display: list-item;
+    align-content: center;
     min-block-size: var(--target-size);
     cursor: pointer;
   }
