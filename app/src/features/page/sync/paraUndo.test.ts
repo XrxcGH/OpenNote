@@ -8,7 +8,7 @@ import { shownMounted } from '../pagesApi';
 import type { MountedPage } from '../mount';
 import { blockId, caretAtEnd, syncPage, syncRig } from './testSync';
 import type { SyncRig } from './testSync';
-// eslint-disable-next-line opennote/feature-boundaries -- The search barrel must not export the plugin: that would load the editor stack at start-up.
+// eslint-disable-next-line opennote/feature-boundaries -- The search barrel must not export the plugin.
 import { elementExtensions } from '../../search/elements/plugin';
 
 vi.mock('../../../ui/toast', () => ({ showToast: vi.fn() }));

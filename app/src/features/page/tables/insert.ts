@@ -17,7 +17,7 @@ import { syncOf } from '../blocks/textBlock';
 import { shownLayer } from '../mount';
 import { shownPool } from '../pool/shown';
 import { acceptRemoteText, shownQueue } from '../sync';
-// eslint-disable-next-line opennote/feature-boundaries -- The tables barrel pulls the whole smart-table engine into this chunk; the version is a one-line file.
+// eslint-disable-next-line opennote/feature-boundaries -- The barrel pulls the whole engine into this chunk.
 import { SHEET_VERSION } from '../../tables/smart/version';
 import { whenViewReady } from './lazyView';
 
