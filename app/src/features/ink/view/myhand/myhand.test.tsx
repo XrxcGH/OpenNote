@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import type { PaperLattice } from '../../../../core/paperLattice';
 import { resetFakeShell, setFakeShell } from '../../../../platform/shellqol';
-import { charSampleId, sentenceSampleId } from '../../myhand/charset';
+import { CHAR_GROUPS, charSampleId, sentenceSampleId } from '../../myhand/charset';
 import { syntheticProgress } from '../../myhand/fixtures';
 import type { InkStroke } from '../../model/types';
 import type { InkHost } from '../host';
@@ -115,6 +115,32 @@ describe('the calibration page', () => {
     await userEvent.click(within(dialog).getByRole('button', { name: 'Finish' }));
     await waitFor(() => expect(styleState.get().doc.style).not.toBeNull());
   });
+});
+
+describe('the calibration page layout (walk 9, T1-D03-11)', () => {
+  /** Elements in the dialog that scroll up and down now. */
+  const scrollers = (root: HTMLElement) =>
+    [root, ...root.querySelectorAll<HTMLElement>('*')].filter(
+      (el) => /auto|scroll/.test(getComputedStyle(el).overflowY) && el.scrollHeight > el.clientHeight + 1,
+    );
+
+  for (const [name, step] of [
+    ['a letter step', 1],
+    ['the sentences step', CHAR_GROUPS.length + 1],
+  ] as const) {
+    it(`fits the writing boxes to the dialog with one scroll bar, on ${name}`, async () => {
+      await loadStyle();
+      await setProgressForTests({ samples: {}, step });
+      render(<CalibrationDialog done={() => undefined} />);
+      const dialog = await screen.findByRole('dialog', { name: 'Calibration page' });
+      const boxes = [...dialog.querySelectorAll<HTMLElement>('[data-myhand-box]')];
+      expect(boxes.length).toBeGreaterThan(0);
+      const page = dialog.querySelector<HTMLElement>('[data-myhand-calibration]')!;
+      const right = page.getBoundingClientRect().right;
+      for (const box of boxes) expect(box.getBoundingClientRect().right).toBeLessThanOrEqual(right + 1);
+      expect(scrollers(dialog).length).toBeLessThanOrEqual(1);
+    });
+  }
 });
 
 describe('Settings, My handwriting', () => {
