@@ -12,7 +12,11 @@ test('shows a formula’s result and keeps the formula for editing', async ({ pa
   await openSmart(page);
   await fillSales(page);
   await expect(shown(page, 2, 2)).toHaveAttribute('data-shown', '90');
+  // One click on the result selects the cell, and the result stays. F2 or a double click edits the formula.
   await shown(page, 2, 2).click();
+  await expect(shown(page, 2, 2)).toHaveAttribute('aria-selected', 'true');
+  await expect(shown(page, 2, 2)).toHaveAttribute('data-shown', '90');
+  await page.keyboard.press('F2');
   await expect(shown(page, 2, 2)).not.toHaveAttribute('data-shown', /.+/);
   await expect(shown(page, 2, 2)).toContainText('=B2*0.6');
 });
