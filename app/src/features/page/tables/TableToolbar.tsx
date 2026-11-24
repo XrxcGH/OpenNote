@@ -192,27 +192,19 @@ function keepRoomBelow(tools: HTMLElement, tall: number): void {
 }
 
 /**
- * The tools sit above the table. When they are taller than the room between the table and the top of the page (the
- * cell format bar adds rows, and touch targets are larger), they go below it instead, so no button is cut off.
+ * The tools sit below the table, in room the table keeps for them, so they cover no text (walk 9 T1-D01-1). When
+ * they first show past the bottom of the page's view, the view scrolls just enough to show them.
  */
-function useRoomAbove(wrap: { current: HTMLDivElement | null }) {
+function useRoomBelow(wrap: { current: HTMLDivElement | null }) {
   useLayoutEffect(() => {
     const node = wrap.current;
-    const owner = node?.parentElement;
-    if (!node || !owner) return undefined;
-    const clipTop = (): number => {
-      for (let at = owner.parentElement; at; at = at.parentElement) {
-        const style = getComputedStyle(at);
-        if (/clip|hidden|auto|scroll/.test(style.overflowY)) return at.getBoundingClientRect().top;
-      }
-      return 0;
-    };
+    if (!node) return undefined;
+    let shown = false;
     const place = () => {
-      const room = owner.getBoundingClientRect().top - clipTop();
       const tall = node.getBoundingClientRect().height;
-      if (tall > 0 && tall > room) node.setAttribute('data-below', '');
-      else node.removeAttribute('data-below');
       keepRoomBelow(node, tall);
+      if (tall > 0 && !shown) node.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+      shown = tall > 0;
     };
     place();
     // A surface with no ResizeObserver (a test document) keeps the first placement.
@@ -230,7 +222,7 @@ export function TableToolbar(props: TableToolbarProps) {
   const { block, can, header, run, more, width, widthOpen, openWidth, closeWidth } = props;
   const moreButton = useRef<HTMLSpanElement>(null);
   const wrap = useRef<HTMLDivElement>(null);
-  useRoomAbove(wrap);
+  useRoomBelow(wrap);
   const button = (tool: Tool, first: boolean) => (
     <span key={tool.command} data-tool-slot="">
       <IconButton
