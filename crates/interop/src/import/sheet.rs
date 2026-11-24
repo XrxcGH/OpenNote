@@ -91,6 +91,18 @@ pub(super) fn typed_table_content(
     } else {
         Vec::new()
     };
+    // A plain table keeps its dates as text, and the report says which columns they are in.
+    let date_columns: Vec<String> = if typed {
+        Vec::new()
+    } else {
+        let found = database::infer_columns(&table.rows[..kept]);
+        table.rows[0]
+            .iter()
+            .zip(&found)
+            .filter(|(_, kind)| **kind == database::ColumnKind::Date)
+            .map(|(name, _)| name.trim().to_owned())
+            .collect()
+    };
     let rows: Vec<Vec<Vec<Inline>>> = table
         .rows
         .iter()
@@ -105,6 +117,12 @@ pub(super) fn typed_table_content(
     report.came_over(format!("{} rows and {} columns", kept - 1, width));
     if let Some(types) = database::describe(&table.rows[0], &kinds) {
         report.came_over(types);
+    }
+    if !date_columns.is_empty() {
+        report.simplified(
+            format!("dates stay text: {}", date_columns.join(", ")),
+            "A CSV file has no date type, so these columns keep their dates as plain text.",
+        );
     }
     if let Some((what, why)) = simplified {
         report.simplified(what, why);
@@ -176,6 +194,32 @@ mod tests {
     use super::*;
     use crate::page_builder::PageBuilder;
     use crate::testing::TestEnv;
+
+    #[test]
+    fn a_date_column_of_a_plain_table_is_named_in_the_report() {
+        let content = table_content(
+            "Name,Due
+Pens,2024-03-05
+Ink,2024-04-01
+",
+            "Sheet".to_owned(),
+            None,
+        );
+        let note = content
+            .notes
+            .iter()
+            .find(|e| e.what.starts_with("dates stay text"))
+            .expect("an entry");
+        assert_eq!(note.what, "dates stay text: Due");
+        let plain = table_content(
+            "Name,Note
+Pens,red
+",
+            "Sheet".to_owned(),
+            None,
+        );
+        assert!(plain.notes.iter().all(|e| !e.what.starts_with("dates stay text")));
+    }
 
     #[test]
     fn a_wide_file_keeps_only_the_rows_that_fit_on_a_page() {

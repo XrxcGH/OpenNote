@@ -52,6 +52,7 @@ export const CALCULATOR: Dialect = {
   infix: setOf('+', '-', '*', '/', '^', 'mod'),
   prefix: setOf('-', '+'),
   postfix: setOf('!', '%', '°'),
+  degreeWords: setOf('deg', 'degree', 'degrees'),
   implicit: 'strict',
   functions: functionLookup(TABLE, { names: FUNCTION_NAMES, aliases: ALIASES }),
   calls: 'paren',

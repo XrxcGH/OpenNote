@@ -129,9 +129,17 @@ impl<'a> PageBuilder<'a> {
     pub fn push_blocks(&mut self, blocks: Vec<DocBlock>) {
         for block in blocks {
             match block {
-                DocBlock::Table { header, rows, .. } => {
+                DocBlock::Table {
+                    header,
+                    rows,
+                    cell_styles,
+                    ..
+                } => {
                     self.flush_text();
-                    let data = table_data(header, rows, self.env);
+                    let mut data = table_data(header, rows, self.env);
+                    if let Some(sheet) = alignment_sheet(&data, &cell_styles) {
+                        data.extra.insert("sheet".to_owned(), sheet);
+                    }
                     self.pieces.push(BlockData::Table(data));
                 }
                 DocBlock::Paragraph(inlines) => match image_only(&inlines) {
@@ -391,6 +399,31 @@ fn image_only(inlines: &[Inline]) -> Option<(AssetId, String)> {
     };
     let id = AssetId::parse(dest.strip_prefix("asset:")?).ok()?;
     Some((id, alt.clone()))
+}
+
+/// The `data.sheet` that gives each column the horizontal alignment its cells had in the source (the first styled
+/// cell of the column decides). `None` when no cell has one.
+fn alignment_sheet(
+    table: &TableData,
+    cell_styles: &[Vec<Option<crate::doc::cell_style::CellStyle>>],
+) -> Option<serde_json::Value> {
+    let mut styles = serde_json::Map::new();
+    let mut cols = serde_json::Map::new();
+    for (index, column) in table.columns.iter().enumerate() {
+        let horizontal = cell_styles
+            .iter()
+            .filter_map(|row| row.get(index)?.as_ref()?.align.horizontal.as_deref())
+            .next();
+        let id = match horizontal {
+            Some("left") => "alignl",
+            Some("center") => "alignc",
+            Some("right") => "alignr",
+            _ => continue,
+        };
+        styles.insert(id.to_owned(), serde_json::json!({ "align": { "h": horizontal } }));
+        cols.insert(column.id.to_string(), serde_json::json!({ "style": id }));
+    }
+    (!cols.is_empty()).then(|| serde_json::json!({ "styles": styles, "cols": cols }))
 }
 
 fn table_data(header: bool, rows: Vec<Vec<Vec<Inline>>>, env: &ImportEnv<'_>) -> TableData {

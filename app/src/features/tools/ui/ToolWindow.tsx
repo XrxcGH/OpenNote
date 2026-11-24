@@ -6,9 +6,11 @@
 // It never takes focus from the page by itself and never traps it.
 import { Component, useRef } from 'react';
 import type { CSSProperties, KeyboardEvent, PointerEvent, ReactNode } from 'react';
+import { ArrowSquareOutIcon } from '@phosphor-icons/react/dist/csr/ArrowSquareOut';
+import { PushPinIcon } from '@phosphor-icons/react/dist/csr/PushPin';
 import { XIcon } from '@phosphor-icons/react/dist/csr/X';
 import { t } from '../../../strings/t';
-import { Button, IconButton } from '../../../ui';
+import { IconButton } from '../../../ui';
 import styles from './tools.module.css';
 import type { ToolDef } from './tools';
 
@@ -150,14 +152,12 @@ export function ToolWindow({
         onKeyDown={onKeyDown}
       />
       <div className={styles.header} data-move="" tabIndex={-1}>
-        <h2 className={styles.title}>{title}</h2>
-        <Button variant="quiet" aria-pressed={pinned} onClick={onPin}>
-          {t('smart.tools.window.keepOnTop')}
-        </Button>
+        <h2 className={styles.title} title={title}>
+          {title}
+        </h2>
+        <IconButton label={t('smart.tools.window.keepOnTop')} icon={PushPinIcon} pressed={pinned} onPress={onPin} />
         {onPopOut ? (
-          <Button variant="quiet" onClick={onPopOut}>
-            {t('smart.tools.window.popOut')}
-          </Button>
+          <IconButton label={t('smart.tools.window.popOut')} icon={ArrowSquareOutIcon} onPress={onPopOut} />
         ) : null}
         <IconButton label={t('smart.tools.window.close', { title })} icon={XIcon} onPress={onClose} />
       </div>

@@ -6,9 +6,10 @@ mod highlight;
 pub(super) mod tags;
 mod v2;
 
-use pulldown_cmark::{CodeBlockKind, Event, LinkType, Options, Parser, Tag, TagEnd};
+use pulldown_cmark::{Alignment, CodeBlockKind, Event, LinkType, Options, Parser, Tag, TagEnd};
 
 use self::clean::{clean_alt, clean_language, split_callout, tidy};
+use super::cell_style::CellStyle;
 use super::html_tags::{self, apply_tag, Piece, Span};
 use super::{push_text, visit_inlines_mut, Block, Inline, Item, Marks};
 
@@ -102,6 +103,29 @@ enum Frame {
     },
 }
 
+/// The cell styles of a table whose columns carry GFM alignment colons: one style per cell with the column's
+/// alignment. Empty when no column is aligned.
+fn aligned_styles(aligns: &[Alignment], rows: usize) -> Vec<Vec<Option<CellStyle>>> {
+    let styles: Vec<Option<CellStyle>> = aligns
+        .iter()
+        .map(|align| {
+            let horizontal = match align {
+                Alignment::None => return None,
+                Alignment::Left => "left",
+                Alignment::Center => "center",
+                Alignment::Right => "right",
+            };
+            let mut style = CellStyle::default();
+            style.align.horizontal = Some(horizontal.to_owned());
+            Some(style)
+        })
+        .collect();
+    if styles.iter().all(Option::is_none) {
+        return Vec::new();
+    }
+    vec![styles; rows]
+}
+
 #[derive(Default)]
 struct Builder {
     frames: Vec<Frame>,
@@ -116,6 +140,8 @@ struct Builder {
     image: Option<(String, String)>,
     html_block: Option<String>,
     table: Vec<Vec<Vec<Inline>>>,
+    /// The alignment colons of the table's delimiter row, one per column.
+    aligns: Vec<Alignment>,
     row: Vec<Vec<Inline>>,
     notes: Notes,
     /// Quotes, lists, and items opened past [`MAX_NESTING`], whose content goes to the deepest container kept.
@@ -236,7 +262,10 @@ impl Builder {
                 items: Vec::new(),
             }),
             Tag::Item => self.frames.push(Frame::Container(Kind::Item(None), Vec::new())),
-            Tag::Table(_) => self.table.clear(),
+            Tag::Table(aligns) => {
+                self.table.clear();
+                self.aligns = aligns;
+            }
             _ => {}
         }
     }
@@ -364,7 +393,12 @@ impl Builder {
     fn end_table(&mut self) {
         let rows = std::mem::take(&mut self.table);
         if self.frames.len() == 1 {
-            self.add_block(Block::table(true, rows));
+            let aligns = std::mem::take(&mut self.aligns);
+            let mut table = Block::table(true, rows);
+            if let Block::Table { rows, cell_styles, .. } = &mut table {
+                *cell_styles = aligned_styles(&aligns, rows.len());
+            }
+            self.add_block(table);
             return;
         }
         self.notes.tables_flattened += 1;

@@ -21,6 +21,7 @@
   }
 
   .tab {
+    min-inline-size: var(--target-size);
     min-block-size: var(--target-size);
     padding-inline: var(--space-3);
     font: inherit;
@@ -193,6 +194,8 @@
     overflow-x: auto;
     overflow-y: hidden;
     padding-block: var(--space-1);
+    /* The last italic glyph of a formula reaches past its box; the padding keeps it from being cut (walk 9). */
+    padding-inline: var(--space-1);
   }
 
   .buttons {

@@ -31,6 +31,7 @@
   }
 
   .tab {
+    min-inline-size: var(--target-size);
     min-block-size: var(--target-size);
     padding: var(--space-1) var(--space-2);
     font: inherit;

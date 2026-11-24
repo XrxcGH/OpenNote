@@ -8,7 +8,7 @@ import styles from './kit.module.css';
 
 const W = 480;
 const H = 260;
-const PAD = { left: 52, right: 12, top: 12, bottom: 36 };
+const PAD = { left: 52, right: 28, top: 12, bottom: 36 };
 const COLORS = ['var(--color-accent-primary)', 'var(--color-text-secondary)', 'var(--color-text-primary)'];
 
 interface Drawn {

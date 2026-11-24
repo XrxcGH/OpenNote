@@ -30,6 +30,11 @@ export interface Dialect {
   /** The postfix operators: "!", "%", and the degree sign. */
   postfix: ReadonlySet<string>;
   /**
+   * Words, in lower case, that work as the degree sign after an operand: `30 deg` is `30°`. A word followed by an
+   * opening bracket stays a call, so `2 deg(x)` is still a product.
+   */
+  degreeWords?: ReadonlySet<string>;
+  /**
    * What side-by-side operands do. 'none' is an error. 'free' multiplies them, as in 2x and (a+1)(a-1).
    * 'strict' multiplies them too, except for two numbers in a row, which is an error because 2 3 is likely a slip.
    */
