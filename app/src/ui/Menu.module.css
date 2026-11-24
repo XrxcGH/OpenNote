@@ -115,12 +115,15 @@
     block-size: var(--size-icon-sm);
   }
 
+  /* A label stays on one line while the menu fits the window, and wraps once it reaches the cap (full walk VA-4). */
   .label {
     flex: 1;
-    white-space: nowrap;
+    min-inline-size: 0;
+    overflow-wrap: anywhere;
   }
 
   .shortcut {
+    flex: none;
     margin-inline-start: var(--space-7);
     color: var(--color-text-secondary);
     font-size: var(--type-small-size);
