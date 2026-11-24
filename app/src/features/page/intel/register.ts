@@ -4,6 +4,7 @@
 import { isEnabled } from '../../../app/flags';
 import { chord, defineCommand } from '../../../commands/registry';
 import { commandBar, commands } from '../../../registries';
+import { isOn } from '../../intel/choices';
 import { oneImageSelected } from '../images/shown';
 import { pageSelection } from '../seams/selectionStore';
 import { shownQueue } from '../sync/shown';
@@ -27,7 +28,7 @@ commands.register(
     keywords: 'intel.commands.summarizePageKeywords',
     category: 'view',
     flag: 'intel.summaries',
-    when: () => shownQueue.get() !== null,
+    when: () => shownQueue.get() !== null && isOn('summaries'),
     run: () => import('./summarize').then((module) => module.summarizePage()),
   }),
 );
