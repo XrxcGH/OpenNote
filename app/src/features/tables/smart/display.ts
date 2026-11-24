@@ -83,6 +83,12 @@ export const errorLabel: ErrorLabel = (code) => ({
   description: t(`smart.table.errorDescriptions.${code}`),
 });
 
+/** The words and the description of a formula with a syntax error: what is wrong, and where. */
+const syntaxLabel = (problem: string) => ({
+  words: t('smart.table.syntaxWords', { problem }),
+  description: t('smart.table.syntaxDescription', { problem }),
+});
+
 /**
  * The cells each spilling formula fills, with the edges of its outline: "t", "r", "b", and "l" for the sides of the
  * range that cell is on. Read from the results: the formula's cell, then the spilled cells right of it and below it.
@@ -143,7 +149,11 @@ export function buildDecorations(
         if (edge) found.push(Decoration.node(from, from + cell.nodeSize, { 'data-spill': edge }, { kind: 'spill' }));
         return;
       }
-      const label = shown.error ? labelOf(shown.error) : null;
+      const label = shown.error
+        ? labelOf(shown.error)
+        : shown.problem !== undefined
+          ? syntaxLabel(shown.problem)
+          : null;
       const classes = [styles.shown, KIND_CLASS[shown.kind]];
       if (shown.error === 'SPILL') classes.push(styles.spillBlocked);
       if (shown.error === 'BUSY') classes.push(styles.busy);
@@ -155,7 +165,7 @@ export function buildDecorations(
             class: classes.join(' '),
             'data-shown': shown.text,
             title: label ? label.words : typedLabel(cell.textContent),
-            ...(label ? { 'aria-description': label.description, 'data-error': shown.error } : {}),
+            ...(label ? { 'aria-description': label.description, 'data-error': shown.error ?? 'SYNTAX' } : {}),
             ...(edge ? { 'data-spill': edge } : {}),
           },
           { kind: 'shown' },

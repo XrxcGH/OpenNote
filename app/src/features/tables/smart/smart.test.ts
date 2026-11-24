@@ -178,11 +178,14 @@ describe('the typed table', () => {
     expect(shownFor(model, EMPTY_SMART, 0, 1, EN_US)).toBeNull();
   });
 
-  it('shows an error in words and keeps text that is not a formula', () => {
-    const texts = [...TEXT.slice(0, 1), ['x', '0', '1', '=C1/B1'], ['y', '=1+', '', '']];
+  it('shows an error in words, and marks a formula that does not read as one', () => {
+    const texts = [...TEXT.slice(0, 1), ['x', '0', '1', '=C1/B1'], ['y', '=1+', 'a=b', '=']];
     const model = buildModel(gridOf(dataOf(texts)), EMPTY_SMART, EN_US);
     expect(shownFor(model, EMPTY_SMART, 0, 3, EN_US)?.kind).toBe('error');
-    expect(shownFor(model, EMPTY_SMART, 1, 1, EN_US)).toBeNull();
+    // =1+ is a formula with a syntax error (walk 9 T4-D07-1); a lone "=" and text with "=" inside are text.
+    expect(shownFor(model, EMPTY_SMART, 1, 1, EN_US)).toMatchObject({ text: '#ERROR!', kind: 'error' });
+    expect(shownFor(model, EMPTY_SMART, 1, 2, EN_US)).toBeNull();
+    expect(shownFor(model, EMPTY_SMART, 1, 3, EN_US)).toBeNull();
   });
 
   it('formats a column the person picked, and only the cells that change', () => {
@@ -440,6 +443,25 @@ describe('the error display', () => {
         'aria-description': 'Divide by zero error',
       }),
     ]);
+  });
+
+  it('marks a formula with a syntax error, says where in the tooltip, and shows #REF! for a deleted reference', () => {
+    const data = dataOf([...ROWS.slice(0, 1), ['x', '=SUM(', '=#REF!+1', '']]);
+    const model = buildModel(gridOfData(data), EMPTY_SMART, EN_US);
+    expect(shownFor(model, EMPTY_SMART, 0, 2, EN_US)).toEqual({ text: '#REF!', kind: 'error', error: 'REF' });
+    const set = buildDecorations(tableDataToDoc(data), model, EMPTY_SMART, EN_US, (typed) => typed);
+    const attrs = set
+      .find()
+      .map((found) => (found as unknown as { type: { attrs: Record<string, string> } }).type.attrs);
+    expect(attrs[0]).toEqual(
+      expect.objectContaining({
+        'data-shown': '#ERROR!',
+        'data-error': 'SYNTAX',
+        title: 'Formula error: Check the formula near the end.',
+        'aria-description': 'Formula error. Check the formula near the end.',
+      }),
+    );
+    expect(attrs[1]).toEqual(expect.objectContaining({ 'data-shown': '#REF!', 'data-error': 'REF' }));
   });
 
   it('shows Circular for a cell in a circle of formulas, and says #BUSY! in words', () => {

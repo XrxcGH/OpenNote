@@ -2,6 +2,7 @@
 // them by the columns' types, runs the formulas, and says what each cell shows, which rows the filters leave, and
 // what a chart or a total reads. It is pure, so tests run it without an editor.
 import {
+  checkFormulaInput,
   columnLetter,
   ERROR_TOKENS,
   filterIndices,
@@ -261,6 +262,24 @@ export interface Shown {
   error?: ErrorCode;
   /** The value comes from a formula above or to the left that spills over this cell. */
   spill?: true;
+  /** Typed text that starts with "=" but is not a formula: what is wrong with it, for the tooltip. */
+  problem?: string;
+}
+
+/** What a cell shows for a formula with a syntax error, as Google Sheets shows it. */
+export const SYNTAX_ERROR_TOKEN = '#ERROR!';
+
+/**
+ * What a cell shows for typed text that starts with "=" but does not read as a formula, or null for other text. A
+ * spreadsheet never shows such a formula as plain text (walk 9 T4-D07-1). A reference that a deleted row or column
+ * took reads #REF!, so that formula shows the reference error, as Excel does.
+ */
+function brokenFormula(raw: string, locale: Locale, table: Table): Shown | null {
+  const typed = raw.trim();
+  if (!typed.startsWith('=') || typed.length < 2) return null;
+  if (typed.toUpperCase().includes(ERROR_TOKENS.REF)) return { text: ERROR_TOKENS.REF, kind: 'error', error: 'REF' };
+  const problem = checkFormulaInput(typed.slice(1), locale, table);
+  return typeof problem === 'string' ? null : { text: SYNTAX_ERROR_TOKEN, kind: 'error', problem: problem.message };
 }
 
 /** What an error shows in its cell: Excel's token, or Circular for a cell in a circle of formulas. */
@@ -293,6 +312,8 @@ export function shownFor(
     const text = cell.value === null ? '' : formatValue(cell.value, col, locale);
     return { text, kind: typeof cell.value === 'number' ? 'number' : 'text', spill };
   }
+  const broken = cell.formula === undefined ? brokenFormula(cell.raw, locale, model.table) : null;
+  if (broken) return broken;
   if (cell.formula === undefined && !(formatted && cell.value !== null && typeof cell.value !== 'string')) return null;
   const text = formatValue(cell.value, col, locale);
   if (cell.formula === undefined && text === cell.raw.trim()) return null;
