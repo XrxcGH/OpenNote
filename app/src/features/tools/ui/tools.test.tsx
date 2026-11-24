@@ -195,6 +195,19 @@ describe('the calculator modes', () => {
     expect((screen.getByRole('textbox', { name: 'Expression' }) as HTMLInputElement).value).toBe('100000000');
   });
 
+  it('hides the answer buttons while the result is an error (walk 9, T4-D07-4)', async () => {
+    localStorage.setItem('opennote.tools.calculator.tab', JSON.stringify('scientific'));
+    renderUi(<CalculatorTool />);
+    const field = screen.getByRole('textbox', { name: 'Expression' });
+    await userEvent.fill(field, '2+2');
+    await userEvent.click(screen.getByRole('button', { name: 'Calculate' }));
+    expect(screen.getByRole('button', { name: 'Copy answer' })).toBeTruthy();
+    await userEvent.fill(field, 'integral(x^2,0,3)');
+    await userEvent.click(screen.getByRole('button', { name: 'Calculate' }));
+    expect(screen.queryByRole('button', { name: 'Copy answer' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Insert answer into page' })).toBeNull();
+  });
+
   it('summarizes data and fits a line on the statistics tab', async () => {
     localStorage.setItem('opennote.tools.calculator.tab', JSON.stringify('statistics'));
     renderUi(<CalculatorTool />);
