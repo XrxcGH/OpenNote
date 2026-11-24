@@ -237,3 +237,33 @@ describe('empty states and accessibility', () => {
     }
   }
 });
+
+describe('the More button on a row', () => {
+  const parts = (item: HTMLElement) => {
+    const title = document.getElementById(`${item.getAttribute('aria-labelledby')}`)!;
+    const more = [...item.children].find((child) =>
+      child.contains(within(item).getByRole('button', { name: /^More actions for/ })),
+    )!;
+    return { title: title.parentElement!.getBoundingClientRect(), more: more.getBoundingClientRect() };
+  };
+
+  it('takes its own room in touch density, so it never covers the title (VA-3)', async () => {
+    await renderTree({ density: 'touch' });
+    const { title, more } = parts(row(notebooksTree(), 'Biology 101'));
+    expect(more.width).toBeGreaterThan(0);
+    expect(title.right).toBeLessThanOrEqual(more.left + 0.5);
+  });
+
+  it('sits inside the focus outline of the selected row, so the outline keeps its corners (VB-188)', async () => {
+    await renderTree();
+    await focusRow(notebooksTree, 'Biology 101');
+    const item = row(notebooksTree(), 'Biology 101');
+    const ring = parseFloat(getComputedStyle(item).outlineWidth);
+    const box = item.getBoundingClientRect();
+    const { more } = parts(item);
+    expect(ring).toBeGreaterThan(0);
+    expect(more.top).toBeGreaterThanOrEqual(box.top + ring - 0.5);
+    expect(more.bottom).toBeLessThanOrEqual(box.bottom - ring + 0.5);
+    expect(more.right).toBeLessThanOrEqual(box.right - ring + 0.5);
+  });
+});

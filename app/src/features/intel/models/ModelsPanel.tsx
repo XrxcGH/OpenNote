@@ -26,13 +26,16 @@ import {
 /** The Code group: the code studio's runtime packs, and the code models (code:L18). It loads with the panel. */
 const CodeDownloads = lazy(loadCodeDownloads);
 
-function stateLine(model: ModelInfo): string {
+/** The line under a model's name. A part that rounds to the whole size says what is left instead. */
+export function stateLine(model: ModelInfo): string {
   const size = formatSize(model.sizeBytes);
   const done = formatSize(model.bytes);
   switch (model.state) {
     case 'notInstalled':
       return t('intelPlus.models.state.notInstalled');
     case 'partial':
+      if (done === size && model.bytes < model.sizeBytes)
+        return t('intelPlus.models.state.partialLeft', { left: formatSize(model.sizeBytes - model.bytes) });
       return t('intelPlus.models.state.partial', { done, size });
     case 'downloading':
       return t('intelPlus.models.state.downloading', { done, size });

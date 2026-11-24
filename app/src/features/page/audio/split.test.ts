@@ -53,22 +53,34 @@ vi.mock('./moreClient', () => ({
 }));
 vi.mock('./stamps', () => ({ marksOf: () => null }));
 vi.mock('../history/shown', () => ({ shownPage: { get: () => ({ id: 'p', saveNow: async () => undefined }) } }));
+const transcriptBlock = { id: 't1', type: 'ext:org.opennote/transcript', order: 'b', data: { recording: 'r1' } };
+const layerBlocks: unknown[] = [];
 vi.mock('../mount', () => ({
   shownLayer: {
-    get: () => ({ blocks: () => [], block: () => ({ id: 'b1' }), view: () => null, upsert: () => undefined }),
+    get: () => ({
+      blocks: () => layerBlocks,
+      block: (id: string) => (id === 't1' ? transcriptBlock : { id }),
+      view: () => null,
+      upsert: () => undefined,
+      remove: () => undefined,
+    }),
   },
 }));
 vi.mock('../pool/shown', () => ({ shownPool: { get: () => null } }));
 vi.mock('../runtime', () => ({ pagesClient: vi.fn() }));
 vi.mock('../sync/shown', () => ({ shownQueue: { get: () => ({ send }) } }));
-vi.mock('../../../app/flags', () => ({ isEnabled: () => false }));
+const flags = vi.hoisted(() => ({ transcripts: false }));
+vi.mock('../../../app/flags', () => ({ isEnabled: (flag: string) => flag === 'transcripts.block' && flags.transcripts }));
 
 const { splitRecording } = await import('./edits');
+const { hold } = await import('./transcripts/store');
 
 beforeEach(() => {
   sent.length = 0;
   send.mockClear();
   deleteFiles.mockClear();
+  flags.transcripts = false;
+  layerBlocks.length = 0;
 });
 
 describe('splitting a recording', () => {
@@ -85,5 +97,28 @@ describe('splitting a recording', () => {
   it('keeps the original files, which an undo lists again', async () => {
     await splitRecording('b1', 'p', whole, 10 * SECOND);
     expect(deleteFiles).not.toHaveBeenCalled();
+  });
+
+  it('moves the transcript in the same undo step as the split (T4-C05-4)', async () => {
+    flags.transcripts = true;
+    layerBlocks.push(transcriptBlock);
+    const line = (id: string, startMs: number) => ({ id, startMs, endMs: startMs + 1000, text: id });
+    hold([
+      {
+        recording: 'r1',
+        language: null,
+        summary: '',
+        lines: [line('early', 2_000), line('late', 20_000)],
+        speakers: {},
+        chapters: [],
+        source: 'imported',
+      } as never,
+    ]);
+    await splitRecording('b1', 'p', whole, 10 * SECOND);
+    // The split, the first half's transcript, and the second half's new transcript.
+    expect(sent.length).toBeGreaterThanOrEqual(3);
+    const key = sent[0]!.coalesce;
+    expect(key).toBeDefined();
+    for (const batch of sent) expect(batch.coalesce).toEqual(key);
   });
 });

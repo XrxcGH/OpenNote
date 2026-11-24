@@ -295,6 +295,46 @@ fn trimming_silence_keeps_the_sound_and_a_margin() {
     assert_audio_at(dir.path(), &edited, after.duration_ns() - 400_000_000);
 }
 
+/// A noisy room: 8 s of hum, 8.5 s of quiet speech with pauses between the words and one loud word near
+/// the end, then 0.5 s of hum. The speech is only a little louder than the room.
+fn quiet_speech_in_a_noisy_room() -> Signal {
+    let noise = noise();
+    Arc::new(move |frame| {
+        let at_ms = frame / 48;
+        // The noise has an RMS of about 0.173, so these scale it to 0.02, 0.05, and 0.17.
+        let scale = match at_ms {
+            15_800..16_000 => 1.0,
+            8_000..16_500 if at_ms % 400 < 300 => 0.29,
+            _ => 0.116,
+        };
+        noise(frame) * scale
+    })
+}
+
+#[test]
+fn trimming_a_noisy_room_keeps_all_of_the_quiet_speech() {
+    let dir = tempfile::tempdir().unwrap();
+    let summary = record_signal(dir.path(), quiet_speech_in_a_noisy_room(), 17);
+    let edited = trim_silence(dir.path(), &summary, &plan("new", "e"), &pcm_decoder_factory())
+        .unwrap()
+        .expect("there is silence to trim");
+
+    let after = PositionMap::from_summary(&edited);
+    // The speech runs from 8 s to 16.5 s, so at least 8.5 s stays, not just the loud word.
+    assert!(after.duration_ns() >= 8_500_000_000, "{}", after.duration_ns());
+    let start = after.capture_at(0).unwrap();
+    assert!(
+        start <= START + 8 * SECOND,
+        "the speech starts at 8 s, kept from {}",
+        start - START
+    );
+    assert!(
+        start >= START + 7 * SECOND,
+        "the hum before 7 s is silence, kept from {}",
+        start - START
+    );
+}
+
 #[test]
 fn trimming_does_nothing_when_there_is_nothing_worth_trimming() {
     let dir = tempfile::tempdir().unwrap();
