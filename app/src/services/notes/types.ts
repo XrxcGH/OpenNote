@@ -84,6 +84,8 @@ export interface LibraryInfo {
   /** The notes folder, for display. */
   readonly folder: string;
   readonly readOnly: boolean;
+  /** Notebooks the library knows whose folder isn't there, as when the notes folder was moved or renamed. */
+  readonly missing?: number;
 }
 
 export interface InitialTree {

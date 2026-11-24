@@ -15,6 +15,8 @@ pub mod trash;
 pub mod tree;
 
 #[cfg(test)]
+mod missing_tests;
+#[cfg(test)]
 mod tests;
 
 use std::{
@@ -74,6 +76,8 @@ pub struct NodeSummary {
 pub struct LibraryOut {
     pub folder: String,
     pub read_only: bool,
+    /// Notebooks the library knows whose folder isn't there, as when the notes folder was moved or renamed.
+    pub missing: u32,
 }
 
 /// The contract's `InitialTree`.
