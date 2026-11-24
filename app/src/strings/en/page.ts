@@ -119,6 +119,14 @@ export const page = {
     'A newer version of OpenNote wrote this page, so this version can’t open it. ' +
     'The file is left unchanged. Update OpenNote to open the page.',
   recoverDamaged: 'Put back the last saved version',
+  saveBlocked: {
+    readOnlyFile:
+      'This page isn’t saving: its file (page.json) is marked read-only. ' +
+      'Clear Read-only in the file’s Properties, then choose Retry in the save notice.',
+    cloudPlaceholder:
+      'This page isn’t saving: its file is a cloud file that isn’t downloaded. ' +
+      'Download it with the cloud service, then choose Retry in the save notice.',
+  },
   recoverNone: 'This page has no saved version to put back. Its file is left unchanged.',
   stillClosing:
     'OpenNote was still closing from last time, so this page opened read-only. ' +
