@@ -100,6 +100,15 @@ describe('the Settings page', () => {
 });
 
 describe('the Settings sections and screens', () => {
+  it('leaves with Escape when focus is on the page body (T1-D05-2)', async () => {
+    await renderApp();
+    await openSettings();
+    (document.activeElement as HTMLElement | null)?.blur();
+    expect(document.activeElement).toBe(document.body);
+    await userEvent.keyboard('{Escape}');
+    await waitFor(() => expect(getLocation().view).toBe('workspace'));
+  });
+
   it('keeps Escape for fields and popups: it never leaves from inside one', async () => {
     await renderApp();
     await openSettings();

@@ -4,7 +4,6 @@
 // Every change applies at once, so there is no Save button.
 
 import { useEffect, useRef, useState } from 'react';
-import type { KeyboardEvent } from 'react';
 import { navigate, useLocation } from '../../app/location';
 import { useSizeClass } from '../../state/layout';
 import { t } from '../../strings/t';
@@ -39,15 +38,20 @@ export function SettingsView() {
     setListShowing(false);
     navigate({ view: 'settings', section: id }, { replace: true });
   };
-  const onKeyDown = (event: KeyboardEvent) => {
-    if (!escapeLeaves(event)) return;
-    event.preventDefault();
-    if (compact && !showList) setListShowing(true);
-    else leaveSettings();
-  };
+  // On the document, so Escape also leaves when focus is on the page body and no control has it (walk 9).
+  useEffect(() => {
+    const onKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (!escapeLeaves(event)) return;
+      event.preventDefault();
+      if (compact && !showList) setListShowing(true);
+      else leaveSettings();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [compact, showList, setListShowing]);
   const title = showList || !section ? t('settings.title') : t(section.title);
   return (
-    <div className={styles.page} data-scope="settings" data-stacked={compact ? '' : undefined} onKeyDown={onKeyDown}>
+    <div className={styles.page} data-scope="settings" data-stacked={compact ? '' : undefined}>
       <div className={styles.header}>
         {compact && !showList ? (
           <Button variant="quiet" onClick={() => setListShowing(true)}>
