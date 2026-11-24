@@ -228,7 +228,8 @@ export function CodeCellPanel({
       const result = await handle.done;
       setRunning(null);
       setTruncated(result.truncated);
-      setFailed(result.status === 'failed');
+      // A run that did not finish normally (failed, time limit, memory) says why; it never also says it printed nothing.
+      setFailed(result.status !== 'ok');
       const said = statusText(result, String(limitsNow().timeMs / 1000));
       setStatus(said);
       announce(said);
