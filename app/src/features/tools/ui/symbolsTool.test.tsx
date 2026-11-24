@@ -24,6 +24,24 @@ afterEach(() => {
   inserted.splice(0);
 });
 
+describe('the symbol palette layout', () => {
+  afterEach(() => {
+    document.documentElement.style.fontSize = '';
+  });
+
+  it('keeps the copy switch tall enough for its wrapped label in a short, narrow window (walk 9, R-VB-8)', () => {
+    // 200% text: the root size doubles, and the line heights follow it.
+    document.documentElement.style.fontSize = '200%';
+    renderUi(
+      <div style={{ inlineSize: 260, blockSize: 280, display: 'flex', flexDirection: 'column' }}>
+        <SymbolsTool />
+      </div>,
+    );
+    const button = screen.getByRole('button', { name: /Copy to the clipboard/ });
+    expect(button.scrollHeight).toBeLessThanOrEqual(button.clientHeight + 1);
+  });
+});
+
 describe('the symbol palette', () => {
   it('inserts a symbol at the caret and lists it under Recent', async () => {
     renderUi(<SymbolsTool />);
