@@ -464,6 +464,16 @@ describe('the error display', () => {
     expect(attrs[1]).toEqual(expect.objectContaining({ 'data-shown': '#REF!', 'data-error': 'REF' }));
   });
 
+  it('says the formula of a cell that shows its result to a screen reader (walk 9 T4-D07-12)', () => {
+    const data = dataOf([...ROWS.slice(0, 1), ['x', '2', '3', '=B1*C1']]);
+    const model = buildModel(gridOfData(data), EMPTY_SMART, EN_US);
+    const set = buildDecorations(tableDataToDoc(data), model, EMPTY_SMART, EN_US, (typed) => `Typed: ${typed}`);
+    const attrs = set
+      .find()
+      .map((found) => (found as unknown as { type: { attrs: Record<string, string> } }).type.attrs);
+    expect(attrs).toEqual([expect.objectContaining({ 'data-shown': '6', 'aria-description': 'Typed: =B1*C1' })]);
+  });
+
   it('shows Circular for a cell in a circle of formulas, and says #BUSY! in words', () => {
     const model = buildModel(gridOfData(dataOf([...ROWS.slice(0, 1), ['x', '1', '=D1', '=C1']])), EMPTY_SMART, EN_US);
     expect(shownFor(model, EMPTY_SMART, 0, 2, EN_US)).toMatchObject({ text: 'Circular', error: 'CYCLE' });

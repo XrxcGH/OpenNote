@@ -165,7 +165,12 @@ export function buildDecorations(
             class: classes.join(' '),
             'data-shown': shown.text,
             title: label ? label.words : typedLabel(cell.textContent),
-            ...(label ? { 'aria-description': label.description, 'data-error': shown.error ?? 'SYNTAX' } : {}),
+            // A formula's cell says its formula to a screen reader too, not only in the tooltip (walk 9 T4-D07-12).
+            ...(label
+              ? { 'aria-description': label.description, 'data-error': shown.error ?? 'SYNTAX' }
+              : cell.textContent.trim().startsWith('=')
+                ? { 'aria-description': typedLabel(cell.textContent) }
+                : {}),
             ...(edge ? { 'data-spill': edge } : {}),
           },
           { kind: 'shown' },
