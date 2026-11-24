@@ -2432,6 +2432,7 @@ Open it with the command "Open upcoming".
 
 - Export as PDF has an Update button once a page's PDF has been saved in this session.
 - Lasso any area, then choose "Export selection" to save it as PDF, PNG, SVG or `.docx`, or copy it as an image.
+- The lasso bar turns a selection 90 degrees in one undo step.
 - This works for annotated images: import a photo, draw on it, and export just that part.
 
 #### Import and export
