@@ -109,7 +109,6 @@ describe('the Settings sections and screens', () => {
     expect(getComputedStyle(box).scrollbarGutter).toContain('stable');
   });
 
-
   it('shows the default notes folder when none is chosen (T1-D05-7, W9-VA-16)', async () => {
     await renderApp({ settings: { storage: { notesFolder: null } } });
     await openSettings();

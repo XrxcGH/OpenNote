@@ -27,7 +27,9 @@ export function requestCards(text: string, source: string): CardRequest {
  * "Term: meaning" lines are written on the page around the transcript, and the palette command reads them too.
  */
 export function transcriptCardText(transcript: string, page: string | null): string {
-  return page?.trim() ? `${page}
+  return page?.trim()
+    ? `${page}
 
-${transcript}` : transcript;
+${transcript}`
+    : transcript;
 }
