@@ -111,7 +111,10 @@ export async function makeTranscript(holder: BlockJson, entry: RecordingEntry): 
     }
     const summary = await quietSummary(data);
     await place(holder, summary ? { ...data, summary } : data);
-    showToast({ id: WORKING, message: t('audioMore.transcript.engineDone') });
+    // Said, not shown: a toast at the bottom covered the transcript's last lines (VB-183), and the transcript itself
+    // is what shows that it is ready.
+    (started as { dismiss(): void } | null)?.dismiss();
+    announce(t('audioMore.transcript.engineDone'));
     return true;
   } catch (error) {
     const reason = (error as { reason?: string } | null)?.reason;

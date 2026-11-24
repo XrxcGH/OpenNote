@@ -249,8 +249,12 @@ transcriptActions.register({
   flag: 'study.cards',
   run: async ({ text, source }) => {
     if (!text.trim()) return void say(t('study.generate.emptyTranscript'));
-    const [{ requestCards }, { openTool }] = await Promise.all([import('../../study'), import('../../tools')]);
-    requestCards(text, source || t('study.deck.untitled', { number: 1 }));
+    const [{ requestCards, transcriptCardText }, { openTool }] = await Promise.all([
+      import('../../study'),
+      import('../../tools'),
+    ]);
+    const page = await shownText();
+    requestCards(transcriptCardText(text, page?.text ?? null), source || t('study.deck.untitled', { number: 1 }));
     openTool('flashcards');
   },
 });

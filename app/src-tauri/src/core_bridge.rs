@@ -221,15 +221,28 @@ fn invalid(field: &str, error: impl std::fmt::Display) -> IpcError {
     IpcError::invalid(field, &error.to_string())
 }
 
-/// A core error with the code the page service reads: an edit's own code, `readOnly`, `notFound`, or internal.
+/// A core error with the code the page service reads: an edit's own code, `readOnly`, `notFound`, `damaged` for a
+/// file that can't be read, or internal.
 pub(crate) fn core_error(error: CoreError) -> IpcError {
     let code = match &error {
         CoreError::Edit(edit) => edit.code(),
         CoreError::ReadOnly(_) => "readOnly",
         CoreError::NotFound(_) => "notFound",
+        CoreError::Format(_) => "damaged",
         _ => codes::INTERNAL,
     };
     IpcError::new(code, error.to_string())
+}
+
+/// Why a page didn't open. A page a newer OpenNote wrote gets its own code, so the page says the file is left
+/// unchanged instead of the general message.
+fn open_error(error: CoreError) -> IpcError {
+    match error {
+        CoreError::ReadOnly(opennote_core::model::ReadOnlyReason::NewerFormat) => {
+            IpcError::new("newerFormat", "A newer version of OpenNote wrote this page.")
+        }
+        error => core_error(error),
+    }
 }
 
 fn revision_id(text: &str) -> IpcResult<RevisionId> {
@@ -298,7 +311,7 @@ impl Bridge {
             return Ok(handle.clone());
         }
         let (notebook, _) = self.core.find_node(id.0).ok_or_else(missing)?;
-        let handle = notebook.open_page(id, client.clone()).map_err(core_error)?;
+        let handle = notebook.open_page(id, client.clone()).map_err(open_error)?;
         self.homes.insert((id, client.clone()), notebook.id());
         self.open.insert((id, client), handle.clone());
         Ok(handle)

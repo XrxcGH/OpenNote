@@ -65,6 +65,11 @@ export const tree = {
   },
   empty: {
     notebooks: 'No notebooks yet. Choose New notebook to start one.',
+    missing:
+      // checks-disable-next-line length: one sentence kept whole, because t() reads its parameters from the literal
+      '{count, plural, one {# notebook isn’t in its folder anymore.} other {# notebooks aren’t in their folder anymore.}} The notes folder may have been moved or renamed.',
+    missingFix: 'Open Storage settings to choose the notes folder where your notebooks are now.',
+    missingAction: 'Choose the notes folder',
     pages: 'No pages yet. Press {shortcut} or choose New page to start one.',
     pagesNoShortcut: 'No pages yet. Choose New page to start one.',
     noSection: 'Choose a section to see its pages.',

@@ -2,7 +2,7 @@
 // the Flashcards window and the flashcard block show. Heavy parts load on first use.
 export { dayKey, daysBetween, isDayKey } from './deck/dates';
 export { nextState } from './deck/schedule';
-export { requestCards } from './deck/request';
+export { requestCards, transcriptCardText } from './deck/request';
 export { cardRequest, importWanted } from './deck/request';
 export {
   decksStore,

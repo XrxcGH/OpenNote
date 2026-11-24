@@ -5,6 +5,7 @@
 import { TrashIcon } from '@phosphor-icons/react/dist/csr/Trash';
 import { lazy, Suspense, useEffect } from 'react';
 import { useFlag } from '../../app/flags';
+import { navigate } from '../../app/location';
 import { formatChord, useKeysFor } from '../../commands/keymap';
 import { executeCommand } from '../../commands/registry';
 import { useStore } from '../../state/store';
@@ -51,13 +52,26 @@ function TrashButton({ plant }: { plant: boolean }) {
 }
 
 function NotebooksEmpty() {
+  const missing = useStore(treeStore, (state) => state.library?.missing ?? 0);
   return (
     <>
       <EmptyArt kind="notebooks" className={styles.emptyArt} />
-      <p>{t('tree.empty.notebooks')}</p>
+      {missing > 0 ? (
+        <>
+          <p role="status">{`${t('tree.empty.missing', { count: missing })} ${t('tree.empty.missingFix')}`}</p>
+          <Button variant="quiet" onClick={openStorage}>
+            {t('tree.empty.missingAction')}
+          </Button>
+        </>
+      ) : (
+        <p>{t('tree.empty.notebooks')}</p>
+      )}
     </>
   );
 }
+
+/** Storage settings, where the notes folder is chosen again after it moved. */
+const openStorage = () => navigate({ view: 'settings', section: 'storage' });
 
 export function NotebooksPane() {
   useTreeStart();

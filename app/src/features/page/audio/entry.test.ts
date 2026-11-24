@@ -143,4 +143,25 @@ describe('where a flag sits', () => {
     expect(positionOfCapture(paused, 22 * SECOND)).toBe(10 * SECOND);
     expect(positionOfCapture(paused, 70 * SECOND)).toBe(activeNs(paused));
   });
+
+  it('follows the track timeline, so a flag after a removed part moves earlier and stays in the clip', () => {
+    // 19 s of audio from 10 s to 29 s, with 3 s to 5 s removed: the track jumps from frame 3 s to capture 15 s.
+    const rate = 48_000;
+    const timeline = {
+      anchors: [
+        { frame: 0, timeNs: 10 * SECOND },
+        { frame: 3 * rate, timeNs: 15 * SECOND },
+      ],
+      frames: 17 * rate,
+    };
+    const edited = entry({
+      endedNs: 29 * SECOND,
+      tracks: [{ kind: 'microphone', asset: 'a', timeline, silenceFrames: 0, droppedPackets: 0 }],
+    });
+    expect(positionOfCapture(edited, 12 * SECOND)).toBe(2 * SECOND);
+    expect(positionOfCapture(edited, 20 * SECOND)).toBe(8 * SECOND);
+    // A flag in the removed part sits where the audio goes on, and one at the old end sits at the new end.
+    expect(positionOfCapture(edited, 14 * SECOND)).toBe(3 * SECOND);
+    expect(positionOfCapture(edited, 29 * SECOND)).toBe(17 * SECOND);
+  });
 });
