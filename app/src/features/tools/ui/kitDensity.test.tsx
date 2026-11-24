@@ -10,8 +10,10 @@ import { FluidHeatKit } from '../../engineering/fluidheat/ui/FluidHeatKit';
 import { SolidsKit } from '../../engineering/solids/ui/SolidsKit';
 import { ThermoKit } from '../../engineering/thermo/ui/ThermoKit';
 import { renderUi } from '../../../test';
+import { LifeSysTool } from '../lifesys/ui/LifeSysTool';
 import { MindKit } from '../mind/ui/MindKit';
 import { KitMolBioTool } from '../molbio/KitMolBioTool';
+import { Tabs } from '../signals/shared/ui';
 import { StatModelsKit } from '../statmodels/ui/StatModelsKit';
 
 const TARGET = 44;
@@ -29,6 +31,7 @@ const kits: readonly (readonly [string, () => ReactElement])[] = [
   ['Mind', () => <MindKit />],
   ['Molecular biology', () => <KitMolBioTool />],
   ['Statistical models', () => <StatModelsKit />],
+  ['Life systems', () => <LifeSysTool />],
 ];
 
 describe('kit windows in touch density', () => {
@@ -38,6 +41,8 @@ describe('kit windows in touch density', () => {
       await waitFor(() => expect(screen.getAllByRole('tab').length).toBeGreaterThan(1));
       for (const tab of screen.getAllByRole('tab')) {
         expect(tab.getBoundingClientRect().height, tab.textContent ?? '').toBeGreaterThanOrEqual(TARGET - 0.5);
+        // A short label ("CT", "Map") is a finger target wide as well as tall (walk 9, R-VB-16).
+        expect(tab.getBoundingClientRect().width, tab.textContent ?? '').toBeGreaterThanOrEqual(TARGET - 0.5);
       }
     });
     it(`give the ${name} kit's selects and fields a finger-sized target`, async () => {
@@ -57,4 +62,27 @@ describe('kit windows in touch density', () => {
       expect(short).toEqual([]);
     });
   }
+});
+
+describe('the shared tab strip in touch density', () => {
+  it('makes a short label such as CT or Map a finger target wide as well as tall (walk 9, R-VB-16)', async () => {
+    renderUi(
+      <Tabs
+        label="Tools"
+        value="ct"
+        options={['ct', 'map']}
+        name={(o) => (o === 'ct' ? 'CT' : 'Map')}
+        onChange={() => {}}
+      >
+        <p>x</p>
+      </Tabs>,
+      { density: 'touch' },
+    );
+    await waitFor(() => expect(screen.getAllByRole('tab').length).toBe(2));
+    for (const tab of screen.getAllByRole('tab')) {
+      const box = tab.getBoundingClientRect();
+      expect(box.width, tab.textContent ?? '').toBeGreaterThanOrEqual(TARGET - 0.5);
+      expect(box.height, tab.textContent ?? '').toBeGreaterThanOrEqual(TARGET - 0.5);
+    }
+  });
 });
