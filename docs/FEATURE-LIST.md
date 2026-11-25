@@ -1019,6 +1019,7 @@ Open it with the command "Open the code studio".
 - **Edits from other apps.** OpenNote watches the notes folder and reloads pages that other programs change, such as Git, Syncthing, or a script.
 - **Notes in OneDrive or Dropbox.** Setup and Settings notice when the notes folder is inside OneDrive, Dropbox, iCloud Drive, or Google Drive.
 - **Open a notebook from any folder.** "Open folder" opens a notebook that lives anywhere: another drive, a USB stick, a network share, or a folder in a Git repository.
+- **Save notice and outside edits.** When a page can't save, for example because its file is read-only, a notice says why.
 - **Check notebook.** Scans a notebook for damaged files, missing images and recordings, broken links, and pages whose readable copy doesn't match the page data.
 - **Open-source notices.** Settings, then About, has a section with the copyright lines and license text of the bundled fonts (Atkinson Hyperlegible, Literata), as the SIL Open Font License asks.
 
