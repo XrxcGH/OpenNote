@@ -1,9 +1,6 @@
 // An imported column alignment (data.sheet column styles) shows in the real page, with the real stylesheet.
 // The cell and the paragraph inside it align as the column says (T4-D11-1).
 
-import writes (data.sheet column styles) shows in the real page, with the real
-// stylesheet: the cell and the paragraph inside it align as the column says (T4-D11-1).
-
 import { expect, test } from '../fixtures';
 import { openSmart } from './smart';
 
