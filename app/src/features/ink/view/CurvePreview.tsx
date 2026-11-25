@@ -25,7 +25,15 @@ export function previewRadii(pen: Pick<PenDevice, 'curve' | 'customCurve' | 'min
 export function CurvePreview({ pen, label }: { pen: PenDevice; label: string }) {
   const radii = previewRadii(pen);
   return (
-    <svg role="img" aria-label={label} width={WIDTH} height={HEIGHT} viewBox={`0 0 ${WIDTH} ${HEIGHT}`}>
+    <svg
+      role="img"
+      aria-label={label}
+      width={WIDTH}
+      height={HEIGHT}
+      viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
+      // Shrinks with a narrow column in place of scrolling the page sideways (walk 11, R-VA-2).
+      style={{ maxInlineSize: '100%', blockSize: 'auto' }}
+    >
       {radii.map((r, i) => {
         const along = i / (POINTS - 1);
         const x = 12 + along * (WIDTH - 24);

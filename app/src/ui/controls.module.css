@@ -7,12 +7,16 @@
     gap: var(--space-7);
   }
 
+  /* A card never needs more than the column, so one wraps below 7rem in a narrow window (walk 11, R-VA-2). */
   /* Equal cards, at most --radio-columns to a row, wrapping together so no row is left with one card. */
   .radioGrid {
     display: grid;
     grid-template-columns: repeat(
       auto-fit,
-      minmax(max(7rem, calc((100% - (var(--radio-columns) - 1) * var(--space-5)) / var(--radio-columns))), 1fr)
+      minmax(
+        min(100%, max(7rem, calc((100% - (var(--radio-columns) - 1) * var(--space-5)) / var(--radio-columns)))),
+        1fr
+      )
     );
     gap: var(--space-5);
   }

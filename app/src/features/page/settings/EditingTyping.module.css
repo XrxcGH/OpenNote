@@ -14,6 +14,12 @@
     color: var(--color-text-secondary);
   }
 
+  /* A wide table scrolls inside its own box, so the Settings page never scrolls sideways (walk 11, R-VA-2). */
+  .listScroll {
+    min-inline-size: 0;
+    overflow-x: auto;
+  }
+
   .list {
     border-collapse: collapse;
     inline-size: 100%;
@@ -35,7 +41,7 @@
 
   .add {
     display: grid;
-    grid-template-columns: 1fr 1fr auto;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
     align-items: end;
     gap: var(--space-2);
   }
