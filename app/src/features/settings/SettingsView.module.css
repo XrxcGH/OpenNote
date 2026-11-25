@@ -155,12 +155,14 @@
   /* Short number fields side by side, never one stretched across the column. */
   .fields {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(9rem, 100%), 1fr));
     gap: var(--space-4);
   }
 
   .block p {
     margin: 0;
+    /* A folder name longer than the column breaks inside, after the breaks at separators (walk 10, R-VA-2). */
+    overflow-wrap: anywhere;
   }
 
   .help {
