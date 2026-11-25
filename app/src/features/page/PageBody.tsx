@@ -9,7 +9,8 @@ import { getSizeClass } from '../../state/layout';
 import { useStore } from '../../state/store';
 import { t } from '../../strings/t';
 import { mountPage } from './mount';
-import { openFailureOf, openFailureText } from './openFailure';
+import { OpenFailedNotice } from './openFailedNotice';
+import { openFailureOf } from './openFailure';
 import type { OpenFailure } from './openFailure';
 import type { MountedPage } from './mount';
 import extrasStyles from './qol/qol.module.css';
@@ -114,15 +115,7 @@ export default function PageBody({ pageId, title, treeTitle, changed, band }: Pa
   }, [mounted, treeTitle]);
   return (
     <>
-      {failed && <p role="alert">{openFailureText(failed)}</p>}
-      {failed === 'damaged' && recover && (
-        <p>
-          <button type="button" onClick={putBack}>
-            {t('page.recoverDamaged')}
-          </button>
-          {recoverNote && <span role="status"> {recoverNote}</span>}
-        </p>
-      )}
+      {failed && <OpenFailedNotice failure={failed} onRecover={recover && putBack} note={recoverNote} />}
       {mounted && <StillClosingNotice readOnly={mounted.page.readOnly} />}
       {mounted && <SaveBlockedNotice page={mounted.page} />}
       <div className={paneStyles.row} data-page-row="">
