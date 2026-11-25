@@ -4,7 +4,7 @@ A code project can hold C (.c) and C++ (.cpp) files with their headers, and comp
 
 ## The compiler
 
-- C and C++ use clang 22 from the clang runtime pack. Get the pack once from the studio's toolbar or in Settings, under Code downloads. Without it, a run says the pack is missing.
+- C and C++ use clang 22 from the clang runtime pack. Get the pack once from the studio's toolbar or in Settings, under Code downloads. Without it, a run says the pack is missing and offers Download and Cancel in the console.
 - The program runs as WebAssembly in the run sandbox.
 - C uses C17 and C++ uses C++20 unless Settings, then Code, picks another standard. Warnings (-Wall -Wextra) are on unless you turn them off there.
 
