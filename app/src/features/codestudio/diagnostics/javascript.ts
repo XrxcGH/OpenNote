@@ -59,6 +59,13 @@ function kids(node: SyntaxNode): SyntaxNode[] {
   return out;
 }
 
+/** Everything the console object has, in browsers and in Node. */
+const CONSOLE_MEMBERS = new Set([
+  ...['log', 'error', 'warn', 'info', 'debug', 'table', 'assert', 'clear', 'count', 'countReset', 'dir', 'dirxml'],
+  ...['group', 'groupCollapsed', 'groupEnd', 'time', 'timeEnd', 'timeLog', 'timeStamp', 'trace'],
+  ...['profile', 'profileEnd', 'context', 'createTask'],
+]);
+
 class JsChecker {
   readonly findings: Finding[] = [];
   private readonly refs: Ref[] = [];
@@ -410,9 +417,24 @@ class JsChecker {
     return null;
   }
 
+  /** `console.lgo`: a member the console does not have fails when it runs, so it is marked now (T4-D09-7). */
+  private consoleMember(ref: Ref): void {
+    const match = /^\.([\p{L}_$][\p{L}\p{N}_$]*)/u.exec(this.text.slice(ref.to, ref.to + 80));
+    if (!match || CONSOLE_MEMBERS.has(match[1])) return;
+    this.findings.push({
+      from: ref.to + 1,
+      to: ref.to + 1 + match[1].length,
+      severity: 'error',
+      code: 'no-unknown-member',
+      message: 'unknownMember',
+      params: { object: 'console', name: match[1] },
+    });
+  }
+
   private resolve(): void {
     for (const ref of this.refs) {
       const b = this.lookup(ref);
+      if (!b && ref.name === 'console') this.consoleMember(ref);
       if (!b) {
         if (!ref.type && !ref.typeOf && !JS_GLOBALS.has(ref.name) && ref.name !== 'arguments') {
           this.findings.push({
