@@ -46,8 +46,10 @@
   }
 
   .even [role='radio'] {
-    min-inline-size: calc(var(--space-9) * 2);
+    /* Never wider than its grid cell or row, so a narrow window or large text does not scroll sideways (walk 10). */
+    min-inline-size: min(calc(var(--space-9) * 2), 100%);
     justify-items: center;
+    overflow-wrap: normal;
   }
 
   /* Eight steps, the text sizes, need 696 px in one row: eight 80 px cards and seven 8 px gaps. Narrower, they
@@ -55,8 +57,15 @@
   @container (inline-size < 696px) {
     .even [role='radiogroup']:has(> :nth-child(8):last-child) {
       display: grid;
-      grid-template-columns: repeat(4, auto);
+      grid-template-columns: repeat(4, minmax(0, auto));
       justify-content: start;
+    }
+  }
+
+  /* Under four 80 px cards: two columns, and the cards shrink with their cell. */
+  @container (inline-size < 344px) {
+    .even [role='radiogroup']:has(> :nth-child(8):last-child) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
 }

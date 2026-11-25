@@ -22,7 +22,9 @@ function wide(): string[] {
   for (const el of main.querySelectorAll('*')) {
     const box = el.getBoundingClientRect();
     if (box.width > 0 && box.right > edge + 1)
-      out.push(`${el.tagName}.${(el as HTMLElement).className}:${Math.round(box.right - edge)}`);
+      out.push(
+        `${el.tagName}.${(el as HTMLElement).className}:${Math.round(box.right - edge)} in ${el.closest('section')?.id}`,
+      );
   }
   return out.filter(Boolean).slice(0, 8);
 }
@@ -32,6 +34,7 @@ describe('Settings in a small window', () => {
     [600, 1],
     [600, 2],
     [400, 2],
+    [300, 2],
   ])('has no sideways scroll at %i px with text at %i x', async (width, scale) => {
     await setViewport(width, 900);
     document.documentElement.style.fontSize = `${scale * 100}%`;
@@ -47,5 +50,24 @@ describe('Settings in a small window', () => {
       const back = screen.queryByRole('button', { name: 'Back to settings' });
       if (back) await userEvent.click(back);
     }
+  });
+
+  it('wraps a long program path in General at 300 px with text at 2 x', async () => {
+    await setViewport(300, 900);
+    document.documentElement.style.fontSize = '200%';
+    const exePath = [
+      'D:',
+      'Programs',
+      'SomeLongFolderName',
+      'AnotherLongFolderName',
+      'ThirdFolder',
+      'OpenNote.exe',
+    ].join(String.fromCharCode(92));
+    await renderApp({ boot: { install: { isDevBuild: false, inUserPrograms: false, exePath } } });
+    await pressChord('Ctrl+,');
+    await userEvent.click(await screen.findByRole('link', { name: 'General' }));
+    await screen.findByText(/OpenNote runs from/);
+    await new Promise((done) => setTimeout(done, 300));
+    expect(wide()).toEqual([]);
   });
 });
