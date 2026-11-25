@@ -5,9 +5,12 @@
 // The log redraws from the console buffer alone. Each line redraws only when its text or the project's paths change.
 // So typing in the editor and a growing log stay fast with thousands of lines.
 import { memo, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { useStore } from '../../../state/store';
 import { t } from '../../../strings/t';
 import { Button } from '../../../ui';
+import { downloadPack, openCodeDownloads, packsState, refreshPacks } from '../packs/store';
 import type { StudioController } from '../window/controller';
+import { RUNTIME_PACKS, runtimeName } from '../window/languages';
 import type { ConsoleLine, ConsoleSpan, LineKind } from './buffer';
 import styles from './console.module.css';
 import { findLinks } from './links';
@@ -166,6 +169,33 @@ function InputLine({ controller }: { controller: StudioController }) {
   );
 }
 
+/** What a run that needed a download offers: get the runtime, or leave it (T4-D09-6). */
+function PackPrompt({ controller }: { controller: StudioController }) {
+  const runtime = controller.missingPack;
+  const pack = runtime ? RUNTIME_PACKS[runtime] : undefined;
+  const list = useStore(packsState, (state) => state.list);
+  useEffect(() => {
+    if (pack) void refreshPacks();
+  }, [pack]);
+  if (!runtime || !pack) return null;
+  const info = list?.packs.find((one) => one.id === pack);
+  const busy = info?.state.kind === 'downloading';
+  return (
+    <div
+      className={styles.actions}
+      role="group"
+      aria-label={t('codeStudio.studio.console.packPrompt', { runtime: runtimeName(runtime) })}
+    >
+      <Button variant="primary" disabled={busy} onClick={() => (info ? void downloadPack(info) : openCodeDownloads())}>
+        {t('codeStudio.studio.console.packDownload')}
+      </Button>
+      <Button variant="quiet" onClick={() => controller.dismissPackPrompt()}>
+        {t('codeStudio.studio.console.packCancel')}
+      </Button>
+    </div>
+  );
+}
+
 function StdinBox({ controller }: { controller: StudioController }) {
   const project = controller.project()!;
   const [text, setText] = useState(project.stdin);
@@ -227,6 +257,7 @@ export function ConsolePanel({ controller }: { controller: StudioController }) {
       <div ref={log} className={styles.output} role="log" aria-label={t('codeStudio.studio.console.output')}>
         <Log lines={lines} files={files} open={open} />
       </div>
+      <PackPrompt controller={controller} />
       <InputLine controller={controller} />
     </div>
   );

@@ -48,11 +48,20 @@ function AppLocation() {
       .install.moveToUserPrograms()
       .catch(() => showToast({ message: t('settings.general.moveFailed'), tone: 'danger' }));
   };
-  const text = status.isDevBuild
-    ? t('settings.general.appDev')
-    : status.inUserPrograms
-      ? t('settings.general.appHome')
-      : t('settings.general.appElsewhere', { path: status.exePath });
+  // The path breaks after a separator, so a long one wraps in a narrow window (walk 10, R-VA-2).
+  const marker = '\u0000';
+  const elsewhere = t('settings.general.appElsewhere', { path: marker }).split(marker);
+  const text = status.isDevBuild ? (
+    t('settings.general.appDev')
+  ) : status.inUserPrograms ? (
+    t('settings.general.appHome')
+  ) : (
+    <>
+      {elsewhere[0]}
+      <PathText path={status.exePath} />
+      {elsewhere[1]}
+    </>
+  );
   return (
     <section className={styles.block} aria-labelledby="settings-app">
       <h2 id="settings-app">{t('settings.general.appTitle')}</h2>

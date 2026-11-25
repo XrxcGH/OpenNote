@@ -36,7 +36,7 @@ The Code studio is a tool window for writing, running, and testing code projects
 ## Quick fixes and explanations
 
 - Point at a problem, or put the cursor on it and press Ctrl+., to see its fixes.
-- Fixes include a name you likely meant, a missing import or include, and a closing bracket or quote.
+- Fixes include a name you likely meant (such as `console.log` for `console.lgo`), a missing import or include, and a closing bracket or quote.
 - Other fixes add indents, a missing colon or semicolon, or a missing self. They also change = to == and fix SQL typos.
 - Fix all fixes every problem of one kind in the file.
 - Explain the problem says what the error means, in plain words. It works for Python, JavaScript, C, C++, SQLite, and Lua errors.

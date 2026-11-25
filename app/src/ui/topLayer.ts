@@ -39,12 +39,18 @@ let anchors = 0;
 export function anchorTo(floating: HTMLElement, anchor: HTMLElement): () => void {
   anchors += 1;
   const name = `--ui-anchor-${anchors}`;
-  const inline = anchor.style.getPropertyValue('anchor-name');
   const current = getComputedStyle(anchor).getPropertyValue('anchor-name');
   anchor.style.setProperty('anchor-name', current && current !== 'none' ? `${current}, ${name}` : name);
   floating.style.setProperty('position-anchor', name);
   return () => {
-    if (inline) anchor.style.setProperty('anchor-name', inline);
+    // Only this name goes. A menu opened from another menu at the same button anchors before the first one
+    // closes, and putting back the old value would drop its name and send it to the corner (T1-D03-8).
+    const others = anchor.style
+      .getPropertyValue('anchor-name')
+      .split(',')
+      .map((part) => part.trim())
+      .filter((part) => part && part !== name && part !== 'none');
+    if (others.length > 0) anchor.style.setProperty('anchor-name', others.join(', '));
     else anchor.style.removeProperty('anchor-name');
   };
 }

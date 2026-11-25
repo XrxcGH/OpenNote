@@ -471,3 +471,13 @@ describe('review gaps, second round', () => {
     expect(schema.get('b')).toEqual(['y']);
   });
 });
+
+describe('a misspelled console member (T4-D09-7)', () => {
+  it('is marked, and Ctrl+. offers the right name', async () => {
+    const text = 'console.lgo(1);\nconsole.log(2);\nconsole.dir({});\n';
+    const found = (await diagnose('javascript', text)).filter((d) => d.code === 'no-unknown-member');
+    expect(found).toHaveLength(1);
+    expect(text.slice(found[0]!.from, found[0]!.to)).toBe('lgo');
+    expect(applyFirst(text, 'javascript', found[0]!)).toBe('console.log(1);\nconsole.log(2);\nconsole.dir({});\n');
+  });
+});

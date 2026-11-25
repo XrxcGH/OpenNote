@@ -219,7 +219,7 @@ fn a_recording_that_is_still_growing_does_not_stop_a_save_or_make_the_page_read_
 }
 
 #[test]
-fn a_change_on_disk_stops_the_save_unless_the_revision_is_the_same() {
+fn a_change_on_disk_stops_the_save_even_with_the_same_revision() {
     let h = Harness::new();
     let page = sample_page();
     h.put_assets(&page);
@@ -237,7 +237,15 @@ fn a_change_on_disk_stops_the_save_unless_the_revision_is_the_same() {
         }
     );
     h.fs.put(&path, &h.codec.write_page(&saved));
-    assert!(h.store.save(&h.dir, again()).is_ok(), "touched, same revision");
+    // Another program can change the text and keep the revision (T2-D04-6): the session decides.
+    let err = h.store.save(&h.dir, again()).unwrap_err();
+    assert_eq!(
+        err,
+        SaveError::External {
+            disk: Some(saved.revision.id)
+        },
+        "touched, same revision"
+    );
     h.fs.put(&path, b"not a page");
     let err = h.store.save(&h.dir, again()).unwrap_err();
     assert_eq!(err, SaveError::External { disk: None });
