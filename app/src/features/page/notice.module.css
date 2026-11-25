@@ -1,0 +1,22 @@
+@layer components {
+  /* A notice above the page, such as one that says the page can't open or can't save. It sits inside the pane, as
+     the external-edit notices do, not flush against its edge (walk 10: T2-D04-7, T2-D04-9). */
+  .notice {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+    margin: var(--space-3) var(--space-4) 0;
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-md);
+    background: var(--color-accent-dusk-subtle);
+    color: var(--color-text-primary);
+  }
+
+  .notice p {
+    flex: 1;
+    min-inline-size: 12rem;
+    margin: 0;
+  }
+}

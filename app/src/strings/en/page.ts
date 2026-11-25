@@ -122,10 +122,11 @@ export const page = {
   saveBlocked: {
     readOnlyFile:
       'This page isn’t saving: its file (page.json) is marked read-only. ' +
-      'Clear Read-only in the file’s Properties, then choose Retry in the save notice.',
+      'Clear Read-only in the file’s Properties, then choose Retry.',
     cloudPlaceholder:
       'This page isn’t saving: its file is a cloud file that isn’t downloaded. ' +
-      'Download it with the cloud service, then choose Retry in the save notice.',
+      'Download it with the cloud service, then choose Retry.',
+    retry: 'Retry',
   },
   recoverNone: 'This page has no saved version to put back. Its file is left unchanged.',
   stillClosing:

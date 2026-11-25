@@ -76,7 +76,7 @@ impl PageStore {
         };
         before_commit(page.revision.id, req.through_seq)?;
         fail_point!("save.save_begin.flushed");
-        self.check_disk(dir, req.page, req.base_stamp)?;
+        self.check_disk(dir, req.base_stamp)?;
         let committed = self
             .config
             .fs
@@ -168,8 +168,10 @@ impl PageStore {
         }
     }
 
-    /// S7: `page.json` must still be the file this save started from, or hold the same revision.
-    fn check_disk(&self, dir: &Path, page: &Page, base: Option<crate::store::fs::FileStamp>) -> Result<(), SaveError> {
+    /// S7: `page.json` must still be the file this save started from. A changed file stops the save even when
+    /// it holds the same revision: another program can change the text and keep the revision fields (T2-D04-6).
+    /// The session compares the bytes and keeps an outside edit in `.conflicts` before it saves again.
+    fn check_disk(&self, dir: &Path, base: Option<crate::store::fs::FileStamp>) -> Result<(), SaveError> {
         let Some(base) = base else {
             return Ok(());
         };
@@ -183,10 +185,7 @@ impl PageStore {
                     .ok()
                     .and_then(|bytes| self.config.codec.read_page(&bytes, &self.config.limits).ok())
                     .map(|read| read.page.revision.id);
-                match disk {
-                    Some(revision) if revision == page.revision.id => Ok(()),
-                    disk => Err(SaveError::External { disk }),
-                }
+                Err(SaveError::External { disk })
             }
             Err(err) if err.kind == FsErrorKind::NotFound => Err(SaveError::External { disk: None }),
             Err(err) => Err(SaveError::Fs(err)),

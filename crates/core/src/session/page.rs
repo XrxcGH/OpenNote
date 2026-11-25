@@ -233,6 +233,12 @@ impl PageHandle {
         self.session.read_only()
     }
 
+    /// Whether `bytes` are the `page.json` this session last read or wrote. Another program can change the text
+    /// and keep the revision fields, so the revision alone can't tell (T2-D04-6).
+    pub fn is_own_file(&self, bytes: &[u8]) -> bool {
+        self.session.state().bytes[..] == bytes[..]
+    }
+
     /// Whether the page has changes that aren't saved yet.
     pub fn has_unsaved(&self) -> bool {
         self.session.state().dirty.is_some()

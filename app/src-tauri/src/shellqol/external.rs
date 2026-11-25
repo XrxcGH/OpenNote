@@ -217,8 +217,8 @@ fn settle(app: &AppHandle, pending: HashMap<(PathBuf, String, Seen), PathBuf>) {
         let Some(handle) = page_handle(app, id) else {
             continue;
         };
-        let foreign = match seen {
-            Seen::ConflictCopy => true,
+        match seen {
+            Seen::ConflictCopy => emit(app, "external", json!({ "pageId": page, "change": "conflictCopy" })),
             Seen::PageMd => {
                 // Saving first, then looking at page.md, keeps the edited file aside as a save would. OpenNote's own
                 // page.md is left as it is, so its own writes never come back here as an edit.
@@ -227,24 +227,30 @@ fn settle(app: &AppHandle, pending: HashMap<(PathBuf, String, Seen), PathBuf>) {
                 if copies.iter().any(|copy| copy.file == "page.md") {
                     emit(app, "external", json!({ "pageId": page, "change": "edited" }));
                 }
-                continue;
             }
             Seen::PageJson => {
-                // Saving first keeps OpenNote's own unsaved edits: the core keeps both versions if the file changed.
-                let own = handle.save_now().ok().map(|info| info.revision.to_string());
-                let disk = std::fs::read(&path).ok().and_then(|bytes| revision_in(&bytes));
-                matches!((own, disk), (Some(own), Some(disk)) if own != disk)
+                if let Some(change) = page_json_change(&handle, &path) {
+                    emit(app, "external", json!({ "pageId": page, "change": change }));
+                }
             }
-        };
-        if foreign {
-            let change = match seen {
-                Seen::ConflictCopy => "conflictCopy",
-                Seen::PageMd => "edited",
-                Seen::PageJson => "changed",
-            };
-            emit(app, "external", json!({ "pageId": page, "change": change }));
         }
     }
+}
+
+/// What a changed `page.json` of an open page means. Saving first keeps OpenNote's own unsaved edits: the core
+/// keeps the outside version in `.conflicts`, which the conflict banner offers ("conflictCopy"). A file that is
+/// not OpenNote's own, with no unsaved edits, offers to reload ("changed"). Another program can change the text
+/// and keep the revision fields, so the bytes are compared too (T2-D04-6).
+fn page_json_change(handle: &opennote_core::session::page::PageHandle, path: &Path) -> Option<&'static str> {
+    let count = || handle.conflicts().map(|c| c.len()).unwrap_or(0);
+    let before = count();
+    let own = handle.save_now().ok().map(|info| info.revision.to_string());
+    if count() > before {
+        return Some("conflictCopy");
+    }
+    let bytes = std::fs::read(path).ok()?;
+    let other_revision = matches!((own, revision_in(&bytes)), (Some(own), Some(disk)) if own != disk);
+    (other_revision || !handle.is_own_file(&bytes)).then_some("changed")
 }
 
 #[cfg(test)]
@@ -339,6 +345,81 @@ Added outside",
             "a second call has nothing to bring in"
         );
         bridge.shutdown();
+    }
+
+    /// T2-D04-6: another program changes the text in `page.json` and keeps the revision fields.
+    #[test]
+    fn an_outside_page_json_edit_that_keeps_the_revision_is_offered() {
+        use opennote_core::ops::resolve::{Edit, NewBlock, TxnRequest};
+        let dir = tempfile::tempdir().expect("a temp folder");
+        let notes = dir.path().join("Notes");
+        let bridge = CoreBridge::at(dir.path().join("local"));
+        let (id, handle) = bridge
+            .notes(Some(notes.clone()), |b| {
+                let mut make = |kind: &str, parent: Option<String>| {
+                    let input = json!({ "kind": kind, "placement": { "parentId": parent, "beforeId": null } });
+                    let node = b.dispatch("notes_create", &json!({ "input": input }))?;
+                    Ok::<_, IpcError>(node["id"].as_str().unwrap_or_default().to_owned())
+                };
+                let notebook = make("notebook", None)?;
+                let section = make("section", Some(notebook))?;
+                let page = make("page", Some(section))?;
+                let handle = b.handle(&page, "main-1")?;
+                Ok((page, handle))
+            })
+            .expect("a page");
+        let insert = |seq: u64, n: u32, text: &str| {
+            let block: NewBlock = serde_json::from_value(json!({
+                "id": format!("01k6f00000000000000000b{n:03}"), "type": "text", "data": { "markdown": text }
+            }))
+            .expect("a block");
+            let request = TxnRequest {
+                page: handle.id(),
+                client: handle.client().clone(),
+                client_seq: seq,
+                coalesce: None,
+                ui: None,
+                edits: vec![Edit::InsertBlock {
+                    block,
+                    after: None,
+                    before: None,
+                }],
+            };
+            handle.apply(request).expect("applies");
+        };
+        insert(1, 1, "ZEXT alpha");
+        handle.save_now().expect("saves");
+        let path = find_file(&notes, &id, "page.json").expect("a page.json");
+        assert_eq!(page_json_change(&handle, &path), None, "OpenNote's own file");
+        let edit_outside = |from: &str, to: &str| {
+            let text = std::fs::read_to_string(&path).unwrap();
+            assert!(text.contains(from), "{text}");
+            std::fs::write(&path, text.replace(from, to)).unwrap();
+        };
+        // No unsaved edits: the page offers to reload.
+        edit_outside("ZEXT alpha", "ZEXT CHANGED OUTSIDE");
+        assert_eq!(page_json_change(&handle, &path), Some("changed"));
+        // Unsaved edits: the outside version is kept as a conflict, which the banner offers.
+        insert(2, 2, "typed after");
+        edit_outside("ZEXT CHANGED OUTSIDE", "ZEXT CHANGED AGAIN");
+        assert_eq!(page_json_change(&handle, &path), Some("conflictCopy"));
+        assert_eq!(handle.conflicts().unwrap().len(), 1);
+        bridge.shutdown();
+    }
+
+    fn find_file(dir: &Path, page: &str, name: &str) -> Option<PathBuf> {
+        for entry in std::fs::read_dir(dir).ok()?.filter_map(Result::ok) {
+            let path = entry.path();
+            if path.is_dir() {
+                if path.file_name().is_some_and(|n| n == page) && path.join(name).is_file() {
+                    return Some(path.join(name));
+                }
+                if let Some(found) = find_file(&path, page, name) {
+                    return Some(found);
+                }
+            }
+        }
+        None
     }
 
     fn find_page_md(dir: &Path, page: &str) -> Option<PathBuf> {
