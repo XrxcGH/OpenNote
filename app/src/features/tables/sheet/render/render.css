@@ -2,21 +2,22 @@
  * Drawing cell styles (ADR 0056, DESIGN 9). draw.ts gives each cell custom properties (--cell-*) and data attributes;
  * these rules turn them into pixels. Borders come from the settled edges in --cell-bt, --cell-br, --cell-bb, and
  * --cell-bl, so both cells of a shared edge draw the same line. Colors are values the draw step resolved for the
- * current scheme, so dark mode needs no second set of rules. Every selector starts with table[data-sheet], which
- * outranks the table's base rules in tables.module.css.
+ * current scheme, so dark mode needs no second set of rules. Every selector starts with the sheet table, which
+ * outranks the table's base rules in tables.module.css. In a page a node view draws the table, so the decoration's
+ * data-sheet lands on the wrapper around it: both forms match.
  */
 @layer components {
-  table[data-sheet] {
+  :is(table[data-sheet], [data-sheet] > table) {
     border-collapse: collapse;
     box-shadow: none;
     --sheet-grid: var(--sheet-grid-color, var(--color-border-subtle));
   }
 
-  table[data-sheet][data-no-grid] {
+  :is(table[data-sheet][data-no-grid], [data-sheet][data-no-grid] > table) {
     --sheet-grid: transparent;
   }
 
-  table[data-sheet] :is(td, th)[data-cell] {
+  :is(table[data-sheet], [data-sheet] > table) :is(td, th)[data-cell] {
     box-shadow: none;
     box-sizing: border-box;
     border-top: var(--cell-bt, none);
@@ -41,73 +42,76 @@
   }
 
   /* Header cells stay bold unless the look says otherwise. */
-  table[data-sheet] th[data-cell] {
+  :is(table[data-sheet], [data-sheet] > table) th[data-cell] {
     font-weight: var(--cell-weight, 700);
   }
 
   /* Conditional icon sets: the glyph comes first, and its text after the slash is what a screen reader says. */
-  table[data-sheet] :is(td, th)[data-cell][data-icon-glyph] > p:first-child::before {
+  :is(table[data-sheet], [data-sheet] > table) :is(td, th)[data-cell][data-icon-glyph] > p:first-child::before {
     content: var(--cell-icon-glyph) / var(--cell-icon-text);
     color: var(--cell-icon-color, var(--cell-color, var(--sheet-ink, CanvasText)));
     margin-inline-end: 0.35em;
   }
 
   /* Icon only and bar only keep the value for assistive technology and hide it from the eye. */
-  table[data-sheet] :is(td, th)[data-cell]:is([data-icon-only], [data-bar-only]) > p {
+  :is(table[data-sheet], [data-sheet] > table) :is(td, th)[data-cell]:is([data-icon-only], [data-bar-only]) > p {
     color: transparent;
   }
 
-  table[data-sheet] :is(td, th)[data-cell][data-icon-only] > p:first-child::before {
+  :is(table[data-sheet], [data-sheet] > table) :is(td, th)[data-cell][data-icon-only] > p:first-child::before {
     margin-inline-end: 0;
   }
 
-  table[data-sheet] :is(td, th)[data-cell][data-distributed] {
+  :is(table[data-sheet], [data-sheet] > table) :is(td, th)[data-cell][data-distributed] {
     text-align-last: justify;
   }
 
   /* Wrap, overflow, and clip. Without room to spill, overflow clips at the cell edge, as Excel does. */
-  table[data-sheet] :is(td, th)[data-cell]:is([data-wrap='overflow'], [data-wrap='clip']) {
+  :is(table[data-sheet], [data-sheet] > table) :is(td, th)[data-cell]:is([data-wrap='overflow'], [data-wrap='clip']) {
     overflow: hidden;
     white-space: nowrap;
     overflow-wrap: normal;
   }
 
   /* Text that spills draws in a paragraph wider than its cell. The measuring pass (measure.ts) sets how far. */
-  table[data-sheet] :is(td, th)[data-cell]:is([data-spill-before], [data-spill-after], [data-across]) {
+  :is(table[data-sheet], [data-sheet] > table)
+    :is(td, th)[data-cell]:is([data-spill-before], [data-spill-after], [data-across]) {
     position: relative;
     z-index: calc(var(--layer-base) + 1);
     overflow: visible;
   }
 
-  table[data-sheet] :is(td, th)[data-cell]:is([data-spill-before], [data-spill-after], [data-across]) > p:first-child {
+  :is(table[data-sheet], [data-sheet] > table)
+    :is(td, th)[data-cell]:is([data-spill-before], [data-spill-after], [data-across])
+    > p:first-child {
     contain: inline-size;
     overflow: hidden;
     margin-inline: calc(-1 * var(--cell-spill-l, 0px)) calc(-1 * var(--cell-spill-r, 0px));
     inline-size: calc(100% + var(--cell-spill-l, 0px) + var(--cell-spill-r, 0px));
   }
 
-  table[data-sheet] :is(td, th)[data-cell][data-across-covered] {
+  :is(table[data-sheet], [data-sheet] > table) :is(td, th)[data-cell][data-across-covered] {
     border-left-color: transparent;
   }
 
   /* Shrink to fit: one line, scaled by the factor the measuring pass found. */
-  table[data-sheet] :is(td, th)[data-cell][data-shrink] {
+  :is(table[data-sheet], [data-sheet] > table) :is(td, th)[data-cell][data-shrink] {
     white-space: nowrap;
     overflow: hidden;
   }
 
-  table[data-sheet] :is(td, th)[data-cell][data-shrink] > p {
+  :is(table[data-sheet], [data-sheet] > table) :is(td, th)[data-cell][data-shrink] > p {
     font-size: calc(var(--cell-size, 1em) * var(--cell-shrink, 1));
   }
 
   /* Rotated text turns inside the cell, which the measuring pass makes tall enough for the turned box. */
-  table[data-sheet] :is(td, th)[data-cell][data-rotate] {
+  :is(table[data-sheet], [data-sheet] > table) :is(td, th)[data-cell][data-rotate] {
     position: relative;
     height: var(--cell-rot-h, auto);
     overflow: hidden;
   }
 
-  table[data-sheet] :is(td, th)[data-cell][data-rotate] > p {
+  :is(table[data-sheet], [data-sheet] > table) :is(td, th)[data-cell][data-rotate] > p {
     position: absolute;
     inset-block-start: 50%;
     inset-inline-start: 50%;
@@ -116,25 +120,25 @@
     transform: translate(-50%, -50%) rotate(var(--cell-rotate, 0deg));
   }
 
-  table[data-sheet] :is(td, th)[data-cell][data-stacked] {
+  :is(table[data-sheet], [data-sheet] > table) :is(td, th)[data-cell][data-stacked] {
     text-align: center;
   }
 
-  table[data-sheet] :is(td, th)[data-cell][data-stacked] > p {
+  :is(table[data-sheet], [data-sheet] > table) :is(td, th)[data-cell][data-stacked] > p {
     writing-mode: vertical-lr;
     text-orientation: upright;
   }
 
   /* Fill alignment repeats the text; the measuring pass writes the repeated text to data-fill-text. */
-  table[data-sheet] :is(td, th)[data-cell][data-fill-repeat][data-fill-text] {
+  :is(table[data-sheet], [data-sheet] > table) :is(td, th)[data-cell][data-fill-repeat][data-fill-text] {
     position: relative;
   }
 
-  table[data-sheet] :is(td, th)[data-cell][data-fill-repeat][data-fill-text] > p {
+  :is(table[data-sheet], [data-sheet] > table) :is(td, th)[data-cell][data-fill-repeat][data-fill-text] > p {
     color: transparent;
   }
 
-  table[data-sheet] :is(td, th)[data-cell][data-fill-repeat][data-fill-text]::after {
+  :is(table[data-sheet], [data-sheet] > table) :is(td, th)[data-cell][data-fill-repeat][data-fill-text]::after {
     /* The empty alternative keeps the repeat out of the accessible name; the cell's own text is read. */
     content: attr(data-fill-text) / '';
     position: absolute;
@@ -162,57 +166,57 @@
   }
 
   /* Hidden rows and columns, with a thin double line where they are. */
-  table[data-sheet] tr[data-row-hidden],
-  table[data-sheet] :is(td, th)[data-col-hidden] {
+  :is(table[data-sheet], [data-sheet] > table) tr[data-row-hidden],
+  :is(table[data-sheet], [data-sheet] > table) :is(td, th)[data-col-hidden] {
     display: none;
   }
 
-  table[data-sheet] :is(td, th)[data-cell][data-hidden-below] {
+  :is(table[data-sheet], [data-sheet] > table) :is(td, th)[data-cell][data-hidden-below] {
     border-bottom: 3px double var(--sheet-ink);
   }
 
-  table[data-sheet] :is(td, th)[data-cell][data-hidden-above] {
+  :is(table[data-sheet], [data-sheet] > table) :is(td, th)[data-cell][data-hidden-above] {
     border-top: 3px double var(--sheet-ink);
   }
 
-  table[data-sheet] :is(td, th)[data-cell][data-hidden-right] {
+  :is(table[data-sheet], [data-sheet] > table) :is(td, th)[data-cell][data-hidden-right] {
     border-right: 3px double var(--sheet-ink);
   }
 
-  table[data-sheet] :is(td, th)[data-cell][data-hidden-left] {
+  :is(table[data-sheet], [data-sheet] > table) :is(td, th)[data-cell][data-hidden-left] {
     border-left: 3px double var(--sheet-ink);
   }
 
   /* Freeze panes: the frozen cells stick inside the table's scroll container. The offsets come from measure.ts. */
-  table[data-sheet] :is(td, th)[data-cell][data-frozen-row],
-  table[data-sheet] :is(td, th)[data-cell][data-frozen-col] {
+  :is(table[data-sheet], [data-sheet] > table) :is(td, th)[data-cell][data-frozen-row],
+  :is(table[data-sheet], [data-sheet] > table) :is(td, th)[data-cell][data-frozen-col] {
     position: sticky;
     background-color: var(--cell-fill, var(--color-surface-page));
   }
 
-  table[data-sheet] :is(td, th)[data-cell][data-frozen-row] {
+  :is(table[data-sheet], [data-sheet] > table) :is(td, th)[data-cell][data-frozen-row] {
     top: var(--cell-sticky-top, 0);
     z-index: calc(var(--layer-sticky) + 3);
   }
 
-  table[data-sheet] :is(td, th)[data-cell][data-frozen-col] {
+  :is(table[data-sheet], [data-sheet] > table) :is(td, th)[data-cell][data-frozen-col] {
     left: var(--cell-sticky-left, 0);
     z-index: calc(var(--layer-sticky) + 2);
   }
 
-  table[data-sheet] :is(td, th)[data-cell][data-frozen-row][data-frozen-col] {
+  :is(table[data-sheet], [data-sheet] > table) :is(td, th)[data-cell][data-frozen-row][data-frozen-col] {
     z-index: calc(var(--layer-sticky) + 4);
   }
 
-  table[data-sheet] :is(td, th)[data-cell][data-frozen-row='edge'] {
+  :is(table[data-sheet], [data-sheet] > table) :is(td, th)[data-cell][data-frozen-row='edge'] {
     box-shadow: 0 1px 0 var(--color-border-control);
   }
 
-  table[data-sheet] :is(td, th)[data-cell][data-frozen-col='edge'] {
+  :is(table[data-sheet], [data-sheet] > table) :is(td, th)[data-cell][data-frozen-col='edge'] {
     box-shadow: 1px 0 0 var(--color-border-control);
   }
 
-  table[data-sheet] :is(td, th)[data-cell][data-frozen-row='edge'][data-frozen-col='edge'] {
+  :is(table[data-sheet], [data-sheet] > table) :is(td, th)[data-cell][data-frozen-row='edge'][data-frozen-col='edge'] {
     box-shadow:
       0 1px 0 var(--color-border-control),
       1px 0 0 var(--color-border-control);
@@ -222,32 +226,32 @@
    * A selected cell (tables.module.css .selectedCell) must show over a fill and over a frozen cell's background, so
    * these rules match the cell rules above in weight and come after them.
    */
-  table[data-sheet] :is(td, th)[data-cell].selectedCell,
-  table[data-sheet] :is(td, th)[data-cell][data-frozen-row].selectedCell,
-  table[data-sheet] :is(td, th)[data-cell][data-frozen-col].selectedCell {
+  :is(table[data-sheet], [data-sheet] > table) :is(td, th)[data-cell].selectedCell,
+  :is(table[data-sheet], [data-sheet] > table) :is(td, th)[data-cell][data-frozen-row].selectedCell,
+  :is(table[data-sheet], [data-sheet] > table) :is(td, th)[data-cell][data-frozen-col].selectedCell {
     background-color: var(--color-surface-selected);
   }
 
   /* Forced colors drop fills, so a filled cell gets an outline, and gridlines use the system line color. */
   @media (forced-colors: active) {
-    table[data-sheet]:not([data-no-grid]) {
+    :is(table[data-sheet]:not([data-no-grid]), [data-sheet]:not([data-no-grid]) > table) {
       --sheet-grid: CanvasText;
     }
 
-    table[data-sheet] :is(td, th)[data-cell] {
+    :is(table[data-sheet], [data-sheet] > table) :is(td, th)[data-cell] {
       color: CanvasText;
       background-color: Canvas;
       background-image: none;
       border-color: CanvasText;
     }
 
-    table[data-sheet] :is(td, th)[data-cell]:is([data-frozen-row], [data-frozen-col]) {
+    :is(table[data-sheet], [data-sheet] > table) :is(td, th)[data-cell]:is([data-frozen-row], [data-frozen-col]) {
       background-color: Canvas;
     }
 
     /* A data bar stays: forced colors keep it as a gradient, with an outline so it shows without its color, and the
        value of a bar-only cell stays readable. Icon sets differ by shape, not by color alone (R-SHT-15). */
-    table[data-sheet] :is(td, th)[data-cell][data-bar] {
+    :is(table[data-sheet], [data-sheet] > table) :is(td, th)[data-cell][data-bar] {
       background-image: var(--cell-bar);
       forced-color-adjust: none;
       color: CanvasText;
@@ -255,22 +259,22 @@
       outline-offset: -2px;
     }
 
-    table[data-sheet] :is(td, th)[data-cell]:is([data-icon-only], [data-bar-only]) > p {
+    :is(table[data-sheet], [data-sheet] > table) :is(td, th)[data-cell]:is([data-icon-only], [data-bar-only]) > p {
       color: CanvasText;
     }
 
-    table[data-sheet] :is(td, th)[data-cell][data-icon-glyph] > p:first-child::before {
+    :is(table[data-sheet], [data-sheet] > table) :is(td, th)[data-cell][data-icon-glyph] > p:first-child::before {
       color: CanvasText;
     }
 
-    table[data-sheet] :is(td, th)[data-cell][data-filled] {
+    :is(table[data-sheet], [data-sheet] > table) :is(td, th)[data-cell][data-filled] {
       outline: 1px solid CanvasText;
       outline-offset: -2px;
     }
 
-    table[data-sheet] :is(td, th)[data-cell].selectedCell,
-    table[data-sheet] :is(td, th)[data-cell][data-frozen-row].selectedCell,
-    table[data-sheet] :is(td, th)[data-cell][data-frozen-col].selectedCell {
+    :is(table[data-sheet], [data-sheet] > table) :is(td, th)[data-cell].selectedCell,
+    :is(table[data-sheet], [data-sheet] > table) :is(td, th)[data-cell][data-frozen-row].selectedCell,
+    :is(table[data-sheet], [data-sheet] > table) :is(td, th)[data-cell][data-frozen-col].selectedCell {
       background-color: Highlight;
       color: HighlightText;
     }
@@ -283,11 +287,11 @@
    * (data-header-row) for whoever writes that markup from the sheet.
    */
   @media print {
-    table[data-sheet] > thead {
+    :is(table[data-sheet], [data-sheet] > table) > thead {
       display: table-header-group;
     }
 
-    table[data-sheet] tr {
+    :is(table[data-sheet], [data-sheet] > table) tr {
       break-inside: avoid;
     }
   }

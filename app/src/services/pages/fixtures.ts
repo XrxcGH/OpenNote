@@ -418,6 +418,19 @@ function build(): Record<string, () => PageFixture> {
     // Row virtualization: 10,001 rows (a header and 10,000), and 1,999 rows, one under the threshold.
     tenThousandRows: () => page('Long table', [text(0, 'Start here.'), longTable(1, 10_000)]),
     rows1999: () => page('Shorter table', [text(0, 'Start here.'), longTable(1, 1998)]),
+    // Column alignment as the Markdown import writes it (:--, :-:, --:): data.sheet gives each column a style (T4-D11-1).
+    alignedTable: () => {
+      const table = tableOf(1, [
+        ['Left', 'Center', 'Right'],
+        ['a', 'b', 'c'],
+      ]);
+      const columns = table.data.columns as { id: string }[];
+      const hs = ['left', 'center', 'right'];
+      const styles = Object.fromEntries(hs.map((h) => [`align${h[0]}`, { align: { h } }]));
+      const cols = Object.fromEntries(columns.map((c, i) => [c.id, { style: `align${hs[i][0]}` }]));
+      table.data.sheet = { v: 1, styles, cols };
+      return page('Aligned notes', [text(0, 'Start here.'), table]);
+    },
   };
 }
 
@@ -434,6 +447,7 @@ export type PageFixtureName =
   | 'ruledSheets'
   | 'unlabeled'
   | 'sheetTable'
+  | 'alignedTable'
   | 'bigTable'
   | 'largeSheetTable'
   | 'twentyPageFormatted'

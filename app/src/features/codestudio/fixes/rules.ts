@@ -553,7 +553,7 @@ function usedMembers(text: string): string[] {
 
 /** `AttributeError: 'Foo' object has no attribute 'lenght'`: the names used after a dot in the file, and the type's table. */
 const attribute: Rule = (d, ctx) => {
-  const m = /has no attribute '(\w+)'/.exec(d.message);
+  const m = /has no (?:attribute|member) '(\w+)'/.exec(d.message);
   if (!m) return [];
   const wrong = m[1]!;
   const line = around(d, ctx.text);

@@ -22,6 +22,7 @@ export const codeStudioDiagnostics = {
     mixedIndent: 'This line mixes tabs and spaces in its indentation.',
     undefinedVar: "'{name}' is not defined.",
     unusedVar: "'{name}' is {kind, select, assigned {given a value} other {defined}} but never used.",
+    unknownMember: "{object} has no member '{name}'.",
     constAssign: "'{name}' is a constant and cannot be given a new value.",
     unreachable: 'This code never runs.',
     eqeqeq: "Use '{better}' instead of '{op}'.",

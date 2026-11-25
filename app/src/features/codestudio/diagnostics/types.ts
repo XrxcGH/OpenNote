@@ -63,6 +63,7 @@ export type MessageId =
   | 'undefinedVar'
   | 'unusedVar'
   | 'constAssign'
+  | 'unknownMember'
   | 'unreachable'
   | 'eqeqeq'
   | 'condAssign'

@@ -76,6 +76,8 @@ export class StudioController {
   /** The runtime that reported `runtimeVersion`, so a version never shows beside a language it was not run for. */
   private versionRuntime: string | null = null;
   lastResult: RunResult | null = null;
+  /** The runtime whose download the last run needed, until the person downloads it or cancels (T4-D09-6). */
+  missingPack: RuntimeId | null = null;
   runProblems: Problem[] = [];
   /** The live checks' problems by file (liveChecks.ts). */
   checkProblems = new Map<string, Problem[]>();
@@ -579,6 +581,7 @@ export class StudioController {
     this.panel = test ? 'tests' : 'console';
     this.runProblems = [];
     this.written = [];
+    this.missingPack = null;
     if (filter) {
       // Only the results that run again are replaced; the rest stay.
       this.testResults = this.testResults.filter((one) =>
@@ -616,6 +619,8 @@ export class StudioController {
       if (this.handle !== handle) return;
       this.handle = null;
       this.lastResult = result;
+      const used = this.project()?.runtime;
+      this.missingPack = result.message === 'pack-missing' && used && used !== 'toolchain' ? used : null;
       if (result.version) {
         this.runtimeVersion = result.version;
         this.versionRuntime = this.project()?.runtime ?? null;
@@ -637,6 +642,12 @@ export class StudioController {
       }
       this.changed();
     });
+  }
+
+  /** Cancel on the download offer after a run that needed a runtime pack. */
+  dismissPackPrompt(): void {
+    this.missingPack = null;
+    this.changed();
   }
 
   stop(): void {

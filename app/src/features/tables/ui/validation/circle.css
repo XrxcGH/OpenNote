@@ -2,11 +2,11 @@
    status color, with a dashed line under forced colors, and the cell also carries aria-invalid and a title that
    say why, so the mark never carries the meaning alone. */
 @layer components {
-  table[data-sheet] td[data-invalid] {
+  :is(table[data-sheet], [data-sheet] > table) td[data-invalid] {
     position: relative;
   }
 
-  table[data-sheet] td[data-invalid]::after {
+  :is(table[data-sheet], [data-sheet] > table) td[data-invalid]::after {
     content: '';
     position: absolute;
     inset: 1px;
@@ -16,14 +16,14 @@
   }
 
   @media (forced-colors: active) {
-    table[data-sheet] td[data-invalid]::after {
+    :is(table[data-sheet], [data-sheet] > table) td[data-invalid]::after {
       border-color: Mark;
       border-style: dashed;
     }
   }
 
   @media print {
-    table[data-sheet] td[data-invalid]::after {
+    :is(table[data-sheet], [data-sheet] > table) td[data-invalid]::after {
       display: none;
     }
   }
