@@ -83,7 +83,13 @@ describe('match mode 3 matcher', () => {
   it('stays fast on patterns that make a backtracking engine take exponential time', () => {
     const text = `${'a'.repeat(5000)}!`;
     const start = performance.now();
-    for (const pattern of [['(a|aa', ')+$'].join(''), ['(a+', ')+$'].join(''), ['(a*', ')*b'].join(''), '^(a?){30}a{30}$', '(.*a){12}$']) {
+    for (const pattern of [
+      ['(a|aa', ')+$'].join(''),
+      ['(a+', ')+$'].join(''),
+      ['(a*', ')*b'].join(''),
+      '^(a?){30}a{30}$',
+      '(.*a){12}$',
+    ]) {
       expect(regexMatcher(pattern)?.(text), pattern).toBe(false);
     }
     expect(performance.now() - start).toBeLessThan(2000);
