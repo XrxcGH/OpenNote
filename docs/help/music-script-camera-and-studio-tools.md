@@ -2,6 +2,8 @@
 
 One tool window holds the tools for music, film and theater, and visual art. Each tool has a tab. A tool takes typed values, works the problem, and shows the results, the worked steps, and its assumptions. These tools are new in Beta and off in Stable. Check the answers against your own work while you learn them.
 
+![The Music, script, camera, and studio kit on its music theory tab](../screens/kit-music-light.png)
+
 ## Open the tools
 
 - Press Ctrl+K and type "music", "script", "camera", or "studio". Each tool also has its own command, such as "voice leading" or "ear training", which opens the window on that tab.

@@ -1,6 +1,7 @@
-//! Turning the paragraphs of a Word page into blocks: lists, quotes, code, callouts, and tasks.
+//! Turning the paragraphs of a Word page into blocks: lists, quotes, code, callouts, and tasks. Each block comes
+//! with the formatting of its elements (spec 6.6), in document order.
 
-use super::body::{Item, Kind, Para};
+use super::body::{Fmt, Item, Kind, Para};
 use super::styles::StyleKind;
 use crate::doc::{plain_text, Block, Inline, Item as ListItem};
 
@@ -25,14 +26,27 @@ const CALLOUT_KINDS: &[&str] = &[
     "todo",
 ];
 
+/// A block and the formatting of each of its elements, in document order.
+pub(super) type Formatted = (Block, Vec<Option<Fmt>>);
+
+fn some(fmt: Fmt) -> Option<Fmt> {
+    (!fmt.is_empty()).then_some(fmt)
+}
+
 /// Builds the blocks of one page.
+#[cfg(test)]
 pub(super) fn blocks(items: Vec<Item>) -> Vec<Block> {
+    formatted(items).into_iter().map(|(block, _)| block).collect()
+}
+
+/// Builds the blocks of one page, each with the formatting of its elements.
+pub(super) fn formatted(items: Vec<Item>) -> Vec<Formatted> {
     let mut out = Vec::new();
     let mut rest = items.into_iter().peekable();
     while let Some(item) = rest.next() {
         match item {
             Item::PageBreak => {}
-            Item::Table(table) => out.push(table),
+            Item::Table(table) => out.push((table, Vec::new())),
             Item::Para(para) => {
                 let mut group = vec![para];
                 while let Some(Item::Para(next)) = rest.peek() {
@@ -65,7 +79,7 @@ fn joins(first: &Para, next: &Para) -> bool {
     }
 }
 
-fn group_to_blocks(group: Vec<Para>, out: &mut Vec<Block>) {
+fn group_to_blocks(group: Vec<Para>, out: &mut Vec<Formatted>) {
     let first = &group[0];
     if first.shaded && is_callout(&group) {
         out.push(callout(group));
@@ -75,49 +89,58 @@ fn group_to_blocks(group: Vec<Para>, out: &mut Vec<Block>) {
         Kind::ListItem { .. } => out.extend(lists(&group)),
         Kind::Styled(StyleKind::Code) => {
             let text: Vec<String> = group.iter().map(|p| plain_text(&p.inlines)).collect();
-            out.push(Block::Code {
-                language: String::new(),
-                text: text.join("\n"),
-            });
+            let fmt = some(first.fmt.clone());
+            out.push((
+                Block::Code {
+                    language: String::new(),
+                    text: text.join("\n"),
+                },
+                vec![fmt],
+            ));
         }
         Kind::Styled(StyleKind::Quote) => {
-            let inner = group
+            let (inner, fmts): (Vec<Block>, Vec<Option<Fmt>>) = group
                 .into_iter()
                 .filter(|p| !p.inlines.is_empty())
-                .map(|p| Block::Paragraph(p.inlines))
-                .collect::<Vec<_>>();
+                .map(|p| (Block::Paragraph(p.inlines), some(p.fmt)))
+                .unzip();
             if !inner.is_empty() {
-                out.push(Block::Quote(inner));
+                out.push((Block::Quote(inner), fmts));
             }
         }
         Kind::Styled(StyleKind::Normal) if task_of(first).is_some() => out.extend(lists(&group)),
         _ => {
             for para in group {
-                single(para, out);
+                if let Some((block, fmt)) = single(para) {
+                    out.push((block, vec![fmt]));
+                }
             }
         }
     }
 }
 
-fn single(para: Para, out: &mut Vec<Block>) {
+fn single(para: Para) -> Option<(Block, Option<Fmt>)> {
     if para.inlines.is_empty() {
-        return;
+        return None;
     }
-    match para.kind {
-        Kind::Styled(StyleKind::Title) => out.push(Block::Heading {
+    let fmt = some(para.fmt);
+    let block = match para.kind {
+        Kind::Styled(StyleKind::Title) => Block::Heading {
             level: 1,
             content: para.inlines,
-        }),
-        Kind::Styled(StyleKind::Subtitle) => out.push(Block::Heading {
+        },
+        Kind::Styled(StyleKind::Subtitle) => Block::Heading {
             level: 2,
             content: para.inlines,
-        }),
-        Kind::Styled(StyleKind::Heading(level)) => out.push(Block::Heading {
+        },
+        // Markdown has six heading levels; headings 7 to 9 are paragraphs with their style (`R-STY-3`).
+        Kind::Styled(StyleKind::Heading(level)) if level <= 6 => Block::Heading {
             level,
             content: para.inlines,
-        }),
-        _ => out.push(Block::Paragraph(para.inlines)),
-    }
+        },
+        _ => Block::Paragraph(para.inlines),
+    };
+    Some((block, fmt))
 }
 
 /// A shaded group is a callout when its first paragraph is a bold title line.
@@ -130,9 +153,16 @@ fn is_callout(group: &[Para]) -> bool {
         && !matches!(group[0].kind, Kind::ListItem { .. })
 }
 
-fn callout(group: Vec<Para>) -> Block {
+fn callout(group: Vec<Para>) -> Formatted {
     let mut paragraphs = group.into_iter();
-    let title = paragraphs.next().map(|p| p.inlines).unwrap_or_default();
+    let first = paragraphs.next().unwrap_or_default();
+    // The callout draws the shading, so its elements do not repeat it.
+    let unshaded = |mut fmt: Fmt| {
+        fmt.para.remove("shade");
+        some(fmt)
+    };
+    let mut fmts = vec![unshaded(first.fmt)];
+    let title = first.inlines;
     let named = plain_text(&title).trim().to_lowercase();
     let (kind, title) = if CALLOUT_KINDS.contains(&named.as_str()) {
         (named, Vec::new())
@@ -151,14 +181,20 @@ fn callout(group: Vec<Para>) -> Block {
     };
     let mut blocks = Vec::new();
     for para in paragraphs {
-        single(para, &mut blocks);
+        if let Some((block, fmt)) = single(para) {
+            blocks.push(block);
+            fmts.push(fmt.and_then(unshaded));
+        }
     }
-    Block::Callout {
-        kind,
-        fold: None,
-        title,
-        blocks,
-    }
+    (
+        Block::Callout {
+            kind,
+            fold: None,
+            title,
+            blocks,
+        },
+        fmts,
+    )
 }
 
 /// Whether a paragraph starts with a checkbox, and if so whether it is checked.
@@ -191,10 +227,11 @@ struct Entry {
     start: u64,
     task: Option<bool>,
     inlines: Vec<Inline>,
+    fmt: Option<Fmt>,
 }
 
 /// Builds lists from paragraphs: nested by level, and a new list when the numbering style changes.
-fn lists(group: &[Para]) -> Vec<Block> {
+fn lists(group: &[Para]) -> Vec<Formatted> {
     let entries: Vec<Entry> = group
         .iter()
         .map(|p| {
@@ -204,6 +241,7 @@ fn lists(group: &[Para]) -> Vec<Block> {
             } else {
                 p.inlines.clone()
             };
+            let fmt = some(p.fmt.clone());
             match p.kind {
                 Kind::ListItem {
                     level, ordered, start, ..
@@ -213,6 +251,7 @@ fn lists(group: &[Para]) -> Vec<Block> {
                     start,
                     task,
                     inlines,
+                    fmt,
                 },
                 Kind::Styled(_) => Entry {
                     level: 0,
@@ -220,6 +259,7 @@ fn lists(group: &[Para]) -> Vec<Block> {
                     start: 1,
                     task,
                     inlines,
+                    fmt,
                 },
             }
         })
@@ -227,17 +267,19 @@ fn lists(group: &[Para]) -> Vec<Block> {
     let mut blocks = Vec::new();
     let mut at = 0;
     while at < entries.len() {
-        let (block, next) = build(&entries, at, entries[at].level);
-        blocks.push(block);
+        let (block, next, fmts) = build(&entries, at, entries[at].level);
+        blocks.push((block, fmts));
         at = next.max(at + 1);
     }
     blocks
 }
 
-/// Builds the list whose first entry is `from`, at `level`, and returns it with the index after its last entry.
-fn build(entries: &[Entry], from: usize, level: u32) -> (Block, usize) {
+/// Builds the list whose first entry is `from`, at `level`, and returns it with the index after its last entry
+/// and the formatting of its elements: each item, then the items of the lists inside it.
+fn build(entries: &[Entry], from: usize, level: u32) -> (Block, usize, Vec<Option<Fmt>>) {
     let (ordered, start) = (entries[from].ordered, entries[from].start);
     let mut items = Vec::new();
+    let mut fmts: Vec<Vec<Option<Fmt>>> = Vec::new();
     let mut at = from;
     while at < entries.len() {
         let entry = &entries[at];
@@ -246,13 +288,23 @@ fn build(entries: &[Entry], from: usize, level: u32) -> (Block, usize) {
         }
         if entry.level > level {
             // A deeper entry with no parent above it starts its own list inside the previous item.
-            let (nested, next) = build(entries, at, entry.level);
+            let (nested, next, inner) = build(entries, at, entry.level);
             match items.last_mut() {
-                Some(ListItem { blocks, .. }) => blocks.push(nested),
-                None => items.push(ListItem {
-                    task: None,
-                    blocks: vec![nested],
-                }),
+                Some(ListItem { blocks, .. }) => {
+                    blocks.push(nested);
+                    if let Some(last) = fmts.last_mut() {
+                        last.extend(inner);
+                    }
+                }
+                None => {
+                    items.push(ListItem {
+                        task: None,
+                        blocks: vec![nested],
+                    });
+                    let mut item = vec![None];
+                    item.extend(inner);
+                    fmts.push(item);
+                }
             }
             at = next;
             continue;
@@ -262,9 +314,14 @@ fn build(entries: &[Entry], from: usize, level: u32) -> (Block, usize) {
             task: entry.task,
             blocks: vec![paragraph],
         });
+        fmts.push(vec![entry.fmt.clone()]);
         at += 1;
     }
-    (Block::List { ordered, start, items }, at)
+    (
+        Block::List { ordered, start, items },
+        at,
+        fmts.into_iter().flatten().collect(),
+    )
 }
 
 #[cfg(test)]
@@ -281,6 +338,7 @@ mod tests {
             },
             bookmarks: Vec::new(),
             shaded: false,
+            ..Para::default()
         })
     }
 

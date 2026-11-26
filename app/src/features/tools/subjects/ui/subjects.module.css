@@ -31,7 +31,7 @@
     display: inline-flex;
     align-items: center;
     gap: var(--space-1);
-    min-block-size: var(--size-target-pointer);
+    min-block-size: var(--target-size);
     font-size: var(--type-small-size);
     cursor: pointer;
   }
@@ -98,7 +98,7 @@
 
   .cell {
     inline-size: 5.5rem;
-    min-block-size: var(--size-target-pointer);
+    min-block-size: var(--target-size);
     padding-inline: var(--space-1);
     font: inherit;
     font-size: var(--type-small-size);

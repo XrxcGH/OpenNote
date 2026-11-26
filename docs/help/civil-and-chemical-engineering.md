@@ -2,6 +2,8 @@
 
 Nine tools share one window. Press Ctrl+K and type the tool's name, such as "Open hydrology and open channels", then pick a calculation from the list at the top. These tools are new in Beta, so check the answers against your own work while you learn them.
 
+![The Civil and chemical engineering kit on its hydrology and open channels tab](../screens/kit-civil-light.png)
+
 ## How every tool works
 
 - Type the inputs. A field with a unit has a unit list beside it, in SI and US units, and the answer follows the unit you pick.

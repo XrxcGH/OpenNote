@@ -1,4 +1,4 @@
-// How each mark range is written: with delimiters (`**`, `*`, `~~`, `==`) or with the HTML tags of SPEC 7.4.
+// How each mark range is written: with delimiters (`**`, `*`, `~~`, `==`) or with the tags of SPEC 7.4 and 7.10.
 // SPEC 7.7: where a delimiter would not open or close under CommonMark's rules for that position, the writer uses
 // the matching tag for that range.
 //
@@ -11,27 +11,20 @@ import { cleanText } from './escape';
 import { canClose, canCloseHighlight, canOpen, canOpenHighlight, edgeClass } from './flanking';
 import type { CharClass } from './flanking';
 import type { Plan, Range } from './marksPlan';
+import { tagsOf } from './tags';
 
 export type Style = 'delim' | 'tag';
 
 const DELIMITERS: Readonly<Record<string, string>> = { bold: '**', italic: '*', strike: '~~' };
-const TAGS: Readonly<Record<string, string>> = {
-  bold: 'strong',
-  italic: 'em',
-  strike: 'del',
-  underline: 'u',
-  highlight: 'mark',
-  subscript: 'sub',
-  superscript: 'sup',
-};
 
 /** Honey, the default highlight color, is the only one with a delimiter form. */
 export function isPlainHighlight(mark: Mark): boolean {
-  return mark.type.name === 'highlight' && !mark.attrs.color;
+  return mark.type.name === 'highlight' && (!mark.attrs.color || mark.attrs.color === 'honey');
 }
 
-/** Whether a mark has a delimiter form at all. */
+/** Whether a mark has a delimiter form at all. A double strike has only its tag. */
 export function hasDelimiter(mark: Mark): boolean {
+  if (mark.type.name === 'strike') return mark.attrs.line !== 'double';
   return mark.type.name in DELIMITERS || isPlainHighlight(mark);
 }
 
@@ -43,23 +36,10 @@ function delimiterOf(mark: Mark): string {
   return isPlainHighlight(mark) ? '==' : DELIMITERS[mark.type.name];
 }
 
-/** An attribute value as the tag may hold it: the schema checks it on the way in, and this keeps any other value
- * from closing the quote or the tag. */
-function attrValue(value: unknown): string {
-  return String(value).replace(/[^#A-Za-z0-9-]/g, '');
-}
-
-function openTag(mark: Mark): string {
-  const name = mark.type.name;
-  if (name === 'highlight' && mark.attrs.color) return `<mark data-color="${attrValue(mark.attrs.color)}">`;
-  if (name === 'textColor') return `<span data-color="${attrValue(mark.attrs.color)}">`;
-  if (name === 'textSize') return `<span data-size="${attrValue(mark.attrs.size)}">`;
-  return `<${TAGS[name]}>`;
-}
-
-function closeTag(mark: Mark): string {
-  const name = mark.type.name;
-  return name === 'textColor' || name === 'textSize' ? '</span>' : `</${TAGS[name]}>`;
+/** The tags of a mark (SPEC 7.4 and 7.10). A mark with no tag form, such as a foreign mark whose stored tag is not
+ * in the grammar, writes nothing, so its text is written without it. */
+function tagPair(mark: Mark): readonly [string, string] {
+  return tagsOf(mark.type.name, mark.attrs) ?? ['', ''];
 }
 
 const ENTITY_LIKE = /&(?=#?[A-Za-z0-9]+;)/g;
@@ -80,13 +60,13 @@ export function formatDestination(href: string): string {
 export function openToken(range: Range, style: Style): string {
   const mark = range.mark;
   if (mark.type.name === 'link') return '[';
-  return style === 'delim' ? delimiterOf(mark) : openTag(mark);
+  return style === 'delim' ? delimiterOf(mark) : tagPair(mark)[0];
 }
 
 export function closeToken(range: Range, style: Style): string {
   const mark = range.mark;
   if (mark.type.name === 'link') return `](${formatDestination(mark.attrs.href as string)})`;
-  return style === 'delim' ? delimiterOf(mark) : closeTag(mark);
+  return style === 'delim' ? delimiterOf(mark) : tagPair(mark)[1];
 }
 
 type Styles = ReadonlyMap<Range, Style>;

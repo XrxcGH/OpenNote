@@ -55,13 +55,15 @@ function colorMenu(item: ContextMenuItem, def: AnyCommand, ctx: CommandContext):
 
 function specFor(item: ContextMenuItem, def: AnyCommand, ctx: CommandContext, radio: boolean): MenuItemSpec {
   const checked = def.checked?.(ctx);
+  const disabled = def.enabled ? !def.enabled(ctx) : false;
   return {
     id: item.id,
     label: t(def.title),
     shortcut: shortcutHint(def.id) ?? undefined,
     kind: checked === undefined ? 'item' : radio ? 'radio' : 'checkbox',
     checked,
-    disabled: def.enabled ? !def.enabled(ctx) : false,
+    disabled,
+    disabledReason: disabled ? def.disabledReason?.(ctx) : undefined,
     danger: item.group === DANGER,
     submenu: item.submenu === 'color' ? colorMenu(item, def, ctx) : undefined,
     onSelect: item.submenu ? undefined : () => void executeCommand(def.id, item.args, 'menu', ctx.target),

@@ -61,6 +61,8 @@ pub struct JournalThread {
     thread: Option<JoinHandle<()>>,
     /// How long an open waits for the thread's answer: [`OPEN_TIMEOUT`], shorter in tests.
     open_wait: Duration,
+    /// How long an append waits for the thread to write it: [`WRITE_WAIT`], shorter in tests.
+    write_wait: Duration,
 }
 
 /// A page's journal, held by its page session.
@@ -70,6 +72,7 @@ pub struct JournalHandle {
     shared: Arc<PageShared>,
     codec: Arc<dyn Codec>,
     closed: bool,
+    write_wait: Duration,
 }
 
 /// The base snapshot of a new generation: the exact bytes of `page.json` at a revision, gzipped.
@@ -206,6 +209,12 @@ pub enum TreeOp {
 /// instead of failing as busy.
 const OPEN_TIMEOUT: Duration = Duration::from_secs(10);
 
+/// How long an append waits for the journal thread to write it. The thread writes in well under a millisecond,
+/// or as long as making a generation takes. A thread slower than this (a stuck or virus-scanned disk) doesn't hold
+/// the core: the append returns, and [`JournalHandle::written`] says the record isn't in the file yet, so the
+/// edit's answer doesn't claim it is.
+const WRITE_WAIT: Duration = Duration::from_secs(2);
+
 impl JournalThread {
     /// Starts the thread.
     pub fn start(config: JournalConfig) -> Result<JournalThread, CoreError> {
@@ -222,6 +231,7 @@ impl JournalThread {
             codec,
             thread: Some(thread),
             open_wait: OPEN_TIMEOUT,
+            write_wait: WRITE_WAIT,
         })
     }
 
@@ -252,6 +262,7 @@ impl JournalThread {
             shared,
             codec: self.codec.clone(),
             closed: false,
+            write_wait: self.write_wait,
         })
     }
 
@@ -296,10 +307,24 @@ impl JournalThread {
 }
 
 impl JournalHandle {
-    /// Appends a transaction and returns its sequence number. It survives an app crash from now on.
+    /// Appends a transaction and returns its sequence number. This waits, up to [`WRITE_WAIT`], until the journal
+    /// thread has written it, so the edit the caller acknowledges is in the file and an app crash no longer loses
+    /// it. Before, it returned once the record was queued, and a kill while the thread was still busy (making the
+    /// page's first generation on a slow disk) could lose a stroke the page already showed. Whether the wait got
+    /// there is [`JournalHandle::written`]: a thread slower than the wait keeps the record queued, and the caller
+    /// must not say it is written.
     pub fn append_txn(&self, txn: &Txn) -> u64 {
         let (json, blob) = encode_txn(txn, &*self.codec);
-        self.append(RecordKind::Txn, &json, &blob)
+        let seq = self.append(RecordKind::Txn, &json, &blob);
+        // A timeout, a degraded journal, or a closed one: `written` reports each as not written.
+        let _ = self.shared.health.wait_handled(seq, self.write_wait);
+        seq
+    }
+
+    /// Whether the record numbered `seq` is in the journal file, so an app crash no longer loses it. False while
+    /// the thread hasn't written it yet, and while the journal can't be written.
+    pub fn written(&self, seq: u64) -> bool {
+        self.shared.health.written(seq)
     }
 
     /// Appends a progress copy of a stroke still being drawn.
@@ -322,6 +347,7 @@ impl JournalHandle {
             seq: *seq,
             bytes,
             edit: true,
+            shared: Arc::clone(&self.shared),
         };
         if self.commands.send(command).is_err() {
             self.shared.health.close();

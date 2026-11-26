@@ -1,3 +1,4 @@
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { analyzePowerSeries, analyzeSeries } from './engine';
 
@@ -103,5 +104,15 @@ describe('power series', () => {
   });
   it('refuses a term that is not a power series about the center', () => {
     expect(() => analyzePowerSeries('sin(x)/n', '0', 1)).toThrow();
+  });
+});
+
+describe('a start before a singular term (B1-B07-1)', () => {
+  it('names the bad term instead of giving a sum of undefined', () => {
+    expect(() => analyzeSeries('1/n^2', -5)).toThrow('undefinedTerm');
+    expect(() => analyzeSeries('1/(n-20)', 1)).toThrow('undefinedTerm');
+  });
+  it('still sums when the start is past the singular term', () => {
+    expect(analyzeSeries('1/n^2', 1).sum).not.toBeNull();
   });
 });

@@ -41,6 +41,12 @@
   }
 
   /* A spacer pushes the lines after it down by the planned height. It is hidden while the page is measured. */
+  /* A block of columns taller than a sheet flows in one column, so it can split between sheets. */
+  :global([data-columns-flow]) {
+    column-count: 1 !important;
+    column-rule: none !important;
+  }
+
   .spacer {
     display: block;
     inline-size: 100%;

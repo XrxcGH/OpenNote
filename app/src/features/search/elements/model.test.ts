@@ -40,7 +40,7 @@ describe('text elements', () => {
     expect(ensureIds(tr, newId)).toBe(true);
     const ids = readLineData(tr.doc).ids;
     expect(ids).toHaveLength(2);
-    const data = { ids, tags: { [ids[1]]: ['todo'] }, checked: [ids[1]] };
+    const data = { ids, tags: { [ids[1]]: ['todo'] }, checked: [ids[1]], paras: {} };
     const next = stateFor('One\n\nTwo').tr;
     expect(applyLineData(next, data)).toBe(true);
     expect(readLineData(next.doc)).toEqual(data);
@@ -48,11 +48,27 @@ describe('text elements', () => {
   });
 
   it('writes a merge patch that removes what went away', () => {
-    const before = { ids: ['a', 'b'], tags: { a: ['idea'], b: ['todo'] }, checked: ['b'] };
-    const after = { ids: ['a', 'b'], tags: { a: ['idea', 'question'] }, checked: [] };
+    const before = { ids: ['a', 'b'], tags: { a: ['idea'], b: ['todo'] }, checked: ['b'], paras: {} };
+    const after = { ids: ['a', 'b'], tags: { a: ['idea', 'question'] }, checked: [], paras: {} };
     expect(patchFor(before, after)).toEqual({ tags: { a: ['idea', 'question'], b: null }, checked: [] });
     expect(patchFor(before, before)).toBeNull();
     expect(patchFor(emptyLineData(), emptyLineData())).toBeNull();
+  });
+
+  it('applies paragraph formatting by ID and drops the entries of deleted elements on save (R-PARA-2)', () => {
+    const paras = { a: { align: 'center', later: { kept: true } }, b: { indent: { start: 36 } }, gone: {} };
+    const sent = lineDataOf({ ids: ['a', 'b'], paras });
+    const tr = stateFor('One\n\nTwo').tr;
+    expect(applyLineData(tr, sent)).toBe(true);
+    expect(tr.doc.firstChild?.attrs.align).toBe('center');
+    tr.delete(tr.doc.firstChild!.nodeSize, tr.doc.content.size);
+    expect(patchFor(sent, readLineData(tr.doc))).toEqual({ ids: ['a'], paras: { b: null, gone: null } });
+  });
+
+  it('sends only the keys of an entry that changed', () => {
+    const before = { ...emptyLineData(), ids: ['a'], paras: { a: { indent: { start: 36, first: 18 }, x: 1 } } };
+    const after = { ...emptyLineData(), ids: ['a'], paras: { a: { indent: { start: 36 }, x: 1, align: 'end' } } };
+    expect(patchFor(before, after)).toEqual({ paras: { a: { indent: { first: null }, align: 'end' } } });
   });
 
   it('reads odd data as empty', () => {

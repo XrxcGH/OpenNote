@@ -19,6 +19,11 @@ export const history = {
   failed: "Couldn't load this page's history.",
   empty: 'No earlier versions yet. Versions are saved as you work.',
   versions: 'Versions',
+  filter: {
+    label: 'Filter versions',
+    help: 'Type part of a date, a reason, a device, or a name.',
+    none: 'No earlier version matches.',
+  },
   current: 'Current page',
   named: 'Named',
   version: '{when} on {device}',
@@ -79,6 +84,7 @@ export const history = {
     cancel: 'Cancel',
     done: 'Version named.',
   },
+  untitled: 'Untitled page',
   delete: {
     action: 'Delete history',
     title: 'Delete the history of "{name}"?',

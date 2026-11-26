@@ -14,6 +14,8 @@ export const kitChemMat = {
     number: 'Enter a number for {name}.',
     temperature: 'The temperature must be above absolute zero.',
     unexpected: 'These values cannot be solved. Check each field.',
+    outOfRange:
+      'These values are too large or too small for this tool to give a finite answer. Try values closer to real ones.',
   },
   common: {
     system: 'Units',
@@ -25,6 +27,8 @@ export const kitChemMat = {
     insertTable: 'Insert as table',
     insertEquation: 'Insert equation',
     insertPlot: 'Insert plot',
+    insertLive: 'Live calculation block',
+    liveInserted: 'Added a live calculation block. Use Open in tool to change it.',
     inserted: 'Inserted into the page.',
     noPage: 'Click in a page first, then insert.',
     quantity: 'Quantity',

@@ -14,10 +14,12 @@ import styles from './MoveTo.module.css';
 interface MoveToProps {
   readonly title: string;
   readonly places: readonly Destination[];
+  /** Copy to uses this dialog too, with its own title and button. */
+  readonly mode: 'move' | 'copy';
   onChoose(place: Destination | null): void;
 }
 
-function MoveToContent({ title, places, onChoose }: MoveToProps) {
+function MoveToContent({ title, places, mode, onChoose }: MoveToProps) {
   const [filter, setFilter] = useState('');
   const [active, setActive] = useState(0);
   const input = useRef<HTMLInputElement>(null);
@@ -37,12 +39,17 @@ function MoveToContent({ title, places, onChoose }: MoveToProps) {
   };
   return (
     <Dialog
-      title={t('tree.moveTo.title', { title })}
+      title={t(mode === 'copy' ? 'tree.moveTo.copyTitle' : 'tree.moveTo.title', { title })}
       initialFocus={input}
       onDismiss={() => onChoose(null)}
       actions={[
         { id: 'cancel', label: t('common.cancel'), variant: 'secondary', onPress: () => onChoose(null) },
-        { id: 'move', label: t('tree.moveTo.move'), variant: 'primary', onPress: choose },
+        {
+          id: mode,
+          label: t(mode === 'copy' ? 'tree.moveTo.copy' : 'tree.moveTo.move'),
+          variant: 'primary',
+          onPress: choose,
+        },
       ]}
     >
       <input
@@ -62,7 +69,9 @@ function MoveToContent({ title, places, onChoose }: MoveToProps) {
         }}
         onKeyDown={onKeyDown}
       />
-      {places.length === 0 && <p className={styles.message}>{t('tree.moveTo.none')}</p>}
+      {places.length === 0 && (
+        <p className={styles.message}>{t(mode === 'copy' ? 'tree.moveTo.noneCopy' : 'tree.moveTo.none')}</p>
+      )}
       {places.length > 0 && shown.length === 0 && <p className={styles.message}>{t('tree.moveTo.noMatches')}</p>}
       <ul id={listId} role="listbox" aria-label={t('tree.moveTo.destinations')} className={styles.list}>
         {shown.map((place) => (
@@ -85,7 +94,11 @@ function MoveToContent({ title, places, onChoose }: MoveToProps) {
 }
 
 /** Shows the dialog. Resolves with the chosen destination, or null when it was canceled. */
-export function chooseDestination(title: string, places: readonly Destination[]): Promise<Destination | null> {
+export function chooseDestination(
+  title: string,
+  places: readonly Destination[],
+  mode: 'move' | 'copy' = 'move',
+): Promise<Destination | null> {
   const host = document.body.appendChild(document.createElement('div'));
   const root = createRoot(host);
   return new Promise((resolve) => {
@@ -96,6 +109,6 @@ export function chooseDestination(title: string, places: readonly Destination[])
       });
       resolve(place);
     };
-    root.render(<MoveToContent title={title} places={places} onChoose={finish} />);
+    root.render(<MoveToContent title={title} places={places} mode={mode} onChoose={finish} />);
   });
 }

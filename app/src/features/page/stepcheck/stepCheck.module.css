@@ -61,10 +61,11 @@
 
 .panel {
   position: fixed;
-  inset-inline-end: 16px;
-  inset-block-end: 16px;
+  /* Clear of the page scroll bar and the word-count footer at the bottom right (walk VB-184). */
+  inset-inline-end: 32px;
+  inset-block-end: 48px;
   z-index: var(--layer-overlay);
-  inline-size: min(360px, calc(100vw - 32px));
+  inline-size: min(360px, calc(100vw - 64px));
   max-block-size: min(60vh, 480px);
   overflow: auto;
   padding: var(--space-3) var(--space-4);
@@ -127,7 +128,7 @@
 }
 
 .action {
-  min-block-size: var(--size-target-min);
+  min-block-size: var(--target-size);
   padding: 0 var(--space-3);
   border: 1px solid var(--color-border-control);
   border-radius: var(--radius-sm);

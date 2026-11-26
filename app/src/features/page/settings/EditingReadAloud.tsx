@@ -5,7 +5,7 @@ import { commandContext } from '../../../commands/registry';
 import { updateSettings, useSettings } from '../../../state/settings';
 import { t } from '../../../strings/t';
 import { Button, Switch } from '../../../ui';
-import { createWebSpeechEngine } from '../readAloud/engine';
+import { appSpeechEngine } from '../readAloud/appEngine';
 import type { SpeechVoice } from '../readAloud/engine';
 import { VoiceAndSpeed } from '../readAloud/ReadAloudBar';
 import styles from '../spelling/parts.module.css';
@@ -21,7 +21,7 @@ export default function EditingReadAloud() {
   const [voices, setVoices] = useState<SpeechVoice[] | null>(null);
   useEffect(() => {
     let current = true;
-    void (createWebSpeechEngine()?.voices() ?? Promise.resolve([])).then((list) => current && setVoices(list));
+    void (appSpeechEngine()?.voices() ?? Promise.resolve([])).then((list) => current && setVoices(list));
     return () => {
       current = false;
     };

@@ -51,6 +51,7 @@
     "allow-audio-enhance",
     "allow-audio-compress",
     "allow-audio-storage-scan",
+    "allow-audio-free-space",
     "allow-audio-purge-history",
     "allow-audio-export",
     "allow-audio-export-video",
@@ -115,6 +116,7 @@
     "allow-history-restore-blocks",
     "allow-history-name",
     "allow-history-delete",
+    "allow-page-recover-damaged",
     "allow-page-add-strokes",
     "allow-page-read-strokes",
     "allow-search-call",
@@ -200,6 +202,18 @@
     "allow-api-call",
     "allow-share-take",
     "allow-accounts-call",
-    "allow-sync-call"
+    "allow-sync-call",
+    "allow-fonts-list",
+    "allow-notebook-styles-get",
+    "allow-notebook-styles-set",
+    "allow-packs-list",
+    "allow-packs-download",
+    "allow-packs-cancel",
+    "allow-packs-remove",
+    "allow-coderun-detect",
+    "allow-coderun-start",
+    "allow-coderun-cancel",
+    "allow-code-complete",
+    "allow-code-cancel"
   ]
 }

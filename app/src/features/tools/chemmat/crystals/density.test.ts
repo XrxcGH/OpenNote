@@ -1,3 +1,4 @@
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { density, millerBravais } from './density';
 import type { Outcome } from '../types';

@@ -1,39 +1,28 @@
 // @vitest-environment jsdom
 // checks-disable-file brand-consistency: these tests feed in the fonts and colors people choose
-// Text styles as variables. Set values become custom properties with marking attributes, and unset ones go.
-// Values are clamped to the dialog's limits, and custom colors get a contrast check on both pages.
+// The Text styles dialog's values. Version 2 keys show in page units and are written back as version 2 keys.
+// Custom colors get a contrast check on both pages.
 import { describe, expect, it } from 'vitest';
-import { applyNotebookStyles, contrastRatio, contrastWarning, styleVar, withStyle } from './styleVars';
+import { contrastRatio, contrastWarning, dialogValues, fromDialog, withStyle } from './styleVars';
 
-describe('text style variables', () => {
-  it('sets each value as a custom property, marked by an attribute', () => {
-    const root = document.createElement('div');
-    applyNotebookStyles(root, { h2: { size: 26, font: 'Literata', color: 'indigo', lineHeight: 1.4 } });
-    expect(root.style.getPropertyValue(styleVar('h2', 'size'))).toBe('26px');
-    expect(root.style.getPropertyValue('--style-h2-font')).toBe('"Literata"');
-    expect(root.style.getPropertyValue('--style-h2-color')).toBe('var(--ink-indigo)');
-    expect(root.style.getPropertyValue('--style-h2-line-height')).toBe('1.4');
-    expect(root.hasAttribute('data-style-h2-size')).toBe(true);
-    expect(root.hasAttribute('data-style-h3-size')).toBe(false);
+describe('the dialog values', () => {
+  it('shows version 2 keys in page units, and a version 2 key wins over its version 1 twin', () => {
+    // 18 pt x 4/3 = 24 px; 12 pt x 4/3 = 16 px.
+    expect(dialogValues({ h2: { sizePt: 18, size: 99, before: 12, line: { rule: 'multiple', value: 1.4 } } })).toEqual({
+      h2: { size: 24, spaceBefore: 16, lineHeight: 1.4 },
+    });
   });
 
-  it('removes what the styles no longer set, and clamps to the limits', () => {
-    const root = document.createElement('div');
-    applyNotebookStyles(root, { normal: { size: 200, spaceBefore: -4 } });
-    expect(root.style.getPropertyValue('--style-normal-size')).toBe('72px');
-    expect(root.style.getPropertyValue('--style-normal-space-before')).toBe('0px');
-    applyNotebookStyles(root, undefined);
-    expect(root.style.getPropertyValue('--style-normal-size')).toBe('');
-    expect(root.hasAttribute('data-style-normal-size')).toBe(false);
+  it('writes only the changed values, as version 2 keys, and keeps every other key', () => {
+    const sheet = { h2: { sizePt: 18, keepNext: true, future: 'kept' } };
+    const before = dialogValues(sheet);
+    const next = fromDialog(sheet, before, { h2: { ...before.h2, size: 32, color: 'indigo' } });
+    expect(next).toEqual({ h2: { sizePt: 24, keepNext: true, future: 'kept', textColor: 'indigo' } });
   });
 
-  it('ignores fonts and colors outside the lists', () => {
-    const root = document.createElement('div');
-    applyNotebookStyles(root, { quote: { font: 'Comic Sans' as never, color: 'red' } });
-    expect(root.style.getPropertyValue('--style-quote-font')).toBe('');
-    expect(root.style.getPropertyValue('--style-quote-color')).toBe('');
+  it('removes a cleared value and its version 1 twin, and drops a style left empty', () => {
+    expect(fromDialog({ code: { size: 14 } }, { code: { size: 14 } }, {})).toEqual({});
   });
-
   it('keeps only values that differ from the defaults', () => {
     expect(withStyle({ h1: { size: 30 } }, 'h1', { size: undefined })).toEqual({});
     expect(withStyle({}, 'code', { font: 'Cascadia Code' })).toEqual({ code: { font: 'Cascadia Code' } });

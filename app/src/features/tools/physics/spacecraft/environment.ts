@@ -1,5 +1,6 @@
 // The spacecraft sizing tool's power, thermal, and attitude calculations: solar array and battery sizing, the
 // isothermal equilibrium temperature, and the worst-case disturbance torques with the wheel momentum they need.
+import '../text';
 import type { MessageKey } from '../../../../strings/t';
 import { fmt, q, qIn } from '../kit/format';
 import type { Reader } from '../kit/read';

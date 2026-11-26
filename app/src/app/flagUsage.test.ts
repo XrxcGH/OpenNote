@@ -12,7 +12,14 @@ const RUST = join(SRC, '..', 'src-tauri', 'src');
 
 /** Registered flags whose feature is not built yet (docs/FEATURES.md lists each as not built). */
 const WAITING: Readonly<Record<string, string>> = {
-  'page.imageRenditions': 'display-size renditions wait for spike S3 (docs/adr/0025-paste-and-images.md)',
+  'text.v2Controls': 'Beta 10: the Home tab and the formatting commands read it.',
+  'text.runFormats': 'Beta 10 to 12: the lane that builds it reads it.',
+  'text.paraFormats': 'Beta 10 to 12: the lane that builds it reads it.',
+  'text.fontPicker': 'Beta 10 to 12: the lane that builds it reads it.',
+  'text.styles2': 'Beta 10 to 12: the lane that builds it reads it.',
+  'text.findFormat': 'Beta 10 to 12: the lane that builds it reads it.',
+  'code.tier2': 'Beta 14: code:L16 and code:L17 run installed toolchains behind it.',
+  'code.models': 'Beta 13: code:L13a and code:L13b read it for the code models.',
 };
 
 function sources(dir: string, pattern: RegExp, out: string[] = []): string[] {

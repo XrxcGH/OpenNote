@@ -71,6 +71,7 @@ function Bar({
   const customFrame = useCustomFrame();
   return (
     <header
+      aria-label={t('layout.regions.titleBar')}
       ref={barRef}
       className={styles.titleBar}
       data-title-bar=""

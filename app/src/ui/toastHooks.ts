@@ -127,12 +127,30 @@ export function toastLane(modal: boolean): ToastLane {
   return document.dir === 'rtl' ? { start: end, end: left } : { start: left, end };
 }
 
+/**
+ * How far the toast is lifted so it stands above what must stay readable and pressable at the bottom of the window.
+ * Those are marked data-toast-above: the setup footer, whose buttons the toast would hide (Beta 8 walk A-A01-2).
+ * Only what reaches into the toast's band counts, so a short step with its footer higher up lifts nothing.
+ */
+export function toastLift(): number {
+  const region = document.querySelector('[data-region="notifications"]');
+  const floor = region?.getBoundingClientRect().bottom ?? window.innerHeight;
+  const band = window.innerHeight - BAND;
+  let lift = 0;
+  for (const element of document.querySelectorAll<HTMLElement>('[data-toast-above]')) {
+    const box = element.getBoundingClientRect();
+    if (box.width === 0 || box.bottom < band) continue;
+    lift = Math.max(lift, floor - box.top);
+  }
+  return Math.max(0, Math.ceil(lift));
+}
+
 /** Keeps the toast region over the page column while a toast shows (toastLane), following the window's size. */
-export function useToastLane(key: number | undefined, modal: () => boolean): ToastLane {
-  const [lane, setLane] = useState<ToastLane>({ start: 0, end: 0 });
+export function useToastLane(key: number | undefined, modal: () => boolean): ToastLane & { lift: number } {
+  const [lane, setLane] = useState<ToastLane & { lift: number }>({ start: 0, end: 0, lift: 0 });
   useLayoutEffect(() => {
     if (key === undefined) return;
-    const update = () => setLane(toastLane(modal()));
+    const update = () => setLane({ ...toastLane(modal()), lift: toastLift() });
     update();
     window.addEventListener('resize', update);
     return () => window.removeEventListener('resize', update);

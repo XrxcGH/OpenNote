@@ -48,7 +48,10 @@ function contentExtent(world: HTMLElement, flow: HTMLElement): { w: number; h: n
     floating ||= child.style.left !== '' && child.offsetLeft + child.offsetWidth > flow.offsetLeft + flow.offsetWidth;
   }
   for (const child of world.children) {
-    if (child instanceof HTMLElement && child !== flow) h = Math.max(h, child.offsetTop + child.offsetHeight);
+    // A backdrop (the paper under the canvas) is drawn to the world's size: counting it would grow the world each
+    // time the paper is drawn again.
+    if (!(child instanceof HTMLElement) || child === flow || child.dataset.backdrop !== undefined) continue;
+    h = Math.max(h, child.offsetTop + child.offsetHeight);
   }
   return { w, h, floating };
 }
@@ -92,7 +95,9 @@ export function createFlow(viewport: PageViewport): Flow {
     },
     fitWidth() {
       const { w } = contentExtent(viewport.world, flow);
-      return fitWidthZoom(w + flow.offsetLeft, viewport.camera().viewport.w);
+      // A fitted page leaves no spare width, so the desk gutter settles to 0 once it is applied: measure with it back.
+      const gutter = Number(viewport.viewport.closest('main')?.dataset.deskGutter ?? 0) || 0;
+      return fitWidthZoom(w + flow.offsetLeft, viewport.camera().viewport.w + 2 * gutter);
     },
     extent() {
       const { w, h } = contentExtent(viewport.world, flow);
@@ -106,6 +111,35 @@ export function createFlow(viewport: PageViewport): Flow {
       stopFlow();
       mutations?.disconnect();
       cancelAnimationFrame(frame);
+    },
+  };
+}
+
+/**
+ * Watches what sits above the flow in the world, such as the title band. When it grows, as a long title wraps, the
+ * flow's first line moves and its lead must be measured again. `sync` watches what is there now; `clear` stops.
+ */
+function watchAbove(world: HTMLElement, flow: HTMLElement, resizes: ResizeObserver | null, onChange: () => void) {
+  const watching = new Set<Element>();
+  // A band added above the flow, or taken away, moves the flow as well.
+  const around = typeof MutationObserver === 'undefined' ? null : new MutationObserver(onChange);
+  return {
+    start: () => around?.observe(world, { childList: true }),
+    sync(): void {
+      const now = new Set<Element>();
+      for (const child of world.children) {
+        if (child === flow || !(child instanceof HTMLElement) || child.dataset.backdrop !== undefined) continue;
+        now.add(child);
+        if (!watching.has(child)) resizes?.observe(child);
+      }
+      for (const element of watching) if (!now.has(element)) resizes?.unobserve(element);
+      watching.clear();
+      now.forEach((element) => watching.add(element));
+    },
+    clear(): void {
+      around?.disconnect();
+      for (const element of watching) resizes?.unobserve(element);
+      watching.clear();
     },
   };
 }
@@ -124,6 +158,7 @@ function createRuleAligner(viewport: PageViewport, flow: HTMLElement) {
   let frame = 0;
   const watched = new Set<Element>();
   const resizes = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => schedule());
+  const above = watchAbove(world, flow, resizes, () => schedule());
   const mutations = typeof MutationObserver === 'undefined' ? null : new MutationObserver(() => schedule());
 
   /** How far down the page an element ends, in page units from the top of the world. */
@@ -167,6 +202,7 @@ function createRuleAligner(viewport: PageViewport, flow: HTMLElement) {
       found.add(inner);
       moved = pad(inner) || moved;
     }
+    above.sync();
     for (const element of watched) if (!found.has(element)) resizes?.unobserve(element);
     for (const element of found) if (!watched.has(element)) resizes?.observe(element);
     watched.clear();
@@ -189,6 +225,7 @@ function createRuleAligner(viewport: PageViewport, flow: HTMLElement) {
       (element as HTMLElement).style.removeProperty('--rule-pad');
     }
     watched.clear();
+    above.clear();
     resizes?.unobserve(flow);
     mutations?.disconnect();
   }
@@ -205,6 +242,7 @@ function createRuleAligner(viewport: PageViewport, flow: HTMLElement) {
       if (!was) {
         resizes?.observe(flow);
         mutations?.observe(flow, { childList: true, subtree: true });
+        above.start();
         // The fonts load after the page does and can change what sits above the flow.
         void document.fonts?.ready.then(schedule);
       }

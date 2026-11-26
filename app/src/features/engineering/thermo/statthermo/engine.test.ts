@@ -1,3 +1,4 @@
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { ThermoError } from '../common/types';
 import { shown } from '../ui/present';

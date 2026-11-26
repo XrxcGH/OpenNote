@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { META_AUTO_CHANGE } from '../meta';
 import { mountEditor, testHost, typeInto } from '../commands/testing';
 import type { TestEditor } from '../commands/testing';
-import { DEFAULT_REPLACEMENTS, correctionFor } from './autocorrect';
+import { DEFAULT_REPLACEMENTS, addressIn, correctionFor } from './autocorrect';
 
 let mounted: TestEditor | null = null;
 afterEach(() => {
@@ -82,5 +82,26 @@ describe('AutoCorrect', () => {
     const page = mount('[]', host);
     typeInto(page.editor, 'omw teh ');
     expect(page.editor.state.doc.textContent).toBe('on my way teh ');
+  });
+});
+
+describe('addresses', () => {
+  it('finds web and e-mail addresses and leaves the sentence punctuation out', () => {
+    expect(addressIn('https://example.com/a(c)b.')).toEqual({
+      text: 'https://example.com/a(c)b',
+      href: 'https://example.com/a(c)b',
+    });
+    expect(addressIn('www.example.com')).toEqual({ text: 'www.example.com', href: 'https://www.example.com' });
+    expect(addressIn('ann@example.org,')).toEqual({ text: 'ann@example.org', href: 'mailto:ann@example.org' });
+    expect(addressIn('(c)')).toBeNull();
+    expect(addressIn('http://')).toBeNull();
+  });
+
+  it('links a typed address when the word ends and keeps (c) in it', () => {
+    const page = mount('[]');
+    typeInto(page.editor, 'see https://example.com/a(c)b ');
+    const html = page.editor.getHTML();
+    expect(html).toContain('href="https://example.com/a(c)b"');
+    expect(html).not.toContain('©');
   });
 });

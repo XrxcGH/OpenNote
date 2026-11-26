@@ -1,5 +1,6 @@
 // Complex analysis: a value in both forms, roots on a circle, poles and residues with contour integrals checked two
 // ways, real integrals by residues, and the image of a grid under a conformal map.
+import '../text';
 import { t } from '../../../../strings/t';
 import { fmt } from '../numeric';
 import { KitError } from '../types';

@@ -15,10 +15,17 @@ import { textPageFixture } from '../test/fixtures';
 import { cleanupPages, renderPage } from '../test/harness';
 import type { PageHarness } from '../test/harness';
 import { currentTable } from '../tables/current';
+import { tableExtras } from '../tables/extras';
+import type { TableExtraHost } from '../tables/extras';
 import { whenViewReady } from '../tables/lazyView';
 import '../register';
 
-afterEach(cleanupPages);
+// React schedules its last renders on the next turn of the event loop. Let them run while jsdom is still there, so
+// none lands after the environment is gone and throws in the next file that runs in the same worker.
+afterEach(async () => {
+  await cleanupPages();
+  for (let turn = 0; turn < 3; turn++) await new Promise((done) => setImmediate(done));
+});
 
 // jsdom has no layout, and ProseMirror measures a Range when it scrolls the caret into view.
 Range.prototype.getClientRects ??= () => [] as unknown as DOMRectList;
@@ -39,7 +46,10 @@ function tableData(): TableData {
   return data;
 }
 
-async function tablePage(data: TableData = tableData()): Promise<{ page: PageHarness; editor: Editor }> {
+async function tablePage(
+  data: TableData = tableData(),
+  flags: Record<string, boolean> = {},
+): Promise<{ page: PageHarness; editor: Editor }> {
   const fixture = textPageFixture('Before the table');
   const at = fixture.page.blocks[0].created;
   const block: BlockJson = {
@@ -51,7 +61,7 @@ async function tablePage(data: TableData = tableData()): Promise<{ page: PageHar
     data: data as unknown as Record<string, unknown>,
   };
   fixture.page.blocks.push(block);
-  const page = await renderPage({ fixture, flags: { 'page.tables': true } });
+  const page = await renderPage({ fixture, flags: { 'page.tables': true, ...flags } });
   await whenViewReady(page.wrapper(TABLE));
   const editor = page.mounted.pool.mount(TABLE, { kind: 'start' }, 'target');
   if (!editor) throw new Error('The table has no editor.');
@@ -213,5 +223,79 @@ describe('table commands', () => {
     const data = inserted.block.data as unknown as TableData;
     expect([data.columns.length, data.rows.length, data.header]).toEqual([3, 3, true]);
     expect(page.markdown(text)).toBe('First');
+  });
+});
+
+describe('table extras', () => {
+  it('tells every extra about the data an extra wrote, so a second extra plans from it', async () => {
+    let writer: TableExtraHost | undefined;
+    const seen: unknown[] = [];
+    const stop = [
+      tableExtras.register({
+        id: 'test.writer',
+        attach: (host) => {
+          writer = host;
+          return { update: () => {}, destroy: () => {} };
+        },
+      }),
+      tableExtras.register({
+        id: 'test.reader',
+        attach: () => ({ update: (block) => seen.push(block.data), destroy: () => {} }),
+      }),
+    ];
+    try {
+      await tablePage();
+      await vi.waitFor(() => expect(writer).toBeDefined());
+      await writer!.patch({ sheet: { styles: { s1: { fmt: 'first' } } } });
+      expect(seen.at(-1)).toMatchObject({ sheet: { styles: { s1: { fmt: 'first' } } } });
+      expect(writer!.data().sheet).toEqual({ styles: { s1: { fmt: 'first' } } });
+      // A second write merges into the first, as the core does.
+      await writer!.patch({ sheet: { styles: { s2: { fmt: 'second' } } } });
+      expect(writer!.data().sheet).toEqual({ styles: { s1: { fmt: 'first' }, s2: { fmt: 'second' } } });
+    } finally {
+      stop.forEach((undo) => undo());
+    }
+  });
+
+  it('tells each extra once per write, with the smart extra attached, so no extra writes in a loop', async () => {
+    let writer: TableExtraHost | undefined;
+    let updates = 0;
+    const stop = [
+      tableExtras.register({
+        id: 'test.writer',
+        attach: (host) => {
+          writer = host;
+          return { update: () => {}, destroy: () => {} };
+        },
+      }),
+      tableExtras.register({
+        id: 'test.counter',
+        attach: () => ({ update: () => void updates++, destroy: () => {} }),
+      }),
+    ];
+    try {
+      const { editor } = await tablePage();
+      await vi.waitFor(() => expect(writer).toBeDefined());
+      const before = updates;
+      await writer!.patch({ smart: { filters: [] } });
+      await writer!.patch({ sheet: { styles: { s1: { fmt: 'first' } } } });
+      // The page's own smart extra receives these writes too. A write of its own would show as a third update.
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(updates - before).toBe(2);
+      expect(editor.isDestroyed).toBe(false);
+    } finally {
+      stop.forEach((undo) => undo());
+    }
+  });
+});
+
+describe('table size edges and the structure flag', () => {
+  it('has no row edges while tables.structureUi is off', async () => {
+    const { page } = await tablePage(tableData(), { 'tables.structureUi': false });
+    expect(page.wrapper(TABLE).querySelectorAll('[data-row]').length).toBe(0);
+  });
+  it('has the row edge while tables.structureUi is on', async () => {
+    const { page } = await tablePage(tableData(), { 'tables.structureUi': true });
+    expect(page.wrapper(TABLE).querySelectorAll('[data-row]').length).toBe(1);
   });
 });

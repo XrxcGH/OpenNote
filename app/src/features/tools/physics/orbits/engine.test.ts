@@ -1,6 +1,7 @@
 // The orbital mechanics tool against its validation cases (first principles) and independent working: elements and
 // state vectors round trip, propagation agrees with Kepler's equation and keeps energy and angular momentum, and a
 // ground track turns with Earth.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { specProblems } from '../kit/checkSpec';
 import { problem, runMode, value } from '../kit/run';

@@ -2,6 +2,8 @@
 
 Plot surfaces and curves in space, trace parametric and polar curves, work with vectors, lines, and planes, find volumes of solids of revolution, and fly a projectile. These tools are in the Beta channel.
 
+![A 3D graph block on a page, with a surface and its axes](../screens/graph-3d-light.png)
+
 ## 3D graphs
 
 Open Insert, then 3D graph, or type `/3d graph`. The block starts with a saddle, its tangent plane at one point, and its level curves.
@@ -41,6 +43,7 @@ Open Solids of revolution from the palette or the Insert tab. Type the outer and
 
 - A horizontal axis, y = k, uses the washer method, where a washer with no hole is a disk. A vertical axis, x = k, uses shells.
 - The steps show the radii, the integral, and the volume. When the volume is a simple fraction of π, it is also shown exactly, such as 8π.
+- From must be less than To, and the limits and axis must be numbers. If not, a message says which, and the result stays empty until they are fixed.
 - The solid is drawn in a 3D view you can turn. Insert into page adds the steps and the solid.
 
 ## Projectile simulator

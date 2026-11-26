@@ -92,9 +92,13 @@ export function AppBar() {
       {parent && <BackButton parent={parent} />}
       {/* The notebooks and pages screens have no page heading of their own, so the bar's title is it. */}
       {screen === 'page' ? (
-        <span className={styles.screenTitle}>{title}</span>
+        <span className={styles.screenTitle} title={title}>
+          {title}
+        </span>
       ) : (
-        <h1 className={styles.screenTitle}>{title}</h1>
+        <h1 className={styles.screenTitle} title={title}>
+          {title}
+        </h1>
       )}
       <div ref={group} className={styles.group}>
         {items

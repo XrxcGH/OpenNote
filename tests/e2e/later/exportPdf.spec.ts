@@ -2,13 +2,13 @@
 // spec chose, and each file is a real PDF. The WebView2 print path and the app's PDF writer both run.
 
 import assert from 'node:assert/strict';
-import { mkdtempSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
+import { mkdtempSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 import { after, before, describe, it } from 'node:test';
-import { launchApp, skipReason } from '../harness.ts';
+import { launchApp, skipReason, removeFolder } from '../harness.ts';
 import type { AppSession } from '../harness.ts';
-import { answerPickers, clickRow, dialogWith, runCommand } from './steps.ts';
+import { clickRow, dialogWith, pickerEnv, runCommand } from './steps.ts';
 
 /** Every file under a folder. */
 function filesUnder(folder: string): string[] {
@@ -23,24 +23,25 @@ describe('exporting a PDF from the real app', { skip: skipReason() }, () => {
 
   before(async () => {
     out = mkdtempSync(join(tmpdir(), 'opennote-export-'));
-    session = await launchApp();
+    session = await launchApp({ env: pickerEnv({ folder: out }) });
   });
 
   after(async () => {
     await session?.close();
-    rmSync(out, { recursive: true, force: true });
+    removeFolder(out);
   });
 
   it('exports a section as PDF files that open as PDFs', async () => {
     const { browser } = session;
     await clickRow(browser, 'Notebooks', 'Lectures');
-    await answerPickers(browser, { folder: out });
     await runCommand(browser, 'export', 'Export…');
     const dialog = dialogWith(browser, 'Choose a format and a folder');
     await dialog.waitForExist({ timeout: 10_000 });
     await dialog.$('//*[@role="radio"][contains(normalize-space(.), "PDF files")]').click();
     await dialog.$('button=Choose a folder…').click();
-    await dialog.$(`//*[contains(normalize-space(.), ${JSON.stringify(out)})]`).waitForExist({ timeout: 10_000 });
+    await dialog
+      .$(`//*[contains(normalize-space(.), ${JSON.stringify(basename(out))})]`)
+      .waitForExist({ timeout: 10_000 });
     await dialog.$('//button[normalize-space(.)="Export"]').click();
     await dialog
       .$('//*[normalize-space(.)="Export finished"]')

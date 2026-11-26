@@ -159,7 +159,12 @@ pub(super) fn sheet_page(
             )
         };
         report.skipped_count(grid.rows.len() - kept + grid.cut_rows, (one, many), why);
-        builder.push_blocks(vec![Block::Table { header: true, rows }]);
+        // A first row with a formula is data, not a header: header cells are never calculated.
+        let header = !grid
+            .rows
+            .first()
+            .is_some_and(|row| row.iter().any(|c| c.starts_with('=')));
+        builder.push_blocks(vec![Block::table(header, rows)]);
     }
     report_counts(&mut report, &grid);
     Ok(ConvertedPage {

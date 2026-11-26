@@ -1,6 +1,7 @@
 // Getting images onto the page (Phase 4 ARCHITECTURE.md sections 12.1, 12.2, and 6.1): each image goes through the
 // page's import queue, and one batch adds the assets and inserts the image blocks. On a freeform page they float
 // just below the current text box, or at the drop point; on a flow page they flow after the current block.
+import './text';
 import { newId } from '../../../editor/ids';
 import type { BlockId, Edit, Frame, ImportedAsset, NewBlock, OpenPage, PageRect } from '../../../services/pages/types';
 import { t } from '../../../strings/t';
@@ -8,6 +9,7 @@ import { announce, showToast } from '../../../ui';
 import type { MountedPage } from '../mount';
 import { pageSelection, selectOnPage } from '../seams/selectionStore';
 import { assetTable } from './assets';
+import { belowTitle, clearOfBlocks, KEEP_BELOW } from '../layout/freeSpot';
 import { offerActualSize, sizeFor, sizingFor } from '../qol/pasteSize';
 import type { Sizing } from '../qol/pasteSize';
 import { FREEFORM_MAX_WIDTH } from './geometry';
@@ -44,26 +46,31 @@ export function isMetafile(file: Pick<File, 'type' | 'name'>): boolean {
 }
 /** What the shell can convert when page.heicImport is on. */
 export const CONVERTIBLE_TYPES = ['image/heic', 'image/heif', 'image/tiff'] as const;
-const KEEP_BELOW = 24;
 const PROGRESS_DELAY = 300;
 
 export type Placement = { kind: 'point'; x: number; y: number } | { kind: 'after'; block: BlockId | null };
 
 const queues = new WeakMap<OpenPage, ImportQueue>();
 
-/** The quiet progress bar: it appears after 300 ms with "Adding 12 images" and goes when the queue is empty. */
-function progressFor(host: () => HTMLElement | null): (state: { pending: number }) => void {
+/**
+ * The quiet progress bar: it appears after 300 ms with "Adding 12 images" (or what `label` says for the count) and goes
+ * when nothing is pending. Attachments use it too.
+ */
+export function progressFor(
+  host: () => HTMLElement | null,
+  label: (count: number) => string = (count) => t('images.adding', { count }),
+): (state: { pending: number }) => void {
   let element: HTMLElement | null = null;
   let timer: ReturnType<typeof setTimeout> | null = null;
   let total = 0;
   const render = (pending: number) => {
     if (!element) return;
     const bar = element.querySelector('progress')!;
-    const label = t('images.adding', { count: total });
-    element.firstChild!.textContent = label;
+    const said = label(total);
+    element.firstChild!.textContent = said;
     bar.max = total;
     bar.value = total - pending;
-    bar.setAttribute('aria-label', label);
+    bar.setAttribute('aria-label', said);
   };
   return ({ pending }) => {
     if (pending === 0) {
@@ -122,36 +129,12 @@ export function defaultPlacement(mounted: MountedPage): Placement {
   const current = currentBlock(mounted);
   if (isFlow(mounted.page)) return { kind: 'after', block: current };
   const below = current ? mounted.layer.view(current)?.measure() : null;
-  if (below) return { kind: 'point', x: below.x, y: below.y + below.h + KEEP_BELOW };
+  // Below the caret's block, and below any block already there, such as a table under the text (walk 9 T1-D01-2).
+  if (below) return { kind: 'point', x: below.x, y: clearOfBlocks(mounted, below.x, below.y + below.h + KEEP_BELOW) };
   const box = mounted.viewport.viewport.getBoundingClientRect();
   const corner = mounted.viewport.toWorld(box.left + 48, box.top + 48);
   const x = Math.max(0, corner.x);
   return { kind: 'point', x, y: clearOfBlocks(mounted, x, Math.max(0, corner.y, belowTitle(mounted))) };
-}
-
-/** The size of a new block's footprint that must not land on a block already there (a file card, a small picture). */
-const FOOTPRINT = { w: 320, h: 96 };
-
-/** `y`, or the first y below the blocks that a block at `x`, `y` would cover, so a new block never hides one. */
-function clearOfBlocks(mounted: MountedPage, x: number, y: number): number {
-  const boxes = mounted.layer
-    .blocks()
-    .map((block) => mounted.layer.view(block.id)?.measure())
-    .filter((box): box is NonNullable<typeof box> => !!box && box.w > 0 && box.h > 0)
-    .sort((a, b) => a.y - b.y);
-  let top = y;
-  for (const box of boxes) {
-    const covers = box.x < x + FOOTPRINT.w && box.x + box.w > x && box.y < top + FOOTPRINT.h && box.y + box.h > top;
-    if (covers) top = box.y + box.h + KEEP_BELOW;
-  }
-  return top;
-}
-
-/** The first world y under the title band, so a new block never covers the page title. */
-function belowTitle(mounted: Pick<MountedPage, 'title' | 'viewport'>): number {
-  const band = mounted.title?.element.getBoundingClientRect();
-  if (!band || band.height === 0) return 0;
-  return mounted.viewport.toWorld(band.left, band.bottom).y + KEEP_BELOW;
 }
 
 export function isFlow(page: OpenPage): boolean {

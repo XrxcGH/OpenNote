@@ -80,7 +80,7 @@ export async function createShortcutFor(notes: NotesService, node: NodeSummary, 
     return;
   }
   const choice = await showDialog<ShortcutChoice | null>((done) =>
-    createElement(ShortcutDialog, { title: titleOf(node), platform, done }),
+    createElement(ShortcutDialog, { title: titleOf(node), kind: node.kind, platform, done }),
   );
   if (choice) await makeShortcut(node, choice);
 }

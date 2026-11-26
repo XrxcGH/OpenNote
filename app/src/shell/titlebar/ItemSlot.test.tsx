@@ -30,4 +30,14 @@ describe('a title bar item slot', () => {
     const { container } = render(<ItemSlot item={item(() => false)} className="slot" presentation="full" />);
     expect(container.innerHTML).toBe('');
   });
+
+  // jsdom has no layout, so this checks only what the CSS relies on. A component that renders nothing leaves a
+  // wrapper with no children (:empty), which TitleBar.module.css takes out of the layout. The browser test in
+  // tests/ui/behavior/layout.spec.ts measures the gap.
+  it('leaves an empty wrapper, which the stylesheet hides, when the component renders nothing', () => {
+    const idle: TitleBarItemDef = { ...item(), Component: () => null };
+    const { container } = render(<ItemSlot item={idle} className="slot" presentation="full" />);
+    expect(container.innerHTML).toBe('<span class="slot"></span>');
+    expect(container.querySelector('.slot')?.matches(':empty')).toBe(true);
+  });
 });

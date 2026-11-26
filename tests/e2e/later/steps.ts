@@ -1,8 +1,7 @@
 // Shared steps for the real-app specs of Phases 6 to 13 (A4-50): open a page by its tree rows, run a command from
 // the palette, and answer the file and folder pickers. Windows draws the real pickers, which a WebDriver session
-// cannot reach, so a spec answers them from the page: it wraps the app's `invoke`, and the two picker commands
-// return the path the spec chose. Every other command goes to the real core. The app, its notes, and its exports
-// are real; only the picker window is skipped.
+// cannot reach, so a spec starts the test build with the paths the pickers answer (pickerEnv). Every other command
+// goes to the real core. The app, its notes, and its exports are real; only the picker window is skipped.
 
 import { Key } from 'webdriverio';
 import type { Browser } from '../harness.ts';
@@ -61,33 +60,18 @@ export interface Picks {
   file?: string;
 }
 
-/** Makes the folder and file pickers answer at once with the paths given, until the page reloads. */
-export async function answerPickers(browser: Browser, picks: Picks): Promise<void> {
-  await browser.execute((picks) => {
-    const internals = (
-      window as unknown as {
-        __TAURI_INTERNALS__: {
-          invoke: (command: string, args?: Record<string, unknown>, options?: unknown) => unknown;
-        };
-        __opennotePicks?: Picks;
-      }
-    ).__TAURI_INTERNALS__;
-    const state = window as unknown as { __opennotePicks?: Picks; __opennoteInvoke?: unknown };
-    state.__opennotePicks = picks;
-    if (state.__opennoteInvoke) return;
-    const real = internals.invoke.bind(internals);
-    state.__opennoteInvoke = real;
-    internals.invoke = (command, args, options) => {
-      const chosen = state.__opennotePicks ?? {};
-      if (command === 'install_pick_folder') return Promise.resolve(chosen.folder ?? null);
-      if (command === 'interop_pick') {
-        return Promise.resolve(
-          (args as { kind?: string } | undefined)?.kind === 'folder' ? chosen.folder : chosen.file,
-        );
-      }
-      return real(command, args, options);
-    };
-  }, picks);
+/**
+ * The environment that makes the folder and file pickers answer at once with the paths given. Windows draws the real
+ * pickers, which a WebDriver session cannot reach, and the page cannot stand in for them: Tauri defines
+ * `__TAURI_INTERNALS__` and its `invoke` as read-only, and the import and export commands accept only a path that
+ * the picker command returned. So the test build (the `test-endpoints` feature, app/src-tauri/src/test_pick.rs) reads
+ * the answers when the app starts, and the picker commands return them. Pass the result to launchApp as `env`.
+ */
+export function pickerEnv(picks: Picks): Record<string, string> {
+  return {
+    ...(picks.folder ? { OPENNOTE_TEST_PICK_FOLDER: picks.folder } : {}),
+    ...(picks.file ? { OPENNOTE_TEST_PICK_FILE: picks.file } : {}),
+  };
 }
 
 /** The dialog that is open and mentions `text`. A native dialog has no role attribute, so it is found by its text. */

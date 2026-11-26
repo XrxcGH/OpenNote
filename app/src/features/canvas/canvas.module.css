@@ -148,4 +148,11 @@
   .json {
     margin-block-start: var(--space-3);
   }
+
+  .json > summary {
+    display: list-item;
+    align-content: center;
+    min-block-size: var(--target-size);
+    cursor: pointer;
+  }
 }

@@ -10,10 +10,12 @@ import { resetStores } from '../../state/store';
 import { ensureChildren, startTree, stopTree } from './load';
 import { setPinned } from './qolActions';
 import { getNode, treeStore } from './store';
+import { undo, undoStore } from './undo';
 
 const id = (value: string) => value as NodeId;
 const titles = async () => (await notes.listChildren(id('s-lectures'))).map((page) => page.title);
 let notes: MemoryNotesService;
+let pins: { id: unknown; pinned: unknown }[] = [];
 
 beforeEach(async () => {
   resetStores();
@@ -21,8 +23,10 @@ beforeEach(async () => {
   notes = createMemoryNotesService({ seed: 'sample' });
   await startTree(notes);
   await ensureChildren(id('s-lectures'));
+  pins = [];
   setFakeShell((name, args) => {
     const node = getNode(String(args?.id));
+    if (name === 'notes.setPinned') pins.push({ id: args?.id, pinned: args?.pinned });
     return name === 'notes.setPinned' && node ? { ...node, pinned: args?.pinned } : null;
   });
 });
@@ -51,5 +55,18 @@ describe('setPinned', () => {
       .find((n) => n?.pageLevel === 0 && n.id !== top?.id);
     await setPinned(other!.id, true);
     expect(await titles()).toEqual(before);
+  });
+
+  it('undoes a pin as one change: unpinned, and back where it stood', async () => {
+    const before = await titles();
+    const last = [...treeStore.get().children['s-lectures']]
+      .map((n) => getNode(n))
+      .filter((n) => n?.pageLevel === 0)
+      .at(-1);
+    await setPinned(last!.id, true, notes);
+    expect(undoStore.get().past).toHaveLength(1);
+    expect(await undo(notes)).toBe(true);
+    expect(await titles()).toEqual(before);
+    expect(pins.at(-1)).toEqual({ id: last!.id, pinned: false });
   });
 });

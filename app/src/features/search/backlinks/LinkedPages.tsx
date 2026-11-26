@@ -55,7 +55,9 @@ const open = (page: string) => void openPage(commandContext('palette').notes, pa
 function Backlinks({ links, busy, onUpdate }: { links: Backlink[]; busy: boolean; onUpdate(): void }) {
   return (
     <div className={styles.paneSection}>
-      <h3 className={styles.paneSectionHeading}>{t('search.backlinks.linksHeading', { count: links.length })}</h3>
+      <h3 className={styles.paneSectionHeading}>
+        {t('search.backlinks.linksHeading', { count: new Set(links.map((link) => link.source)).size })}
+      </h3>
       {links.length === 0 ? (
         <p className={styles.note}>{t('search.backlinks.none')}</p>
       ) : (

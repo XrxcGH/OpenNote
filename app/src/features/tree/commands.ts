@@ -8,7 +8,7 @@ import type { ChipColor, NodeId } from '../../services/notes';
 import { dismissActionToasts } from '../../state/toasts';
 import { t } from '../../strings/t';
 import { announce } from '../../ui';
-import { colorNode } from './actions';
+import { colorNode, titleOf } from './actions';
 import { canCreate, createFromContext } from './creation';
 import type { NewKind } from './creation';
 import { currentNode } from './current';
@@ -19,6 +19,7 @@ import { levelAfter, stepOf } from './moves';
 import { deleteNode } from './remove';
 import { startRename } from './rename';
 import { treeStore } from './store';
+import { keepTreeFocus } from './keepFocus';
 import { redo, undo } from './undo';
 
 /**
@@ -28,7 +29,12 @@ import { redo, undo } from './undo';
  */
 async function toShownPage(id: 'page.undo' | 'page.redo', ctx: CommandContext): Promise<boolean> {
   const focused = typeof document === 'undefined' ? null : document.activeElement;
-  if (ctx.source !== 'keyboard' || (focused && focused !== document.body)) return false;
+  if (ctx.source === 'commandBar' || ctx.source === 'palette' || ctx.source === 'menu') {
+    return executeCommand(id, undefined, ctx.source);
+  }
+  // A panel of the page outside the page's own scope (the properties panel) marks itself data-page-undo.
+  const inPage = focused?.closest('[data-page-undo]');
+  if (ctx.source !== 'keyboard' || (focused && focused !== document.body && !inPage)) return false;
   return executeCommand(id, undefined, 'keyboard');
 }
 
@@ -80,9 +86,13 @@ function moveCommand(direction: 'up' | 'down') {
     category: 'notebooks',
     keys: [chord(up ? 'Ctrl+Shift+Up' : 'Ctrl+Shift+Down')],
     scope: 'tree',
+    keywords: up ? 'tree.commands.keywords.moveUp' : 'tree.commands.keywords.moveDown',
     allowRepeat: true,
-    palette: false,
     enabled: (ctx) => canStep(ctx, direction),
+    disabledReason: (ctx) => {
+      const node = currentNode(ctx);
+      return node && t(up ? 'tree.moves.alreadyFirst' : 'tree.moves.alreadyLast', { title: titleOf(node) });
+    },
     run: (ctx) => {
       const node = currentNode(ctx);
       return node ? moveStep(ctx.notes, node, direction) : undefined;
@@ -110,6 +120,10 @@ function levelCommand(change: 1 | -1) {
       return node?.kind === 'page' && (indent || node.pageLevel > 0 || ctx.source === 'keyboard');
     },
     enabled: (ctx) => canChangeLevel(ctx, change),
+    disabledReason: (ctx) => {
+      const node = currentNode(ctx);
+      return node && t(indent ? 'tree.moves.cantIndent' : 'tree.moves.alreadyTop', { title: titleOf(node) });
+    },
     run: (ctx) => {
       const node = currentNode(ctx);
       return node ? changeLevel(ctx.notes, node, change) : undefined;
@@ -190,7 +204,7 @@ const editCommands = [
     run: async (ctx) => {
       if (await toShownPage('page.undo', ctx)) return;
       dismissActionToasts();
-      if (!(await undo(ctx.notes))) announce(t('tree.undo.nothing'));
+      if (!(await keepTreeFocus(() => undo(ctx.notes)))) announce(t('tree.undo.nothing'));
     },
   }),
   defineCommand({
@@ -201,7 +215,7 @@ const editCommands = [
     scope: 'workspace',
     run: async (ctx) => {
       if (await toShownPage('page.redo', ctx)) return;
-      if (!(await redo(ctx.notes))) announce(t('tree.undo.nothingToRedo'));
+      if (!(await keepTreeFocus(() => redo(ctx.notes)))) announce(t('tree.undo.nothingToRedo'));
     },
   }),
 ];

@@ -2,6 +2,8 @@
 
 OpenNote can write typed text and math in your own handwriting. It learns your hand from a calibration page you write with your pen, and keeps what it learns only on this device.
 
+![My handwriting: calibration and the symbols written in your own hand](../screens/settings-my-handwriting-light.png)
+
 ## Write the calibration page
 
 Open Settings, then My handwriting, and choose Start calibration. The page goes one step at a time:

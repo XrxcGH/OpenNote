@@ -1,6 +1,7 @@
 // The side panels of the drafting sheet: the sheet's settings, the title block, shapes typed by coordinates (the
 // keyboard way to draw), what is selected, and the list of every shape and dimension. A number is committed when its
 // field loses focus or Enter is pressed, so one edit is one undo step.
+import '../text';
 import { useId, useState } from 'react';
 import { Button } from '../../../../ui';
 import { addEntity, remove, updateDim, updateEntity } from '../drafting/edit';

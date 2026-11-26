@@ -31,7 +31,8 @@ describe('the wide workspace', () => {
     const { container } = await renderApp({ sizeClass: 'wide' });
     expect(notebooksNav()).toBeTruthy();
     expect(screen.getByRole('navigation', { name: 'Pages' })).toBeTruthy();
-    expect(screen.getByRole('main')).toBeTruthy();
+    expect(screen.getByRole('main', { name: 'Page' })).toBeTruthy();
+    expect(screen.getByRole('banner', { name: 'Title bar' })).toBeTruthy();
     expect(width('notebooks')).toBe(auto('notebooks'));
     expect(width('pages')).toBe(auto('pages'));
     expect(separator('notebooks').getAttribute('aria-valuetext')).toBe(`Notebooks pane, ${auto('notebooks')} pixels`);

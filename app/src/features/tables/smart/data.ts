@@ -2,6 +2,9 @@
 // format passes through untouched, so older readers still see an ordinary table. Cells keep their text as typed,
 // so a formula is the cell's text ("=B2*C2") and every other reader sees it. Columns, filters, and charts name
 // columns by ID, so adding or moving a column never changes what they mean.
+//
+// Keys this version doesn't know, at the top of `data.smart` and in its columns, are kept (SPEC 2.9). A change
+// writes only the keys it changed.
 import { MAX_CHOICES, cleanChoiceName } from '../engine';
 import { parseUnit } from '../../../core/units';
 import type { Aggregate, ChartKind, ColumnType, FilterOp, TotalKind } from '../engine';
@@ -34,6 +37,8 @@ export interface ColumnSmart {
   unit?: string;
   /** Engineering notation, or SI prefixes on the unit. */
   notation?: 'engineering' | 'si';
+  /** Keys a later version wrote, kept as they are. */
+  [key: string]: unknown;
 }
 
 export interface FilterSmart {
@@ -104,6 +109,8 @@ export interface SmartData {
   saved?: SavedViewSmart[];
   /** The saved view that was applied last. */
   savedActive?: string;
+  /** Keys a later version wrote, kept as they are. */
+  [key: string]: unknown;
 }
 
 export const EMPTY_SMART: SmartData = Object.freeze({ columns: {}, filters: [], charts: [] }) as SmartData;
@@ -116,6 +123,25 @@ const TYPES: readonly ColumnType[] = ['text', 'number', 'currency', 'percent', '
 const TOTALS: readonly TotalKind[] = ['sum', 'average', 'count', 'min', 'max', 'checked'];
 const KINDS: readonly ChartKind[] = ['bar', 'line', 'area', 'pie', 'scatter', 'box'];
 const AGGREGATES: readonly Aggregate[] = ['none', 'sum', 'average', 'count', 'min', 'max'];
+
+/** The keys of a column and of `data.smart` this version reads. Any other key is kept as it is. */
+const COLUMN_KEYS = new Set([
+  'type',
+  'decimals',
+  'currency',
+  'total',
+  'choices',
+  'options',
+  'multi',
+  'unit',
+  'notation',
+]);
+const SMART_KEYS = new Set(['columns', 'filters', 'charts', 'view', 'sort', 'saved', 'savedActive']);
+
+/** The entries of `fields` whose keys are not in `known`. */
+function unknownKeys(fields: Record<string, unknown>, known: ReadonlySet<string>): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(fields).filter(([key]) => !known.has(key)));
+}
 
 /** The options a stored list means: named, with a color from the set, no repeats, at most MAX_CHOICES. */
 export function readOptions(raw: unknown): ChoiceOption[] {
@@ -138,7 +164,7 @@ export function readOptions(raw: unknown): ChoiceOption[] {
 
 function readColumn(raw: unknown): ColumnSmart {
   const fields = isRecord(raw) ? raw : {};
-  const out: ColumnSmart = {};
+  const out: ColumnSmart = unknownKeys(fields, COLUMN_KEYS);
   if (TYPES.includes(fields.type as ColumnType)) out.type = fields.type as ColumnType;
   if (typeof fields.decimals === 'number' && Number.isInteger(fields.decimals)) {
     out.decimals = Math.min(10, Math.max(0, fields.decimals));
@@ -237,6 +263,7 @@ export function readSmart(data: Record<string, unknown> | undefined): SmartData 
   const saved = readSaved(raw.saved);
   const active = saved.some((one) => one.id === raw.savedActive) ? (raw.savedActive as string) : undefined;
   return {
+    ...unknownKeys(raw, SMART_KEYS),
     columns,
     filters,
     charts,
@@ -247,16 +274,45 @@ export function readSmart(data: Record<string, unknown> | undefined): SmartData 
   };
 }
 
-/** The merge patch that stores `smart`: the whole object, or null when nothing is left. */
-export function smartPatch(smart: SmartData): Record<string, unknown> {
-  const empty =
+/** Whether `smart` holds nothing: no columns, filters, charts, view, sort, saved views, or unknown keys. */
+function isEmpty(smart: SmartData): boolean {
+  return (
     Object.keys(smart.columns).length === 0 &&
     smart.filters.length === 0 &&
     smart.charts.length === 0 &&
     smart.view === undefined &&
     smart.sort === undefined &&
-    (smart.saved ?? []).length === 0;
-  return { smart: empty ? null : smart };
+    (smart.saved ?? []).length === 0 &&
+    Object.keys(unknownKeys(smart, SMART_KEYS)).every((key) => smart[key] === undefined)
+  );
+}
+
+/** The JSON merge patch (RFC 7396) from `before` to `after`: only the keys that changed, and null for a gone key. */
+function mergeDiff(before: Record<string, unknown>, after: Record<string, unknown>): Record<string, unknown> {
+  const patch: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(after)) {
+    if (value === undefined) continue;
+    const old = before[key];
+    if (JSON.stringify(old) === JSON.stringify(value)) continue;
+    if (isRecord(old) && isRecord(value)) {
+      const inner = mergeDiff(old, value);
+      if (Object.keys(inner).length > 0) patch[key] = inner;
+    } else patch[key] = value;
+  }
+  for (const [key, value] of Object.entries(before)) {
+    if (value !== undefined && after[key] === undefined) patch[key] = null;
+  }
+  return patch;
+}
+
+/**
+ * The merge patch that stores `smart`: null when nothing is left. Given the `before` it was read as, only the keys
+ * that changed, so keys another version wrote, or another change made meanwhile, stay. Without it, the whole object.
+ */
+export function smartPatch(smart: SmartData, before?: SmartData): Record<string, unknown> {
+  if (isEmpty(smart)) return { smart: null };
+  if (!before || before === EMPTY_SMART) return { smart };
+  return { smart: mergeDiff(before, smart) };
 }
 
 /** `smart` with the columns that are no longer in the table dropped from it. */
@@ -267,7 +323,9 @@ export function pruneSmart(smart: SmartData, columnIds: readonly string[]): Smar
     filters: filters.filter((filter) => keep.has(filter.column)),
     ...(sort && keep.has(sort.column) ? { sort } : {}),
   }));
+  const { sort: _sort, saved: _saved, savedActive: _active, view: _view, ...rest } = smart;
   return {
+    ...rest,
     columns: Object.fromEntries(Object.entries(smart.columns).filter(([id]) => keep.has(id))),
     filters: smart.filters.filter((filter) => keep.has(filter.column)),
     charts: smart.charts,

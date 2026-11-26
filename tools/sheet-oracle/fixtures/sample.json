@@ -1,0 +1,17 @@
+{
+  "cases": [
+    {
+      "formula": "=2^3^2",
+      "expected": 64,
+      "source": "hand",
+      "note": "Powers group left to right in a spreadsheet: (2^3)^2 is 8^2."
+    },
+    {
+      "formula": "=SUM(A1:A2)/4",
+      "cells": { "A1": 3, "A2": 7 },
+      "expected": 2.5,
+      "source": "hand",
+      "note": "3 plus 7 is 10, and 10 over 4 is 2.5."
+    }
+  ]
+}

@@ -1,7 +1,8 @@
 // The Models part of Settings, then On-device intelligence: the speech models with their sizes, and a button to
 // download, cancel, resume, remove, or choose each. Nothing downloads until a person presses Download and confirms.
-import { useEffect, useId, useState } from 'react';
+import { lazy, Suspense, useEffect, useId, useState } from 'react';
 import type { ModelInfo } from '../../../services/intel';
+import { loadCodeDownloads } from '../../codestudio';
 import { useStore } from '../../../state/store';
 import { t } from '../../../strings/t';
 import { announce, Button } from '../../../ui';
@@ -22,13 +23,19 @@ import {
   selectedSpeechModel,
 } from './store';
 
-function stateLine(model: ModelInfo): string {
+/** The Code group: the code studio's runtime packs, and the code models (code:L18). It loads with the panel. */
+const CodeDownloads = lazy(loadCodeDownloads);
+
+/** The line under a model's name. A part that rounds to the whole size says what is left instead. */
+export function stateLine(model: ModelInfo): string {
   const size = formatSize(model.sizeBytes);
   const done = formatSize(model.bytes);
   switch (model.state) {
     case 'notInstalled':
       return t('intelPlus.models.state.notInstalled');
     case 'partial':
+      if (done === size && model.bytes < model.sizeBytes)
+        return t('intelPlus.models.state.partialLeft', { left: formatSize(model.sizeBytes - model.bytes) });
       return t('intelPlus.models.state.partial', { done, size });
     case 'downloading':
       return t('intelPlus.models.state.downloading', { done, size });
@@ -39,8 +46,14 @@ function stateLine(model: ModelInfo): string {
   }
 }
 
-function ModelRow(props: { model: ModelInfo; selected?: boolean; onSelect?: (id: string) => void }) {
-  const { model, selected = false, onSelect } = props;
+function ModelRow(props: {
+  model: ModelInfo;
+  selected?: boolean;
+  onSelect?: (id: string) => void;
+  /** Work offline is on: nothing can download, so Download and Resume are off, and the panel says why. */
+  offline?: boolean;
+}) {
+  const { model, selected = false, onSelect, offline = false } = props;
   const nameId = useId();
   const size = formatSize(model.sizeBytes);
   const busy = model.state === 'downloading';
@@ -74,6 +87,7 @@ function ModelRow(props: { model: ModelInfo; selected?: boolean; onSelect?: (id:
           <Button
             variant="secondary"
             aria-label={t('intelPlus.models.downloadNamed', { name: model.name, size })}
+            disabled={offline}
             onClick={() => void downloadModel(model)}
           >
             {t('intelPlus.models.download')}
@@ -83,6 +97,7 @@ function ModelRow(props: { model: ModelInfo; selected?: boolean; onSelect?: (id:
           <Button
             variant="secondary"
             aria-label={t('intelPlus.models.resumeNamed', { name: model.name })}
+            disabled={offline}
             onClick={() => void downloadModel(model)}
           >
             {t('intelPlus.models.resume')}
@@ -183,22 +198,41 @@ export default function ModelsPanel() {
       <p className={styles.help}>{t('intelPlus.models.speechHelp')}</p>
       <ul className={styles.list} aria-label={t('intelPlus.models.speechHeading')}>
         {speech.map((model) => (
-          <ModelRow key={model.id} model={model} selected={selected === model.id} onSelect={choose} />
+          <ModelRow
+            key={model.id}
+            offline={list?.offline === true}
+            model={model}
+            selected={selected === model.id}
+            onSelect={choose}
+          />
         ))}
       </ul>
       <ModelGroup heading={t('intelPlus.models.languageHeading')} help={t('intelPlus.models.languageHelp')}>
         {languageModels.map((model) => (
-          <ModelRow key={model.id} model={model} selected={languageInUse === model.id} onSelect={chooseLanguage} />
+          <ModelRow
+            key={model.id}
+            offline={list?.offline === true}
+            model={model}
+            selected={languageInUse === model.id}
+            onSelect={chooseLanguage}
+          />
         ))}
       </ModelGroup>
+      <Suspense fallback={null}>
+        <CodeDownloads styles={styles}>
+          {of('code').map((model) => (
+            <ModelRow key={model.id} offline={list?.offline === true} model={model} />
+          ))}
+        </CodeDownloads>
+      </Suspense>
       <ModelGroup heading={t('intelPlus.models.meaningHeading')} help={t('intelPlus.models.meaningHelp')}>
         {of('meaning').map((model) => (
-          <ModelRow key={model.id} model={model} />
+          <ModelRow key={model.id} offline={list?.offline === true} model={model} />
         ))}
       </ModelGroup>
       <ModelGroup heading={t('intelPlus.models.translateHeading')} help={t('intelPlus.models.translateHelp')}>
         {of('translate').map((model) => (
-          <ModelRow key={model.id} model={model} />
+          <ModelRow key={model.id} offline={list?.offline === true} model={model} />
         ))}
       </ModelGroup>
       <p className={styles.help}>{t('intelPlus.models.folder')}</p>

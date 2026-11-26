@@ -11,3 +11,59 @@
     zoom: var(--ui-scale, 1);
   }
 }
+
+/* Text you select in the interface (a page title, help text, a dialog sentence) uses the selection color in place of
+   the system blue. The editor, the PDF viewer, and Markdown source set their own. */
+@layer base {
+  ::selection {
+    background: var(--color-selection-highlight);
+    color: var(--color-text-primary);
+  }
+}
+
+/* Focus the app moved by script after a pointer, or before any input, shows no ring until the next Tab, arrow key, or
+   Escape (ui/focusOrigin.ts). Keyboard focus keeps the ring. */
+@layer states {
+  /* checks-disable-next-line usability: script focus after a pointer or before input; Tab, arrows, Escape restore it */
+  [data-focus-origin='pointer']:focus-visible {
+    outline: none;
+  }
+}
+
+/* The open notebook's pen color, for the few marks of place: the breadcrumb dot, the active tab's edge, and the page
+   title's rule (docs/BRAND.md section 4). A mark reads the variable and never a pen directly. */
+@layer tokens {
+  [data-accent='ink'] {
+    --notebook-accent: var(--ink-ink);
+  }
+
+  [data-accent='indigo'] {
+    --notebook-accent: var(--ink-indigo);
+  }
+
+  [data-accent='brick'] {
+    --notebook-accent: var(--ink-brick);
+  }
+
+  [data-accent='fern'] {
+    --notebook-accent: var(--ink-fern);
+  }
+
+  [data-accent='plum'] {
+    --notebook-accent: var(--ink-plum);
+  }
+
+  [data-accent='amber'] {
+    --notebook-accent: var(--ink-amber);
+  }
+
+  [data-accent='walnut'] {
+    --notebook-accent: var(--ink-walnut);
+  }
+
+  @media (forced-colors: active) {
+    [data-accent] {
+      --notebook-accent: CanvasText;
+    }
+  }
+}

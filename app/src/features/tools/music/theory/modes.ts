@@ -130,7 +130,7 @@ export function interval(v: Values): KitOk {
   const steps: KitStep[] = [
     { key: 'thIntervalCount', vars: { low: noteName(low), high: noteName(high), generic: String(i.generic) } },
     { key: 'thIntervalSemis', vars: { semis: String(i.semitones) } },
-    { key: 'thIntervalQuality', vars: { name: intervalWords(i) } },
+    { key: 'thIntervalQuality', vars: { semis: String(i.semitones), name: intervalWords(i) } },
   ];
   if (descending) steps.unshift({ key: 'thIntervalDescending' });
   return ok({

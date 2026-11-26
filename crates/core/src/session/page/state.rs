@@ -10,7 +10,7 @@ use crate::format::gzip::gzip;
 use crate::id::{AssetId, BlockId, ClientId, PageId, RevisionId};
 use crate::model::{Asset, Page, ReadOnlyReason, VersionReason};
 use crate::ops::undo::UndoStack;
-use crate::ops::{AppliedChanges, Op, Txn};
+use crate::ops::{AppliedChanges, Txn};
 use crate::session::autosave::{due_at, Dirty, Saveable, Urgency};
 use crate::session::backend::PageJournal;
 use crate::session::core::CoreCtx;
@@ -320,17 +320,10 @@ impl PageSession {
         self.ctx.saver.schedule(self.serial, me, due);
     }
 
-    /// The order keys the transaction gave new blocks, for the answer to the interface.
+    /// The order keys the transaction gave new and moved blocks, for the answer to the interface. Moved blocks
+    /// are included so Bring to front and the other arrange commands restack at once.
     pub(crate) fn new_order_keys(txn: &Txn) -> BTreeMap<BlockId, crate::order::OrderKey> {
-        let mut keys = BTreeMap::new();
-        for op in &txn.ops {
-            if let Op::InsertBlocks { blocks } = op {
-                for block in blocks {
-                    keys.insert(block.id, block.order.clone());
-                }
-            }
-        }
-        keys
+        crate::ops::resolve::assigned_order_keys(txn).into_iter().collect()
     }
 
     /// Whether the client can undo and redo.

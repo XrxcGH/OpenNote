@@ -19,7 +19,7 @@ mod single;
 mod tables;
 mod word;
 
-pub use convert::Resolver;
+pub use convert::{page_to_document, text_data, Document, Resolver};
 pub use files::{export_files, export_files_with, Exported, Format};
 pub use latex::{
     export_latex, export_latex_with, latex_preview, Citation as LatexCitation, DateChoice as LatexDate,
@@ -31,4 +31,4 @@ pub use pptx::export_pptx;
 pub use share::{export_share, export_share_with, EXTENSION as SHARE_EXTENSION};
 pub use single::export_html_single;
 pub use tables::{export_tables, TableFormat};
-pub use word::{export_docx, export_docx_with};
+pub use word::{export_docx, export_docx_options, export_docx_with};

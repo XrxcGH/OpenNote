@@ -36,7 +36,9 @@ export type Heard =
 
 /** Modifiers alone and keys that leave the field are ignored, Backspace removes, and anything else is a chord. */
 export function hear(event: KeyInput): Heard {
-  if (event.isComposing || event.key === 'Tab' || event.key === 'Escape' || isModifierKey(event.key)) {
+  // Plain Tab and Shift+Tab leave the field, so there is no trap. Ctrl+Tab and Alt+Tab combinations are chords.
+  const leaves = event.key === 'Tab' && !event.ctrlKey && !event.altKey && !event.metaKey;
+  if (event.isComposing || leaves || event.key === 'Escape' || isModifierKey(event.key)) {
     return { kind: 'ignore' };
   }
   const plain = !event.ctrlKey && !event.altKey && !event.shiftKey && !event.metaKey;

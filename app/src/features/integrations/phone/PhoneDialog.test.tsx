@@ -58,6 +58,34 @@ describe('From phone', () => {
     expect(await screen.findByText('Added 1 photo to the page.')).toBeTruthy();
   });
 
+  it('names a scan cleanup command that is registered', async () => {
+    const { commands } = await import('../../../registries');
+    await import('../../pdf');
+    expect(commands.get('pdf.scanCleanup')).toBeTruthy();
+  });
+
+  it('does not ask for scan cleanup when several photos arrive at once', async () => {
+    const { commands } = await import('../../../registries');
+    await import('../../pdf');
+    const def = commands.get('pdf.scanCleanup')!;
+    const run = vi.fn();
+    const original = def.run;
+    def.run = run;
+    try {
+      render(<PhoneDialog onClose={() => undefined} pasteTarget={() => new EventTarget()} host={host} />);
+      await screen.findByRole('img', { name: /QR code/ });
+      for (let one = 0; one < 2; one += 1) photos.push({ mime: 'image/png', width: 1, height: 1, data: btoa('png') });
+      await waitFor(() => {
+        fake.emit({ kind: 'phone', what: 'photo' });
+        expect(screen.getByText('Added 2 photos to the page.')).toBeTruthy();
+      });
+      await new Promise((done) => setTimeout(done, 200));
+      expect(run).not.toHaveBeenCalled();
+    } finally {
+      def.run = original;
+    }
+  });
+
   it('says why a closed session ended and offers a new code', async () => {
     render(<PhoneDialog onClose={() => undefined} pasteTarget={() => null} host={host} />);
     await screen.findByRole('img', { name: /QR code/ });

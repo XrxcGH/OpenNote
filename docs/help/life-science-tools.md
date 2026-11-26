@@ -3,6 +3,8 @@
 Work physiology, pharmacology, neuroscience, lab, population, and ecology problems with units and worked steps, then insert the answer into your page.
 These tools are new in Beta and are for coursework only: they never give clinical, dosing, or treatment advice.
 
+![The Life science kit on its population dynamics tab, with a population curve](../screens/kit-life-science-light.png)
+
 ## Open the tools
 
 - Open the command palette and choose Open life science tools, or a single tool such as Open physiology calculators.

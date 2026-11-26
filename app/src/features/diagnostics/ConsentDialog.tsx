@@ -10,14 +10,13 @@ import type { ConsentFlow } from './consent';
 import styles from './Diagnostics.module.css';
 import { changeConsent, diagnostics } from './runtime';
 
-export function ConsentDialog({ reason, onClose }: { reason: ConsentFlow['reason']; onClose(): void }) {
-  const [flow, dispatch] = useReducer(reduceConsent, reason, openConsent);
+/** Loads the example report when it is shown, and scrolls it into view once it is there. */
+function useExample(showing: boolean) {
   const [example, setExample] = useState<string | null>(null);
-  const body = useRef<HTMLDivElement>(null);
-  const now = () => Math.floor(Date.now() / 1000);
+  const exampleBox = useRef<HTMLPreElement>(null);
 
   useEffect(() => {
-    if (!flow.showingExample || example !== null) return;
+    if (!showing || example !== null) return;
     let current = true;
     void diagnostics()
       .exampleReport()
@@ -26,7 +25,21 @@ export function ConsentDialog({ reason, onClose }: { reason: ConsentFlow['reason
     return () => {
       current = false;
     };
-  }, [flow.showingExample, example]);
+  }, [showing, example]);
+
+  // The example opens at the end of the scrolling body; bring it, with the line under it, fully into view above
+  // the buttons (full walk A-A02-9).
+  useEffect(() => {
+    if (showing && example !== null) exampleBox.current?.nextElementSibling?.scrollIntoView({ block: 'nearest' });
+  }, [showing, example]);
+  return { example, exampleBox };
+}
+
+export function ConsentDialog({ reason, onClose }: { reason: ConsentFlow['reason']; onClose(): void }) {
+  const [flow, dispatch] = useReducer(reduceConsent, reason, openConsent);
+  const { example, exampleBox } = useExample(flow.showingExample);
+  const body = useRef<HTMLDivElement>(null);
+  const now = () => Math.floor(Date.now() / 1000);
 
   useEffect(() => {
     if (!flow.closed) return;
@@ -93,7 +106,13 @@ export function ConsentDialog({ reason, onClose }: { reason: ConsentFlow['reason
           </Button>
         </div>
         {flow.showingExample && (
-          <pre className={styles.text} role="region" tabIndex={0} aria-label={t('diagnostics.consent.exampleLabel')}>
+          <pre
+            ref={exampleBox}
+            className={styles.text}
+            role="region"
+            tabIndex={0}
+            aria-label={t('diagnostics.consent.exampleLabel')}
+          >
             {example ?? ''}
           </pre>
         )}

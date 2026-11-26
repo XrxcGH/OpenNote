@@ -30,6 +30,11 @@ export interface Dialect {
   /** The postfix operators: "!", "%", and the degree sign. */
   postfix: ReadonlySet<string>;
   /**
+   * Words, in lower case, that work as the degree sign after an operand: `30 deg` is `30°`. A word followed by an
+   * opening bracket stays a call, so `2 deg(x)` is still a product.
+   */
+  degreeWords?: ReadonlySet<string>;
+  /**
    * What side-by-side operands do. 'none' is an error. 'free' multiplies them, as in 2x and (a+1)(a-1).
    * 'strict' multiplies them too, except for two numbers in a row, which is an error because 2 3 is likely a slip.
    */
@@ -64,6 +69,29 @@ export interface Dialect {
   units?: UnitSpec;
   /** The most nested groups, signs, and powers. */
   maxDepth: number;
+  /**
+   * When true, a leading sign binds tighter than "^", as spreadsheets read it: -2^2 is 4 and 2^-2 is 0.25. Default
+   * false: -2^2 is -4, as in textbooks.
+   */
+  signBindsTighter?: boolean;
+  /** How a chain of powers groups. Default 'right': 2^3^2 is 2^9. 'left' reads (2^3)^2, as spreadsheets do. */
+  powerAssociativity?: 'left' | 'right';
+  /** The significant digits a typed number keeps. Later digits become 0, as Excel keeps 15. Default: all. */
+  inputDigits?: number;
+  /**
+   * Excel's reference grammar, for dialects with `cells`: array constants {1,2;3,4}, spill references A1#, "@",
+   * the space operator for the cells two references share, the comma union inside brackets, Sheet!A1 and
+   * 'Quoted name'!A1, structured references Table[Col], Table[[#Headers],[Col]], [@Col], and [#Totals], and whole
+   * rows 3:3. It also lets a name that is not a cell through as a name, which the host reports as unknown.
+   */
+  excelRefs?: boolean;
+  /**
+   * When true, an argument may be left empty, as in UNIQUE(A1:A9,,TRUE). It reads as a name with no text, which the
+   * host treats as an omitted argument. Default false.
+   */
+  emptyArguments?: boolean;
+  /** When set, R1C1 references such as R[-1]C read relative to this cell (zero-based), as the clipboard needs. */
+  r1c1?: { readonly row: number; readonly col: number };
 }
 
 /** The lexer settings the dialects share: the usual operators and the pretty symbols people paste. */

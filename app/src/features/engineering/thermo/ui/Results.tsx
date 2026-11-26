@@ -1,6 +1,7 @@
 // A tool's answer: the result table in the chosen units, the assumptions and source, the plot, and the worked
 // steps with their math rendered by KaTeX (with MathML for screen readers). The table and steps are plain text,
 // so every number is readable without the plot.
+import '../text';
 import 'katex/dist/katex.min.css';
 import { renderLatex } from '../../../math';
 import { t } from '../../../../strings/t';

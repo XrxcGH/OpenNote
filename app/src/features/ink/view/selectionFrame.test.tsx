@@ -1,11 +1,13 @@
 // T3-4: the lasso's actions exist only while something is selected; with nothing selected the frame (and so every
 // action in it) is not displayed, which also takes it out of the accessibility tree. With a selection the actions show.
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { initFlags } from '../../../app/flags';
 import { makeStroke } from '../geometry/fixtures';
 import type { InkHost, InkSelection } from './host';
 import { attachSelectionFrame, createFrameTool } from './selection';
 import { chooseTool } from './state';
 import type { InkSurface } from './surface';
+import './view.module.css';
 
 let selection: InkSelection = { blocks: [], strokes: [] };
 const listeners = new Set<() => void>();
@@ -78,6 +80,55 @@ describe('the lasso bar and the page title', () => {
     chrome.append(band);
     listeners.forEach((fn) => fn());
     expect(bar()?.hasAttribute('data-below')).toBe(true);
+    frame.stop();
+    chrome.remove();
+    selection = { blocks: [], strokes: [] };
+  });
+});
+
+describe('the lasso bar and the drawing aids', () => {
+  it('stays above a protractor shown after it (walk 9, T1-D03-9)', () => {
+    document.body.append(chrome);
+    selection = { blocks: [], strokes: ['s1'] };
+    const frame = attachSelectionFrame(host, surface);
+    const aid = document.createElement('div');
+    aid.style.cssText = 'position:absolute;inset:0';
+    chrome.append(aid);
+    const bar = chrome.querySelector<HTMLElement>('[data-ink-selection-bar]')!;
+    const action = bar.querySelector<HTMLElement>('[data-ink-action]:not([hidden])')!;
+    const box = action.getBoundingClientRect();
+    expect(document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2)).toBe(action);
+    frame.stop();
+    chrome.remove();
+    selection = { blocks: [], strokes: [] };
+  });
+});
+
+describe('Rotate 90 degrees on the lasso bar', () => {
+  it('turns the selection a quarter turn about its center (walk 9, T1-D03-4)', async () => {
+    document.body.append(chrome);
+    const transform = vi.fn((..._args: unknown[]) => Promise.resolve(true));
+    const turning = {
+      ...surface,
+      transform,
+      endPreview: () => undefined,
+      index: { all: () => [stroke], query: () => [stroke] },
+    } as unknown as InkSurface;
+    selection = { blocks: [], strokes: ['s1'] };
+    const frame = attachSelectionFrame(host, turning);
+    const rotate = chrome.querySelector<HTMLButtonElement>('[data-ink-action="rotate"]');
+    expect(rotate?.textContent).toBe('Rotate 90 degrees');
+    rotate!.click();
+    await vi.waitFor(() => expect(transform).toHaveBeenCalled());
+    const [ids, matrix] = transform.mock.calls[0]! as [string[], number[]];
+    expect(ids).toEqual(['s1']);
+    // A quarter turn about the center of the box from (10, 10) to (60, 40), which is (35, 25).
+    const [a, b, c, d, e, f] = matrix;
+    const turn = (x: number, y: number) => ({ x: a! * x + c! * y + e!, y: b! * x + d! * y + f! });
+    expect(turn(35, 25).x).toBeCloseTo(35);
+    expect(turn(35, 25).y).toBeCloseTo(25);
+    expect(turn(60, 25).x).toBeCloseTo(35);
+    expect(Math.abs(turn(60, 25).y - 25)).toBeCloseTo(25);
     frame.stop();
     chrome.remove();
     selection = { blocks: [], strokes: [] };
@@ -157,5 +208,72 @@ describe('a text box selected alone (Beta 6, owner bugs 5 and 8)', () => {
     frame.stop();
     delete chrome.dataset.inkChrome;
     chrome.remove();
+  });
+});
+
+describe('the lasso handles on a thin selection (A2-A09-5)', () => {
+  it('leaves every resize handle on top, with the rewrap handle clear of them', () => {
+    initFlags('dev', { 'ink.handwriting': true, 'intel.handwriting': true });
+    chrome.style.cssText =
+      'position:absolute;left:0;top:0;width:600px;height:300px;--space-1:2px;--space-2:4px;--space-3:8px;--space-4:12px;--space-5:16px';
+    document.body.append(chrome);
+    const line = makeStroke('line', [
+      { x: 100, y: 100 },
+      { x: 400, y: 110 },
+    ]);
+    const thin = {
+      ...surface,
+      strokes: (ids: readonly string[]) => (ids.includes('line') ? [line] : []),
+    } as unknown as InkSurface;
+    selection = { blocks: [], strokes: ['line'] };
+    const frame = attachSelectionFrame(host, thin);
+    // The bar is not under test, and unstyled it is tall enough to cover the top handles.
+    chrome.querySelector<HTMLElement>('[data-ink-selection-bar]')!.style.display = 'none';
+    const side = chrome.querySelector<HTMLElement>('[data-ink-side]')!;
+    expect(side).not.toBeNull();
+    const centerHit = (element: Element) => {
+      const box = element.getBoundingClientRect();
+      return document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
+    };
+    expect(centerHit(side)).toBe(side);
+    for (const corner of ['nw', 'ne', 'se', 'sw']) {
+      const handle = chrome.querySelector<HTMLElement>(`[data-ink-corner="${corner}"]`)!;
+      expect(centerHit(handle), corner).toBe(handle);
+    }
+    frame.stop();
+    chrome.remove();
+    chrome.style.cssText = '';
+    selection = { blocks: [], strokes: [] };
+  });
+});
+
+describe('the lasso corner handles (VA-54)', () => {
+  it('keep their small look but take a press a target size wide', () => {
+    chrome.style.cssText = 'position:absolute;left:0;top:0;width:600px;height:400px;--space-5:16px;--target-size:32px';
+    document.body.append(chrome);
+    const box = makeStroke('box', [
+      { x: 150, y: 150 },
+      { x: 400, y: 300 },
+    ]);
+    const wide = {
+      ...surface,
+      strokes: (ids: readonly string[]) => (ids.includes('box') ? [box] : []),
+    } as unknown as InkSurface;
+    selection = { blocks: [], strokes: ['box'] };
+    const frame = attachSelectionFrame(host, wide);
+    chrome.querySelector<HTMLElement>('[data-ink-selection-bar]')!.style.display = 'none';
+    for (const corner of ['nw', 'ne', 'se', 'sw']) {
+      const handle = chrome.querySelector<HTMLElement>(`[data-ink-corner="${corner}"]`)!;
+      const rect = handle.getBoundingClientRect();
+      expect(rect.width, corner).toBeLessThanOrEqual(17);
+      // 12 px out from the middle, away from the frame: inside a 32 px target, outside the 16 px dot.
+      const out = corner.includes('w') ? -12 : 12;
+      const hit = document.elementFromPoint(rect.left + rect.width / 2 + out, rect.top + rect.height / 2);
+      expect(hit, corner).toBe(handle);
+    }
+    frame.stop();
+    chrome.remove();
+    chrome.style.cssText = '';
+    selection = { blocks: [], strokes: [] };
   });
 });

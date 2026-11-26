@@ -9,7 +9,7 @@ test('adds a tag to a page and renames it with a preview', async ({ page }) => {
   await page.getByRole('tree', { name: 'Pages' }).getByRole('treeitem', { name: 'Mitosis' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Mitosis' })).toBeVisible();
   await page.keyboard.press('Control+KeyK');
-  await page.getByRole('combobox').fill('manage tags');
+  await page.locator('[data-scope="palette"]').getByRole('combobox').fill('manage tags');
   await page.getByRole('option', { name: 'Manage tags' }).click();
   const dialog = page.getByRole('dialog', { name: 'Tags' });
   await expect(dialog.getByText('No page has a tag yet.')).toBeVisible();

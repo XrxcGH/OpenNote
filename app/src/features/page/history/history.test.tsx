@@ -8,6 +8,7 @@ import { expectNoAxeViolations } from '../../../test';
 import { cleanupPages, renderPage } from '../test/harness';
 import type { PageHarness } from '../test/harness';
 import { textPageFixture } from '../test/fixtures';
+import { shownViewport } from '../viewport/viewport';
 import { moveThroughChanges, openHistory, resetHistory } from './chunk';
 
 const TEXT = '01k6f0000000000000000t0001';
@@ -49,6 +50,29 @@ afterEach(async () => {
   await cleanupPages();
 });
 
+describe('page history layout (W9-VA-5)', () => {
+  it('docks beside the page in its row, and spaces the versions and buttons', async () => {
+    const page = await renderPage({
+      fixture: textPageFixture('The quick fox.'),
+      flags: { 'page.history': true },
+    });
+    withHistory(page, olderVersion(page, 'The slow fox.'));
+    const row = document.createElement('div');
+    row.dataset.pageRow = '';
+    row.style.display = 'flex';
+    const body = shownViewport.get()!.viewport.parentElement!;
+    body.parentElement!.insertBefore(row, body);
+    row.append(body);
+    openHistory('Biology');
+    const panel = await screen.findByRole('complementary', { name: 'Page history' });
+    expect(panel.parentElement!.parentElement).toBe(row);
+    expect(getComputedStyle(panel.parentElement!).position).toBe('relative');
+    const list = await screen.findByRole('list', { name: 'Versions' });
+    expect(parseFloat(getComputedStyle(list).rowGap)).toBeGreaterThanOrEqual(6);
+    row.replaceWith(body);
+  });
+});
+
 describe('page history', () => {
   it('lists versions with their reasons, compares with marked words, and passes axe', async () => {
     const page = await renderPage({
@@ -71,6 +95,25 @@ describe('page history', () => {
     expect(document.activeElement?.closest('[data-change]')?.textContent).toContain('quick');
     moveThroughChanges(1);
     expect(document.activeElement?.textContent).toContain('A lost line here.');
+  });
+
+  it('filters a long list of versions by a word of the reason or the name, and says when none match', async () => {
+    const page = await renderPage({ fixture: textPageFixture('The quick fox.'), flags: { 'page.history': true } });
+    const days = Array.from({ length: 8 }, (_, i) =>
+      version(`r${i + 1}`, `2026-10-0${8 - i}T08:00:00.000Z`, 'interval'),
+    );
+    days[3] = { ...days[3], reason: 'closed', name: 'Before the quiz' };
+    vi.spyOn(page.page.history, 'list').mockResolvedValue(days);
+    openHistory('Biology');
+    const panel = await screen.findByRole('complementary', { name: 'Page history' });
+    const list = await within(panel).findByRole('list', { name: 'Versions' });
+    expect(within(list).getAllByRole('button')).toHaveLength(8);
+    await userEvent.fill(within(panel).getByRole('textbox', { name: 'Filter versions' }), 'quiz');
+    await expect.poll(() => within(list).getAllByRole('button')).toHaveLength(2);
+    expect(within(list).getByText(/Before the quiz/)).toBeTruthy();
+    await userEvent.fill(within(panel).getByRole('textbox', { name: 'Filter versions' }), 'quiz zebra');
+    expect(await within(panel).findByText('No earlier version matches.')).toBeTruthy();
+    await expectNoAxeViolations(panel);
   });
 
   it('offers only a copy of an older version while the page is a locked entry', async () => {

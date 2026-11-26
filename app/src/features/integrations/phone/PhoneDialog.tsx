@@ -4,7 +4,6 @@
 // the one the phone's browser shows.
 
 import { useEffect, useRef, useState } from 'react';
-import { executeCommand } from '../../../commands/registry';
 import { t } from '../../../strings/t';
 import { Dialog } from '../../../ui';
 import { apiHost, errorCode } from '../api/host';
@@ -12,6 +11,7 @@ import type { ApiHost } from '../api/host';
 import { minutesLeft, pastePhotos, photoFiles, qrPath } from './model';
 import type { PhonePhoto, PhoneSession, PhoneState } from './model';
 import styles from './Phone.module.css';
+import { cleanUpScanAfterPaste } from './scanAfterPaste';
 
 const POLL_MS = 2000;
 
@@ -84,8 +84,8 @@ export function PhoneDialog({ onClose, pasteTarget, host = apiHost() }: PhoneDia
           }
           setAdded((count) => count + files.length);
           setStatus(t('platformApi.phone.added', { count: files.length }));
-          // Scan cleanup (A3-20) straightens the photo when that feature is part of the build.
-          void executeCommand('object.scanCleanup', undefined, 'menu').catch(() => false);
+          // Scan cleanup straightens a single photo once it is on the page and selected, when that feature is in the build.
+          cleanUpScanAfterPaste(files.length);
         })
         .catch(() => undefined);
     const stop = host.listen((event) => {

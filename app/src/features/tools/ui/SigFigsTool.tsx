@@ -33,13 +33,18 @@ export function seedSigFigs(input: string): void {
   window.dispatchEvent(new Event(SEED_EVENT));
 }
 
+/** The figure count typed, or null when it is empty or not a whole number from 1 to 50. */
+export function figureCount(figures: string): number | null {
+  const count = Number(figures);
+  return figures.trim() !== '' && Number.isInteger(count) && count >= 1 && count <= 50 ? count : null;
+}
+
 /** The number text rounded to a count (when given) and written in a notation. Null when it is not a number. */
 export function shapeNumber(input: string, figures: string, notation: Notation): string | null {
   const d = parseDec(input);
   if (d === null) return null;
-  const count = Number(figures);
-  const ready = figures.trim() !== '' && Number.isInteger(count) && count >= 1 && count <= 50;
-  return write(ready ? roundToFigures(d, count) : d, notation);
+  const count = figureCount(figures);
+  return write(count === null ? d : roundToFigures(d, count), notation);
 }
 
 function readSaved(): Saved {
@@ -146,8 +151,11 @@ function RoundSection({ sig }: { sig: Sig }) {
       {shaped === null ? null : (
         <div className={science.result} role="status">
           <span className={science.big}>{shaped}</span>
-          {state.figures.trim() !== '' ? (
-            <span>{t('science.sigfigs.rounded', { count: Number(state.figures) || 1 })}</span>
+          {figureCount(state.figures) !== null ? (
+            <span>{t('science.sigfigs.rounded', { count: figureCount(state.figures) ?? 1 })}</span>
+          ) : null}
+          {state.figures.trim() !== '' && figureCount(state.figures) === null ? (
+            <span className={styles.problem}>{t('science.sigfigs.figuresRange')}</span>
           ) : null}
         </div>
       )}

@@ -48,6 +48,10 @@ function LineRow(props: {
   line: Line;
   editing: boolean;
   speakers: boolean;
+  /** The line before is the same speaker's, so the name isn't said again. */
+  sameSpeaker: boolean;
+  /** The first line is what the "transcript is ready" toast must not cover, so the toast stands above it. */
+  first: boolean;
   selectable: boolean;
   selected: boolean;
   active: boolean;
@@ -58,14 +62,21 @@ function LineRow(props: {
   const time = clockMs(line.startMs);
   const who = line.speaker === undefined ? null : speakerName(data, line.speaker, speakerWord);
   return (
-    <li className={styles.line} aria-current={active ? 'true' : undefined} data-active={active ? 'true' : undefined}>
+    <li
+      className={styles.line}
+      aria-current={active ? 'true' : undefined}
+      data-active={active ? 'true' : undefined}
+      data-toast-above={props.first ? '' : undefined}
+    >
       {selectable && (
-        <input
-          type="checkbox"
-          aria-label={t('audioMore.transcript.selectLine', { time })}
-          checked={selected}
-          onChange={(event) => props.onSelect(event.target.checked)}
-        />
+        <label className={styles.pick}>
+          <input
+            type="checkbox"
+            aria-label={t('audioMore.transcript.selectLine', { time })}
+            checked={selected}
+            onChange={(event) => props.onSelect(event.target.checked)}
+          />
+        </label>
       )}
       <Button
         variant="quiet"
@@ -76,7 +87,7 @@ function LineRow(props: {
         {time}
       </Button>
       <div className={styles.words}>
-        {speakers && !editing && who && <strong className={styles.speaker}>{who}</strong>}
+        {speakers && !editing && who && !props.sameSpeaker && <strong className={styles.speaker}>{who}</strong>}
         {speakers && editing && (
           <select
             className={styles.select}
@@ -381,13 +392,15 @@ export function TranscriptView({ block }: { block: BlockJson }) {
         />
       )}
       <ol className={styles.lines}>
-        {data.lines.map((line) => (
+        {data.lines.map((line, index) => (
           <LineRow
             key={line.id}
             data={data}
             line={line}
             editing={editing}
             speakers={speakersOn}
+            sameSpeaker={index > 0 && data.lines[index - 1]?.speaker === line.speaker}
+            first={index === 0}
             selectable={notesOn}
             selected={selected.has(line.id)}
             active={line.id === activeId}

@@ -94,7 +94,8 @@ export class SessionWriter {
     const p = this.profile;
     if (p.tilt === 'none') return { tx: 0, ty: 0 };
     const sx = this.options.handedness === 'left' ? -1 : 1;
-    const sy = this.options.grip === 'hooked' ? -1 : 1;
+    // An overwriter's hand rests above the line like a hooked grip's (`heelOffset`), so its pen leans up too.
+    const sy = this.options.grip === 'hooked' || this.options.grip === 'overwriter' ? -1 : 1;
     const tx = sx * between(this.rand, 18, 30);
     const ty = sy * between(this.rand, 20, 32);
     if (p.tilt === 'degrees') return { tx, ty };

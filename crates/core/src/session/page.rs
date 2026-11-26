@@ -49,6 +49,10 @@ pub use view::StrokeRead;
 pub struct TxnAck {
     /// The journal sequence number of the transaction.
     pub seq: u64,
+    /// Whether the transaction is in the journal file, so an app crash no longer loses it. When false (the journal
+    /// thread is slower than its wait, or the journal can't be written), the edit is safe only once a save through
+    /// `seq` reports `core:saved`, and the interface must not say "Saved" before then.
+    pub written: bool,
     /// The order keys the core made for new blocks.
     pub order_keys: BTreeMap<BlockId, OrderKey>,
     /// Whether the client can undo.
@@ -229,6 +233,12 @@ impl PageHandle {
         self.session.read_only()
     }
 
+    /// Whether `bytes` are the `page.json` this session last read or wrote. Another program can change the text
+    /// and keep the revision fields, so the revision alone can't tell (T2-D04-6).
+    pub fn is_own_file(&self, bytes: &[u8]) -> bool {
+        self.session.state().bytes[..] == bytes[..]
+    }
+
     /// Whether the page has changes that aren't saved yet.
     pub fn has_unsaved(&self) -> bool {
         self.session.state().dirty.is_some()
@@ -331,6 +341,13 @@ impl PageHandle {
     /// The other version of a conflict as plain text.
     pub fn conflict_text(&self, rev: RevisionId) -> Result<String, CoreError> {
         self.session.conflict_page(rev).map(|(_, _, page)| page.plain_text())
+    }
+
+    /// The blocks that differ between the page now and the other version of a conflict, as JSON, so each block
+    /// type can show its own compare view (ADR 0089).
+    pub fn conflict_blocks(&self, rev: RevisionId) -> Result<Vec<serde_json::Value>, CoreError> {
+        let (_, _, other) = self.session.conflict_page(rev)?;
+        Ok(crate::merge::differing_blocks_json(&self.session.state().page, &other))
     }
 
     /// The other version of a conflict, read-only.

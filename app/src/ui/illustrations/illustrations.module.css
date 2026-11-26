@@ -41,6 +41,11 @@
     fill: var(--color-art-dusk);
   }
 
+  /* The evening window's hills are the plum glow of the canvas below them, not the rose of the book spines. */
+  .moon ~ .fillDusk {
+    fill: var(--color-ambient-glow);
+  }
+
   .fillNight {
     fill: var(--color-art-night);
   }
@@ -164,9 +169,75 @@
     display: block;
   }
 
+  /* With more contrast the canvas is flat, so there is no sky to hold stars. */
+  @media (prefers-contrast: more) {
+    :global(:root[data-theme='dark']) .stars {
+      display: none;
+    }
+  }
+
   /* "Always paper white" lights the whole page area, so there is no night sky to put them in. */
   :global(:root[data-page-color='paper']) .stars {
     display: none;
+  }
+
+  /* The desk gutter's motifs (BRAND.md A11 to A13). They sit in main's side strips, behind the page (z-index -1), so a
+     miscalculation hides one under the paper instead of over it. Physical sides, as the window light's pool is: the
+     vine hangs from the top right, 4 px clear of the paper and the edge, and the stars stand at the top left. They are
+     centered in a wider gutter, never animate, and show only at a gutter of 24 px or more (main[data-desk-motifs]). */
+  .gutterVine,
+  .gutterStars {
+    position: absolute;
+    inset-block-start: 0;
+    z-index: calc(var(--layer-base) - 1);
+    display: none;
+    pointer-events: none;
+    animation: none;
+  }
+
+  .gutterVine {
+    right: calc(4px + (var(--desk-gutter, 24px) - 24px) / 2);
+    fill: none;
+    stroke: var(--color-border-control);
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .gutterVine :is(path, circle) {
+    vector-effect: non-scaling-stroke;
+  }
+
+  .gutterStars {
+    left: calc((var(--desk-gutter, 24px) - 24px) / 2);
+    stroke: none;
+  }
+
+  :global(main[data-desk-motifs]) .gutterVine {
+    display: block;
+  }
+
+  :global(:root[data-theme='dark']) :global(main[data-desk-motifs]) .gutterStars {
+    display: block;
+  }
+
+  /* The region's own star field gives way while the gutter shows, so no random star sits at the paper's edge. It keeps
+     its box (display stays block); only its stars hide. */
+  :global(main[data-desk-gutter]:not([data-desk-gutter='0'])) .stars {
+    visibility: hidden;
+  }
+
+  /* The flat canvas of more contrast has no sky or window light to hold them. */
+  @media (prefers-contrast: more) {
+    .gutterVine,
+    .gutterStars,
+    :global(:root[data-theme='dark']) :global(main[data-desk-motifs]) .gutterStars {
+      display: none;
+    }
+
+    :global(main[data-desk-motifs]) .gutterVine {
+      display: none;
+    }
   }
 
   @keyframes arrive {
@@ -202,7 +273,7 @@
       stroke: none;
     }
 
-    :is(.stars, .dots, .halo) {
+    :is(.stars, .dots, .halo, .gutterVine, .gutterStars) {
       display: none;
     }
   }

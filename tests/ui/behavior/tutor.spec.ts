@@ -58,8 +58,8 @@ test('climbs the hint ladder without giving the answer away, then shows the solu
   await next.click();
   await expect(log).toContainText('Hint 4 of 4: The next step');
   await expect(log).toContainText('That step could be: 2x = 4');
-  await next.click();
   await expect(log).toContainText('That was the last hint.');
+  await expect(next).toBeDisabled();
 
   await panel.getByRole('button', { name: 'Show the full solution' }).click();
   const confirm = page.getByRole('dialog', { name: 'Show the full solution?' });

@@ -4,7 +4,8 @@
 //
 // It never holds information the control's name and shortcut don't already give, so the control's accessible
 // name stays its label. One tooltip shows at a time, and moving straight to the next control shows its tooltip at
-// once. Touch never shows tooltips, and a press hides them. The tooltip sits in the top layer, so it renders next
+// once. Touch never shows tooltips, and a press hides them, except for a control that opts in with `touchHold`: a
+// touch press held for the long-press time shows its tooltip, and nothing runs. The tooltip sits in the top layer, so it renders next
 // to its control in the document, inside the control's landmark, and still shows above everything.
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
@@ -12,6 +13,7 @@ import type { FocusEvent, PointerEvent, ReactElement, RefObject } from 'react';
 import { interceptEscape } from '../state/layers';
 import { t } from '../strings/t';
 import { tokens } from '../theme/tokens';
+import { useLongPress } from './hooks';
 import { placeBelow } from './position';
 import styles from './Tooltip.module.css';
 import { anchorTo, hideFromTopLayer, playExit, showInTopLayer, supportsAnchors } from './topLayer';
@@ -19,6 +21,8 @@ import { anchorTo, hideFromTopLayer, playExit, showInTopLayer, supportsAnchors }
 export interface TooltipProps {
   label: string;
   shortcut?: string | null;
+  /** A touch press held for the long-press time shows the tooltip, cancels the context menu, and swallows the click. */
+  touchHold?: boolean;
   children: ReactElement;
 }
 
@@ -26,6 +30,8 @@ export interface TooltipProps {
 const HIDE_GRACE_MS = 100;
 /** After a tooltip hides, the next one within this time shows without the delay. */
 const WARM_MS = 500;
+/** How long a tooltip that a touch hold showed stays on screen. */
+const TOUCH_SHOW_MS = 2500;
 
 /** The text a tooltip shows: the name, with the shortcut in parentheses when there is one. */
 export function tooltipText(label: string, shortcut?: string | null): string {
@@ -82,6 +88,11 @@ function useTooltipState(trigger: RefObject<HTMLElement | null>) {
       else if (performance.now() - lastHiddenAt < WARM_MS) show();
       else later(tokens.interaction.tooltipDelayMs, show);
     },
+    /** A touch hold: show at once, and hide again after a while. */
+    reveal() {
+      show();
+      later(TOUCH_SHOW_MS, hide);
+    },
     /** The pointer left: hide after a short grace, so it can reach the tooltip. */
     leave() {
       pressed.current = false;
@@ -135,11 +146,18 @@ function TooltipSurface({ text, tip, trigger }: SurfaceProps) {
  * in the layout, so the child sits where it would without it. The tooltip renders inside the wrapper, so the
  * pointer over it counts as being over the control.
  */
-export function Tooltip({ label, shortcut, children }: TooltipProps) {
+export function Tooltip({ label, shortcut, touchHold = false, children }: TooltipProps) {
   const wrapper = useRef<HTMLSpanElement>(null);
   const tip = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLElement | null>(null);
   const state = useTooltipState(trigger);
+  const hold = useLongPress(() => {
+    trigger.current = wrapper.current?.firstElementChild as HTMLElement | null;
+    state.reveal();
+  });
+  // A touch long press ends in a context menu event, which the hold swallows. A mouse or the keyboard keeps its own.
+  const touching = useRef(false);
+  const untouch = useRef<number>(0);
   const within = (node: EventTarget | null) => node instanceof Node && Boolean(wrapper.current?.contains(node));
   const arrive = () => {
     trigger.current = wrapper.current?.firstElementChild as HTMLElement | null;
@@ -165,7 +183,39 @@ export function Tooltip({ label, shortcut, children }: TooltipProps) {
       onPointerOut={onPointerOut}
       onFocus={onFocus}
       onBlur={onBlur}
-      onPointerDown={() => state.dismiss(true)}
+      onPointerDown={(event) => {
+        state.dismiss(true);
+        window.clearTimeout(untouch.current);
+        touching.current = event.pointerType === 'touch';
+        if (touchHold && event.pointerType === 'touch') hold.onPointerDown?.(event);
+      }}
+      onPointerMove={touchHold ? hold.onPointerMove : undefined}
+      onPointerUp={
+        touchHold
+          ? (event) => {
+              untouch.current = window.setTimeout(() => (touching.current = false), 600);
+              hold.onPointerUp?.(event);
+            }
+          : undefined
+      }
+      onPointerCancel={
+        touchHold
+          ? (event) => {
+              untouch.current = window.setTimeout(() => (touching.current = false), 600);
+              hold.onPointerCancel?.(event);
+            }
+          : undefined
+      }
+      onClickCapture={touchHold ? hold.onClickCapture : undefined}
+      onContextMenuCapture={
+        touchHold
+          ? (event) => {
+              if (!touching.current) return;
+              event.preventDefault();
+              event.stopPropagation();
+            }
+          : undefined
+      }
     >
       {children}
       {state.open && <TooltipSurface text={tooltipText(label, shortcut)} tip={tip} trigger={trigger} />}

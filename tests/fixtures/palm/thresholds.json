@@ -280,7 +280,7 @@
       "G7_inkTruncated": 0,
       "G8_navMissedRate": 0,
       "G8_tapsMissed": 0,
-      "G9_navDelayP95": 84,
+      "G9_navDelayP95": 96,
       "G10_commitDelayAbsent": 0,
       "G10_commitDelay": 532,
       "G11_strayPerStroke": 0,

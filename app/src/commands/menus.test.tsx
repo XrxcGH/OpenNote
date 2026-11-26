@@ -2,6 +2,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { commands, contextMenus } from '../registries';
 import type { ContextMenuItem } from '../registries/types';
 import { createMemoryNotesService } from '../services/notes/memory';
+import { initFlags } from '../app/flags';
 import { resetStores } from '../state/store';
 import { createTestPlatform } from '../test/platform';
 import { menuItemsFor } from './menus';
@@ -59,9 +60,10 @@ describe('menuItemsFor order and labels', () => {
     add('rename', { keys: [chord('F2')] });
     add('promote', { enabled: () => false });
     add('hidden', { when: () => false });
-    add('flagged', { flag: 'page.imageRenditions' });
+    initFlags('dev', { 'page.heicImport': false });
+    add('flagged', { flag: 'page.heicImport' });
     for (const id of ['rename', 'promote', 'hidden', 'flagged']) item(id);
-    item('later', { flag: 'page.imageRenditions' });
+    item('later', { flag: 'page.heicImport' });
     const specs = menuItemsFor('page.table', ctx());
     expect(specs.map(({ id, label, shortcut, disabled }) => ({ id, label, shortcut, disabled }))).toEqual([
       { id: 'rename', label: 'Toggle dark mode', shortcut: 'F2', disabled: false },

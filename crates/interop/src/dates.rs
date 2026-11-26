@@ -53,7 +53,10 @@ fn email_date(text: &str) -> Option<Timestamp> {
     };
     let zone = match parts.next().unwrap_or("Z") {
         "GMT" | "UT" | "UTC" | "Z" | "z" => "Z".to_owned(),
-        zone if zone.len() == 5 && zone.starts_with(['+', '-']) => format!("{}:{}", &zone[..3], &zone[3..]),
+        // Only ASCII may be sliced by byte: a wide character would put a cut inside it.
+        zone if zone.len() == 5 && zone.is_ascii() && zone.starts_with(['+', '-']) => {
+            format!("{}:{}", &zone[..3], &zone[3..])
+        }
         _ => return None,
     };
     Timestamp::parse(&format!("{year:04}-{month:02}-{day:02}T{time}{zone}")).ok()
@@ -162,6 +165,13 @@ mod tests {
         assert_eq!(parse_date("6 Oct 2026 12:00:00 +0200 (CEST)"), expected);
         assert_eq!(parse_date("Tue, 6 Oct 2026 10:00 GMT"), expected);
         assert_eq!(parse_date("Tue, 6 Foo 2026 10:00 GMT"), None);
+    }
+
+    #[test]
+    fn a_zone_that_is_not_ascii_is_not_a_date() {
+        // The nightly fuzzer's crash: five bytes that start with a sign but hold a wide character.
+        assert_eq!(parse_date("3 dec 3112 10:00 +\u{fffd}*"), None);
+        assert_eq!(parse_date("3 Dec 2026 10:00 -1\u{e9}2"), None);
     }
 
     #[test]

@@ -245,7 +245,9 @@ pub fn yaml_text(text: &str) -> String {
 }
 
 /// Writes the front matter of an exported page, including the closing line and a blank line after it.
-pub fn write(title: &str, created: Timestamp, modified: Timestamp, tags: &[String]) -> String {
+/// `properties` is the page's `properties:` block as page.md writes it (`opennote_core::format::readable::property_lines`),
+/// or empty: an export keeps the page's properties as the page's own file does (full walk B2-B13-5).
+pub fn write(title: &str, created: Timestamp, modified: Timestamp, tags: &[String], properties: &str) -> String {
     let mut out = String::from("---\n");
     out.push_str(&format!("title: {}\n", yaml_text(title)));
     out.push_str(&format!("created: {}\n", created.to_rfc3339()));
@@ -256,6 +258,7 @@ pub fn write(title: &str, created: Timestamp, modified: Timestamp, tags: &[Strin
             out.push_str(&format!("  - {}\n", yaml_text(tag)));
         }
     }
+    out.push_str(properties);
     out.push_str("---\n\n");
     out
 }
@@ -291,7 +294,7 @@ mod tests {
     fn written_front_matter_reads_back() {
         let created = Timestamp::parse("2026-09-30T14:00:00.000Z").expect("a valid time");
         let tags = vec!["biology".to_owned(), "exam/unit 3".to_owned()];
-        let text = format!("{}Body", write("Plants: \"light\"", created, created, &tags));
+        let text = format!("{}Body", write("Plants: \"light\"", created, created, &tags, ""));
         let (front, body) = split(&text);
         let front = front.expect("front matter is found");
         assert_eq!(body, "Body");

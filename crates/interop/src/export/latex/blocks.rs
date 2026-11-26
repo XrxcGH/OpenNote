@@ -88,7 +88,7 @@ impl Writer<'_> {
             }
             Block::Code { language, text } => self.code(language, text),
             Block::Break => "\\par\\medskip\\noindent\\rule{\\linewidth}{0.4pt}\\par\\medskip".to_owned(),
-            Block::Table { header, rows } => self.table(*header, rows),
+            Block::Table { header, rows, .. } => self.table(*header, rows),
         }
     }
 

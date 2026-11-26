@@ -1,6 +1,7 @@
 // System models and responses against the plan's cases and closed forms: the underdamped step response
 // 1 − e^(−ζωₙt)(cos ωd t + ζ/√(1 − ζ²) sin ωd t), first-order responses, block algebra by hand, and identification
 // that recovers the model the data came from.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { ControlError } from '../lib/errors';
 import { readTF, ssToTF, tfToSS, type TF } from '../lib/tf';

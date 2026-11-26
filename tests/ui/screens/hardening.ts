@@ -17,7 +17,7 @@ async function openSection(page: Page, name: string): Promise<void> {
 async function runCommand(page: Page, search: string, name: RegExp): Promise<void> {
   await page.locator('[data-workspace]').waitFor();
   await page.keyboard.press('Control+KeyK');
-  await page.getByRole('combobox').fill(search);
+  await page.locator('[data-scope="palette"]').getByRole('combobox').fill(search);
   await page.getByRole('option', { name }).click();
 }
 
@@ -101,9 +101,12 @@ export default defineScreens([
       await page.getByRole('button', { name: 'Start in safe mode' }).click();
       // Late chunks change what fits in the title bar, which would close a menu opened before they arrive.
       await settle(page);
-      // Where the title bar has no room the notice moves into its More menu, drawn open there.
+      // Where the title bar or, in the compact layout, the app bar has no room, the notice moves into its More menu,
+      // drawn open there. The app bar keeps its screen title readable, so the notice moves there sooner.
       const notice = page.getByRole('button', { name: 'OpenNote is in safe mode' });
-      const more = page.locator('[data-title-bar]').getByRole('button', { name: 'More', exact: true });
+      const more = page
+        .locator('[data-title-bar], [data-region="titleBar"]')
+        .getByRole('button', { name: 'More', exact: true });
       const text = page.getByText('Embeds, which show their saved preview instead');
       await expect(async () => {
         if (await text.isVisible()) return;

@@ -1,8 +1,9 @@
 name: nightly
 
 # The long-running hardening tests of DEVELOPMENT.md section 8: fuzzing, the kill harness, property tests with
-# many cases, the performance budgets, a two-hour random-editing soak, and an NVDA run of the keyboard and screen
-# reader checklist. The e2e-full job runs every E2E spec in the full app on Windows. It is the Phase 3 skeleton,
+# many cases, the performance budgets, a two-hour random-editing soak, the palm label oracle's full sweep, and an
+# NVDA run of the keyboard and screen reader checklist. The e2e-full job runs every E2E spec in the full app on
+# Windows. It is the Phase 3 skeleton,
 # which later phases grow with other architectures, 200% text, start-up baselines, and the frame probe. The bundles
 # job builds the macOS dmg and the Linux AppImage.
 #
@@ -37,6 +38,10 @@ on:
         description: Minutes of random editing in the soak
         type: number
         default: 120
+      soak_seed:
+        description: Seed of the soak's random edits, to replay a night (empty uses the run number)
+        type: string
+        default: ''
 
 permissions: {}
 
@@ -149,6 +154,8 @@ jobs:
     env:
       KILLS: ${{ inputs.kills || '1000' }}
       KILL_NOTEBOOK: ${{ github.workspace }}/kill-notebook
+      # The device-local data folder: the journal and the manifest the harness checks the notebook against.
+      KILL_DATA: ${{ github.workspace }}/kill-data
       # Optimized code runs more saves in the same time than debug code, and keeps debug assertions.
       CARGO_PROFILE_DEV_OPT_LEVEL: 2
     steps:
@@ -167,13 +174,16 @@ jobs:
         run: |
           mkdir -p "$KILL_NOTEBOOK"
           echo "Seed: $GITHUB_RUN_ID"
-          target/debug/opennote-crashtest run --notebook "$KILL_NOTEBOOK" --iterations "$KILLS" --seed "$GITHUB_RUN_ID"
+          target/debug/opennote-crashtest run --notebook "$KILL_NOTEBOOK" --data "$KILL_DATA" --iterations "$KILLS" --seed "$GITHUB_RUN_ID"
       - name: Keep the notebook the harness checked
         if: failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: kill-notebook
-          path: kill-notebook
+          # The folder made above is taken, so the harness's notebook lands beside it as "kill-notebook (2)".
+          path: |
+            kill-notebook*
+            kill-data
           if-no-files-found: ignore
           retention-days: 30
 
@@ -253,6 +263,37 @@ jobs:
           if-no-files-found: ignore
           retention-days: 90
 
+  perf-typing-gate:
+    # The typing benchmark with its 16 ms painted p95 gate on, formatted.middle included, so a regression in the
+    # formatted condition fails the night. A hosted runner is noisy: a failure here is a reason to look, then to
+    # confirm on the reference laptop (docs/perf/phase-4.md).
+    runs-on: windows-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    env:
+      OPENNOTE_TYPING_GATE: '1'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install tools
+        run: npm ci
+      - name: Typing benchmark with the gate
+        run: npm run perf:typing
+      - name: Keep the numbers
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: perf-typing-gate
+          path: tests/perf/typing/results
+          if-no-files-found: ignore
+          retention-days: 30
+
   e2e-full:
     # Builds the app with the test endpoints and runs every E2E spec on Windows, where the real window lives.
     runs-on: windows-latest
@@ -284,14 +325,30 @@ jobs:
       - name: Every E2E spec
         env:
           OPENNOTE_E2E_EXE: target/ci/opennote.exe
+          # Each spec keeps a screenshot and the page text of its last moment, with the app's logs (tests/e2e/harness.ts).
+          OPENNOTE_E2E_DIAG: '1'
         # One file at a time, because the specs share the machine's windows (tests/e2e/harness.ts). The specs in
         # tests/e2e/later cover Phases 6 to 13: export a PDF, import a notebook, record then stop, search, back up
         # now, quick capture, and the tool windows.
-        run: node --test --test-concurrency=1 "tests/e2e/**/*.spec.ts"
+        # The timeout is for a whole file: the crash spec starts the app 50 times and takes about nine minutes.
+        # Each spec file runs in a process of its own, and any app or driver it left behind is stopped before the
+        # next one starts, so one spec that dies cannot reset the connections of the 70 after it.
+        run: |
+          $failed = @()
+          foreach ($spec in Get-ChildItem tests/e2e -Recurse -Filter '*.spec.ts' | Sort-Object FullName) {
+            node --test --test-concurrency=1 --test-timeout=1800000 $spec.FullName
+            if ($LASTEXITCODE -ne 0) { $failed += $spec.Name }
+            Get-Process -Name opennote, msedgedriver, tauri-driver -ErrorAction SilentlyContinue |
+              Stop-Process -Force -ErrorAction SilentlyContinue
+          }
+          if ($failed.Count -gt 0) {
+            "Failed specs: $($failed -join ', ')" | Tee-Object -FilePath $env:GITHUB_STEP_SUMMARY -Append
+            exit 1
+          }
       - name: Start-up baseline for main
         run: node tests/perf/startup.ts --runs 20 --exe target/ci/opennote.exe --record
       - name: Keep the E2E logs
-        if: failure()
+        if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: nightly-e2e-logs
@@ -302,14 +359,14 @@ jobs:
   soak:
     # A scripted person edits one long note at random for two hours and the job holds memory, nodes, and typing
     # time flat from the first quarter to the last (A4-35, tests/soak). The seed is the run number, so a failure
-    # can be replayed with OPENNOTE_SOAK_SEED.
+    # can be replayed with OPENNOTE_SOAK_SEED, or on Actions with the soak_seed input.
     runs-on: ubuntu-latest
     timeout-minutes: 200
     permissions:
       contents: read
     env:
       OPENNOTE_SOAK_MINUTES: ${{ inputs.soak_minutes || '120' }}
-      OPENNOTE_SOAK_SEED: ${{ github.run_number }}
+      OPENNOTE_SOAK_SEED: ${{ inputs.soak_seed || github.run_number }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -339,10 +396,113 @@ jobs:
           if-no-files-found: ignore
           retention-days: 90
 
+  code-studio-perf:
+    # The code studio's budgets (docs/perf/code-studio.md, DESIGN section 15).
+    # They are studio open, typing in a 1,000-line file, completion, ghost text, and marks.
+    # They are also run start for every runtime, C and C++ compile, and idle memory.
+    # The language models' first token and speed count when a model file is on the machine.
+    # The job summary has the budget table, with a row for every gate.
+    # A hosted runner catches large regressions. The numbers that count are the reference laptop's.
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    env:
+      OPENNOTE_PERF_MACHINE: github-ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install tools
+        run: npm ci
+      - name: Check that every gate can fail
+        run: npm run test:perf-code-studio
+      - name: Browser gates
+        # TEMPORARY waiver, tracking item B12-TYPING-1000: typing-1000 is advisory (in the table, not a failure) until
+        # the editor's typing fix lands. Remove this setting with that fix; see
+        # docs/perf/code-studio.md. The other browser gates fail the job.
+        env:
+          OPENNOTE_PERF_ADVISORY: typing-1000
+        run: npm run perf:code-studio:browser
+        continue-on-error: true
+        id: browser
+      - name: Node gates and the budget table
+        if: always()
+        run: node tests/perf/codeStudio/run.ts --machine "$OPENNOTE_PERF_MACHINE"
+      - name: Model speed
+        # No model is downloaded: without OPENNOTE_LLM_MODEL or OPENNOTE_LLM_MODELS the table says "not measured".
+        if: always()
+        # bash with pipefail, so that a failing gate fails the step and not only tee.
+        shell: bash
+        run: |
+          set -o pipefail
+          node tests/perf/codeStudio/model.ts --machine "$OPENNOTE_PERF_MACHINE" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Fail when a browser gate failed
+        if: always() && steps.browser.outcome == 'failure'
+        run: |
+          echo "::error::A code studio browser gate failed. The budget table above has the numbers."
+          exit 1
+      - name: Keep the results
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: code-studio-perf
+          path: tests/perf/codeStudio/results/*.json
+          if-no-files-found: ignore
+          retention-days: 90
+
+  palm-sweep:
+    # The palm label oracle's full sweep (docs/testing/palm-sweep.md): 200,000 cases in four shards of 50,000. Each
+    # shard fails on a failing case that tests/fixtures/palm/oracle-sweep.json does not record as open, and on an
+    # open case that now passes, so the record never goes stale after a generator or classifier change.
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { shard: 0, from: 0, to: 50000 }
+          - { shard: 1, from: 50000, to: 100000 }
+          - { shard: 2, from: 100000, to: 150000 }
+          - { shard: 3, from: 150000, to: 200000 }
+    env:
+      PALM_SWEEP_FROM: ${{ matrix.from }}
+      PALM_SWEEP_TO: ${{ matrix.to }}
+      PALM_SWEEP_OUT: palm-sweep-${{ matrix.shard }}.json
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install tools
+        run: npm ci
+      - name: Sweep cases ${{ matrix.from }} to ${{ matrix.to }}
+        run: |
+          npx vitest run --config app/vitest.config.ts --project unit \
+            app/src/features/ink/input/testing/oracleSweep.test.ts -t "full sweep"
+      - name: Keep the failing cases
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: palm-sweep-${{ matrix.shard }}
+          path: palm-sweep-${{ matrix.shard }}.json
+          if-no-files-found: ignore
+          retention-days: 30
+
   nvda:
-    # NVDA, driven by Guidepup, walks through the checklist for the keyboard and the screen reader in tests/nvda in a headed browser and
-    # records what it said (A4-42). The Guidepup packages are installed here, not in package.json, so no other job
-    # needs them. A phrase NVDA did not say fails the job, and nvda.json has everything it did say.
+    # NVDA, driven by Guidepup, walks through the checklist for the keyboard and the screen reader in tests/nvda in a
+    # headed browser and records what it said (A4-42). The Guidepup packages are installed here from the lock file in
+    # tests/nvda, not from package.json, so no other job needs them. A phrase NVDA did not say fails the job, and
+    # nvda.json has everything it did say.
     runs-on: windows-latest
     timeout-minutes: 45
     permissions:
@@ -358,9 +518,19 @@ jobs:
       - name: Install tools
         run: npm ci
       - name: Install Guidepup
-        run: npm install --no-save --no-package-lock @guidepup/guidepup@0.35.0
-      - name: Set up NVDA
-        run: npx --yes @guidepup/setup@0.29.1 setup --ci
+        # From the lock file in tests/nvda, a package of its own away from the repository's tree. Installing on top
+        # of that tree failed with "Cannot read properties of null (reading 'edgesOut')". No install scripts run,
+        # and the optional recorder, with its ffmpeg download, is left out.
+        run: npm ci --prefix tests/nvda --ignore-scripts --omit=optional --no-audit --no-fund
+      - name: Set up the machine for NVDA
+        # Guidepup keeps the machine setup and the screen reader download apart. "setup" prepares Windows. "install"
+        # downloads the NVDA build in the Guidepup manifest, checks its checksum, and unpacks it where Guidepup
+        # looks. Without "install", nvda.start() fails with "NVDA is not installed". Run from tests/nvda, so that
+        # "install" finds its Guidepup package.
+        working-directory: tests/nvda
+        run: |
+          npx --no-install guidepup setup --ci
+          npx --no-install guidepup install nvda
       - name: Walk the checklist with NVDA
         env:
           OPENNOTE_NVDA: '1'
@@ -440,7 +610,7 @@ jobs:
   report:
     # Opens an issue when any job failed, or adds a comment to the issue that is already open. It is the only
     # job that can write, it can only write issues, and it never checks out the code.
-    needs: [plan, fuzz, kill, proptest, perf, e2e-full, bundles, soak, nvda]
+    needs: [plan, fuzz, kill, proptest, perf, perf-typing-gate, e2e-full, bundles, soak, code-studio-perf, palm-sweep, nvda]
     if: ${{ always() && github.ref == 'refs/heads/main' && contains(needs.*.result, 'failure') }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -456,9 +626,12 @@ jobs:
           KILL_RESULT: ${{ needs.kill.result }}
           PROPTEST_RESULT: ${{ needs.proptest.result }}
           PERF_RESULT: ${{ needs.perf.result }}
+          TYPING_GATE_RESULT: ${{ needs.perf-typing-gate.result }}
           E2E_RESULT: ${{ needs.e2e-full.result }}
           BUNDLES_RESULT: ${{ needs.bundles.result }}
           SOAK_RESULT: ${{ needs.soak.result }}
+          CODE_STUDIO_PERF_RESULT: ${{ needs.code-studio-perf.result }}
+          PALM_SWEEP_RESULT: ${{ needs.palm-sweep.result }}
           NVDA_RESULT: ${{ needs.nvda.result }}
         run: |
           run_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
@@ -470,10 +643,14 @@ jobs:
             [ "$KILL_RESULT" = failure ] && echo "- Crash safety: replay with seed $GITHUB_RUN_ID"
             [ "$PROPTEST_RESULT" = failure ] && echo "- Property tests: the log has the failing case"
             [ "$PERF_RESULT" = failure ] && echo "- Performance: the results are in the run's artifacts"
+            [ "$TYPING_GATE_RESULT" = failure ] && echo "- Typing gate (16 ms painted p95): the numbers are in the run's artifacts"
             [ "$E2E_RESULT" = failure ] && echo "- E2E specs: the logs are in the run's artifacts"
             [ "$BUNDLES_RESULT" = failure ] && echo "- The macOS dmg or the Linux AppImage didn't build"
             # checks-disable-next-line length: one shell line that writes one line of the run summary
             [ "$SOAK_RESULT" = failure ] && echo "- Random-editing soak: the samples are in the run's artifacts; replay with the run number as the seed"
+            [ "$CODE_STUDIO_PERF_RESULT" = failure ] && echo "- Code studio budgets: the budget table is in the run summary"
+            # checks-disable-next-line length: one shell line that writes one line of the run summary
+            [ "$PALM_SWEEP_RESULT" = failure ] && echo "- Palm label oracle sweep: the cases that differ from the record are in the log and the run's artifacts"
             [ "$NVDA_RESULT" = failure ] && echo "- NVDA checklist: the spoken log is in the run's artifacts"
             echo
             echo "Run: $run_url"

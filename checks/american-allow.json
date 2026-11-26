@@ -1,0 +1,30 @@
+{
+  "description": "Exceptions to the spelling rule (the American English check). Each entry is a word, an optional path glob, and a reason. Use it for quotations, proper nouns, place names, locale names and test fixtures that need a British word on purpose. A whole directory is never allowed: name the word, and the file when it is not a proper noun.",
+  "allow": [
+    {
+      "word": "litres",
+      "path": "app/src/features/tools/calculator/unitData.ts",
+      "reason": "British spelling kept as a search alias so people who type it find the unit"
+    },
+    {
+      "word": "litre",
+      "path": "app/src/features/tools/calculator/unitData.ts",
+      "reason": "British spelling kept as a search alias so people who type it find the unit"
+    },
+    {
+      "word": "kilometres",
+      "path": "app/src/features/tools/calculator/unitData.ts",
+      "reason": "British spelling kept as a search alias so people who type it find the unit"
+    },
+    {
+      "word": "kilometre",
+      "path": "app/src/features/tools/calculator/unitData.ts",
+      "reason": "British spelling kept as a search alias so people who type it find the unit"
+    },
+    {
+      "word": "Modelling",
+      "path": "app/src/features/tools/earth/ocean/teos10.ts",
+      "reason": "Title of a journal in a citation"
+    }
+  ]
+}

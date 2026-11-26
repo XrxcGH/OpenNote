@@ -49,6 +49,16 @@
     accent-color: var(--color-accent-clay);
   }
 
+  /* With touch-size controls the Decorative row is a 44 px target; the label toggles the box. */
+  :global(:root[data-density='touch']) .check {
+    min-block-size: var(--size-target-touch);
+  }
+
+  :global(:root[data-density='touch']) .check input {
+    inline-size: 24px;
+    block-size: 24px;
+  }
+
   .fields {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));

@@ -17,8 +17,9 @@ fn hex(bytes: &[u8]) -> String {
     bytes.iter().map(|byte| format!("{byte:02x}")).collect()
 }
 
-/// Whether the file at `path` matches `digest` and `size`.
-fn matches(path: &Path, size: u64, digest: Digest) -> io::Result<bool> {
+/// Whether the file at `path` matches `digest` and `size`. It reads the file in 64 KiB pieces, so a large file is
+/// never held in memory.
+pub fn matches(path: &Path, size: u64, digest: Digest) -> io::Result<bool> {
     let mut file = File::open(path)?;
     let mut buffer = vec![0u8; 1 << 16];
     let found = match digest {
@@ -92,7 +93,7 @@ fn download_part(
         have = 0;
     }
     if have < part.size {
-        let opened = source.open(part.url, have).map_err(DownloadError::Network)?;
+        let opened = source.open(part.url, have, part.size).map_err(DownloadError::Network)?;
         let mut file = if opened.resumed && have > 0 {
             OpenOptions::new().append(true).open(&partial)?
         } else {

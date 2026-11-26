@@ -5,6 +5,7 @@
 import { useId } from 'react';
 import { executeCommand } from '../../commands/registry';
 import type { CommandContext, CommandId } from '../../commands/types';
+import { hostSystem } from '../../platform/system';
 import type { UpdaterPhase } from '../../platform/types';
 import { t } from '../../strings/t';
 import { Button, ProgressBar } from '../../ui';
@@ -55,7 +56,7 @@ function ReadyActions({ phase, place, onLater }: UpdateDetailsProps & { phase: {
           aria-describedby={blocked ? reasonId : undefined}
           onClick={() => !blocked && run(source, 'updates.restart')}
         >
-          {t('updates.actions.restart')}
+          {hostSystem() === 'macos' ? t('updates.actions.openInstaller') : t('updates.actions.restart')}
         </Button>
         <Button onClick={() => run(source, 'updates.whatsNew', version)}>{t('updates.actions.whatsNew')}</Button>
         <Later onLater={onLater} />
@@ -119,7 +120,7 @@ function Body(props: UpdateDetailsProps) {
       return (
         <>
           <Title id={titleId} text={t('updates.details.readyTitle', { version: phase.version })} />
-          <p>{t('updates.details.readyBody')}</p>
+          <p>{hostSystem() === 'macos' ? t('updates.details.readyBodyMac') : t('updates.details.readyBody')}</p>
           <Notes notes={phase.notes} />
           <ReadyActions {...props} phase={phase} />
         </>

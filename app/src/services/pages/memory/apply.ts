@@ -17,6 +17,13 @@ export const OWN_EXTENSION_PREFIX = 'ext:org.opennote/';
 /** A new block's type must be a version 1 type or an extension type, and an extension block needs a fallback. */
 function checkNewType(block: { type: string; fallback?: unknown }): void {
   if (V1_TYPES.includes(block.type)) return;
+  // A break is defined by version 2 (spec 6.12): the core accepts it with its fallback, like an extension block.
+  if (block.type === 'break') {
+    if (!block.fallback || typeof block.fallback !== 'object') {
+      throw new PageServiceError('invalid', 'invalid edit: a block of type "break" needs a fallback');
+    }
+    return;
+  }
   if (!block.type.startsWith('ext:')) {
     const why = RESERVED_TYPES.includes(block.type) ? 'reserved' : 'unknown';
     throw new PageServiceError('invalid', `invalid edit: the block type "${block.type}" is ${why}`);

@@ -247,3 +247,26 @@ export async function walkBlocks(audit: Auditor, page: Page): Promise<void> {
     if (!(await page.locator('[data-workspace]').count())) await boot(page);
   }
 }
+
+/** The Code studio with a finished run that ended in an error: the editor and console, then the Problems panel. */
+export async function walkCodeStudio(audit: Auditor, page: Page): Promise<void> {
+  await page.getByRole('textbox', { name: 'Text' }).first().click();
+  await page.keyboard.press('Control+End');
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('Control+k');
+  await page.locator('[data-scope="palette"]').getByRole('combobox').first().waitFor();
+  await page.keyboard.type('New code project');
+  await page.getByRole('option', { name: 'New code project' }).first().click();
+  const studio = page.getByRole('dialog', { name: 'Code studio' });
+  await studio.waitFor();
+  await hook(page, 'codeStudioFakeRunner');
+  await studio.getByRole('textbox', { name: 'Code editor, main.py' }).click();
+  await page.keyboard.press('Control+a');
+  await page.keyboard.insertText('a = 1\nraise ValueError("boom")\n');
+  await studio.getByRole('button', { name: 'Run', exact: true }).click();
+  await studio.getByRole('log', { name: 'Console output' }).getByText('ValueError: boom').waitFor();
+  await audit.visit('code-studio.console');
+  await studio.getByRole('tab', { name: /Problems/ }).click();
+  await audit.visit('code-studio.problems');
+  await calm(page);
+}

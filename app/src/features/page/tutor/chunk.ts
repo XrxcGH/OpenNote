@@ -33,6 +33,8 @@ export async function openTutor(): Promise<TutorPanelModule> {
   if (!panel) {
     const host = document.createElement('div');
     host.className = tutor.tutorStyles.host ?? '';
+    // The panel lies over the page's end edge, so the Properties chip (search/properties/mount.tsx) stays left of it.
+    host.dataset.pagePane = '';
     const returnTo = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     panel = { host, root: createRoot(host), returnTo, tutor };
     const props = { onClose: closeTutor, onUseSelection: () => void takeSelection() };

@@ -10,18 +10,43 @@ import { RowsIcon } from '@phosphor-icons/react/dist/csr/Rows';
 import { RowsPlusBottomIcon } from '@phosphor-icons/react/dist/csr/RowsPlusBottom';
 import { RowsPlusTopIcon } from '@phosphor-icons/react/dist/csr/RowsPlusTop';
 import { TextHOneIcon } from '@phosphor-icons/react/dist/csr/TextHOne';
-import { useEffect, useRef, useState } from 'react';
+import { Component, lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import type { ComponentType, KeyboardEvent } from 'react';
 import type { CommandId } from '../../../commands/types';
 import type { TableOp } from '../../../editor/commands/tables';
 import { MAX_COLUMN_WIDTH, MIN_COLUMN_WIDTH } from '../../../editor/table/mapping';
 import { t } from '../../../strings/t';
 import type { MessageKey } from '../../../strings/t';
-import { IconButton, TextField } from '../../../ui';
+import { IconButton, Switch, TextField } from '../../../ui';
 import type { IconProps } from '../../../ui';
 import styles from './tables.module.css';
 
+/** The cell format bar loads with the first table toolbar (the tables feature's own chunk). */
+const CellFormatBar = lazy(async () => ({
+  default: (await (await import('../../tables')).loadCellFormatBar()).CellFormatBar,
+}));
+/** The formula bar (tables:formula-bar) loads the same way, under the cell format bar. */
+const FormulaBar = lazy(async () => ({
+  default: (await (await import('../../tables')).loadFormulaBar()).FormulaBar,
+}));
+
+/** Hides the formula bar when it fails, so a failure there never takes the cell format bar or the table with it. */
+class QuietBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+  override state = { failed: false };
+
+  static getDerivedStateFromError(): { failed: boolean } {
+    return { failed: true };
+  }
+
+  override render(): ReactNode {
+    return this.state.failed ? null : this.props.children;
+  }
+}
+
 export interface TableToolbarProps {
+  /** The table block's ID, which the cell format bar uses to find the block's data. */
+  block?: string;
   can(op: TableOp): boolean;
   header: boolean;
   run(op: TableOp): void;
@@ -33,6 +58,11 @@ export interface TableToolbarProps {
   openWidth(): void;
   /** Applies a width, or cancels with null; focus goes back to the cell either way. */
   closeWidth(width: number | null): void;
+  /** The row height field (the Row height command opens it). Optional: tables without structure commands omit it. */
+  heightOpen?: boolean;
+  /** The height set on the caret's row, or null for none. */
+  rowHeight?: { height: number | null; exact: boolean };
+  closeHeight?(result: { height: number; exact: boolean } | null): void;
 }
 
 interface Tool {
@@ -115,9 +145,90 @@ function WidthField({ width, close }: { width: number; close(width: number | nul
   );
 }
 
+const MIN_ROW_HEIGHT = 1;
+const MAX_ROW_HEIGHT = 10_000;
+
+function HeightField(props: {
+  current: { height: number | null; exact: boolean };
+  close(result: { height: number; exact: boolean } | null): void;
+}) {
+  const { current, close } = props;
+  const [value, setValue] = useState(current.height === null ? '' : String(current.height));
+  const [exact, setExact] = useState(current.exact);
+  const parsed = Number(value.trim());
+  const valid = /^\d+(\.\d+)?$/.test(value.trim()) && parsed >= MIN_ROW_HEIGHT && parsed <= MAX_ROW_HEIGHT;
+  const hint = t('sheetStructure.height.hint');
+  const field = useRef<HTMLDivElement>(null);
+  useEffect(() => field.current?.querySelector('input')?.focus(), []);
+  return (
+    <div ref={field} className={styles.widthField} role="group" aria-label={t('sheetStructure.height.label')}>
+      <TextField
+        label={t('sheetStructure.height.label')}
+        value={value}
+        onChange={setValue}
+        autoSelect
+        help={valid ? hint : undefined}
+        error={valid ? undefined : hint}
+        // An invalid height keeps the field open, with the range as its error.
+        onCommit={() => valid && close({ height: parsed, exact })}
+        onCancel={() => close(null)}
+      />
+      <Switch label={t('sheetStructure.height.exact')} checked={exact} onChange={setExact} />
+    </div>
+  );
+}
+
+/**
+ * Tools below the table would cover the block after it (a second table, whose cells could not be clicked), so the
+ * table keeps their room below it while they show. `tall` is the tools' height, 0 when they are hidden.
+ */
+function keepRoomBelow(tools: HTMLElement, tall: number): void {
+  const block = tools.offsetParent instanceof HTMLElement ? tools.offsetParent : tools.parentElement?.parentElement;
+  if (!block) return;
+  block.style.marginBlockEnd = '';
+  if (tall <= 0 || tools.getBoundingClientRect().top < block.getBoundingClientRect().bottom - 1) return;
+  const margin = parseFloat(getComputedStyle(block).marginBlockEnd) || 0;
+  block.style.marginBlockEnd = `${margin + tall}px`;
+}
+
+/**
+ * The tools sit below the table, in room the table keeps for them, so they cover no text (walk 9 T1-D01-1). When
+ * they first show past the bottom of the page's view, the view scrolls just enough to show them.
+ */
+function useRoomBelow(wrap: { current: HTMLDivElement | null }) {
+  useLayoutEffect(() => {
+    const node = wrap.current;
+    if (!node) return undefined;
+    let shown = false;
+    const place = () => {
+      // A table taller than the window has its end far from where the person works: its tools stay above it, and the
+      // view never jumps to its end.
+      const owner = node.offsetParent;
+      const long = owner instanceof HTMLElement && owner.getBoundingClientRect().height > window.innerHeight;
+      if (long) node.setAttribute('data-above', '');
+      else node.removeAttribute('data-above');
+      const tall = node.getBoundingClientRect().height;
+      keepRoomBelow(node, tall);
+      if (tall > 0 && !shown && !long) node.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+      shown = tall > 0;
+    };
+    place();
+    // A surface with no ResizeObserver (a test document) keeps the first placement.
+    if (typeof ResizeObserver === 'undefined') return undefined;
+    const watch = new ResizeObserver(place);
+    watch.observe(node);
+    return () => {
+      watch.disconnect();
+      keepRoomBelow(node, 0);
+    };
+  }, [wrap]);
+}
+
 export function TableToolbar(props: TableToolbarProps) {
-  const { can, header, run, more, width, widthOpen, openWidth, closeWidth } = props;
+  const { block, can, header, run, more, width, widthOpen, openWidth, closeWidth } = props;
   const moreButton = useRef<HTMLSpanElement>(null);
+  const wrap = useRef<HTMLDivElement>(null);
+  useRoomBelow(wrap);
   const button = (tool: Tool, first: boolean) => (
     <span key={tool.command} data-tool-slot="">
       <IconButton
@@ -131,7 +242,7 @@ export function TableToolbar(props: TableToolbarProps) {
     </span>
   );
   return (
-    <div className={styles.toolbarWrap}>
+    <div ref={wrap} className={styles.toolbarWrap}>
       <div
         role="toolbar"
         aria-label={t('tables.toolbar.label')}
@@ -177,7 +288,22 @@ export function TableToolbar(props: TableToolbarProps) {
           </span>
         </span>
       </div>
+      {block ? (
+        <>
+          <Suspense fallback={null}>
+            <CellFormatBar block={block} />
+          </Suspense>
+          <QuietBoundary>
+            <Suspense fallback={null}>
+              <FormulaBar block={block} />
+            </Suspense>
+          </QuietBoundary>
+        </>
+      ) : null}
       {widthOpen ? <WidthField width={width} close={closeWidth} /> : null}
+      {props.heightOpen && props.closeHeight ? (
+        <HeightField current={props.rowHeight ?? { height: null, exact: false }} close={props.closeHeight} />
+      ) : null}
     </div>
   );
 }

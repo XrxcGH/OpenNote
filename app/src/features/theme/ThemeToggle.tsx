@@ -15,6 +15,7 @@ import { useOs } from '../../state/os';
 import { useSettings } from '../../state/settings';
 import { t } from '../../strings/t';
 import { setThemePreference, toggledPreference, useResolvedTheme } from '../../theme/theme';
+import { TitleBarMenuItem } from '../../shell/titlebar/TitleBarMenuItem';
 import { Switch, Tooltip, useLongPress } from '../../ui';
 import type { MenuAnchor } from '../../ui';
 import { openThemeMenu } from './ThemeMenu';
@@ -67,7 +68,7 @@ function useMenuTriggers(wrapper: RefObject<HTMLElement | null>) {
   };
 }
 
-export function ThemeToggle() {
+export function ThemeToggle({ presentation }: { presentation?: 'full' | 'icon' | 'menuItem' }) {
   const shown = useResolvedTheme();
   const following = useSettings((settings) => settings.appearance.theme === 'system');
   const contrast = useOs((os) => os.contrast);
@@ -79,6 +80,18 @@ export function ThemeToggle() {
   const label = t('theme.darkMode');
   const dark = shown === 'dark';
 
+  // In the title bar's More menu the switch is a row with its name, so it is not an unlabeled icon.
+  if (presentation === 'menuItem') {
+    return (
+      <TitleBarMenuItem
+        label={label}
+        command="theme.toggle"
+        checked={dark}
+        disabled={contrast}
+        onPress={() => setThemePreference(toggledPreference(shown), 'toggle')}
+      />
+    );
+  }
   return (
     <span ref={wrapper} className={styles.toggle} data-theme-toggle="" {...longPress} {...menu.handlers}>
       <Tooltip label={contrast ? t('theme.contrastNote') : label} shortcut={shortcut(keys, contrast)}>

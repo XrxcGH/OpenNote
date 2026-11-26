@@ -5,17 +5,21 @@ import { newId } from '../../editor/ids';
 import type { EditorHost } from '../../editor/host';
 import { createMarkdownCache } from '../../editor/markdown';
 import type { MarkdownCache } from '../../editor/markdown';
+import { commandContext } from '../../commands/registry';
 import { beforeExit } from '../../registries';
 import type { PageViewMode } from '../../platform/bindings/PageViewMode';
 import type { AppliedFrame, BlockId, BlockJson, OpenPage } from '../../services/pages/types';
+import type { NodeId } from '../../services/notes/types';
 import { osStore } from '../../state/os';
 import { createStore } from '../../state/store';
-import { announce } from '../../ui';
+import { announce, openMenu } from '../../ui';
+import { menuItemsFor } from '../../commands/menus';
+import { t } from '../../strings/t';
 import { createBlockLayer } from './blocks/blockLayer';
 import type { PageBlockLayer } from './blocks/blockLayer';
 import { frameContext } from './blocks/frameContext';
-import { markDraft } from './blocks/textBlock';
-import { createEditorHost } from './editorHost';
+import { markDraft, syncOf } from './blocks/textBlock';
+import { createEditorHost, pageSettingsOf } from './editorHost';
 import { createFlow } from './layout/flow';
 import type { Flow } from './layout/flow';
 import { createPageLayout } from './layout/actions';
@@ -32,17 +36,19 @@ import type { PageLayout } from './layout/actions';
 import { attachPageMedia } from './images/attach';
 import { shownPage as shownOpenPage } from './history/shown';
 import { createEditorPool, shownPool } from './pool/pool';
-import type { PagePool } from './pool/pool';
+import type { EditorPool, PagePool } from './pool/pool';
 import { createSelectTool } from './pool/selectTool';
 import { savePageView } from './runtime';
 import { setGeometrySource } from './seams/geometry';
 import { pageSelection, selectOnPage } from './seams/selectionStore';
 import { createSyncQueue, exitHook, shownQueue } from './sync';
 import { keepLinksInPlace } from './linkClicks';
-import type { SyncQueue } from './sync';
+import type { FrameContext, SyncQueue } from './sync';
 import type { Point } from './viewport/camera';
+import { readDefaultTab, setDefaultTab, setPageHyphenate } from '../../editor/paragraph/defaultTab';
 import { createGestureTool } from './viewport/gestures';
 import { rememberView, restoreView } from './viewport/remember';
+import { dropDuplicateMenus } from './viewport/menuRequests';
 import { createRouter } from './viewport/router';
 import type { PointerToolDef } from './viewport/router';
 import { shownFitWidth, shownPage } from './viewport/shown';
@@ -106,6 +112,64 @@ function draftTextBlock(): BlockJson {
   return markDraft(block, { block: { id, type: 'text' } });
 }
 
+/**
+ * Gives a page with no text an empty text box. It does so at once, and again when an undo or another window takes
+ * the last text block away. Before, an undo of the first insert into a new page left no editor at all. The box
+ * goes again, unsaved, when a frame brings a text block back while it is still empty.
+ */
+function keepTextBox(frames: FrameContext, layer: PageBlockLayer, pool: EditorPool, readOnly: boolean): void {
+  if (readOnly) return;
+  let draft: BlockId | null = null;
+  const hasText = () => layer.blocks().some((block) => block.type === 'text' && block.id !== draft);
+  const add = () => {
+    if (hasText() || (draft && layer.block(draft))) return;
+    const block = draftTextBlock();
+    draft = block.id;
+    layer.upsert(block);
+  };
+  const { removeBlock, upsertBlock } = frames;
+  frames.removeBlock = (block) => {
+    removeBlock(block);
+    add();
+  };
+  frames.upsertBlock = (block) => {
+    upsertBlock(block);
+    if (!draft || block.type !== 'text' || block.id === draft || !layer.block(draft)) return;
+    // Only a box known to be untouched goes: its editor is there, empty, and has sent nothing.
+    const editor = pool.editor(draft);
+    if (!editor || editor.state.doc.textContent !== '' || syncOf(editor)?.lastSent() !== '') return;
+    layer.remove(draft);
+    draft = null;
+  };
+  add();
+}
+
+/** The page an OpenNote page link points at (`opennote:page/<id>` or `opennote://page/<id>`), or null. */
+export function linkedPage(href: string): string | null {
+  const page = /^opennote:(?:\/\/)?page\/([^#?/]+)/i.exec(href)?.[1];
+  return page ? decodeURIComponent(page) : null;
+}
+
+/**
+ * Follows a link to another page (a series' Before and Next, an extracted page): with Ctrl or Command in text being
+ * edited, as in other editors, and with a plain click or tap where the text isn't being edited. Web links still open
+ * only through the Open link command. Returns a function that stops.
+ */
+function followPageLinks(container: HTMLElement): () => void {
+  const onClick = (event: MouseEvent) => {
+    const link = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>('a[href]') : null;
+    const page = link ? linkedPage(link.getAttribute('href') ?? '') : null;
+    if (!link || !page) return;
+    const editing = link.closest('[contenteditable="true"]') !== null;
+    if (editing && !event.ctrlKey && !event.metaKey) return;
+    event.preventDefault();
+    const ctx = commandContext('menu');
+    ctx.navigate({ view: 'workspace', notebookId: null, sectionId: null, pageId: page as NodeId });
+  };
+  container.addEventListener('click', onClick);
+  return () => container.removeEventListener('click', onClick);
+}
+
 /** The block under a point in page units: a hit test, so only at pointer down. */
 function blockAt(viewport: PageViewport, point: Point): BlockId | null {
   const client = viewport.toClient(point.x, point.y);
@@ -126,6 +190,27 @@ function routePointers(container: HTMLElement, viewport: PageViewport, tools: re
   });
 }
 
+/** Whether a contextmenu target is the page itself: not a block, the title, a control, or text being edited. */
+function onEmptyPage(target: Element, container: HTMLElement): boolean {
+  return (
+    container.contains(target) &&
+    !target.closest(
+      '[data-block-id], [data-handle], [data-page-title], [data-app-menu], [data-scope~="editor"], button, a, input, textarea',
+    )
+  );
+}
+
+/** The menu of the empty page (what it can add), from right-click, a long press, or a barrel press. */
+function openCanvasMenu(event: MouseEvent): void {
+  const items = menuItemsFor('page.canvas', commandContext('menu'));
+  if (items.length === 0) return;
+  event.preventDefault();
+  event.stopPropagation();
+  const keyboard = event.clientX === 0 && event.clientY === 0;
+  const anchor = keyboard ? { x: 0, y: 0 } : { x: event.clientX, y: event.clientY };
+  void openMenu({ label: t('page.canvas.menuLabel'), items, anchor });
+}
+
 /** The object menu from right-click, a long press, Shift+F10, or the Menu key on a block's wrapper or grip. */
 function objectMenus(container: HTMLElement, objects: Objects, layer: PageBlockLayer): () => void {
   const onMenu = (event: MouseEvent) => {
@@ -133,7 +218,8 @@ function objectMenus(container: HTMLElement, objects: Objects, layer: PageBlockL
     const handle = target?.closest<HTMLElement>('[data-handle]');
     const wrapper = target?.closest<HTMLElement>('[data-block-id]');
     const block = handle?.dataset.block ?? wrapper?.dataset.blockId;
-    if (!block || !layer.block(block) || target?.closest('[data-scope="editor"]')) return;
+    if (!block && target && onEmptyPage(target, container)) return void openCanvasMenu(event);
+    if (!block || !layer.block(block) || target?.closest('[data-scope~="editor"]')) return;
     event.preventDefault();
     event.stopPropagation();
     if (!objects.selected().includes(block)) objects.select([block], { focus: true });
@@ -142,7 +228,11 @@ function objectMenus(container: HTMLElement, objects: Objects, layer: PageBlockL
     void openObjectMenu(objects, anchor);
   };
   container.addEventListener('contextmenu', onMenu);
-  return () => container.removeEventListener('contextmenu', onMenu);
+  const stopDuplicates = dropDuplicateMenus(container);
+  return () => {
+    container.removeEventListener('contextmenu', onMenu);
+    stopDuplicates();
+  };
 }
 
 /** Points the shown page's stores at this view. Returns a function that clears them if they still point here. */
@@ -158,7 +248,7 @@ function showPage(mounted: Omit<MountedPage, 'destroy'>): () => void {
     objectCommand: (command) => mounted.objects.command(command),
     objectEnabled: (command) => mounted.objects.enabled(command),
   });
-  shownFitWidth.set(() => mounted.flow.fitWidth());
+  shownFitWidth.set(() => () => mounted.flow.fitWidth());
   shownQueue.set(mounted.sync);
   shownPool.set(mounted.pool);
   shownLayer.set(mounted.layer);
@@ -219,25 +309,37 @@ function titleBand(world: HTMLElement, parts: TitleParts, options: MountOptions)
   });
 }
 
+/** One page is shown at a time: only a shown page sets the tab interval and hyphenation default in force. */
+function applyPageDefaults(view: unknown, shown: boolean): void {
+  if (!shown) return;
+  setDefaultTab(readDefaultTab(view));
+  setPageHyphenate(view);
+}
+
 export function mountPage(container: HTMLElement, page: OpenPage, options: MountOptions): MountedPage {
   registerEscapeToObjects();
   const cache = createMarkdownCache();
   const viewport = createViewport(container, options.classNames);
   const flow = createFlow(viewport);
   flow.setView(page.initial.view);
+  applyPageDefaults(page.initial.view, options.shown !== false);
   const reading = opensInReading(page, options);
   flow.setReading(reading);
   restoreView(page.id, viewport, () => flow.extent());
   const pool = createEditorPool();
   let objects: Objects | null = null;
+  let pageSettings = pageSettingsOf(page.initial.view);
   const host = createEditorHost({
     selectBlocks: (blocks, reason) => objects?.selectBlocks(blocks, reason),
+    pageSettings: () => pageSettings,
     ...options.host,
   });
   const frames = frameContext(pool, () => layer, {
     setPageFields(fields) {
       if (fields.view) {
+        pageSettings = pageSettingsOf(fields.view);
         layout.setView(fields.view);
+        applyPageDefaults(fields.view, options.shown !== false);
         layer.setPreferredOrder(fields.view.readingOrder ?? []);
       }
       if (fields.title !== undefined) title?.setTitle(fields.title);
@@ -248,10 +350,10 @@ export function mountPage(container: HTMLElement, page: OpenPage, options: Mount
   const sync = createSyncQueue({ page, cache, frames, announce });
   const layer = createBlockLayer(flow.element, { page, host, viewport, pool, sync, cache, reading });
   layer.apply(page.initial);
-  if (!page.readOnly && !page.initial.blocks.some((block) => block.type === 'text')) layer.upsert(draftTextBlock());
+  keepTextBox(frames, layer, pool, page.readOnly !== null);
   const title = titleBand(viewport.world, { page, sync, layer, pool }, options);
   const compact = options.compact ?? false;
-  const layout = createPageLayout({ page, sync, layer, pool, flow, viewport, compact, reading });
+  const layout = createPageLayout({ page, sync, layer, pool, flow, viewport, title, compact, reading });
   const chrome = createChrome({ container, viewport, layer, pool });
   const keepBelow = createKeepBelow(layer, sync, pool);
   objects = new Objects({
@@ -273,6 +375,7 @@ export function mountPage(container: HTMLElement, page: OpenPage, options: Mount
     rememberView(page.id, viewport),
     routePointers(container, viewport, [gestures, objectsTool, select]),
     keepLinksInPlace(container),
+    followPageLinks(container),
     installObjectKeys(viewport.world, objects, layer),
     objectMenus(container, objects, layer),
     () => chrome.destroy(),
@@ -309,6 +412,7 @@ export function mountPage(container: HTMLElement, page: OpenPage, options: Mount
     },
   };
   const detachMedia = attachPageMedia(result, container, options.shown !== false);
-  const detachHooks = options.shown === false ? () => undefined : attachMountedPageHooks(result);
+  // The hooks get the object the shown-page store holds, so a command that reads the store finds what a hook attached.
+  const detachHooks = options.shown === false ? () => undefined : attachMountedPageHooks(mounted as MountedPage);
   return result;
 }

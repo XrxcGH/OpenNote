@@ -1,6 +1,7 @@
 // The Insert buttons of a tool: the answer as text, with its steps, as a table, the main equation, and the plot as a
 // picture. Each writes at the caret of the page that is open and says in words what happened.
 import { Button, announce } from '../../../../ui';
+import { insertLive as keepLive } from '../../kits/liveInsert';
 import { insertIntoPage } from '../../ui/insert';
 import tools from '../../ui/tools.module.css';
 import { plotSvg } from '../plot';
@@ -50,6 +51,20 @@ function insertPlot(solved: Solved, id: string) {
   );
 }
 
+/** The answer and the typed values as a live calculation block: Open in tool brings the values back. */
+function insertLive(from: Element, solved: Solved, system: System) {
+  const rows = solved.rows.map((row) => {
+    const s = showRow(row, system);
+    return { label: s.label, value: s.value, unit: s.unit ?? '' };
+  });
+  const summary = lines(solved, system).slice(0, 3).join('; ');
+  void keepLive(from, {
+    summary,
+    rows,
+    ...(solved.equation ? { latex: solved.equation } : {}),
+  }).then((ok) => announce(tr(ok ? 'kitChemMat.common.liveInserted' : 'kitChemMat.common.noPage')));
+}
+
 export function InsertBar({ solved, system, toolId }: { solved: Solved; system: System; toolId: string }) {
   return (
     <div className={tools.buttons}>
@@ -70,6 +85,9 @@ export function InsertBar({ solved, system, toolId }: { solved: Solved; system: 
           {tr('kitChemMat.common.insertEquation')}
         </Button>
       ) : null}
+      <Button variant="quiet" onClick={(event) => insertLive(event.currentTarget, solved, system)}>
+        {tr('kitChemMat.common.insertLive')}
+      </Button>
       {solved.plot ? (
         <Button variant="quiet" onClick={() => insertPlot(solved, toolId)}>
           {tr('kitChemMat.common.insertPlot')}

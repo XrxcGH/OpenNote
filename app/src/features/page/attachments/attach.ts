@@ -8,7 +8,7 @@ import type { BlockId, Edit, ImportedAsset, NewBlock } from '../../../services/p
 import { t } from '../../../strings/t';
 import { announce, showToast } from '../../../ui';
 import { assetTable } from '../images/assets';
-import { defaultPlacement, fileItems, imageFiles, insertImages, showInserted } from '../images/insert';
+import { defaultPlacement, fileItems, imageFiles, insertImages, progressFor, showInserted } from '../images/insert';
 import type { Placement } from '../images/insert';
 import type { MountedPage } from '../mount';
 import { pageSelection, selectOnPage } from '../seams/selectionStore';
@@ -63,16 +63,26 @@ export async function attachFiles(
   const imported: ImportedAsset[] = [];
   let failed = 0;
   let tooLarge = 0;
-  for (const file of files) {
-    if (file.size > MAX_ATTACHMENT_BYTES) {
-      tooLarge += 1;
-      continue;
+  // A large file takes seconds to reach the shell: the quiet progress bar shows after 300 ms (Beta 8 walk A1-A07-12).
+  const progress = progressFor(
+    () => mounted.viewport.viewport.parentElement,
+    (count) => t('pageExtras.attach.adding', { count }),
+  );
+  try {
+    for (const [at, file] of files.entries()) {
+      progress({ pending: files.length - at });
+      if (file.size > MAX_ATTACHMENT_BYTES) {
+        tooLarge += 1;
+        continue;
+      }
+      try {
+        imported.push(await client.attachBytes(mounted.page.id, await file.arrayBuffer(), file.name, file.type));
+      } catch {
+        failed += 1;
+      }
     }
-    try {
-      imported.push(await client.attachBytes(mounted.page.id, await file.arrayBuffer(), file.name, file.type));
-    } catch {
-      failed += 1;
-    }
+  } finally {
+    progress({ pending: 0 });
   }
   if (tooLarge > 0) showToast({ message: t('pageExtras.attach.tooLarge', { count: tooLarge }), tone: 'danger' });
   if (failed > 0) showToast({ message: t('pageExtras.attach.failed', { count: failed }), tone: 'danger' });

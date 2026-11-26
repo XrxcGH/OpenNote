@@ -1,5 +1,6 @@
 // The airfoil tool's form: an NACA designation and typed parameters give the same section, angles arrive in any
 // unit, the flat plate drops the panels, and the coordinate table reads in the page's words.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { tableText } from '../ui/DataTable';
 import { initialValues, runSpec, unitKey, visibleFields } from '../ui/spec';

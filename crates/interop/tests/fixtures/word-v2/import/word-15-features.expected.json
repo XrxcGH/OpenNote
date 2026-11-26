@@ -1,0 +1,58 @@
+{
+  "blocks": [
+    {
+      "kind": "text",
+      "markdown": "# Formatting\n\n**bold**\n\n*italic*\n\n<u data-line=\"double\" data-line-color=\"#c00000\">underlined</u>\n\n~~struck~~\n\n<del data-line=\"double\">double struck</del>\n\n<span data-caps=\"small\">small caps</span>\n\n<span data-caps=\"all\">all caps</span>\n\n<span data-color=\"#2f5496\">blue</span>\n\n<mark data-color=\"#ffff00\">yellow</mark>\n\n<span data-font=\"Georgia\">Georgia</span>\n\n<span data-size=\"14\">fourteen</span>\n\n<span data-tracking=\"1.5\">spaced</span>\n\nx<sup>2</sup>\n\n<span data-shade=\"#123456\">shaded</span>\n\nCentered",
+      "elements": 16,
+      "styles": {},
+      "paras": {
+        "15": {"align": "center", "indent": {"start": 36, "end": 0, "first": -18}, "before": 12, "after": 6}
+      }
+    }
+  ],
+  "styles": {
+    "normal": {
+      "font": "Calibri",
+      "sizePt": 11,
+      "size": 14.67,
+      "weight": 400,
+      "italic": false,
+      "after": 8,
+      "spaceAfter": 10.67,
+      "line": {"rule": "multiple", "value": 1.08},
+      "lineHeight": 1.08
+    },
+    "h1": {
+      "font": "Calibri Light",
+      "sizePt": 16,
+      "size": 21.33,
+      "weight": 400,
+      "italic": false,
+      "textColor": "#2f5496",
+      "color": "#2f5496",
+      "before": 12,
+      "spaceBefore": 16,
+      "after": 0,
+      "spaceAfter": 0,
+      "line": {"rule": "multiple", "value": 1.08},
+      "lineHeight": 1.08,
+      "keepNext": true,
+      "keepLines": true,
+      "outline": 1
+    }
+  },
+  "theme": {
+    "fonts": {"heading": "Calibri Light", "body": "Calibri"},
+    "colors": {
+      "accent1": "#4472c4",
+      "accent2": "#ed7d31",
+      "accent3": "#a5a5a5",
+      "accent4": "#ffc000",
+      "accent5": "#5b9bd5",
+      "accent6": "#70ad47",
+      "text": "#000000",
+      "background": "#ffffff"
+    }
+  },
+  "paper": {"size": "letter", "orientation": "portrait", "width": 816, "height": 1056, "margins": [96, 96, 96, 96]}
+}

@@ -83,6 +83,9 @@ describe('insertMath', () => {
     page.editor.commands.focus('end');
     expect(insertMath(page.editor, true)).toBe(true);
     expect(page.root.querySelector('textarea[aria-label="Math source"]')).not.toBeNull();
-    expect(page.editor.state.doc.childCount).toBe(2);
+    // The equation, and the empty line the editor keeps below a last equation (Beta 8 walk A-A06-5).
+    const kinds: string[] = [];
+    page.editor.state.doc.forEach((node) => kinds.push(node.type.name));
+    expect(kinds).toEqual(['paragraph', 'mathBlock', 'paragraph']);
   });
 });

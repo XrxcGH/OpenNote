@@ -14,6 +14,8 @@ use std::{
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager, WebviewWindow};
 
+#[cfg(windows)]
+use super::tao_window::TaoWindow;
 use crate::state::{DeviceStateStore, WindowState};
 
 /// How long moves and resizes are folded together before the placement is saved.
@@ -105,8 +107,13 @@ pub fn capture(_window: &WebviewWindow) -> Option<WindowPlacement> {
 /// Applies a saved placement to the window, which also shows it the way it was (normal or maximized). The
 /// rectangle is moved onto the nearest monitor's work area when it is no longer visible. Returns false when
 /// there was nothing to apply or it failed, so the caller shows the window at its default place.
+///
+/// `SetWindowPlacement` shows the window behind tao's back, so the window is then shown through tao as well
+/// (see [`TaoWindow`]). Otherwise tao skips the frame refresh that showing does, which leaves the native caption
+/// from creation over the page's title bar, and its next style change, such as the native frame coming back,
+/// hides the window.
 #[cfg(windows)]
-pub fn restore(window: &WebviewWindow, saved: &WindowPlacement) -> bool {
+pub fn restore(window: &impl TaoWindow, saved: &WindowPlacement) -> bool {
     use windows::Win32::{
         Foundation::RECT,
         Graphics::Gdi::{GetMonitorInfoW, MonitorFromRect, MONITORINFO, MONITOR_DEFAULTTONEAREST},
@@ -157,7 +164,11 @@ pub fn restore(window: &WebviewWindow, saved: &WindowPlacement) -> bool {
         ..WINDOWPLACEMENT::default()
     };
     // SAFETY: `hwnd` is this process's window and `placement` is a local with its length set.
-    unsafe { SetWindowPlacement(hwnd, &placement).is_ok() }
+    let placed = unsafe { SetWindowPlacement(hwnd, &placement).is_ok() };
+    if placed {
+        let _ = window.show();
+    }
+    placed
 }
 
 #[cfg(not(windows))]

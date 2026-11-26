@@ -10,6 +10,7 @@ import { page } from './page';
 import { palette } from './palette';
 import { shortcuts } from './shortcuts';
 import { settings } from './settings';
+import { platformIntel } from './platformIntel';
 import { setup } from './setup';
 import { language } from './language';
 import { theme } from './theme';
@@ -19,7 +20,7 @@ import { diagnostics } from './diagnostics';
 import { keys } from './keys';
 import { pageSync } from './pageSync';
 import { editor } from './editor';
-import { images } from './images';
+import { images } from './imagesStart';
 import { paste } from './paste';
 import { tables } from './tables';
 import { code } from './code';
@@ -39,7 +40,7 @@ import { interopLatex } from './interopLatex';
 import { moreInterop } from './moreInterop';
 import { intel } from './intel';
 import { pageExtras } from './pageExtras';
-import { video } from './video';
+import { video } from './videoStart';
 import { study } from './study';
 import { science } from './science';
 import { qolSearch } from './qolSearch';
@@ -63,7 +64,7 @@ import { kitMusic } from './kitMusicStart';
 import { chem } from './chem';
 import { kitEcon } from './kitEconStart';
 import { kitReasoning } from './kitReasoningStart';
-import { kitChemMat } from './kitChemMat';
+import { kitChemMat } from './kitChemMatStart';
 import { docStructure } from './docStructure';
 import { codeCells } from './codeCells';
 import { kitStatModels } from './kitStatModels';
@@ -80,17 +81,68 @@ import { stepCheck } from './stepCheck';
 import { tutor } from './tutor';
 import { exams } from './exams';
 import { sync } from './sync';
-import { kitControl } from './kitControl';
-import { kitDesign } from './kitDesign';
-import { kitMath } from './kitMath';
-import { kitMechDyn } from './kitMechDyn';
-import { kitPhysics } from './kitPhysics';
+import { kitControl } from './kitControlStart';
+import { kitDesign } from './kitDesignStart';
+import { kitMath } from './kitMathStart';
+import { kitMechDyn } from './kitMechDynStart';
+import { kitPhysics } from './kitPhysicsStart';
 import { kitStatInfer } from './kitStatInfer';
-import { kitElectrical } from './kitElectrical';
-import { kitFluidHeat } from './kitFluidHeat';
-import { kitSolids } from './kitSolids';
-import { kitAero } from './kitAero';
-import { kitThermo } from './kitThermo';
+import { kitElectrical } from './kitElectricalStart';
+import { kitFluidHeat } from './kitFluidHeatStart';
+import { kitSolids } from './kitSolidsStart';
+import { kitAero } from './kitAeroStart';
+import { kitThermo } from './kitThermoStart';
+// Text formatting and spreadsheet tables, Beta 9 and Beta 10. Each file names its owning lane.
+import { sheetModel } from './sheetModel';
+import { numfmt } from './numfmt';
+import { color } from './color';
+import { fnDateTime } from './fnDateTime';
+import { fnLogicInfo } from './fnLogicInfo';
+import { fnLookup } from './fnLookup';
+import { fnMath } from './fnMath';
+import { fnText } from './fnText';
+import { sheetKeys } from './sheetKeys';
+import { sheetPointer } from './sheetPointer';
+import { sheetFormula } from './sheetFormula';
+import { sheetToolbar } from './sheetToolbar';
+import { textPaste } from './textPaste';
+import { textCommands } from './textCommands';
+import { textFonts } from './textFonts';
+import { textStyles } from './textStyles';
+import { textHome } from './textHome';
+// Text formatting, spreadsheet tables, and the code studio, Beta 11.
+import { sheetConditional } from './sheetConditional';
+import { fnArrays } from './fnArrays';
+import { fnFinance } from './fnFinance';
+import { fnStats } from './fnStats';
+import { sheetFormat } from './sheetFormat';
+import { sheetMerge } from './sheetMerge';
+import { sheetClipboard } from './sheetClipboard';
+import { sheetValidation } from './sheetValidation';
+import { sheetTools } from './sheetTools';
+import { sheetStructure } from './sheetStructure';
+import { textFind } from './textFind';
+import { textPane } from './textPane';
+import { textLanguage } from './textLanguage';
+import { textRuler } from './textRuler';
+import { textSymbols } from './textSymbols';
+import { codeStudioEditor } from './codeStudio/editor';
+import { codeStudioProject } from './codeStudio/project';
+import { codeStudioRun } from './codeStudio/run';
+import { codeStudioPacks } from './codeStudio/packs';
+import { codeStudioStudio } from './codeStudio/studio';
+import { codeStudioPython } from './codeStudio/python';
+import { codeStudioJs } from './codeStudio/js';
+import { codeStudioSqlLua } from './codeStudio/sqlLua';
+import { codeStudioCpp } from './codeStudio/cpp';
+import { codeStudioDiagnostics } from './codeStudio/diagnostics';
+import { codeStudioComplete } from './codeStudio/complete';
+import { codeStudioFixes } from './codeStudio/fixes';
+import { codeStudioExplain } from './codeStudio/explain';
+import { codeStudioTesting } from './codeStudio/testing';
+import { textNotes } from './textNotes';
+import { textReview } from './textReview';
+import { textLayout } from './textLayout';
 
 export const en = {
   common,
@@ -103,6 +155,7 @@ export const en = {
   palette,
   shortcuts,
   settings,
+  platformIntel,
   setup,
   language,
   theme,
@@ -184,4 +237,56 @@ export const en = {
   kitSolids,
   kitAero,
   kitThermo,
+  sheetModel,
+  numfmt,
+  color,
+  fnDateTime,
+  fnLogicInfo,
+  fnLookup,
+  fnMath,
+  fnText,
+  sheetKeys,
+  sheetPointer,
+  sheetFormula,
+  sheetToolbar,
+  textPaste,
+  textCommands,
+  textFonts,
+  textStyles,
+  textHome,
+  sheetConditional,
+  fnArrays,
+  fnFinance,
+  fnStats,
+  sheetFormat,
+  sheetMerge,
+  sheetClipboard,
+  sheetValidation,
+  sheetTools,
+  sheetStructure,
+  textFind,
+  textPane,
+  textLanguage,
+  textRuler,
+  textSymbols,
+  textNotes,
+  textReview,
+  textLayout,
+  /** The code studio's namespaces, one file per lane under codeStudio/. */
+  codeStudio: {
+    editor: codeStudioEditor,
+    project: codeStudioProject,
+    run: codeStudioRun,
+    packs: codeStudioPacks,
+    studio: codeStudioStudio,
+    python: codeStudioPython,
+    js: codeStudioJs,
+    sqlLua: codeStudioSqlLua,
+    cpp: codeStudioCpp,
+    diagnostics: codeStudioDiagnostics,
+    complete: codeStudioComplete,
+    fixes: codeStudioFixes,
+    explain: codeStudioExplain,
+    testing: codeStudioTesting,
+  },
 } as const;

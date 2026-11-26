@@ -8,6 +8,7 @@ import { DEFAULT_SETTINGS } from '../../state/settings';
 import type { Platform } from '../types';
 import { createWebAccounts } from './accounts';
 import { createWebAudio } from './audio';
+import { createWebFonts, createWebNotebookStyles } from './fonts';
 import { createWebConnectors } from './connectors';
 import { createWebSync } from './sync';
 import { createWebDiagnostics } from './diagnostics';
@@ -64,6 +65,7 @@ export function createWebPlatform(options: WebPlatformOptions = {}): WebPlatform
   const log = createWebLog();
   const pages = createWebPages();
   const connectors = createWebConnectors();
+  const snapshot = createWebSnapshot(options.fixture ?? 'sample');
   return {
     kind: 'web',
     boot,
@@ -76,7 +78,7 @@ export function createWebPlatform(options: WebPlatformOptions = {}): WebPlatform
     updater: createWebUpdater(boot.updater),
     shell: createWebShell(),
     pages,
-    search: createWebSearch(pages),
+    search: createWebSearch(pages, async () => (await snapshot.load()) ?? '{}'),
     diagnostics: createWebDiagnostics(),
     connectors,
     accounts: createWebAccounts(connectors),
@@ -89,8 +91,10 @@ export function createWebPlatform(options: WebPlatformOptions = {}): WebPlatform
     audio: createWebAudio(),
     speech: createWebSpeech(),
     interop: createWebInterop(),
-    notesSnapshot: createWebSnapshot(options.fixture ?? 'sample'),
+    notesSnapshot: snapshot,
     notesCore: null,
+    fonts: createWebFonts(),
+    notebookStyles: createWebNotebookStyles(),
     perf: createWebPerf(),
     log: log.log,
     setOs: os.set,

@@ -1,6 +1,7 @@
 // The Analyze tools on a smart table: Statistics, Regression, and Matrix. Each reads the selection (or the whole
 // table), works the answer out, and adds it below the table as a new table, with a chart where the result has one.
 import { t } from '../../../strings/t';
+import { showToast } from '../../../ui';
 import type { MessageKey } from '../../../strings/t';
 import { formatQuickMath } from '../engine';
 import type { Locale } from '../engine';
@@ -420,8 +421,12 @@ export async function runAnalysis(
   output: 'table' | 'equation' = 'table',
 ): Promise<boolean> {
   const { locale } = inst;
-  const announce = (made: Problem) =>
-    inst.host.announce((t as (key: MessageKey, params?: unknown) => string)(made.key, made.params));
+  // A tool that cannot run says why on the screen as well as aloud, so a press is never left without an answer.
+  const announce = (made: Problem) => {
+    const text = (t as (key: MessageKey, params?: unknown) => string)(made.key, made.params);
+    inst.host.announce(text);
+    showToast({ message: text });
+  };
   const block = readBlock(inst.model(), locale, inst.range());
   if (!block) {
     announce(problem('tableMath.problem.noNumbers'));
@@ -461,11 +466,8 @@ export async function runAnalysis(
     inst.host.announce(done ? t('tableMath.done.equation', { what: made.what }) : t('tableMath.problem.nothing'));
     return done;
   }
-  // Each new table lands right below the one with focus, and takes focus, so the grids stack in order.
-  let added = false;
-  for (const grid of made.grids) {
-    added = (await inst.host.insertTable(gridToBlockData(grid, inst.host.cache))) || added;
-  }
+  // The new tables land right below the one with focus, in order, and one undo takes them all away.
+  const added = await inst.host.insertTables(made.grids.map((grid) => gridToBlockData(grid, inst.host.cache)));
   inst.host.announce(added ? t('tableMath.done.added', { what: made.what }) : t('tableMath.problem.nothing'));
   return added;
 }

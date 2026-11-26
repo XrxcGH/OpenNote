@@ -340,6 +340,29 @@ fn archiving_marks_an_unknown_key_that_the_next_open_still_sees() {
 }
 
 #[test]
+fn only_the_styles_a_person_changes_get_a_new_time() {
+    let (_kit, mut store, _, _) = with_pages();
+    let v2 = |points: f64| {
+        let mut extra = serde_json::Map::new();
+        extra.insert("sizePt".to_owned(), serde_json::Value::from(points));
+        crate::model::StyleSpec {
+            extra,
+            ..Default::default()
+        }
+    };
+    // An older writer saved version 2 keys without the version 1 keys they decide (R-STY-2).
+    store.notebook.styles = [("h1".to_owned(), v2(20.0)), ("h2".to_owned(), v2(16.0))]
+        .into_iter()
+        .collect();
+    store.notebook.extra.remove(crate::model::STYLES_CHANGED);
+    let mut next = store.notebook.styles.clone();
+    next.insert("h2".to_owned(), v2(18.0));
+    store.set_notebook_styles(next).unwrap();
+    let times = store.notebook.extra[crate::model::STYLES_CHANGED].as_object().unwrap();
+    assert_eq!(times.keys().collect::<Vec<_>>(), ["h2"], "h1 was not changed");
+}
+
+#[test]
 fn a_notebook_keeps_its_named_styles() {
     let (kit, mut store, section, _) = with_pages();
     let styles = |size: f64| {
@@ -466,6 +489,41 @@ fn a_group_moves_to_another_notebook_with_its_sections() {
         .exists(&target_root.join(s1.to_string()).join(p.to_string())));
     assert!(store.tree().groups.is_empty());
     assert!(store.tree().sections.is_empty());
+}
+
+#[test]
+fn moving_a_section_away_and_back_keeps_one_original_in_trash() {
+    let kit = Kit::new();
+    let mut store = kit.open().unwrap();
+    let s1 = store.create_section("Week 1", None, None).unwrap();
+    store.create_page(s1, None, None, "Notes").unwrap();
+    let target_root = create_notebook(&kit.env, Path::new("/notes"), "Archive").unwrap();
+    let mut target = NotebookStore::open(
+        kit.env.clone(),
+        &target_root,
+        PageCache::detached(),
+        Box::new(crate::store::tree_log::MemIntentLog::new()),
+    )
+    .unwrap();
+    let to = NodePlacement {
+        parent: ParentRef::Notebook,
+        before: None,
+    };
+    let holding = |store: &NotebookStore| {
+        store
+            .trash_items()
+            .iter()
+            .filter(|item| item.contents.contains(&s1.0))
+            .count()
+    };
+    // Away, back (an undo), and away again (a redo).
+    store.move_section_to(NodeRef::Section(s1), &mut target, &to).unwrap();
+    target.move_section_to(NodeRef::Section(s1), &mut store, &to).unwrap();
+    assert_eq!(holding(&store), 0, "the live section has no stale copy in Trash");
+    assert_eq!(holding(&target), 1);
+    store.move_section_to(NodeRef::Section(s1), &mut target, &to).unwrap();
+    assert_eq!(holding(&store), 1);
+    assert_eq!(holding(&target), 0);
 }
 
 #[test]

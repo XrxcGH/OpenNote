@@ -3,6 +3,8 @@
 Describe data, run tests, plan studies, and work the numbers of epidemiology, resampling, and Bayesian updating, with the steps shown so you can follow them.
 The kit is new in Beta, so check its answers against your own work while you learn it.
 
+![The Statistics kit describing a column of data, with its summary table](../screens/kit-statistics-light.png)
+
 ## Open the kit
 
 - Open the command palette and type Statistics, or the name of a tool, such as ANOVA, power, or bootstrap. Each tool has its own command.
@@ -37,7 +39,7 @@ The kit is new in Beta, so check its answers against your own work while you lea
 ## Data
 
 - Most tools take numbers typed or pasted one list to a line. A line may start with a name and a colon, such as `Control: 4, 5, 6`.
-- Correlation and two-way ANOVA read a table: paste it, open a CSV or TSV file, or pick a table on the open page, then choose the columns.
+- Correlation and two-way ANOVA read a table: paste it, open a CSV or TSV file, or pick a table on the open page, then choose the columns. The tool says which file it read, or that a file could not be read. Choosing the empty entry in a column list empties it, and the result says which column to choose by its name.
 
 ## Repeatable random results
 

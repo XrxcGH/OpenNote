@@ -19,7 +19,8 @@ function FocusExit() {
   const focus = useStore(qolStore, (state) => state.focusMode);
   if (!focus) return null;
   return (
-    <div className={styles.focusExit}>
+    // data-page-pane: the Properties chip keeps to the left of this button instead of covering it.
+    <div className={styles.focusExit} data-page-pane="">
       <Button variant="quiet" onClick={() => setFocusMode(false)}>
         {t('qol.focus.exit')}
       </Button>

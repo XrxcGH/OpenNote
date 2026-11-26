@@ -1,5 +1,6 @@
 // The nuclear science tool's shielding and reactor calculations: narrow-beam attenuation, a point source's dose rate
 // with distance and shielding, and the four- and six-factor formulas with one-group criticality of a bare core.
+import '../text';
 import type { MessageKey } from '../../../../strings/t';
 import { N_A } from '../kit/constants';
 import { fmt, q, qIn } from '../kit/format';

@@ -1,0 +1,175 @@
+{
+  "name": "every key of data.sheet with valid values",
+  "data": {
+    "header": true,
+    "columns": [
+      {
+        "id": "01m3sbcmt0000000000000k001",
+        "width": 120
+      },
+      {
+        "id": "01m3sbcmt0000000000000k002",
+        "width": 120
+      },
+      {
+        "id": "01m3sbcmt0000000000000k003",
+        "width": 120
+      }
+    ],
+    "rows": [
+      {
+        "id": "01m3sbcmt0000000000000r001",
+        "cells": {
+          "01m3sbcmt0000000000000k001": {
+            "markdown": "A1"
+          },
+          "01m3sbcmt0000000000000k002": {
+            "markdown": "B1"
+          },
+          "01m3sbcmt0000000000000k003": {
+            "markdown": "C1"
+          }
+        }
+      },
+      {
+        "id": "01m3sbcmt0000000000000r002",
+        "cells": {
+          "01m3sbcmt0000000000000k001": {
+            "markdown": "A2"
+          },
+          "01m3sbcmt0000000000000k002": {
+            "markdown": "B2"
+          },
+          "01m3sbcmt0000000000000k003": {
+            "markdown": "C2"
+          }
+        }
+      },
+      {
+        "id": "01m3sbcmt0000000000000r003",
+        "cells": {
+          "01m3sbcmt0000000000000k001": {
+            "markdown": "A3"
+          },
+          "01m3sbcmt0000000000000k002": {
+            "markdown": "B3"
+          },
+          "01m3sbcmt0000000000000k003": {
+            "markdown": "C3"
+          }
+        }
+      }
+    ],
+    "sheet": {
+      "v": 1,
+      "styles": {
+        "0qp9wh": {
+          "fill": "#fde68a",
+          "font": {
+            "bold": true
+          }
+        },
+        "v7g19q": {
+          "fill": "indigo"
+        }
+      },
+      "table": {
+        "style": "v7g19q",
+        "look": "banded-indigo",
+        "band": {
+          "rows": true
+        },
+        "freeze": {
+          "rows": 1,
+          "cols": 0
+        },
+        "name": "Prices"
+      },
+      "cols": {
+        "01m3sbcmt0000000000000k002": {
+          "style": "0qp9wh",
+          "hidden": false,
+          "level": 1
+        }
+      },
+      "rows": {
+        "01m3sbcmt0000000000000r002": {
+          "style": "0qp9wh",
+          "height": 28,
+          "exact": true
+        }
+      },
+      "cells": {
+        "01m3sbcmt0000000000000r003": {
+          "01m3sbcmt0000000000000k003": "0qp9wh"
+        }
+      },
+      "merges": {
+        "m1": {
+          "from": ["01m3sbcmt0000000000000r001", "01m3sbcmt0000000000000k001"],
+          "to": ["01m3sbcmt0000000000000r001", "01m3sbcmt0000000000000k002"]
+        }
+      },
+      "names": {
+        "TaxRate": {
+          "ref": "0.0825",
+          "scope": "page"
+        },
+        "Prices2": {
+          "ref": "[B]"
+        }
+      },
+      "validation": {
+        "v1": {
+          "ranges": [
+            {
+              "col": "01m3sbcmt0000000000000k002"
+            }
+          ],
+          "kind": "decimal",
+          "op": "between",
+          "a": "0",
+          "b": "100",
+          "alert": "stop"
+        }
+      },
+      "conditional": {
+        "c1": {
+          "order": 1,
+          "ranges": [
+            {
+              "col": "01m3sbcmt0000000000000k003"
+            }
+          ],
+          "type": "scale",
+          "stops": [
+            {
+              "at": "min",
+              "color": "brick"
+            },
+            {
+              "at": "max",
+              "color": "fern"
+            }
+          ]
+        }
+      },
+      "notes": {
+        "01m3sbcmt0000000000000r002": {
+          "01m3sbcmt0000000000000k001": {
+            "markdown": "Check with the lab.",
+            "at": "2026-11-01T10:00:00.000Z"
+          }
+        }
+      },
+      "values": {
+        "01m3sbcmt0000000000000r002": {
+          "01m3sbcmt0000000000000k003": 42.5
+        }
+      },
+      "links": {
+        "Other page": "01m3sbcmt0000000000000p001"
+      }
+    }
+  }
+}

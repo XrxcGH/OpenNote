@@ -20,11 +20,14 @@ This folder holds the core of Phase 7: typed tables, formulas, quick math, pasti
 | `model.ts`, `edit.ts`                | Typed columns and cells, and edits that return a new, recalculated table                                    |
 | `canonical.ts`, `format.ts`          | Locale-free cell text for storage, and display text in the person's region                                  |
 | `formula/`                           | The formula dialect, the compiler, and the functions. Reading text is the shared engine's job (`core/expr`) |
+| `formula/fn/`                        | The function registry: one `FnSpec2` list per family, collected in `index.ts` (ADR 0060)                    |
+| `numfmt/`                            | Number format codes: compile, render, built-in IDs, and regional display (ADR 0057)                         |
 | `recalc.ts`                          | Dependency-ordered recalculation with cycle detection                                                       |
 | `sort.ts`, `filter.ts`, `totals.ts`  | Multi-column sort, filters, and the totals row                                                              |
 | `quickMath.ts`                       | The "2.5*9.81=" evaluator, on the same engine                                                               |
 | `paste/`                             | Delimited text, Excel, Sheets, and LibreOffice tables, and type inference                                   |
 | `chart/`                             | The chart spec builder, palette slots, and two-click defaults                                               |
+| `arrays/`, `graph/`, `worker/`       | Spill ranges, the dependency graph with cycle detection, and the recalculation worker with its client       |
 
 ## How the pieces fit
 
@@ -36,12 +39,24 @@ A view is a list of row indices: `viewIndices` filters, then sorts. Totals and c
 
 A calculated column runs one formula on every row. `[Price]*[Qty]` reads this row's values, and inside an aggregate such as `SUM([Price])` a column means every row. References by column ID (`{c1}`) and A1 references (`B2`, `A1:B5`, `B:B`) work too.
 
-- **Reading.** The tokenizer and parser are the shared expression engine's (`core/expr`), with its spreadsheet dialect. The calculator and the grapher use the same engine, so `2^3^2` and `-2^2` mean the same everywhere.
+- **Reading.** The tokenizer and parser are the shared expression engine's (`core/expr`), with its spreadsheet dialect. The calculator and the grapher use the same engine, so a table with `data.sheet.v` (every new table) follows Excel: `2^3^2` is 64 and `-2^2` is 4. An older table keeps the textbook rules (512 and -4), as do the calculator and the grapher.
 - **Forms.** Formulas are stored with a period and a comma. `convertFormula` moves text to and from a region's form, such as a comma decimal mark with semicolons between arguments.
 - **A1 addressing.** Columns are letters, and rows count data rows from 1, so the header is not row 1. A1 references address stored order, so `sortTable` changes what they mean. Sorting as a view never does.
 - **Single cells.** Typed text that starts with "=" becomes a formula in that cell. Pasted text never does.
 - **Errors.** The values are `#DIV/0!`, `#VALUE!`, `#REF!`, `#NAME?`, and `#NUM!`. A cycle shows as `#REF!` in storage and as "Circular" on screen. `setColumnFormula` refuses a formula with a syntax error or a cycle.
-- **Numbers.** Results round to 15 significant digits, so 0.1 + 0.2 is 0.3. `ROUND` rounds half away from zero, and -2^2 is -4.
+- **Numbers.** Results round to 15 significant digits, so 0.1 + 0.2 is 0.3. `ROUND` rounds half away from zero. A new table reads -2^2 as 4, as Excel does.
+
+## Function reference
+
+Each function is an `FnSpec2` in its family file under `formula/fn/`, with a signature and example in `meta`. Its description strings are in `app/src/strings/en/fn<Family>.ts`. `docs/help/table-functions.md` is generated from them. After adding a function, run `UPDATE_DOCS=1 npx vitest run --config app/vitest.config.ts --project unit app/src/features/tables/engine/formula/fn/functionReference.test.ts`. The test fails when the page is out of date.
+
+## Beyond the engine
+
+The grid features sit beside this folder, not inside it.
+
+- `../sheet/` holds the sheet model and its layers: `conditional/` (rules and what they draw), `validation/` (rules, checks, and lists), and `structure/` (rows, columns, and names).
+- `../ui/` holds the dialogs and bars: the formula bar, Insert function, the Name manager, Evaluate formula, the toolbar, the rule manager, and the validation dialog.
+- `../keys/` holds the spreadsheet key model (ADR 0063).
 
 ## Pasting
 

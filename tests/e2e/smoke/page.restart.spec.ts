@@ -3,11 +3,11 @@
 
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
 import { after, describe, it } from 'node:test';
-import { launchApp, skipReason, tools } from '../harness.ts';
+import { launchApp, skipReason, tools, removeFolder } from '../harness.ts';
 import type { AppSession, Browser } from '../harness.ts';
 
 const TEXT = 'Typed before a restart';
@@ -60,7 +60,7 @@ describe('typed text survives a restart', { skip: skipReason() }, () => {
 
   after(async () => {
     await session?.close();
-    rmSync(profileDir, { recursive: true, force: true });
+    removeFolder(profileDir);
   });
 
   it('keeps what was typed into a page', async () => {

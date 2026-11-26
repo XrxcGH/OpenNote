@@ -17,6 +17,10 @@ export interface BlockRenderContext {
   readonly cache: MarkdownCache;
   /** The compact Reading view. */
   readonly reading: boolean;
+  /** Shows a block changed here at once, before the core answers. The block layer sets it. */
+  readonly local?: (block: BlockJson) => void;
+  /** The page's blocks in reading order (the block layer sets it): a table reads the others for references between tables. */
+  readonly blocks?: () => readonly BlockJson[];
 }
 
 export interface BlockView {
@@ -25,9 +29,21 @@ export interface BlockView {
   /** The focusable editing root, if any. */
   readonly editRoot: HTMLElement | null;
   update(block: BlockJson): void;
+  /** The block's data as it is now, with typing the layer's copy has not seen. Only a view that holds typing has it. */
+  liveData?(): Record<string, unknown> | null;
   /** Page units, from the last layout. */
   measure(): PageRect;
   destroy(): void;
+}
+
+/** What a block of a kind that holds something the person made asks before it is deleted. */
+export interface DeletePrompt {
+  title: string;
+  /** Names what is lost and how to get it back. */
+  body: string;
+  confirmLabel: string;
+  /** The toast after the delete, which names it, in place of the generic count. */
+  done: string;
 }
 
 export interface BlockRendererDef {
@@ -36,6 +52,11 @@ export interface BlockRendererDef {
   priority: number;
   flag?: FlagId;
   create(block: BlockJson, ctx: BlockRenderContext): BlockView;
+  /**
+   * Asks before blocks of these types are deleted, for blocks whose loss costs more than a keystroke, such as a
+   * recording. It gets the blocks of its types among those about to go. Null deletes with no question.
+   */
+  deletePrompt?(blocks: readonly BlockJson[]): DeletePrompt | null;
 }
 
 export interface BlockLayer {

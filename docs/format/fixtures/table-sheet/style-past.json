@@ -1,0 +1,406 @@
+{
+  "name": "style values just past the edge of their range, each in its own style",
+  "rules": [
+    "R-SHT-7",
+    "R-VAL-1",
+    "R-VAL-3",
+    "R-VAL-4",
+    "R-VAL-7",
+    "R-NUM-1"
+  ],
+  "page": {
+    "formatVersion": 1,
+    "minReaderVersion": 1,
+    "kind": "opennote.page",
+    "id": "01m3sbcmt0000000000000p001",
+    "title": "Fixture",
+    "created": "2026-11-02T10:00:00.000Z",
+    "modified": "2026-11-02T10:00:00.000Z",
+    "view": {
+      "layout": "flow"
+    },
+    "blocks": [
+      {
+        "id": "01m3sbcmt0000000000000b001",
+        "type": "table",
+        "order": "a0",
+        "created": "2026-11-02T10:00:00.000Z",
+        "modified": "2026-11-02T10:00:00.000Z",
+        "data": {
+          "columns": [
+            {
+              "id": "01m3sbcmt0000000000000k001",
+              "width": 120
+            },
+            {
+              "id": "01m3sbcmt0000000000000k002",
+              "width": 120
+            },
+            {
+              "id": "01m3sbcmt0000000000000k003",
+              "width": 120
+            }
+          ],
+          "rows": [
+            {
+              "id": "01m3sbcmt0000000000000r001",
+              "cells": {
+                "01m3sbcmt0000000000000k001": {
+                  "markdown": "a"
+                },
+                "01m3sbcmt0000000000000k002": {
+                  "markdown": "b"
+                },
+                "01m3sbcmt0000000000000k003": {
+                  "markdown": "c"
+                }
+              }
+            },
+            {
+              "id": "01m3sbcmt0000000000000r002",
+              "cells": {
+                "01m3sbcmt0000000000000k001": {
+                  "markdown": "a"
+                },
+                "01m3sbcmt0000000000000k002": {
+                  "markdown": "b"
+                },
+                "01m3sbcmt0000000000000k003": {
+                  "markdown": "c"
+                }
+              }
+            },
+            {
+              "id": "01m3sbcmt0000000000000r003",
+              "cells": {
+                "01m3sbcmt0000000000000k001": {
+                  "markdown": "a"
+                },
+                "01m3sbcmt0000000000000k002": {
+                  "markdown": "b"
+                },
+                "01m3sbcmt0000000000000k003": {
+                  "markdown": "c"
+                }
+              }
+            }
+          ],
+          "sheet": {
+            "styles": {
+              "06v18p": {
+                "pad": {
+                  "t": 1584.05
+                }
+              },
+              "2gk3g9": {
+                "fill": {
+                  "gradient": {
+                    "angle": 360,
+                    "stops": [
+                      {
+                        "at": 0,
+                        "color": "ink"
+                      },
+                      {
+                        "at": 1,
+                        "color": "brick"
+                      }
+                    ]
+                  }
+                }
+              },
+              "3hfrm0": {
+                "fill": {
+                  "pattern": "dots"
+                }
+              },
+              "54nw3c": {
+                "border": {
+                  "b": {
+                    "style": "thin",
+                    "width": 0.3
+                  }
+                }
+              },
+              "5hbfgg": {
+                "pad": {
+                  "l": -0.05
+                }
+              },
+              "8ccc9f": {
+                "font": {
+                  "size": 12.25
+                }
+              },
+              "9q9a3z": {
+                "pad": {
+                  "r": 0.07
+                }
+              },
+              "asrp63": {
+                "fill": {
+                  "gradient": {
+                    "stops": [
+                      {
+                        "at": -0.0001,
+                        "color": "ink"
+                      },
+                      {
+                        "at": 1,
+                        "color": "brick"
+                      }
+                    ]
+                  }
+                }
+              },
+              "cak0hi": {
+                "fill": {
+                  "gradient": {
+                    "stops": [
+                      {
+                        "at": 0,
+                        "color": "ink"
+                      },
+                      {
+                        "at": 1.0001,
+                        "color": "brick"
+                      }
+                    ]
+                  }
+                }
+              },
+              "d16ss4": {
+                "font": {
+                  "color": "#FFFFFF"
+                }
+              },
+              "esvatj": {
+                "border": {
+                  "t": {
+                    "style": "thin",
+                    "width": 0.125
+                  }
+                }
+              },
+              "ev9tqm": {
+                "font": {
+                  "size": 1638.5
+                }
+              },
+              "f59ew5": {
+                "border": {
+                  "x": {
+                    "style": "thin"
+                  }
+                }
+              },
+              "fbks1u": {
+                "fmt": ""
+              },
+              "fkeewu": {
+                "align": {
+                  "h": "start"
+                }
+              },
+              "i646ew": {
+                "border": {
+                  "l": {
+                    "width": 1
+                  }
+                }
+              },
+              "i7ljwn": {
+                "font": {
+                  "weight": 450
+                }
+              },
+              "jz1tbl": {
+                "fill": {
+                  "gradient": {
+                    "stops": [
+                      {
+                        "at": 0,
+                        "color": "ink"
+                      }
+                    ]
+                  }
+                }
+              },
+              "ldt6pm": {
+                "align": {
+                  "rotate": -91
+                }
+              },
+              "lo4ksn": {
+                "fill": {
+                  "gradient": {
+                    "stops": [
+                      {
+                        "at": 0.0,
+                        "color": "ink"
+                      },
+                      {
+                        "at": 0.1,
+                        "color": "ink"
+                      },
+                      {
+                        "at": 0.2,
+                        "color": "ink"
+                      },
+                      {
+                        "at": 0.3,
+                        "color": "ink"
+                      },
+                      {
+                        "at": 0.4,
+                        "color": "ink"
+                      },
+                      {
+                        "at": 0.5,
+                        "color": "ink"
+                      },
+                      {
+                        "at": 0.6,
+                        "color": "ink"
+                      },
+                      {
+                        "at": 0.7,
+                        "color": "ink"
+                      },
+                      {
+                        "at": 0.8,
+                        "color": "ink"
+                      }
+                    ]
+                  }
+                }
+              },
+              "lplpm4": {
+                "font": {
+                  "size": 0.5
+                }
+              },
+              "meg44w": {
+                "fill": {
+                  "gradient": {
+                    "stops": [
+                      {
+                        "at": 0.5,
+                        "color": "ink"
+                      },
+                      {
+                        "at": 0.25,
+                        "color": "brick"
+                      }
+                    ]
+                  }
+                }
+              },
+              "nyg597": {
+                "align": {
+                  "rotate": 45.5
+                }
+              },
+              "o9fx1e": {
+                "fmt": "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+              },
+              "prhluf": {
+                "align": {
+                  "indent": 16
+                }
+              },
+              "qfnguq": {
+                "align": {
+                  "indent": -1
+                }
+              },
+              "rqeh8f": {
+                "font": {
+                  "weight": 1000
+                }
+              },
+              "u0t2bv": {
+                "align": {
+                  "rotate": 91
+                }
+              },
+              "u2u3zn": {
+                "font": {
+                  "weight": 50
+                }
+              },
+              "vykx9u": {
+                "font": {
+                  "bold": "yes"
+                }
+              },
+              "yvzqs3": {
+                "border": {
+                  "r": {
+                    "style": "thin",
+                    "width": 6.125
+                  }
+                }
+              },
+              "zupmgq": {
+                "font": {
+                  "script": "middle"
+                }
+              }
+            }
+          }
+        }
+      }
+    ],
+    "revision": {
+      "id": "01m3sbcmt0000000000000v001",
+      "parents": [],
+      "ancestors": [],
+      "savedAt": "2026-11-02T10:00:00.000Z",
+      "device": {
+        "id": "01m3sbcmt0000000000000d001",
+        "label": "Test device"
+      },
+      "writer": "Fixture"
+    }
+  },
+  "stamp": {
+    "formatVersion": 1,
+    "minReaderVersion": 1,
+    "minWriterVersion": 1
+  },
+  "problems": [
+    "blocks[0].data.sheet.styles.06v18p.pad.t: a number from 0 to 1584, step 0.05",
+    "blocks[0].data.sheet.styles.2gk3g9.fill: a color or none",
+    "blocks[0].data.sheet.styles.3hfrm0.fill: a color or none",
+    "blocks[0].data.sheet.styles.54nw3c.border.b.width: a number from 0.25 to 6, step 0.125",
+    "blocks[0].data.sheet.styles.5hbfgg.pad.l: a number from 0 to 1584, step 0.05",
+    "blocks[0].data.sheet.styles.8ccc9f.font.size: a number from 1 to 1638, step 0.5",
+    "blocks[0].data.sheet.styles.9q9a3z.pad.r: a number from 0 to 1584, step 0.05",
+    "blocks[0].data.sheet.styles.asrp63.fill: a color or none",
+    "blocks[0].data.sheet.styles.cak0hi.fill: a color or none",
+    "blocks[0].data.sheet.styles.d16ss4.font.color: a color (Appendix D.7)",
+    "blocks[0].data.sheet.styles.esvatj.border.t.width: a number from 0.25 to 6, step 0.125",
+    "blocks[0].data.sheet.styles.ev9tqm.font.size: a number from 1 to 1638, step 0.5",
+    "blocks[0].data.sheet.styles.f59ew5.border.x: not a key of this object",
+    "blocks[0].data.sheet.styles.fbks1u.fmt: a string of 1 to 255 characters",
+    "blocks[0].data.sheet.styles.fkeewu.align.h: one of general, left, center, right, fill, justify, centerAcross, distributed",
+    "blocks[0].data.sheet.styles.i646ew.border.l.style: required",
+    "blocks[0].data.sheet.styles.i7ljwn.font.weight: a number from 100 to 900, step 100",
+    "blocks[0].data.sheet.styles.jz1tbl.fill: a color or none",
+    "blocks[0].data.sheet.styles.ldt6pm.align.rotate: an integer from -90 to 90",
+    "blocks[0].data.sheet.styles.lo4ksn.fill: a color or none",
+    "blocks[0].data.sheet.styles.lplpm4.font.size: a number from 1 to 1638, step 0.5",
+    "blocks[0].data.sheet.styles.meg44w.fill: a color or none",
+    "blocks[0].data.sheet.styles.nyg597.align.rotate: an integer from -90 to 90",
+    "blocks[0].data.sheet.styles.o9fx1e.fmt: a string of 1 to 255 characters",
+    "blocks[0].data.sheet.styles.prhluf.align.indent: an integer from 0 to 15",
+    "blocks[0].data.sheet.styles.qfnguq.align.indent: an integer from 0 to 15",
+    "blocks[0].data.sheet.styles.rqeh8f.font.weight: a number from 100 to 900, step 100",
+    "blocks[0].data.sheet.styles.u0t2bv.align.rotate: an integer from -90 to 90",
+    "blocks[0].data.sheet.styles.u2u3zn.font.weight: a number from 100 to 900, step 100",
+    "blocks[0].data.sheet.styles.vykx9u.font.bold: a boolean",
+    "blocks[0].data.sheet.styles.yvzqs3.border.r.width: a number from 0.25 to 6, step 0.125",
+    "blocks[0].data.sheet.styles.zupmgq.font.script: one of super, sub, none"
+  ]
+}

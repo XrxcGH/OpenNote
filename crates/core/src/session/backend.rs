@@ -60,6 +60,11 @@ pub trait PageJournal: Send + Sync {
     fn bytes_since_save(&self) -> u64;
     /// Whether the journal can't be written.
     fn degraded(&self) -> bool;
+    /// Whether the transaction numbered `seq` is in the journal file, so an app crash no longer loses it.
+    fn written(&self, seq: u64) -> bool {
+        let _ = seq;
+        !self.degraded()
+    }
     /// The journal thread's handle, which the page store needs for `SaveBegin`.
     fn handle(&self) -> Option<&JournalHandle> {
         None
@@ -97,6 +102,10 @@ impl PageJournal for JournalHandle {
 
     fn degraded(&self) -> bool {
         JournalHandle::degraded(self)
+    }
+
+    fn written(&self, seq: u64) -> bool {
+        JournalHandle::written(self, seq)
     }
 
     fn handle(&self) -> Option<&JournalHandle> {

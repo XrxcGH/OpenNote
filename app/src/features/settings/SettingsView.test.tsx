@@ -28,10 +28,12 @@ describe('the Settings page', () => {
       'Appearance',
       'Language',
       'Editing',
+      'Tables',
       'Recording',
       'Pen and touch',
       'My handwriting',
       'On-device intelligence',
+      'Code',
       'Storage and backups',
       'Updates',
       'Privacy',
@@ -97,7 +99,34 @@ describe('the Settings page', () => {
   });
 });
 
+// checks-disable-next-line modifiability: one test group that shares its fixtures; split it when it grows again
 describe('the Settings sections and screens', () => {
+  it('keeps the scroll bar of the notices box in its own strip (W9-VA-17)', async () => {
+    await renderApp();
+    await openSettings();
+    await userEvent.click(screen.getByRole('link', { name: 'About' }));
+    const box = await screen.findByLabelText('Copyright lines and license text of the bundled fonts');
+    expect(getComputedStyle(box).scrollbarGutter).toContain('stable');
+  });
+
+  it('shows the default notes folder when none is chosen (T1-D05-7, W9-VA-16)', async () => {
+    await renderApp({ settings: { storage: { notesFolder: null } } });
+    await openSettings();
+    const path = await screen.findByText(/Documents.OpenNote/);
+    expect(path.textContent).toContain('\\');
+    expect(path.textContent).not.toContain('/');
+    expect(screen.queryByText(/No notes folder is chosen/)).toBeNull();
+  });
+
+  it('leaves with Escape when focus is on the page body (T1-D05-2)', async () => {
+    await renderApp();
+    await openSettings();
+    (document.activeElement as HTMLElement | null)?.blur();
+    expect(document.activeElement).toBe(document.body);
+    await userEvent.keyboard('{Escape}');
+    await waitFor(() => expect(getLocation().view).toBe('workspace'));
+  });
+
   it('keeps Escape for fields and popups: it never leaves from inside one', async () => {
     await renderApp();
     await openSettings();
@@ -134,6 +163,18 @@ describe('the Settings sections and screens', () => {
     await waitFor(() => expect(getSettings().keymap.preset).toBe('onenote'));
   });
 
+  it('shows the Google Docs set as chosen when the settings name it', async () => {
+    await renderApp({ settings: { keymap: { preset: 'docs' } } });
+    await openSettings();
+    await userEvent.click(screen.getByRole('link', { name: 'Shortcuts' }));
+    const group = await screen.findByRole('radiogroup', { name: 'Shortcut set' });
+    expect(
+      within(group)
+        .getByRole('radio', { name: /Google Docs/ })
+        .getAttribute('aria-checked'),
+    ).toBe('true');
+  });
+
   it('is two screens in the compact size class', async () => {
     await renderApp({ sizeClass: 'compact' });
     await pressChord('Ctrl+,');
@@ -146,5 +187,74 @@ describe('the Settings sections and screens', () => {
     await userEvent.keyboard('{Escape}');
     expect(await screen.findByRole('navigation', { name: 'Settings sections' })).toBeTruthy();
     expect(getLocation().view).toBe('settings');
+  });
+
+  it('is two screens in the medium size class too, as at 640 px or 200 percent text', async () => {
+    await renderApp({ sizeClass: 'medium' });
+    await pressChord('Ctrl+,');
+    await expectFocus(await screen.findByRole('heading', { level: 1, name: 'Settings' }));
+    expect(screen.queryByRole('heading', { level: 1, name: 'General' })).toBeNull();
+  });
+
+  it('moves between the section links with the arrow keys, Home and End', async () => {
+    await renderApp();
+    await openSettings();
+    const nav = screen.getByRole('navigation', { name: 'Settings sections' });
+    const links = within(nav).getAllByRole('link');
+    links[0].focus();
+    await userEvent.keyboard('{ArrowDown}');
+    expect(document.activeElement).toBe(links[1]);
+    await userEvent.keyboard('{End}');
+    expect(document.activeElement).toBe(links.at(-1));
+    await userEvent.keyboard('{ArrowUp}');
+    expect(document.activeElement).toBe(links.at(-2));
+    await userEvent.keyboard('{Home}');
+    expect(document.activeElement).toBe(links[0]);
+  });
+
+  it('fills a wide window with columns of settings, the heading across them all', async () => {
+    await setViewport(2560, 1200);
+    await renderApp({ sizeClass: 'expanded' });
+    const heading = await openSettings();
+    const main = heading.parentElement!;
+    await waitFor(() => expect(main.children.length).toBeGreaterThan(3));
+    const lefts = new Set([...main.children].slice(1).map((child) => Math.round(child.getBoundingClientRect().left)));
+    expect(lefts.size).toBeGreaterThan(1);
+    const used = Math.max(...[...main.children].map((child) => child.getBoundingClientRect().right));
+    expect(used - main.getBoundingClientRect().left).toBeGreaterThan(main.clientWidth / 2);
+  });
+});
+
+describe('the Settings page in a narrow window', () => {
+  it('keeps every section inside a 300 px window with no sideways scrolling (walk bug A2-A14-1, not reproduced)', async () => {
+    await setViewport(300, 800);
+    await renderApp({ sizeClass: 'compact' });
+    await pressChord('Ctrl+,');
+    await screen.findByRole('heading', { level: 1, name: 'Settings' });
+    const names = within(screen.getByRole('navigation', { name: 'Settings sections' }))
+      .getAllByRole('link')
+      .map((link) => link.textContent ?? '');
+    const wide: string[] = [];
+    for (const name of names) {
+      within(screen.getByRole('navigation', { name: 'Settings sections' }))
+        .getByRole('link', { name })
+        .click();
+      await screen.findByRole('heading', { level: 1, name });
+      await new Promise((resolve) => setTimeout(resolve, 150));
+      const main = screen.getByRole('main');
+      const room = document.documentElement.clientWidth;
+      const culprit = [...main.querySelectorAll<HTMLElement>('*')].find((element) => {
+        const box = element.getBoundingClientRect();
+        return box.width > 0 && box.right > room + 1;
+      });
+      if (culprit || main.scrollWidth > main.clientWidth) {
+        wide.push(
+          `${name}: ${culprit?.tagName}.${String(culprit?.className).slice(0, 40)} ${main.scrollWidth} ${main.clientWidth}`,
+        );
+      }
+      screen.getByRole('button', { name: 'Back to settings' }).click();
+      await screen.findByRole('navigation', { name: 'Settings sections' });
+    }
+    expect(wide).toEqual([]);
   });
 });

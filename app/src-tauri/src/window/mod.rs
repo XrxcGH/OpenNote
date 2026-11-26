@@ -16,6 +16,7 @@ pub mod snap_overlay;
 #[cfg(windows)]
 pub mod subclass;
 pub mod system_menu;
+pub mod tao_window;
 #[cfg(all(test, windows))]
 mod test_windows;
 pub mod webview;
@@ -85,7 +86,53 @@ pub fn is_app_url(url: &tauri::Url) -> bool {
 /// `shell.customFrame` flag, so the window keeps the native frame unless the flag is on; the page's caption layout
 /// report switches the frame either way ([`custom_frame`]). A window created without the native frame gets it back
 /// when the page reports no caption buttons in time or its process fails.
+///
+/// A failure is logged here, so the log says why and not only where (full walk A-A01-6).
 pub fn create(app: &AppHandle) -> tauri::Result<WebviewWindow> {
+    build_main(app).inspect_err(|error| {
+        ::log::error!("The main window could not be made, so OpenNote could not start: {error}");
+    })
+}
+
+/// The exit code of a start that could not make its main window.
+pub const NO_WINDOW_EXIT: i32 = 1;
+
+/// What the person reads when the main window can't be made. The window's browser part (WebView2) is what usually
+/// refuses, often while the last OpenNote is still closing and holds its folder.
+pub const NO_WINDOW_MESSAGE: &str =
+    "OpenNote couldn't open its window, so it closed. Wait a moment and start it again. If this keeps happening, restart the computer.";
+
+/// Makes the main window at start-up. Returns `false` when it can't be made: the person is told why, and the app
+/// is asked to close with [`NO_WINDOW_EXIT`].
+///
+/// Setup must not return the error: Tauri panics on a setup error ("Failed to setup app", app.rs:1444), which the
+/// full walk logged as a panic during a launch (A-A01-6). A missing window is a start that failed, not a crash.
+pub fn create_at_start(app: &AppHandle) -> bool {
+    open_or_close(
+        || create(app),
+        |reason| {
+            webview::show_no_window_message(&reason);
+            app.exit(NO_WINDOW_EXIT);
+        },
+    )
+    .is_some()
+}
+
+/// Runs `make`; on an error hands its text to `close` instead of passing the error on.
+fn open_or_close<T, E: std::fmt::Display>(
+    make: impl FnOnce() -> Result<T, E>,
+    close: impl FnOnce(String),
+) -> Option<T> {
+    match make() {
+        Ok(made) => Some(made),
+        Err(error) => {
+            close(error.to_string());
+            None
+        }
+    }
+}
+
+fn build_main(app: &AppHandle) -> tauri::Result<WebviewWindow> {
     let windows = &app.config().app.windows;
     let config = windows
         .iter()
@@ -118,13 +165,7 @@ pub fn create(app: &AppHandle) -> tauri::Result<WebviewWindow> {
         .disable_drag_drop_handler()
         .on_navigation(is_app_url)
         .zoom_hotkeys_enabled(false);
-    #[cfg(all(windows, feature = "test-endpoints"))]
-    let builder =
-        match webview::driver_browser_args(std::env::var("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS").ok().as_deref()) {
-            Some(args) => builder.additional_browser_args(&args),
-            None => builder,
-        };
-    let window = builder.build()?;
+    let window = webview::with_driver_args(builder).build()?;
     perf::mark("windowCreated", None);
     webview::configure(&window);
     let lost = window.clone();
@@ -291,6 +332,30 @@ pub fn window_show_system_menu(window: WebviewWindow, at: Option<Point>) -> IpcR
 #[tauri::command]
 pub fn window_set_frame_theme(window: WebviewWindow, theme: ThemeName) -> IpcResult<()> {
     frame::set_theme(&window, theme)
+}
+
+#[cfg(test)]
+mod start_tests {
+    use super::open_or_close;
+
+    #[test]
+    fn a_window_that_cannot_be_made_closes_the_app_instead_of_failing_setup() {
+        let mut told = None;
+        let made: Option<u8> = open_or_close(
+            || Err::<u8, _>("WebView2 error 0x8007139F"),
+            |reason| told = Some(reason),
+        );
+        assert_eq!(made, None);
+        assert_eq!(told.as_deref(), Some("WebView2 error 0x8007139F"));
+    }
+
+    #[test]
+    fn a_window_that_is_made_is_kept() {
+        let mut closed = false;
+        let made = open_or_close(|| Ok::<u8, String>(7), |_| closed = true);
+        assert_eq!(made, Some(7));
+        assert!(!closed);
+    }
 }
 
 #[cfg(test)]

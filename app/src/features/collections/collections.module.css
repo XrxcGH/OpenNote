@@ -143,6 +143,8 @@
   .board {
     display: flex;
     gap: var(--space-3);
+    /* A scroll box in the dialog's grid could shrink to nothing in a short window (Beta 8 walk B2-B13-3). */
+    min-block-size: min(18rem, 55vh);
     max-block-size: 55vh;
     overflow: auto;
   }

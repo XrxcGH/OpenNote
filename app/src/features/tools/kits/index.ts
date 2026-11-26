@@ -22,6 +22,7 @@ export * from './ui/diagram';
 export * from './ui/palette';
 export { el, px, svgDocument } from './ui/svg';
 export * from './ui/insert';
+export * from './panelForm';
 export { ChoiceField, QuantityField, SystemToggle } from './ui/fields';
 export type { ChoiceFieldProps, QuantityFieldProps } from './ui/fields';
 export { Assumptions, MathLine, Problem, ResultTable, SourceNote, StepsView } from './ui/output';

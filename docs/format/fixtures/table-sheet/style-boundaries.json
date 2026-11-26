@@ -1,0 +1,346 @@
+{
+  "name": "every numeric style value at the edge of its range",
+  "rules": [
+    "R-SHT-7",
+    "R-SHT-6",
+    "R-STAMP-6",
+    "R-VAL-1",
+    "R-VAL-3",
+    "R-VAL-4",
+    "R-VAL-7",
+    "R-NUM-1"
+  ],
+  "page": {
+    "formatVersion": 1,
+    "minReaderVersion": 1,
+    "kind": "opennote.page",
+    "id": "01m3sbcmt0000000000000p001",
+    "title": "Fixture",
+    "created": "2026-11-02T10:00:00.000Z",
+    "modified": "2026-11-02T10:00:00.000Z",
+    "view": {
+      "layout": "flow"
+    },
+    "blocks": [
+      {
+        "id": "01m3sbcmt0000000000000b001",
+        "type": "table",
+        "order": "a0",
+        "created": "2026-11-02T10:00:00.000Z",
+        "modified": "2026-11-02T10:00:00.000Z",
+        "data": {
+          "columns": [
+            {
+              "id": "01m3sbcmt0000000000000k001",
+              "width": 120
+            },
+            {
+              "id": "01m3sbcmt0000000000000k002",
+              "width": 120
+            },
+            {
+              "id": "01m3sbcmt0000000000000k003",
+              "width": 120
+            }
+          ],
+          "rows": [
+            {
+              "id": "01m3sbcmt0000000000000r001",
+              "cells": {
+                "01m3sbcmt0000000000000k001": {
+                  "markdown": "a"
+                },
+                "01m3sbcmt0000000000000k002": {
+                  "markdown": "b"
+                },
+                "01m3sbcmt0000000000000k003": {
+                  "markdown": "c"
+                }
+              }
+            },
+            {
+              "id": "01m3sbcmt0000000000000r002",
+              "cells": {
+                "01m3sbcmt0000000000000k001": {
+                  "markdown": "d"
+                },
+                "01m3sbcmt0000000000000k002": {
+                  "markdown": "e"
+                },
+                "01m3sbcmt0000000000000k003": {
+                  "markdown": "f"
+                }
+              }
+            },
+            {
+              "id": "01m3sbcmt0000000000000r003",
+              "cells": {
+                "01m3sbcmt0000000000000k001": {
+                  "markdown": "g"
+                },
+                "01m3sbcmt0000000000000k002": {
+                  "markdown": "h"
+                },
+                "01m3sbcmt0000000000000k003": {
+                  "markdown": "i"
+                }
+              }
+            },
+            {
+              "id": "01m3sbcmt0000000000000r004",
+              "cells": {
+                "01m3sbcmt0000000000000k001": {
+                  "markdown": "j"
+                },
+                "01m3sbcmt0000000000000k002": {
+                  "markdown": "k"
+                },
+                "01m3sbcmt0000000000000k003": {
+                  "markdown": "l"
+                }
+              }
+            }
+          ],
+          "sheet": {
+            "cells": {
+              "01m3sbcmt0000000000000r001": {
+                "01m3sbcmt0000000000000k001": "pnema4",
+                "01m3sbcmt0000000000000k002": "npf9oa",
+                "01m3sbcmt0000000000000k003": "417r9v"
+              },
+              "01m3sbcmt0000000000000r002": {
+                "01m3sbcmt0000000000000k001": "2k9ggz",
+                "01m3sbcmt0000000000000k002": "rv440o",
+                "01m3sbcmt0000000000000k003": "mqrxht"
+              },
+              "01m3sbcmt0000000000000r003": {
+                "01m3sbcmt0000000000000k001": "4jqrb9",
+                "01m3sbcmt0000000000000k002": "5y1lan",
+                "01m3sbcmt0000000000000k003": "z35qti"
+              },
+              "01m3sbcmt0000000000000r004": {
+                "01m3sbcmt0000000000000k001": "qduzxb",
+                "01m3sbcmt0000000000000k002": "8j6j79",
+                "01m3sbcmt0000000000000k003": "utaa8f"
+              }
+            },
+            "styles": {
+              "2k9ggz": {
+                "font": {
+                  "size": 1637.5,
+                  "weight": 800
+                }
+              },
+              "417r9v": {
+                "font": {
+                  "size": 1.5,
+                  "weight": 400
+                }
+              },
+              "4jqrb9": {
+                "align": {
+                  "dir": "ltr",
+                  "h": "general",
+                  "indent": 0,
+                  "rotate": 90,
+                  "shrink": false,
+                  "v": "top",
+                  "wrap": "overflow"
+                },
+                "pad": {
+                  "b": 1583.95,
+                  "l": 4,
+                  "r": 0.05,
+                  "t": 0
+                },
+                "protect": {
+                  "hideFormula": false,
+                  "locked": true
+                }
+              },
+              "5y1lan": {
+                "align": {
+                  "indent": 1,
+                  "rotate": "stacked"
+                },
+                "pad": {
+                  "l": 0.1
+                }
+              },
+              "8j6j79": {
+                "fill": {
+                  "gradient": {
+                    "stops": [
+                      {
+                        "at": 0.25,
+                        "color": "mint"
+                      },
+                      {
+                        "at": 0.75,
+                        "color": "rose"
+                      }
+                    ]
+                  }
+                }
+              },
+              "mqrxht": {
+                "align": {
+                  "dir": "rtl",
+                  "h": "centerAcross",
+                  "indent": 15,
+                  "rotate": -90,
+                  "shrink": true,
+                  "v": "distributed",
+                  "wrap": "clip"
+                },
+                "pad": {
+                  "b": 1584,
+                  "l": 1584,
+                  "r": 1584,
+                  "t": 1584
+                },
+                "protect": {
+                  "hideFormula": true,
+                  "locked": false
+                }
+              },
+              "npf9oa": {
+                "font": {
+                  "bold": true,
+                  "color": "#ffffff",
+                  "family": "Georgia",
+                  "italic": false,
+                  "script": "super",
+                  "size": 1638,
+                  "strike": "none",
+                  "underline": "wavyDouble",
+                  "weight": 900
+                }
+              },
+              "pnema4": {
+                "font": {
+                  "bold": false,
+                  "color": "theme:accent6",
+                  "family": "+mono",
+                  "italic": true,
+                  "script": "sub",
+                  "size": 1,
+                  "strike": "double",
+                  "underline": "singleAccounting",
+                  "weight": 100
+                }
+              },
+              "qduzxb": {
+                "fill": {
+                  "gradient": {
+                    "angle": 0,
+                    "stops": [
+                      {
+                        "at": 0,
+                        "color": "#000000"
+                      },
+                      {
+                        "at": 1,
+                        "color": "#ffffff"
+                      }
+                    ]
+                  }
+                }
+              },
+              "rv440o": {
+                "border": {
+                  "b": {
+                    "style": "thick",
+                    "width": 0.375
+                  },
+                  "dd": {
+                    "color": "theme:accent1",
+                    "style": "dashed",
+                    "width": 3
+                  },
+                  "du": {
+                    "color": "brick",
+                    "style": "dotted",
+                    "width": 0.375
+                  },
+                  "l": {
+                    "style": "hair",
+                    "width": 5.875
+                  },
+                  "r": {
+                    "style": "medium",
+                    "width": 6
+                  },
+                  "t": {
+                    "style": "thin",
+                    "width": 0.25
+                  }
+                }
+              },
+              "utaa8f": {
+                "fmt": "0.00;[Red]-0.00"
+              },
+              "z35qti": {
+                "fill": {
+                  "gradient": {
+                    "angle": 359,
+                    "stops": [
+                      {
+                        "at": 0,
+                        "color": "ink"
+                      },
+                      {
+                        "at": 0.0001,
+                        "color": "brick"
+                      },
+                      {
+                        "at": 0.0002,
+                        "color": "fern"
+                      },
+                      {
+                        "at": 0.25,
+                        "color": "#ffffff"
+                      },
+                      {
+                        "at": 0.5,
+                        "color": "plum"
+                      },
+                      {
+                        "at": 0.9998,
+                        "color": "amber"
+                      },
+                      {
+                        "at": 0.9999,
+                        "color": "walnut"
+                      },
+                      {
+                        "at": 1,
+                        "color": "honey"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    ],
+    "revision": {
+      "id": "01m3sbcmt0000000000000v001",
+      "parents": [],
+      "ancestors": [],
+      "savedAt": "2026-11-02T10:00:00.000Z",
+      "device": {
+        "id": "01m3sbcmt0000000000000d001",
+        "label": "Test device"
+      },
+      "writer": "Fixture"
+    }
+  },
+  "stamp": {
+    "formatVersion": 1,
+    "minReaderVersion": 1,
+    "minWriterVersion": 1
+  }
+}

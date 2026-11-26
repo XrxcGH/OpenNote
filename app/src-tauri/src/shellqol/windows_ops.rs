@@ -53,21 +53,25 @@ fn build(
         kind,
         page.as_ref().map(|(id, _)| *id),
     );
-    WebviewWindowBuilder::new(app, label, WebviewUrl::App("index.html".into()))
-        .title(title)
-        .inner_size(size.0, size.1)
-        .min_inner_size(320.0, 240.0)
-        .always_on_top(on_top)
-        .center()
-        .background_color(Color(r, g, b, 255))
-        .initialization_script(text)
-        .data_directory(paths.webview.clone())
-        .disable_drag_drop_handler()
-        .on_navigation(crate::window::is_app_url)
-        .zoom_hotkeys_enabled(false)
-        .build()
-        .map(|window| crate::lifecycle::watch_window(&window))
-        .map_err(|error| IpcError::new(codes::INTERNAL, error.to_string()))
+    crate::window::webview::with_driver_args(WebviewWindowBuilder::new(
+        app,
+        label,
+        WebviewUrl::App("index.html".into()),
+    ))
+    .title(title)
+    .inner_size(size.0, size.1)
+    .min_inner_size(320.0, 240.0)
+    .always_on_top(on_top)
+    .center()
+    .background_color(Color(r, g, b, 255))
+    .initialization_script(text)
+    .data_directory(paths.webview.clone())
+    .disable_drag_drop_handler()
+    .on_navigation(crate::window::is_app_url)
+    .zoom_hotkeys_enabled(false)
+    .build()
+    .map(|window| crate::lifecycle::watch_window(&window))
+    .map_err(|error| IpcError::new(codes::INTERNAL, error.to_string()))
 }
 
 /// Opens a page in a window of its own, or brings its window forward.

@@ -17,6 +17,14 @@ function run(session = newSession(), ...inputs: string[]) {
   return inputs.reduce((s, input) => submit(s, input).session, session);
 }
 
+describe('the angle unit of a session', () => {
+  it('keeps gradians when it is saved and read back, and falls back to degrees for anything else', () => {
+    const saved = JSON.parse(JSON.stringify(setAngleMode(newSession(), 'grad'))) as unknown;
+    expect(restoreSession(saved).angle).toBe('grad');
+    expect(restoreSession({ ...(saved as object), angle: 'turns' }).angle).toBe('deg');
+  });
+});
+
 describe('the calculator session', () => {
   it('keeps answers in a history and reads the last one as ans', () => {
     const session = run(newSession(), '2 + 3', 'ans * 4');

@@ -11,8 +11,10 @@
     inset-inline-start: var(--point-x, auto);
     box-sizing: border-box;
     min-inline-size: var(--size-menu-min-width);
-    max-inline-size: calc(100vw - 2 * var(--space-3));
-    max-block-size: calc(100vh - 2 * var(--space-3));
+    /* The window less a margin, in this box's own pixels: an overlay inside a zoomed region (interface size) shrinks
+       its limit by the zoom, set as --fit-zoom by fitToZoom, so it never passes the window's edge. */
+    max-inline-size: calc((100vw - 2 * var(--space-3)) / var(--fit-zoom, 1));
+    max-block-size: calc((100vh - 2 * var(--space-3)) / var(--fit-zoom, 1));
     margin: 0;
     padding: var(--space-2);
     overflow-y: auto;
@@ -75,6 +77,8 @@
 
   .item {
     display: flex;
+    /* In a menu squeezed against the window edge, the shortcut drops under the label and does not crush it. */
+    flex-wrap: wrap;
     align-items: center;
     gap: var(--space-3);
     min-block-size: var(--target-size);
@@ -113,13 +117,18 @@
     block-size: var(--size-icon-sm);
   }
 
+  /* A label stays on one line while the menu fits the window, and wraps once it reaches the cap (full walk VA-4). */
   .label {
-    flex: 1;
-    white-space: nowrap;
+    flex: 1 1 8em;
+    min-inline-size: 0;
+    overflow-wrap: anywhere;
   }
 
   .shortcut {
-    margin-inline-start: var(--space-7);
+    flex: none;
+    margin-inline-start: auto;
+    padding-inline-start: var(--space-7);
+    white-space: nowrap;
     color: var(--color-text-secondary);
     font-size: var(--type-small-size);
     line-height: var(--type-small-line);

@@ -9,7 +9,7 @@ import { currentNotesService, isNotesError, NOT_KEPT } from '../../services/note
 import { t } from '../../strings/t';
 import { treeCommands } from './commands';
 import { registerQolMenus } from './qolMenus';
-import { SaveStatus } from './SaveStatus';
+import { markSaveStatus, SaveStatus } from './SaveStatus';
 
 for (const def of treeCommands) commands.register(def);
 
@@ -102,6 +102,7 @@ titleBarItems.register({
   compact: 'hide',
   Component: SaveStatus,
 });
+if (typeof document !== 'undefined') markSaveStatus(document.documentElement);
 
 /** How long "Close anyway" lets the next close through. */
 export const CLOSE_ANYWAY_MS = 10_000;

@@ -194,9 +194,17 @@ export function fourierSeries(source: string, kind: FourierKind, L: number, term
   const scale = kind === 'full' ? 1 / L : 2 / L;
   const cosCoefficient = (n: number) => scale * integratePieces(pieces, (x, f) => f * Math.cos(k(n) * x), lo, L);
   const sinCoefficient = (n: number) => scale * integratePieces(pieces, (x, f) => f * Math.sin(k(n) * x), lo, L);
-  const a0 = cosCoefficient(0);
-  const a = kind === 'sine' ? [] : Array.from({ length: terms }, (_, i) => cosCoefficient(i + 1));
-  const b = kind === 'cosine' ? [] : Array.from({ length: terms }, (_, i) => sinCoefficient(i + 1));
+  // The sine series has no constant term, so its a0 is not the integral of f but 0.
+  const rawA0 = kind === 'sine' ? 0 : cosCoefficient(0);
+  const rawA = kind === 'sine' ? [] : Array.from({ length: terms }, (_, i) => cosCoefficient(i + 1));
+  const rawB = kind === 'cosine' ? [] : Array.from({ length: terms }, (_, i) => sinCoefficient(i + 1));
+  // Quadrature leaves 1e-17 noise where a coefficient is exactly 0 (a(n) of an odd function): drop what is under
+  // round-off next to the largest coefficient, so the table shows 0 and not 9.1e-18.
+  const biggest = Math.max(Math.abs(rawA0), ...rawA.map(Math.abs), ...rawB.map(Math.abs));
+  const clean = (c: number) => (Math.abs(c) <= 1e-12 * biggest ? 0 : c);
+  const a0 = clean(rawA0);
+  const a = rawA.map(clean);
+  const b = rawB.map(clean);
   const partial = (x: number, N = terms) => {
     let sum = kind === 'sine' ? 0 : a0 / 2;
     for (let n = 1; n <= Math.min(N, terms); n++) {
@@ -251,6 +259,15 @@ export function fourierSeries(source: string, kind: FourierKind, L: number, term
     steps,
     samples: { f, sum },
   };
+}
+
+/**
+ * The first rows of the coefficient table: n, a(n), b(n). A half-range series has only one of the two kinds of term,
+ * and the other column is 0 (the table used to show only its header row for a sine series).
+ */
+export function coefficientRows(out: Pick<FourierResult, 'a' | 'b'>, limit = 8): string[][] {
+  const count = Math.min(Math.max(out.a.length, out.b.length), limit);
+  return Array.from({ length: count }, (_, i) => [String(i + 1), fmt(out.a[i] ?? 0, 6), fmt(out.b[i] ?? 0, 6)]);
 }
 
 // ---------------------------------------------------------------------------------------------------------------

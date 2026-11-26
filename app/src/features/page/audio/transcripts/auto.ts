@@ -12,7 +12,7 @@ import { createStore } from '../../../../state/store';
 import { t } from '../../../../strings/t';
 import { announce, showToast } from '../../../../ui';
 import { currentEngine } from './engine';
-import { fromSegments } from './model';
+import { fromSegments, withoutNonSpeech } from './model';
 import type { TranscriptData } from './model';
 import { TRANSCRIPT_TYPE } from './moment';
 import { fallbackOf, transcriptsOf } from './store';
@@ -155,7 +155,7 @@ async function transcribe(using: AutoDeps, saved: SavedRecording, signal: AbortS
     interactive: false,
   });
   if (signal.aborted) return;
-  const data = fromSegments(saved.entry.id, result.segments, 'engine', result.language);
+  const data = fromSegments(saved.entry.id, withoutNonSpeech(result.segments), 'engine', result.language);
   if (data.lines.length === 0) return;
   const summary = await using.summarize(data);
   const full = summary ? { ...data, summary } : data;

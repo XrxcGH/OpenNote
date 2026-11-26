@@ -17,10 +17,20 @@
 
 import { spawn, spawnSync } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
-import { cpSync, existsSync, mkdirSync, mkdtempSync, openSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  appendFileSync,
+  cpSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  openSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { createServer, connect } from 'node:net';
 import { EOL, homedir, tmpdir } from 'node:os';
-import { dirname, join, resolve, sep } from 'node:path';
+import { basename, dirname, join, resolve, sep } from 'node:path';
 import { remote } from 'webdriverio';
 
 export type Browser = Awaited<ReturnType<typeof remote>>;
@@ -134,7 +144,7 @@ function keyboardOnly(browser: Browser): void {
   });
 }
 
-const LOGS = join(ROOT, 'tests', 'e2e', 'logs');
+export const LOGS = join(ROOT, 'tests', 'e2e', 'logs');
 
 /**
  * Makes a profile folder look like one where first-run setup is finished. A launch with no settings.json is the
@@ -149,6 +159,19 @@ export function seedProfile(dir: string, kind: ProfileKind = 'ready'): void {
   for (const file of [settings, state]) mkdirSync(dirname(file), { recursive: true });
   if (!existsSync(settings)) writeFileSync(settings, JSON.stringify({ schemaVersion: 1, minWriterSchema: 1 }));
   if (!existsSync(state)) writeFileSync(state, JSON.stringify({ stateVersion: 1, setup: { status: 'done' } }));
+}
+
+/**
+ * Removes a folder the app may still hold open for a moment after it was killed. Windows answers EBUSY until the
+ * process is really gone, so this tries again for a few seconds. Then it gives up quietly. A temp folder is no
+ * reason to fail a spec, or to hide the error the spec failed with.
+ */
+export function removeFolder(folder: string): void {
+  try {
+    rmSync(folder, { recursive: true, force: true, maxRetries: 25, retryDelay: 200 });
+  } catch {
+    // Left in the temp folder.
+  }
 }
 
 /** Ends tauri-driver along with the msedgedriver and app processes under it, which a plain kill leaves running. */
@@ -175,6 +198,17 @@ async function startDriver(
   const driver = spawn(tauriDriver, args, { env, stdio: ['ignore', log, log] });
   // A driver that outlived its spec would keep this process, and so the whole test run, from ever ending.
   driver.unref();
+  // A driver that dies on its own is what resets the spec's connection (ECONNRESET), so say how it ended.
+  driver.on('exit', (code, signal) => {
+    try {
+      appendFileSync(
+        join(LOGS, `tauri-driver-${stamp}.log`),
+        `${EOL}tauri-driver exited: code ${code}, signal ${signal}${EOL}`,
+      );
+    } catch {
+      // Logging must not fail a spec.
+    }
+  });
   return { driver, port };
 }
 
@@ -207,7 +241,7 @@ function listFiles(folder: string, depth: number): string[] {
  * Keeps the test profile in the folder CI keeps, without the webview folder's browser cache: the app's logs, its
  * perf log and settings, and a listing of every file. Where the webview folder is empty, WebView2 never started.
  */
-function keepAppLogs(profileDir: string, stamp: number): void {
+export function keepAppLogs(profileDir: string, stamp: number): void {
   try {
     const kept = join(LOGS, `app-${stamp}`);
     mkdirSync(kept, { recursive: true });
@@ -218,6 +252,48 @@ function keepAppLogs(profileDir: string, stamp: number): void {
   }
 }
 
+let windowsKept = 0;
+/** A spec file that starts the app dozens of times, such as the crash spec, keeps only the first few. */
+const KEEP_LIMIT = 6;
+
+/**
+ * What the window showed when the spec ended: a screenshot and the page's text, in the folder CI keeps. A spec that
+ * timed out waiting for an element says only what it waited for, and this says what was there instead. It runs when
+ * OPENNOTE_E2E_DIAG is set, which the nightly workflow does, and gives up after a few seconds on a window that is gone.
+ */
+async function keepWindow(browser: Browser, stamp: number): Promise<void> {
+  if (windowsKept >= KEEP_LIMIT) return;
+  windowsKept += 1;
+  const name = `${basename(process.argv[1] ?? 'spec', '.ts')}-${stamp}`;
+  const capture = async () => {
+    mkdirSync(LOGS, { recursive: true });
+    await browser.saveScreenshot(join(LOGS, `${name}.png`));
+    const text = await browser.execute(() => {
+      const element = document.activeElement as HTMLElement | null;
+      const label = element?.getAttribute('aria-label');
+      const focus = element
+        ? `${element.tagName.toLowerCase()} label=${label} block=${element.dataset.blockId}`
+        : 'none';
+      const notices = [...document.querySelectorAll('[role="status"], [role="alert"], [aria-live]')].map(
+        (node) => node.textContent,
+      );
+      return `FOCUS: ${focus}
+NOTICES: ${JSON.stringify(notices)}
+${document.body.innerText.slice(0, 6000)}`;
+    });
+    writeFileSync(join(LOGS, `${name}.txt`), String(text));
+  };
+  let timer: NodeJS.Timeout | undefined;
+  const gaveUp = new Promise<void>((done) => (timer = setTimeout(done, 8_000)));
+  try {
+    await Promise.race([capture(), gaveUp]);
+  } catch {
+    // The window may already be gone.
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export async function launchApp(options: LaunchOptions = {}): Promise<AppSession> {
   const found = tools();
   const exe = options.exe ?? found.exe;
@@ -225,7 +301,7 @@ export async function launchApp(options: LaunchOptions = {}): Promise<AppSession
   const profileDir = options.profileDir ?? mkdtempSync(join(tmpdir(), 'opennote-e2e-'));
   seedProfile(profileDir, options.profile);
   const removeProfile = () => {
-    if (!options.profileDir) rmSync(profileDir, { recursive: true, force: true });
+    if (!options.profileDir) removeFolder(profileDir);
   };
   const stamp = Date.now();
   // The core keeps the notes, so a ready profile asks the test build for the sample library in its notes folder.
@@ -247,8 +323,12 @@ export async function launchApp(options: LaunchOptions = {}): Promise<AppSession
     browser,
     profileDir,
     async close() {
+      const diedEarly = driver.exitCode !== null;
+      const diagnose = Boolean(process.env.OPENNOTE_E2E_DIAG);
+      if (diagnose && !diedEarly) await keepWindow(browser, stamp);
       await browser.deleteSession().catch(() => {});
       stopDriver(driver);
+      if (diedEarly || (diagnose && windowsKept <= KEEP_LIMIT)) keepAppLogs(profileDir, stamp);
       removeProfile();
     },
   };

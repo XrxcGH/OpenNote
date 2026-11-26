@@ -52,6 +52,7 @@ describe('the citation library for a LaTeX export', () => {
     ]);
     expect(options.citations[0].entry).toMatch(/^@book\{Smith2020,\n {2}author = \{Smith, A\.\}/);
     expect(options.engine).toBe('unicode');
+    expect(options.utcOffsetMinutes).toBe(-new Date().getTimezoneOffset());
   });
 });
 

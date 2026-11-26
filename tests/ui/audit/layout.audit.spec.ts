@@ -6,7 +6,16 @@
 import { test } from '../fixtures';
 import { Auditor } from './auditor';
 import { SWEEP_CELLS, activeCells, cellName } from './cells';
-import { boot, sweepCommands, walkBlocks, walkSettings, walkSetup, walkTools, walkWorkspace } from './walk';
+import {
+  boot,
+  sweepCommands,
+  walkBlocks,
+  walkCodeStudio,
+  walkSettings,
+  walkSetup,
+  walkTools,
+  walkWorkspace,
+} from './walk';
 
 test.describe.configure({ timeout: 900_000 });
 test.use({ actionTimeout: 15_000 });
@@ -39,6 +48,8 @@ for (const cell of activeCells()) {
     await walkTools(audit, page);
     await boot(page);
     await walkBlocks(audit, page);
+    await boot(page);
+    await walkCodeStudio(audit, page);
     if (SWEEP_CELLS.has(cellName(cell))) {
       await boot(page);
       await sweepCommands(audit, page);

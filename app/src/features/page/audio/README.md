@@ -18,7 +18,8 @@ This folder is the screens for [audio recording](../../../../../crates/media/REA
 - **Indicator.** A red dot and the recorded time sit in the title bar while a recording runs, on every page. It opens the level meters, the warnings, and Pause, Flag, and Stop.
 - **Recording block.** While recording, the block is the recording bar. After Stop, it is the player: play, 10-second skips, a slider, speed from 0.5x to 3x, skipping silence, and flags.
 - **Time stamps.** Text typed while recording is marked with its time. Alt+click on a word, or Alt+Shift+C with the caret in it, plays from that moment. While a recording plays, the blocks written at that moment get a tint, and the words too when their editor is open.
-- **Trim.** The More menu trims the silence at both ends, or removes a marked part after asking.
+- **Trim.** The More menu trims the silence at both ends, saying how long the recording becomes and asking first, or removes a marked part after asking. Neither can be undone, since the cut audio is deleted.
+- **Delete a recording.** Deleting its block (Backspace on the selected block, or Delete in its menu) asks first and names the recording and its length. The files stay, so Undo in the message brings it back (`deletePrompt.ts`).
 - **Tap a word.** A pen or a finger tap on a stamped word plays from it: one tap while a recording is open for listening, two taps at other times, so a single tap still places the caret.
 - **Split.** The More menu splits a recording at the listening position. The first half keeps the block, and the second becomes a new recording after it. Flags, typed-text marks, and the transcript go to the half they belong to.
 - **Remove a part.** As before, and now the words spoken in it leave the transcript and the page's saved versions are deleted, so it can't be brought back.

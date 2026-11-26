@@ -1,6 +1,7 @@
 // Light and the quantum atom. Photon energy and wavelength. Hydrogen-like levels and lines. The de Broglie wavelength.
 // The particle in a box. Quantum numbers. Lengths are in meters, energies in joules, masses in kilograms inside; the
 // rows carry the unit the student reads them in.
+import '../text';
 import { latexNumber, plain } from '../chemText';
 import { C, E_CHARGE, H, ME, MP, NA, R_H } from '../constants';
 import { fail } from '../types';

@@ -1,6 +1,7 @@
 // Crystal structures and diffraction: unit cell facts and density, spacing of planes, angles, Bragg angles, the
 // allowed reflections of cubic and hexagonal crystals, indexing a powder pattern, and the Scherrer crystallite size.
 // Lengths are in meters inside; the window shows them in the unit the student picks.
+import '../text';
 import { latexNumber, plain } from '../chemText';
 import { NA } from '../constants';
 import type { MessageKey } from '../../../../strings/t';

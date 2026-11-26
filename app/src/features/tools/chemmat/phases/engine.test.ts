@@ -1,3 +1,4 @@
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { creep, criticalCrack, eutectic, fracture, larsonMiller, lever, leverFractions } from './engine';
 import { basquin, fatigue, interpolate, tensile } from './mechanical';

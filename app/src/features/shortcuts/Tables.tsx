@@ -52,6 +52,7 @@ function CommandRow({ row }: { row: ShortcutRow }) {
       <th scope="row" className={styles.name}>
         {row.title}
         {row.moved && <span className={styles.note}>{row.moved}</span>}
+        {row.refinement && <span className={styles.note}>{row.refinement}</span>}
       </th>
       {changing ? (
         // While it listens, the field takes the empty actions cell too, so its prompt and hint have room.

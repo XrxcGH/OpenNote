@@ -69,6 +69,18 @@ describe('practice mode', () => {
     expect(screen.getByText('0 of 3 steps shown.')).toBeTruthy();
   });
 
+  it('moves through the steps with the arrow keys and Home while a button has the focus', async () => {
+    renderUi(<PracticeTool />);
+    const next = await screen.findByRole('button', { name: 'Show next step' });
+    next.focus();
+    await userEvent.keyboard('{ArrowRight}{ArrowRight}');
+    expect(screen.getByText('2 of 3 steps shown.')).toBeTruthy();
+    await userEvent.keyboard('{ArrowLeft}');
+    expect(screen.getByText('1 of 3 steps shown.')).toBeTruthy();
+    await userEvent.keyboard('{Home}');
+    expect(screen.getByText('0 of 3 steps shown.')).toBeTruthy();
+  });
+
   it('works with the buttons and has no accessibility violations', async () => {
     const { container } = renderUi(<PracticeTool />);
     await userEvent.click(await screen.findByRole('button', { name: 'Show next step' }));

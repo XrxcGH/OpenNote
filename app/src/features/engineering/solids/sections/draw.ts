@@ -1,5 +1,6 @@
 // The section drawn to scale: solid parts shaded, holes cut out, thin walls along their centerlines, the centroid
 // with the principal axes through it, the shear center, and the cut for Q. y is up, as in the calculation.
+import '../text';
 import { numberText } from '../kit/format';
 import { axisLine, svg, text, W, H, type DrawContext } from '../kit/picture';
 import { toShown, unitOf } from '../kit/units';

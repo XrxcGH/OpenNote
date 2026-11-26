@@ -2,7 +2,7 @@
 // lexer, parser, and functions, so a formula and a quick calculation always agree. Pure: the editor extension that
 // calls this lives in the wiring stage.
 
-import { compile, type Ctx } from './formula/compile';
+import { compile, newCtx } from './formula/compile';
 import type { Node } from '../../../core/expr';
 import { syntaxOf, type Syntax } from './formula/lexer';
 import { parseFormula } from './formula/parser';
@@ -60,8 +60,7 @@ function isBoundary(body: string, at: number): boolean {
 
 function evaluate(node: Node): number | ErrorCode | null {
   const scope = { columns: [], rowCount: 0, env: DEFAULT_ENV };
-  const ctx: Ctx = { cols: [], row: 0, epoch: 1 };
-  const value = compile(node, scope, { col: 0, row: null }).fn(ctx);
+  const value = compile(node, scope, { col: 0, row: null }).fn(newCtx());
   if (isError(value)) return value.error;
   return typeof value === 'number' ? value : null;
 }

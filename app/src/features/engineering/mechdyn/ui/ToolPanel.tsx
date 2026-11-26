@@ -1,5 +1,6 @@
 // One tool of the kit: its fields, a choice of SI or US units, ready-made examples, the results, and the Insert menu.
 // The typed texts are kept on this device for each tool, and the unit system for the whole kit.
+import '../text';
 import { useEffect, useId, useMemo, useState } from 'react';
 import { t } from '../../../../strings/t';
 import { Button, announce, openMenu } from '../../../../ui';
@@ -198,7 +199,8 @@ function insertItems(c: InsertContext, texts: Readonly<Record<string, string>>):
         done(sendToPage({ picture: pictureRequest(plotPicture(say, plot, PAGE), `${c.tool}-${i + 1}.svg`, title) })),
     });
   });
-  return items;
+  // A tool with no worked steps has no entry for them: an empty list would insert nothing and say nothing.
+  return c.outcome.steps.length > 0 ? items : items.filter((item) => item.id !== 'steps');
 }
 
 export function ToolPanel({ tool, spec }: { tool: string; spec: ToolSpec }) {

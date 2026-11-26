@@ -7,6 +7,12 @@ export const code = {
     exit: 'Leave code block',
     keywords: 'code language syntax programming snippet',
   },
+  copy: {
+    button: 'Copy',
+    label: 'Copy the code',
+    done: 'Copied the code.',
+    failed: 'The code could not be copied.',
+  },
   language: {
     button: 'Code language: {name}',
     plain: 'Plain text',

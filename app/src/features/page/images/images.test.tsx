@@ -55,6 +55,28 @@ describe('image blocks', () => {
     await expectNoAxeViolations(handle.element);
   });
 
+  it('give every handle and toolbar button a 44 px target with touch-size controls (Beta 8 walk A1-A07-19)', async () => {
+    document.documentElement.dataset.density = 'touch';
+    try {
+      const { id, handle } = await pageWithImage();
+      selectOnPage({ blocks: [id], strokes: [] });
+      await vi.waitFor(() => expect(handle.element.querySelector('[role="toolbar"]')).not.toBeNull(), {
+        timeout: 10_000,
+      });
+      const targets = [...handle.element.querySelectorAll('button')].filter((button) => button.offsetParent);
+      expect(targets.length).toBeGreaterThan(8);
+      for (const button of targets) {
+        const box = button.getBoundingClientRect();
+        expect([button.getAttribute('aria-label') ?? button.textContent, box.width >= 44 && box.height >= 44]).toEqual([
+          button.getAttribute('aria-label') ?? button.textContent,
+          true,
+        ]);
+      }
+    } finally {
+      delete document.documentElement.dataset.density;
+    }
+  });
+
   it('crop mode keeps a crop as one patch and one move', async () => {
     const { page, handle } = await pageWithImage();
     const before = page.sent().length;
@@ -71,6 +93,18 @@ describe('image blocks', () => {
     expect(move.edit).toBe('moveBlock');
   });
 
+  it('crop handles take a real pointer press at their center, so a mouse or pen drag crops (A1-A07-2)', async () => {
+    const { handle } = await pageWithImage();
+    startCrop(handle);
+    const buttons = [...handle.element.querySelectorAll<HTMLButtonElement>('button[aria-label^="Crop from"]')];
+    expect(buttons).toHaveLength(8);
+    for (const button of buttons) {
+      const box = button.getBoundingClientRect();
+      const hit = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
+      expect(hit === button, button.getAttribute('aria-label') ?? '').toBe(true);
+    }
+  });
+
   it('crop mode cancels with Escape', async () => {
     const { page, handle } = await pageWithImage();
     const before = page.sent().length;
@@ -78,6 +112,77 @@ describe('image blocks', () => {
     await userEvent.keyboard('{ArrowRight}{Escape}');
     expect(handle.element.querySelector('[role="group"]')).toBeNull();
     expect(page.sent().length).toBe(before);
+  });
+});
+
+/** A pointer event at a point, from a mouse or a finger. */
+function press(target: Element, type: string, pointerType: 'mouse' | 'touch', x: number, y: number): void {
+  const init = { bubbles: true, cancelable: true, isPrimary: true, pointerId: pointerType === 'touch' ? 7 : 8 };
+  const button = type === 'pointermove' && pointerType === 'mouse' ? -1 : 0;
+  const buttons = type === 'pointerup' ? 0 : 1;
+  target.dispatchEvent(new PointerEvent(type, { ...init, pointerType, button, buttons, clientX: x, clientY: y }));
+}
+
+/** Drags from the middle of the target by (dx, dy) in that many moves. */
+function dragFrom(target: Element, pointerType: 'mouse' | 'touch', dx: number, dy: number, steps: number): void {
+  const box = target.getBoundingClientRect();
+  const [x, y] = [box.x + box.width / 2, box.y + box.height / 2];
+  press(target, 'pointerdown', pointerType, x, y);
+  for (let step = 1; step <= steps; step++)
+    press(target, 'pointermove', pointerType, x + (dx * step) / steps, y + (dy * step) / steps);
+  press(target, 'pointerup', pointerType, x + dx, y + dy);
+}
+
+/** The frame of the first moveBlock for the block sent after the batches already sent, once it is sent. */
+async function movedFrame(page: Awaited<ReturnType<typeof renderPage>>, id: string, before: number) {
+  const frame = () => {
+    const edits = page
+      .sent()
+      .slice(before)
+      .flatMap((batch) => batch.edits);
+    const move = edits.find((edit) => edit.edit === 'moveBlock' && edit.block === id);
+    return move?.edit === 'moveBlock' ? (move.frame ?? null) : null;
+  };
+  await vi.waitFor(() => expect(frame()).not.toBeNull());
+  return frame();
+}
+
+describe('dragging an image', () => {
+  it('moves it by its picture with Select and type (Beta 8 walk A1-A07-2)', async () => {
+    const { page, id, handle } = await pageWithImage();
+    const before = page.sent().length;
+    dragFrom(handle.element.querySelector('img')!, 'mouse', 60, 30, 6);
+    expect(await movedFrame(page, id, before)).toMatchObject({ x: 100, y: 230 });
+  });
+
+  it('moves a selected image with a finger drag on its picture, as a mouse does (A1-A07-11)', async () => {
+    const { page, id, handle } = await pageWithImage();
+    selectOnPage({ blocks: [id], strokes: [] });
+    const before = page.sent().length;
+    // Twelve 5 px steps go past the touch slop, where a one-finger pan would take the pointer.
+    dragFrom(handle.element.querySelector('img')!, 'touch', 60, 30, 12);
+    expect(await movedFrame(page, id, before)).toMatchObject({ x: 100, y: 230 });
+  });
+
+  it('leaves an unselected image to a finger pan, which does not move it (A1-A07-11)', async () => {
+    const { page, handle } = await pageWithImage();
+    const before = page.sent().length;
+    dragFrom(handle.element.querySelector('img')!, 'touch', 60, 30, 12);
+    const moves = page
+      .sent()
+      .slice(before)
+      .flatMap((batch) => batch.edits);
+    expect(moves.filter((edit) => edit.edit === 'moveBlock')).toEqual([]);
+  });
+
+  it('resizes it with a finger as far as the finger went (Beta 8 walk A1-A07-8)', async () => {
+    const { page, id } = await pageWithImage();
+    selectOnPage({ blocks: [id], strokes: [] });
+    const corner = await vi.waitFor(() => screen.getByRole('button', { name: 'Resize from the bottom right corner' }));
+    const before = page.sent().length;
+    // Twelve 5 px steps go past the touch slop, where a one-finger pan would take the pointer.
+    dragFrom(corner, 'touch', 60, 0, 12);
+    expect((await movedFrame(page, id, before))?.w).toBe(460);
   });
 });
 
@@ -97,6 +202,40 @@ describe('Size and position for an image', () => {
     expect(move.edit).toBe('moveBlock');
     // The popover closes after the crop, because the image's frame changed with it.
     await vi.waitFor(() => expect(screen.queryByLabelText('Crop left')).toBeNull());
+  });
+
+  it('keeps every crop field typed before Apply, and the layer shows the crop at once', async () => {
+    const { page, id } = await pageWithImage();
+    selectOnPage({ blocks: [id], strokes: [] });
+    page.mounted.objects.command('sizeAndPosition');
+    const left = await vi.waitFor(() => screen.getByLabelText('Crop left'), { timeout: 10_000 });
+    const before = page.sent().length;
+    await userEvent.clear(left);
+    await userEvent.type(left, '20');
+    await userEvent.tab();
+    // Leaving a field neither sends half a crop nor closes the popover.
+    expect(screen.getByLabelText('Crop top')).toBe(document.activeElement);
+    expect(page.sent().length).toBe(before);
+    await userEvent.clear(screen.getByLabelText('Crop top'));
+    await userEvent.type(screen.getByLabelText('Crop top'), '10');
+    await userEvent.click(screen.getByRole('button', { name: 'Apply' }));
+    await vi.waitFor(() => expect(page.sent().length).toBe(before + 1));
+    expect(page.sent().at(-1)!.edits[0]).toMatchObject({ data: { crop: { x: 0.2, y: 0.1, w: 0.8, h: 0.9 } } });
+    expect(page.mounted.layer.block(id)!.data.crop).toEqual({ x: 0.2, y: 0.1, w: 0.8, h: 0.9 });
+  });
+});
+
+describe('editing alt text', () => {
+  it('shows the new description at once, in the view and the block layer', async () => {
+    const { page, id, handle } = await pageWithImage();
+    const { editAltText } = await import('./AltTextDialog');
+    const done = editAltText(handle);
+    const field = await vi.waitFor(() => screen.getByLabelText('Description'), { timeout: 10_000 });
+    await userEvent.type(field, 'A black box');
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(handle.element.getAttribute('aria-label')).toBe('Image: A black box');
+    expect(page.mounted.layer.block(id)!.data.alt).toBe('A black box');
+    await expect(done).resolves.toBe(true);
   });
 });
 

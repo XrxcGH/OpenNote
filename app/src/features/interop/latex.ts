@@ -64,5 +64,6 @@ export async function latexOptions(choices: LatexChoices, notebook: string): Pro
     key: entry.key,
     entry: entry.entry,
   }));
-  return { ...choices, citations };
+  // The shell has no time zone, so the date under the title is the local day the page shows.
+  return { ...choices, citations, utcOffsetMinutes: -new Date().getTimezoneOffset() };
 }

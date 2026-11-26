@@ -27,6 +27,48 @@ export const FR_FR: Locale = {
   currency: 'EUR',
 };
 
+const groupCache = new Map<string, readonly number[]>();
+const percentCache = new Map<string, string>();
+
+/**
+ * How the region groups integer digits: [3] for most regions, [3, 2] where the groups after the first are two digits,
+ * such as en-IN's 12,34,567.
+ */
+export function groupSizes(locale: Locale): readonly number[] {
+  let sizes = groupCache.get(locale.tag);
+  if (!sizes) {
+    sizes = [3];
+    try {
+      const parts = new Intl.NumberFormat(locale.tag, { useGrouping: true })
+        .formatToParts(123_456_789)
+        .filter((p) => p.type === 'integer');
+      if (parts.length >= 3) sizes = [parts[parts.length - 1].value.length, parts[parts.length - 2].value.length];
+    } catch {
+      // An unknown tag keeps groups of three.
+    }
+    groupCache.set(locale.tag, sizes);
+  }
+  return sizes;
+}
+
+/** The space the region writes between a number and its percent sign: "" in en-US, a no-break space in de-DE. */
+export function percentSpace(locale: Locale): string {
+  let space = percentCache.get(locale.tag);
+  if (space === undefined) {
+    space = '';
+    try {
+      const parts = new Intl.NumberFormat(locale.tag, { style: 'percent' }).formatToParts(0.5);
+      const sign = parts.findIndex((p) => p.type === 'percentSign');
+      const before = parts[sign - 1];
+      if (sign > 0 && before.type === 'literal' && /^\s+$/.test(before.value)) space = before.value;
+    } catch {
+      // An unknown tag writes no space.
+    }
+    percentCache.set(locale.tag, space);
+  }
+  return space;
+}
+
 /** The same region read with the other decimal convention, for the decimal vote. */
 export function otherConvention(locale: Locale): Pick<Locale, 'decimal' | 'group'> {
   return locale.decimal === '.' ? { decimal: ',', group: '.' } : { decimal: '.', group: ',' };

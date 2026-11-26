@@ -232,11 +232,17 @@ export async function openLinkAtCaret(ctx: CommandContext): Promise<void> {
   await ctx.platform.shell.openExternal({ kind: 'link', url: link.href });
 }
 
-export async function copyLinkAtCaret(ctx: CommandContext): Promise<void> {
+export async function copyLinkAtCaret(_ctx?: CommandContext): Promise<void> {
   const link = targetLink();
   if (!link) return;
-  await navigator.clipboard.writeText(link.href);
-  ctx.announce(t('editor.link.copied'));
+  try {
+    await navigator.clipboard.writeText(link.href);
+  } catch {
+    showToast({ message: t('editor.link.copyFailed'), tone: 'danger' });
+    return;
+  }
+  // A toast, so the copy is seen as well as heard (Beta 8 walk A2-A12-9).
+  showToast({ message: t('editor.link.copied') });
 }
 
 export { linkAt };

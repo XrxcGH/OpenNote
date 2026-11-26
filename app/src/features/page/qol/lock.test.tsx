@@ -44,6 +44,19 @@ describe('reading mode', () => {
     expect(readingLock.get()).toBe(false);
   });
 
+  it('keeps the focus on the page when the editor that had it is turned off, so the lock chord still works', async () => {
+    await renderApp();
+    const { mounted, viewport, title } = fakePage(true);
+    viewport.tabIndex = -1;
+    const stop = attachLock(mounted);
+    title.focus();
+    expect(document.activeElement).toBe(title);
+    toggleReadingLock(true);
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    expect(document.activeElement).toBe(viewport);
+    stop();
+  });
+
   it('does nothing while its flag is off', async () => {
     await renderApp();
     const { mounted, viewport } = fakePage(false);

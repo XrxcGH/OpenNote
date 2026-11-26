@@ -46,7 +46,7 @@ test('Ctrl+Shift+F finds words typed into a page, previews it, and opens it', as
   await expect(page.getByText('No pages match.')).toBeVisible();
   await box.fill('osmosis');
   await page.getByRole('option', { name: /Membranes/ }).click();
-  await expect(page.getByRole('combobox')).toHaveCount(0);
+  await expect(page.locator('[data-scope="palette"]').getByRole('combobox')).toHaveCount(0);
   await expect(page.getByRole('heading', { level: 1, name: 'Membranes' })).toBeVisible();
 });
 

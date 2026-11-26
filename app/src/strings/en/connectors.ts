@@ -63,7 +63,10 @@ export const connectors = {
     webdavTokenHelp:
       'Type them as name:password. Use an app password if the server offers one. OpenNote keeps them in Windows Credential Manager.',
     addressLabel: 'School address',
-    addressHelp: "The address you use to sign in to your school's site, such as school.instructure.com.",
+    addressHelp: {
+      canvas: "The address you use to sign in to your school's Canvas, such as school.instructure.com.",
+      moodle: "The address you use to sign in to your school's Moodle, such as moodle.school.edu.",
+    },
   },
   service: {
     microsoft: {
@@ -179,6 +182,7 @@ export const connectors = {
     network: 'OpenNote could not reach {name}. Check your connection and try again.',
     rejected: '{name} did not accept the sign-in or the token. Check it and try again.',
     badInput: "Check the school address and the token. The address must start with https and name your school's site.",
+    badInputWebdav: 'Check the server address, the user name, and the password. The address must start with https.',
     foreignHost: 'That address is not one OpenNote may connect to for {name}.',
     storage: 'OpenNote could not save the {name} connection in Windows Credential Manager.',
   },

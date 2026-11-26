@@ -42,6 +42,7 @@ export function lazyBlockView(block: BlockJson, ctx: BlockRenderContext, load: L
       latest = next;
       inner?.update(next);
     },
+    liveData: () => inner?.liveData?.() ?? null,
     measure: () =>
       inner?.measure() ?? {
         x: element.offsetLeft,

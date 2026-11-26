@@ -2,7 +2,7 @@
 // one onto a core command through the client in app/src/core/, which keeps one request in flight per page. The
 // core's `core:*` events become frames, external changes, and read-only notices for the page they name.
 import type { CoreClient, DecodedEnvelope, FrameInfo } from '../../core/client';
-import { coreBusy, pageClosed, watchSaveHealth } from './saveHealth';
+import { coreBusy, pageOpened, pageUnwritten, watchSaveHealth } from './saveHealth';
 import type { ImagesClient, IpcError } from '../../platform/types';
 import { inkListeners } from './ink';
 import { PageServiceError } from './types';
@@ -11,6 +11,7 @@ import type {
   AssetJson,
   BlockId,
   BlockJson,
+  Edit,
   ExternalChange,
   OpenPage,
   PageErrorCode,
@@ -76,6 +77,17 @@ interface Changes {
   blocksChanged: BlockId[];
   blocksRemoved: BlockId[];
   assetsChanged: string[];
+}
+
+/**
+ * An edit as the core takes it. The page service says `frame: null` removes a block's frame and `lock: null` removes
+ * its lock, and the memory service does so. The core reads a null as "no change" in both places: it removes a frame
+ * given with no values, and it takes the lock "none", so a null sent as it is would leave the frame and the lock.
+ */
+export function toCoreEdit(edit: Edit): Edit {
+  if (edit.edit === 'moveBlock' && edit.frame === null) return { ...edit, frame: {} };
+  if (edit.edit === 'patchBlock' && edit.lock === null) return { ...edit, lock: 'none' } as unknown as Edit;
+  return edit;
 }
 
 /** A frame of another client's change, from the page as the core now holds it. */
@@ -190,6 +202,7 @@ function history(session: Session): PageHistory {
       const ack: TxnAck = await session
         .numbered((clientSeq) => core.historyRestoreBlocks({ page, client, clientSeq, revision, blocks: [...blocks] }))
         .catch(rejectAs);
+      if (ack.written === false) pageUnwritten(page, ack.seq);
       const { page: held } = await session.reread();
       const restored = held.blocks.filter((block) => blocks.includes(block.id));
       const present = new Set(restored.map((block) => block.id));
@@ -271,6 +284,7 @@ export function createTauriPageService(client: CoreClient, images: ImagesClient,
   return {
     async open(pageId, { viewport }): Promise<OpenPage> {
       const name = `${prefix}-${++clients}`;
+      pageOpened(pageId);
       const envelope = await client.pageOpen(pageId, name, viewport).catch(rejectAs);
       const { turn, numbered } = sequence(envelope.session.clientSeq, () =>
         client.pageOpen(pageId, name, null).then((again) => again.session.clientSeq),
@@ -290,6 +304,8 @@ export function createTauriPageService(client: CoreClient, images: ImagesClient,
       const heard = events(session, listeners<AppliedFrame>());
       const ink = inkListeners();
       const frame = (info: FrameInfo | null) => {
+        // An undo or redo is journaled like an edit: "Saving" until a save holds it, as for `send` below.
+        if (info?.written === false) pageUnwritten(pageId, info.seq);
         const made = info ? toFrame(info) : null;
         ink.emit(made?.ink);
         return made;
@@ -315,11 +331,15 @@ export function createTauriPageService(client: CoreClient, images: ImagesClient,
               clientSeq,
               coalesce: batch.coalesce ?? null,
               ui: batch.ui ?? null,
-              edits: batch.edits,
+              edits: batch.edits.map(toCoreEdit),
             };
             // Phase 5: new strokes go with page_add_strokes, after the batch's edits in the same transaction.
             return batch.strokes ? client.pageAddStrokes(request, batch.strokes) : client.pageApply(request);
-          }).catch(rejectAs),
+          }).then((ack) => {
+            // Not in the journal file yet: "Saving" until a save holds it, not "Saved" over an edit a crash loses.
+            if (ack.written === false) pageUnwritten(pageId, ack.seq);
+            return ack;
+          }, rejectAs),
         undo: () => turn(() => client.pageUndo(pageId, name)).then(frame, rejectAs),
         redo: () => turn(() => client.pageRedo(pageId, name)).then(frame, rejectAs),
         saveNow: () => turn(() => client.pageSaveNow(pageId)).catch(rejectAs),
@@ -337,7 +357,6 @@ export function createTauriPageService(client: CoreClient, images: ImagesClient,
         onReadOnly: heard.onReadOnly,
         close: () => {
           heard.stop();
-          pageClosed(pageId);
           return turn(() => client.pageClose(pageId, name)).catch(rejectAs);
         },
       };

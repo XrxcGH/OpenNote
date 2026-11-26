@@ -1,5 +1,6 @@
 // The answer of a tool: the result rows, the tables, the plot, the working with its equations, the assumptions, and
 // the sources. The rows are in a status region so a screen reader hears a changed answer.
+import '../text';
 import { useMemo } from 'react';
 import type { MessageKey } from '../../../../strings/t';
 import chem from '../../ui/chem.module.css';
@@ -26,7 +27,8 @@ function ResultRows({ solved, system }: { solved: Solved; system: System }) {
               return (
                 <tr key={i}>
                   <th scope="row">{s.label}</th>
-                  <td className={chem.numeric}>{s.value}</td>
+                  {/* A word answer is a sentence, so it wraps; only a number keeps to one line at the end. */}
+                  <td className={row.word ? undefined : chem.numeric}>{s.value}</td>
                   <td>{s.unit}</td>
                 </tr>
               );

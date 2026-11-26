@@ -160,6 +160,8 @@
     flex-wrap: wrap;
     justify-content: flex-end;
     gap: var(--space-4);
+    /* A last row of the body, such as a switch with a large target, never sits against the buttons (walk 9). */
+    margin-block-start: var(--space-3);
   }
 }
 

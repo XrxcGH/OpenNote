@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { judge, pickAction, seeded, someWords, soakMinutes, WEIGHTS } from './plan.ts';
+import { judge, nextStep, pickAction, seeded, someWords, soakMinutes, stepAt, WEIGHTS } from './plan.ts';
 import type { Sample } from './plan.ts';
 
 const MB = 1024 * 1024;
@@ -43,6 +43,34 @@ describe('the soak plan', () => {
     for (let i = 0; i < 100; i += 1) {
       const words = someWords(random).split(' ').length;
       assert.ok(words >= 1 && words <= 6);
+    }
+  });
+
+  it('keeps the draws of the actions the soak made before the steps were drawn in one place', () => {
+    // Each step draws its choices in the order the soak's own code did, so a seed from an old night keeps its meaning.
+    const random = seeded(58);
+    const steps = Array.from({ length: 6 }, () => nextStep(random));
+    assert.deepEqual(
+      steps.map((step) => step.id),
+      ['backspace', 'italic', 'backspace', 'switch', 'move', 'type'],
+    );
+    assert.deepEqual(stepAt(58, 5), steps[5]);
+  });
+
+  it('finds the action a failed night stopped at: seed 58 switches pages at 13250, then makes the italic at 13251', () => {
+    // Nightly run 41792295946 failed at action 13251. The caret search that follows a page switch ran before the
+    // page's text was drawn. tests/soak/replay.spec.ts replays this pair in a browser.
+    assert.deepEqual(stepAt(58, 13_250), { id: 'switch' });
+    assert.deepEqual(stepAt(58, 13_251), { id: 'italic', words: 'cell' });
+  });
+
+  it('draws only whole choices', () => {
+    const random = seeded(9);
+    for (let i = 0; i < 2000; i += 1) {
+      const step = nextStep(random);
+      if ('times' in step) assert.ok(Number.isInteger(step.times) && step.times >= 1);
+      if ('keys' in step) assert.ok(step.keys.length >= 1 && step.keys.length <= 10);
+      if ('words' in step) assert.ok(step.words.length > 0);
     }
   });
 

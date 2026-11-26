@@ -1,3 +1,4 @@
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { cell, electrolysis, halfById, standardPotential } from './engine';
 import { HALF_REACTIONS } from '../data/halfReactions';

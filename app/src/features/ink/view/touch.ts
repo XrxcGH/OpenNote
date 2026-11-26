@@ -17,7 +17,7 @@ import { showRulerLength, snapToolsNow } from './snapTools';
 import { activeSlot, drawState, styleOf, writesInk } from './state';
 import type { DrawTool } from './state';
 import type { InkSurface } from './surface';
-import { isEditing, objectAt, onObjectHandle, selectObject, TAP_SLOP_PX } from './objectTaps';
+import { isEditing, objectAt, onObjectHandle, PAGE_CHROME, selectObject, TAP_SLOP_PX } from './objectTaps';
 
 /** The tools the palm filter manages touch for: every pen tool, not only the ones that write ink. */
 const penTool = (tool: DrawTool): boolean => tool !== 'select';
@@ -84,10 +84,10 @@ function storeLearned(learned: LearnedState): void {
 }
 
 /**
- * The selection frame's bar is a control outside the page to the palm filter: a finger's tap presses its button even
- * while fingers draw, where it would otherwise leave a dot, and a palm on it presses nothing.
+ * The selection frame's bar, a table's toolbar, a menu, and a dialog are controls outside the page to the palm filter.
+ * A finger's tap presses their buttons even while fingers draw, and a palm on them presses nothing.
  */
-const FRAME_BAR = '[data-ink-selection-bar]';
+const FRAME_BAR = PAGE_CHROME;
 
 /** Copies a pointer event into the pipeline's reused record. */
 function fill(record: PointerRecord, event: PointerEvent, type: PointerRecord['type']): PointerRecord {

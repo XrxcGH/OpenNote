@@ -1,6 +1,7 @@
 // The fields of a physics tool's mode: numbers with a unit picker limited to what the number measures, choices,
 // vectors typed as a list, and rows of numbers (point charges, wire segments, optical elements) one per line.
 // Every field has a visible label; a unit picker is named for its field.
+import '../text';
 import { useId } from 'react';
 import { t } from '../../../../strings/t';
 import { parseNumber } from '../kit/read';

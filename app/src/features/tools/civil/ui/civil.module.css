@@ -7,10 +7,17 @@
     min-block-size: 0;
   }
 
+  /* Each picker is at least 16rem wide, so in a narrow window they stack one per row and no name is clipped. */
   .pickers {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
     gap: var(--space-3);
+  }
+
+  /* The kit's fields sit in a column; the table's hint and units keep the shared field gap below the textarea. */
+  .tableBlock {
+    display: grid;
+    gap: var(--space-2);
   }
 
   .unit {
@@ -68,6 +75,8 @@
     margin-block: var(--space-1) var(--space-2);
     color: var(--color-text-primary);
     overflow-x: auto;
+    overflow-y: hidden;
+    padding-block: var(--space-1);
   }
 
   .notes {

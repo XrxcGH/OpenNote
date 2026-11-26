@@ -1,3 +1,4 @@
+import './text';
 import { describe, expect, it } from 'vitest';
 import { bracketScan, besselI, besselJ, besselK, brent, CalcError, erf, erfc, erfcx, fmt } from './numeric';
 

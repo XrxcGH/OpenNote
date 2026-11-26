@@ -94,3 +94,109 @@ pub(super) fn layout() -> String {
 pub(super) fn group() -> &'static str {
     GROUP
 }
+
+/// The size of a slide's body text in points. Size names scale it as they scale the 12 point body of a page.
+pub(super) const SLIDE_BODY_POINTS: f64 = 20.0;
+
+/// The size of a run in hundredths of a point: `10.5` is `1050`. The names `small`, `large`, and `xlarge` are 10, 15,
+/// and 18 points at the 12 point page body, so on the slide body they scale it by that ratio.
+pub(super) fn size_hundredths(size: &str) -> Option<i64> {
+    let points = crate::doc::size_points(size)?;
+    if matches!(size, "small" | "large" | "xlarge") {
+        return Some((SLIDE_BODY_POINTS * points / 12.0 * 100.0).round() as i64);
+    }
+    Some((points * 100.0).round() as i64)
+}
+
+/// The `u` value of `a:rPr` (ECMA-376 21.1.2.3.32) for an underline style of the Markdown grammar.
+fn underline_type(line: Option<&str>) -> &'static str {
+    match line {
+        Some("double") => "dbl",
+        Some("words") => "words",
+        Some("thick") => "heavy",
+        Some("dotted") => "dotted",
+        Some("dottedHeavy") => "dottedHeavy",
+        Some("dash") => "dash",
+        Some("dashedHeavy") => "dashHeavy",
+        Some("dashLong") => "dashLong",
+        Some("dashLongHeavy") => "dashLongHeavy",
+        Some("dotDash") => "dotDash",
+        Some("dashDotHeavy") => "dotDashHeavy",
+        Some("dotDotDash") => "dotDotDash",
+        Some("dashDotDotHeavy") => "dotDotDashHeavy",
+        Some("wave") => "wavy",
+        Some("wavyHeavy") => "wavyHeavy",
+        Some("wavyDouble") => "wavyDbl",
+        _ => "sng",
+    }
+}
+
+/// The attributes of `a:rPr` that the marks of a run set, and the children that go before the font and the link
+/// (`a:solidFill`, `a:highlight`), in schema order. `bold` and `italic` come from the paragraph.
+pub(super) fn run_properties(marks: &crate::doc::Marks, bold: bool, italic: bool) -> (String, String) {
+    use crate::doc::Script;
+    let mut attrs = String::new();
+    let size = marks.size.as_deref().and_then(size_hundredths);
+    attrs.push_str(&format!(" sz=\"{}\"", size.unwrap_or(2000)));
+    if marks.strong || bold {
+        attrs.push_str(" b=\"1\"");
+    }
+    if marks.emphasis || italic {
+        attrs.push_str(" i=\"1\"");
+    }
+    if marks.underline {
+        attrs.push_str(&format!(" u=\"{}\"", underline_type(marks.underline_line.as_deref())));
+    }
+    if marks.strike {
+        attrs.push_str(if marks.strike_double {
+            " strike=\"dblStrike\""
+        } else {
+            " strike=\"sngStrike\""
+        });
+    }
+    match marks.caps.as_deref() {
+        Some("small") => attrs.push_str(" cap=\"small\""),
+        Some("all") => attrs.push_str(" cap=\"all\""),
+        _ => {}
+    }
+    if let Some(points) = marks.tracking.as_deref().and_then(|t| t.parse::<f64>().ok()) {
+        attrs.push_str(&format!(" spc=\"{}\"", (points * 100.0).round() as i64));
+    }
+    // `baseline` is a percentage of the size in thousandths of a percent.
+    let baseline = match marks.script {
+        Some(Script::Sup) => Some(30_000),
+        Some(Script::Sub) => Some(-25_000),
+        None => marks
+            .shift
+            .as_deref()
+            .and_then(|s| s.parse::<f64>().ok())
+            .map(|points| {
+                let body = size.map_or(SLIDE_BODY_POINTS, |s| s as f64 / 100.0);
+                (points / body * 100_000.0).round() as i64
+            }),
+    };
+    if let Some(value) = baseline {
+        attrs.push_str(&format!(" baseline=\"{value}\""));
+    }
+    let mut children = String::new();
+    if let Some(hex) = marks.color.as_deref().and_then(crate::palette::color_hex) {
+        children.push_str(&format!("<a:solidFill><a:srgbClr val=\"{hex}\"/></a:solidFill>"));
+    }
+    if let Some(hex) = marks
+        .highlight
+        .as_deref()
+        .or(marks.shade.as_deref())
+        .and_then(crate::palette::color_hex)
+    {
+        children.push_str(&format!("<a:highlight><a:srgbClr val=\"{hex}\"/></a:highlight>"));
+    }
+    // ECMA-376 21.1.2.3.32 puts the underline fill after the highlight and before the fonts.
+    if marks.underline {
+        if let Some(hex) = marks.underline_color.as_deref().and_then(crate::palette::color_hex) {
+            children.push_str(&format!(
+                "<a:uFill><a:solidFill><a:srgbClr val=\"{hex}\"/></a:solidFill></a:uFill>"
+            ));
+        }
+    }
+    (attrs, children)
+}

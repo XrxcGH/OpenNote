@@ -248,7 +248,7 @@ fn apply_span(tag: &Tag, marks: &mut Marks, spans: &mut Vec<Span>) -> bool {
         marks.color = Some(color);
         spans.push(Span::Color);
         true
-    } else if let Some(size) = tag.attr("data-size").and_then(mark_name) {
+    } else if let Some(size) = tag.attr("data-size").and_then(super::size_value) {
         marks.size = Some(size);
         spans.push(Span::Size);
         true

@@ -8,19 +8,27 @@
     position: relative;
   }
 
-  /* The button sits in the block's corner, out of the flow, so the block's box is the same before it mounts. */
-  .language {
+  /* The buttons sit in the block's top corner, out of the flow. The page keeps a row of this height clear above
+     the code (blocks.module.css), so they never cover the first line, however narrow the page (walk 9 VA-8). */
+  .tools {
     position: absolute;
     inset-block-start: var(--space-1);
     inset-inline-end: var(--space-1);
+    display: flex;
+    /* The language button comes first in the order of the page and Copy follows it, but Copy is drawn to its left. */
+    flex-direction: row-reverse;
+    gap: var(--space-1);
+  }
+
+  .language {
     padding: 0 var(--space-2);
     border: 1px solid transparent;
     border-radius: var(--radius-sm);
     background: var(--color-surface-sunken);
     color: var(--color-text-secondary);
     font-family: var(--font-ui);
-    font-size: var(--type-caption-size);
-    line-height: var(--type-caption-line);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
     cursor: pointer;
     user-select: none;
   }

@@ -46,7 +46,7 @@ export interface CommandBarComponentProps {
 
 export interface CommandBarItem {
   id: string;
-  tab: 'home' | 'insert' | 'draw' | 'view';
+  tab: 'home' | 'insert' | 'draw' | 'view' | 'layout' | 'review';
   group: string;
   /** Also what the item runs from the More menu when the bar is too narrow to show it. */
   command: CommandId;
@@ -62,6 +62,10 @@ export interface CommandBarItem {
    */
   overflow?: readonly CommandId[];
   flag?: FlagId;
+  /** The item hides while this flag is on, so a newer control can take its place without a second bar item. */
+  offWith?: FlagId;
+  /** With presentation 'toggle': true when only part of the selection has the state (aria-pressed mixed). */
+  mixed?: () => boolean;
 }
 
 export interface ContextMenuItem {

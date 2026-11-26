@@ -92,6 +92,9 @@ for (const [us, gb] of STEMS) {
 const SAME_IZE = /^(?:(?:re|over|under|down|up|out|cap)?siz(?:e|es|ed|ing)|seiz(?:e|es|ed|ing)|priz(?:e|es|ed|ing))$/;
 const IZE = /^(.{3,}?)iz(e|es|ed|ing|er|ers|ation|ations)$/;
 const ISE = /^(.{3,}?)is(e|es|ed|ing|er|ers|ation|ations)$/;
+// -yze verbs (analyze, paralyze, catalyze). The plural "analyses" is left alone: it is also an American noun.
+const YZE = /^(.{2,}?)yz(e|ed|ing|er|ers)$/;
+const YSE = /^(.{2,}?)ys(e|ed|ing|er|ers)$/;
 // -ise words that are -ise everywhere, which the reverse rule must leave alone.
 const SAME_ISE = new RegExp(
   `^(?:${[
@@ -146,6 +149,8 @@ export function toDialectSpelling(word: string): string {
     const match = IZE.exec(lower);
     if (match) return `${match[1]}is${match[2]}`;
   }
+  const yze = YZE.exec(lower);
+  if (yze) return `${yze[1]}ys${yze[2]}`;
   return word;
 }
 
@@ -158,5 +163,7 @@ export function toAmericanSpelling(word: string): string {
     const match = ISE.exec(lower);
     if (match) return `${match[1]}iz${match[2]}`;
   }
+  const yse = YSE.exec(lower);
+  if (yse) return `${yse[1]}yz${yse[2]}`;
   return word;
 }

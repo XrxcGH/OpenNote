@@ -4,6 +4,11 @@
 // trusted pointer event and the pen's color and width. Where the browser has no `navigator.ink`, or the flag is off,
 // nothing happens and the canvas draws alone. The trail is only a hint: the stroke itself is always drawn by the page.
 
+/** True when the system's raw pen trail may draw a stroke: never once the stroke is held to a snap tool. */
+export function trailShows(g: { readonly snapHold?: { readonly kind: string } }): boolean {
+  return !g.snapHold || g.snapHold.kind === 'none';
+}
+
 export interface InkTrailStyle {
   readonly color: string;
   readonly diameter: number;

@@ -31,6 +31,7 @@ use crate::{
 pub(crate) mod caption_style;
 mod catalog;
 mod cloud;
+pub(crate) mod code;
 mod ext;
 mod llm;
 pub(crate) mod models;

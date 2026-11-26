@@ -13,8 +13,8 @@ import { registerRegionMain } from '../../shell/regions';
 import { useStore } from '../../state/store';
 import { formatDate, formatTime } from '../../strings/format';
 import { t } from '../../strings/t';
-import { Button, EmptyArt, ProgressBar, useContextMenu, useDelayedFlag } from '../../ui';
-import { titleOf } from '../tree';
+import { Button, EmptyArt, ProgressBar, useDelayedFlag } from '../../ui';
+import { titleOf, useMenuTriggers } from '../tree';
 import { canPurge, deleteForever, emptyTrash } from './purge';
 import { restoreTrashItem, trashStore } from './restore';
 import styles from './TrashView.module.css';
@@ -30,7 +30,7 @@ function TrashRow({ item, onRestore, onDelete }: RowProps) {
   const row = useRef<HTMLLIElement>(null);
   const title = titleOf(item.node);
   const notebook = item.node.kind === 'notebook';
-  useContextMenu(row, () => {
+  const press = useMenuTriggers(row, () => {
     const ctx = commandContext('menu', { kind: 'trashItem', id: item.node.id });
     const items = menuItemsFor('trash.item', ctx);
     return items.length ? { label: t('tree.menu.label', { title }), items } : null;
@@ -40,7 +40,7 @@ function TrashRow({ item, onRestore, onDelete }: RowProps) {
     : t('tree.trash.fromLibrary');
   const deleted = t('tree.trash.deleted', { date: formatDate(item.trashedAt), time: formatTime(item.trashedAt) });
   return (
-    <li ref={row} className={styles.item}>
+    <li ref={row} className={styles.item} {...press}>
       <div className={styles.text}>
         <span className={styles.title}>{title}</span>
         <span className={styles.note}>{t('tree.describe.kind', { kind: item.node.kind })}</span>

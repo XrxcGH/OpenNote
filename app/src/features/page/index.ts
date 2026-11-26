@@ -2,23 +2,40 @@
 
 export { PageView } from './PageView';
 export { installPageZoom } from './zoom';
+export { configureStyleStorage, loadStyles, localStylesClient, saveStyles, stylesFor } from './styles/store';
 export { installPages } from './runtime';
 export { mountedPageHooks, shownAssetUrl, shownMounted, snapshotShownPage } from './pagesApi';
 /** The editor that formatting commands act on (a light module). */
 export { targetEditor } from './formattingBar/target';
 /** Reading pages and making pages from templates or text loads when first used, so start-up stays small. */
 export const loadTemplates = () => import('./templates/apply');
+/** The page on screen as a Replace in all notebooks target, which takes the batch through the page's own queue. */
+export const loadReplaceTarget = () => import('./find/replaceTarget');
 export type { MountedPage, MountedPageHook } from './pagesApi';
 export { shownQueue } from './sync/shown';
 export { shownStrokes } from './seams/inkStrokes';
 export { pageSelection } from './seams/selectionStore';
 export { shownPaper } from './seams/paper';
+export { shownPaginated } from './seams/paginated';
+export { textSeams } from './textSeams';
 export { transcriptActions } from './audio/transcripts/actionRegistry';
 export type { TranscriptAction, TranscriptContext } from './audio/transcripts/actionRegistry';
 export { usePrefs as usePageExtrasPrefs } from './qol/prefs';
 export { readingLock } from './qol/stores';
 export type { TableExtraDef, TableExtraHandle, TableExtraHost } from './tables/extras';
+/** What features add to a table block, such as the spreadsheet keys (a light module). */
+export { tableExtras } from './tables/extras';
+export { requestContextMenu } from './viewport/menuRequests';
+// Row virtualization's state, for the spreadsheet keys (the plugin itself loads with the table block).
+export { drawnRows, setPinnedRows, virtualRowsKey } from './tables/virtual/key';
+export { isVirtualDoc } from './tables/virtual/rows';
+/** The table the table commands act on now. */
+export { currentTable } from './tables/current';
+export type { TableHandle } from './tables/current';
 export { assetTable } from './images/assets';
+/** Shows blocks this window inserted, which the page view does not show until it has them. Loads when first used. */
+export const showInserted = async (...args: Parameters<typeof import('./images/insert').showInserted>) =>
+  (await import('./images/insert')).showInserted(...args);
 /** The exporter's helpers load when a page is exported, not at start-up. */
 export const expandEmbedText = async (...args: Parameters<typeof import('./embeds/expand').expandEmbedText>) =>
   (await import('./embeds/expand')).expandEmbedText(...args);
@@ -26,3 +43,6 @@ export const loadEmbed = async (...args: Parameters<typeof import('./embeds/load
   (await import('./embeds/load')).loadEmbed(...args);
 export const preparePlayer = async (...args: Parameters<typeof import('./audio/exportPlayer').preparePlayer>) =>
   (await import('./audio/exportPlayer')).preparePlayer(...args);
+/** The shown page's viewport (a light module): the desk gutter reads its camera and scroller. */
+export { shownViewport } from './viewport/shown';
+export type { PageViewportApi } from './viewport/viewport';

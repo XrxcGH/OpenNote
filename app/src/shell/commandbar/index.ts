@@ -2,3 +2,4 @@
 
 export { BottomBar } from './BottomBar';
 export { CommandBar } from './CommandBar';
+export { barTick, bumpBar } from './barTick';

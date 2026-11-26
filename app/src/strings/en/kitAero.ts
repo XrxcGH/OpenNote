@@ -37,12 +37,16 @@ export const kitAero = {
   insertEquation: 'Equation',
   insertTable: 'Result table',
   insertSteps: 'Steps as a list',
+  insertLive: 'Live calculation block',
+  liveInserted: 'Added a live calculation block. Use Open in tool to change it.',
   insertPicture: 'Plot as picture',
   insertThisTable: 'Insert this table',
   inserted: 'Inserted into the page.',
   noPage: 'Click in a page first, then insert.',
   error: {
     notNumber: 'Enter a number in “{name}”.',
+    outOfRange:
+      'These values are too large or too small for this tool to give a finite answer. Try values closer to real ones.',
     notPositive: '{name} must be greater than zero.',
     notNegative: '{name} cannot be negative.',
     gammaRange: 'γ = {value} is outside the range a gas can have. Use a value above 1 and at most 2 (air is 1.4).',

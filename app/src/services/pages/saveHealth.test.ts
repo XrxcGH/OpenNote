@@ -6,10 +6,15 @@ import {
   combinedStatus,
   coreBusy,
   coreStalled,
-  pageClosed,
+  pageOpened,
   pageSaveFailed,
   pageSaved,
+  pageSending,
+  pageUnwritten,
+  pageWaiting,
+  waitingDetail,
   saveHealthStore,
+  sendingPage,
   setCoreStalled,
   watchSaveHealth,
 } from './saveHealth';
@@ -41,12 +46,12 @@ describe('save health', () => {
     expect(anySaveFailing(saveHealthStore.get())).toBe(false);
   });
 
-  it('forgets a page that closed, since no save will be reported for it', () => {
+  it('keeps failing pages, whichever page is shown, until a save reports each (walk bug N1-N03-5)', () => {
     pageSaveFailed('p1');
     pageSaveFailed('p2');
-    pageClosed('p1');
-    expect([...saveHealthStore.get().failing]).toEqual(['p2']);
-    pageClosed('p3');
+    pageSaved('p3');
+    expect([...saveHealthStore.get().failing]).toEqual(['p1', 'p2']);
+    pageSaved('p1');
     expect([...saveHealthStore.get().failing]).toEqual(['p2']);
   });
 
@@ -82,6 +87,22 @@ describe('save health', () => {
     expect(client.listening()).toEqual([]);
   });
 
+  it('keeps why a page failed and whether autosave tries again, until the page saves', () => {
+    const client = fakeClient();
+    const stop = watchSaveHealth(client);
+    client.emit('core:save-failed', { page: 'p1', kind: 'diskFull', message: 'x', retryInMs: 5000 });
+    expect(saveHealthStore.get().failures.get('p1')).toEqual({ kind: 'diskFull', retrying: true });
+    client.emit('core:save-failed', { page: 'p1', kind: 'readOnlyFile', message: 'x', retryInMs: null });
+    expect(saveHealthStore.get().failures.get('p1')).toEqual({ kind: 'readOnlyFile', retrying: false });
+    client.emit('core:save-failed', { page: 'p2', message: 'x' });
+    expect(saveHealthStore.get().failures.get('p2')).toEqual({ kind: 'io', retrying: false });
+    client.emit('core:saved', { page: 'p1', revision: 'r2' });
+    expect([...saveHealthStore.get().failures.keys()]).toEqual(['p2']);
+    client.emit('core:saved', { page: 'p2', revision: 'r3' });
+    expect(saveHealthStore.get().failures.size).toBe(0);
+    stop();
+  });
+
   it('turns "Saved" into "Couldn\'t save" while a page fails, and leaves the rest to the notes bridge', () => {
     expect(combinedStatus('saved', true)).toBe('error');
     expect(combinedStatus('saved', false)).toBe('saved');
@@ -90,5 +111,63 @@ describe('save health', () => {
     expect(combinedStatus('error', false)).toBe('error');
     expect(combinedStatus('saved', false, true)).toBe('stalled');
     expect(combinedStatus('saving', true, true)).toBe('stalled');
+  });
+
+  it('says "Saving" while a page batch is on its way to the core, until the last one arrives', () => {
+    const first = sendingPage();
+    const second = sendingPage();
+    expect(combinedStatus('saved', false, false, pageSending(saveHealthStore.get()))).toBe('saving');
+    first();
+    first();
+    expect(pageSending(saveHealthStore.get())).toBe(true);
+    second();
+    expect(combinedStatus('saved', false, false, pageSending(saveHealthStore.get()))).toBe('saved');
+    expect(combinedStatus('saved', true, false, true)).toBe('error');
+    expect(combinedStatus('saved', false, true, true)).toBe('stalled');
+  });
+});
+
+describe('save health of unwritten edits', () => {
+  it('says "Saving" over an edit answered as not written until a save holds it', () => {
+    const client = fakeClient();
+    const stop = watchSaveHealth(client);
+    pageUnwritten('p1', 7);
+    pageUnwritten('p1', 5);
+    expect(combinedStatus('saved', false, false, pageWaiting(saveHealthStore.get()))).toBe('saving');
+    // A save that began before the edit doesn't hold it.
+    client.emit('core:saved', { page: 'p1', through: 6 });
+    expect(pageWaiting(saveHealthStore.get())).toBe(true);
+    client.emit('core:saved', { page: 'p2', through: 9 });
+    expect(pageWaiting(saveHealthStore.get())).toBe(true);
+    client.emit('core:saved', { page: 'p1', through: 7 });
+    expect(combinedStatus('saved', false, false, pageWaiting(saveHealthStore.get()))).toBe('saved');
+    stop();
+  });
+
+  it('keeps a closed page waiting until a save holds its unwritten edit, since the close may not save it', () => {
+    const client = fakeClient();
+    const stop = watchSaveHealth(client);
+    pageUnwritten('p2', 3);
+    expect(pageWaiting(saveHealthStore.get())).toBe(true);
+    expect(waitingDetail(saveHealthStore.get())).toBe('unwritten p2@3');
+    client.emit('core:saved', { page: 'p2', through: 3 });
+    expect(pageWaiting(saveHealthStore.get())).toBe(false);
+    stop();
+  });
+
+  it('takes a save that arrived before the edit’s answer as holding it, until the page opens again', () => {
+    const client = fakeClient();
+    const stop = watchSaveHealth(client);
+    client.emit('core:saved', { page: 'p1', through: 4 });
+    pageUnwritten('p1', 4);
+    expect(pageWaiting(saveHealthStore.get())).toBe(false);
+    pageUnwritten('p1', 5);
+    expect(waitingDetail(saveHealthStore.get())).toBe('unwritten p1@5');
+    client.emit('core:saved', { page: 'p1', through: 5 });
+    // A page opened again may number its edits afresh, so the old save holds none of them.
+    pageOpened('p1');
+    pageUnwritten('p1', 2);
+    expect(pageWaiting(saveHealthStore.get())).toBe(true);
+    stop();
   });
 });

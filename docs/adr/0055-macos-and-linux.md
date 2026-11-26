@@ -23,7 +23,7 @@ OpenNote was built for Windows first (ADR 0012 and DEVELOPMENT.md). The owner as
 
 | Feature | macOS | Linux | Why, and the fallback |
 |---|---|---|---|
-| Text in pictures (OCR) and handwriting to text | None | None | Windows.Media.Ocr and Ink Analysis. Ink is kept as drawn, and search covers typed text. |
+| Text in pictures (OCR) and handwriting to text | Vision; handwriting read as a picture | Tesseract (installed separately); handwriting read as a picture | Windows uses Windows.Media.Ocr and Ink Analysis. Off Windows the strokes are drawn as a picture and read by the OCR engine. Without Tesseract, Linux keeps ink as drawn, and search covers typed text. |
 | Read aloud | None | None | Windows voices. A later engine can use AVSpeechSynthesizer and Speech Dispatcher. |
 | PDF export and printing | None | None | The PrintToPdf of WebView2. Export as Word or HTML, then print. `createPDF` in WKWebView and the print operation of WebKitGTK are the follow-up. |
 | Windows Hello for protected sections | Password only | Password only | Touch ID through LocalAuthentication is a follow-up. |
@@ -31,7 +31,7 @@ OpenNote was built for Windows first (ADR 0012 and DEVELOPMENT.md). The owner as
 | Share target, dock to an edge, Snap Layouts, pen settings, custom title bar | None | None | Windows shell features. |
 | Self-update | By hand (dmg) | Yes (AppImage) | See Updates above. |
 | The `opennote` command-line tool inside the app | None | None | Only the Windows build embeds it. Build it with `cargo build -p opennote-cli`. |
-| End-to-end-encrypted sync (ADR 0049) | Refused at setup | Refused at setup | The device key lives in Windows Credential Manager. Off Windows the secret store is memory only, so the key would be lost at the next start. The Keychain and the Secret Service are a follow-up. |
+| End-to-end-encrypted sync (ADR 0049) | Keychain | Secret Service, refused only when no keyring runs | The device key lives in the system's credential store. On Linux without GNOME Keyring or KWallet the store is memory only, so setup is refused rather than lose the key at the next start; a keyring started later is used without a restart. |
 | Native speech engines (whisper.cpp, ONNX Runtime) | None | None | Only the Windows x64 exe carries them. The pure Rust speech reader runs. |
 
 ## Web view differences

@@ -24,7 +24,7 @@
     block-size: 2px;
     margin-block-start: var(--space-2);
     border-radius: 1px;
-    background: var(--color-accent-clay);
+    background: var(--notebook-accent, var(--color-accent-clay));
   }
 
   .changed {
@@ -64,6 +64,19 @@
     display: flex;
     flex-direction: column;
     block-size: 100%;
+    /* At Wide, the desk gutter (shell/layout/deskGutter.ts) shows the canvas on each side of the sheet. It is flush
+       with the top and bottom and square-cornered. */
+    margin-inline: var(--desk-gutter, 0px);
+  }
+
+  :global(main[data-desk-gutter]:not([data-desk-gutter='0'])) .editing {
+    box-shadow: var(--elevation-1);
+  }
+
+  @media (forced-colors: active) {
+    .editing {
+      margin-inline: 0;
+    }
   }
 
   .header {

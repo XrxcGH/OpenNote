@@ -53,6 +53,75 @@ describe('the settings slice', () => {
   });
 });
 
+describe('schema version 2', () => {
+  it('starts every new key at its default', () => {
+    expect(DEFAULT_SETTINGS).toMatchObject({
+      schemaVersion: 2,
+      minWriterSchema: 1,
+      text: {
+        paste: { word: 'keepSource', docs: 'keepSource', onenote: 'keepSource', web: 'mergeFormatting' },
+        measurementUnit: 'inches',
+        darkCustomBackgrounds: 'exact',
+      },
+      tables: { newTableKeys: 'spreadsheet', formulaBar: true },
+      code: {
+        indent: {},
+        pythonRuntime: 'quick',
+        timeLimitSeconds: 10,
+        memoryLimitMib: 64,
+        formatOnSave: false,
+        completionList: true,
+        suggestions: 'automaticRules',
+        acceptButton: 'touchOrPen',
+        announceSuggestions: true,
+        diagnostics: 'everything',
+        cStandard: 'c17',
+        cppStandard: 'cpp20',
+        compilerWarnings: true,
+      },
+    });
+  });
+
+  it('keeps a code setting and rejects one outside its range', async () => {
+    const platform = start();
+    await updateSettings({ code: { suggestions: 'onRequest' } });
+    expect(getSettings().code.suggestions).toBe('onRequest');
+    await expect(platform.settings.update({ code: { timeLimitSeconds: 600 } })).rejects.toMatchObject({
+      field: 'code.timeLimitSeconds',
+    });
+  });
+
+  it('saves and reads back the Docs shortcut set', async () => {
+    const platform = start();
+    await updateSettings({ keymap: { preset: 'docs' } });
+    expect(getSettings().keymap.preset).toBe('docs');
+    const saved = JSON.parse(JSON.stringify(getSettings())) as typeof DEFAULT_SETTINGS;
+    expect(saved.keymap.preset).toBe('docs');
+    const bad = { keymap: { preset: 'word' } } as unknown as Parameters<typeof updateSettings>[0];
+    await expect(platform.settings.update(bad)).rejects.toMatchObject({ field: 'keymap.preset' });
+  });
+});
+
+const BAD_INDENTS: [string, Record<string, { tabSize: number; insertSpaces: boolean }>][] = [
+  ['a tab size of 0', { python: { tabSize: 0, insertSpaces: true } }],
+  ['a tab size of 9', { python: { tabSize: 9, insertSpaces: true } }],
+  ['an id with capitals', { 'C++': { tabSize: 4, insertSpaces: true } }],
+  ['an id that starts with a hyphen', { '-c': { tabSize: 4, insertSpaces: true } }],
+];
+
+describe('code.indent in a browser', () => {
+  it('keeps a valid language id and tab size', async () => {
+    start();
+    await updateSettings({ code: { indent: { 'objective-c': { tabSize: 8, insertSpaces: true } } } });
+    expect(getSettings().code.indent['objective-c']).toEqual({ tabSize: 8, insertSpaces: true });
+  });
+
+  it.each(BAD_INDENTS)('rejects %s, as Rust does', async (_label, indent) => {
+    const platform = start();
+    await expect(platform.settings.update({ code: { indent } })).rejects.toMatchObject({ field: 'code.indent' });
+  });
+});
+
 describe('settings from an older shell', () => {
   it("fills fields the host doesn't send with defaults, and keeps what it sends", async () => {
     const platform = createWebPlatform();

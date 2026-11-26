@@ -31,6 +31,8 @@ describe('quantity fields', () => {
     expect(readNumber('2.5')).toBe(2.5);
     expect(readNumber(' -1.2e-3 ')).toBe(-0.0012);
     expect(readNumber('−4')).toBe(-4);
+    // A half-typed exponent is a slip, not 2.5 times Euler's number (6.79).
+    expect(readNumber('2.5e')).toBeNaN();
     expect(readNumber('1 000')).toBe(1000);
     expect(readNumber('pi/2')).toBeCloseTo(Math.PI / 2, 12);
     expect(readNumber('2*sqrt(3)')).toBeCloseTo(2 * Math.sqrt(3), 12);

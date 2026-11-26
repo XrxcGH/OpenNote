@@ -1,4 +1,5 @@
 // The unit system toggle and the first state of a tool in US units.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { SPECS } from '../specs';
 import { convertTexts, firstState, firstTexts, firstUnits, readFields } from './read';
@@ -28,5 +29,16 @@ describe('switching units', () => {
     const back = convertTexts(spec, us.texts, us.units, 'si');
     expect(Number(back.texts.d)).toBeCloseTo(50, 11);
     expect(Number(back.texts.v)).toBeCloseTo(150, 11);
+  });
+});
+
+describe('switching units and back', () => {
+  it('restores the typed text exactly, with no drift such as 99.9999999999999', async () => {
+    const spec = await SPECS.machining!();
+    const si = { texts: firstTexts(spec), units: firstUnits(spec, 'si') };
+    const us = convertTexts(spec, si.texts, si.units, 'us');
+    expect(us.texts.v).not.toBe(si.texts.v);
+    const back = convertTexts(spec, us.texts, us.units, 'si');
+    expect(back.texts).toEqual(si.texts);
   });
 });

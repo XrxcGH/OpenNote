@@ -1,6 +1,7 @@
 // IAPWS-IF97 against the verification values of the release (R7-97(2012)), then against the IAPWS-95 saturated
 // table the chemistry tools ship, and against itself: the region boundaries meet, and h - u = p v everywhere.
 /* eslint-disable opennote/feature-boundaries -- The test compares with the chemistry tools' IAPWS-95 table. */
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { STEAM_BY_P, STEAM_BY_T } from '../../../tools/chem/data/steamData';
 import { psat, pB23, region1, region2, region3, region5, tB23, tsat } from './if97';

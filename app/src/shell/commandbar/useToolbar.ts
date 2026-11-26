@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { FocusEvent, KeyboardEvent, RefObject } from 'react';
-import { useDensity } from '../../state/layout';
+import { useDensity, useSizeClass } from '../../state/layout';
 import type { BarEntry } from './useBarItems';
 
 const STEPS: Record<string, (index: number, count: number) => number> = {
@@ -43,6 +43,15 @@ export function useRovingTools(ref: RefObject<HTMLElement | null>) {
     const step = STEPS[event.key];
     const tools = toolsIn(ref.current);
     const index = tools.indexOf(document.activeElement as HTMLElement);
+    // A tool that opens a menu opens it on Arrow Down too, as a menu button does elsewhere (Beta 8 walk A2-A12-5).
+    const tool = tools[index];
+    if (event.key === 'ArrowDown' && tool?.getAttribute('aria-haspopup') === 'menu') {
+      if (tool.getAttribute('aria-expanded') !== 'true') {
+        event.preventDefault();
+        tool.click();
+      }
+      return;
+    }
     if (!step || index === -1) return;
     event.preventDefault();
     const next = tools[step(index, tools.length)];
@@ -84,7 +93,9 @@ export function useOverflow(ref: RefObject<HTMLElement | null>, entries: readonl
   const [hidden, setHidden] = useState<ReadonlySet<string>>(() => new Set());
   const widths = useRef(new Map<string, number>());
   const latest = useRef(entries);
+  const watcher = useRef<ResizeObserver | null>(null);
   const density = useDensity();
+  const sizeClass = useSizeClass();
   // A font that arrives after the first measure changes every width, so each font load measures again.
   const [fontLoads, setFontLoads] = useState(0);
   useEffect(() => {
@@ -94,7 +105,7 @@ export function useOverflow(ref: RefObject<HTMLElement | null>, entries: readonl
     fonts.addEventListener('loadingdone', again);
     return () => fonts.removeEventListener('loadingdone', again);
   }, []);
-  const key = `${density} ${fontLoads} ${entries.map((entry) => entry.item.id).join(' ')}`;
+  const key = `${density} ${sizeClass} ${fontLoads} ${entries.map((entry) => entry.item.id).join(' ')}`;
   const [measuredFor, setMeasuredFor] = useState(key);
   if (measuredFor !== key) {
     setMeasuredFor(key);
@@ -128,10 +139,20 @@ export function useOverflow(ref: RefObject<HTMLElement | null>, entries: readonl
       });
     });
     observer.observe(bar);
+    watcher.current = observer;
     return () => {
+      watcher.current = null;
       cancelAnimationFrame(frame);
       observer.disconnect();
     };
   }, [ref, fit]);
+  // A tool whose own width changes (a label that settles, an icon that arrives) with no render of the bar and no
+  // change to the bar's width is measured again. Without this, a fit taken on a transient width can stay.
+  useEffect(() => {
+    const observer = watcher.current;
+    for (const slot of ref.current?.querySelectorAll<HTMLElement>('[data-item-id], [data-more]') ?? []) {
+      observer?.observe(slot);
+    }
+  });
   return hidden;
 }

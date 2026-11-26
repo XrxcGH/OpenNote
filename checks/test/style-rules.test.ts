@@ -12,7 +12,7 @@ import { uiVoice, variants } from '../rules/ui-voice.ts';
 const baseTokens = (): Tokens => ({
   color: {
     light: { text: { primary: '#2B2521' }, surface: { page: '#FFFCF6', selected: '#DDE8DA' } },
-    dark: { text: { primary: '#F0E9DE' }, surface: { page: '#24201C', selected: '#2E3B30' } },
+    dark: { text: { primary: '#F2F1EC' }, surface: { page: '#262624', selected: '#2E3B30' } },
   },
   ink: {
     pens: [{ name: 'Amber', light: '#B8620F', dark: '#F0AE68' }],
@@ -57,7 +57,7 @@ test('brand-tokens composites a highlighter over the page before measuring text 
   const old = baseTokens();
   old.ink!.highlighters![0].dark = '#C9A42F66';
   assert.match((await tokenMessages({ ...old, contrast: [pair] })).join('\n'), /dark: text.primary on ink.hig/);
-  assert.ok(contrastRatio('#F0E9DE', '#A88A2C66', '#24201C') >= 7);
+  assert.ok(contrastRatio('#F2F1EC', '#A88A2C66', '#262624') >= 7);
 });
 
 test('brand-tokens enforces a ceiling on contrast, for washes that must stay close to a surface', async () => {

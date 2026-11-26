@@ -23,6 +23,9 @@
 
   :global(:root[data-density='touch']) .tool {
     min-block-size: var(--size-target-touch);
+    /* A pen slot holds only its swatch: in touch density it is a full target both ways. */
+    min-inline-size: var(--size-target-touch);
+    justify-content: center;
   }
 
   .tool:hover {
@@ -31,6 +34,33 @@
 
   .tool[aria-pressed='true'] {
     background: var(--color-surface-selected);
+  }
+
+  /* The Draw tools keep their names alone, with 4 px less padding a side, which brings the seven pens back onto the bar
+     at 1,280 px (docs/BRAND.md section 8). */
+  .tool[data-ink-tool] {
+    padding-inline: var(--space-2);
+  }
+
+  /* The shapes library's two buttons show an icon before the name; at the Medium size class the name stands alone. */
+  .toolIcon {
+    flex: none;
+    inline-size: var(--size-icon-md);
+    block-size: var(--size-icon-md);
+    color: var(--color-text-secondary);
+  }
+
+  :global(:root[data-size-class='medium']) .toolIcon {
+    display: none;
+  }
+
+  /* A contrast theme turns the selected fill into Canvas, so the chosen tool uses the system highlight. */
+  @media (forced-colors: active) {
+    .tool[aria-pressed='true'] {
+      forced-color-adjust: none;
+      background: Highlight;
+      color: HighlightText;
+    }
   }
 
   .tool:focus-visible {
@@ -56,7 +86,11 @@
   }
 
   /* The lasso's frame and its bar, over the page in screen space. */
+  /* Its own stacking context, so the handles' hit areas can sit under every part of the frame. */
   :global(.ink-selection-frame) {
+    /* Over the ruler and protractor, which join the chrome later, so the bar's actions stay reachable. */
+    z-index: calc(var(--layer-base) + 1);
+    isolation: isolate;
     border: 1px dashed var(--color-accent-primary);
     border-radius: var(--radius-sm);
   }
@@ -70,6 +104,8 @@
   :global(.ink-selection-frame) [data-ink-move] {
     position: absolute;
     inset: 0;
+    /* Under the corners' hit circles, so a finger just inside a corner resizes instead of moving. */
+    z-index: calc(var(--layer-base) - 2);
     border: none;
     background: transparent;
     cursor: move;
@@ -87,6 +123,15 @@
     border: 1px solid var(--color-accent-primary);
     border-radius: 50%;
     background: var(--color-surface-page);
+  }
+
+  /* The dot stays small, but a press anywhere in a target-size square around it takes the handle. The circle lies
+     over the move area and under every dot, so a dot always wins over a neighbor's circle. */
+  :global(.ink-selection-frame) [data-ink-corner]::before {
+    content: '';
+    position: absolute;
+    z-index: calc(var(--layer-base) - 1);
+    inset: calc((var(--space-5) - var(--target-size, 32px)) / 2 - 1px);
   }
 
   :global(.ink-selection-frame) [data-ink-corner='nw'] {
@@ -135,11 +180,15 @@
     inset-block-start: calc(100% + var(--space-3));
   }
 
-  /* The handle on the right side of the lasso's frame: drag it to rewrap handwriting to a new width. */
+  /*
+   * The handle on the right side of the lasso's frame: drag it to rewrap handwriting to a new width. It sits clear of
+   * the frame's edge, past the corner handles that are centered on it, so on a thin selection (one line of
+   * handwriting) it never lies on the bottom right resize handle.
+   */
   :global(.ink-selection-frame) [data-ink-side] {
     position: absolute;
     inset-block-start: calc(50% - var(--space-5) / 2);
-    inset-inline-end: calc(var(--space-5) / -2);
+    inset-inline-end: calc(var(--space-5) * -1.5 - var(--space-1));
     inline-size: var(--space-5);
     block-size: var(--space-5);
     border: 1px solid var(--color-accent-primary);
@@ -186,7 +235,7 @@
 
     :global(.ink-selection-frame) [data-ink-side]::before {
       inset-block: calc(-1 * var(--space-4));
-      inset-inline: calc(-1 * var(--space-3)) calc(-1 * var(--space-5));
+      inset-inline: 0 calc(-1 * var(--space-5));
     }
   }
 }

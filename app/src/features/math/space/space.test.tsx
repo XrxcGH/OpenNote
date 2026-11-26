@@ -120,6 +120,27 @@ describe('the math tool windows', () => {
     await expectNoAxeViolations(container);
   });
 
+  it('says why the solid is missing when From is not below To', async () => {
+    renderUi(<SolidsTool />);
+    const from = screen.getByRole('textbox', { name: 'From x =' });
+    const to = screen.getByRole('textbox', { name: 'To x =' });
+    await userEvent.clear(from);
+    await userEvent.type(from, '4');
+    await userEvent.clear(to);
+    await userEvent.type(to, '1');
+    expect(screen.getByText(/From must be less than To/)).toBeTruthy();
+    expect(screen.queryByText(/Volume:/)).toBeNull();
+    await userEvent.clear(from);
+    await userEvent.type(from, 'abc');
+    expect(screen.getByText(/must be numbers/)).toBeTruthy();
+    await userEvent.clear(from);
+    await userEvent.type(from, '0');
+    await userEvent.clear(to);
+    await userEvent.type(to, '4');
+    expect(screen.getByText(/Volume: 25.132741/)).toBeTruthy();
+    expect(screen.queryByText(/From must be less than To/)).toBeNull();
+  });
+
   it('fly a projectile and insert its graph and values', async () => {
     const { container } = renderUi(<ProjectileTool />);
     expect(screen.getByText('Range: 40.77 m')).toBeTruthy();

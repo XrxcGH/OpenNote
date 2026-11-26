@@ -3,7 +3,7 @@ import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { failures, groups, measure, summary } from './check-bundle.ts';
+import { failures, groups, measure, summary, unmatchedKeys } from './check-bundle.ts';
 import type { Budget, Manifest } from './check-bundle.ts';
 
 const MANIFEST: Manifest = {
@@ -26,6 +26,15 @@ const MANIFEST: Manifest = {
 const BUDGET: Budget = { startup: { jsKb: 1, cssKb: 1 }, lazyKb: { 'features/palette': 2 }, lazyDefaultKb: 3 };
 
 describe('check-bundle', () => {
+  it('names the lazyKb keys that match no dynamic entry', () => {
+    const budget = {
+      ...BUDGET,
+      lazyKb: { 'features/palette': 2, 'features/tables/engine/formula/fn/lazy/financial': 9 },
+    };
+    expect(unmatchedKeys(MANIFEST, budget)).toEqual(['features/tables/engine/formula/fn/lazy/financial']);
+    expect(unmatchedKeys(MANIFEST, BUDGET)).toEqual([]);
+  });
+
   it('groups start-up files and each lazy chunk without what start-up loads', () => {
     expect(groups(MANIFEST, BUDGET)).toEqual([
       { name: 'start-up JavaScript', files: ['assets/index.js', 'assets/shared.js'], limitKb: 1 },
@@ -82,5 +91,54 @@ describe('check-bundle', () => {
     const before = [{ name: 'start-up JavaScript', files: [], limitKb: 125, bytes: 1024 }];
     expect(summary(now, before)).toContain('| start-up JavaScript | 2.0 | 125 | +1.0 |');
     expect(summary(now, null)).toContain('no baseline');
+  });
+});
+
+describe('check-bundle after rules', () => {
+  it('takes several after rules, one for each kit window, each leaving out only its own window', () => {
+    const lazy = (src: string, file: string, imports: string[]) => ({
+      file,
+      src,
+      isDynamicEntry: true,
+      imports,
+    });
+    const manifest: Manifest = {
+      'index.html': { file: 'assets/index.js', isEntry: true },
+      'src/features/engineering/aero/ui/AeroKit.tsx': lazy('src/features/engineering/aero/ui/AeroKit.tsx', 'a.js', [
+        '_words-a.js',
+      ]),
+      'src/features/engineering/aero/wing/tool.ts': lazy('src/features/engineering/aero/wing/tool.ts', 'wing.js', [
+        '_words-a.js',
+      ]),
+      'src/features/engineering/thermo/ui/ThermoKit.tsx': lazy(
+        'src/features/engineering/thermo/ui/ThermoKit.tsx',
+        't.js',
+        ['_words-t.js'],
+      ),
+      'src/features/engineering/thermo/steam/tool.ts': lazy(
+        'src/features/engineering/thermo/steam/tool.ts',
+        'steam.js',
+        ['_words-t.js', '_words-a.js'],
+      ),
+      '_words-a.js': { file: 'assets/words-a.js' },
+      '_words-t.js': { file: 'assets/words-t.js' },
+    };
+    const budget: Budget = {
+      ...BUDGET,
+      after: [
+        { within: 'engineering/aero/', entry: 'engineering/aero/ui/AeroKit' },
+        { within: 'engineering/thermo/', entry: 'engineering/thermo/ui/ThermoKit' },
+      ],
+    };
+    const files = Object.fromEntries(
+      groups(manifest, budget)
+        .slice(2)
+        .map((g) => [g.name.split('/').slice(-2).join('/'), g.files]),
+    );
+    expect(files['ui/AeroKit.tsx']).toEqual(['a.js', 'assets/words-a.js']);
+    expect(files['wing/tool.ts']).toEqual(['wing.js']);
+    expect(files['ui/ThermoKit.tsx']).toEqual(['t.js', 'assets/words-t.js']);
+    // The steam tool follows the thermo window only, so the aero words still count against it.
+    expect(files['steam/tool.ts']).toEqual(['steam.js', 'assets/words-a.js']);
   });
 });

@@ -14,6 +14,8 @@ export interface PageSource {
   readonly pageId: string;
   readonly title: string;
   readonly notebook: string;
+  /** The notebook's ID, whose text styles the page uses. Absent when the page is in no notebook. */
+  readonly notebookId?: string;
   readonly section: string;
   readonly page: ExportPage;
   /** Where each asset loads from, by asset ID. */
@@ -24,17 +26,21 @@ export interface PageSource {
 async function placeOf(
   notes: NotesService,
   pageId: string,
-): Promise<{ title: string; notebook: string; section: string }> {
+): Promise<{ title: string; notebook: string; notebookId?: string; section: string }> {
   const node = await notes.get(pageId as NodeId).catch(() => null);
   let section = '';
   let notebook = '';
+  let notebookId: string | undefined;
   let parent = node?.parentId ? await notes.get(node.parentId).catch(() => null) : null;
   while (parent) {
     if (parent.kind === 'section' && !section) section = titleOf(parent);
-    if (parent.kind === 'notebook') notebook = titleOf(parent);
+    if (parent.kind === 'notebook') {
+      notebook = titleOf(parent);
+      notebookId = parent.id;
+    }
     parent = parent.parentId ? await notes.get(parent.parentId).catch(() => null) : null;
   }
-  return { title: node ? titleOf(node) : '', notebook, section };
+  return { title: node ? titleOf(node) : '', notebook, ...(notebookId ? { notebookId } : {}), section };
 }
 
 /** The box of every block as the page view laid it out, in page units. */

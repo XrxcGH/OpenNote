@@ -3,6 +3,7 @@
 // recording's own words are the thing being heard, and it says so when this computer cannot keep up.
 import { useEffect, useState } from 'react';
 import { useStore } from '../../../state/store';
+import { usePageTopSlot } from '../pageSlot';
 import { t } from '../../../strings/t';
 import styles from './captions.module.css';
 import { isLate, shown } from './model';
@@ -23,11 +24,17 @@ export function CaptionStrip() {
       alive = false;
     };
   }, [open]);
+  // At the top, the strip sits over the page area and the page makes room for it, so it never hides the title.
+  const { attach, style: place } = usePageTopSlot(open && position === 'top');
   if (!open) return null;
   const { text, box } = captionCss(style);
   const lines = shown(words);
   return (
-    <div className={`${styles.strip} ${position === 'top' ? styles.top : styles.bottom}`}>
+    <div
+      ref={position === 'top' ? attach : undefined}
+      style={position === 'top' ? place : undefined}
+      className={`${styles.strip} ${position === 'top' ? styles.top : styles.bottom}`}
+    >
       <div className={styles.box} style={box} role="region" aria-label={t('intelMore.captions.region')} aria-live="off">
         {lines.length === 0 ? (
           <p className={styles.line} style={text}>

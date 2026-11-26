@@ -2,9 +2,15 @@
 
 use serde_json::Value;
 
+use super::text_v2::{boolean, one_of, points, whole, Check};
+use super::values::Step;
 use crate::error::FormatError;
 use crate::format::json::{Fields, Json, Obj};
-use crate::model::{Background, Color, Named, NamedValue, PageView, Paper};
+use crate::format::tree_json::styles::{read_style, read_theme, style_format};
+use crate::limits::Limits;
+use crate::model::{
+    Background, Color, LineNumbers, Named, NamedValue, Page, PageNumbers, PageStyleSheet, PageView, Paper, TextSettings,
+};
 
 /// Reads `view`. Every field has a default.
 pub fn read_view(value: Value) -> Result<PageView, FormatError> {
@@ -64,6 +70,82 @@ fn read_background(value: Value) -> Result<Background, FormatError> {
         template: fields.opt_id("template")?,
         extra: fields.rest(),
     })
+}
+
+/// What a reader makes of `view.text` (`R-VIEW-1` to `R-VIEW-4`). Invalid values read as missing and are
+/// added to `problems`.
+pub fn text_settings(view: &PageView, problems: &mut Vec<String>) -> TextSettings {
+    let mut settings = TextSettings::default();
+    let Some(value) = view.extra.get("text") else {
+        return settings;
+    };
+    let Some(map) = value.as_object() else {
+        problems.push("view.text: an object".to_owned());
+        return settings;
+    };
+    let mut c = Check::new(problems);
+    let path = "view.text";
+    let tab = points(1.0, 1584.0, Step::Twentieth);
+    if let Some(tab) = c.key(map, path, "defaultTab", "a number from 1 to 1584, step 0.05", tab) {
+        settings.default_tab = tab;
+    }
+    settings.hyphenate = c.key(map, path, "hyphenate", "true or false", boolean).unwrap_or(false);
+    settings.line_numbers = c.key(map, path, "lineNumbers", "{start, countBy, restart}", |v| {
+        let m = v.as_object()?;
+        Some(LineNumbers {
+            start: m.get("start").map_or(Some(1), |s| whole(1, 32_767)(s))?,
+            count_by: m.get("countBy").map_or(Some(1), |s| whole(1, 100)(s))?,
+            restart: m
+                .get("restart")
+                .map_or(Some("page".to_owned()), one_of(&["page", "continuous"]))?,
+        })
+    });
+    settings.page_numbers = c.key(map, path, "pageNumbers", "{format, start}", |v| {
+        let m = v.as_object()?;
+        let formats = ["decimal", "lowerRoman", "upperRoman", "lowerLetter", "upperLetter"];
+        Some(PageNumbers {
+            format: m.get("format").map_or(Some("decimal".to_owned()), one_of(&formats))?,
+            start: m.get("start").map_or(Some(1), |s| whole(0, 32_767)(s))?,
+        })
+    });
+    settings
+}
+
+/// What a reader makes of a page's style sheet and theme (`R-STY-7`, `R-THM-1`). More than
+/// [`Limits::styles_per_page`] styles is over the limit.
+pub fn style_sheet(page: &Page, limits: &Limits) -> PageStyleSheet {
+    let mut sheet = PageStyleSheet::default();
+    if let Some(value) = page.extra.get("styles") {
+        match value.as_object() {
+            None => sheet
+                .problems
+                .push("styles: a map from style names to styles".to_owned()),
+            Some(map) => {
+                if map.len() > limits.styles_per_page as usize {
+                    let count = map.len();
+                    let most = limits.styles_per_page;
+                    sheet
+                        .over_limits
+                        .push(format!("styles: {count} styles, at most {most}"));
+                }
+                for (name, style) in map {
+                    let path = format!("styles.{name}");
+                    match read_style(style.clone(), &path) {
+                        Ok(spec) => {
+                            let format = style_format(&spec, &path, &mut sheet.problems);
+                            sheet.styles.insert(name.clone(), (spec, format));
+                        }
+                        Err(err) => sheet.problems.push(format!("{path}: {}", err.detail)),
+                    }
+                }
+            }
+        }
+    }
+    sheet.theme = page
+        .extra
+        .get("theme")
+        .map(|theme| read_theme(theme, "theme", &mut sheet.problems));
+    sheet
 }
 
 /// A known or unknown enum value as written.

@@ -4,6 +4,7 @@
 import { INSERT_EVENT } from '../../flags';
 import type { KitCalcData } from '../block/model';
 import { KIT_CALC_TYPE, kitCalcFallback, kitCalcData } from '../block/model';
+import { panelOf, readPanelForm } from '../panelForm';
 import type { KitResultRow, KitStep } from '../types';
 import { say, stepsHtml } from './words';
 
@@ -50,4 +51,24 @@ export function insertLiveBlock(block: KitCalcData): boolean {
   const data = kitCalcData(block);
   // The page takes a panel block by its full type (PANEL_TYPES.kitCalc in features/page/panels/kinds.ts).
   return send({ panel: { type: KIT_CALC_TYPE, data: { ...data }, fallback: kitCalcFallback(data) } });
+}
+
+/**
+ * A live calculation block for the tool whose panel holds `from` (a kit's Insert button), with the panel's typed
+ * values as its inputs, so Open in tool puts them back. False when the button is not in a marked panel or no page
+ * took the block.
+ */
+export function insertLiveFromPanel(
+  from: Element,
+  block: Omit<KitCalcData, 'kit' | 'tool' | 'inputs' | 'title'> & { title?: string },
+): boolean {
+  const panel = panelOf(from);
+  if (!panel) return false;
+  return insertLiveBlock({
+    ...block,
+    title: block.title || panel.title,
+    kit: panel.kit,
+    tool: panel.tool,
+    inputs: readPanelForm(panel.root),
+  });
 }

@@ -1,0 +1,35 @@
+/* A tab character: a box as wide as the plugin says, with its leader along the baseline (text DESIGN.md 7.2). */
+.tab {
+  display: inline-block;
+  overflow: hidden;
+  white-space: pre;
+  vertical-align: baseline;
+  tab-size: 1;
+}
+
+.tab[data-leader='dot'] {
+  background: radial-gradient(circle, currentColor 0.06em, transparent 0.07em) repeat-x 0 82% / 0.33em 0.33em;
+}
+
+.tab[data-leader='middleDot'] {
+  background: radial-gradient(circle, currentColor 0.06em, transparent 0.07em) repeat-x 0 55% / 0.33em 0.33em;
+}
+
+.tab[data-leader='hyphen'] {
+  background: linear-gradient(90deg, currentColor 60%, transparent 60%) repeat-x 0 60% / 0.4em 0.06em;
+}
+
+.tab[data-leader='underscore'] {
+  background: linear-gradient(currentColor, currentColor) repeat-x 0 100% / 100% 0.06em;
+}
+
+.tab[data-leader='heavy'] {
+  background: linear-gradient(currentColor, currentColor) repeat-x 0 100% / 100% 0.14em;
+}
+
+@media (forced-colors: active) {
+  .tab[data-leader] {
+    forced-color-adjust: none;
+    color: CanvasText;
+  }
+}

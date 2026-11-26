@@ -58,7 +58,7 @@ pub fn enabled() -> bool {
     LOG.get().is_some_and(Option::is_some)
 }
 
-/// One line of the log: `{"mark":"windowShown","epochMs":1767225600000,"source":"rust","detail":"#1C1916"}`.
+/// One line of the log: `{"mark":"windowShown","epochMs":1767225600000,"source":"rust","detail":"#1E1E1C"}`.
 pub fn line(mark: &str, epoch_ms: f64, source: &str, detail: Option<&str>) -> String {
     let mut value = serde_json::json!({ "mark": mark, "epochMs": epoch_ms, "source": source });
     if let (Some(detail), Some(fields)) = (detail, value.as_object_mut()) {
@@ -109,12 +109,12 @@ mod tests {
 
     #[test]
     fn writes_one_json_object_per_line() {
-        let text = line("windowShown", 1000.5, "rust", Some("#1C1916"));
+        let text = line("windowShown", 1000.5, "rust", Some("#1E1E1C"));
         assert!(text.ends_with('\n'));
         let parsed: Value = serde_json::from_str(text.trim_end()).expect("JSON");
         assert_eq!(
             parsed,
-            json!({ "mark": "windowShown", "epochMs": 1000.5, "source": "rust", "detail": "#1C1916" })
+            json!({ "mark": "windowShown", "epochMs": 1000.5, "source": "rust", "detail": "#1E1E1C" })
         );
         let plain: Value = serde_json::from_str(line("mainEntered", 1.0, "rust", None).trim_end()).expect("JSON");
         assert!(plain.get("detail").is_none());
@@ -136,6 +136,6 @@ mod tests {
 
     #[test]
     fn formats_colors_for_the_log() {
-        assert_eq!(hex(crate::theme_tokens::Rgb(0x1C, 0x19, 0x16)), "#1C1916");
+        assert_eq!(hex(crate::theme_tokens::Rgb(0x1E, 0x1E, 0x1C)), "#1E1E1C");
     }
 }

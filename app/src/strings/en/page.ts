@@ -86,6 +86,9 @@ export const page = {
     nothingSelected: 'Select a block on the page first.',
     menuLabel: 'Object',
   },
+  canvas: {
+    menuLabel: 'Page',
+  },
   selection: {
     count: '{count, plural, one {# item selected.} other {# items selected.}}',
     badge: '{count, plural, one {# selected} other {# selected}}',
@@ -109,6 +112,23 @@ export const page = {
     resetDone: 'Reading order reset to the default.',
   },
   openFailed: 'This page couldn’t be opened. Try again, or choose another page.',
+  openDamaged:
+    'This page’s file (page.json) is damaged, so the page couldn’t be opened. ' +
+    'OpenNote can put back its last saved version and keep the damaged file in the page’s .damaged folder.',
+  openNewer:
+    'A newer version of OpenNote wrote this page, so this version can’t open it. ' +
+    'The file is left unchanged. Update OpenNote to open the page.',
+  recoverDamaged: 'Put back the last saved version',
+  saveBlocked: {
+    readOnlyFile:
+      'This page isn’t saving: its file (page.json) is marked read-only. ' +
+      'Clear Read-only in the file’s Properties, then choose Retry.',
+    cloudPlaceholder:
+      'This page isn’t saving: its file is a cloud file that isn’t downloaded. ' +
+      'Download it with the cloud service, then choose Retry.',
+    retry: 'Retry',
+  },
+  recoverNone: 'This page has no saved version to put back. Its file is left unchanged.',
   stillClosing:
     'OpenNote was still closing from last time, so this page opened read-only. ' +
     'Your newest ink is safe, and it shows after you restart OpenNote.',

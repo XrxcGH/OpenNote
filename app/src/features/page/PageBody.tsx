@@ -9,6 +9,9 @@ import { getSizeClass } from '../../state/layout';
 import { useStore } from '../../state/store';
 import { t } from '../../strings/t';
 import { mountPage } from './mount';
+import { OpenFailedNotice } from './openFailedNotice';
+import { openFailureOf } from './openFailure';
+import type { OpenFailure } from './openFailure';
 import type { MountedPage } from './mount';
 import extrasStyles from './qol/qol.module.css';
 import { sourceState } from './qol/stores';
@@ -16,6 +19,7 @@ import styles from './PageView.module.css';
 import { pagesClient, pageView } from './runtime';
 import paneStyles from './readingOrder/pane.module.css';
 import { ReadingOrderPane } from './readingOrder/ReadingOrderPane';
+import { SaveBlockedNotice } from './saveBlocked';
 import { StillClosingNotice } from './stillClosing';
 import { returnBand } from './title/TitleSlot';
 import { readingOrderOpen } from './viewport/shown';
@@ -51,7 +55,9 @@ export default function PageBody({ pageId, title, treeTitle, changed, band }: Pa
   const notes = useNotes();
   const host = useRef<HTMLDivElement>(null);
   const named = useRef(treeTitle);
-  const [failed, setFailed] = useState(false);
+  const [failed, setFailed] = useState<OpenFailure | null>(null);
+  const [attempt, setAttempt] = useState(0);
+  const [recoverNote, setRecoverNote] = useState<string | null>(null);
   const [mounted, setMounted] = useState<MountedPage | null>(null);
   const paneWanted = useStore(readingOrderOpen, (open) => open);
   const paneAllowed = useFlag('page.readingOrder');
@@ -82,7 +88,7 @@ export default function PageBody({ pageId, title, treeTitle, changed, band }: Pa
         destroy = mounted.destroy;
         setMounted(mounted);
       })
-      .catch(() => !cancelled && setFailed(true));
+      .catch((error: unknown) => !cancelled && setFailed(openFailureOf(error)));
     return () => {
       cancelled = true;
       // The band goes back beside the page at once, before the page's slower teardown.
@@ -91,7 +97,17 @@ export default function PageBody({ pageId, title, treeTitle, changed, band }: Pa
     };
     // The title and the changed line are read once, when the page opens.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pageId]);
+  }, [pageId, attempt]);
+  // A damaged page.json: put back the newest saved version, then open the page again.
+  const recover = pagesClient().admin?.recoverDamaged;
+  const putBack = () =>
+    void recover?.(pageId)
+      .then((done) => {
+        if (!done) return setRecoverNote(t('page.recoverNone'));
+        setFailed(null);
+        setAttempt((n) => n + 1);
+      })
+      .catch(() => setRecoverNote(t('page.openFailed')));
   // A rename in the tree shows in the heading, unless the person is typing in it.
   useEffect(() => {
     named.current = treeTitle;
@@ -99,9 +115,10 @@ export default function PageBody({ pageId, title, treeTitle, changed, band }: Pa
   }, [mounted, treeTitle]);
   return (
     <>
-      {failed && <p role="alert">{t('page.openFailed')}</p>}
+      {failed && <OpenFailedNotice failure={failed} onRecover={recover && putBack} note={recoverNote} />}
       {mounted && <StillClosingNotice readOnly={mounted.page.readOnly} />}
-      <div className={paneStyles.row}>
+      {mounted && <SaveBlockedNotice page={mounted.page} />}
+      <div className={paneStyles.row} data-page-row="">
         <div className={extrasStyles.column}>
           {mounted && <Extras mounted={mounted} slot="top" />}
           {mounted && <Extras mounted={mounted} slot="source" />}

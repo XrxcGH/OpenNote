@@ -118,7 +118,15 @@ async fn blocking<T: Send + 'static>(work: impl FnOnce() -> T + Send + 'static) 
 #[tauri::command]
 pub async fn interop_pick(window: WebviewWindow, kind: PickKind, initial: Option<String>) -> IpcResult<Option<String>> {
     let owner = crate::desktop::dialog_owner(&window);
-    let picked = blocking(move || pick::pick(owner, kind, initial)).await??;
+    // The end-to-end build answers from its environment, because a spec cannot reach the Windows picker.
+    #[cfg(feature = "test-endpoints")]
+    let answered = crate::test_pick::answer(kind);
+    #[cfg(not(feature = "test-endpoints"))]
+    let answered: Option<String> = None;
+    let picked = match answered {
+        Some(path) => Some(path),
+        None => blocking(move || pick::pick(owner, kind, initial)).await??,
+    };
     if let Some(path) = &picked {
         grants::grant(path);
         // A file the person picks may also open as a page that saves back (A3-18).

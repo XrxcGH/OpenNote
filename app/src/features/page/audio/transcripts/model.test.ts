@@ -5,6 +5,8 @@ import {
   fixedWords,
   cueText,
   fromSegments,
+  withoutNonSpeech,
+  endAt,
   markdownOf,
   momentHref,
   nextSpeaker,
@@ -230,5 +232,58 @@ describe('the words a fix changed', () => {
     expect(fixedWords('same words', 'same  words')).toBeNull();
     expect(fixedWords('one two', 'one more two')).toBeNull();
     expect(fixedWords('a b c d e f', 'g h i j k l')).toBeNull();
+  });
+});
+
+describe('what a speech model writes for silence', () => {
+  const at = (startMs: number, text: string) => ({ startMs, endMs: startMs + 1000, text });
+
+  it('is left out, even when a marker is split over two segments', () => {
+    const kept = withoutNonSpeech([
+      at(0, ' The quick brown fox.'),
+      at(30_000, ' ['),
+      at(60_000, 'silence ]'),
+      at(90_000, ' [BLANK_AUDIO]'),
+      at(100_000, '[ Pause ]'),
+      at(110_000, ' (silence) '),
+      at(120_000, ' ...'),
+      at(130_000, ' Testing [MUSIC] one two.'),
+    ]);
+    expect(kept.map((segment) => segment.text)).toEqual(['The quick brown fox.', 'Testing one two.']);
+  });
+
+  it('leaves nothing for a silent recording', () => {
+    expect(withoutNonSpeech([at(0, '[BLANK_AUDIO]'), at(60_000, '[ Pause ]')])).toEqual([]);
+  });
+});
+
+describe('broken captions', () => {
+  it('are reported, not added as a line of their timings', () => {
+    const broken = '1\n00:00:01,000 -> garbage\n\nWEBVTT broken --> \n00:xx';
+    expect(parseTranscript(broken, 10_000)).toEqual({ segments: [], timed: false, malformed: true });
+  });
+
+  it('do not catch plain text with an arrow in it', () => {
+    expect(parseTranscript('Input --> output, the whole idea', 10_000).malformed).toBe(false);
+  });
+});
+
+describe('a transcript of a trimmed recording', () => {
+  it('loses the lines past the new end, and a line that runs over ends there', () => {
+    const data = fromSegments(
+      'r1',
+      [
+        { startMs: 1000, endMs: 5000, text: 'Kept.' },
+        { startMs: 12_000, endMs: 16_000, text: 'Cut short.' },
+        { startMs: 30_000, endMs: 31_000, text: 'Gone.' },
+      ],
+      'engine',
+    );
+    const trimmed = endAt({ ...data, summary: 'All of it.' }, 14_000);
+    expect(trimmed.lines.map((line) => [line.text, line.endMs])).toEqual([
+      ['Kept.', 5000],
+      ['Cut short.', 14_000],
+    ]);
+    expect(trimmed.summary).toBe('');
   });
 });

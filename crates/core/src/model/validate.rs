@@ -8,6 +8,8 @@ use std::collections::HashSet;
 
 use crate::format::markdown::{outgoing_links, LinkTarget};
 use crate::format::names::check_asset_file_name;
+use crate::format::page_json::stamp::BREAK_TYPE;
+use crate::format::page_json::{style_sheet, text_settings};
 use crate::id::{AssetId, Id};
 use crate::limits::Limits;
 use crate::model::{Block, BlockData, Page, TableData, TextData, Warning};
@@ -69,6 +71,16 @@ fn check_page_fields(page: &Page, limits: &Limits, report: &mut ValidationReport
     if paper.width <= 0.0 || paper.height <= 0.0 {
         report.error("view.paper", "the paper has no area");
     }
+    let mut problems = Vec::new();
+    text_settings(view, &mut problems);
+    let sheet = style_sheet(page, limits);
+    problems.extend(sheet.problems);
+    for problem in problems {
+        report.warn("page.invalid", problem);
+    }
+    for over in sheet.over_limits {
+        report.error("limit.styles", format!("page.json: {over}"));
+    }
     for id in &view.reading_order {
         if !page.blocks.contains(*id) {
             report.warn("page.readingOrder", format!("{id} names no block"));
@@ -127,6 +139,16 @@ fn check_block(page: &Page, block: &Block, limits: &Limits, ids: &mut HashSet<Id
         BlockData::File(file) => asset(file.asset, report),
         BlockData::Table(table) => check_table(table, limits, &owner, report),
         BlockData::Ink(_) => {}
+        BlockData::Other(other) if &*other.type_name == BREAK_TYPE => {
+            let exact = block
+                .fallback
+                .as_ref()
+                .is_some_and(|f| f.markdown == "---" && f.image.is_none() && f.extra.is_empty());
+            if !exact {
+                let detail = format!("{owner}: a break's fallback is exactly {{\"markdown\": \"---\"}} (R-BRK-2)");
+                report.warn("block.breakFallback", detail);
+            }
+        }
         BlockData::Other(other) => match &other.unreadable {
             Some(reason) => report.warn("block.unreadable", format!("{owner}: {reason}")),
             None if block.fallback.is_none() => report.warn("block.fallback", format!("{owner} has no fallback")),
@@ -158,6 +180,14 @@ fn check_text(
     }
     for tags in text.tags.values() {
         check_tags(tags, limits, owner, report);
+    }
+    // Version 2 data (spec 6.8 to 6.11): an invalid value reads as missing, and a limit passed is an error.
+    let formatting = text.formatting(limits);
+    for problem in formatting.problems {
+        report.warn("text.invalid", format!("{owner}: {problem}"));
+    }
+    for over in formatting.over_limits {
+        report.error("limit.text", format!("page.json, {owner}: {over}"));
     }
     for link in outgoing_links(&text.markdown) {
         if let LinkTarget::Asset(asset) = link {

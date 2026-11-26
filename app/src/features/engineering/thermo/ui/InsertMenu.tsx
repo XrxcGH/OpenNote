@@ -1,5 +1,6 @@
 // The Insert menu of a kit tool: the answer line, the headline equation, the result table, the worked steps, the
 // plot as a picture, and a cycle's state table. Each choice says in words whether the page took it.
+import '../text';
 import { t } from '../../../../strings/t';
 import { Button, announce, openMenu, type MenuItemSpec } from '../../../../ui';
 import type { PlotSpec, ThermoResult } from '../common/types';

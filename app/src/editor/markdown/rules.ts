@@ -116,3 +116,24 @@ export function mathPlugin(md: Md): void {
   md.inline.ruler.before('emphasis', 'math_inline', mathInline);
   md.block.ruler.before('fence', 'math_block', mathBlock, { alt: ['paragraph', 'reference', 'blockquote', 'list'] });
 }
+
+/** R-FN-1: `[^ID]` with an ID as SPEC 2.4 writes it, in lowercase. */
+const FOOTNOTE_REF = /^\[\^([0-7][0-9a-hjkmnp-tv-z]{25})\]/;
+
+/**
+ * A footnote reference. It runs after the link and image rules, so CommonMark goes first (R-FN-2). In silent mode,
+ * where markdown-it scans a link's text, it reads nothing: CommonMark has no references, so their brackets nest in
+ * link text like any other brackets.
+ */
+function footnoteRef(state: StateInline, silent: boolean): boolean {
+  if (silent || state.src.charCodeAt(state.pos) !== 0x5b) return false;
+  const match = FOOTNOTE_REF.exec(state.src.slice(state.pos, Math.min(state.posMax, state.pos + 29)));
+  if (!match) return false;
+  state.push('footnote_ref', '', 0).content = match[1];
+  state.pos += match[0].length;
+  return true;
+}
+
+export function footnotePlugin(md: Md): void {
+  md.inline.ruler.after('image', 'footnote_ref', footnoteRef);
+}

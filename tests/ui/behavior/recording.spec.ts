@@ -105,7 +105,9 @@ test('trims the silence at the start, and removes a marked part', async ({ page 
   await expect(long).toBeVisible();
   await long.getByRole('button', { name: 'More' }).click();
   await page.getByRole('menuitem', { name: 'Trim silence at the start and end' }).click();
-  // The fake finds a second of silence at the start.
+  // It says how long the recording becomes and asks first; the fake finds a second of silence at the start.
+  await expect(page.getByRole('dialog', { name: 'Trim the silence?' })).toBeVisible();
+  await page.getByRole('button', { name: 'Trim silence', exact: true }).click();
   const trimmed = page.getByRole('group', { name: /^Recording, 0:0[34]$/ });
   await expect(trimmed).toBeVisible();
   // Mark where a part starts, move on, and remove up to there after confirming.

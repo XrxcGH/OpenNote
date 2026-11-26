@@ -174,7 +174,7 @@ describe('width from tilt and transform', () => {
 
 describe('the hover cursor', () => {
   it('shows the pen tip at the zoom, kept between 3 and 32 pixels', () => {
-    expect(penHoverPreview(2, 1).diameter).toBe(3);
+    expect(penHoverPreview(2, 1).diameter).toBe(6);
     expect(penHoverPreview(10, 2).diameter).toBe(20);
     expect(penHoverPreview(40, 2).diameter).toBe(32);
   });

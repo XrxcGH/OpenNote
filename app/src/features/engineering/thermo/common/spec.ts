@@ -1,5 +1,6 @@
 // What a tool tells the kit window: its modes, the fields of each mode, and how to solve. Pure data and functions,
 // so the window renders every tool the same way and the forms can be tested without a DOM.
+import { hasInfinity, hasNonFinite, isRangeError } from '../../../../core/finite';
 import type { kitThermo } from '../../../../strings/en/kitThermo';
 import { ThermoError, type ThermoResult } from './types';
 import type { Qty, System } from './units';
@@ -35,6 +36,23 @@ export interface ModeSpec {
 export interface ToolSpec {
   modes: readonly ModeSpec[];
   solve(mode: string, values: Values): ThermoResult;
+}
+
+/**
+ * Solves a mode. An absurd input becomes the named problem "out of range". A NaN or infinite answer or state is
+ * never shown, nor is an infinite plot point. A RangeError from an array sized by the input is not a crash.
+ */
+export function solveChecked(spec: ToolSpec, mode: string, values: Values): ThermoResult {
+  let result: ThermoResult;
+  try {
+    result = spec.solve(mode, values);
+  } catch (error) {
+    if (isRangeError(error)) throw new ThermoError('outOfRange');
+    throw error;
+  }
+  // A plot draws NaN as a gap (the cycle plots do), so only an infinite point is refused there.
+  if (hasNonFinite([result.rows, result.states]) || hasInfinity(result.plots)) throw new ThermoError('outOfRange');
+  return result;
 }
 
 /** A number field's value; throws a missing-value error when it is empty. */

@@ -1,3 +1,4 @@
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { beerLambert, molarMassFromFreezing } from './lab';
 import type { Outcome } from '../types';

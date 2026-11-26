@@ -22,7 +22,7 @@ describe('the tool windows in the real app', { skip: skipReason() }, () => {
   it('answers in the calculator', async () => {
     const { browser } = session;
     await runCommand(browser, 'calculator', 'Open calculator');
-    const expression = browser.$('[aria-label="Expression"]');
+    const expression = browser.$('//label[normalize-space(.)="Expression"]//input');
     await expression.waitForExist({ timeout: 10_000 });
     await expression.setValue('2pi * 3');
     await browser.keys('Enter');

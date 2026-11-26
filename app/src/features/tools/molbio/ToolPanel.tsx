@@ -6,6 +6,7 @@ import { useEffect, useId, useMemo, useState } from 'react';
 import { createStore, useStore } from '../../../state/store';
 import { t } from '../../../strings/t';
 import { Button, announce } from '../../../ui';
+import { insertLive as keepLive } from '../kits/liveInsert';
 import { insertIntoPage } from '../ui/insert';
 import { figureSvg } from './figure';
 import { FigureView } from './FigureView';
@@ -148,6 +149,25 @@ function InsertBar({ result }: { result: KitOk }) {
           {t('kitMolBio.insertSteps')}
         </Button>
       ) : null}
+      <Button
+        variant="quiet"
+        onClick={(event) => {
+          void keepLive(event.currentTarget, {
+            summary: say(result.answer.key, result.answer.vars),
+            rows: result.rows.map((row) => ({
+              label: say(row.key, row.vars),
+              value: row.word ? say(row.word) : String(row.value ?? ''),
+              unit: '',
+            })),
+            ...(result.latex ? { latex: result.latex } : {}),
+          }).then((ok) => {
+            missed.set(!ok);
+            announce(t(ok ? 'kitMolBio.liveInserted' : 'kitMolBio.noPage'));
+          });
+        }}
+      >
+        {t('kitMolBio.insertLive')}
+      </Button>
       <MissedInsert />
     </div>
   );
@@ -209,7 +229,7 @@ function Parts({ result }: { result: KitOk }) {
       {result.figures?.map((item, i) => {
         const title = say(item.title, item.vars);
         return (
-          <section key={`f${i}`} className={styles.part} aria-label={title}>
+          <section key={`f${i}`} className={styles.part} aria-label={t('kitMolBio.figureOf', { what: title })}>
             <div className={styles.partHead}>
               <h4 className={styles.subheading}>{title}</h4>
               <Button
@@ -227,7 +247,7 @@ function Parts({ result }: { result: KitOk }) {
       {result.blocks?.map((block, i) => {
         const title = say(block.title);
         return (
-          <section key={`b${i}`} className={styles.part} aria-label={title}>
+          <section key={`b${i}`} className={styles.part} aria-label={t('kitMolBio.textOf', { what: title })}>
             <div className={styles.partHead}>
               <h4 className={styles.subheading}>{title}</h4>
               <Button

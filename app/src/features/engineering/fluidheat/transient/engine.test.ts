@@ -1,3 +1,4 @@
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { CalcError } from '../numeric';
 import { characteristicLength, eigenvalues, lumped, profile, semiInfinite, series, solid } from './engine';

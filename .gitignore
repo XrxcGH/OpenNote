@@ -15,6 +15,7 @@ tests/e2e/logs/
 tests/ui/report/
 tests/ui/results/
 tests/perf/typing/results/
+tests/e2e/text/results/
 extensions/dist/
 
 # The owner of a build keeps the connectors app registrations here (docs/CONNECTORS.md).
@@ -26,3 +27,4 @@ tests/nvda/results/
 tests/crosscheck/.tools/
 tests/crosscheck/.corpus/
 tests/ui/audit/out/
+tests/perf/codeStudio/results/

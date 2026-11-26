@@ -106,7 +106,7 @@ export interface ImportResult {
 }
 
 export type ExportFormat =
-  'markdown' | 'html' | 'htmlSingle' | 'docx' | 'pdf' | 'pptx' | 'xlsx' | 'csv' | 'latex' | 'share';
+  'markdown' | 'html' | 'htmlSingle' | 'docx' | 'pdf' | 'pptx' | 'xlsx' | 'csv' | 'tsv' | 'latex' | 'share';
 export type ExportScope = 'notebook' | 'section' | 'page';
 
 /** A source of the citation library with its BibTeX entry, for a LaTeX export's `\cite` commands and `.bib` file. */
@@ -129,6 +129,8 @@ export interface LatexOptions {
   author: string;
   date: 'none' | 'today' | 'edited';
   citations: LatexSource[];
+  /** Minutes to add to UTC for local time, so the edited date is the day the page shows. */
+  utcOffsetMinutes?: number;
 }
 
 export interface ExportRequest {
@@ -148,6 +150,16 @@ export interface ExportRequest {
   history?: boolean;
   /** LaTeX: the options and the citation library. */
   latex?: LatexOptions;
+  /** Word: the choices of the export dialog. */
+  word?: WordChoices;
+}
+
+/** What a Word export asks besides the folder. */
+export interface WordChoices {
+  /** Leave the names of authors and the dates out of the file, as Word's "Remove personal information" does. */
+  removePersonal: boolean;
+  /** Embed the app's bundled fonts that the document uses. */
+  embedFonts: boolean;
 }
 
 export interface ExportResult {

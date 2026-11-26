@@ -61,9 +61,20 @@ export function growthSeries(p: GrowthInput): Point[] {
   return solution.t.map((t, i) => [t, solution.y[i][0]]);
 }
 
+/** The growth rate dN/dt of a continuous model at size N (what the model says N changes by per unit time). */
+export function growthRate(p: GrowthInput, N: number): number {
+  if (p.model === 'exponential') return p.r * N;
+  if (p.model === 'logistic') return p.r * N * (1 - N / p.K);
+  return p.r * N * (N / p.A - 1) * (1 - N / p.K);
+}
+
 export function growthResult(p: GrowthInput): CalcResult {
   const series = growthSeries(p);
   const end = series[series.length - 1][1];
+  // A continuous model has a rate dN/dt; a discrete one changes in steps, so it reports the last step.
+  const rate = DISCRETE[p.model]
+    ? { label: 'population.r.change' as const, value: end - series[series.length - 2][1] }
+    : { label: 'population.r.rate' as const, value: growthRate(p, end) };
   const steps: Step[] = [
     { key: `population.s.${p.model}`, vars: { N0: p.N0, r: p.r, K: p.K, A: p.A, t: p.t, N: end } },
   ];
@@ -75,7 +86,10 @@ export function growthResult(p: GrowthInput): CalcResult {
   }
   if (p.model === 'allee') notes.push({ key: 'population.n.allee', vars: { A: p.A, K: p.K } });
   return {
-    rows: [{ label: 'population.r.final', vars: { t: p.t }, value: end }],
+    rows: [
+      { label: 'population.r.final', vars: { t: p.t }, value: end },
+      { ...rate, vars: { t: p.t } },
+    ],
     steps,
     notes,
     latex: {

@@ -155,6 +155,7 @@ export class InkSurface {
 
   /** The ink layer the next stroke goes to, made on first use. */
   layerFor(): string {
+    this.dropRemovedLayer();
     if (this.layerId) return this.layerId;
     if (this.pendingLayer) return this.pendingLayer.id;
     const now = new Date().toISOString();
@@ -432,6 +433,16 @@ export class InkSurface {
   }
 
   // ---- setup ----
+
+  /**
+   * Forgets the ink layer once the page no longer holds it. An undo back to an empty page takes the layer block out,
+   * and the core refuses a stroke sent to it. The next stroke makes a new layer, or uses one a redo put back.
+   */
+  private dropRemovedLayer(): void {
+    const layer = this.parts.layer;
+    if (!this.layerId || !layer || layer.block(this.layerId)) return;
+    this.layerId = layer.blocks().find(isLayer)?.id ?? null;
+  }
 
   private findLayer(): void {
     const layer = this.parts.layer?.blocks().find(isLayer) ?? this.parts.page.initial.blocks.find(isLayer);

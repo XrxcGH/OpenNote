@@ -36,5 +36,9 @@ describe('panel block', () => {
     props.patch({ hidden: false, x: null });
     expect(seen.at(-1)).toEqual({ hidden: false });
     expect(send).toHaveBeenCalledOnce();
+    // The core merges at every level (RFC 7396): a code project's patch of one file keeps the other files.
+    props.patch({ files: { f1: { text: 'a' }, f2: { text: 'b', path: 'b.py' } } });
+    props.patch({ files: { f1: { text: 'c' } } });
+    expect(seen.at(-1)).toEqual({ hidden: false, files: { f1: { text: 'c' }, f2: { text: 'b', path: 'b.py' } } });
   });
 });

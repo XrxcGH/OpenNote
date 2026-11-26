@@ -3,6 +3,7 @@
 // when the page closes. So the heading the tree's Enter focused is the element the person types the title into,
 // and focus never drops while pages switch.
 import { useLayoutEffect, useRef, useState } from 'react';
+import { useNotebookAccent } from '../../tree';
 import styles from './title.module.css';
 
 const slots = new WeakMap<HTMLElement, HTMLElement>();
@@ -50,6 +51,19 @@ export function returnBand(band: HTMLElement): void {
 /** Shows the band while no page holds it. */
 export function TitleSlot({ band, title, changed }: { band: HTMLElement; title: string; changed: string | null }) {
   const slot = useRef<HTMLDivElement>(null);
+  const accent = useNotebookAccent();
+  // The rule under the title follows the notebook's color; an uncolored notebook keeps the clay rule.
+  useLayoutEffect(() => {
+    const heading = band.querySelector('h1');
+    if (!heading) return;
+    if (accent) {
+      heading.dataset.accent = accent;
+      heading.dataset.notebookMark = 'title-rule';
+    } else {
+      delete heading.dataset.accent;
+      delete heading.dataset.notebookMark;
+    }
+  }, [band, accent]);
   useLayoutEffect(() => {
     const element = slot.current!;
     slots.set(band, element);

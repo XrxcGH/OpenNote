@@ -22,7 +22,14 @@ Your settings live in `~/.config/OpenNote`, this computer's files in `~/.local/s
 ## Updates
 
 - **Linux.** OpenNote updates the AppImage itself, the same way as on Windows, as long as it can write to the AppImage's folder. Every update is checked against its signature first.
-- **Mac.** OpenNote doesn't install updates itself on a Mac yet. When a new version is out, download its dmg. Then drag OpenNote to Applications again. Your notes and settings stay as they are.
+- **Mac.** OpenNote checks for updates and downloads the new dmg, checking its signature first. Choose **Open the installer**, then drag OpenNote to Applications again. OpenNote never replaces its own app file, so a signed app stays signed. Your notes and settings stay as they are.
+
+## Read aloud, spell check, PDF, and the command
+
+- **Read aloud** uses the voices installed on the computer: the ones in System Settings on a Mac (`say`), and `espeak-ng` on Linux. The text never leaves the computer.
+- **Spell check** uses the Mac's own checker, or `hunspell` on Linux, for every language it has a dictionary for.
+- **Save as PDF and Print** work as on Windows. The PDF is made by the system's web view.
+- **The opennote command** is part of the app. OpenNote puts it at `~/.local/bin/opennote` each time it starts, as long as **Let apps on this PC connect** is on. On a Mac, add that folder to your PATH if the shell doesn't find it: `echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc`.
 
 ## Shortcuts on a Mac
 
@@ -32,12 +39,12 @@ Every shortcut that uses Ctrl on Windows uses Command (⌘) on a Mac: ⌘K opens
 
 Open Settings, then **About**, or press ⌘K (Ctrl+K on Linux) and choose **Show what works on this computer**. The list names each feature that still needs Windows, and what to do instead:
 
-- Text in pictures and scanned pages isn't searchable, and handwriting doesn't turn into text, because both use recognition that Windows provides. Your ink is kept as drawn.
-- Read aloud has no voices, because it uses the voices Windows has.
-- Saving a page as PDF and printing aren't here yet. Export as Word or HTML, then print that.
+- Text in pictures and scanned pages is read on the device: by Apple's Vision on a Mac, and by Tesseract on Linux once you install the tesseract-ocr package and a language pack, such as tesseract-ocr-eng.
+- Handwriting turns into text on the device too. A Mac reads it with Vision. On Linux, Tesseract reads it, best when the letters are neat and printed. Your ink is kept as drawn either way.
+- On Linux, read aloud needs `espeak-ng` and spell check needs `hunspell` with a dictionary. Install them with your package manager, for example `sudo apt install espeak-ng hunspell hunspell-en-us`. A Mac has both built in.
 - Protected sections open with their password. Windows Hello, docking to a screen edge, Snap Layouts, and Share to OpenNote are Windows features.
 - Recording what the computer plays may not start, because the system has no loopback device. The microphone works.
-- Sync can't be set up yet, because each device keeps its key in Windows Credential Manager.
+- Sync keys and connector sign-ins are kept in the Keychain on a Mac. On Linux they are kept in the system keyring (GNOME Keyring or KWallet); without one running, sync can't be set up and sign-ins last until OpenNote closes.
 - On Linux, pen pressure depends on the desktop. Some setups report none, and strokes then have one width.
 
 Everything stays on your computer, as on Windows, unless you turn on a cloud feature.

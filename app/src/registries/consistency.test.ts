@@ -5,6 +5,14 @@
 
 import { describe, expect, it } from 'vitest';
 import '../features';
+// The pages area's second pass registers with the first page. A start-up command can refine one of its commands (the
+// code studio's Shift+F5 refines Present page), so it is checked here with the rest.
+// eslint-disable-next-line opennote/feature-boundaries -- The test loads a registration that runs late, inside its feature.
+import '../features/pages/registerMore';
+// Dictation registers when a page opens, and Paste special in a table refines its chord (Ctrl+Alt+V). The test loads
+// that late registration from inside its feature.
+// eslint-disable-next-line opennote/feature-boundaries
+import '../features/page/intel/register';
 import { defaultConflicts, scopeDepth, setKeys } from '../commands/keymap';
 import { isChordText } from '../commands/registry';
 import { chordProblem } from '../commands/reserved';
@@ -73,7 +81,14 @@ describe('default shortcuts', () => {
     // The line tag commands (search.tag.*) are the ones Phase 8 reserved these chords for, in the OneNote set.
     const others = commands
       .list()
-      .filter((def) => !def.id.startsWith('search.tag.'))
+      // The default set gives Ctrl+1, Ctrl+2, and Ctrl+5 to line spacing, as Word does (ADR 0085). A command that
+      // refines a line spacing command takes its chord in a narrower scope, such as Format cells in a table.
+      .filter(
+        (def) =>
+          !def.id.startsWith('search.tag.') &&
+          !def.id.startsWith('para.line') &&
+          !(def.refines?.startsWith('para.line') && (def.presetKeys?.onenote ?? []).length === 0),
+      )
       .flatMap((def) => [...(def.keys ?? []), ...Object.values(def.presetKeys ?? {}).flat()]);
     expect(others.filter((chord) => RESERVED_FOR_LATER.includes(chord))).toEqual([]);
   });
@@ -82,7 +97,7 @@ describe('default shortcuts', () => {
     const changeable = commands.list().filter((def) => def.customizable !== false);
     const bad = changeable.flatMap((def) =>
       [...setKeys(def, 'default'), ...setKeys(def, 'onenote')]
-        .filter((chord) => chordProblem(chord))
+        .filter((chord) => chordProblem(chord, def.scope))
         .map((chord) => `${def.id}: ${chord}`),
     );
     expect(bad).toEqual([]);
@@ -93,10 +108,10 @@ describe('default shortcuts', () => {
     expect(defaultConflicts('onenote')).toEqual([]);
   });
 
-  it('refines only less specific commands', () => {
+  it('refines only commands that are no more specific (the dispatcher orders equal scopes by refinement)', () => {
     const wrong = commands.list().filter((def) => {
       const refined = def.refines && commands.get(def.refines);
-      return refined && scopeDepth(def.scope) <= scopeDepth(refined.scope);
+      return refined && scopeDepth(def.scope) < scopeDepth(refined.scope);
     });
     expect(wrong.map((def) => def.id)).toEqual([]);
   });

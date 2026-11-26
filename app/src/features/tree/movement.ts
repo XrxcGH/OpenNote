@@ -16,6 +16,7 @@ import { focusTargetAfterRemoval } from './focus';
 import { levelAfter, stepOf } from './moves';
 import { chooseDestination } from './MoveToDialog';
 import { showLocation } from './selection';
+import { clearMulti } from './multi';
 import { isProtectedNode, notebookOf, requestFocus, treeOf, treeStore } from './store';
 import { undoEntry, undoStore } from './undo';
 
@@ -140,4 +141,41 @@ export async function moveTo(notes: NotesService, node: NodeSummary): Promise<bo
     return false;
   }
   return moveToPlace(notes, node, { parentId: place.id, beforeId: null }, place.title);
+}
+
+/** After a drop of a multi-selection: one move for the whole set, one undo step, and one toast. */
+export async function dropNodes(notes: NotesService, nodes: readonly NodeSummary[], drop: Drop): Promise<boolean> {
+  const [first] = nodes;
+  const state = treeStore.get();
+  const away = drop.placement.parentId !== first.parentId;
+  const before = focusTargetAfterRemoval(state, first);
+  const ids = nodes.map((node) => node.id);
+  try {
+    await moveNodes(notes, ids, drop.placement);
+  } catch (error) {
+    const guarded =
+      nodes.some((node) => isProtectedNode(state, node.id)) ||
+      (drop.placement.parentId !== null && isProtectedNode(state, drop.placement.parentId));
+    toastMoveError(
+      error,
+      t(first.kind === 'page' ? 'qol.multi.pages' : 'qol.multi.sections', { count: nodes.length }),
+      guarded,
+    );
+    requestFocus(treeOf(first), first.id);
+    return false;
+  }
+  clearMulti();
+  if (away) {
+    const open = getLocation();
+    if (first.kind === 'page' && open.view === 'workspace' && open.pageId && ids.includes(open.pageId)) {
+      leaveOpenPage(open.pageId, before?.tree === 'pages' ? before.id : null);
+    }
+    syncNotebook();
+    if (before) requestFocus(before.tree, before.id);
+    movedToast(notes, t('qol.multi.moved', { count: nodes.length, target: titleOf(drop.target) }));
+  } else {
+    requestFocus(treeOf(first), first.id);
+    movedToast(notes, t('qol.multi.reordered', { count: nodes.length }));
+  }
+  return true;
 }

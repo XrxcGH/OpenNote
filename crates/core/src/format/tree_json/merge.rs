@@ -7,9 +7,10 @@
 use std::collections::BTreeMap;
 use std::hash::Hash;
 
+use super::styles::merge_styles;
 use super::{entries, write_notebook, write_section};
 use crate::format::json::write_document;
-use crate::model::{Group, NotebookFile, PageEntry, SectionFile};
+use crate::model::{Group, NotebookFile, PageEntry, SectionFile, STYLES_CHANGED};
 use crate::time::Timestamp;
 
 /// Picks the copy changed later, breaking ties by canonical bytes.
@@ -84,8 +85,18 @@ pub fn merge_notebooks(ours: &NotebookFile, theirs: &NotebookFile) -> NotebookFi
     let header = later(ours, theirs, |f| f.changed, header_bytes);
     let groups = union(&ours.groups, &theirs.groups, |g| g.id, pick_group);
     let groups: Vec<Group> = groups.into_iter().cloned().collect();
+    // Styles merge style by style (R-STY-9); the other fields come from the copy changed later.
+    let (styles, times) = merge_styles((&ours.styles, &ours.extra), (&theirs.styles, &theirs.extra));
+    let mut extra = header.extra.clone();
+    if times.is_empty() {
+        extra.remove(STYLES_CHANGED);
+    } else {
+        extra.insert(STYLES_CHANGED.to_owned(), serde_json::Value::Object(times));
+    }
     NotebookFile {
         groups: entries::sorted_groups(&groups).into_iter().cloned().collect(),
+        styles,
+        extra,
         ..header.clone()
     }
 }

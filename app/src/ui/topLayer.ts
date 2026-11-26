@@ -12,6 +12,20 @@ export function hideFromTopLayer(element: HTMLElement): void {
   if (element.matches(':popover-open')) element.hidePopover();
 }
 
+/**
+ * The zoom the overlay inherits from the region it sits in (the interface size, appearance.css). A box under zoom
+ * measures its lengths, such as 100vw, in its own scaled pixels, so a limit of "the window" must shrink by the same
+ * factor. This sets `--fit-zoom` for the CSS limits and returns it, so a point measured in window pixels can be
+ * divided into the overlay's own pixels.
+ */
+export function fitToZoom(element: HTMLElement): number {
+  const own = element.offsetWidth;
+  const seen = element.getBoundingClientRect().width;
+  const zoom = own > 0 && seen > 0 ? Math.min(3, Math.max(0.5, Math.round((seen / own) * 100) / 100)) : 1;
+  element.style.setProperty('--fit-zoom', String(zoom));
+  return zoom;
+}
+
 export function supportsAnchors(): boolean {
   return typeof CSS !== 'undefined' && CSS.supports('anchor-name: --a');
 }
@@ -25,12 +39,18 @@ let anchors = 0;
 export function anchorTo(floating: HTMLElement, anchor: HTMLElement): () => void {
   anchors += 1;
   const name = `--ui-anchor-${anchors}`;
-  const inline = anchor.style.getPropertyValue('anchor-name');
   const current = getComputedStyle(anchor).getPropertyValue('anchor-name');
   anchor.style.setProperty('anchor-name', current && current !== 'none' ? `${current}, ${name}` : name);
   floating.style.setProperty('position-anchor', name);
   return () => {
-    if (inline) anchor.style.setProperty('anchor-name', inline);
+    // Only this name goes. A menu opened from another menu at the same button anchors before the first one
+    // closes, and putting back the old value would drop its name and send it to the corner (T1-D03-8).
+    const others = anchor.style
+      .getPropertyValue('anchor-name')
+      .split(',')
+      .map((part) => part.trim())
+      .filter((part) => part && part !== name && part !== 'none');
+    if (others.length > 0) anchor.style.setProperty('anchor-name', others.join(', '));
     else anchor.style.removeProperty('anchor-name');
   };
 }

@@ -384,6 +384,11 @@ export interface BondRow {
   carrying: number;
 }
 
+/** The longest bond term laid out, in periods; a longer one would freeze the page. */
+export const MAX_BOND_PERIODS = 100_000;
+/** The most expected deviations the sample-size search accepts. */
+export const MAX_EXPECTED_DEVIATIONS = 1000;
+
 /** Bonds payable by the effective-interest method; rates are per period. */
 export function bondSchedule(
   face: number,
@@ -391,7 +396,15 @@ export function bondSchedule(
   marketRate: number,
   periods: number,
 ): { issue: number; rows: BondRow[] } | null {
-  if (!(face > 0) || !(periods >= 1) || !Number.isInteger(periods) || marketRate <= -1 || couponRate < 0) return null;
+  if (
+    !(face > 0) ||
+    !(periods >= 1) ||
+    !Number.isInteger(periods) ||
+    periods > MAX_BOND_PERIODS ||
+    marketRate <= -1 ||
+    couponRate < 0
+  )
+    return null;
   const cash = face * couponRate;
   const factor = marketRate === 0 ? periods : (1 - (1 + marketRate) ** -periods) / marketRate;
   const issue = cash * factor + face / (1 + marketRate) ** periods;
@@ -489,6 +502,7 @@ export function attributeSample(confidence: number, tolerable: number, expected 
     !(confidence > 0 && confidence < 1) ||
     !(tolerable > 0 && tolerable < 1) ||
     expected < 0 ||
+    expected > MAX_EXPECTED_DEVIATIONS ||
     !Number.isInteger(expected)
   )
     return null;

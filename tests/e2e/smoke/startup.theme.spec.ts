@@ -3,11 +3,11 @@
 // setting wins, and the window's color is known before the page exists.
 
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, it } from 'node:test';
-import { ROOT, launchApp, skipReason } from '../harness.ts';
+import { ROOT, launchApp, skipReason, removeFolder } from '../harness.ts';
 
 interface PerfLine {
   mark: string;
@@ -53,7 +53,7 @@ describe('the first frame matches the saved theme', { skip: skipReason() }, () =
         assert.equal(painted?.detail, theme);
       } finally {
         await session.close();
-        rmSync(profileDir, { recursive: true, force: true });
+        removeFolder(profileDir);
       }
     });
   }

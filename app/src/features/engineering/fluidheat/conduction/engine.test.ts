@@ -1,3 +1,4 @@
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { CalcError, SIGMA } from '../numeric';
 import { criticalRadius, generation, radiationCoefficient, solveWall } from './engine';

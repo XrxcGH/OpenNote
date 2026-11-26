@@ -4,7 +4,7 @@
 // answer when the steps cannot be finished by hand. The plot data is a slope field for a first-order equation and a
 // phase plane (y against y') for a second-order one.
 import { dependsOn } from '../../../core/expr';
-import { antiderivative, collect, fold, polyOf } from './integrate';
+import { antiderivative, collect, fold, polyNode, polyOf, type Poly } from './integrate';
 import {
   SolverError,
   asFraction,
@@ -68,6 +68,8 @@ export interface OdeResult {
   readonly phase: readonly XY[];
   /** The slope field (x, y) or the phase-plane field (y, y'). */
   readonly field: readonly Arrow[];
+  /** True when no starting values were given: the solution has C (or C₁ and C₂) in it, and there is nothing to draw. */
+  readonly general: boolean;
 }
 
 const { mul, div, add, sub, num, call } = build;
@@ -162,10 +164,15 @@ function joinFactors(list: readonly { node: Node; up: boolean }[]): Node {
 
 /** Solves an equation. Throws a SolverError for input it cannot read or an equation of the wrong form. */
 export function solveOde(input: OdeInput): OdeResult {
-  if (!(input.to > input.from) || !Number.isFinite(input.x0) || !Number.isFinite(input.y0))
-    throw new SolverError('ode-range');
-  if (input.kind === 'second') return second(input);
-  return input.kind === 'separable' ? separable(input) : linearFirst(input);
+  // A cleared y(x₀) or y′(x₀) asks for the general solution, with its constants left in.
+  const startKnown = Number.isFinite(input.y0) && (input.kind !== 'second' || Number.isFinite(input.v0 ?? 0));
+  if (!startKnown) {
+    if (input.kind === 'separable') throw new SolverError('ode-start');
+    return input.kind === 'second' ? second(input, true) : linearFirst(input, true);
+  }
+  if (!(input.to > input.from) || !Number.isFinite(input.x0)) throw new SolverError('ode-range');
+  if (input.kind === 'second') return second(input, false);
+  return input.kind === 'separable' ? separable(input) : linearFirst(input, false);
 }
 
 function firstOrderResult(
@@ -192,7 +199,7 @@ function firstOrderResult(
     } else steps.push(step('odeNumericOnly'));
   } else steps.push(step('odeNumericOnly'));
   const box = { x0: input.from, x1: input.to, ...boxAround(curve, 2) };
-  return { steps, solution: text, exact, curve, phase: [], field: arrows((x, y) => [1, F(x, y)], box) };
+  return { steps, solution: text, exact, curve, phase: [], field: arrows((x, y) => [1, F(x, y)], box), general: false };
 }
 
 function separable(input: OdeInput): OdeResult {
@@ -265,7 +272,59 @@ function expOf(I: Node): Node {
   return call('exp', I);
 }
 
-function linearFirst(input: OdeInput): OdeResult {
+/** The terms of a sum, each with its sign. */
+function termsOf(node: Node, plus = true, out: { plus: boolean; node: Node }[] = []): { plus: boolean; node: Node }[] {
+  if (node.type === 'binary' && (node.op === '+' || node.op === '-')) {
+    termsOf(node.left, plus, out);
+    termsOf(node.right, node.op === '-' ? !plus : plus, out);
+  } else if (node.type === 'unary' && node.op === '-') termsOf(node.arg, !plus, out);
+  else out.push({ plus, node });
+  return out;
+}
+
+/** The exponent of e in a factor that is exp(u) or e^u, or null. */
+function exponentOf(node: Node): Node | null {
+  if (node.type === 'call' && node.name === 'exp' && node.args.length === 1) return node.args[0];
+  return node.type === 'binary' && node.op === '^' && node.left.type === 'name' && node.left.name === 'e'
+    ? node.right
+    : null;
+}
+
+/**
+ * numerator / mu with the powers combined term by term, so (2e^(2x) - 2)/e^(2x) reads 2 - 2e^(-2x). When mu is e^I,
+ * each term takes e^(its exponent - I). When mu is a power of x and the numerator a polynomial, the powers of x
+ * subtract, so x^3/(3x) reads x^2/3. Anything else stays a quotient.
+ */
+function quotient(numerator: Node, mu: Node): Node {
+  const I = exponentOf(mu);
+  if (I) {
+    let out: Node | null = null;
+    for (const term of termsOf(tidy(numerator))) {
+      const rest: { node: Node; up: boolean }[] = [];
+      let E: Node = num(0);
+      for (const f of factors(term.node)) {
+        const e = exponentOf(f.node);
+        if (e) E = f.up ? add(E, e) : sub(E, e);
+        else rest.push(f);
+      }
+      const arg = collect(sub(E, I), 'x');
+      const keep = !(isConstant(arg) && valueOf(arg) === 0);
+      const piece = joinFactors(keep ? [...rest, { node: call('exp', arg), up: true }] : rest);
+      out = out ? (term.plus ? add(out, piece) : sub(out, piece)) : term.plus ? piece : build.neg(piece);
+    }
+    return tidy(out ?? num(0));
+  }
+  const top = polyOf(tidy(numerator), 'x');
+  const bottom = polyOf(tidy(mu), 'x');
+  if (top && bottom && bottom.size === 1) {
+    const [[power, coefficient]] = [...bottom.entries()];
+    const divided: Poly = new Map([...top.entries()].map(([k, c]) => [k - power, div(c, coefficient)]));
+    return polyNode(divided, 'x');
+  }
+  return tidy(div(numerator, mu));
+}
+
+function linearFirst(input: OdeInput, general: boolean): OdeResult {
   const P = read(input.p ?? '0');
   const Q = read(input.q ?? '0');
   for (const used of [...namesIn(P), ...namesIn(Q)]) if (used !== 'x') throw new SolverError('unknown-name', used);
@@ -273,18 +332,30 @@ function linearFirst(input: OdeInput): OdeResult {
   const F = (x: number, y: number) => q([x]) - p([x]) * y;
   const steps: Step[] = [step('odeLinear', `y' + (${show(P)})·y = ${show(Q)}`)];
   const I = antiderivative(P, 'x');
-  if (!I) return firstOrderResult(input, F, steps, null);
+  // The general solution needs the integrals by hand; with no starting values there is nothing to follow numerically.
+  if (!I) {
+    if (general) throw new SolverError('ode-start');
+    return firstOrderResult(input, F, steps, null);
+  }
   const mu = expOf(I);
   steps.push(step('odeFactor', `μ(x) = e^(∫ P dx) = ${show(mu)}`));
   steps.push(step('odeMultiply', `d/dx [${show(mu)}·y] = ${show(mul(mu, Q))}`));
   const G = antiderivative(tidy(mul(mu, Q)), 'x');
-  if (!G) return firstOrderResult(input, F, steps, null);
+  if (!G) {
+    if (general) throw new SolverError('ode-start');
+    return firstOrderResult(input, F, steps, null);
+  }
   const Gn = collect(G, 'x');
   steps.push(step('odeIntegrateRight', `${show(mu)}·y = ${show(Gn)} + C`));
+  if (general) {
+    const text = show(quotient(add(Gn, build.name('C')), mu));
+    steps.push(step('odeGeneral', `y = ${text}`));
+    return { steps, solution: text, exact: null, curve: [], phase: [], field: [], general: true };
+  }
   const muFn = compile(mu, ['x']);
   const C = input.y0 * muFn([input.x0]) - compile(Gn, ['x'])([input.x0]);
   steps.push(step('odeConstant', `C = ${niceNumber(C)}`, { x0: numberText(input.x0), y0: numberText(input.y0) }));
-  return firstOrderResult(input, F, steps, tidy(div(add(Gn, num(C)), mu)));
+  return firstOrderResult(input, F, steps, quotient(add(Gn, num(C)), mu));
 }
 
 /** A function of x for the second-order solver. It keeps its text and its tree. */
@@ -296,7 +367,7 @@ interface Basis {
 const basis = (text: string): Basis => ({ text, node: read(text) });
 
 // checks-disable-next-line modifiability: one function whose steps share its state; split it when it grows again
-function second(input: OdeInput): OdeResult {
+function second(input: OdeInput, general: boolean): OdeResult {
   const [a, b, c] = [input.a ?? '1', input.b ?? '0', input.c ?? '0'].map((one) => {
     const node = read(one);
     if (!isConstant(node)) throw new SolverError('ode-coefficients');
@@ -381,6 +452,15 @@ function second(input: OdeInput): OdeResult {
     steps.push(step('odeParticular', `y_p = ${show(particular)}`));
   }
 
+  if (general) {
+    const C1 = build.name('C1');
+    const C2 = build.name('C2');
+    const sum = tidy(add(add(mul(C1, h1.node), mul(C2, h2.node)), particular));
+    const text = show(sum).replace(/\bC([12])\b/g, (_, digit: string) => `C${subscript(Number(digit))}`);
+    steps.push(step('odeGeneral', `y = ${text}`));
+    return { steps, solution: text, exact: null, curve: [], phase: [], field: [], general: true };
+  }
+
   // The constants from y(x0) and y'(x0).
   const [p0, p1] = [particular, derive(particular, 'x')].map((n) => compile(n, ['x'])([input.x0]));
   const hv = [h1, h2].map((h) => [compile(h.node, ['x'])([input.x0]), compile(derive(h.node, 'x'), ['x'])([input.x0])]);
@@ -417,7 +497,7 @@ function second(input: OdeInput): OdeResult {
     ...boxAround(phase, 2),
   };
   const field = arrows((y, v) => [v, (-b * v - c * y) / a], box);
-  return { steps, solution: text, exact: agrees ? (x) => fn([x]) : null, curve, phase, field };
+  return { steps, solution: text, exact: agrees ? (x) => fn([x]) : null, curve, phase, field, general: false };
 }
 
 /** A coefficient with rounding noise taken off, so 0.4999999999 is 1/2. */

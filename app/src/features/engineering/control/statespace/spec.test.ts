@@ -1,5 +1,6 @@
 // The state-space tool through the window's path: the plan's answers as the student sees them, and each impossible
 // input marked on the field that holds it.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { runTool } from '../ui/read';
 import { firstTexts } from '../ui/spec';

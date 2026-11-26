@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
+import { setHostSystem } from '../../platform/system';
 import { createFakeSync, FAKE_SECRETS } from './fake';
 import {
   checkGroups,
@@ -7,6 +8,7 @@ import {
   errorText,
   groupMatches,
   isQuiet,
+  keyStoreText,
   passphraseProblem,
   placeReady,
   qrPath,
@@ -171,5 +173,19 @@ describe('error text', () => {
       'That pairing code has expired by another device’s clock, which is ahead of this one. Check the date and ' +
         'time on each device, then make a new code.',
     );
+  });
+});
+
+describe('where this device keeps its secrets', () => {
+  afterEach(() => setHostSystem('windows'));
+
+  it('names the store of each system', () => {
+    const lines = ['sync.explainer.item4', 'sync.wizard.passwordHelp'] as const;
+    for (const line of lines) expect(keyStoreText(line)).toContain('Windows Credential Manager');
+    setHostSystem('macos');
+    for (const line of lines) expect(keyStoreText(line)).toContain('the Keychain');
+    setHostSystem('linux');
+    for (const line of lines) expect(keyStoreText(line)).toContain('the system keyring (GNOME Keyring or KWallet)');
+    for (const line of lines) expect(keyStoreText(line)).not.toContain('Windows');
   });
 });

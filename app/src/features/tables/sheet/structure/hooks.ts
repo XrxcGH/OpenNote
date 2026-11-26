@@ -1,0 +1,62 @@
+// Plugs the structure commands into the table commands of the editor (editor/commands/tables.ts): the editor keeps
+// the grid, and this runs the structure ops and brings references, names, rules, merges, and ranges along when lines
+// are inserted, deleted, or moved. Importing this file registers them.
+
+import {
+  setTableHooks,
+  type LineChange,
+  type TableBook,
+  type TableChange,
+  type TableHooks,
+} from '../../../../editor/commands/tables';
+import type { TableData } from '../../../../editor/schema/specs';
+import { adjustFormula } from '../../engine/refactor';
+import { mergeSet } from '../model/merges';
+import { readSheet } from '../model/sheet';
+import { applyMergeOp, isMergeOp } from '../merge/ops';
+import { applyStructureOp } from './ops';
+import { followInOthers } from './others';
+import { reflowSheet, rewriteCells } from './reflow';
+
+/**
+ * Rewrites the formulas of the cells, names, and rules for `change`, and moves merges and ranges by their IDs. With the
+ * page's tables, the references into this table from the others (Sales!B2) follow too, and those tables' patches go
+ * with the change.
+ */
+export function followReferences(
+  before: TableData,
+  applied: TableChange,
+  change: LineChange,
+  stored: unknown,
+  book?: TableBook,
+): TableChange {
+  const rewrite = (formula: string) => adjustFormula(formula, change, book ? { tableName: book.name } : {});
+  const rows = rewriteCells(applied.data.rows, rewrite);
+  const data = { ...applied.data, rows };
+  const sheet = reflowSheet(readSheet({ sheet: stored }), before, data, rewrite);
+  const also = book ? followInOthers(book, (formula) => adjustFormula(formula, change, { otherTable: book.name })) : [];
+  return {
+    ...applied,
+    data,
+    ...(sheet.patch ? { extra: sheet.patch } : {}),
+    ...(also.length > 0 ? { also } : {}),
+  };
+}
+
+export const structureHooks: TableHooks = {
+  // Merge, unmerge, and split cell are structure ops of the merge lane (ADR 0064); split inserts lines, so it follows.
+  structure: (data, at, op, sheet, book) =>
+    isMergeOp(op)
+      ? applyMergeOp(data, at, op, sheet, book, followReferences)
+      : applyStructureOp(data, at, op, sheet, book),
+  follow: followReferences,
+  // Swapping two rows cuts a merge that spans either of them, so the move is refused (Excel does the same).
+  cutsMerge: (data, row, to, sheet) =>
+    mergeSet(readSheet({ sheet }), data).list.some(
+      (m) =>
+        m.box.top !== m.box.bottom &&
+        ((m.box.top <= row && row <= m.box.bottom) || (m.box.top <= to && to <= m.box.bottom)),
+    ),
+};
+
+setTableHooks(structureHooks);

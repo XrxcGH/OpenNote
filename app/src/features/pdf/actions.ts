@@ -53,7 +53,10 @@ async function eachPage(
       if (await change(shown)) changed += 1;
       continue;
     }
-    const page = await deps.platform.pages.open(node.id as never, { viewport: null });
+    // A page that does not open (locked, or open in another window) is left as it is, so the rest still run and
+    // the person hears how it went (full walk B2-B13-10).
+    const page = await deps.platform.pages.open(node.id as never, { viewport: null }).catch(() => null);
+    if (!page) continue;
     try {
       if (await change(closedTarget(page))) changed += 1;
     } finally {

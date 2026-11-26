@@ -101,6 +101,17 @@ pub struct CaptionState {
     pub pressed: bool,
 }
 
+/// What a caption layout report changes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Change {
+    /// The report repeats the last one.
+    Nothing,
+    /// The caption buttons moved, and the frame stays.
+    Layout,
+    /// The first report, or one that adds or removes the caption buttons, which switches the frame.
+    Frame,
+}
+
 /// The overlay's state, managed by Tauri.
 #[derive(Debug, Default)]
 pub struct CaptionOverlay {
@@ -118,13 +129,17 @@ impl CaptionOverlay {
             .flatten()
     }
 
-    /// Stores `layout`, and returns false when it equals the last report. The first report always counts, so the
-    /// frame follows the page even when the window was created with the other frame.
-    fn replace(&self, layout: Option<CaptionLayout>) -> bool {
+    /// Stores `layout`, and says what it changes. The first report always switches the frame, so the frame follows
+    /// the page even when the window was created with the other frame.
+    fn replace(&self, layout: Option<CaptionLayout>) -> Change {
         let mut reported = self.reported.lock().unwrap_or_else(PoisonError::into_inner);
-        let changed = reported.as_ref() != Some(&layout);
+        let change = match reported.as_ref() {
+            Some(last) if *last == layout => Change::Nothing,
+            Some(last) if last.is_some() == layout.is_some() => Change::Layout,
+            _ => Change::Frame,
+        };
         *reported = Some(layout);
-        changed
+        change
     }
 
     /// Forgets every report, so the next one counts as the first. With `keep_layout`, a layout that the page
@@ -172,10 +187,10 @@ pub fn window_set_caption_layout(window: WebviewWindow, layout: Option<CaptionLa
     if let Some(layout) = &layout {
         validate(layout)?;
     }
-    if !window.state::<CaptionOverlay>().replace(layout.clone()) {
-        return Ok(());
+    match window.state::<CaptionOverlay>().replace(layout.clone()) {
+        Change::Nothing => Ok(()),
+        change => super::custom_frame::apply(&window, layout, change == Change::Frame),
     }
-    super::custom_frame::apply(&window, layout)
 }
 
 #[cfg(test)]
@@ -260,17 +275,33 @@ mod tests {
     #[test]
     fn remembers_only_changes() {
         let overlay = CaptionOverlay::default();
-        assert!(overlay.replace(Some(layout())));
-        assert!(!overlay.replace(Some(layout())));
+        assert_eq!(overlay.replace(Some(layout())), Change::Frame);
+        assert_eq!(overlay.replace(Some(layout())), Change::Nothing);
         assert_eq!(overlay.layout(), Some(layout()));
-        assert!(overlay.replace(None));
-        assert!(!overlay.replace(None));
+        assert_eq!(overlay.replace(None), Change::Frame);
+        assert_eq!(overlay.replace(None), Change::Nothing);
         assert_eq!(overlay.layout(), None);
     }
 
     #[test]
+    fn recomputes_the_frame_only_when_it_switches() {
+        let overlay = CaptionOverlay::default();
+        let mut moved = layout();
+        moved.maximize.x += 10.0;
+        // The first layout switches to the custom frame, even when the window was created without the native one.
+        assert_eq!(overlay.replace(Some(layout())), Change::Frame);
+        // Resizing moves the buttons on every step, which must not recompute the frame each time.
+        assert_eq!(overlay.replace(Some(moved)), Change::Layout);
+        assert_eq!(overlay.replace(None), Change::Frame);
+        assert_eq!(overlay.replace(Some(layout())), Change::Frame);
+        // After the page is lost, its next report counts as the first.
+        assert!(overlay.forget(false));
+        assert_eq!(overlay.replace(Some(layout())), Change::Frame);
+    }
+
+    #[test]
     fn applies_the_first_report_even_without_caption_buttons() {
-        assert!(CaptionOverlay::default().replace(None));
+        assert_eq!(CaptionOverlay::default().replace(None), Change::Frame);
     }
 
     #[test]
@@ -278,15 +309,15 @@ mod tests {
         let overlay = CaptionOverlay::default();
         // Before any report, and after a report of no caption buttons, there is nothing to keep.
         assert!(overlay.forget(true));
-        assert!(overlay.replace(None));
+        assert_eq!(overlay.replace(None), Change::Frame);
         assert!(overlay.forget(true));
-        assert!(overlay.replace(None));
+        assert_eq!(overlay.replace(None), Change::Frame);
         // A layout stays unless the page is gone.
-        assert!(overlay.replace(Some(layout())));
+        assert_eq!(overlay.replace(Some(layout())), Change::Frame);
         assert!(!overlay.forget(true));
         assert_eq!(overlay.layout(), Some(layout()));
         assert!(overlay.forget(false));
         assert_eq!(overlay.layout(), None);
-        assert!(overlay.replace(Some(layout())));
+        assert_eq!(overlay.replace(Some(layout())), Change::Frame);
     }
 }

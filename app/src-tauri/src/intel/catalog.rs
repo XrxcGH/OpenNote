@@ -1085,3 +1085,7 @@ pub const TRANSLATE: &[ModelSpec] = &[
         ],
     },
 ];
+
+/// The code models of the code studio (ADR 0072). Lane code:L13a fills this list; it is chained after the language
+/// models, so a code model shows in the Models panel's Code group.
+pub const CODE: &[ModelSpec] = &[];

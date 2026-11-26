@@ -1,5 +1,6 @@
 // Routh-Hurwitz and the root locus against the plan's cases and independent checks: root counts from a numerical
 // root finder, and departure and arrival angles tested by the angle condition a short step away.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { ControlError } from '../lib/errors';
 import { cabs, cdiv, cx, pevalC, readTF, rootsOf, type Complex, type TF } from '../lib/tf';

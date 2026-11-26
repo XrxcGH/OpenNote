@@ -19,6 +19,7 @@ import {
   followsEnd,
   inLineOfWriting,
   pivotOf,
+  recognizeCurve,
   recognizeShape,
   reshapeFor,
   smallAndQuick,
@@ -34,7 +35,7 @@ import type { StrokeBuilder } from '../input/strokeBuilder';
 import type { RawSample } from '../input/samples';
 import type { InkStroke } from '../model/types';
 import { mmToPage } from '../pens/tools';
-import { trailFor } from './delegatedTrail';
+import { trailFor, trailShows } from './delegatedTrail';
 import { brandColor, fillOf } from './paint';
 import type { InkHost, InkPointerTool, InkRouterContext } from './host';
 import { finishLasso, startLasso } from './lasso';
@@ -56,7 +57,7 @@ import { activeSlot, chooseTool, drawState, penSlots, styleOf, writesInk } from 
 import type { PenStyle } from './state';
 import type { InkSurface } from './surface';
 import { focusPage } from './touch';
-import { isDwellTap, objectAt, onObjectHandle, selectObject, TAP_SLOP_PX } from './objectTaps';
+import { isDwellTap, objectAt, onObjectHandle, onPageChrome, selectObject, TAP_SLOP_PX } from './objectTaps';
 
 /** The stroke eraser's reach, in screen pixels. */
 const STROKE_ERASER_PX = 6;
@@ -215,7 +216,9 @@ export function createPenTool(
     if (samples.length === 0) return;
     const area = target();
     const newest = events.at(-1);
-    if (g.builder && area && newest && isEnabled('ink.delegatedTrail')) {
+    // The system's trail draws the pen where it is, so a stroke held to the ruler, protractor, or grid draws only its
+    // own held line: a raw trail showed every wobble along the ruler (full walk 2, A1-A10-8).
+    if (g.builder && area && newest && trailShows(g) && isEnabled('ink.delegatedTrail')) {
       const color = fillOf(g.style, surface.scheme());
       const diameter = g.style.width * surface.cameraNow().zoom;
       void trailFor(area).then((trail) => trail.update(newest, color, diameter));
@@ -274,6 +277,8 @@ export function createPenTool(
       if (event.pointerType === 'mouse' && event.button !== 0) return false;
       // The grip and width handle of a selected or edited text box move and resize it in every tool.
       if (onObjectHandle(host, event)) return false;
+      // A table's toolbar, a menu, or a dialog over the page takes its own presses.
+      if (onPageChrome(event)) return false;
       const buttons = isEnabled('ink.penButtons') ? resolvePenAction(event, buttonsOf(penKeyOf(event))) : null;
       if (buttons && buttons.action !== null) return modeFor(buttons.action) !== null;
       return DRAW_TOOLS.has(drawState.get().tool) && ctx.activeTool !== 'select';
@@ -453,11 +458,10 @@ function holdCheck(g: InkGesture, surface: InkSurface, holdMs: number): void {
   const points = g.builder.points;
   if (points.length < 4) return;
   const zoom = surface.cameraNow().zoom;
-  const match = recognizeShape(points, {
-    minSize: 16 / zoom,
-    width: g.style.width,
-    extra: isEnabled('ink.shapeTools'),
-  });
+  // A held open stroke no shape fits becomes a smooth curve, with curves on.
+  const match =
+    recognizeShape(points, { minSize: 16 / zoom, width: g.style.width, extra: isEnabled('ink.shapeTools') }) ??
+    (isEnabled('ink.splines') ? recognizeCurve(points, { minSize: 16 / zoom }) : null);
   if (!match) return;
   hold.shape = toPaper(g, surface, match);
   hold.snapAt = { x: hold.x, y: hold.y };

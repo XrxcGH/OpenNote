@@ -1,3 +1,4 @@
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { AeroError, goldenMax } from '../common';
 import { climbGlide, kOf, polar, rangeEndurance, stability, turn, type Polar } from './engine';

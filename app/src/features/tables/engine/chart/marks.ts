@@ -2,6 +2,7 @@
 // theme switch recolors a chart with no redraw. Bars share one mark and a color scale. Lines, areas, and dots get one
 // mark per series, because dashes and shapes are per series.
 
+import { serialToDate } from '../dates';
 import type { ChartData, Point, SeriesData } from './data';
 import type { MarkSpec, SeriesStyle } from './types';
 
@@ -19,14 +20,13 @@ export interface Layer {
   scales: Record<string, unknown>;
 }
 
-const DAY_MS = 86_400_000;
 const SHAPE_POINTS = 60;
 const DOT_RADIUS = 3;
 const AREA_OPACITY = 0.35;
 
-/** Dates are day numbers in the data, and Dates in Plot. */
+/** Dates are serials in the data, and Dates in Plot. */
 function xOf(build: Build, p: Point): unknown {
-  return build.data.xKind === 'date' ? new Date((p.x as number) * DAY_MS) : p.x;
+  return build.data.xKind === 'date' ? serialToDate(p.x as number) : p.x;
 }
 
 function series(build: Build): { data: SeriesData; style: SeriesStyle }[] {
@@ -44,7 +44,9 @@ export function barLayer(build: Build): Layer {
   const horizontal = build.horizontal;
   const [category, value, facet] = horizontal ? (['y', 'x', 'fy'] as const) : (['x', 'y', 'fx'] as const);
   const options: Record<string, unknown> = { [category]: 'x', [value]: 'y' };
-  const scales: Record<string, unknown> = {};
+  // The bars keep the table's row order. Without a domain, Plot sorts the categories, so Feb would come before Jan.
+  const order = [...new Set(rows.map((r) => r.x))];
+  const scales: Record<string, unknown> = { [category]: { domain: order } };
   if (single) {
     options.fill = build.styles[0].paint;
   } else {
@@ -55,7 +57,7 @@ export function barLayer(build: Build): Layer {
       options[facet] = 'x';
       options[category] = 'series';
       scales[category] = { axis: null, domain: names };
-      scales[facet] = { label: build.data.xName };
+      scales[facet] = { label: build.data.xName, domain: order };
     }
   }
   const zero: MarkSpec = { mark: horizontal ? 'ruleX' : 'ruleY', data: [0], options: {} };

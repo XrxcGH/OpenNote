@@ -266,7 +266,7 @@ fn table(rows: &[Vec<Vec<Item<'_>>>], counts: &mut Counts) -> Block {
                 .collect()
         })
         .collect();
-    Block::Table { header: false, rows }
+    Block::table(false, rows)
 }
 
 /// Where a page's pictures and files go, and what it has added so far.

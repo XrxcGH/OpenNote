@@ -130,6 +130,64 @@ pub struct DeviceRef {
     pub label: String,
 }
 
+/// Line numbers in print and PDF (`R-VIEW-2`).
+#[derive(Clone, Debug, PartialEq)]
+pub struct LineNumbers {
+    /// The first number, 1 to 32,767.
+    pub start: u32,
+    /// Show every nth number, 1 to 100.
+    pub count_by: u32,
+    /// `page` or `continuous`.
+    pub restart: String,
+}
+
+/// How page numbers are counted and written (`R-VIEW-3`).
+#[derive(Clone, Debug, PartialEq)]
+pub struct PageNumbers {
+    /// `decimal`, `lowerRoman`, `upperRoman`, `lowerLetter`, or `upperLetter`.
+    pub format: String,
+    /// The first number, 0 to 32,767.
+    pub start: u32,
+}
+
+/// A page's text settings, `view.text` (`R-VIEW-1`). The JSON stays in the view's unknown keys, so every key is
+/// kept; a key whose value is invalid reads as missing (`R-VIEW-4`).
+#[derive(Clone, Debug, PartialEq)]
+pub struct TextSettings {
+    /// Points between default tab stops.
+    pub default_tab: f64,
+    /// Automatic hyphenation.
+    pub hyphenate: bool,
+    /// Line numbers, or `None` for none.
+    pub line_numbers: Option<LineNumbers>,
+    /// Page numbers.
+    pub page_numbers: Option<PageNumbers>,
+}
+
+impl Default for TextSettings {
+    fn default() -> TextSettings {
+        TextSettings {
+            default_tab: 36.0,
+            hyphenate: false,
+            line_numbers: None,
+            page_numbers: None,
+        }
+    }
+}
+
+/// A page's own style sheet and theme (`R-STY-7`, `R-THM-1`), as a reader makes them out.
+#[derive(Clone, Debug, PartialEq, Default)]
+pub struct PageStyleSheet {
+    /// Each style's version 1 keys and version 2 keys, by name.
+    pub styles: BTreeMap<String, (super::StyleSpec, super::StyleFormat)>,
+    /// The page's theme.
+    pub theme: Option<super::Theme>,
+    /// Values a reader treats as missing, by path.
+    pub problems: Vec<String>,
+    /// Limits of spec 16 passed, by path.
+    pub over_limits: Vec<String>,
+}
+
 /// What the reader found in a file. It is never written.
 #[derive(Clone, Debug, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -138,17 +196,22 @@ pub struct FormatInfo {
     pub version_read: u32,
     /// The file's `minReaderVersion`.
     pub min_reader: u32,
+    /// The file's `minWriterVersion`, or its `formatVersion` when the key is missing or invalid (spec 15.1,
+    /// `R-VER-3`).
+    pub min_writer: u32,
     /// Whether the file may be changed.
     pub access: Access,
     /// Problems the reader worked around.
     pub warnings: Vec<Warning>,
 }
 
+/// A file made in memory reads as version 1: a writer stamps it with the version its content needs (spec 15.6).
 impl Default for FormatInfo {
     fn default() -> FormatInfo {
         FormatInfo {
-            version_read: crate::FORMAT_VERSION,
+            version_read: crate::FIRST_FORMAT_VERSION,
             min_reader: crate::MIN_READER_VERSION,
+            min_writer: crate::FIRST_FORMAT_VERSION,
             access: Access::ReadWrite,
             warnings: Vec::new(),
         }

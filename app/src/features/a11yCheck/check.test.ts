@@ -49,6 +49,12 @@ describe('accessibility checker', () => {
     expect(issue.fix).toMatchObject({ kind: 'edits', edits: [{ edit: 'setText', markdown: '## One\n\n### Four' }] });
   });
 
+  it('finds an empty heading and removes it (T1-D05-6)', () => {
+    const [issue] = checkPage(page([block('text', { markdown: '## Intro\n\n## \n\nText' })]));
+    expect(issue.kind).toBe('emptyHeading');
+    expect(issue.fix).toMatchObject({ kind: 'edits', edits: [{ edit: 'setText', markdown: '## Intro\n\n\nText' }] });
+  });
+
   it('wants a header row on a table with several rows', () => {
     const rows = [{}, {}];
     expect(checkPage(page([block('table', { rows, header: false })])).map((i) => i.kind)).toEqual(['tableHeader']);

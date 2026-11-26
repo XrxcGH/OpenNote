@@ -30,6 +30,8 @@ export interface DrawBundleOptions {
   readonly signal?: AbortSignal;
   /** Called before each page prints, with how many are done. */
   readonly onPage?: (done: number, total: number, title: string) => void;
+  /** Called with the error of a page that could not be printed, which the bundle counts and goes on from. */
+  readonly onFailure?: (title: string, error: unknown) => void;
 }
 
 export interface DrawnBundle {
@@ -91,6 +93,7 @@ export async function drawBundle(options: DrawBundleOptions): Promise<DrawnBundl
         } catch (error) {
           if (error instanceof DOMException && error.name === 'AbortError') throw error;
           failed += 1;
+          options.onFailure?.(entry.title, error);
         }
         done += 1;
       }

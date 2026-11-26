@@ -1,6 +1,7 @@
 // A number typed with a unit, read into SI. Plain numbers (2.5, -1e-3, 1 000) are read directly; anything else goes
 // through core/expr (pi/2, 2*sqrt(3)), which evaluates math only and never runs typed text as code.
-import { evaluate } from '../../../../core/expr';
+import { switchedText } from '../../../../core/units';
+import { evaluateTyped } from '../../../../core/expr';
 import type { QuantityKind, UnitChoice, UnitSystem } from '../units';
 import { findUnit, formatValue, fromSI, toSI, unitChoices } from '../units';
 
@@ -28,7 +29,7 @@ export function readNumber(text: string): number {
   const cleaned = text.trim().replace(/[−–]/g, '-').replace(SPACES, '');
   if (cleaned === '') return NaN;
   if (PLAIN.test(cleaned)) return Number(cleaned);
-  const result = evaluate(cleaned);
+  const result = evaluateTyped(cleaned);
   return result.ok && Number.isFinite(result.value) ? result.value : NaN;
 }
 
@@ -69,7 +70,7 @@ export function inSystem(input: QuantityInput, kind: QuantityKind, system: UnitS
   const target = list[0];
   if (!Number.isFinite(value)) return { text: input.text, unit: target.label };
   const si = toSI(value, unitFor(kind, input.unit));
-  return { text: String(Number(fromSI(si, target).toPrecision(6))), unit: target.label };
+  return { text: switchedText(input.text, input.unit, target.label, fromSI(si, target)), unit: target.label };
 }
 
 /** A result in the first unit of `system` (or a named unit of the kind), as value text and unit label. */

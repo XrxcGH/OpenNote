@@ -11,7 +11,7 @@ const BASE_URL = process.env.OPENNOTE_UI_URL ?? `http://127.0.0.1:${PORT}`;
 
 export default defineConfig({
   testDir: import.meta.dirname,
-  testMatch: /soak\.spec\.ts$/,
+  testMatch: /(replay|soak)\.spec\.ts$/,
   outputDir: join(import.meta.dirname, 'results', 'output'),
   retries: 0,
   workers: 1,

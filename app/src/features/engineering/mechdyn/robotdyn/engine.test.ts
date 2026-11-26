@@ -1,3 +1,4 @@
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { coriolisMatrix, inverseDynamics, massMatrix, ROBOTDYN_DEFAULTS, solveRobotDyn, type ArmLink } from './engine';
 

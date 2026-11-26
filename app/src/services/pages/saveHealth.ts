@@ -5,18 +5,63 @@
 // pages whose last try failed, for the status to show "Couldn't save" until the page saves. The core's watchdog
 // says `core:stalled` while one command has held the core for too long, and `core:responsive` once it answers
 // again; the status says "Not responding" in between.
+//
+// A page's batch counts as sending from when its send queue takes it until the core answers. An edit, an undo, a
+// redo, and a restore of blocks are each answered once the change is in the journal file. When the journal
+// thread is slower than the core's wait, or the journal can't be written, the answer says `written: false`. The
+// page then counts as unwritten until a `core:saved` whose `through` covers that change, even after the page closes:
+// the close's own save may fail, or another window may keep the page open, so only that save says it is safe.
+// A page that closes keeps failing until a `core:saved` for it: the close's own save is skipped for a read-only
+// page and reports nothing, and its edits are still unsaved (walk bug N1-N03-5).
+// So "Saved" never shows over a stroke that only this process's memory holds, which a crash would lose.
 
 import { createStore } from '../../state/store';
 import type { SaveStatus } from '../notes';
 
+/** Why a page's last save failed, as the core reports it (`core:save-failed`). */
+export interface SaveFailure {
+  /** The core's error kind, such as `diskFull` or `readOnlyFile`. */
+  readonly kind: string;
+  /** Whether autosave tries again on its own. */
+  readonly retrying: boolean;
+}
+
+/** What the page that is shown lets the save notice do: save it now, and read its text so it can be copied. */
+export interface SaveRecovery {
+  /** Whether `page` is the one this window has open. */
+  holds(page: string): boolean;
+  /** Saves `page` now. Resolves false when this window can't (the page isn't open here); rejects when the save fails. */
+  retry(page: string): Promise<boolean>;
+  /** The text of `page` as the window holds it, or null when the page isn't open here. */
+  text(page: string): Promise<string | null>;
+}
+
 export interface SaveHealth {
   /** The pages whose last save failed, by ID. */
   readonly failing: ReadonlySet<string>;
+  /** Why each failing page's last save failed, by ID. */
+  readonly failures: ReadonlyMap<string, SaveFailure>;
   /** Whether a command has held the core for too long, so nothing reaches the disk until it returns. */
   readonly stalled: boolean;
+  /** How many page batches are on their way to the core. */
+  readonly sending: number;
+  /** The pages with an edit the core answered as not yet written, by ID, with the latest such edit's sequence number. */
+  readonly unwritten: ReadonlyMap<string, number>;
+  /** The last edit a `core:saved` held, by page ID, since this window opened the page. */
+  readonly savedThrough: ReadonlyMap<string, number>;
 }
 
-export const saveHealthStore = createStore<SaveHealth>({ failing: new Set(), stalled: false }, 'saveHealth');
+export const saveHealthStore = createStore<SaveHealth>(
+  {
+    failing: new Set(),
+    failures: new Map(),
+    stalled: false,
+    sending: 0,
+    unwritten: new Map(),
+    savedThrough: new Map(),
+  },
+  'saveHealth',
+);
 
 /** Whether any page's last save failed. */
 export const anySaveFailing = (health: SaveHealth): boolean => health.failing.size > 0;
@@ -24,13 +69,77 @@ export const anySaveFailing = (health: SaveHealth): boolean => health.failing.si
 /** Whether the core has stopped answering. */
 export const coreStalled = (health: SaveHealth): boolean => health.stalled;
 
+/** Whether a page batch is on its way to the core. */
+export const pageSending = (health: SaveHealth): boolean => health.sending > 0;
+
+/** Whether an edit isn't safe from a crash yet: on its way to the core, or answered as not yet written. */
+export const pageWaiting = (health: SaveHealth): boolean => health.sending > 0 || health.unwritten.size > 0;
+
+/** What holds the status at "Saving": the batches on their way, and each unwritten page with its edit's number. */
+export function waitingDetail(health: SaveHealth): string {
+  const parts = [...health.unwritten].map(([page, seq]) => `unwritten ${page}@${seq}`);
+  if (health.sending > 0) parts.unshift(`sending ${health.sending}`);
+  return parts.join('; ') || 'none';
+}
+
+/**
+ * The core answered an edit of `page` as not yet written (`TxnAck.written`): it is safe once a save holds `seq`.
+ * A `core:saved` through `seq` that arrived before the answer already holds it, so it doesn't wait for another.
+ */
+export function pageUnwritten(page: string, seq: number): void {
+  saveHealthStore.set((state) => {
+    if ((state.unwritten.get(page) ?? -1) >= seq) return state;
+    if ((state.savedThrough.get(page) ?? -1) >= seq) return state;
+    return { ...state, unwritten: new Map(state.unwritten).set(page, seq) };
+  });
+}
+
+/** `page` saved every edit through `through`, so no edit up to it waits any longer. */
+export function pageWritten(page: string, through: number): void {
+  saveHealthStore.set((state) => {
+    const seen = (state.savedThrough.get(page) ?? -1) >= through;
+    const savedThrough = seen ? state.savedThrough : new Map(state.savedThrough).set(page, through);
+    const seq = state.unwritten.get(page);
+    if (seq === undefined || seq > through) return seen ? state : { ...state, savedThrough };
+    const unwritten = new Map(state.unwritten);
+    unwritten.delete(page);
+    return { ...state, unwritten, savedThrough };
+  });
+}
+
+/**
+ * This window opens `page`. The core numbers a page's edits afresh once its journal is gone, so a save seen before
+ * says nothing about the edits from now on.
+ */
+export function pageOpened(page: string): void {
+  saveHealthStore.set((state) => {
+    if (!state.savedThrough.has(page)) return state;
+    const savedThrough = new Map(state.savedThrough);
+    savedThrough.delete(page);
+    return { ...state, savedThrough };
+  });
+}
+
+/** A page batch is on its way to the core. The returned function says it arrived or failed; a second call does nothing. */
+export function sendingPage(): () => void {
+  saveHealthStore.set((state) => ({ ...state, sending: state.sending + 1 }));
+  let done = false;
+  return () => {
+    if (done) return;
+    done = true;
+    saveHealthStore.set((state) => ({ ...state, sending: Math.max(0, state.sending - 1) }));
+  };
+}
+
 /**
  * The status to show: "Not responding" while the core is stalled, else the notes bridge's, unless a page's last
- * save failed while nothing is on its way.
+ * save failed while nothing is on its way, or a page batch is still on its way.
  */
-export function combinedStatus(notes: SaveStatus, pageFailing: boolean, stalled = false): SaveStatus {
+export function combinedStatus(notes: SaveStatus, pageFailing: boolean, stalled = false, sending = false): SaveStatus {
   if (stalled) return 'stalled';
-  return notes === 'saved' && pageFailing ? 'error' : notes;
+  if (notes !== 'saved') return notes;
+  if (pageFailing) return 'error';
+  return sending ? 'saving' : 'saved';
 }
 
 export function setCoreStalled(stalled: boolean): void {
@@ -45,10 +154,16 @@ export function coreBusy(): void {
   setCoreStalled(true);
 }
 
-export function pageSaveFailed(page: string): void {
+/** `page`'s save failed. `failure` says why, so the save notice can say it in plain words. */
+export function pageSaveFailed(page: string, failure: SaveFailure = { kind: 'io', retrying: true }): void {
   saveHealthStore.set((state) => {
-    if (state.failing.has(page)) return state;
-    return { ...state, failing: new Set([...state.failing, page]) };
+    const known = state.failures.get(page);
+    if (state.failing.has(page) && known?.kind === failure.kind && known.retrying === failure.retrying) return state;
+    return {
+      ...state,
+      failing: new Set([...state.failing, page]),
+      failures: new Map(state.failures).set(page, failure),
+    };
   });
 }
 
@@ -57,19 +172,35 @@ export function pageSaved(page: string): void {
     if (!state.failing.has(page)) return state;
     const failing = new Set(state.failing);
     failing.delete(page);
-    return { ...state, failing };
+    const failures = new Map(state.failures);
+    failures.delete(page);
+    return { ...state, failing, failures };
   });
 }
 
-/**
- * A page closed, so no `core:saved` will come for it: it stops counting as failing. A page that still can't
- * save counts again at its next try, which the core reports as before.
- */
-export const pageClosed = pageSaved;
+let recovery: SaveRecovery | null = null;
+
+/** The page view says how to save the shown page now and read its text. Null takes it away. */
+export function setSaveRecovery(next: SaveRecovery | null): void {
+  recovery = next;
+}
+
+/** The save notice's way to act on a failing page, or null before any page view has registered. */
+export const saveRecovery = (): SaveRecovery | null => recovery;
 
 const pageOf = (payload: unknown): string | null => {
   const page = (payload as { page?: unknown } | null)?.page;
   return typeof page === 'string' ? page : null;
+};
+
+const failureOf = (payload: unknown): SaveFailure => {
+  const { kind, retryInMs } = (payload ?? {}) as { kind?: unknown; retryInMs?: unknown };
+  return { kind: typeof kind === 'string' ? kind : 'io', retrying: typeof retryInMs === 'number' };
+};
+
+const throughOf = (payload: unknown): number | null => {
+  const through = (payload as { through?: unknown } | null)?.through;
+  return typeof through === 'number' ? through : null;
 };
 
 /** Keeps the store in step with the core's save events. The returned function stops listening. */
@@ -79,11 +210,14 @@ export function watchSaveHealth(client: {
   const stops = [
     client.onEvent('core:save-failed', (payload) => {
       const page = pageOf(payload);
-      if (page) pageSaveFailed(page);
+      if (page) pageSaveFailed(page, failureOf(payload));
     }),
     client.onEvent('core:saved', (payload) => {
       const page = pageOf(payload);
-      if (page) pageSaved(page);
+      if (!page) return;
+      pageSaved(page);
+      const through = throughOf(payload);
+      if (through !== null) pageWritten(page, through);
     }),
     client.onEvent('core:stalled', () => setCoreStalled(true)),
     client.onEvent('core:responsive', () => setCoreStalled(false)),

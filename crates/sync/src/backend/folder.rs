@@ -1,5 +1,5 @@
 //! A folder as storage: a USB drive, a network share, or a folder that OneDrive, Dropbox, iCloud Drive, or Syncthing
-//! already syncs (ADR 0036). Each blob is one file. A write goes to a temporary name in the same folder, is
+//! already syncs (ADR 0038). Each blob is one file. A write goes to a temporary name in the same folder, is
 //! flushed, and is renamed into place, so a sync tool or another device never picks up half a blob.
 //!
 //! Sync tools add their own files (conflict copies, `desktop.ini`, `.stfolder`): listing skips every name the

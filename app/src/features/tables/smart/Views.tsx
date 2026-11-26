@@ -5,6 +5,7 @@ import { useState } from 'react';
 import type { DragEvent, KeyboardEvent } from 'react';
 import { t } from '../../../strings/t';
 import type { Locale } from '../engine';
+import { daysToYmd, todayDays } from '../engine/dates';
 import type { ViewKind, ViewSmart } from './data';
 import type { SmartData } from './data';
 import { choiceOf } from './choice';
@@ -216,7 +217,7 @@ function Calendar(props: ViewsProps) {
   const days = dateColumn === null ? null : rowsByDay(props.model, dateColumn);
   const first = days ? Math.min(...days.keys()) : Infinity;
   const [month, setMonth] = useState<Month | null>(null);
-  const [today] = useState(() => Math.floor(Date.now() / 86_400_000));
+  const [today] = useState(() => todayDays());
   if (dateColumn === null || days === null) return <p className={styles.note}>{t('smart.views.needDate')}</p>;
   const at = month ?? monthOf(Number.isFinite(first) ? first : today);
   const move = async (row: number, day: number) => {
@@ -265,7 +266,7 @@ function Calendar(props: ViewsProps) {
                 void move(rowOf(event), day);
               }}
             >
-              <span className={styles.dayNumber}>{new Date(Date.UTC(1970, 0, 1 + day)).getUTCDate()}</span>
+              <span className={styles.dayNumber}>{daysToYmd(day).d}</span>
               {(days.get(day) ?? []).map((row) => (
                 <Card
                   key={row}

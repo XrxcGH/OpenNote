@@ -1,5 +1,6 @@
 // The inputs of a kit tool: a number with a unit picker limited to its kind of quantity, a choice, or a list of
 // numbers. Every field has a visible label, and a field whose text is not a number says so in words.
+import '../text';
 import { t } from '../../../../strings/t';
 import type { FieldSpec } from '../common/spec';
 import { unitsFor, type System } from '../common/units';

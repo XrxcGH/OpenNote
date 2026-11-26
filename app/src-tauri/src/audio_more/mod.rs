@@ -22,7 +22,7 @@ use opennote_core::{
     session::notebook::HistoryScope, store::layout::NotebookLayout, store::layout::ASSETS_DIR, PageId,
 };
 use opennote_media::{
-    audio::{ClockAnchor, TrackKind},
+    audio::{ClockAnchor, Environment, SystemEnvironment, TrackKind},
     convert::{self, Quality, Settings},
     edit,
     layout::{RecordingEntry, RecordingPlan},
@@ -195,6 +195,20 @@ pub async fn audio_storage_scan(state: State<'_, AudioState>, bridge: State<'_, 
     .await
 }
 
+/// The least space free on the drives that hold the open notebooks, in bytes: the figure that decides how much more can
+/// be recorded. None when no notebook is open or the system cannot say.
+#[tauri::command]
+pub async fn audio_free_space(state: State<'_, AudioState>, bridge: State<'_, CoreBridge>) -> IpcResult<Option<u64>> {
+    let notebooks = bridge.run(|bridge| Ok(bridge.notebooks())).await?;
+    blocking(&state, move |_| {
+        Ok(notebooks
+            .iter()
+            .filter_map(|notebook| SystemEnvironment.free_bytes(notebook.path()))
+            .min())
+    })
+    .await
+}
+
 /// The finished recordings in a page's `page.json`, which keeps them in its view.
 fn recordings_of(page_dir: &Path) -> Vec<RecordingEntry> {
     let Ok(text) = fs::read_to_string(NotebookLayout::page_json(page_dir)) else {
@@ -214,8 +228,8 @@ fn recordings_of(page_dir: &Path) -> Vec<RecordingEntry> {
         .unwrap_or_default()
 }
 
-/// Deletes a page's saved versions, so audio taken out of the page can't be brought back from them. Named versions go
-/// too, because one of them may hold the part that was removed.
+/// Deletes a page's saved versions and its undo history, so audio taken out of the page can't be brought back. Named
+/// versions go too, because one of them may hold the part that was removed.
 #[tauri::command]
 pub async fn audio_purge_history(bridge: State<'_, CoreBridge>, page: String) -> IpcResult<u32> {
     let id = PageId::parse(&page).map_err(|_| IpcError::invalid("page", "That isn't a page ID."))?;
@@ -231,6 +245,8 @@ pub async fn audio_purge_history(bridge: State<'_, CoreBridge>, page: String) ->
         })
         .await?;
     tauri::async_runtime::spawn_blocking(move || {
+        // An undo could bring the removed part back too, and would point the page at deleted files.
+        notebook.forget_undo(id);
         notebook
             .delete_history(HistoryScope::Page(id), false)
             .map(|deleted| deleted.versions)

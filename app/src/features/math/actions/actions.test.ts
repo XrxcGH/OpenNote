@@ -3,6 +3,7 @@
 import { describe, expect, it } from 'vitest';
 import { Unsupported, latexToText } from './convert';
 import { graphOfLatex, liveAnswer, simplifyLatex, solveLatex } from './actions';
+import { stepsLatex } from './steps';
 
 describe('latexToText', () => {
   it('reads fractions, roots, products, and functions', () => {
@@ -46,7 +47,7 @@ describe('simplify', () => {
   it('says when there is nothing to do or it cannot read the LaTeX', () => {
     expect(simplifyLatex('x')).toEqual({ ok: false, reason: 'unchanged' });
     expect(simplifyLatex(String.raw`\int x`)).toEqual({ ok: false, reason: 'unsupported' });
-    expect(simplifyLatex('2 +')).toEqual({ ok: false, reason: 'unsupported' });
+    expect(simplifyLatex('2 +')).toEqual({ ok: false, reason: 'unfinished', near: '2 +' });
   });
 });
 
@@ -135,5 +136,43 @@ describe('graphs of equations', () => {
     expect(graphOfLatex('4')).toBeNull();
     expect(graphOfLatex('x^2 + y^2 = 1')).toBeNull();
     expect(graphOfLatex('')).toBeNull();
+  });
+});
+
+describe('simplify beyond tidying', () => {
+  it('multiplies out a difference of squares', () => {
+    expect(simplifyLatex('(x+1)^2-(x-1)^2')).toEqual({ ok: true, latex: '4x' });
+  });
+  it('cancels a factor hidden in a sum', () => {
+    expect(simplifyLatex(String.raw`\frac{x^2-9}{x-3}`)).toEqual({ ok: true, latex: 'x+3' });
+    expect(simplifyLatex(String.raw`\frac{(x+1)(x-1)}{x-1}`)).toEqual({ ok: true, latex: 'x+1' });
+  });
+});
+
+describe('equation steps', () => {
+  it('works a linear equation step by step', () => {
+    const found = stepsLatex('2x+3=11');
+    expect(found.ok && found.result).toBe('x = 4');
+    expect(found.ok && found.steps.map((s) => s.rule)).toEqual(['collect', 'isolate', 'divideBoth']);
+  });
+  it('uses the formula for a quadratic and says when there is no real root', () => {
+    const found = stepsLatex('x^2-4=0');
+    expect(found.ok && found.result).toBe(String.raw`x = -2,\ x = 2`);
+    expect(stepsLatex('x^2+1=0')).toMatchObject({ ok: false, reason: 'noRealSolution' });
+  });
+});
+
+describe('an unfinished equation says what is missing (T3-D08-6)', () => {
+  it.each([
+    ['(2+', 'unfinished'],
+    // The editor closes the bracket as it is typed, so the operator ends against a closing bracket (the real repro).
+    ['(2+)', 'unfinished'],
+    [String.raw`\left(2+\right)`, 'unfinished'],
+    ['2x+3=', 'emptySide'],
+    ['(2+3', 'unclosed'],
+    ['=5', 'emptySide'],
+  ])('names the problem of %s', (latex, reason) => {
+    expect(simplifyLatex(latex)).toMatchObject({ ok: false, reason });
+    expect(solveLatex(latex)).toMatchObject({ ok: false, reason });
   });
 });

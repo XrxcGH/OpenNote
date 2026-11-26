@@ -28,6 +28,10 @@ export const FIXED_KEYS: readonly FixedKeyRow[] = [
   { id: 'editorClipboard', keys: ['Ctrl+C', 'Ctrl+X', 'Ctrl+V'], action: 'shortcuts.fixed.editorClipboard' },
   { id: 'editorPastePlain', keys: ['Ctrl+Shift+V'], action: 'shortcuts.fixed.editorPastePlain' },
   { id: 'editorSlash', keys: 'shortcuts.fixed.slashKey', action: 'shortcuts.fixed.editorSlash' },
+  { id: 'codeTab', keys: ['Tab', 'Shift+Tab'], action: 'shortcuts.fixed.codeTab' },
+  { id: 'codeEscape', keys: ['Escape'], action: 'shortcuts.fixed.codeEscape' },
+  { id: 'codeLeave', keys: 'shortcuts.fixed.codeLeaveKeys', action: 'shortcuts.fixed.codeLeave' },
+  { id: 'codeSnippet', keys: ['Enter', 'Shift+Enter'], action: 'shortcuts.fixed.codeSnippet' },
   { id: 'objectMove', keys: ['Up', 'Down', 'Left', 'Right'], action: 'shortcuts.fixed.objectMove' },
   {
     id: 'objectResize',

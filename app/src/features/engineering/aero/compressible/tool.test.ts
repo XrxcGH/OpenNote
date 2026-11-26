@@ -1,5 +1,6 @@
 // The compressible tool's form: each family reads its own known; the branch and the shock solution reach the
 // engine, angles show in degrees, and a problem comes back as a code the window says in words.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { initialValues, runSpec } from '../ui/spec';
 import type { ToolOutput } from '../ui/spec';

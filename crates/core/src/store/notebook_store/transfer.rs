@@ -7,7 +7,7 @@ use super::arrange::FlatPage;
 use super::pages::{read_page_files, write_page_files};
 use super::{invalid_move, not_found, NotebookStore, SectionState};
 use crate::error::{CoreError, FsErrorKind};
-use crate::id::{GroupId, PageId, RevisionId, SectionId, TrashItemId};
+use crate::id::{GroupId, Id, PageId, RevisionId, SectionId, TrashItemId};
 use crate::model::{FormatInfo, Group, Ink, InkRecord, JsonMap, Page, PageEntry, Revision, TrashReason};
 use crate::session::journal_thread::TreeOp;
 use crate::session::notebook::{NodePlacement, NodeRef};
@@ -188,9 +188,12 @@ impl NotebookStore {
             }
         }
         self.log.step_done(intent, 2);
+        let ids: Vec<Id> = shifted.iter().map(|f| f.id.0).collect();
+        target.purge_moved_holding(&ids)?;
         let originals = self.delete(&[NodeRef::Page(page)], TrashReason::Moved)?;
         self.log.step_done(intent, 3);
         self.log.done(intent);
+        self.purge_older_originals(&ids, &originals)?;
         Ok(Transfer {
             moved: vec![NodeRef::Page(page)],
             originals,
@@ -276,9 +279,12 @@ impl NotebookStore {
         }
         target.apply_child_rekeys(&rekeys, false)?;
         self.log.step_done(intent, 3);
+        let ids: Vec<Id> = sections.iter().map(|s| s.0).collect();
+        target.purge_moved_holding(&ids)?;
         let originals = self.delete(&[node], TrashReason::Moved)?;
         self.log.step_done(intent, 4);
         self.log.done(intent);
+        self.purge_older_originals(&ids, &originals)?;
         Ok(Transfer {
             moved: vec![node],
             originals,

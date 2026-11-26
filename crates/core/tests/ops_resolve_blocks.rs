@@ -190,6 +190,17 @@ fn new_blocks_need_unused_ids_and_known_types() {
     let mut extension = new_block(1, "ext:org.example/x", json!({"cards": 1}));
     extension.fallback = Some(json!({"markdown": "A card"}));
     assert_eq!(code(&page, insert(extension, None, None)), "ok");
+    // A break is defined by version 2 (spec 6.12): it needs its exact fallback, like any block newer than version 1.
+    assert_eq!(
+        code(
+            &page,
+            insert(new_block(1, "break", json!({"kind": "page"})), None, None)
+        ),
+        "invalid"
+    );
+    let mut page_break = new_block(1, "break", json!({"kind": "page"}));
+    page_break.fallback = Some(json!({"markdown": "---"}));
+    assert_eq!(code(&page, insert(page_break, None, None)), "ok");
     let unknown_asset = new_block(1, "image", json!({"asset": "01m3sa43z1tp9rdr5e8df2jbxz"}));
     assert_eq!(code(&page, insert(unknown_asset, None, None)), "invalid");
 }

@@ -56,6 +56,15 @@ export default function IndicatorPanel({ onClose }: { onClose(): void }) {
         >
           {t('audio.bar.stop')}
         </Button>
+        <Button
+          variant="quiet"
+          onClick={() => {
+            onClose();
+            void executeCommand('audio.options', undefined, 'titleBar');
+          }}
+        >
+          {t('audio.bar.options')}
+        </Button>
       </div>
     </div>
   );

@@ -1,5 +1,6 @@
 // The nuclear science tool's mass calculations: a nucleus's mass defect and binding energy, and a reaction's Q-value,
 // both from atomic masses.
+import '../text';
 import type { MessageKey } from '../../../../strings/t';
 import { M_E, U_KG, U_MEV } from '../kit/constants';
 import { fmt, q } from '../kit/format';

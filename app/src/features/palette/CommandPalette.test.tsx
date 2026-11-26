@@ -35,6 +35,17 @@ describe('the command palette', () => {
     await expectNoAxeViolations(document.body);
   });
 
+  it('lists Move up and Move down (walk bug A1-A03-2)', async () => {
+    await renderApp();
+    const box = await openWith('Ctrl+K');
+    await userEvent.keyboard('move up');
+    const list = await screen.findByRole('listbox', { name: 'Results' });
+    await waitFor(() => expect(within(list).getByRole('option', { name: /Move up/ })).toBeTruthy());
+    await userEvent.clear(box);
+    await userEvent.keyboard('move down');
+    await waitFor(() => expect(within(list).getByRole('option', { name: /Move down/ })).toBeTruthy());
+  });
+
   it('runs the highlighted command on Enter, closes first, and gives focus back', async () => {
     await renderApp({ theme: 'light' });
     const opener = document.body.appendChild(document.createElement('button'));

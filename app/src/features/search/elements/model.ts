@@ -3,6 +3,8 @@
 // change into the merge patch that `patchBlock` takes. Pure functions, so they are tested without an editor.
 import type { Node as PMNode } from '@tiptap/pm/model';
 import type { Transaction } from '@tiptap/pm/state';
+import { paraAttrsFor } from '../../../editor/markdown/elements';
+import { entryFromAttrs, mergePatch } from '../../../editor/paragraph/attributes';
 import { ELEMENT_TYPES } from '../../../editor/schema/specs';
 
 export interface ElementRef {
@@ -12,14 +14,19 @@ export interface ElementRef {
   index: number;
 }
 
-/** The fields of a text block's `data` that line tags and links use. */
+/** The fields of a text block's `data` that line tags, links, and paragraph formatting (`paras`, spec 6.8) use. */
 export interface LineData {
   ids: string[];
   tags: Record<string, string[]>;
   checked: string[];
+  /** Paragraph formatting by element ID, each entry as the file had it. */
+  paras: Record<string, unknown>;
 }
 
-export const emptyLineData = (): LineData => ({ ids: [], tags: {}, checked: [] });
+export const emptyLineData = (): LineData => ({ ids: [], tags: {}, checked: [], paras: {} });
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 /** The elements of a document, in document order. A list item's first child belongs to the item (SPEC 6.6). */
 export function listElements(doc: PMNode): ElementRef[] {
@@ -80,12 +87,16 @@ export function lineDataOf(data: Record<string, unknown> | undefined): LineData 
       if (names.length > 0) out.tags[id] = names;
     }
   }
+  if (isRecord(data.paras)) out.paras = { ...data.paras };
   return out;
 }
 
 /** Whether the line data says anything: IDs, tags, or checked boxes. */
 export const hasLineData = (data: LineData): boolean =>
-  data.ids.length > 0 || data.checked.length > 0 || Object.keys(data.tags).length > 0;
+  data.ids.length > 0 ||
+  data.checked.length > 0 ||
+  Object.keys(data.tags).length > 0 ||
+  Object.keys(data.paras).length > 0;
 
 /** Gives every element an ID: one without, or one a split copied from its neighbor, gets a new one. */
 export function ensureIds(tr: Transaction, newId: () => string): boolean {
@@ -116,6 +127,8 @@ export function readLineData(doc: PMNode): LineData {
     const tags = stringList(ref.node.attrs.tags);
     if (tags.length > 0) out.tags[id] = tags;
     if (ref.node.attrs.tagChecked) out.checked.push(id);
+    const entry = entryFromAttrs(ref.node.attrs);
+    if (entry !== undefined) out.paras[id] = entry;
   }
   out.checked.sort();
   return out;
@@ -130,10 +143,14 @@ export function applyLineData(tr: Transaction, data: LineData): boolean {
     const tags = id === null ? [] : (data.tags[id] ?? []);
     const tagChecked = id !== null && checked.has(id);
     const old = ref.node.attrs;
+    const paras = paraAttrsFor(ref.node, id !== null && Object.hasOwn(data.paras, id) ? data.paras[id] : undefined);
     const same =
-      (old.id ?? null) === id && sameList(stringList(old.tags), tags) && Boolean(old.tagChecked) === tagChecked;
+      (old.id ?? null) === id &&
+      sameList(stringList(old.tags), tags) &&
+      Boolean(old.tagChecked) === tagChecked &&
+      Object.entries(paras).every(([name, value]) => mergePatch(old[name], value) === undefined);
     if (same) continue;
-    tr.setNodeMarkup(ref.pos, undefined, { ...old, id, tags, tagChecked });
+    tr.setNodeMarkup(ref.pos, undefined, { ...old, id, tags, tagChecked, ...paras });
     changed = true;
   }
   return changed;
@@ -152,6 +169,9 @@ export function patchFor(before: LineData, after: LineData): Record<string, unkn
   for (const [id, list] of Object.entries(after.tags)) if (!sameList(before.tags[id] ?? [], list)) tags[id] = list;
   if (Object.keys(tags).length > 0) patch.tags = tags;
   if (!sameList(before.checked, after.checked)) patch.checked = after.checked;
+  // An element that is gone takes its entry with it (R-PARA-2), and a changed entry changes only its changed keys.
+  const paras = mergePatch(before.paras, after.paras);
+  if (paras !== undefined) patch.paras = paras;
   return Object.keys(patch).length > 0 ? patch : null;
 }
 

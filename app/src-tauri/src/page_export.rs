@@ -21,7 +21,7 @@ use serde::Deserialize;
 use serde_json::{json, Value};
 use tauri::{
     ipc::{InvokeBody, Response},
-    AppHandle, Listener, Manager, WebviewUrl, WebviewWindow, WebviewWindowBuilder,
+    AppHandle, Listener, Manager, WebviewUrl, WebviewWindow,
 };
 
 use crate::{
@@ -130,7 +130,7 @@ pub async fn print_prepare(app: AppHandle, job: String, input: Value) -> IpcResu
     let listener = app.listen_any(RESULT_EVENT, move |event| {
         let _ = tx.send(event.payload().to_owned());
     });
-    let built = WebviewWindowBuilder::new(&app, &label, WebviewUrl::App("print.html".into()))
+    let built = crate::window::webview::new_window(&app, &label, WebviewUrl::App("print.html".into()))
         .title("OpenNote print")
         .inner_size(1280.0, 960.0)
         .visible(false)
@@ -198,8 +198,8 @@ pub async fn print_render(
         .map_err(|error| IpcError::new(codes::INTERNAL, error.to_string()))?;
     let bytes = match outcome {
         Ok(Ok(true)) => fs::read(&file).map_err(IpcError::from),
-        Ok(Ok(false)) => Err(IpcError::new(codes::INTERNAL, "WebView2 didn't write the PDF.")),
-        Ok(Err(message)) => Err(IpcError::new(codes::INTERNAL, format!("PrintToPdf failed: {message}"))),
+        Ok(Ok(false)) => Err(IpcError::new(codes::INTERNAL, "The PDF wasn't written.")),
+        Ok(Err(message)) => Err(IpcError::new(codes::INTERNAL, format!("The PDF failed: {message}"))),
         Err(_) => Err(IpcError::new("timeout", "Printing to PDF took too long.")),
     };
     let _ = fs::remove_file(&file);
@@ -317,7 +317,8 @@ fn start_devtools_print(
         .map_err(IpcError::from)
 }
 
-/// PDF and printing go through WebView2's PrintToPdf, which WKWebView and WebKitGTK don't have (ADR 0055).
+/// Windows prints through WebView2's PrintToPdf; macOS and Linux through the web view's own print operation
+/// (print_native.rs). Only a system with neither answers like this.
 #[cfg(not(windows))]
 fn pdf_unavailable() -> IpcError {
     IpcError::new(
@@ -394,7 +395,10 @@ fn start_print(
         .map_err(IpcError::from)
 }
 
-#[cfg(not(windows))]
+#[cfg(any(target_os = "linux", target_os = "macos"))]
+use crate::print_native::start_print;
+
+#[cfg(not(any(windows, target_os = "linux", target_os = "macos")))]
 fn start_print(
     _window: &WebviewWindow,
     _file: PathBuf,

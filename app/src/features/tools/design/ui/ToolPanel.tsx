@@ -1,4 +1,5 @@
 // checks-disable-file modifiability: the panel is one component that holds the form state
+import '../text';
 
 // One calculating tool of the kit: its fields with a unit for each number, a choice of SI or US units, ready-made
 // examples, the results, and the Insert menu. The typed texts are kept on this device for each tool, and the unit
@@ -178,7 +179,8 @@ function insertItems(c: InsertContext): MenuItemSpec[] {
       onSelect: () => done(sendToPage({ picture: pictureRequest(svgText, `${c.tool}.svg`, alt) })),
     });
   }
-  return items;
+  // A tool with no worked steps has no entry for them: an empty list would insert nothing and say nothing.
+  return c.outcome.steps.length > 0 ? items : items.filter((item) => item.id !== 'steps');
 }
 
 /** The system the kit last used. */

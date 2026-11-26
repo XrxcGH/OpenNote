@@ -1,3 +1,4 @@
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { PHYSICS_TOOLS } from '../meta';

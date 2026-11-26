@@ -16,7 +16,8 @@
     display: flex;
     flex: 0 1 16rem;
     align-items: center;
-    min-inline-size: 0;
+    /* Tabs shrink only to a width that keeps a title readable. With more tabs than fit, the strip scrolls. */
+    min-inline-size: 7.5rem;
     border: 1px solid transparent;
     border-block-end: none;
     border-start-start-radius: var(--radius-md);
@@ -24,10 +25,39 @@
     color: var(--color-text-secondary);
   }
 
+  /* The close button keeps its own width, so a long title is clipped before it and never runs under it (W9-VB-3). */
+  .tab > :not(.title) {
+    flex: none;
+  }
+
+  .tab[data-drop='before'] {
+    box-shadow: inset var(--size-focus-ring-width) 0 0 var(--color-focus-ring);
+  }
+
+  .tab[data-drop='after'] {
+    box-shadow: inset calc(-1 * var(--size-focus-ring-width)) 0 0 var(--color-focus-ring);
+  }
+
   .tab[data-active] {
     border-color: var(--color-border-subtle);
     background: var(--color-surface-page);
     color: var(--color-text-primary);
+  }
+
+  /* The active tab says so with more than color: a semibold name, and when its notebook has a color, a 2 px top edge.
+     The tab's width is fixed by its basis, so the heavier name never moves its neighbors. */
+  .tab[data-active] .title {
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .tab[data-active][data-notebook-mark='tab'] {
+    box-shadow: inset 0 2px 0 var(--notebook-accent);
+  }
+
+  @media (forced-colors: active) {
+    .tab[data-active][data-notebook-mark='tab'] {
+      box-shadow: none;
+    }
   }
 
   .tab:not([data-active]):hover {

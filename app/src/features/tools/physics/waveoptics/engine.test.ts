@@ -1,5 +1,6 @@
 // The interference, diffraction, and polarization tool against its validation cases (first principles) and
 // independent working: other forms of the same laws, limits, and conservation.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { specProblems } from '../kit/checkSpec';
 import { problem, runMode, value } from '../kit/run';

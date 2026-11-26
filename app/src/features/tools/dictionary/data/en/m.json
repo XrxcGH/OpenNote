@@ -8,6 +8,19 @@
       ]
     ]
   ],
+  "meter": [
+    [
+      "n",
+      [
+        ["the basic unit of length in the metric system", ["metre"], "The pool is twenty-five meters long."],
+        [
+          "a device that measures and shows an amount",
+          ["gauge", "gage", "counter", "dial"],
+          "The meter showed how much power the house used."
+        ]
+      ]
+    ]
+  ],
   "method": [
     [
       "n",

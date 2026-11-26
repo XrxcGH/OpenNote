@@ -1,7 +1,7 @@
 // The Export dialog: choose what to export (this page, section, or notebook), a format, and a folder; export with
 // progress and Cancel; read the summary. The host makes a new folder or file, so nothing is overwritten.
 
-import { useEffect, useState, useSyncExternalStore } from 'react';
+import { useEffect, useId, useState, useSyncExternalStore } from 'react';
 import { isEnabled } from '../../app/flags';
 import type { ExportFormat, ExportScope, InteropClient } from '../../platform/interop';
 import type { NotesService } from '../../services/notes/types';
@@ -11,7 +11,14 @@ import { Button, Dialog, RadioCard, RadioGroup, Switch, TextField, announce } fr
 import type { DialogAction } from '../../ui';
 import { createExportFlow } from './exportFlow';
 import { CheckFirstSwitch } from '../a11yCheck';
-import { pageTitleOn, setPageTitle } from '../exportPrefs';
+import {
+  embedFontsOn,
+  pageTitleOn,
+  removePersonalOn,
+  setEmbedFonts,
+  setPageTitle,
+  setRemovePersonal,
+} from '../exportPrefs';
 import { LatexFields } from './LatexFields';
 import { SendExtras } from './SendExtras';
 import { NO_SHARE_CHOICES } from './exportFlow';
@@ -33,7 +40,7 @@ export interface ExportDialogProps {
 }
 
 const FORMATS: readonly ExportFormat[] = ['markdown', 'html', 'htmlSingle', 'docx'];
-const OFFICE_FORMATS: readonly ExportFormat[] = ['pptx', 'xlsx', 'csv'];
+const OFFICE_FORMATS: readonly ExportFormat[] = ['pptx', 'xlsx', 'csv', 'tsv'];
 
 /**
  * The choices to show: the PDF and the Office choices appear when their flags are on. PDF also needs a way to print
@@ -58,6 +65,7 @@ const formatLabel = (format: ExportFormat) =>
     pptx: t('interop.export.formats.pptx'),
     xlsx: t('interop.export.formats.xlsx'),
     csv: t('interop.export.formats.csv'),
+    tsv: t('interop.export.formats.tsv'),
     latex: t('interopLatex.format'),
     share: t('interop.share.command'),
   })[format];
@@ -72,6 +80,7 @@ const formatHint = (format: ExportFormat) =>
     pptx: t('interop.export.formats.pptxHint'),
     xlsx: t('interop.export.formats.xlsxHint'),
     csv: t('interop.export.formats.csvHint'),
+    tsv: t('interop.export.formats.tsvHint'),
     latex: t('interopLatex.formatHint'),
     share: t('interop.share.intro'),
   })[format];
@@ -95,6 +104,7 @@ function Options({
   refocus: boolean;
   canPrint: boolean;
 }) {
+  const formats = exportFormats(canPrint);
   return (
     <div className={styles.body}>
       <StepHeading focus={refocus}>{t('interop.export.optionsHeading')}</StepHeading>
@@ -119,11 +129,11 @@ function Options({
       ) : (
         <RadioGroup<ExportFormat>
           label={t('interop.export.formatLabel')}
-          columns={4}
+          columns={formats.length % 4 === 1 ? 3 : 4}
           value={state.format}
           onChange={(format) => flow.setFormat(format)}
         >
-          {exportFormats(canPrint).map((format) => (
+          {formats.map((format) => (
             <RadioCard<ExportFormat>
               key={format}
               value={format}
@@ -147,6 +157,8 @@ function Options({
       </div>
       {state.format !== 'share' && <SendExtras flow={flow} folder={state.folder} />}
       {state.format === 'pdf' && <PageTitleSwitch />}
+      {state.format === 'docx' && <RemovePersonalSwitch />}
+      {state.format === 'docx' && <EmbedFontsSwitch />}
       <CheckFirstSwitch />
       {state.error && (
         <p role="alert" className={styles.error}>
@@ -170,6 +182,50 @@ function PageTitleSwitch() {
           setOn(value);
         }}
       />
+    </>
+  );
+}
+
+/** Whether a Word export leaves out authors' names and dates. Off until turned on, and remembered. */
+function RemovePersonalSwitch() {
+  const [on, setOn] = useState(removePersonalOn);
+  const helpId = useId();
+  return (
+    <>
+      <Switch
+        label={t('interop.export.removePersonal')}
+        checked={on}
+        describedBy={helpId}
+        onChange={(value) => {
+          setRemovePersonal(value);
+          setOn(value);
+        }}
+      />
+      <p id={helpId} className={styles.note}>
+        {t('interop.export.removePersonalHelp')}
+      </p>
+    </>
+  );
+}
+
+/** Whether a Word export embeds the bundled fonts it uses. Off until turned on, and remembered. */
+function EmbedFontsSwitch() {
+  const [on, setOn] = useState(embedFontsOn);
+  const helpId = useId();
+  return (
+    <>
+      <Switch
+        label={t('interop.export.embedFonts')}
+        checked={on}
+        describedBy={helpId}
+        onChange={(value) => {
+          setEmbedFonts(value);
+          setOn(value);
+        }}
+      />
+      <p id={helpId} className={styles.note}>
+        {t('interop.export.embedFontsHelp')}
+      </p>
     </>
   );
 }

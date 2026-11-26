@@ -1,4 +1,5 @@
 // checks-disable-file modifiability: one describe block per feature
+import '../text';
 
 import { describe, expect, it } from 'vitest';
 import {

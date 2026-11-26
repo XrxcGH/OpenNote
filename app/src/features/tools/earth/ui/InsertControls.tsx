@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { t } from '../../../../strings/t';
 import { Button, announce, openMenu } from '../../../../ui';
 import type { MenuItemSpec } from '../../../../ui';
+import { insertLive as keepLive } from '../../kits/liveInsert';
 import { insertIntoPage } from '../../ui/insert';
 import { figureSvg } from '../core/figure';
 import type { Outcome } from './form';
@@ -25,9 +26,9 @@ export function tableOf(outcome: Outcome): { header: string[]; rows: string[][] 
   return { header: [t('kitEarth.quantity'), t('kitEarth.value')], rows: outcome.rows.map(([a, b]) => [a, b]) };
 }
 
-type Say = (handled: boolean) => void;
+type Say = (handled: boolean, done?: 'kitEarth.inserted' | 'kitEarth.liveInserted') => void;
 
-function menuItems(outcome: Outcome, say: Say): MenuItemSpec[] {
+function menuItems(outcome: Outcome, say: Say, anchor: Element): MenuItemSpec[] {
   const items: MenuItemSpec[] = [];
   if (outcome.latex) {
     const source = outcome.latex;
@@ -44,6 +45,16 @@ function menuItems(outcome: Outcome, say: Say): MenuItemSpec[] {
     id: 'steps',
     label: t('kitEarth.insertSteps'),
     onSelect: () => say(insertIntoPage({ text: stepsText(outcome) })),
+  });
+  items.push({
+    id: 'live',
+    label: t('kitEarth.insertLive'),
+    onSelect: () =>
+      void keepLive(anchor, {
+        summary: outcome.answer,
+        rows: (outcome.rows ?? []).slice(0, 12).map(([label, value]) => ({ label, value, unit: '' })),
+        ...(outcome.latex ? { latex: outcome.latex } : {}),
+      }).then((ok) => say(ok, 'kitEarth.liveInserted')),
   });
   (outcome.figures ?? []).forEach((figure, i) => {
     const bytes = new TextEncoder().encode(figureSvg(figure)).buffer as ArrayBuffer;
@@ -65,9 +76,9 @@ export function InsertControls({ outcome }: { outcome: Outcome | null }) {
   // The note belongs to the result it was pressed for, so a new result hides it without an effect.
   const [missedFor, setMissedFor] = useState<Outcome | null>(null);
   const missed = outcome !== null && missedFor === outcome;
-  const say: Say = (handled) => {
+  const say: Say = (handled, done = 'kitEarth.inserted') => {
     setMissedFor(handled ? null : outcome);
-    announce(t(handled ? 'kitEarth.inserted' : 'kitEarth.noPage'));
+    announce(t(handled ? done : 'kitEarth.noPage'));
   };
   return (
     <>
@@ -85,7 +96,8 @@ export function InsertControls({ outcome }: { outcome: Outcome | null }) {
           aria-haspopup="menu"
           onClick={(event) => {
             const anchor = event.currentTarget;
-            if (outcome) void openMenu({ label: t('kitEarth.insertMenu'), items: menuItems(outcome, say), anchor });
+            if (outcome)
+              void openMenu({ label: t('kitEarth.insertMenu'), items: menuItems(outcome, say, anchor), anchor });
           }}
         >
           {t('kitEarth.insertMore')}

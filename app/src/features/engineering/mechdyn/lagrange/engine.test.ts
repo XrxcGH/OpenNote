@@ -1,4 +1,5 @@
 /* eslint-disable opennote/feature-boundaries -- The tests hand the engines the math feature's algebra directly. */
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { LAGRANGE_DEFAULTS, LAGRANGE_TEMPLATES, nameLatex, solveLagrange, type LagrangeInput } from './engine';
 import { simplest, substitute } from '../../../math/calculus/algebra';

@@ -1,5 +1,6 @@
 // Changing the unit system must not change the problem. Every example of every tool is run in SI, then in US units
 // after its texts are pinned and its tables turned, then back in SI, and gives the same answers each time.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { SPECS } from '../specs';
 import { firstTexts, pinUnits, runTool, type Run } from './read';

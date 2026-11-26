@@ -96,7 +96,7 @@ fn tables_become_table_blocks_and_nested_ones_become_lines() {
         "| a | b |\n|---|---|\n| 1 | 2 |\n\n- item\n\n  | x | y |\n  |---|---|\n  | 3 | 4 |",
         SoftBreaks::Hard,
     );
-    let Block::Table { header, rows } = &parsed.blocks[0] else {
+    let Block::Table { header, rows, .. } = &parsed.blocks[0] else {
         panic!("expected a table, found {:?}", parsed.blocks[0]);
     };
     assert!(*header);

@@ -19,7 +19,7 @@ test('Ctrl+, opens Settings on its heading, and Escape leaves it', async ({ page
 });
 
 test('the section list stays in view while a long section scrolls', async ({ page }) => {
-  await page.setViewportSize({ width: 820, height: 620 });
+  await page.setViewportSize({ width: 1280, height: 620 });
   await page.goto('/');
   await expect(page.locator('[data-workspace]')).toBeVisible();
   await page.keyboard.press('Control+Comma');

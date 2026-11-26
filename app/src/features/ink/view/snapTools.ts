@@ -29,6 +29,7 @@ import type { Vec } from '../geometry/types';
 import type { InkHost, InkPointerTool } from './host';
 import { hasPaperLines, paperNow, paperSnapNow } from './paperSnap';
 import { inkPrefs, setPrefs } from './prefs';
+import { drawState } from './state';
 import type { InkSurface } from './surface';
 
 interface Geometry {
@@ -43,6 +44,8 @@ export const snapGeometry = createStore<Geometry>(
 
 /** How near a stroke must start to an edge or the center, in screen pixels. */
 const REACH_PX = 14;
+/** How far inside the ruler a pen press starts a line along its edge, in screen pixels: as far as a stroke is held. */
+const EDGE_BAND_PX = REACH_PX;
 const MOVE_STEP = 4;
 const TURN_STEP = Math.PI / 180;
 
@@ -139,7 +142,7 @@ export function setRulerUnits(choice: 'auto' | LengthUnits): void {
 const SVG = 'http://www.w3.org/2000/svg';
 
 /** The ruler's tick marks and numbers as SVG, in page units across its length from the left end. */
-function tickMarks(doc: Document, ruler: Ruler, units: LengthUnits): SVGSVGElement {
+export function tickMarks(doc: Document, ruler: Ruler, units: LengthUnits): SVGSVGElement {
   const svg = doc.createElementNS(SVG, 'svg');
   svg.setAttribute('viewBox', `0 0 ${ruler.length} ${ruler.width}`);
   svg.setAttribute('aria-hidden', 'true');
@@ -166,16 +169,73 @@ function tickMarks(doc: Document, ruler: Ruler, units: LengthUnits): SVGSVGEleme
     node.setAttribute('y', String(long.major + 2.8 * mm));
     node.setAttribute('text-anchor', anchor);
     node.setAttribute('font-size', String(size * mm));
-    node.setAttribute('fill', 'currentColor');
+    // The ruler is see-through, so its numbers take the strongest text color to stay readable over the page.
+    node.setAttribute('fill', 'var(--color-text-primary)');
     node.textContent = text;
     svg.append(node);
   };
   for (const tick of ticks) if (tick.label && tick.at > 0) label(tick.at, tick.label, 'middle', 2.6);
-  label(1.2 * mm, units === 'imperial' ? 'in' : 'cm', 'start', 2.2);
+  label(1.2 * mm, units === 'imperial' ? 'in' : 'cm', 'start', 2.6);
   return svg;
 }
 
 type Which = 'ruler' | 'protractor';
+
+/** A turn handle's size: the target size, so touch density gets 44 px, and never less than 28 px. */
+const HANDLE = 'max(28px, var(--target-size, 28px))';
+
+/** The part of the page the view shows, in page units. */
+export interface View {
+  readonly x: number;
+  readonly y: number;
+  readonly w: number;
+  readonly h: number;
+}
+
+/** Room kept clear around a widget, in screen pixels: its Turn handle reaches up to 50 px past its end. */
+const WIDGET_PAD_PX = 56;
+/** The shortest ruler a narrow view gets, in page units. */
+const MIN_RULER = 40 * gridSize(1);
+
+const inside = (view: View, x: number, y: number, pad: number) =>
+  x >= view.x + pad && x <= view.x + view.w - pad && y >= view.y + pad && y <= view.y + view.h - pad;
+
+/**
+ * The ruler placed so all of it and its Turn handle show. One that fits the view stays as it is. Otherwise it goes
+ * level in the middle of the view, shorter on a narrow one (full walk 2: A1-A10-7, A2-A11-6). `pad` is in page units.
+ */
+export function rulerInView(ruler: Ruler, view: View, pad: number): Ruler {
+  const half = ruler.length / 2 + pad;
+  const cos = Math.cos(ruler.angle);
+  const sin = Math.sin(ruler.angle);
+  const across = ruler.width / 2;
+  const fits = [-1, 1].every((end) =>
+    [-1, 1].every((side) =>
+      inside(
+        view,
+        ruler.cx + end * half * cos - side * across * sin,
+        ruler.cy + end * half * sin + side * across * cos,
+        0,
+      ),
+    ),
+  );
+  if (fits) return ruler;
+  const length = Math.max(MIN_RULER, Math.min(DEFAULT_RULER.length, view.w - 2 * pad));
+  return { ...ruler, angle: 0, length, cx: view.x + view.w / 2, cy: view.y + view.h / 2 };
+}
+
+/** The protractor where all of it can be seen, by the same rule as the ruler. */
+export function protractorInView(protractor: Protractor, view: View, pad: number): Protractor {
+  const r = protractor.radius + pad;
+  if (
+    inside(view, protractor.cx - r, protractor.cy - r, 0) &&
+    inside(view, protractor.cx + r, protractor.cy + pad, 0)
+  ) {
+    return protractor;
+  }
+  const radius = Math.max(MIN_RULER / 2, Math.min(DEFAULT_PROTRACTOR.radius, view.w / 2 - pad, view.h - 2 * pad));
+  return { ...protractor, angle: 0, radius, cx: view.x + view.w / 2, cy: view.y + view.h / 2 + radius / 2 };
+}
 
 /** A widget moved to a place on the screen, turned about it, with its own anchor point `(ax, ay)` on that place. */
 function placement(x: number, y: number, angle: number, ax: number, ay: number): string {
@@ -222,8 +282,8 @@ function make(doc: Document, which: Which): Widget {
   handle.setAttribute('aria-label', t('ink.snap.turn'));
   Object.assign(handle.style, {
     position: 'absolute',
-    width: '28px',
-    height: '28px',
+    width: HANDLE,
+    height: HANDLE,
     borderRadius: '50%',
     border: '1px solid var(--color-accent-primary)',
     background: 'var(--color-surface-page)',
@@ -274,11 +334,54 @@ class SnapLayer {
       surface.onChange(() => this.place()),
       snapGeometry.subscribe(() => this.place()),
     );
+    let was = inkPrefs.get();
     this.stops.push(
-      inkPrefs.subscribe(() => this.place()),
+      inkPrefs.subscribe(() => {
+        const now = inkPrefs.get();
+        // A widget that comes on shows whole, within the view, so its ends and its Turn handle can be reached.
+        if (now.ruler && !was.ruler) this.bringIntoView('ruler');
+        if (now.protractor && !was.protractor) this.bringIntoView('protractor');
+        was = now;
+        this.place();
+      }),
       paperNow.subscribe(() => this.place()),
     );
+    if (was.ruler) this.bringIntoView('ruler');
+    if (was.protractor) this.bringIntoView('protractor');
     this.place();
+  }
+
+  /** The part of the page this surface shows, in page units. */
+  private view(): View {
+    const { zoom, scrollX, scrollY, viewport } = this.surface.cameraNow();
+    const w = this.surface.chrome.clientWidth || viewport.w;
+    const h = this.surface.chrome.clientHeight || viewport.h;
+    return { x: scrollX / zoom, y: scrollY / zoom, w: w / zoom, h: h / zoom };
+  }
+
+  private bringIntoView(which: Which): void {
+    const view = this.view();
+    if (!(view.w > 0 && view.h > 0)) return;
+    const pad = WIDGET_PAD_PX / this.surface.cameraNow().zoom;
+    const g = snapGeometry.get();
+    const next =
+      which === 'ruler'
+        ? { ...g, ruler: rulerInView(g.ruler, view, pad) }
+        : { ...g, protractor: protractorInView(g.protractor, view, pad) };
+    if (next[which] !== g[which]) snapGeometry.set(next);
+  }
+
+  /**
+   * True when a pen or mouse press on the ruler is at its edge with a pen chosen: that starts a line along the edge,
+   * where moving the ruler would take the stroke away (full walk 2, A1-A10-8). Fingers and the Turn handle still move it.
+   */
+  drawsAtEdge(event: PointerEvent, at: Vec): boolean {
+    if (event.pointerType === 'touch' || event.target === this.ruler.handle) return false;
+    if (!this.ruler.element.contains(event.target as Node)) return false;
+    const tool = drawState.get().tool;
+    if (tool !== 'pen' && tool !== 'writing') return false;
+    const zoom = this.surface.cameraNow().zoom;
+    return nearRulerEdge(snapGeometry.get().ruler, at, EDGE_BAND_PX / zoom) !== null;
   }
 
   widgetOf(target: EventTarget | null): Widget | null {
@@ -357,7 +460,10 @@ class SnapLayer {
       backgroundPosition: `${w % (mm * 10)}px 0, ${w % (mm * 10)}px 0`,
       borderRadius: 'var(--radius-sm)',
     });
-    Object.assign(this.ruler.handle.style, { right: '-34px', top: `${h / 2 - 14}px` });
+    Object.assign(this.ruler.handle.style, {
+      right: `calc(-6px - ${HANDLE})`,
+      top: `calc(${h / 2}px - ${HANDLE} / 2)`,
+    });
 
     const pEl = this.protractor.element;
     const pw = protractor.radius * 2 * zoom;
@@ -378,7 +484,7 @@ class SnapLayer {
       backgroundSize: '100% 100%',
       maskImage: 'none',
     });
-    Object.assign(this.protractor.handle.style, { right: '-34px', bottom: '-14px' });
+    Object.assign(this.protractor.handle.style, { right: `calc(-6px - ${HANDLE})`, bottom: `calc(${HANDLE} / -2)` });
   }
 
   private readonly onKey = (event: KeyboardEvent) => {
@@ -444,7 +550,10 @@ export function installSnapTools(host: InkHost, surfaces: Store<InkSurface | nul
     id: 'ink.snapWidgets',
     // Above the palm filter (100), so a finger on a ruler moves the ruler and never draws.
     priority: 105,
-    accepts: (event) => layer !== null && layer.widgetOf(event.target) !== null,
+    accepts: (event, ctx) =>
+      layer !== null &&
+      layer.widgetOf(event.target) !== null &&
+      !layer.drawsAtEdge(event, ctx.toWorld(event.clientX, event.clientY)),
     down(event, ctx) {
       const widget = layer?.widgetOf(event.target);
       if (!layer || !widget) return 'watch';

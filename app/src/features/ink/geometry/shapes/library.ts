@@ -5,7 +5,7 @@
 import type { Vec } from '../types';
 import { headBarbs } from './arrow';
 import { CIRCUIT_SHAPES, ENGINEERING_BUILDERS, MECHANICS_SHAPES } from './engineering';
-import { polygonCorners, sampleArc, sampleEllipse, shapePoints, starCorners } from './generate';
+import { arcEnd, polygonCorners, sampleArc, sampleEllipse, shapePoints, starCorners } from './generate';
 
 export type LibraryGroup = 'basic' | 'flowchart' | 'network' | 'entity' | 'mechanics' | 'circuit';
 
@@ -96,11 +96,7 @@ const doubleArrow: Builder = (c, w) => {
 const curvedArrow: Builder = (c, w) => {
   const radius = w * 0.45;
   const center = { x: c.x, y: c.y + radius * 0.4 };
-  const body = sampleArc(center, radius, Math.PI * 1.1, Math.PI * 0.8);
-  const tip = body[body.length - 1];
-  const back = body[body.length - 4];
-  const length = Math.hypot(tip.x - back.x, tip.y - back.y) || 1;
-  const direction = { x: (tip.x - back.x) / length, y: (tip.y - back.y) / length };
+  const { tip, direction } = arcEnd(center, radius, Math.PI * 1.1, Math.PI * 0.8);
   const barbs = headBarbs(tip, direction, 22);
   return [shapePoints({ kind: 'curvedArrow', center, radius, start: Math.PI * 1.1, sweep: Math.PI * 0.8, barbs })];
 };

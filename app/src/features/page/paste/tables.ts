@@ -57,6 +57,42 @@ export function tableData(table: HTMLTableElement, newId: () => string): TableDa
   };
 }
 
+/**
+ * Table data from text whose lines are rows and whose tabs separate cells, which is how a spreadsheet copies as text.
+ * A first row of words above rows with numbers is the header. The text must have two rows or more with the same
+ * number of cells, two or more, and no row may begin with a tab. Indented code, and a lone line with a tab in it,
+ * stay text.
+ */
+export function tabTableData(text: string, newId: () => string): TableData | null {
+  const rows = text
+    .replace(/\r\n?/g, '\n')
+    .replace(/\n+$/, '')
+    .split('\n')
+    .map((line) => line.split('\t'));
+  const count = rows[0].length;
+  if (rows.length < 2 || count < 2 || rows.length > 5000 || count > 64) return null;
+  if (rows.some((row) => row.length !== count || row[0] === '' || row.every((cell) => cell.trim() === ''))) return null;
+  const columns = Array.from({ length: count }, () => ({ id: newId(), width: DEFAULT_COLUMN_WIDTH }));
+  // A first row of words above rows with numbers in them is the column titles.
+  const isNumber = (cell: string) => cell.trim() !== '' && Number.isFinite(Number(cell.trim().replace(/,/g, '')));
+  const header =
+    rows[0].every((cell) => cell.trim() !== '' && !isNumber(cell)) && rows.slice(1).some((row) => row.some(isNumber));
+  return {
+    header,
+    columns,
+    rows: rows.map((row) => ({
+      id: newId(),
+      cells: Object.fromEntries(
+        columns.map((column, at) => {
+          const cell = row[at].replace(/\0/g, '�').trim();
+          const paragraph = nodes.paragraph.create(null, cell === '' ? [] : textSchema.text(cell));
+          return [column.id, { markdown: serializeInline(paragraph, TITLE).trim() }];
+        }),
+      ),
+    })),
+  };
+}
+
 /** Swaps each table that stands among the blocks for a marker paragraph, and returns the tables in order. */
 export function extractTables(body: HTMLElement, newId: () => string): TableData[] {
   const found: TableData[] = [];
@@ -76,4 +112,22 @@ export function extractTables(body: HTMLElement, newId: () => string): TableData
 export function tableMarker(node: PMNode): number | null {
   const match = node.type.name === 'paragraph' ? MARKER.exec(node.textContent) : null;
   return match ? Number(match[1]) : null;
+}
+
+/**
+ * Table data with its sheet from a spreadsheet's clipboard HTML (Excel, Google Sheets, LibreOffice, or an OpenNote
+ * table copy), or null for any other HTML, which keeps today's reading through `extractTables` (ADR 0067).
+ */
+type SpreadsheetReader = (html: string, newId: () => string) => TableData | null;
+
+let reader: SpreadsheetReader | null = null;
+
+/** Loads the sheet paste code once, off the start-up path. The paste pipeline awaits it before it reads. */
+export async function ensureSpreadsheetPaste(): Promise<void> {
+  // The tables index is a large chunk, so it loads here and not with the paste pipeline.
+  reader ??= await (await import('../../tables')).loadSpreadsheetPaste();
+}
+
+export function spreadsheetTable(html: string, newId: () => string): TableData | null {
+  return reader ? reader(html, newId) : null;
 }

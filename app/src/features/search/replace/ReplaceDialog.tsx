@@ -14,6 +14,7 @@ import { recordChange } from '../changeSet';
 import { maybeSearchClient } from '../client';
 import styles from '../search.module.css';
 import { applyReplace, undoReplace } from './apply';
+import { loadReplaceTarget } from '../../page';
 import { planPage } from './plan';
 import type { Match, ReplaceOptions } from './plan';
 
@@ -122,10 +123,11 @@ export default function ReplaceDialog({ onClose, query = '' }: OverlayProps & { 
     if (busy || chosen.length === 0) return;
     setBusy(true);
     const { platform } = commandContext('palette');
-    const done = await applyReplace(platform.pages, chosen, replacement);
+    const { shownReplaceTarget: shownTarget } = await loadReplaceTarget();
+    const done = await applyReplace(platform.pages, chosen, replacement, shownTarget());
     onClose();
     const message = t('qolSearch.replace.done', { count: done.matches, pages: done.pages });
-    recordChange({ label: message, undo: () => undoReplace(platform.pages, done.written) }, message);
+    recordChange({ label: message, undo: () => undoReplace(platform.pages, done.written, shownTarget()) }, message);
   };
 
   return (

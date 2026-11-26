@@ -5,6 +5,8 @@ use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
 
+pub mod format;
+
 use super::{named_enum, JsonMap, Named};
 use crate::id::{AssetId, BlockId, ColumnId, ElementId, RowId};
 use crate::order::OrderKey;
@@ -105,7 +107,8 @@ pub enum BlockData {
     Other(OtherData),
 }
 
-/// A text box: OpenNote Markdown and its elements (spec 6.3 and 6.6).
+/// A text box: OpenNote Markdown and its elements (spec 6.3 and 6.6). Version 2 data (spec 6.8 to 6.11) stays
+/// in `extra` as JSON, so every key is kept exactly; [`TextData::formatting`] reads it.
 #[derive(Clone, Debug, PartialEq, Default)]
 pub struct TextData {
     /// The text, in OpenNote Markdown.
@@ -120,6 +123,29 @@ pub struct TextData {
     pub checked: BTreeSet<ElementId>,
     /// Unknown keys of `data`.
     pub extra: JsonMap,
+}
+
+impl TextData {
+    /// What a reader makes of the block's version 2 data (spec 6.8 to 6.11), with the values it found invalid
+    /// and the limits the data passes.
+    pub fn formatting(&self, limits: &crate::limits::Limits) -> format::TextFormatting {
+        crate::format::page_json::text_v2::read_formatting(&self.extra, &self.ids, limits)
+    }
+
+    /// Whether `paras` has an entry that names no element of `ids` (`R-PARA-2`).
+    pub fn has_stale_paras(&self) -> bool {
+        let Some(serde_json::Value::Object(paras)) = self.extra.get("paras") else {
+            return false;
+        };
+        let live: BTreeSet<String> = self.ids.iter().map(ToString::to_string).collect();
+        paras.keys().any(|key| !live.contains(key))
+    }
+
+    /// Drops the entries of `paras` that name no element of `ids`, as writers do (`R-PARA-2`). Returns whether
+    /// any went.
+    pub fn drop_stale_paras(&mut self) -> bool {
+        crate::format::page_json::text_v2::drop_stale_paras(&mut self.extra, &self.ids)
+    }
 }
 
 /// An ink block's fields (spec 6.3 and 8.1).

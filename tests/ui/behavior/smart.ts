@@ -4,8 +4,8 @@ import { expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 
 /** A page of text and a small table (?fixture=smart), open and ready. */
-export async function openSmart(page: Page): Promise<void> {
-  await page.goto('/?fixture=smart');
+export async function openSmart(page: Page, fixture = 'smart'): Promise<void> {
+  await page.goto(`/?fixture=${fixture}`);
   await page.getByRole('tree', { name: 'Notebooks' }).getByRole('treeitem', { name: 'Lectures' }).click();
   await page.getByRole('tree', { name: 'Pages' }).getByRole('treeitem', { name: 'Membranes' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Membranes' })).toBeVisible();
@@ -46,7 +46,7 @@ export async function newLine(page: Page): Promise<void> {
 export async function runCommand(page: Page, name: string): Promise<void> {
   // The palette is a lazy chunk and the key handler is installed late on a slow machine: press Ctrl+K until the
   // input has focus, then type, so the text is never lost.
-  const input = page.getByRole('combobox').first();
+  const input = page.locator('[data-scope="palette"]').getByRole('combobox').first();
   await expect(async () => {
     if (!(await input.isVisible())) await page.keyboard.press('Control+k');
     await expect(input).toBeFocused({ timeout: 2000 });

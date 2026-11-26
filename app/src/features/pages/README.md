@@ -44,7 +44,7 @@ Handwriting reaches export through the app's `exportInkSources` registry, which 
 ## Not built yet
 
 - **Lock entry** (FEATURES.md, Phase 6). The format has no page-level lock or history entry for it. Format spec 6.1 has only a lock on each block. It needs a format decision first, then the notes service.
-- **Manual page breaks and keep together.** The paginator handles both, but the page view has no break block or switch to set them.
+- **Keep together.** The paginator handles it, but the page view has no switch to set it. Page and column breaks are `break` blocks (spec 6.12): Insert page break (Ctrl+Enter) and Insert column break (Ctrl+Shift+Enter) add one, the live view and print turn it into a new sheet, and a column break acts as a page break.
 - **Tagged PDF and bookmarks.** `PrintToPdf` writes neither (ADR 0006). The DevTools route can, and `exportPdfFile` is where to ask for it.
 - **The lasso.** Export as picture takes the selected blocks or the whole page. The lasso tool needs a pointer tool that Phase 5 owns.
 - **Syllable breaks** change the text nodes of an editor, so they wait for a display layer that does not touch the document.

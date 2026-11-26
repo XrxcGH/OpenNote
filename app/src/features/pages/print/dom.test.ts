@@ -158,3 +158,25 @@ describe('the page title on the first sheet', () => {
     expect(on.value.paras ?? 0).toBeLessThan(off.value.paras ?? 0);
   }, 120_000);
 });
+
+describe('a block of columns taller than a sheet', () => {
+  it('flows in one column across sheets, so no text is clipped', async () => {
+    const markdown = Array.from({ length: 120 }, (_, i) => `Line ${i + 1}`).join('\n\n');
+    const block = { ...textBlock(markdown), data: { markdown, layout: { columns: 2 } } };
+    const page = pageOf([block]);
+    const { result, value } = await printed(page, () => document.body.textContent ?? '');
+    const html = await printed(page, () => document.body.innerHTML);
+    expect(html.value).not.toContain('column-count');
+    expect(result.sheets).toBeGreaterThan(1);
+    expect(result.warnings).not.toContain('tooTall');
+    expect(value).toContain('Line 1');
+    expect(value).toContain('Line 120');
+  }, 120_000);
+
+  it('keeps the columns of a block shorter than a sheet', async () => {
+    const markdown = 'Short text.';
+    const block = { ...textBlock(markdown), data: { markdown, layout: { columns: 2 } } };
+    const { value } = await printed(pageOf([block]), () => document.body.innerHTML);
+    expect(value).toContain('column-count:2');
+  }, 120_000);
+});

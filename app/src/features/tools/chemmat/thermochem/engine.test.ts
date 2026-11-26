@@ -1,3 +1,4 @@
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { parseReaction, reactionQuantities, thermochem } from './engine';
 import { SPECIES, gibbsOfFormation } from '../data/species';

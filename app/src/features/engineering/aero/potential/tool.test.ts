@@ -1,5 +1,6 @@
 // The potential flow tool's form: the planning cases through the presets, the element list read from text, the
 // probe in US units, and a list it cannot read.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { initialValues, runSpec, unitKey } from '../ui/spec';
 import type { ToolOutput } from '../ui/spec';

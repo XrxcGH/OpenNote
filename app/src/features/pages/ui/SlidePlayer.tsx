@@ -122,7 +122,8 @@ interface Marking {
   clear(): void;
 }
 
-function keyHandler(show: Show, close: () => void, marking: Marking | null) {
+/** Typed digits and then Enter jump to that slide, as in other slide shows (walk 9). */
+function keyHandler(show: Show, close: () => void, marking: Marking | null, digits: { current: string }) {
   const last = Math.max(0, show.slides.length - 1);
   const keys: Record<string, () => void> = {
     ArrowRight: () => show.go(1),
@@ -145,6 +146,20 @@ function keyHandler(show: Show, close: () => void, marking: Marking | null) {
       : {}),
   };
   return (event: KeyboardEvent) => {
+    if (/^[0-9]$/.test(event.key) && !event.ctrlKey && !event.altKey && !event.metaKey) {
+      digits.current = (digits.current + event.key).slice(-5);
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+    const typed = digits.current;
+    digits.current = '';
+    if (event.key === 'Enter' && typed !== '') {
+      event.preventDefault();
+      event.stopPropagation();
+      show.goTo(Math.max(0, Number(typed) - 1));
+      return;
+    }
     const run = keys[event.key.length === 1 ? event.key.toLowerCase() : event.key];
     // A focused button keeps Space and Enter for itself.
     if (!run || (event.target instanceof HTMLButtonElement && event.key === ' ')) return;
@@ -220,6 +235,8 @@ export function SlidePlayer({ source, startBlock, close }: SlidePlayerProps) {
         clear: () => overlay.current?.clear(),
       }
     : null;
+  // A holder the key handler fills; not a ref, because the handler is built during render.
+  const [digits] = useState(() => ({ current: '' }));
   // A mark belongs to the slide it was made on.
   useEffect(() => overlay.current?.clear(), [show.index, overlay]);
   const offset = `translate(${(-STAGE.width * scale) / 2}px, ${(-STAGE.height * scale) / 2}px) scale(${scale})`;
@@ -231,7 +248,7 @@ export function SlidePlayer({ source, startBlock, close }: SlidePlayerProps) {
       aria-modal="true"
       aria-label={t('pageViews.slides.title')}
       tabIndex={-1}
-      onKeyDown={keyHandler(show, close, marking)}
+      onKeyDown={keyHandler(show, close, marking, digits)}
     >
       <div ref={view} className={styles.stageView}>
         {show.slides.length === 0 ? (

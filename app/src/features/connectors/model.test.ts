@@ -117,6 +117,11 @@ describe('sentences', () => {
     }
   });
 
+  it('names the server, not a school, when a WebDAV address or password is refused', () => {
+    expect(errorText('badInput', 'WebDAV', 'webdav')).not.toMatch(/school/);
+    expect(errorText('badInput', 'Moodle', 'moodle')).toMatch(/school/);
+  });
+
   it('says what happened at the service after Disconnect', () => {
     expect(revokeText('nothing', 'Dropbox')).toBeNull();
     for (const outcome of ['revoked', 'notSupported', 'skippedOffline', 'failed'] as const) {

@@ -131,8 +131,6 @@ pub enum DisabledReason {
     ManualMode,
     NotWritable,
     NoKey,
-    /// macOS: the app is a signed bundle, so the person installs each new dmg (ADR 0055).
-    ByHand,
 }
 
 /// What keeps a ready update from applying.

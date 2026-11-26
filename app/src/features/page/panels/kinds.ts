@@ -16,6 +16,8 @@ export const PANEL_TYPES = {
   mindmap: 'ext:org.opennote/mindmap',
   diagram: 'ext:org.opennote/diagram',
   codeCell: 'ext:org.opennote/codecell',
+  /** A code project of several files and tests (features/codestudio/project, ADR 0069). */
+  codeProject: 'ext:org.opennote/codeproject',
   collection: 'ext:org.opennote/collection',
   quiz: 'ext:org.opennote/quiz',
   citation: 'ext:org.opennote/citation',

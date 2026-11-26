@@ -1,5 +1,6 @@
 // The engineering mathematics window in a real browser: every tab opens on an answer with no problem showing, and each
 // follows the theme with no axe violations.
+import '../text';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';
@@ -113,4 +114,33 @@ describe('the engineering mathematics window', () => {
     fireEvent.keyDown(box, { key: 'ArrowUp' });
     await waitFor(() => expect((box as HTMLTextAreaElement).value).toBe('[1 2] * [3 4]'));
   });
+});
+
+describe('the engineering mathematics window live calculation blocks', () => {
+  for (const tool of MATH_TOOLS.filter((t) => t.id !== 'console')) {
+    it(`${tool.id}: Live calculation block keeps the answer and the typed values for Open in tool`, async () => {
+      const { container } = renderUi(<MathKitTool />);
+      const blocks: {
+        type: string;
+        data: { kit: string; tool: string; summary: string; inputs: { fields: unknown[] } };
+      }[] = [];
+      const onInsert = (event: Event) => {
+        const detail = (event as CustomEvent<{ panel?: (typeof blocks)[number]; handled: boolean }>).detail;
+        if (detail.panel) blocks.push(detail.panel);
+        detail.handled = true;
+      };
+      window.addEventListener(INSERT_EVENT, onInsert);
+      try {
+        await userEvent.click(screen.getAllByRole('tab')[MATH_TOOLS.indexOf(tool)]);
+        await waitFor(() => expect(container.querySelector('[aria-live="polite"]')?.textContent).toBeTruthy());
+        await userEvent.click(await screen.findByRole('button', { name: 'Live calculation block' }));
+        await waitFor(() => expect(blocks).toHaveLength(1));
+        expect(blocks[0].data).toMatchObject({ kit: 'math', tool: tool.id });
+        expect(blocks[0].data.summary.length).toBeGreaterThan(0);
+        expect(blocks[0].data.inputs.fields.length).toBeGreaterThan(0);
+      } finally {
+        window.removeEventListener(INSERT_EVENT, onInsert);
+      }
+    });
+  }
 });

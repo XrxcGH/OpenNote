@@ -5,6 +5,7 @@ import { formatNumber } from './format';
 
 const DEG: EvalContext = { angle: 'deg', ans: 0, memory: [] };
 const RAD: EvalContext = { angle: 'rad', ans: 0, memory: [] };
+const GRAD: EvalContext = { angle: 'grad', ans: 0, memory: [] };
 
 function value(source: string, context: EvalContext = DEG): number {
   const result = calculate(source, context);
@@ -151,6 +152,16 @@ describe('steps that jump', () => {
 });
 
 describe('angles', () => {
+  it('accepts the words deg, degree, and degrees as the degree sign (walk 9, T3-D08-1)', () => {
+    for (const word of ['deg', 'degree', 'degrees']) {
+      expect(value(`sin(30 ${word})`, DEG)).toBe(0.5);
+      expect(value(`sin(30 ${word})`, RAD)).toBeCloseTo(0.5, 12);
+      expect(value(`sin(30${word})`, RAD)).toBeCloseTo(0.5, 12);
+    }
+    expect(value('2 deg(pi)')).toBeCloseTo(360, 9);
+    expect(failure('sin 30 deg')).toMatchObject({ code: 'needs-parens', detail: 'sin' });
+  });
+
   it('gives exact answers at familiar degrees', () => {
     expect(value('sin(30)')).toBe(0.5);
     expect(value('sin(180)')).toBe(0);
@@ -170,6 +181,16 @@ describe('angles', () => {
     expect(value('tan(pi/4)', RAD)).toBe(1);
     expect(value('cos(2pi)', RAD)).toBe(1);
     expect(value('sin(1)', RAD)).toBeCloseTo(0.8414709848, 9);
+  });
+
+  it('works in gradians, 400 to a full turn', () => {
+    expect(value('sin(100)', GRAD)).toBe(1);
+    expect(value('cos(200)', GRAD)).toBe(-1);
+    expect(value('sin(50)', GRAD)).toBeCloseTo(Math.SQRT1_2, 12);
+    expect(value('tan(50)', GRAD)).toBe(1);
+    expect(value('asin(1)', GRAD)).toBeCloseTo(100, 9);
+    expect(value('acos(0)', GRAD)).toBeCloseTo(100, 9);
+    expect(value('sin(33.3333)', GRAD)).toBeCloseTo(0.5, 5);
   });
 
   it('returns inverse functions in the current unit', () => {

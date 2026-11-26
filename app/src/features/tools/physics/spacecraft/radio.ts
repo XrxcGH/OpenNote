@@ -1,5 +1,6 @@
 // The spacecraft sizing tool's radio calculations: a link budget from transmitter to Eb/N0 margin, and a passive
 // RFID tag's read range.
+import '../text';
 import type { MessageKey } from '../../../../strings/t';
 import { fmt, q, qIn } from '../kit/format';
 import type { KitStep, ModeDef, Outcome, ResultRow } from '../kit/types';

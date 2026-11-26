@@ -121,7 +121,7 @@ function Review({ flow, state }: { flow: ImportFlow; state: Extract<ImportState,
           ? t('interop.import.review.empty')
           : t('interop.import.review.summary', { pages: preview.pages, title: preview.notebookTitle })}
       </StepHeading>
-      <p className={styles.path} title={path}>
+      <p className={styles.path} title={path} data-user-content>
         {preview.detected.label}: {fileName(path)}
       </p>
       {/* Nothing to import, but the check says why, such as a password to remove: show its reasons. */}
@@ -137,7 +137,7 @@ function Review({ flow, state }: { flow: ImportFlow; state: Extract<ImportState,
           <ul className={`${styles.list} ${styles.scroll}`} aria-label={sectionsText}>
             {preview.sections.map((section, index) => (
               <li key={`${section.title}-${index}`} className={styles.row}>
-                <span>{section.title}</span>
+                <span data-user-content>{section.title}</span>
                 <span className={styles.note}>{t('interop.import.review.sectionPages', { pages: section.pages })}</span>
               </li>
             ))}

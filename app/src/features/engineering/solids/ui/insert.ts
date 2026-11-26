@@ -1,6 +1,7 @@
 // What the kit puts into the open page: an answer line, the answer as an equation, the results as a table, the
 // worked steps as a numbered list with typeset math, and the picture as an SVG image. Each goes through the tools'
 // insert event, which the page answers; the window says in words what happened.
+import '../text';
 import { INSERT_EVENT } from '../../../tools/flags';
 import { escapeXml } from '../kit/picture';
 import { fillMath, valueLatex, valueText, wordValues } from '../kit/format';

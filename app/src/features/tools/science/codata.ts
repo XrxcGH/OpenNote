@@ -363,6 +363,9 @@ export function codataInsertLatex(one: Codata, part: InsertPart): string {
 }
 
 /** Searches by name, symbol, live-math name, group, and other words. Every word of the query must match. */
+/** A search word without an adjective ending, so "gravitational" finds "gravitation" and "magnetic" finds "magnet". */
+const stem = (word: string): string => (word.length > 5 ? word.replace(/(?:al|ic|s)$/, '') : word);
+
 export function searchCodata(query: string, list: readonly Codata[] = CODATA): readonly Codata[] {
   const words = query
     .toLowerCase()
@@ -371,6 +374,6 @@ export function searchCodata(query: string, list: readonly Codata[] = CODATA): r
   if (words.length === 0) return list;
   return list.filter((one) => {
     const hay = `${one.name} ${one.symbol} ${one.id} ${one.calc} ${one.group} ${one.words} ${one.unit}`.toLowerCase();
-    return words.every((word) => hay.includes(word));
+    return words.every((word) => hay.includes(word) || hay.includes(stem(word)));
   });
 }

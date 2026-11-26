@@ -4,6 +4,8 @@
 // it override what the rule set.
 import { Node } from '@tiptap/core';
 import type { TagParseRule } from '@tiptap/pm/model';
+import { paraAttributes, paraRestAttribute } from '../paragraph/attributes';
+import { paraDom } from '../render/paraStyle';
 import { CALLOUT_TYPE_PATTERN, FOLDS, LANGUAGE_PATTERN } from './constants';
 
 const META_OFF = { rendered: false, parseHTML: () => null };
@@ -11,12 +13,23 @@ const META_OFF = { rendered: false, parseHTML: () => null };
 /** Element metadata (SPEC 6.6). It lives in the block's `ids`, `tags`, `styles`, and `checked`, not in the Markdown. */
 function elementAttributes() {
   const noTags: readonly string[] = Object.freeze([]);
+  // A split gives the new element no ID and no tags, so the document never holds an ID twice. The style carries.
   return {
-    id: { default: null, ...META_OFF },
-    tags: { default: noTags, ...META_OFF },
+    id: { default: null, keepOnSplit: false, ...META_OFF },
+    tags: { default: noTags, keepOnSplit: false, ...META_OFF },
     style: { default: null, ...META_OFF },
-    tagChecked: { default: false, ...META_OFF },
+    tagChecked: { default: false, keepOnSplit: false, ...META_OFF },
   };
+}
+
+/** An element that takes paragraph formatting (`data.paras`, spec 6.8): its metadata and one attribute per key. */
+function formattedAttributes() {
+  return { ...elementAttributes(), ...paraAttributes() };
+}
+
+/** An element without paragraph formatting. It keeps a `paras` entry whole, so a save writes it back. */
+function keptAttributes() {
+  return { ...elementAttributes(), ...paraRestAttribute() };
 }
 
 /** A heading's tag, from a level clamped to 1 to 6 so no value can name another element. */
@@ -32,9 +45,9 @@ export const Paragraph = Node.create({
   priority: 1000,
   group: 'block',
   content: 'inline*',
-  addAttributes: elementAttributes,
+  addAttributes: formattedAttributes,
   parseHTML: () => [{ tag: 'p' }],
-  renderHTML: () => ['p', 0],
+  renderHTML: ({ node }) => ['p', paraDom(node.attrs), 0],
 });
 
 export const Heading = Node.create({
@@ -43,9 +56,9 @@ export const Heading = Node.create({
   content: 'inline*',
   defining: true,
   // The level comes from the tag the rule matched, never from a `level` attribute on the pasted element.
-  addAttributes: () => ({ level: { default: 1, rendered: false, parseHTML: () => null }, ...elementAttributes() }),
+  addAttributes: () => ({ level: { default: 1, rendered: false, parseHTML: () => null }, ...formattedAttributes() }),
   parseHTML: () => [1, 2, 3, 4, 5, 6].map((level): TagParseRule => ({ tag: `h${level}`, attrs: { level } })),
-  renderHTML: ({ node }) => [headingTag(node.attrs.level), 0],
+  renderHTML: ({ node }) => [headingTag(node.attrs.level), paraDom(node.attrs), 0],
 });
 
 export const HardBreak = Node.create({
@@ -61,7 +74,7 @@ export const HardBreak = Node.create({
 export const HorizontalRule = Node.create({
   name: 'horizontalRule',
   group: 'block',
-  addAttributes: elementAttributes,
+  addAttributes: keptAttributes,
   parseHTML: () => [{ tag: 'hr' }],
   renderHTML: () => ['hr'],
 });
@@ -93,12 +106,12 @@ export const ListItem = Node.create({
       rendered: false,
       parseHTML: (element: HTMLElement) => taskState(element),
     },
-    ...elementAttributes(),
+    ...formattedAttributes(),
   }),
   parseHTML: () => [{ tag: 'li' }],
   renderHTML: ({ node }) => {
     const checked = node.attrs.checked as boolean | null;
-    return ['li', checked === null ? {} : { 'data-checked': String(checked) }, 0];
+    return ['li', { ...paraDom(node.attrs), ...(checked === null ? {} : { 'data-checked': String(checked) }) }, 0];
   },
 });
 
@@ -180,7 +193,7 @@ export const CodeBlock = Node.create({
   defining: true,
   addAttributes: () => ({
     language: { default: null, rendered: false, parseHTML: codeLanguage },
-    ...elementAttributes(),
+    ...keptAttributes(),
   }),
   parseHTML: () => [{ tag: 'pre', preserveWhitespace: 'full' }],
   renderHTML: ({ node }) => {
@@ -196,7 +209,7 @@ export const MathBlock = Node.create({
   atom: true,
   addAttributes: () => ({
     source: { default: '', rendered: false, parseHTML: (el: HTMLElement) => el.getAttribute('data-math-block') ?? '' },
-    ...elementAttributes(),
+    ...keptAttributes(),
   }),
   parseHTML: () => [{ tag: 'div[data-math-block]' }],
   renderHTML: ({ node }) => ['div', { 'data-math-block': node.attrs.source as string }],

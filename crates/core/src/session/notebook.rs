@@ -380,6 +380,15 @@ impl NotebookHandle {
         })
     }
 
+    /// Runs now the work that opening queues for after the notebook is on screen: the scan of spec 18.3 and
+    /// Trash expiry (spec 12.4). A close before the maintenance thread gets to that work skips it until the next
+    /// open. A caller that closes at once and needs the work done, as a recovery check does, calls this first.
+    pub fn run_open_work(&self) -> Result<(), CoreError> {
+        let scanned = self.scan().map(|_| ());
+        let expired = self.change(false, |t| t.store.purge_expired()).map(|_| ());
+        scanned.and(expired)
+    }
+
     /// Gives a copied notebook a new notebook ID (spec 20.2).
     pub fn make_separate(&self) -> Result<NotebookId, CoreError> {
         self.inner.make_separate()

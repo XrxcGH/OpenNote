@@ -2,9 +2,13 @@
 
 OpenNote keeps every notebook as an ordinary folder in your notes folder. This guide covers page history, Trash, where your notes live, locked entries, and how to check a notebook.
 
+![The page history panel with earlier versions and the compare view of one of them](../screens/page-history-light.png)
+
 ## Page history
 
 OpenNote saves versions of a page while you work. Open a page's History panel to compare two versions or restore part of one.
+
+A page with more than a handful of versions shows a Filter versions field above the list. Type part of a date, a reason, a device, or a name to narrow the list; the current page always stays at the top.
 
 ### How long history is kept
 
@@ -42,6 +46,8 @@ Choose Check notebook in a notebook's menu, in the command palette, or in Settin
 - Restore from the newest backup puts back a damaged or missing file from your newest scheduled backup.
 - Write page.md again writes the page's readable copy afresh. If someone edited it in another app, that copy is kept aside first.
 - Open the page takes you to a page with a broken link, so you can fix the link.
+
+When a page you open is damaged, it offers Put back the last saved version. It sets the damaged file aside and writes the newest version from the page history. A page written by a newer OpenNote is left unchanged and says so. If a page can't save, for example because its file is read-only, a notice on the page says why and how to fix it. Fix the cause, then choose Retry. If another app changes a page file while it is open, OpenNote offers to reload it. If you also have unsaved edits, your edits stay. The other version is kept as a conflict copy.
 
 Each repair has Undo in the same window, until you close OpenNote. If OpenNote closed unexpectedly, the next start shows a short note with a Check notebook button.
 

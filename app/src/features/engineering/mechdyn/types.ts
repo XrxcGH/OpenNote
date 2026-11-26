@@ -41,9 +41,12 @@ export const fail = (
 ): { ok: false; error: ErrorKey; vars?: Record<string, string> } =>
   vars ? { ok: false, error, vars } : { ok: false, error };
 
-/** A number for a worked step: five significant digits, no trailing zeros. */
-export const fmt = (x: number, digits = 5): string =>
-  Number.isFinite(x) ? formatNumber(Math.abs(x) < 1e-12 ? 0 : x, { digits }) : String(x);
+/**
+ * A number for a worked step: five significant digits, no trailing zeros. Anything below `floor` is taken for
+ * round-off and shown as 0; a value that is genuinely tiny in SI (a second moment of area of 5e-13 m^4) passes 0.
+ */
+export const fmt = (x: number, digits = 5, floor = 1e-12): string =>
+  Number.isFinite(x) ? formatNumber(Math.abs(x) < floor ? 0 : x, { digits }) : String(x);
 
 /** True when every value is a finite number. */
 export const finite = (...values: number[]): boolean => values.every((v) => Number.isFinite(v));

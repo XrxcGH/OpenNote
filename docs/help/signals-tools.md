@@ -2,6 +2,8 @@
 
 These tools work signal, sound, and radio problems. Each one shows its steps, plots, and tables, and you can put any of them on the page. Everything works offline. Your work stays on this computer.
 
+![The spectrum analyzer of the Signals and sound kit, with a signal and its spectrum](../screens/kit-signals-light.png)
+
 To open the window, use the command palette: **Open signals and sound tools**. You can also open one tool by its name, such as **Open spectrum analyzer**. The **Tool** list at the top picks a tool. Tabs pick a mode, and the arrow keys move between tabs. Results update as you type.
 
 Each result has buttons to put part of it on the page at the caret: **Insert answer**, **Insert equation**, **Insert table**, **Insert steps**, and **Insert picture**. **Insert live block** puts a calculation block on the page that keeps the tool's fields; its **Open in tool** button opens the tool with them again.

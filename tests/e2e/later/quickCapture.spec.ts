@@ -6,7 +6,7 @@ import { after, before, describe, it } from 'node:test';
 import { Key } from 'webdriverio';
 import { launchApp, skipReason } from '../harness.ts';
 import type { AppSession } from '../harness.ts';
-import { chord, clickRow } from './steps.ts';
+import { chord, clickRow, runCommand } from './steps.ts';
 
 describe('quick capture in the real app', { skip: skipReason() }, () => {
   let session: AppSession;
@@ -23,9 +23,8 @@ describe('quick capture in the real app', { skip: skipReason() }, () => {
     const { browser } = session;
     await clickRow(browser, 'Notebooks', 'Lectures');
     const main = await browser.getWindowHandle();
-    const button = browser.$('button[aria-label="Quick note"]');
-    await button.waitForExist({ timeout: 20_000 });
-    await button.click();
+    // Quick note is a command now, not a button on the page.
+    await runCommand(browser, 'quick note', 'Quick note');
     await browser.waitUntil(async () => (await browser.getWindowHandles()).length === 2, {
       timeout: 20_000,
       timeoutMsg: 'The capture window never opened.',

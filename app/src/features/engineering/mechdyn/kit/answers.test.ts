@@ -1,6 +1,7 @@
 // The answers each tool shows, read from the form the way a student types it. These are the plan's validation
 // cases, run through the units, the spec, and the row text, so a slip between engine and window shows up here.
 /* eslint-disable opennote/feature-boundaries -- The tests hand the engines the math feature's algebra directly. */
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { t } from '../../../../strings/t';
 import { SPECS } from '../specs';

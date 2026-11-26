@@ -50,6 +50,18 @@ describe('the dictionary window', () => {
     await waitFor(() => expect(screen.getByText('No entry for zzyzx.')).toBeTruthy());
   });
 
+  it('wraps a very long word inside the window, with no sideways scroll', async () => {
+    const { container } = renderUi(
+      <div style={{ inlineSize: 320, overflow: 'auto' }} data-testid="frame">
+        <DictionaryTool store={memoryPackStore()} />
+      </div>,
+    );
+    await userEvent.fill(screen.getByLabelText('Word'), 'z'.repeat(300));
+    await waitFor(() => expect(screen.getByText(/^No entry for z+\.$/)).toBeTruthy());
+    const frame = container.querySelector<HTMLElement>('[data-testid="frame"]')!;
+    expect(frame.scrollWidth).toBeLessThanOrEqual(frame.clientWidth);
+  });
+
   it('puts a synonym in the page where the selected word was', async () => {
     renderUi(<DictionaryTool store={memoryPackStore()} />);
     await userEvent.fill(screen.getByLabelText('Word'), 'cause');

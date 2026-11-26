@@ -1,10 +1,13 @@
 // A small form for the chemistry calculators: labeled fields in a grid, and an answer that updates as the person
 // types, with its steps listed under it. A field left empty is the unknown the calculator solves for. The answer is in
 // a status region so a screen reader hears it, and Insert writes it (or the answer with its steps) at the page's caret.
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
+import { isRangeError, printsNonFinite } from '../../../core/finite';
 import { t } from '../../../strings/t';
 import { Button, announce } from '../../../ui';
+import { panelOf } from '../kits/panelForm';
+import { insertLive as keepLive } from '../kits/liveInsert';
 import { insertFigure } from '../subjects/ui/insertFigure';
 import { insertIntoPage } from './CalculatorTool';
 import styles from './chem.module.css';
@@ -52,6 +55,22 @@ export function num(values: Values, id: string): number | null {
   return /^[+-]?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?$/i.test(raw) ? Number(raw) : NaN;
 }
 
+/**
+ * Runs a form and turns an absurd input (1e12 of anything) into the named problem "out of range": an answer that
+ * prints NaN or Infinity is never shown, and a RangeError from an array sized by the input is not a crash.
+ */
+export function guardedSolve(solve: (values: Values) => Outcome, values: Values): Outcome {
+  const outOfRange: Outcome = { ok: false, message: t('chem.outOfRange') };
+  try {
+    const outcome = guardedSolve(solve, values);
+    if (outcome.ok && [outcome.headline, ...outcome.steps].some(printsNonFinite)) return outOfRange;
+    return outcome;
+  } catch (error) {
+    if (isRangeError(error)) return outOfRange;
+    throw error;
+  }
+}
+
 export interface ChemFormProps {
   /** A name that keeps this form's typed values apart from other forms in the same window. */
   name: string;
@@ -89,6 +108,22 @@ export function ChemForm({ name, fields, solve, intro }: ChemFormProps) {
     say(insertIntoPage({ text }));
   };
 
+  // A window that is a kit marks its panel, and then the answer can be kept as a live calculation block.
+  const root = useRef<HTMLDivElement>(null);
+  const [kept, setKept] = useState(false);
+  useEffect(() => setKept(!!root.current && panelOf(root.current) !== null), []);
+  const insertLive = (from: Element) => {
+    if (!outcome.ok) return;
+    void keepLive(from, {
+      summary: outcome.headline,
+      rows: outcome.steps.slice(0, 12).map((step, i) => ({ label: String(i + 1), value: step, unit: '' })),
+    }).then((ok) => {
+      const words = t(ok ? 'chem.liveInserted' : 'chem.noPage');
+      setNote(words);
+      announce(words);
+    });
+  };
+
   const insertGraph = () => {
     if (!outcome.ok || !outcome.diagram) return;
     const { tool, svg, alt, summary } = outcome.diagram;
@@ -96,7 +131,7 @@ export function ChemForm({ name, fields, solve, intro }: ChemFormProps) {
   };
 
   return (
-    <div className={tools.tool} data-chem-form={name}>
+    <div ref={root} className={tools.tool} data-chem-form={name}>
       {intro ? <p className={tools.note}>{intro}</p> : null}
       <div className={styles.grid}>
         {list.map((field) => {
@@ -196,6 +231,11 @@ export function ChemForm({ name, fields, solve, intro }: ChemFormProps) {
         <Button variant="quiet" disabled={!outcome.ok} onClick={() => insert(true)}>
           {t('chem.insertSteps')}
         </Button>
+        {kept ? (
+          <Button variant="quiet" disabled={!outcome.ok} onClick={(event) => insertLive(event.currentTarget)}>
+            {t('chem.insertLive')}
+          </Button>
+        ) : null}
         {outcome.ok && outcome.diagram ? (
           <Button variant="quiet" onClick={insertGraph}>
             {t('chem.insertGraph')}

@@ -4,20 +4,21 @@
 import { isCheckable, spellingHighlights, TEXTBLOCK_SELECTOR } from '../../../editor/extensions/spellingText';
 import { shownViewport } from '../viewport/viewport';
 import { spellingEngine } from './current';
-import type { SpellingEngine } from './engine';
+import type { SpellingEngine, SpellItem } from './engine';
 import './spelling.module.css';
 
 /** Reads textblocks, shows what the cache knows, and queues the rest: those in view first. */
 function scan(elements: readonly Element[], engine: SpellingEngine, viewport: Element): void {
   const view = viewport.getBoundingClientRect();
-  const inView: string[] = [];
-  const rest: string[] = [];
+  const inView: SpellItem[] = [];
+  const rest: SpellItem[] = [];
   for (const element of elements) {
     if (!isCheckable(element)) continue;
     const text = spellingHighlights.refresh(element, engine, false);
     if (text === null) continue;
     const box = element.getBoundingClientRect();
-    (box.bottom >= view.top && box.top <= view.bottom ? inView : rest).push(text);
+    const langs = spellingHighlights.entry(element)?.langs;
+    (box.bottom >= view.top && box.top <= view.bottom ? inView : rest).push(langs ? { text, langs } : { text });
   }
   engine.check(inView, 'now');
   engine.check(rest, 'idle');

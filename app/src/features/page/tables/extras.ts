@@ -11,6 +11,8 @@ import type { BlockJson } from '../../../services/pages/types';
 
 export interface TableExtraHost {
   readonly block: string;
+  /** The open page the block is on (its ID and the window's client), shared by the page's tables. */
+  readonly page: string;
   /** The table block's wrapper. An extra adds its own elements after the table. */
   readonly element: HTMLElement;
   readonly editor: Editor;
@@ -24,19 +26,26 @@ export interface TableExtraHost {
    * is merged into the block's data in the same step. Returns false when `change` returns null.
    */
   apply(change: (data: TableData) => TableData | null, extra?: Record<string, unknown>): Promise<boolean>;
-  /** Merges `data` into the block's data as one undo step. */
+  /** Merges `data` into the block's data as one undo step, with the keys extras add to every edit. */
   patch(data: Record<string, unknown>): Promise<unknown>;
   announce(text: string): void;
   flag(id: FlagId): boolean;
   /** Adds a new table block after the one with focus, with `data` as its block data. Returns false when it cannot. */
   insertTable(data: Record<string, unknown>): Promise<boolean>;
+  /** Adds several new table blocks, one below the other, as one undo step. Returns false when it cannot. */
+  insertTables(data: readonly Record<string, unknown>[]): Promise<boolean>;
   /** Adds a new text block with one display equation (LaTeX source) after the block with focus. */
   insertMath(source: string): Promise<boolean>;
 }
 
 export interface TableExtraHandle {
-  /** The block changed from outside this extra: undo, redo, or another window. */
+  /** The block changed from outside this extra (undo, redo, another window), or an extra wrote to it. */
   update(block: BlockJson): void;
+  /**
+   * Keys to add to the patch of an edit that leaves the table as `data`, with `extra` the keys the edit already
+   * sends. They go in the same undo step. Null adds nothing.
+   */
+  withEdit?(data: TableData, extra?: Record<string, unknown>): Record<string, unknown> | null;
   destroy(): void;
 }
 

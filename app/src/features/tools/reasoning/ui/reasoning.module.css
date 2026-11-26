@@ -17,7 +17,8 @@
   }
 
   .tab {
-    min-block-size: var(--size-target-pointer);
+    min-inline-size: var(--target-size);
+    min-block-size: var(--target-size);
     padding-inline: var(--space-3);
     font: inherit;
     font-size: var(--type-small-size);
@@ -66,7 +67,7 @@
   }
 
   .input {
-    min-block-size: var(--size-target-pointer);
+    min-block-size: var(--target-size);
     min-inline-size: 0;
     padding-inline: var(--space-3);
     font: inherit;
@@ -88,6 +89,7 @@
   }
 
   .linkButton {
+    min-block-size: var(--target-size);
     padding: 0;
     font: inherit;
     font-size: var(--type-small-size);

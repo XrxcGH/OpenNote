@@ -290,6 +290,8 @@ export const solvers = {
       // checks-disable-next-line length: one message with its placeholders, kept whole so the key types read it
       '{system, select, polar {Change to polar coordinates.} cylindrical {Change to cylindrical coordinates.} other {Change to spherical coordinates.}} Multiply by the Jacobian.',
     integralIntegrand: 'The integrand in the new coordinates, with the Jacobian:',
+    integralReversed:
+      'The limits of {variable} run backward, from {lower} to {upper}. Swapping them flips the sign of the value.',
     integralInner: 'Integrate with respect to {variable}, holding the other variables fixed.',
     integralBounds: 'Evaluate at the limits and subtract.',
     integralNoRule: 'No rule finds an antiderivative of this in {variable}, so the rest is found numerically.',
@@ -300,6 +302,8 @@ export const solvers = {
     odeIntegrateBoth: 'Integrate both sides.',
     odeConstant: 'Use y({x0}) = {y0} to find the constant.',
     odeSolution: 'The solution:',
+    odeGeneral:
+      'With no starting values, this is the general solution. Give the starting values to find the constants.',
     odeNumericOnly:
       'The steps cannot be finished by hand here, so the solution is found numerically (fourth-order Runge-Kutta) and shown on the graph.',
     odeLinear: 'Write the equation in the form y′ + P(x)·y = Q(x).',
@@ -398,8 +402,15 @@ export const solvers = {
     'limits-order':
       // checks-disable-next-line length: one message with its placeholders, kept whole so the key types read it
       'The limits of {detail} use a variable that is integrated before it. Put integrals with variable limits inside the ones they depend on.',
+    'integral-diverges':
+      // checks-disable-next-line length: one message with its placeholders, kept whole so the key types read it
+      'This integral does not converge: the integrand grows too fast near {detail}, so the area is infinite and no finite value exists.',
+    'integral-undefined':
+      // checks-disable-next-line length: one message with its placeholders, kept whole so the key types read it
+      'The integrand is not defined, or not finite, at {detail}, inside the limits. The integral has no value there. Split the limits around that point or change them.',
     'not-separable': "This can't be written as a function of x times a function of y.",
     'ode-range': 'Check the starting point and the range: the range must run from left to right.',
+    'ode-start': 'Give x₀ and y(x₀) as numbers. This equation is solved from its starting point.',
     'ode-coefficients': "The coefficients a, b, and c must be numbers, and a can't be 0.",
     'ode-forcing':
       'The right side must be a sum of polynomials, exponentials, sines, and cosines, such as 3x^2 + e^(2x) + sin(x).',

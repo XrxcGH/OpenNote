@@ -67,7 +67,21 @@ describe('thinning a stroke', () => {
         const once = simplifyStroke(points, tolerance);
         expect(simplifyStroke(once, tolerance)).toEqual(once);
       }),
-      { numRuns: 60 },
+      {
+        numRuns: 60,
+        // A press that rises by exactly 0.1 and falls back, then a point a rounding error above zero (seed 1831280740).
+        examples: [
+          [
+            [
+              { x: 0, y: 0, pressure: 0 },
+              { x: 0, y: 0, pressure: 0.1 },
+              { x: 0, y: 0, pressure: 0 },
+              { x: 0, y: 0, pressure: 6.93889390390723e-18 },
+            ],
+            0.05,
+          ],
+        ],
+      },
     );
   });
 

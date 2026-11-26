@@ -70,7 +70,8 @@ describe('the title bar items', () => {
     await expect.poll(() => within(crumbs).queryAllByRole('listitem').length).toBe(3);
     const items = within(crumbs).getAllByRole('listitem');
     expect(items[0].hasAttribute('data-ink')).toBe(true);
-    expect((items[0] as HTMLElement).style.getPropertyValue('--crumb-ink')).toBe('var(--ink-fern)');
+    expect(items[0].getAttribute('data-accent')).toBe('fern');
+    expect(items[1].hasAttribute('data-accent')).toBe(false);
     expect(items[1].hasAttribute('data-ink')).toBe(false);
     expect(items[2].hasAttribute('data-ink')).toBe(false);
   });

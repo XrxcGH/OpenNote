@@ -1,6 +1,7 @@
 // The physics tools lane's registrations: a palette command that opens the physics tools window, and one per tool
 // that opens it on that tool's tab. This file loads at start-up, so it holds only definitions; the window and each
 // tool load on first use. The list matches features/tools/physics/meta.ts, which a test checks.
+import { startUp } from '../../../boot/startUp';
 import { commandBar, commands } from '../../../registries';
 import type { MessageKey } from '../../../strings/t';
 
@@ -36,6 +37,14 @@ commandBar.register({
   flag: 'kits.physics',
   priority: 20,
 });
+
+// A live calculation block's Open in tool opens the window on the block's tool and puts its values back.
+if (typeof window !== 'undefined') {
+  // Best effort: a chunk that fails to load leaves Open in tool unavailable, and the commands still work.
+  void startUp(import('../../tools'))
+    .then((tools) => tools.registerKit('physics', (tool) => open(tool)))
+    .catch(() => undefined);
+}
 
 for (const [tool, icon] of PHYSICS_COMMAND_TOOLS) {
   commands.register({

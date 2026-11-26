@@ -79,7 +79,11 @@ describe('protected sections', () => {
     await userEvent.click(within(dialog).getByRole('button', { name: 'Protect' }));
     expect(await within(dialog).findByText('Use at least 8 characters.')).toBeTruthy();
     await userEvent.clear(first);
+    await userEvent.type(first, '12345678');
+    expect(within(dialog).getByText(/easy to guess/)).toBeTruthy();
+    await userEvent.clear(first);
     await userEvent.type(first, 'correct horse');
+    expect(within(dialog).queryByText(/easy to guess/)).toBeNull();
     await userEvent.clear(second);
     await userEvent.type(second, 'correct house');
     await userEvent.click(within(dialog).getByRole('button', { name: 'Protect' }));

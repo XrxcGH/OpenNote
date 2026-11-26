@@ -45,8 +45,9 @@ describe('the shortcut list', () => {
     await renderApp();
     const dialog = await openList();
     const filter = within(dialog).getByRole('textbox', { name: 'Filter shortcuts' });
+    const all = within(dialog).getAllByRole('row').length;
     await typeInto(filter, 'ctrl+k');
-    await waitFor(() => expect(within(dialog).getAllByRole('row').length).toBeLessThan(10));
+    await waitFor(() => expect(within(dialog).getAllByRole('row').length).toBeLessThan(all / 2));
     expect(rowOf(dialog, 'Open command palette')).toBeTruthy();
     await userEvent.clear(filter);
     await typeInto(filter, 'zzqx');
@@ -147,6 +148,57 @@ describe("the OneNote set's clashes", () => {
     expect(within(list).getByText('Ctrl+/')).toBeTruthy();
     expect(list.textContent).not.toContain('Moved');
     expect(within(rowOf(dialog, 'Reopen closed tab')).getByText('Ctrl+Shift+T')).toBeTruthy();
+  });
+});
+
+describe('the code editor in the shortcut list', () => {
+  it('lists the code command under Code editor with a note on both rows', async () => {
+    await renderApp();
+    const dialog = await openList();
+    const group = within(dialog).getByRole('table', { name: 'Code editor' });
+    const accept = within(group)
+      .getByRole('rowheader', { name: /^Accept suggestion/ })
+      .closest('tr') as HTMLElement;
+    expect(within(accept).getByText('Ctrl+Tab')).toBeTruthy();
+    expect(accept.textContent).toContain('Before Go to the next tab while a code editor has focus.');
+    expect(rowOf(dialog, 'Go to the next tab').textContent).toContain(
+      'In the code editor, Ctrl+Tab runs Accept suggestion. Press Escape, then Tab to leave the editor first.',
+    );
+    expect(within(rowOf(dialog, 'Go to the next tab')).getByText('Ctrl+Page Down')).toBeTruthy();
+  });
+
+  it('drops both notes when the code command moves to another chord', async () => {
+    await renderApp();
+    const before = await openList();
+    expect(rowOf(before, 'Go to the next tab').textContent).toContain('In the code editor');
+    expect(within(before).getByRole('table', { name: 'Code editor' }).textContent).toContain(
+      'Before Go to the next tab',
+    );
+    closeOverlay();
+    await setShortcut('code.completion.accept', [chord('Alt+Enter')]);
+    const dialog = await openList();
+    const group = within(dialog).getByRole('table', { name: 'Code editor' });
+    const accept = within(group)
+      .getByRole('rowheader', { name: /^Accept suggestion/ })
+      .closest('tr') as HTMLElement;
+    expect(within(accept).getByText('Alt+Enter')).toBeTruthy();
+    expect(accept.textContent).not.toContain('Before Go to the next tab');
+    expect(rowOf(dialog, 'Go to the next tab').textContent).not.toContain('In the code editor');
+  });
+
+  it('adds a Code editor block to the keys that always work', async () => {
+    await renderApp();
+    const dialog = await openList();
+    const fixed = within(dialog).getByRole('table', { name: 'Keys that always work' });
+    expect(
+      within(fixed).getByRole('rowheader', { name: 'In the code editor: indent or outdent the lines you touch.' }),
+    ).toBeTruthy();
+    expect(within(fixed).getByRole('rowheader', { name: 'In the code editor: leave the editor.' })).toBeTruthy();
+    expect(within(fixed).getByText('Escape, then Tab')).toBeTruthy();
+    expect(within(fixed).getByRole('rowheader', { name: 'In the code editor: dismiss a suggestion.' })).toBeTruthy();
+    expect(
+      within(fixed).getByRole('rowheader', { name: 'In the code editor: move between the fields of a snippet.' }),
+    ).toBeTruthy();
   });
 });
 

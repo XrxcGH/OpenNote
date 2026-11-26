@@ -4,14 +4,14 @@
 // same profile brings that account's notebook in beside the first one, without mixing the two.
 
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, before, describe, it } from 'node:test';
 import { Key } from 'webdriverio';
 import { addOneNote } from '../../mock-servers/onenote.ts';
 import { MockServer } from '../../mock-servers/server.ts';
-import { launchApp, skipReason } from '../harness.ts';
+import { launchApp, skipReason, removeFolder } from '../harness.ts';
 import type { AppSession } from '../harness.ts';
 import { startMockBridge } from '../mockBridge.ts';
 import type { MockBridge } from '../mockBridge.ts';
@@ -69,7 +69,7 @@ describe('OneNote import in the real app', { skip: skipReason() }, () => {
   after(async () => {
     await first?.session.close();
     await first?.bridge.close();
-    rmSync(profileDir, { recursive: true, force: true });
+    removeFolder(profileDir);
   });
 
   it('brings the notebook in and shows it in the tree', async () => {

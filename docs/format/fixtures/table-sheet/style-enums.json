@@ -1,0 +1,779 @@
+{
+  "name": "one style for every named value of the style keys",
+  "rules": [
+    "R-SHT-7",
+    "R-SHT-6",
+    "R-SHT-3",
+    "R-STAMP-6",
+    "R-VAL-1",
+    "R-VAL-2",
+    "R-VAL-5",
+    "R-VAL-6",
+    "R-NUM-1"
+  ],
+  "page": {
+    "formatVersion": 1,
+    "minReaderVersion": 1,
+    "kind": "opennote.page",
+    "id": "01m3sbcmt0000000000000p001",
+    "title": "Fixture",
+    "created": "2026-11-02T10:00:00.000Z",
+    "modified": "2026-11-02T10:00:00.000Z",
+    "view": {
+      "layout": "flow"
+    },
+    "blocks": [
+      {
+        "id": "01m3sbcmt0000000000000b001",
+        "type": "table",
+        "order": "a0",
+        "created": "2026-11-02T10:00:00.000Z",
+        "modified": "2026-11-02T10:00:00.000Z",
+        "data": {
+          "columns": [
+            {
+              "id": "01m3sbcmt0000000000000k001",
+              "width": 120
+            },
+            {
+              "id": "01m3sbcmt0000000000000k002",
+              "width": 120
+            },
+            {
+              "id": "01m3sbcmt0000000000000k003",
+              "width": 120
+            }
+          ],
+          "rows": [
+            {
+              "id": "01m3sbcmt0000000000000r001",
+              "cells": {
+                "01m3sbcmt0000000000000k001": {
+                  "markdown": "Style"
+                },
+                "01m3sbcmt0000000000000k002": {
+                  "markdown": "Style"
+                },
+                "01m3sbcmt0000000000000k003": {
+                  "markdown": "Style"
+                }
+              }
+            },
+            {
+              "id": "01m3sbcmt0000000000000r002",
+              "cells": {
+                "01m3sbcmt0000000000000k001": {
+                  "markdown": "a"
+                },
+                "01m3sbcmt0000000000000k002": {
+                  "markdown": "b"
+                },
+                "01m3sbcmt0000000000000k003": {
+                  "markdown": "c"
+                }
+              }
+            }
+          ],
+          "sheet": {
+            "cells": {
+              "01m3sbcmt0000000000000r001": {
+                "01m3sbcmt0000000000000k001": "tvwei6",
+                "01m3sbcmt0000000000000k002": "hexmgx",
+                "01m3sbcmt0000000000000k003": "nz4xop"
+              },
+              "01m3sbcmt0000000000000r002": {
+                "01m3sbcmt0000000000000k001": "g5dof0"
+              }
+            },
+            "styles": {
+              "050iig": {
+                "border": {
+                  "t": {
+                    "color": "theme:text",
+                    "style": "double"
+                  }
+                }
+              },
+              "08gtv3": {
+                "font": {
+                  "color": "theme:text"
+                }
+              },
+              "0fc989": {
+                "font": {
+                  "underline": "singleAccounting"
+                }
+              },
+              "0s4e35": {
+                "align": {
+                  "v": "top"
+                }
+              },
+              "119myj": {
+                "border": {
+                  "du": {
+                    "color": "theme:text",
+                    "style": "mediumDashDotDot"
+                  }
+                }
+              },
+              "157f2x": {
+                "align": {
+                  "h": "distributed"
+                }
+              },
+              "1i5ari": {
+                "font": {
+                  "color": "theme:accent6"
+                }
+              },
+              "1mc86x": {
+                "font": {
+                  "color": "mint"
+                }
+              },
+              "1qwgxk": {
+                "align": {
+                  "v": "justify"
+                }
+              },
+              "1sh6qg": {
+                "align": {
+                  "wrap": "overflow"
+                }
+              },
+              "22nhv6": {
+                "font": {
+                  "color": "amber"
+                }
+              },
+              "232h0o": {
+                "fmt": "0.00"
+              },
+              "23sqjk": {
+                "font": {
+                  "underline": "dotDotDash"
+                }
+              },
+              "2gx8zg": {
+                "fmt": "General"
+              },
+              "459rzu": {
+                "font": {
+                  "underline": "wavyHeavy"
+                }
+              },
+              "4vqavv": {
+                "fill": {
+                  "back": "#fef9c3",
+                  "color": "ink",
+                  "pattern": "gray0625"
+                }
+              },
+              "5bm137": {
+                "font": {
+                  "strike": "double"
+                }
+              },
+              "63t9nm": {
+                "font": {
+                  "color": "theme:background"
+                }
+              },
+              "6b9r69": {
+                "align": {
+                  "dir": "ltr"
+                }
+              },
+              "6qtnu4": {
+                "fmt": "0"
+              },
+              "6x2xrn": {
+                "align": {
+                  "v": "middle"
+                }
+              },
+              "7qxvt7": {
+                "border": {
+                  "l": {
+                    "color": "theme:text",
+                    "style": "dashDotDot"
+                  }
+                }
+              },
+              "896lyh": {
+                "align": {
+                  "v": "bottom"
+                }
+              },
+              "8dx11a": {
+                "fmt": "[h]:mm:ss"
+              },
+              "8ga7wx": {
+                "fill": "theme:accent2"
+              },
+              "99sxam": {
+                "font": {
+                  "underline": "dashedHeavy"
+                }
+              },
+              "9tplss": {
+                "font": {
+                  "strike": "single"
+                }
+              },
+              "a69o4q": {
+                "fmt": "# ?/?"
+              },
+              "aub9p4": {
+                "font": {
+                  "underline": "none"
+                }
+              },
+              "axtc6r": {
+                "fill": {
+                  "back": "#fef9c3",
+                  "color": "ink",
+                  "pattern": "darkHorizontal"
+                }
+              },
+              "bm8fa6": {
+                "font": {
+                  "underline": "doubleAccounting"
+                }
+              },
+              "bzrqa6": {
+                "fill": {
+                  "back": "#fef9c3",
+                  "color": "ink",
+                  "pattern": "darkGray"
+                }
+              },
+              "c0ldqe": {
+                "font": {
+                  "family": "Georgia"
+                }
+              },
+              "c6rexd": {
+                "align": {
+                  "h": "fill"
+                }
+              },
+              "d2u7pb": {
+                "border": {
+                  "t": {
+                    "color": "theme:text",
+                    "style": "mediumDashed"
+                  }
+                }
+              },
+              "dlw8i1": {
+                "font": {
+                  "color": "apricot"
+                }
+              },
+              "dodiba": {
+                "font": {
+                  "underline": "dotted"
+                }
+              },
+              "e475nq": {
+                "align": {
+                  "wrap": "wrap"
+                }
+              },
+              "e5621s": {
+                "font": {
+                  "color": "rose"
+                }
+              },
+              "et0qye": {
+                "border": {
+                  "b": {
+                    "color": "theme:text",
+                    "style": "thick"
+                  }
+                }
+              },
+              "f1pnk6": {
+                "align": {
+                  "h": "justify"
+                }
+              },
+              "fk8e9b": {
+                "font": {
+                  "color": "ink"
+                }
+              },
+              "fmnti0": {
+                "font": {
+                  "color": "theme:accent4"
+                }
+              },
+              "fqmyx1": {
+                "font": {
+                  "color": "theme:accent1"
+                }
+              },
+              "g5dof0": {
+                "align": {
+                  "h": "right"
+                }
+              },
+              "gf0vf9": {
+                "fmt": "0%"
+              },
+              "gpjkbd": {
+                "font": {
+                  "underline": "thick"
+                }
+              },
+              "gs29t1": {
+                "font": {
+                  "family": "+body"
+                }
+              },
+              "gxzjhy": {
+                "border": {
+                  "dd": {
+                    "color": "theme:text",
+                    "style": "dashed"
+                  }
+                }
+              },
+              "gyaqcc": {
+                "font": {
+                  "underline": "dashLong"
+                }
+              },
+              "h60bty": {
+                "font": {
+                  "color": "honey"
+                }
+              },
+              "h6qdo9": {
+                "font": {
+                  "script": "sub"
+                }
+              },
+              "hexmgx": {
+                "align": {
+                  "h": "left"
+                }
+              },
+              "i1rhpu": {
+                "align": {
+                  "dir": "context"
+                }
+              },
+              "i3n5hp": {
+                "fmt": "#,##0.00;[Red]-#,##0.00"
+              },
+              "ibznsl": {
+                "border": {
+                  "b": {
+                    "color": "theme:text",
+                    "style": "mediumDashDot"
+                  }
+                }
+              },
+              "iiddqw": {
+                "fill": {
+                  "back": "#fef9c3",
+                  "color": "ink",
+                  "pattern": "gray125"
+                }
+              },
+              "iolkoy": {
+                "font": {
+                  "underline": "dash"
+                }
+              },
+              "iw3zyx": {
+                "font": {
+                  "underline": "wave"
+                }
+              },
+              "jdzfji": {
+                "fmt": "\"Total: \"0.00"
+              },
+              "jxpsem": {
+                "border": {
+                  "du": {
+                    "color": "theme:text",
+                    "style": "dotted"
+                  }
+                }
+              },
+              "k3qim3": {
+                "font": {
+                  "underline": "dottedHeavy"
+                }
+              },
+              "lx2uhp": {
+                "border": {
+                  "l": {
+                    "color": "theme:text",
+                    "style": "hair"
+                  }
+                }
+              },
+              "ma0a5q": {
+                "border": {
+                  "t": {
+                    "color": "theme:text",
+                    "style": "thin"
+                  }
+                }
+              },
+              "mig8p7": {
+                "fill": {
+                  "back": "#fef9c3",
+                  "color": "ink",
+                  "pattern": "lightVertical"
+                }
+              },
+              "ms4ets": {
+                "fill": {
+                  "back": "#fef9c3",
+                  "color": "ink",
+                  "pattern": "lightGray"
+                }
+              },
+              "mxr0pd": {
+                "align": {
+                  "dir": "rtl"
+                }
+              },
+              "n5yxxt": {
+                "font": {
+                  "underline": "dashLongHeavy"
+                }
+              },
+              "nm3ksk": {
+                "font": {
+                  "color": "brick"
+                }
+              },
+              "nnykc6": {
+                "align": {
+                  "h": "centerAcross"
+                }
+              },
+              "nq54bx": {
+                "font": {
+                  "underline": "double"
+                }
+              },
+              "nz4xop": {
+                "align": {
+                  "h": "center"
+                }
+              },
+              "o18aae": {
+                "font": {
+                  "color": "fern"
+                }
+              },
+              "o6ob0c": {
+                "fmt": "@"
+              },
+              "odrplj": {
+                "font": {
+                  "script": "none"
+                }
+              },
+              "okxzch": {
+                "fill": {
+                  "back": "#fef9c3",
+                  "color": "ink",
+                  "pattern": "lightHorizontal"
+                }
+              },
+              "onc9ez": {
+                "font": {
+                  "color": "indigo"
+                }
+              },
+              "ooubdo": {
+                "align": {
+                  "wrap": "clip"
+                }
+              },
+              "oryr7s": {
+                "border": {
+                  "dd": {
+                    "color": "theme:text",
+                    "style": "slantDashDot"
+                  }
+                }
+              },
+              "ou7arm": {
+                "fill": {
+                  "back": "#fef9c3",
+                  "color": "ink",
+                  "pattern": "darkTrellis"
+                }
+              },
+              "pvhler": {
+                "align": {
+                  "v": "distributed"
+                }
+              },
+              "q82m7c": {
+                "fill": {
+                  "back": "#fef9c3",
+                  "color": "ink",
+                  "pattern": "solid"
+                }
+              },
+              "qgk6wh": {
+                "font": {
+                  "color": "#0a1b2c"
+                }
+              },
+              "qjp83r": {
+                "font": {
+                  "underline": "dotDash"
+                }
+              },
+              "qler2w": {
+                "font": {
+                  "family": "+mono"
+                }
+              },
+              "qnx7fz": {
+                "font": {
+                  "color": "plum"
+                }
+              },
+              "rvsdoi": {
+                "fmt": "yyyy-mm-dd"
+              },
+              "s23a2n": {
+                "fill": {
+                  "back": "#fef9c3",
+                  "color": "ink",
+                  "pattern": "mediumGray"
+                }
+              },
+              "s7v9u2": {
+                "font": {
+                  "script": "super"
+                }
+              },
+              "siqvys": {
+                "font": {
+                  "underline": "dashDotHeavy"
+                }
+              },
+              "sn36u1": {
+                "font": {
+                  "underline": "dashDotDotHeavy"
+                }
+              },
+              "sottgg": {
+                "border": {
+                  "r": {
+                    "color": "theme:text",
+                    "style": "dashDot"
+                  }
+                }
+              },
+              "stmb9x": {
+                "fill": {
+                  "back": "#fef9c3",
+                  "color": "ink",
+                  "pattern": "lightDown"
+                }
+              },
+              "surxxu": {
+                "font": {
+                  "strike": "none"
+                }
+              },
+              "t9ke2w": {
+                "font": {
+                  "color": "lilac"
+                }
+              },
+              "tdlzjx": {
+                "fill": {
+                  "back": "#fef9c3",
+                  "color": "ink",
+                  "pattern": "lightGrid"
+                }
+              },
+              "tq70pg": {
+                "border": {
+                  "r": {
+                    "color": "theme:text",
+                    "style": "medium"
+                  }
+                }
+              },
+              "ts5kzd": {
+                "font": {
+                  "family": "+heading"
+                }
+              },
+              "tvwei6": {
+                "align": {
+                  "h": "general"
+                }
+              },
+              "u6ri6s": {
+                "font": {
+                  "color": "walnut"
+                }
+              },
+              "ukqdkh": {
+                "border": {
+                  "r": {
+                    "color": "theme:text",
+                    "style": "none"
+                  }
+                }
+              },
+              "unvmcu": {
+                "fill": "none"
+              },
+              "uz9wbp": {
+                "fill": {
+                  "back": "#fef9c3",
+                  "color": "ink",
+                  "pattern": "darkVertical"
+                }
+              },
+              "v4qx3m": {
+                "font": {
+                  "underline": "single"
+                }
+              },
+              "vhbfdk": {
+                "font": {
+                  "color": "#000000"
+                }
+              },
+              "w6fbbo": {
+                "fmt": "0.00E+00"
+              },
+              "wf7c9z": {
+                "fill": {
+                  "back": "#fef9c3",
+                  "color": "ink",
+                  "pattern": "darkDown"
+                }
+              },
+              "wpwhjw": {
+                "fill": {
+                  "back": "#fef9c3",
+                  "color": "ink",
+                  "pattern": "darkUp"
+                }
+              },
+              "wrj3zi": {
+                "fill": {
+                  "back": "#fef9c3",
+                  "color": "ink",
+                  "pattern": "lightUp"
+                }
+              },
+              "x0sk0j": {
+                "font": {
+                  "family": "Segoe UI Variable"
+                }
+              },
+              "y1u8q0": {
+                "fill": {
+                  "back": "#fef9c3",
+                  "color": "ink",
+                  "pattern": "lightTrellis"
+                }
+              },
+              "y8w33e": {
+                "font": {
+                  "underline": "wavyDouble"
+                }
+              },
+              "yjo36z": {
+                "font": {
+                  "color": "theme:accent3"
+                }
+              },
+              "yoksqi": {
+                "font": {
+                  "color": "theme:accent2"
+                }
+              },
+              "yy28zp": {
+                "font": {
+                  "underline": "words"
+                }
+              },
+              "yzm6bt": {
+                "font": {
+                  "color": "theme:accent5"
+                }
+              },
+              "z35mx7": {
+                "fill": {
+                  "back": "#fef9c3",
+                  "color": "ink",
+                  "pattern": "darkGrid"
+                }
+              }
+            }
+          }
+        }
+      }
+    ],
+    "revision": {
+      "id": "01m3sbcmt0000000000000v001",
+      "parents": [],
+      "ancestors": [],
+      "savedAt": "2026-11-02T10:00:00.000Z",
+      "device": {
+        "id": "01m3sbcmt0000000000000d001",
+        "label": "Test device"
+      },
+      "writer": "Fixture"
+    }
+  },
+  "stamp": {
+    "formatVersion": 1,
+    "minReaderVersion": 1,
+    "minWriterVersion": 1
+  },
+  "expect": {
+    "styleIds": [
+      {
+        "style": {
+          "align": {
+            "h": "general"
+          }
+        },
+        "taken": {},
+        "id": "tvwei6"
+      },
+      {
+        "style": {
+          "align": {
+            "h": "left"
+          }
+        },
+        "taken": {},
+        "id": "hexmgx"
+      },
+      {
+        "style": {
+          "align": {
+            "h": "center"
+          }
+        },
+        "taken": {},
+        "id": "nz4xop"
+      }
+    ]
+  }
+}

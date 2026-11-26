@@ -12,12 +12,15 @@ export const stepCheck = {
     title: 'Check my work',
     summary:
       // checks-disable-next-line length: one message with its placeholders, kept whole so the key types read it
-      '{ok, plural, one {# step follows} other {# steps follow}}{broken, plural, =0 {} one {, # needs a look} other {, # need a look}}{unchecked, plural, =0 {} one {, # I could not check} other {, # I could not check}}.',
+      '{ok, plural, one {# step follows} other {# steps follow}}{broken, plural, =0 {} one {, # needs a look} other {, # need a look}}{unchecked, plural, =0 {} one {, # could not be checked} other {, # could not be checked}}.',
     allGood: 'Every step I could check follows from the line before it.',
+    oneLine:
+      'There is only one line of math here, so there is no step to check. Write the next line of working, or use Solve on the equation.',
     nothing: 'There was no math here to check. Select some lines of working, or try the whole page.',
     dismiss: 'Dismiss',
     recheck: 'Check again',
     line: 'Line {number}',
+    lineNamed: 'Line {number}:',
     suggestion: 'Try: {line}',
     numeric: 'Checked at sample points, not symbolically.',
     offline: 'Checked on this device.',

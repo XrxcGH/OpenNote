@@ -166,6 +166,7 @@ export const editor = {
     invalid: 'Enter a web address, an email address, or an OpenNote link.',
     blocked: 'OpenNote doesn’t make links that run scripts.',
     copied: 'Link copied.',
+    copyFailed: 'The link could not be copied.',
     inert: 'OpenNote doesn’t open {scheme} links.',
   },
   textMenu: 'Text',
@@ -229,6 +230,7 @@ export const editor = {
     removeShort: 'Remove',
     empty: 'No replacements yet.',
     duplicate: 'There’s already a replacement for {from}.',
+    tooLong: 'Use {max} characters or fewer.',
     reset: 'Restore the default replacements',
   },
   general: {
@@ -262,6 +264,7 @@ export const editor = {
     weight: 'Weight',
     color: 'Color',
     colorHex: 'Custom color, as #rrggbb',
+    colorInvalid: 'That is not a color. Use a # and 6 digits or letters, from 0 to 9 and a to f.',
     spaceBefore: 'Space before',
     spaceAfter: 'Space after',
     lineHeight: 'Line height',

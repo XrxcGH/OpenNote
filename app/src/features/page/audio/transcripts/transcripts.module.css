@@ -1,11 +1,17 @@
 /* The transcript block and its dialogs. Tokens only (BRAND.md section 14). */
 @layer components {
+  /* The panel is app chrome, like the recording card above it, so it uses the interface font, not the page's. */
   .card {
+    font-family: var(--font-ui);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
     padding: var(--space-4);
     border: 1px solid var(--color-border-subtle);
     border-radius: var(--radius-lg);
     background: var(--color-surface-raised);
     color: var(--color-text-primary);
+    /* Brought into view, the panel's footer stays clear of a toast such as "The transcript is ready". */
+    scroll-margin-block-end: var(--toast-clearance);
   }
 
   .transcript {
@@ -48,6 +54,11 @@
     margin: 0;
   }
 
+  /* Make a summary starts at the left edge with the rest, not stretched and centered across the card. */
+  .summary > button {
+    justify-self: start;
+  }
+
   .help,
   .label {
     margin: 0;
@@ -64,11 +75,14 @@
     list-style: none;
     max-block-size: 24rem;
     overflow-y: auto;
+    /* A line that gets focus scrolls clear of a toast, as in every scroll container (styles/base.css). */
+    scroll-padding-block-end: var(--toast-clearance);
   }
 
+  /* The checkbox, the time, and the words sit on one baseline. */
   .line {
     display: flex;
-    align-items: flex-start;
+    align-items: baseline;
     gap: var(--space-2);
     padding: var(--space-1) var(--space-2);
     border-radius: var(--radius-md);
@@ -76,6 +90,28 @@
 
   .line[data-active='true'] {
     background: var(--color-surface-selected);
+  }
+
+  /* The box is small, so its label is the target: as high as a button, and a finger-size square in touch density. */
+  .pick {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    align-self: center;
+    inline-size: var(--size-target-pointer);
+    block-size: var(--size-target-pointer);
+    cursor: pointer;
+  }
+
+  :global(:root[data-density='touch']) .pick {
+    inline-size: var(--size-target-touch);
+    block-size: var(--size-target-touch);
+  }
+
+  .pick input {
+    margin: 0;
+    accent-color: var(--color-accent-primary);
   }
 
   .time {
@@ -159,7 +195,7 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: var(--space-3);
+    gap: var(--space-3) var(--space-5);
   }
 
   .suggest {

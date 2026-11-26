@@ -138,7 +138,8 @@ export function PracticeTool() {
 
   const { state } = practice;
   const onKeyDown = (event: React.KeyboardEvent) => {
-    if ((event.target as HTMLElement).closest('button')) return;
+    // A focused button keeps Space and Enter (they press it); the arrow keys and Home still move through the steps.
+    if ((event.target as HTMLElement).closest('button') && (event.key === ' ' || event.key === 'Enter')) return;
     if (['ArrowRight', 'ArrowDown', ' ', 'Enter'].includes(event.key)) practice.next();
     else if (['ArrowLeft', 'ArrowUp', 'Backspace'].includes(event.key)) practice.back();
     else if (event.key === 'Home') practice.reset();
@@ -175,14 +176,15 @@ export function PracticeTool() {
           : t('docStructure.practice.progress', { shown: state.shown, total: state.total })}
       </p>
       <div className={docs.buttons}>
-        <Button variant="primary" onClick={practice.next} disabled={finished}>
+        <Button variant="primary" onClick={practice.next} disabled={finished} onKeyDown={onKeyDown}>
           {t(nextLabel)}
         </Button>
-        <Button variant="secondary" onClick={practice.back} disabled={state.shown === 0}>
+        <Button variant="secondary" onClick={practice.back} disabled={state.shown === 0} onKeyDown={onKeyDown}>
           {t('docStructure.practice.previous')}
         </Button>
         <Button
           variant="quiet"
+          onKeyDown={onKeyDown}
           onClick={() => {
             practice.reset();
             area.current?.focus();
@@ -190,7 +192,7 @@ export function PracticeTool() {
         >
           {t('docStructure.practice.reset')}
         </Button>
-        <Button variant="quiet" onClick={readAgain}>
+        <Button variant="quiet" onClick={readAgain} onKeyDown={onKeyDown}>
           {t('docStructure.practice.refresh')}
         </Button>
       </div>

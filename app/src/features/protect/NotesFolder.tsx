@@ -8,10 +8,10 @@ import { createRoot } from 'react-dom/client';
 import { useFlag } from '../../app/flags';
 import type { FolderCheck } from '../../platform/bindings/FolderCheck';
 import { shellCall, shellHost } from '../../platform/shellqol';
-import { updateSettings, useSettings } from '../../state/settings';
+import { updateSettings } from '../../state/settings';
 import { t } from '../../strings/t';
-import { announce, Button, Dialog, ProgressBar, showToast, Switch } from '../../ui';
-import { settingsHost as host, settingsStyles as styles } from '../settings';
+import { announce, Button, Dialog, ProgressBar, displayPath, showToast, Switch } from '../../ui';
+import { settingsHost as host, settingsStyles as styles, useNotesFolderInUse } from '../settings';
 
 /** The key of "Rename folders with notebooks" in the shell's own choices. Absent means on. */
 export const RENAME_FOLDERS_PREF = 'renameNotebookFolders';
@@ -196,7 +196,7 @@ function RenameFolders() {
 export function NotesFolderSettings() {
   const changeFlag = useFlag('storage.changeFolder');
   const renameFlag = useFlag('notes.renameFolders');
-  const folder = useSettings((settings) => settings.storage.notesFolder);
+  const folder = useNotesFolderInUse();
   const [progress, setProgress] = useState<Progress | null>(null);
   const heading = useId();
   if (!changeFlag && !renameFlag) return null;
@@ -206,7 +206,7 @@ export function NotesFolderSettings() {
       {changeFlag && (
         <>
           <p className={folder ? styles.path : styles.help}>
-            {folder ? t('storage.notesFolder.current', { path: folder }) : t('storage.notesFolder.none')}
+            {folder ? t('storage.notesFolder.current', { path: displayPath(folder) }) : t('storage.notesFolder.none')}
           </p>
           {progress ? (
             <div role="status">

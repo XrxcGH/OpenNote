@@ -137,7 +137,13 @@ export function MoreMenu(props: Props) {
   const uploadVideo = useFlag('accounts.youtubeUpload');
   const transcripts = useFlag('transcripts.block');
   const anchor = useRef<HTMLSpanElement>(null);
-  const items = [
+  const items: MenuItemSpec[] = [
+    {
+      id: 'rename',
+      label: t('audio.block.rename'),
+      onSelect: () =>
+        void import('./rename').then((module) => module.renameRecording(props.pageId, props.block.id, entry)),
+    },
     ...(trim ? editItems(props) : []),
     ...(enhance ? [enhanceItem(props)] : []),
     ...(transcripts ? transcriptItems(props) : []),

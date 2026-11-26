@@ -133,43 +133,58 @@
   }
 
   .chip[data-color='ink'] {
-    border-color: var(--ink-ink, var(--color-text-primary));
-    background: var(--ink-ink, var(--color-text-primary));
+    --notebook-accent: var(--ink-ink);
+    border-color: var(--notebook-accent);
+    background: var(--notebook-accent);
   }
 
   .chip[data-color='indigo'] {
-    border-color: var(--ink-indigo, var(--color-text-link));
-    background: var(--ink-indigo, var(--color-text-link));
+    --notebook-accent: var(--ink-indigo);
+    border-color: var(--notebook-accent);
+    background: var(--notebook-accent);
   }
 
   .chip[data-color='brick'] {
-    border-color: var(--ink-brick, var(--color-status-danger));
-    background: var(--ink-brick, var(--color-status-danger));
+    --notebook-accent: var(--ink-brick);
+    border-color: var(--notebook-accent);
+    background: var(--notebook-accent);
   }
 
   .chip[data-color='fern'] {
-    border-color: var(--ink-fern, var(--color-status-success));
-    background: var(--ink-fern, var(--color-status-success));
+    --notebook-accent: var(--ink-fern);
+    border-color: var(--notebook-accent);
+    background: var(--notebook-accent);
   }
 
   .chip[data-color='plum'] {
-    border-color: var(--ink-plum, var(--color-accent-clay));
-    background: var(--ink-plum, var(--color-accent-clay));
+    --notebook-accent: var(--ink-plum);
+    border-color: var(--notebook-accent);
+    background: var(--notebook-accent);
   }
 
   .chip[data-color='amber'] {
-    border-color: var(--ink-amber, var(--color-status-warning));
-    background: var(--ink-amber, var(--color-status-warning));
+    --notebook-accent: var(--ink-amber);
+    border-color: var(--notebook-accent);
+    background: var(--notebook-accent);
   }
 
   .chip[data-color='walnut'] {
-    border-color: var(--ink-walnut, var(--color-text-secondary));
-    background: var(--ink-walnut, var(--color-text-secondary));
+    --notebook-accent: var(--ink-walnut);
+    border-color: var(--notebook-accent);
+    background: var(--notebook-accent);
   }
 
   @media (forced-colors: active) {
     .chip {
       outline: 1px solid CanvasText;
+    }
+
+    /* A contrast theme turns the selected fill into Canvas, so the chosen rows use the system highlight. */
+    .row[aria-selected='true'],
+    .row[data-multi] {
+      forced-color-adjust: none;
+      background: Highlight;
+      color: HighlightText;
     }
   }
 
@@ -178,6 +193,11 @@
     flex: 1;
     flex-direction: column;
     min-inline-size: 0;
+  }
+
+  /* The field takes the row's full height, so it is as tall as the row's target (W9-VA-10). */
+  .text:has(> .rename) {
+    align-self: stretch;
   }
 
   .title,
@@ -210,9 +230,10 @@
 
   /* The kebab takes no room while it is hidden, so a name uses the whole row and ends at its edge. When it shows
      it lies over the end of the row, on the row's own fill, and only then hides the last of the name. */
+  /* It stays inside the row's focus ring, which it would otherwise paint over. */
   .more {
     position: absolute;
-    inset-block: 0;
+    inset-block: var(--size-focus-ring-width);
     inset-inline-end: var(--space-1);
     display: grid;
     align-items: center;
@@ -228,17 +249,32 @@
     opacity: 1;
   }
 
+  /* With touch density the kebab always shows, so it takes its own room and the name ends before it. */
+  :global(:root[data-density='touch']) .more {
+    position: static;
+    flex: none;
+  }
+
   .rename {
     position: relative;
     display: flex;
+    flex: 1;
     flex-direction: column;
     inline-size: 100%;
     min-inline-size: 0;
   }
 
+  /* While a name is edited the row's own buttons give way, so the field never lies under the kebab (W9-VA-10). */
+  .row:has(.rename) .more {
+    display: none;
+  }
+
   .renameInput {
     inline-size: 100%;
     min-inline-size: 0;
+    /* As tall as the row, which is a touch target with large buttons. */
+    flex: 1;
+    min-block-size: var(--target-size);
     box-sizing: border-box;
     padding-inline: var(--space-3);
     border: 1px solid var(--color-border-control);
@@ -349,6 +385,25 @@
 
   .saveStatus[data-status='error'] {
     color: var(--color-status-danger);
+  }
+
+  /* The trouble state is a real button: no chrome of its own, but a hover and a focus ring, and room for a fingertip. */
+  .saveStatusButton {
+    min-block-size: var(--size-target-pointer);
+    padding: 0 var(--space-2);
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  :global(:root[data-density='touch']) .saveStatusButton {
+    min-block-size: var(--size-target-touch);
+  }
+
+  .saveStatusButton:hover {
+    background: var(--color-surface-hover);
   }
 
   .visuallyHidden {

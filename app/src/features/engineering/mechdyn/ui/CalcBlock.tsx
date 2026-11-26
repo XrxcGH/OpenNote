@@ -1,5 +1,6 @@
 // The calculation block on the page: the tool's name, the answer it gave, and a button that opens the kit on that
 // tool with the block's inputs, to change them and insert again.
+import '../text';
 import { Button } from '../../../../ui';
 import type { BlockProps } from '../../canvas/shared';
 import { openMechDynKit } from '../open';

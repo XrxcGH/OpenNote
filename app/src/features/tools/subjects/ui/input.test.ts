@@ -14,6 +14,15 @@ import {
 import { rocArea } from './statPlots';
 import { formatNumber } from './words';
 
+describe('reading a data field', () => {
+  it('parses the same text once, however many fields read it', () => {
+    const text = 'x,y\n1,2\n3,4';
+    expect(readDataInput({ text })).toBe(readDataInput({ text, table: null }));
+    expect(readDataInput({ text, decimal: 'comma' })).not.toBe(readDataInput({ text }));
+    expect(readDataInput({ text }).rows).toBe(2);
+  });
+});
+
 describe('subject input helpers', () => {
   it('reads a list one value per line, skipping blanks and missing markers', () => {
     expect(readList('1.5\n\n-2\nNA\n3e2\nabc')).toEqual({

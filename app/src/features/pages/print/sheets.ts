@@ -10,7 +10,19 @@ import {
   type CustomSize,
   type SheetGeometry,
 } from '../pagination/geometry';
-import { bandBox, fillBand, type BandBox, type BandFields, type BandTemplate, type BandText } from './headerFooter';
+import {
+  DEFAULT_PAGE_NUMBERS,
+  bandBox,
+  bandForSheet,
+  fillBand,
+  pageNumberLabel,
+  type BandBox,
+  type BandFields,
+  type BandTemplate,
+  type BandText,
+  type LineNumberSettings,
+  type PageNumberSettings,
+} from './headerFooter';
 import { parsePageRange, type Parity, type RangeError } from './range';
 
 export interface PrintOptions {
@@ -27,6 +39,10 @@ export interface PrintOptions {
   readonly footer?: BandTemplate;
   /** `sheet` numbers a printed sheet by its place on the page. `printed` counts from 1 through the sheets chosen. */
   readonly numbering?: 'sheet' | 'printed';
+  /** How `{page}` is written and where it starts (R-VIEW-3). Default: decimal from 1. */
+  readonly pageNumbers?: PageNumberSettings;
+  /** Line numbers in the left margin (R-VIEW-2). Default: none. */
+  readonly lineNumbers?: LineNumberSettings;
   /** The page Chromium writes for this paper size, in points, if the host measured it. */
   readonly pagePt?: CustomSize;
   readonly fields?: BandFields;
@@ -57,6 +73,7 @@ export interface PrintPlan {
   readonly sheets: readonly PrintSheet[];
   readonly header: BandBox | null;
   readonly footer: BandBox | null;
+  readonly lineNumbers?: LineNumberSettings | null;
   readonly background: boolean;
   readonly ink: boolean;
   readonly warnings: readonly PrintWarning[];
@@ -94,17 +111,19 @@ export function planPrint(g: SheetGeometry, sheetsNeeded: number, options: Print
   const footer = options.footer ? bandBox(g, 'footer') : null;
   if (options.header && !header) warnings.push({ kind: 'marginTooSmall', band: 'header' });
   if (options.footer && !footer) warnings.push({ kind: 'marginTooSmall', band: 'footer' });
+  const numbers = options.pageNumbers ?? DEFAULT_PAGE_NUMBERS;
   const sheets = picked.map((index, ordinal): PrintSheet => {
+    const counted = options.numbering === 'printed' ? ordinal : index;
     const fields = {
       ...options.fields,
-      page: options.numbering === 'printed' ? ordinal + 1 : index + 1,
+      page: pageNumberLabel(numbers, counted),
       pages: options.numbering === 'printed' ? picked.length : totalSheets,
     };
     return {
       index,
-      number: fields.page,
-      header: header ? fillBand(options.header, fields) : null,
-      footer: footer ? fillBand(options.footer, fields) : null,
+      number: numbers.start + counted,
+      header: header ? fillBand(bandForSheet(options.header, index), fields) : null,
+      footer: footer ? fillBand(bandForSheet(options.footer, index), fields) : null,
     };
   });
   return {
@@ -114,6 +133,7 @@ export function planPrint(g: SheetGeometry, sheetsNeeded: number, options: Print
     sheets,
     header,
     footer,
+    lineNumbers: options.lineNumbers ?? null,
     background: options.background !== false,
     ink: options.ink !== false,
     warnings,

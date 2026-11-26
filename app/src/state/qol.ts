@@ -1,5 +1,5 @@
 // State of the quality-of-life features that more than one place reads: focus mode, the mini window, docking,
-// low-power mode, archived items, the Home page, and tabs with the recently closed list. None of it is saved; a
+// low-power mode, archived items, the Home page, and tabs with the recently closed list. Only the tabs are saved; a
 // new start begins with all of it off.
 
 import type { Location } from '../app/location';

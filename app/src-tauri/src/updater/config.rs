@@ -121,8 +121,9 @@ fn folder_writable(dir: &Path) -> bool {
     writable
 }
 
-/// Why this copy of the app never updates itself, if it doesn't: a development build, a Mac (which installs each
-/// dmg by hand), a build without a key, or a folder it can't write to.
+/// Why this copy of the app never updates itself, if it doesn't: a development build, a build without a key, or a
+/// folder it can't write to. A Mac does update: it downloads and checks the new dmg, and opens it for the person to
+/// drag into Applications, so the signed bundle is never swapped under it (ADR 0055), and no folder needs to be writable.
 pub fn blocked_reason(
     platform: Option<PlatformKey>,
     dev_build: bool,
@@ -131,11 +132,9 @@ pub fn blocked_reason(
 ) -> Option<DisabledReason> {
     if dev_build || platform.is_none() {
         Some(DisabledReason::DevBuild)
-    } else if platform.is_some_and(|platform| !platform.replaces_itself()) {
-        Some(DisabledReason::ByHand)
     } else if !has_keys {
         Some(DisabledReason::NoKey)
-    } else if !writable() {
+    } else if platform.is_some_and(PlatformKey::replaces_itself) && !writable() {
         Some(DisabledReason::NotWritable)
     } else {
         None
@@ -203,10 +202,15 @@ mod tests {
     }
 
     #[test]
-    fn a_mac_installs_by_hand_and_a_linux_appimage_updates_itself() {
+    fn a_mac_downloads_the_dmg_and_a_linux_appimage_updates_itself() {
         let never = || panic!("the folder isn't checked");
         let mac = Some(PlatformKey::MacosUniversal);
-        assert_eq!(blocked_reason(mac, false, true, never), Some(DisabledReason::ByHand));
+        assert_eq!(
+            blocked_reason(mac, false, true, never),
+            None,
+            "a Mac needs no writable folder"
+        );
+        assert_eq!(blocked_reason(mac, false, false, never), Some(DisabledReason::NoKey));
         assert_eq!(blocked_reason(mac, true, true, never), Some(DisabledReason::DevBuild));
         let linux = Some(PlatformKey::LinuxX86_64);
         assert_eq!(blocked_reason(linux, false, true, || true), None);

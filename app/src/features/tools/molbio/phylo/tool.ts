@@ -457,6 +457,7 @@ function boot(values: Values): KitOk {
 
 function newick(values: Values): KitOk {
   let tree = readNewick(values.newick ?? '');
+  if (leaves(tree).length < 3) fail('phylo.e.fewTaxa');
   tree = finish(tree, values);
   if (values.ladderize === 'yes') tree = ladderize(tree);
   const taxa = leaves(tree);

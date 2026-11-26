@@ -1,5 +1,6 @@
 // The nuclear science tool's decay calculations: one nuclide's decay and activity, and a decay chain by the Bateman
 // equations.
+import '../text';
 import type { MessageKey } from '../../../../strings/t';
 import { fmt, q, qIn } from '../kit/format';
 import { fail } from '../kit/read';

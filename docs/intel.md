@@ -112,7 +112,7 @@ The list gives the speech engine a hint before it starts. Afterward it corrects 
 
 ## Transcription
 
-The `TranscriptionEngine` trait is the seam for whisper.cpp. An engine reads 16 kHz mono samples from an `AudioSource`, reports progress and finished segments through a `JobControl`, and stops when the job is canceled.
+The `TranscriptionEngine` trait is the seam for the speech engine. The whisper.cpp engine is in `crates/intel-engines`. An engine reads 16 kHz mono samples from an `AudioSource`, reports progress and finished segments through a `JobControl`, and stops when the job is canceled.
 
 `TranscriptionQueue` runs jobs one at a time on a thread in Windows background mode, which lowers its processor, disk, and memory priority. Engines that start helper threads call `enter_background_mode` on each one.
 
@@ -169,9 +169,11 @@ Synthetic strokes are cleaner than a person's handwriting, so accuracy needs a r
 2. Run the recognizer on the strokes and compare the text with what you wrote.
 3. Record the error rate in the Phase 12 benchmark sheet.
 
-Run the same check for OCR on a photo of a printed page, and for transcription once the whisper.cpp engine lands. For read aloud, listen to a page in each installed voice and check that the highlighted word follows the sound.
+Run the same check for OCR on a photo of a printed page, and for transcription with the whisper.cpp engine. For read aloud, listen to a page in each installed voice and check that the highlighted word follows the sound.
 
 ## Left for the UI stage
+
+This list was written before the UI stage. The Settings section, the setup step, and the app commands now exist (see [On-device intelligence](help/on-device-intelligence.md)). Check the code before you rely on an item.
 
 - Decode stored Opus audio into an `AudioSource`, and render PDF pages into `OcrImage` values.
 - Before beta, add an `OcrSource` kind that names a file in the notebook, so a whole photo never travels as base64 in JSON.

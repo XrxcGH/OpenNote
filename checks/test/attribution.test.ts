@@ -2,7 +2,17 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { attributionGaps, describeGaps, findGaps, parseRows } from '../attribution.ts';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import {
+  attributionGaps,
+  describeGaps,
+  findGaps,
+  missingNotices,
+  parseRows,
+  repoRoot,
+  REQUIRED_NOTICES,
+} from '../attribution.ts';
 
 const TABLE = [
   '| Path | Author | Source | License |',
@@ -64,4 +74,16 @@ test('a bundled font package needs its copyright line in the notices', () => {
 
 test('an npm row for a package that is not a dependency is stale', () => {
   assert.equal(findGaps([], FONT_ROW, { ...FACTS, dependencies: [] }).packages.length, 1);
+});
+
+test('the notices keep a row for each component added before its files', () => {
+  const notices = readFileSync(join(repoRoot(), 'THIRD_PARTY_NOTICES.md'), 'utf8');
+  assert.deepEqual(missingNotices(notices), []);
+  for (const name of REQUIRED_NOTICES) {
+    const without = notices
+      .split(/\r?\n/)
+      .filter((line) => !line.startsWith(`| ${name}`))
+      .join('\n');
+    assert.deepEqual(missingNotices(without), [`THIRD_PARTY_NOTICES.md has no row for ${name}`]);
+  }
 });

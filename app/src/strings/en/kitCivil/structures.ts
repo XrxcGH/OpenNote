@@ -107,6 +107,7 @@ export const structures = {
     brace: 'Brace force to hold the sway',
     cycles: 'Cycles',
     Mmax: 'Largest bending moment',
+    Mmid: 'Moment at midspan',
     femLeft: 'Fixed-end moment, left',
     femRight: 'Fixed-end moment, right',
     peak: 'Largest ordinate',

@@ -8,6 +8,7 @@ import blockStyles from '../blocks/blocks.module.css';
 import type { BlockRenderContext } from '../blocks/types';
 import type { InnerView } from '../tables/lazyView';
 import { activeNs, dataOf } from './blocks';
+import { nameOf } from './entry';
 import { adoptPage, recordingEntries } from './entries';
 import styles from './block.module.css';
 import { lengthClock } from './format';
@@ -15,9 +16,10 @@ import { RecordingBlockView } from './RecordingBlock';
 
 function labelOf(block: BlockJson): string {
   const data = dataOf(block);
-  return data && data.entry.state !== 'recording'
-    ? t('audio.block.label', { time: lengthClock(activeNs(data.entry) / 1e6) })
-    : t('audio.block.labelWhile');
+  if (!data || data.entry.state === 'recording') return t('audio.block.labelWhile');
+  const time = lengthClock(activeNs(data.entry) / 1e6);
+  const name = nameOf(data.entry);
+  return name ? t('audio.block.labelNamed', { name, time }) : t('audio.block.label', { time });
 }
 
 export function createInner(wrapper: HTMLElement, block: BlockJson, ctx: BlockRenderContext): InnerView {

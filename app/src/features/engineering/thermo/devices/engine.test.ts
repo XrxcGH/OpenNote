@@ -1,5 +1,6 @@
 // Steady-flow devices against the published validation values, then against hand calculations: closed energy
 // and entropy balances, steam and refrigerant devices, and the problems the second law rules out.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { ThermoError, type ThermoResult } from '../common/types';
 import { fromPX, fromTP } from '../steam/water';

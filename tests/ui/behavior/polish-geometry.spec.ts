@@ -280,6 +280,25 @@ test.describe('the Properties chip', () => {
   }
 });
 
+test.describe('the Properties chip in focus mode', () => {
+  test('stays clear of the Exit focus mode button at 1280 by 800', async ({ page }) => {
+    await openMembranes(page, 1280);
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await runCommand(page, 'Focus mode');
+    const exit = page.getByRole('button', { name: 'Exit focus mode' });
+    const chip = page.getByRole('button', { name: /^Properties/ });
+    await expect(exit).toBeVisible();
+    await expect(chip).toBeVisible();
+    // The chip floats at the page area's end edge; the exit button is fixed at the window's. They must not overlap.
+    await expect(async () => {
+      const a = (await exit.boundingBox())!;
+      const b = (await chip.boundingBox())!;
+      const overlap = a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+      expect(overlap, 'the Properties chip covers the Exit focus mode button').toBe(false);
+    }).toPass({ timeout: 5000 });
+  });
+});
+
 test('a tool window wider than a phone-size window stays inside it', async ({ page }) => {
   await page.setViewportSize({ width: 420, height: 800 });
   await page.goto('/?fixture=smart');
@@ -305,6 +324,44 @@ test('a long title wraps before the Properties chip', async ({ page }) => {
     return Math.max(...[...range.getClientRects()].map((rect) => rect.right));
   });
   expect(right).toBeLessThanOrEqual(chip.x - 4);
+});
+
+test('the Properties chip shares no pixel with the page title at 600 px, where the page area is narrow', async ({
+  page,
+}) => {
+  await openMembranes(page, 1280);
+  await page.setViewportSize({ width: 600, height: 900 });
+  const chip = page.getByRole('button', { name: /^Properties/ });
+  await expect(chip).toBeVisible();
+  await expect
+    .poll(async () => {
+      const box = (await chip.boundingBox())!;
+      return page.evaluate((chipBox) => {
+        const range = document.createRange();
+        range.selectNodeContents(document.querySelector('[data-page-title]')!);
+        const rects = [...range.getClientRects()];
+        return rects.some(
+          (rect) =>
+            rect.left < chipBox.x + chipBox.width &&
+            rect.right > chipBox.x &&
+            rect.top < chipBox.y + chipBox.height &&
+            rect.bottom > chipBox.y,
+        );
+      }, box);
+    })
+    .toBe(false);
+});
+
+test('the Properties chip stays beside a short title at 720 px, where the word fits', async ({ page }) => {
+  await openMembranes(page, 1280);
+  await page.setViewportSize({ width: 720, height: 900 });
+  const chip = page.getByRole('button', { name: /^Properties/ });
+  await expect(chip).toBeVisible();
+  const title = await page.getByRole('heading', { level: 1, name: 'Membranes' }).boundingBox();
+  const box = (await chip.boundingBox())!;
+  // One line of the title, and the chip at the top of the page area, not on a line above it.
+  expect(title!.height).toBeLessThan(60);
+  expect(box.y).toBeLessThan(title!.y + 16);
 });
 
 test.describe('controls line up with the text and fields around them', () => {

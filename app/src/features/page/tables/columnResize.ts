@@ -8,6 +8,9 @@ import type { PageViewportApi } from '../viewport/viewport';
 import styles from './tables.module.css';
 
 export type ResizeColumn = (column: number, width: number) => void;
+export type FitColumn = (column: number) => void;
+
+const DOUBLE_TAP_MS = 350;
 
 /** Adds an edge after each column to `host`, which scrolls with the table. Returns the function that removes them. */
 export function attachColumnHandles(
@@ -15,6 +18,7 @@ export function attachColumnHandles(
   columns: TableData['columns'],
   viewport: PageViewportApi,
   resize: ResizeColumn,
+  fit?: FitColumn,
 ): () => void {
   const layer = host.appendChild(host.ownerDocument.createElement('div'));
   layer.className = styles.handles;
@@ -28,10 +32,18 @@ export function attachColumnHandles(
     handle.className = styles.handle;
     handle.style.insetInlineStart = `${edge}px`;
     handle.dataset.column = String(index);
+    let lastTap = Number.NEGATIVE_INFINITY;
     const onDown = (event: PointerEvent) => {
       if (event.button !== 0) return;
       event.preventDefault();
       event.stopPropagation();
+      // A double tap fits the column to its content, as a double click does.
+      if (event.pointerType === 'touch' && event.timeStamp - lastTap < DOUBLE_TAP_MS) {
+        lastTap = Number.NEGATIVE_INFINITY;
+        fit?.(index);
+        return;
+      }
+      lastTap = event.timeStamp;
       handle.setPointerCapture(event.pointerId);
       handle.toggleAttribute('data-dragging', true);
       const release = viewport.holdCamera('drag');
@@ -53,14 +65,23 @@ export function attachColumnHandles(
         handle.removeEventListener('pointercancel', onUp);
         handle.toggleAttribute('data-dragging', false);
         release();
-        resize(index, width);
+        // A press with no drag is not a resize: the double click that follows fits the column.
+        if (width !== column.width) resize(index, width);
       };
       handle.addEventListener('pointermove', onMove);
       handle.addEventListener('pointerup', onUp);
       handle.addEventListener('pointercancel', onUp);
     };
+    const onDouble = (event: MouseEvent) => {
+      event.preventDefault();
+      fit?.(index);
+    };
     handle.addEventListener('pointerdown', onDown);
-    stops.push(() => handle.removeEventListener('pointerdown', onDown));
+    handle.addEventListener('dblclick', onDouble);
+    stops.push(() => {
+      handle.removeEventListener('pointerdown', onDown);
+      handle.removeEventListener('dblclick', onDouble);
+    });
   });
   return () => {
     stops.forEach((stop) => stop());

@@ -190,7 +190,9 @@ export function prettyText(text: string): string {
     .replace(/\btheta\b/g, 'θ')
     .replace(/\bphi\b/g, 'φ')
     .replace(/\brho\b/g, 'ρ')
-    .replace(/\*/g, '·');
+    .replace(/\*/g, '·')
+    // A negative product alone in brackets, such as exp(-(2x)), reads exp(-2x).
+    .replace(/\(-\(([^()+\-,]+)\)\)/g, '(-$1)');
   const wrapped = /^-\((.*)\)$/.exec(out);
   if (wrapped && balanced(wrapped[1]) && !/[+-]/.test(topLevel(wrapped[1]))) out = `-${wrapped[1]}`;
   return out;

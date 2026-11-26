@@ -1,3 +1,4 @@
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { rad } from '../num';
 import { composite, principal, solveRigid3d, type Body, type RigidInput } from './engine';

@@ -274,6 +274,30 @@ impl NotebookStore {
         Ok(())
     }
 
+    /// Purges the `moved` Trash items that hold any of `ids`: originals of an earlier move to another notebook
+    /// (spec 18.2) that a newer copy of the same pages or sections replaces. Moving a section away and back, as
+    /// an undo does, otherwise left a copy in Trash beside the live one, which the notebook check reports as a
+    /// duplicate section.
+    pub(crate) fn purge_moved_holding(&mut self, ids: &[Id]) -> Result<(), CoreError> {
+        self.purge_older_originals(ids, &[])
+    }
+
+    /// [`Self::purge_moved_holding`], keeping the items in `keep` (the originals a move just made).
+    pub(crate) fn purge_older_originals(&mut self, ids: &[Id], keep: &[TrashItemId]) -> Result<(), CoreError> {
+        let stale: Vec<TrashItemId> = self
+            .trash
+            .values()
+            .filter(|t| !keep.contains(&t.file.id))
+            .filter(|t| t.file.reason.known() == Some(TrashReason::Moved))
+            .filter(|t| t.file.contents.iter().any(|id| ids.contains(id)))
+            .map(|t| t.file.id)
+            .collect();
+        for item in stale {
+            self.purge(item)?;
+        }
+        Ok(())
+    }
+
     /// Deletes every Trash item for good.
     pub fn empty_trash(&mut self) -> Result<(), CoreError> {
         let items: Vec<TrashItemId> = self.trash.keys().copied().collect();

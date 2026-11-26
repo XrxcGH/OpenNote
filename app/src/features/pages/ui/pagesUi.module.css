@@ -2,6 +2,7 @@
 @layer components {
   .form {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--space-4);
   }
 
@@ -31,6 +32,11 @@
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--space-3);
+  }
+
+  /* The narrow-window query below needs an ancestor that is a size container. */
+  .splitBox {
+    container-type: inline-size;
   }
 
   .split {
@@ -116,7 +122,9 @@
   }
 
   .select {
-    min-block-size: var(--size-chrome-hit);
+    min-block-size: var(--target-size);
+    inline-size: 100%;
+    min-inline-size: 0;
     padding-inline: var(--space-2);
     border: 1px solid var(--color-border-control);
     border-radius: var(--radius-sm);

@@ -51,12 +51,14 @@ impl PageSession {
     pub(crate) fn save(&self, why: Why) -> Result<Option<RevisionInfo>, CoreError> {
         let _io = self.io.lock().unwrap_or_else(PoisonError::into_inner);
         let mut retried = false;
+        self.recheck_read_only();
         loop {
             let Some(snapshot) = self.snapshot()? else {
                 self.version_when_idle(why);
                 return Ok(None);
             };
             self.version_before(&snapshot);
+            self.backup_before_upgrade(&snapshot);
             let result = {
                 let journal = self.journal();
                 let input = SaveInput {
@@ -75,6 +77,26 @@ impl PageSession {
                 }
                 Err(e) => return Err(self.failed(snapshot, e)),
             }
+        }
+    }
+
+    /// A read-only file or a cloud placeholder stops saving until the person acts (spec 17.6). Each save looks at
+    /// `page.json` again. So a Retry saves the page once the person cleared the attribute or downloaded the file.
+    /// It lets edits in again too, instead of failing on what the first failure found.
+    fn recheck_read_only(&self) {
+        let mut st = self.state();
+        if !matches!(
+            st.read_only,
+            Some(ReadOnlyReason::ReadOnlyFile | ReadOnlyReason::CloudPlaceholder)
+        ) {
+            return;
+        }
+        let Ok(meta) = self.ctx.fs.metadata(&st.dir.join(PAGE_JSON)) else {
+            return;
+        };
+        if !meta.read_only && !meta.placeholder {
+            st.read_only = None;
+            st.failures = 0;
         }
     }
 
@@ -114,6 +136,36 @@ impl PageSession {
             reason,
             name: None,
         });
+    }
+
+    /// Before a save first gives the page a higher `formatVersion` than the file on disk has (`R-VER-7`), keeps
+    /// the page's last revision as a `beforeUpgrade` version and copies every JSON file of the notebook to the
+    /// device's backups (spec 15.4). Best effort, as history is: a failure never stops the save.
+    fn backup_before_upgrade(&self, snapshot: &Snapshot) {
+        let Some(from) = crate::format::header::leading_version(&snapshot.base) else {
+            return;
+        };
+        if from >= crate::FORMAT_VERSION {
+            return;
+        }
+        let to = crate::format::page_json::stamp::page_stamp(&snapshot.page).format;
+        if to <= from {
+            return;
+        }
+        if let Ok(read) = self.ctx.codec.read_page(&snapshot.base, &self.ctx.limits) {
+            let _ = self.ctx.backend.write_version(VersionToWrite {
+                dir: &snapshot.dir,
+                bytes: &snapshot.base,
+                page: &read.page,
+                reason: VersionReason::BeforeUpgrade,
+                name: None,
+            });
+        }
+        if let Some(notebook) = self.notebook.upgrade() {
+            let backups = self.ctx.data.backups_dir(notebook.id());
+            let fs = self.ctx.fs.as_ref();
+            let _ = crate::store::backup::backup_before_upgrade(fs, &notebook.root, &backups, from, to);
+        }
     }
 
     /// Steps S9 to S12: the page's new base, the journal's rotation, history, events, and the work that can
@@ -161,7 +213,7 @@ impl PageSession {
             journal.after_save(outcome.durability, base, snapshot.through);
         }
         self.version_after(&snapshot.dir, outcome, &saved_page, (why, edited));
-        self.report_saved(&saved_page, snapshot.hint, encrypted);
+        self.report_saved(&saved_page, snapshot.through, snapshot.hint, encrypted);
         RevisionInfo {
             revision: outcome.revision.id,
             saved_at: outcome.revision.saved_at,
@@ -235,11 +287,12 @@ impl PageSession {
     }
 
     /// Step S12, and the work of step S11 that can wait.
-    fn report_saved(&self, page: &Page, hint: Hint, encrypted: bool) {
+    fn report_saved(&self, page: &Page, through: u64, hint: Hint, encrypted: bool) {
         self.ctx.events.emit(CoreEvent::Saved {
             page: self.id,
             revision: page.revision.id,
             at: page.revision.saved_at,
+            through,
         });
         let Some(notebook) = self.notebook.upgrade() else {
             return;
@@ -275,10 +328,22 @@ impl PageSession {
             .backend
             .classify_change(&loaded.page.revision, st.base, &st.page.revision, true);
         st.stamp = Some(loaded.stamp);
-        if matches!(decision, ExternalDecision::Unchanged | ExternalDecision::OlderOfOurs) {
+        // Another program can change the text and keep the revision fields. The revision then reads as ours,
+        // but the bytes differ, so the outside edit is kept under a revision of its own (T2-D04-6).
+        let same_revision = loaded.page.revision.id == st.page.revision.id || loaded.page.revision.id == st.base;
+        let outside_edit = same_revision && loaded.bytes[..] != snapshot.base[..];
+        let theirs: Arc<[u8]> = if outside_edit {
+            let mut page = loaded.page.clone();
+            page.revision.parents = vec![loaded.page.revision.id];
+            page.revision.ancestors.insert(0, loaded.page.revision.id);
+            page.revision.id = crate::id::RevisionId::generate(self.ctx.clock.as_ref());
+            self.ctx.codec.write_page(&page).into()
+        } else if matches!(decision, ExternalDecision::Unchanged | ExternalDecision::OlderOfOurs) {
             return Ok(());
-        }
-        if let Ok(revision) = self.ctx.backend.keep_conflict(&snapshot.dir, &loaded.bytes) {
+        } else {
+            loaded.bytes.clone()
+        };
+        if let Ok(revision) = self.ctx.backend.keep_conflict(&snapshot.dir, &theirs) {
             if !st.conflicts.contains(&revision) {
                 st.conflicts.push(revision);
             }

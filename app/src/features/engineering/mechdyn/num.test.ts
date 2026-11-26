@@ -1,3 +1,4 @@
+import './text';
 import { describe, expect, it } from 'vitest';
 import { bracketScan, brent, dopri, generalizedEigen, solve, symEigen, wrap } from './num';
 

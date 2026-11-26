@@ -70,12 +70,22 @@
     user-select: none;
   }
 
+  /* The two header actions stay on one line each; the title gives way first (walk VB-189). */
+  .header > button {
+    flex: none;
+    white-space: nowrap;
+  }
+
   .header:focus {
     outline: none;
   }
 
   .title {
     flex: 1;
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     margin: 0;
     font-size: var(--type-subtitle-size);
     line-height: var(--type-subtitle-line);
@@ -106,6 +116,13 @@
     /* A switch reaches out past the content edge by more than the padding, so its focus ring would be cut. */
     padding-inline: calc(var(--space-4) + var(--space-1));
     scroll-padding: var(--space-3);
+  }
+
+  /* Floating, the window's last child is this square body. Its opaque background (the scroll shades) and its own scroll
+     bar would paint over the window's rounded bottom corners and hide the border's arc there. So the body follows the
+     window's inner corners: the outer radius less the 1 px border. Docked, the window has no radius to follow. */
+  .window:not([data-docked]) > .body {
+    clip-path: inset(0 round 0 0 calc(var(--radius-lg) - 1px) calc(var(--radius-lg) - 1px));
   }
 
   /* While a tool's code loads, the body says so instead of standing empty. */
@@ -160,6 +177,8 @@
   .empty,
   .note {
     margin: 0;
+    /* A long unbroken word (a 300-letter lookup) wraps inside the window instead of widening it. */
+    overflow-wrap: anywhere;
     color: var(--color-text-muted);
     font-size: var(--type-small-size);
     line-height: var(--type-small-line);
@@ -167,6 +186,7 @@
 
   .problem {
     margin: 0;
+    overflow-wrap: anywhere;
     color: var(--color-status-danger);
   }
 
@@ -338,6 +358,7 @@
     flex: none;
     white-space: nowrap;
     min-block-size: var(--target-size);
+    min-inline-size: var(--target-size);
     padding-inline: var(--space-4);
     font: inherit;
     color: var(--color-text-secondary);
@@ -376,6 +397,7 @@
 
   .groupTitle {
     margin: 0;
+    overflow-wrap: anywhere;
     font-size: var(--type-small-size);
     font-weight: var(--font-weight-semibold);
     color: var(--color-text-secondary);

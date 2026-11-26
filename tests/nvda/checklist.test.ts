@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { failures, ITEMS, missingPhrases, result, table } from './checklist.ts';
+import { explainStartFailure, failures, ITEMS, missingPhrases, NVDA_MISSING_HELP, result, table } from './checklist.ts';
 import type { Run } from './checklist.ts';
 
 describe('the NVDA checklist', () => {
@@ -65,5 +65,22 @@ describe('recording a run', () => {
 
   it('lists a failure for each failing item', () => {
     assert.deepEqual(failures(run), ['headings: NVDA did not say Short note']);
+  });
+});
+
+describe('starting NVDA', () => {
+  it('explains a missing install with the commands that put it in place', () => {
+    const guidepup = new Error('NVDA is not installed\nPlease ensure you have run:');
+    const explained = explainStartFailure(guidepup);
+    assert.ok(explained.message.startsWith(NVDA_MISSING_HELP));
+    assert.match(explained.message, /guidepup install nvda/);
+    assert.match(explained.message, /Guidepup said: NVDA is not installed/);
+    assert.equal(explained.cause, guidepup);
+  });
+
+  it('leaves every other error as it was', () => {
+    const other = new Error('NVDA is already running');
+    assert.equal(explainStartFailure(other), other);
+    assert.equal(explainStartFailure('boom').message, 'boom');
   });
 });

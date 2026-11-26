@@ -6,9 +6,11 @@
 // It never takes focus from the page by itself and never traps it.
 import { Component, useRef } from 'react';
 import type { CSSProperties, KeyboardEvent, PointerEvent, ReactNode } from 'react';
+import { ArrowSquareOutIcon } from '@phosphor-icons/react/dist/csr/ArrowSquareOut';
+import { PushPinIcon } from '@phosphor-icons/react/dist/csr/PushPin';
 import { XIcon } from '@phosphor-icons/react/dist/csr/X';
 import { t } from '../../../strings/t';
-import { Button, IconButton } from '../../../ui';
+import { IconButton } from '../../../ui';
 import styles from './tools.module.css';
 import type { ToolDef } from './tools';
 
@@ -18,6 +20,8 @@ export interface ToolWindowProps {
   width: number;
   /** The space between this panel's right edge and the window's: the panels docked to its right, or for a floating one, its place. */
   right: number;
+  /** For a floating window that had to overlap others: how far it starts below the top, so its title stays clear. */
+  down?: number;
   /** True when the window is too narrow to keep a usable page beside the panels, so they overlay it. */
   overlay: boolean;
   /** Its place among the tool windows that overlap: higher is in front. */
@@ -39,14 +43,14 @@ export const MIN_PANEL = 280;
 
 const clamp = (value: number, low: number, high: number) => Math.min(high, Math.max(low, value));
 
-function frameStyle(width: number, right: number, overlay: boolean, stack: number): CSSProperties {
+function frameStyle(width: number, right: number, overlay: boolean, stack: number, down: number): CSSProperties {
   // Docked, the panel is a column from the command bar's line to the status line. Floating, it is as tall as its
   // content and no taller than the room between them, so a short tool leaves no empty box and a long one scrolls.
   return overlay
     ? {
         insetInlineEnd: right,
-        insetBlockStart: 'var(--panel-top)',
-        maxBlockSize: 'calc(100dvh - var(--panel-top) - var(--panel-bottom))',
+        insetBlockStart: down ? `calc(var(--panel-top) + ${down}px)` : 'var(--panel-top)',
+        maxBlockSize: `calc(100dvh - var(--panel-top) - var(--panel-bottom) - ${down}px)`,
         inlineSize: width,
         zIndex: stack,
       }
@@ -82,6 +86,7 @@ export function ToolWindow({
   tool,
   width,
   right,
+  down = 0,
   overlay,
   stack,
   onRaise,
@@ -122,7 +127,7 @@ export function ToolWindow({
       role="dialog"
       aria-modal="false"
       aria-label={title}
-      style={frameStyle(width, right, overlay, stack)}
+      style={frameStyle(width, right, overlay, stack, down)}
       onPointerDownCapture={onRaise}
       onFocusCapture={onRaise}
       onKeyDown={(event) => {
@@ -147,14 +152,12 @@ export function ToolWindow({
         onKeyDown={onKeyDown}
       />
       <div className={styles.header} data-move="" tabIndex={-1}>
-        <h2 className={styles.title}>{title}</h2>
-        <Button variant="quiet" aria-pressed={pinned} onClick={onPin}>
-          {t('smart.tools.window.keepOnTop')}
-        </Button>
+        <h2 className={styles.title} title={title}>
+          {title}
+        </h2>
+        <IconButton label={t('smart.tools.window.keepOnTop')} icon={PushPinIcon} pressed={pinned} onPress={onPin} />
         {onPopOut ? (
-          <Button variant="quiet" onClick={onPopOut}>
-            {t('smart.tools.window.popOut')}
-          </Button>
+          <IconButton label={t('smart.tools.window.popOut')} icon={ArrowSquareOutIcon} onPress={onPopOut} />
         ) : null}
         <IconButton label={t('smart.tools.window.close', { title })} icon={XIcon} onPress={onClose} />
       </div>

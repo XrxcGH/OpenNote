@@ -10,9 +10,9 @@ import { t } from '../../../strings/t';
 import { announce, confirm, showToast } from '../../../ui';
 import { shownPage as shownOpenPage } from '../history/shown';
 import { shownLayer } from '../mount';
-import { shownQueue } from '../sync/shown';
-import { insertRecordingBlock, writeEntry } from './blocks';
+import { writeEntry, writeSplit } from './blocks';
 import { describeError, platformAudio } from './controller';
+import { activeNs } from './entry';
 import { clockNs, lengthNs } from './format';
 import { moreClient } from './moreClient';
 import { closePlayback } from './playback';
@@ -45,20 +45,25 @@ async function replace(block: string, pageId: string, old: RecordingEntry, next:
   await deleteAudioFiles(dir, old);
 }
 
-/** Gives the marks of the text that was written in the second half to the second recording. */
-async function moveMarks(from: string, halves: readonly SplitHalf[]): Promise<void> {
+/** The steps that give the marks of the text written in the second half to the second recording. */
+function moveMarks(from: string, halves: readonly SplitHalf[]): Edit[] {
   const edits: Edit[] = [];
   for (const block of shownLayer.get()?.blocks() ?? []) {
     const marks = marksOf(block.id);
     if (marks?.moveToSplit(from, halves))
       edits.push({ edit: 'patchBlock', block: block.id, data: { marks: marks.toData() } });
   }
-  if (edits.length > 0) await shownQueue.get()?.send({ edits });
+  return edits;
 }
+
+/** Counts splits, so each one is its own undo step. */
+let splits = 0;
 
 /**
  * Splits the recording at `positionNs`. The first half stays in its block with the recording's ID, and the second
  * is a new recording in a new block after it. Flags and the marks of typed text go to the half they were made in.
+ * The split is one change, so one undo brings the whole recording back. That is why the original's files stay: the
+ * undo lists them in the page again. They go with the page's other unused files once nothing can bring them back.
  */
 export async function splitRecording(
   block: string,
@@ -74,12 +79,12 @@ export async function splitRecording(
     const flags = Flags.fromEntries([entry]);
     flags.moveToSplit(entry.id, [first.entry, second.entry]);
     const [one, two] = [first.entry, second.entry].map((half) => flags.into(withoutEnhanced(half)));
-    await writeEntry(pageId, block, one, { track: 'finished', drop: entry });
-    const secondBlock = await insertRecordingBlock(two, { after: block, track: 'finished' });
-    await moveMarks(entry.id, [first.entry, second.entry]);
-    await withTranscripts((module) => module.afterSplit(entry.id, two.id, positionNs, secondBlock));
+    const marks = moveMarks(entry.id, [first.entry, second.entry]);
+    // The transcript's changes join the split's undo step, so one undo takes all of it back.
+    const coalesce = { kind: 'drag' as const, target: `split-${entry.id}-${(splits += 1)}` };
+    const secondBlock = await writeSplit(pageId, block, entry, [one, two], marks, coalesce);
+    await withTranscripts((module) => module.afterSplit(entry.id, two.id, positionNs, secondBlock, coalesce));
     await shownOpenPage.get()?.saveNow();
-    await deleteAudioFiles(dir, entry);
     announce(t('audioMore.split.done', { first: lengthNs(first.durationNs), second: lengthNs(second.durationNs) }));
   } catch (error) {
     showToast({ message: describeError(error), tone: 'danger' });
@@ -94,10 +99,21 @@ export async function trimSilence(block: string, pageId: string, entry: Recordin
     await closePlayback();
     const edited = await audio.trimSilence(dir, entry);
     if (!edited) return void announce(t('audio.announce.nothingToTrim'));
+    // The old audio goes for good once the page is saved, so the person sees what is cut first. The new files are
+    // deleted when they decline, and the recording stays as it was.
+    const [before, after] = [lengthNs(activeNs(entry)), lengthNs(edited.durationNs)];
+    const ok = await confirm({
+      title: t('audio.block.trimConfirm'),
+      body: t('audio.block.trimBody', { before, after }),
+      confirmLabel: t('audio.block.trimAction'),
+      cancelLabel: t('audio.block.cancel'),
+      danger: true,
+    });
+    if (!ok) return void (await deleteAudioFiles(dir, edited.entry));
     await replace(block, pageId, entry, edited.entry);
-    // What was said later now starts earlier by the silence cut from the start.
-    const head = firstCaptureNs(edited.entry) - firstCaptureNs(entry);
-    if (head > 0) await withTranscripts((module) => module.afterTrim(entry.id, head));
+    // What was said later now starts earlier by the silence cut from the start, and nothing is said past the new end.
+    const head = Math.max(0, firstCaptureNs(edited.entry) - firstCaptureNs(entry));
+    await withTranscripts((module) => module.afterTrim(entry.id, head, edited.durationNs));
     announce(t('audio.announce.trimmed', { time: lengthNs(edited.durationNs) }));
   } catch (error) {
     showToast({ message: describeError(error), tone: 'danger' });
@@ -141,7 +157,7 @@ export async function removePart(block: string, pageId: string, entry: Recording
     await replace(block, pageId, entry, edited.entry);
     // The removed words go from the transcript, and the page's saved versions, which could bring the part back, go.
     await purgeRemoved(pageId, entry.id, startNs, endNs);
-    announce(t('audio.announce.trimmed', { time: lengthNs(edited.durationNs) }));
+    showToast({ message: t('audio.announce.trimmed', { time: lengthNs(edited.durationNs) }) });
   } catch (error) {
     showToast({ message: describeError(error), tone: 'danger' });
   }

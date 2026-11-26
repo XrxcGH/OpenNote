@@ -1,9 +1,10 @@
 // The earth, atmosphere, and ocean sciences kit window: a topic picker over the chosen tool. Each tool's code
 // loads the first time its topic is picked.
-import { Suspense } from 'react';
+import { Suspense, useRef } from 'react';
 import type { MessageKey } from '../../../../strings/t';
 import { t } from '../../../../strings/t';
 import { useStore } from '../../../../state/store';
+import { useKitReopen } from '../../kits/useKitReopen';
 import extra from '../../ui/extra.module.css';
 import tools from '../../ui/tools.module.css';
 import { KIT } from '../kit';
@@ -14,6 +15,8 @@ import styles from './earth.module.css';
 export function EarthKit() {
   const tool = useStore(earthChoice, (choice) => choice.tool);
   const Body = KIT[tool];
+  const panel = useRef<HTMLDivElement>(null);
+  useKitReopen('earth', tool, panel);
   return (
     <div className={`${tools.tool} ${styles.kit}`}>
       <label className={extra.field}>
@@ -30,9 +33,17 @@ export function EarthKit() {
           ))}
         </select>
       </label>
-      <Suspense fallback={null}>
-        <Body key={tool} />
-      </Suspense>
+      <div
+        ref={panel}
+        data-kit-form="earth"
+        data-kit-tool={tool}
+        data-kit-title={t(`kitEarth.tools.${tool}.title` as MessageKey)}
+        style={{ display: 'contents' }}
+      >
+        <Suspense fallback={null}>
+          <Body key={tool} />
+        </Suspense>
+      </div>
     </div>
   );
 }

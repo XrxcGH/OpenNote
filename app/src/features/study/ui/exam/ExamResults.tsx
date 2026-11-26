@@ -75,7 +75,9 @@ function Row(props: {
             : t('exams.results.got', { got: mark.got, of: mark.of })}
         </span>
       </div>
-      <p className={own.prompt}>{question.prompt}</p>
+      <p className={own.prompt}>
+        {question.kind === 'fill' ? question.prompt.replace(/\{\{[^{}]+?\}\}/g, '_____') : question.prompt}
+      </p>
       <dl className={own.compare}>
         <dt>{t('exams.results.yourAnswer')}</dt>
         <dd>{answerText(question, answer)}</dd>

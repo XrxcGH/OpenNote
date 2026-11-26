@@ -3,6 +3,7 @@
 // and in tests. A call the fake doesn't know resolves to null.
 
 import { answerProtect, fakeProtection } from '../services/notes/memory/protection';
+import { registerTestHook } from './web/testHooks';
 
 export type ShellEvent = { kind: string } & Record<string, unknown>;
 
@@ -46,6 +47,18 @@ export function resetFakeShell(): void {
   fakeProtection.clear();
   fake = memoryAnswer;
 }
+// Test builds only: record every call the interface makes to the shell, and refuse the named ones, so a test can
+// check that a window asked the shell to close, and what it does when the shell says no.
+let recorded: { name: string; args: Record<string, unknown> }[] = [];
+registerTestHook('shellRecord', (refuse: string[] = []) => {
+  recorded = [];
+  fake = (name, args) => {
+    recorded.push({ name, args });
+    if (refuse.includes(name)) throw new Error(`The shell refused ${name}.`);
+    return memoryAnswer(name, args);
+  };
+});
+registerTestHook('shellCalls', () => recorded);
 const listeners = new Set<(event: ShellEvent) => void>();
 
 export function setFakeShell(answer: Fake): void {

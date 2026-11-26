@@ -1,10 +1,11 @@
 // The table commands as changes to a table's data (ARCHITECTURE.md section 13; owner: WP6). Each takes the data
 // and the cell the caret is in, and returns the next data and the cell for the caret, or null when the command
 // doesn't apply. New rows and columns get fresh IDs; a moved row keeps its own, so later merges can match rows.
+import type { ResolvedPos } from '@tiptap/pm/model';
 import type { EditorState } from '@tiptap/pm/state';
-import { CellSelection } from '@tiptap/pm/tables';
+import { CellSelection, TableMap } from '@tiptap/pm/tables';
 import { clampColumnWidth, newColumn, newRow, normalizeTableData } from '../table/mapping';
-import type { TableData } from '../schema/specs';
+import { DEFAULT_COLUMN_WIDTH, type TableData } from '../schema/specs';
 
 /** A cell by row and column index. */
 export interface CellAt {
@@ -16,6 +17,22 @@ export interface TableChange {
   data: TableData;
   /** Where the caret goes, or null when the table is gone. */
   caret: CellAt | null;
+  /**
+   * The merge patch of the keys beside the grid (`data.sheet`) that the change also makes: references, names, merges,
+   * and rules that follow inserted, deleted, and moved lines, or the settings a structure command sets.
+   */
+  extra?: Record<string, unknown>;
+  /** Set by a merge that removes text: how many values go. The block asks before it applies the change (ADR 0064). */
+  warn?: { lost: number };
+  /** The data patches of other tables on the page whose formulas read this one (Sales!B2) and follow the change. */
+  also?: { block: string; data: Record<string, unknown> }[];
+}
+
+/** The tables of the page, for references between tables: this table's name, and the others' data. */
+export interface TableBook {
+  /** The name formulas use for this table (its own name, or Table1, Table2, ... in page order). */
+  name: string;
+  others: readonly { block: string; data: unknown }[];
 }
 
 export type TableOp =
@@ -28,37 +45,192 @@ export type TableOp =
   | { op: 'headerRow'; on?: boolean }
   | { op: 'moveRowUp' }
   | { op: 'moveRowDown' }
-  | { op: 'columnWidth'; width: number };
+  | { op: 'columnWidth'; width: number }
+  | StructureOp;
 
-/** The cell holding the selection's head, or null outside a table. */
-export function cellAt(state: EditorState): CellAt | null {
-  const selection = state.selection;
-  const $pos = selection instanceof CellSelection ? selection.$headCell : selection.$head;
+/** A block of cells by index into the table's rows and columns, both ends included. Without one, the caret's cell. */
+export interface Block {
+  row1: number;
+  col1: number;
+  row2: number;
+  col2: number;
+}
+
+/**
+ * The structure commands (ADR 0056, DESIGN 13.2): row height, fit, distribute, hide, freeze, outline groups, and insert
+ * and delete cells. They change `data.sheet` (and the columns' widths), and the spreadsheet registers the code that
+ * runs them (`setTableHooks`), so the editor does not import the spreadsheet.
+ */
+export type StructureOp =
+  | { op: 'rowHeight'; height: number | null; exact?: boolean; box?: Block }
+  | { op: 'fitRows'; box?: Block }
+  | { op: 'distributeRows'; box?: Block; heights?: number[] }
+  | { op: 'distributeColumns'; box?: Block }
+  /**
+   * `texts` is the text each cell of a column shows, by column index (the cells' own text by default); `measure`
+   * gives a line's width (a canvas measure of the body font by default).
+   */
+  | { op: 'fitColumns'; box?: Block; texts?: (column: number) => readonly string[]; measure?: (line: string) => number }
+  | { op: 'hideRows' | 'unhideRows' | 'hideColumns' | 'unhideColumns'; box?: Block }
+  | { op: 'freeze'; rows: number; cols: number }
+  | { op: 'freezeAtCaret' | 'freezeTopRow' | 'freezeFirstColumn' | 'unfreeze' }
+  | { op: 'groupRows' | 'ungroupRows' | 'groupColumns' | 'ungroupColumns'; box?: Block }
+  | { op: 'clearOutline'; axis: 'rows' | 'columns' }
+  /** `index` is the summary line below the group; without it, the group the caret is in (or below). */
+  | { op: 'collapse' | 'expand'; axis: 'rows' | 'columns'; index?: number }
+  | { op: 'showLevel'; axis: 'rows' | 'columns'; level: number }
+  | { op: 'insertCells'; shift: 'down' | 'right'; box?: Block }
+  | { op: 'deleteCells'; shift: 'up' | 'left'; box?: Block }
+  /**
+   * Merged cells (ADR 0064). `merge` keeps the top-left text, `keep` joins all the text with line breaks, `center` also
+   * centers (and unmerges a box that is one merge already), `across` merges each row of the box, `vertical` each column.
+   */
+  | { op: 'mergeCells'; mode: 'merge' | 'keep' | 'center' | 'across' | 'vertical'; box?: Block }
+  | { op: 'unmergeCells'; box?: Block }
+  /** Split cell: unmerges a merged cell, else splits a plain cell into `columns` by `rows` cells. */
+  | { op: 'splitCell'; columns: number; rows: number };
+
+/**
+ * A change of rows or columns, in the formulas' coordinates: zero-based, and A1's row 1 is the first body row.
+ * `at` is where lines are inserted or deleted; a move takes `count` lines from `from` and puts them at `to`.
+ */
+export type LineChange =
+  | { kind: 'insertRows' | 'deleteRows' | 'insertCols' | 'deleteCols'; at: number; count: number }
+  | { kind: 'moveRows' | 'moveCols'; from: number; count: number; to: number };
+
+/** The code the spreadsheet registers: the structure commands, and the references that follow a line change. */
+export interface TableHooks {
+  structure(data: TableData, at: CellAt, op: StructureOp, sheet: unknown, book?: TableBook): TableChange | null;
+  /** The change with formulas, names, rules, merges, and ranges brought up to date for `change`. */
+  follow(before: TableData, applied: TableChange, change: LineChange, sheet: unknown, book?: TableBook): TableChange;
+  /** Whether moving the row at `row` to `to` must be refused because it would cut a merge (ADR 0064). */
+  cutsMerge?(data: TableData, row: number, to: number, sheet: unknown): boolean;
+}
+
+let hooks: TableHooks | null = null;
+
+/** Registers the spreadsheet's code (null removes it). Tables without it behave as plain grids. */
+export function setTableHooks(next: TableHooks | null): void {
+  hooks = next;
+}
+
+const STRUCTURE_NAMES: ReadonlySet<string> = new Set<StructureOp['op']>([
+  'rowHeight',
+  'fitRows',
+  'distributeRows',
+  'distributeColumns',
+  'fitColumns',
+  'hideRows',
+  'unhideRows',
+  'hideColumns',
+  'unhideColumns',
+  'freeze',
+  'freezeAtCaret',
+  'freezeTopRow',
+  'freezeFirstColumn',
+  'unfreeze',
+  'groupRows',
+  'ungroupRows',
+  'groupColumns',
+  'ungroupColumns',
+  'clearOutline',
+  'collapse',
+  'expand',
+  'showLevel',
+  'insertCells',
+  'deleteCells',
+  'mergeCells',
+  'unmergeCells',
+  'splitCell',
+]);
+
+export const isStructureOp = (op: { op: string }): op is StructureOp => STRUCTURE_NAMES.has(op.op);
+
+/** The cell a position is in, or null outside a table. */
+function cellOf($pos: ResolvedPos): CellAt | null {
   for (let depth = $pos.depth; depth > 0; depth--) {
     const role = $pos.node(depth).type.spec.tableRole as string | undefined;
-    if (role === 'row') return { row: $pos.index(depth - 1), column: $pos.index(depth) };
+    if (role === 'row') {
+      // At a cell boundary (a cell selection's anchor and head), the table's map gives the slot past merged cells.
+      const next = $pos.nodeAfter?.type.spec.tableRole as string | undefined;
+      if (next === 'cell' || next === 'header_cell') {
+        const found = TableMap.get($pos.node(depth - 1)).findCell($pos.pos - $pos.start(depth - 1));
+        return { row: found.top, column: found.left };
+      }
+      return { row: $pos.index(depth - 1), column: $pos.index(depth) };
+    }
     if (role === 'cell' || role === 'header_cell') {
-      return { row: $pos.index(depth - 2), column: $pos.index(depth - 1) };
+      const table = $pos.node(depth - 2);
+      // A merged cell leaves slots out of its row, so the column comes from the table's map (ADR 0064).
+      const found = TableMap.get(table).findCell($pos.before(depth) - $pos.start(depth - 2));
+      return { row: found.top, column: found.left };
     }
   }
   if ($pos.depth === 0 && $pos.nodeAfter?.type.spec.tableRole === 'row') return { row: $pos.index(0), column: 0 };
   return null;
 }
 
+/** The cell holding the selection's head, or null outside a table. */
+export function cellAt(state: EditorState): CellAt | null {
+  const selection = state.selection;
+  return cellOf(selection instanceof CellSelection ? selection.$headCell : selection.$head);
+}
+
+/** The block of cells a cell selection covers, or null for a caret: the structure commands act on it. */
+export function selectionBox(state: EditorState): { row1: number; col1: number; row2: number; col2: number } | null {
+  const selection = state.selection;
+  if (!(selection instanceof CellSelection)) return null;
+  const a = cellOf(selection.$anchorCell);
+  const b = cellOf(selection.$headCell);
+  if (!a || !b) return null;
+  return {
+    row1: Math.min(a.row, b.row),
+    col1: Math.min(a.column, b.column),
+    row2: Math.max(a.row, b.row),
+    col2: Math.max(a.column, b.column),
+  };
+}
+
+/** `op` with the selected block filled in, when it acts on a block and has none. */
+export function withSelectionBox(op: TableOp, state: EditorState | null): TableOp {
+  if (!state || !isStructureOp(op) || ('box' in op && op.box)) return op;
+  const box = selectionBox(state);
+  return box && BOX_OPS.has(op.op) ? ({ ...op, box } as TableOp) : op;
+}
+
+const BOX_OPS: ReadonlySet<string> = new Set([
+  'rowHeight',
+  'fitRows',
+  'distributeRows',
+  'distributeColumns',
+  'fitColumns',
+  'hideRows',
+  'unhideRows',
+  'hideColumns',
+  'unhideColumns',
+  'groupRows',
+  'ungroupRows',
+  'groupColumns',
+  'ungroupColumns',
+  'insertCells',
+  'deleteCells',
+  'mergeCells',
+  'unmergeCells',
+]);
+
 /** The position inside the paragraph of a cell, at its start or end, in a table document. */
 export function cellTextPos(doc: EditorState['doc'], at: CellAt, end = false): number | null {
   const table = doc.firstChild;
   if (!table || at.row >= table.childCount) return null;
-  const row = table.child(at.row);
-  if (at.column >= row.childCount) return null;
-  let pos = 1; // inside the table
-  for (let r = 0; r < at.row; r++) pos += table.child(r).nodeSize;
-  pos += 1; // inside the row
-  for (let c = 0; c < at.column; c++) pos += row.child(c).nodeSize;
-  const cell = row.child(at.column);
+  const map = TableMap.get(table);
+  if (at.row >= map.height || at.column >= map.width) return null;
+  // The slot's cell: a merged cell answers for every slot it covers. Offsets count from inside the table.
+  const offset = map.map[at.row * map.width + at.column];
+  const cell = typeof offset === 'number' ? table.nodeAt(offset) : null;
+  if (!cell) return null;
   const paragraph = cell.firstChild;
-  // Inside the cell, then inside its paragraph.
-  return pos + 2 + (end && paragraph ? paragraph.content.size : 0);
+  // Inside the table, then the cell, then its paragraph.
+  return 1 + offset + 2 + (end && paragraph ? paragraph.content.size : 0);
 }
 
 const clampCell = (data: TableData, at: CellAt): CellAt => ({
@@ -70,12 +242,43 @@ function withRows(data: TableData, rows: TableData['rows']): TableData {
   return { ...data, rows };
 }
 
-/** Whether the op can run on this table with the caret in `at`. */
-export function canApply(data: TableData, at: CellAt, op: TableOp): boolean {
-  return applyTableOp(data, at, op) !== null;
+/**
+ * Whether the op can run on this table with the caret in `at`. The toolbar asks on every caret move, so a line command
+ * only checks the grid: the references that would follow it (every formula of this table and of the page's others) are
+ * brought along when the command runs, and they cannot make it fail.
+ */
+export function canApply(data: TableData, at: CellAt, op: TableOp, sheet?: unknown, book?: TableBook): boolean {
+  if (isStructureOp(op)) return applyTableOp(data, at, op, sheet, book) !== null;
+  // The same rules as applyGridOp, read off the table's size without building rows (this runs on every caret move).
+  const rows = Math.max(1, data.rows?.length ?? 0);
+  const columns = Math.max(1, data.columns?.length ?? 0);
+  const row = Math.min(Math.max(0, at.row), rows - 1);
+  const column = Math.min(Math.max(0, at.column), columns - 1);
+  const header = data.header === true;
+  switch (op.op) {
+    case 'rowAbove':
+    case 'rowBelow':
+    case 'columnLeft':
+    case 'columnRight':
+      return true;
+    case 'deleteRow':
+      return rows > 1;
+    case 'deleteColumn':
+      return columns > 1;
+    case 'headerRow':
+      return (op.on ?? !header) !== header;
+    case 'moveRowUp':
+    case 'moveRowDown': {
+      const to = op.op === 'moveRowUp' ? row - 1 : row + 1;
+      const first = header ? 1 : 0;
+      if (row < first || to < first || to >= rows) return false;
+      return !hooks?.cutsMerge?.(data, row, to, sheet);
+    }
+    case 'columnWidth':
+      return clampColumnWidth(op.width) !== clampColumnWidth(data.columns?.[column]?.width ?? DEFAULT_COLUMN_WIDTH);
+  }
 }
 
-/** The data after `op`, or null when it doesn't apply (moving the top row up, deleting the last column). */
 /** The narrowest a new column is made to keep a table inside its page. */
 const MIN_FITTED_COLUMN = 80;
 
@@ -95,9 +298,67 @@ export function fitAddedColumn(before: TableData, change: TableChange, room: num
   return { ...change, data: { ...change.data, columns } };
 }
 
-export function applyTableOp(input: TableData, at: CellAt, op: TableOp): TableChange | null {
+/**
+ * The data after `op`, or null when it doesn't apply. `sheet` is the table's `data.sheet` as stored: the structure
+ * commands read and change it, and inserting, deleting, and moving lines adjust the references, names, merges, and
+ * rules in it (ADR 0056). The change carries the patch in `extra`.
+ */
+export function applyTableOp(
+  input: TableData,
+  at: CellAt,
+  op: TableOp,
+  sheet?: unknown,
+  book?: TableBook,
+): TableChange | null {
   const data = normalizeTableData(input);
-  const { row, column } = clampCell(data, at);
+  const cell = clampCell(data, at);
+  if (isStructureOp(op)) return hooks?.structure(data, cell, op, sheet, book) ?? null;
+  if ((op.op === 'moveRowUp' || op.op === 'moveRowDown') && hooks?.cutsMerge) {
+    const to = op.op === 'moveRowUp' ? cell.row - 1 : cell.row + 1;
+    if (hooks.cutsMerge(data, cell.row, to, sheet)) return null;
+  }
+  const applied = applyGridOp(data, cell, op);
+  if (!applied) return null;
+  const change = referenceChange(data, cell, op);
+  return change && hooks ? hooks.follow(data, applied, change, sheet, book) : applied;
+}
+
+/** The change of rows or columns that `op` makes, in the formulas' coordinates (A1 is the first body row), or null. */
+function referenceChange(data: TableData, at: CellAt, op: TableOp): LineChange | null {
+  const base = data.header ? 1 : 0;
+  const { row, column } = at;
+  switch (op.op) {
+    case 'rowAbove':
+      return { kind: 'insertRows', at: Math.max(row, base) - base, count: 1 };
+    case 'rowBelow':
+      return { kind: 'insertRows', at: row + 1 - base, count: 1 };
+    case 'columnLeft':
+      return { kind: 'insertCols', at: column, count: 1 };
+    case 'columnRight':
+      return { kind: 'insertCols', at: column + 1, count: 1 };
+    case 'deleteRow':
+      return row < base ? null : { kind: 'deleteRows', at: row - base, count: 1 };
+    case 'deleteColumn':
+      return { kind: 'deleteCols', at: column, count: 1 };
+    case 'moveRowUp':
+    case 'moveRowDown': {
+      const to = op.op === 'moveRowUp' ? row - 1 : row + 1;
+      return { kind: 'moveRows', from: row - base, count: 1, to: to - base };
+    }
+    // A header row is not a body row: the first row is A1 until it becomes the header, and then the second row is.
+    case 'headerRow':
+      return (op.on ?? !data.header) === data.header
+        ? null
+        : data.header
+          ? { kind: 'insertRows', at: 0, count: 1 }
+          : { kind: 'deleteRows', at: 0, count: 1 };
+    default:
+      return null;
+  }
+}
+
+function applyGridOp(data: TableData, at: CellAt, op: Exclude<TableOp, StructureOp>): TableChange | null {
+  const { row, column } = at;
   const firstBody = data.header ? 1 : 0;
   switch (op.op) {
     case 'rowAbove': {

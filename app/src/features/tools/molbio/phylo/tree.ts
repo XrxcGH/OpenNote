@@ -158,7 +158,8 @@ export function reroot(root: TreeNode, outgroup: string): TreeNode {
   }
   const target = all.findIndex((n) => isLeaf(n) && n.name === outgroup);
   if (target === -1) return fail('phylo.e.unknownTaxon', { name: outgroup });
-  const neighbor = adj[target]![0]!;
+  const neighbor = adj[target]![0];
+  if (neighbor === undefined) return fail('phylo.e.fewTaxa');
   const build = (at: number, from: number, length: number | undefined): TreeNode => {
     const src = all[at]!;
     const kids = adj[at]!.filter((e) => e.to !== from).map((e) => build(e.to, at, e.length));

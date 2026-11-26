@@ -2,6 +2,8 @@
 
 The psychology and behavior kit is a tool window for perception, learning, decisions, response times, observation, and measurement. Open it from the command palette (Open the psychology and behavior tools), or search the palette for a tool by name or topic, such as d prime, Rescorla-Wagner, or Cohen's kappa. The tools are new in Beta, so check the answers against your own work while you learn them. They are for coursework and practice and give no clinical, diagnostic, or treatment advice.
 
+![The Psychology and behavior kit on its signal detection tab](../screens/kit-psychology-light.png)
+
 ## How every tool works
 
 - Pick what to work on, type or paste the data, and the results, notes, plots, and worked steps update as you type. Choose Example for a ready-made problem, or Reset the fields to start over.

@@ -1,3 +1,4 @@
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { CalcError } from '../numeric';
 import { annularFin, fin, finArray, finProfile } from './engine';

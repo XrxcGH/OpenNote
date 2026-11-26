@@ -147,6 +147,80 @@ fn appends_create_the_generation_lazily_and_group_commit_flushes() {
     assert_eq!(header.notebook_identity, "07".repeat(24));
 }
 
+/// A transaction is in the journal file once `append_txn` returns, so an app killed right after the core
+/// acknowledged an edit (a stroke the page already shows) still has it. A slow first generation, as on a CI disk,
+/// used to leave it only in the thread's queue.
+#[test]
+fn an_appended_transaction_is_in_the_file_when_append_returns() {
+    let s = setup(slow());
+    let handle = s
+        .thread
+        .open_page(&key(), sample_page().id, meta("boot-1"), base(0))
+        .unwrap();
+    s.fs.slow_creates(300);
+    let seq = handle.append_txn(&txn(1));
+    assert!(
+        s.fs.inner.exists(&generation_path(1)),
+        "the generation that holds the transaction was not made yet"
+    );
+    let records = read(&s, 1).records;
+    assert!(matches!(&records[..], [JournalRecord::Txn { seq: found, .. }] if *found == seq));
+    s.fs.slow_creates(0);
+    let next = handle.append_txn(&txn(2));
+    assert!(matches!(read(&s, 1).records.last(), Some(JournalRecord::Txn { seq, .. }) if *seq == next));
+}
+
+/// An append for a journal the thread no longer holds is never written, so it doesn't make the edit wait out
+/// `WRITE_WAIT`: it is answered at once, as not written.
+#[test]
+fn an_append_to_a_journal_the_thread_dropped_answers_at_once_as_not_written() {
+    let s = setup(slow());
+    let handle = s
+        .thread
+        .open_page(&key(), sample_page().id, meta("boot-1"), base(0))
+        .unwrap();
+    handle.commands.send(Command::Detach { id: handle.id }).unwrap();
+    let started = std::time::Instant::now();
+    let seq = handle.append_txn(&txn(1));
+    assert!(
+        started.elapsed() < Duration::from_millis(500),
+        "the append waited {:?} for a journal nobody holds",
+        started.elapsed()
+    );
+    assert!(!handle.written(seq), "a record no journal holds was reported written");
+}
+
+/// A journal thread slower than the append's wait doesn't hold the core. The append then doesn't claim the record
+/// is written, so the edit's answer says so and the interface keeps saying "Saving". Before, the wait's timeout
+/// was dropped, and a slow first generation still let an unwritten stroke show as Saved.
+#[test]
+fn an_append_that_outlasts_its_wait_is_not_reported_written() {
+    let mut s = setup(slow());
+    s.thread.write_wait = Duration::from_millis(50);
+    let handle = s
+        .thread
+        .open_page(&key(), sample_page().id, meta("boot-1"), base(0))
+        .unwrap();
+    s.fs.slow_creates(400);
+    let started = std::time::Instant::now();
+    let seq = handle.append_txn(&txn(1));
+    assert!(
+        started.elapsed() < Duration::from_millis(300),
+        "the append waited {:?}",
+        started.elapsed()
+    );
+    assert!(
+        !handle.written(seq),
+        "a record still in the thread's queue was reported written"
+    );
+    let deadline = std::time::Instant::now() + WAIT;
+    while !handle.written(seq) && std::time::Instant::now() < deadline {
+        std::thread::sleep(Duration::from_millis(10));
+    }
+    assert!(handle.written(seq), "the record was never reported written");
+    assert!(s.fs.inner.exists(&generation_path(1)));
+}
+
 #[test]
 fn save_begin_is_flushed_before_it_returns() {
     let s = setup(slow());
@@ -397,6 +471,7 @@ fn opening_a_journal_gives_up_when_the_journal_thread_does_not_answer() {
         codec: Arc::new(RegistryCodec::new()),
         thread: None,
         open_wait: Duration::from_millis(50),
+        write_wait: Duration::from_millis(50),
     };
     let started = std::time::Instant::now();
     let page = thread.open_page(&key(), sample_page().id, meta("boot-1"), base(0));

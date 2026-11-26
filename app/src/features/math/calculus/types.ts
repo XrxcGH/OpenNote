@@ -52,7 +52,12 @@ export type StepRule =
   | 'finiteSum'
   | 'geometric'
   | 'knownSeries'
-  | 'seriesNumeric';
+  | 'seriesNumeric'
+  // Equations
+  | 'collect'
+  | 'isolate'
+  | 'divideBoth'
+  | 'quadraticFormula';
 
 export interface Step {
   rule: StepRule;
@@ -68,7 +73,14 @@ export type CalculusKind = 'derivative' | 'integral' | 'limit' | 'sum';
 
 /** Why there is no answer. Each has a calm sentence in mathTools.steps.reasons. */
 export type NoAnswer =
-  'unsupported' | 'letters' | 'notInTable' | 'diverges' | 'noLimit' | 'undefinedOnInterval' | 'tooLarge';
+  | 'unsupported'
+  | 'letters'
+  | 'notInTable'
+  | 'diverges'
+  | 'noLimit'
+  | 'undefinedOnInterval'
+  | 'tooLarge'
+  | 'noRealSolution';
 
 /** An answer: the right side of the equation, as LaTeX and as plain text. */
 export interface Answer {

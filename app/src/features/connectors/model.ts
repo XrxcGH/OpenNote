@@ -115,7 +115,7 @@ export function cardActions(info: ConnectorInfo): CardActions {
 }
 
 /** The sentence for a failure. The cases are written out so each message key is checked as the strings define it. */
-export function errorText(code: ConnectorErrorCode, name: string): string {
+export function errorText(code: ConnectorErrorCode, name: string, id?: string): string {
   switch (code) {
     case 'offline':
       return t('connectors.error.offline');
@@ -148,7 +148,8 @@ export function errorText(code: ConnectorErrorCode, name: string): string {
     case 'rejected':
       return t('connectors.error.rejected', { name });
     case 'badInput':
-      return t('connectors.error.badInput');
+      // A WebDAV server takes a user name and a password, and is not a school's site (full walk B2-B14-2).
+      return t(id === 'webdav' ? 'connectors.error.badInputWebdav' : 'connectors.error.badInput');
     case 'foreignHost':
       return t('connectors.error.foreignHost', { name });
     case 'storage':

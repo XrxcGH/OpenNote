@@ -2,10 +2,11 @@
 // at every size, resizing without a pointer, F6 between regions, and focus staying on a control when the window
 // changes size class.
 
-import type { Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 import { expect, test } from '../fixtures';
 import { VIEWPORTS } from '../screens';
 import type { SizeClass } from '../screens';
+import { openSmart, runCommand } from './smart';
 
 const SIZES = Object.keys(VIEWPORTS) as SizeClass[];
 
@@ -149,5 +150,53 @@ test.describe('without a pointer', () => {
       await expect(page.locator('html')).toHaveAttribute('data-size-class', size);
       await expect.poll(() => page.evaluate(() => document.activeElement?.tagName)).not.toBe('BODY');
     }
+  });
+});
+
+test.describe('the title bar end group', () => {
+  // Between two neighbors there is one gap: the end group's own column gap (--space-3, 8 px). The Today button's left
+  // edge is its box edge, so its padding is inside the button and not in the distance. Half a pixel is sub-pixel
+  // rounding. Items that render nothing used to leave an empty wrapper, and each added one more gap.
+  const GAP = 8;
+  const TOLERANCE = 0.5;
+
+  async function box(locator: Locator) {
+    const rect = await locator.boundingBox();
+    if (!rect) throw new Error('not laid out');
+    return { left: rect.x, right: rect.x + rect.width };
+  }
+
+  test('Saved sits one gap before Today when nothing else shows', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/');
+    const saved = page.locator('[data-save-status]');
+    const today = page.getByRole('button', { name: "Open today's note" });
+    await expect(saved).toBeVisible();
+    await expect(today).toBeVisible();
+    const group = await saved.evaluate((el) => getComputedStyle(el.closest('div') as HTMLElement).columnGap);
+    expect(group).toBe(`${GAP}px`);
+    const distance = (await box(today)).left - (await box(saved)).right;
+    // Before the fix: the offline, safe mode, recording, and timer slots stood empty here, 8 + 4 * 8 = 40 px.
+    expect(distance).toBeLessThanOrEqual(GAP + TOLERANCE);
+  });
+
+  test('a running timer chip sits between Saved and Today with the same gap rhythm', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await openSmart(page);
+    await runCommand(page, 'Open timers');
+    const dialog = page.getByRole('dialog', { name: 'Timers' });
+    await dialog.getByRole('button', { name: 'Add timer' }).click();
+    await dialog.getByRole('button', { name: 'Start' }).click();
+    await expect(dialog.getByText('Running')).toBeVisible();
+    // The Timers window stays docked beside the page; it is not modal, and the chip shows while it is open.
+    const chip = page.getByRole('button', { name: /^Timers: .*Open the Timers window\.$/ });
+    await expect(chip).toBeVisible();
+    const saved = await box(page.locator('[data-save-status]'));
+    const chipBox = await box(chip);
+    const today = await box(page.getByRole('button', { name: "Open today's note" }));
+    expect(chipBox.left - saved.right).toBeGreaterThanOrEqual(0);
+    expect(chipBox.left - saved.right).toBeLessThanOrEqual(GAP + TOLERANCE);
+    expect(today.left - chipBox.right).toBeGreaterThanOrEqual(0);
+    expect(today.left - chipBox.right).toBeLessThanOrEqual(GAP + TOLERANCE);
   });
 });

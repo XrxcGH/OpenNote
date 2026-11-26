@@ -115,3 +115,21 @@ describe('the tutor with a cloud key', () => {
     expect(tutorState.get().turns.at(-1)).toMatchObject({ where: 'rules' });
   });
 });
+
+describe('the tutor ladder and long questions', () => {
+  it('says so, and sends nothing, when a question is longer than the tutor reads', async () => {
+    await askTutor('x'.repeat(1500));
+    expect(tutorState.get().turns.at(-1)?.text).toMatch(/longer than the tutor reads/);
+    expect(host.transport.ext.cloudSent).toEqual([]);
+  });
+
+  it('says the last hint was the last once, and takes no hint after it', async () => {
+    offline(true);
+    tutorState.set((state) => ({ ...state, rung: 3 }));
+    await nextHint();
+    const said = () => tutorState.get().turns.filter((turn) => /last hint/.test(turn.text)).length;
+    expect(said()).toBe(1);
+    await nextHint();
+    expect(said()).toBe(1);
+  });
+});

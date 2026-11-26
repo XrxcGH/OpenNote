@@ -25,7 +25,8 @@ test('adds summary statistics of the selection as a table', async ({ page }) => 
   await fillSales(page);
   await selectSales(page);
   await analyze(page, 'Statistics', 'Summary statistics');
-  await expect(page.getByRole('cell', { name: 'Median' })).toBeVisible();
+  // A new table uses spreadsheet keys, so its cells are grid cells (ADR 0063).
+  await expect(page.getByRole('gridcell', { name: 'Median' })).toBeVisible();
 });
 
 test('adds a box plot chart', async ({ page }) => {

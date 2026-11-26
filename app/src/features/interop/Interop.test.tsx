@@ -102,15 +102,16 @@ describe('Import notes', () => {
   });
 });
 
-describe('Export', () => {
-  async function openExport(menuLabel: 'Mitosis' | 'Lectures' | 'Biology 101') {
-    const tree = screen.getByRole('tree', { name: 'Notebooks' });
-    const row = await within(tree).findByRole('treeitem', { name: menuLabel });
-    await userEvent.click(row, { button: 'right' });
-    await userEvent.click(await screen.findByRole('menuitem', { name: 'Export…' }));
-    return screen.findByRole('dialog', { name: new RegExp(`^Export "${menuLabel}"`) });
-  }
+/** Opens the Export dialog from a notebook, section, or page menu. */
+async function openExport(menuLabel: 'Mitosis' | 'Lectures' | 'Biology 101') {
+  const tree = screen.getByRole('tree', { name: 'Notebooks' });
+  const row = await within(tree).findByRole('treeitem', { name: menuLabel });
+  await userEvent.click(row, { button: 'right' });
+  await userEvent.click(await screen.findByRole('menuitem', { name: 'Export…' }));
+  return screen.findByRole('dialog', { name: new RegExp(`^Export "${menuLabel}"`) });
+}
 
+describe('Export', () => {
   it('exports a notebook from its menu in the chosen format and shows the summary', async () => {
     const { platform } = await renderApp();
     const dialog = await openExport('Biology 101');
@@ -123,6 +124,30 @@ describe('Export', () => {
     expect(platform.interop.log.exports[0]).toMatchObject({ format: 'docx', scope: 'notebook', title: 'Biology 101' });
     await userEvent.click(within(dialog).getByRole('button', { name: 'Show in folder' }));
     expect(platform.interop.log.revealed).toEqual(['C:\\Users\\Sample\\Documents\\Biology 101']);
+  });
+
+  it('offers Remove personal information for Word only, and sends the choice', async () => {
+    localStorage.removeItem('opennote.export.removePersonal');
+    try {
+      const { platform } = await renderApp();
+      const dialog = await openExport('Biology 101');
+      await userEvent.click(within(dialog).getByRole('radio', { name: /Markdown files/ }));
+      expect(within(dialog).queryByRole('switch', { name: 'Remove personal information' })).toBeNull();
+      await userEvent.click(within(dialog).getByRole('radio', { name: /Word document/ }));
+      const remove = within(dialog).getByRole('switch', { name: 'Remove personal information' });
+      expect(remove.getAttribute('aria-checked')).toBe('false');
+      const helpId = remove.getAttribute('aria-describedby') ?? '';
+      expect(document.getElementById(helpId)?.textContent).toMatch(/^Leaves the names of authors/);
+      await userEvent.click(remove);
+      await userEvent.click(within(dialog).getByRole('button', { name: 'Choose a folder…' }));
+      await within(dialog).findByText('C:\\Users\\Sample\\Documents');
+      await expectNoAxeViolations(dialog);
+      await userEvent.click(within(dialog).getByRole('button', { name: 'Export' }));
+      await within(dialog).findByRole('heading', { name: 'Export finished' });
+      expect(platform.interop.log.exports[0]).toMatchObject({ format: 'docx', word: { removePersonal: true } });
+    } finally {
+      localStorage.removeItem('opennote.export.removePersonal');
+    }
   });
 
   it('opens on Word, ready to export the page, from the page Export as Word command', async () => {
@@ -168,6 +193,35 @@ describe('Export', () => {
     await userEvent.click(await within(dialog).findByRole('button', { name: 'Cancel' }));
     await within(dialog).findByRole('button', { name: 'Export' });
     expect(platform.interop.log.canceled).toHaveLength(1);
+  });
+});
+
+describe('Word export choices', () => {
+  it('offers Embed bundled fonts for Word only, and sends the choice', async () => {
+    localStorage.removeItem('opennote.export.embedFonts');
+    try {
+      const { platform } = await renderApp();
+      const dialog = await openExport('Biology 101');
+      await userEvent.click(within(dialog).getByRole('radio', { name: /Markdown files/ }));
+      expect(within(dialog).queryByRole('switch', { name: 'Embed bundled fonts' })).toBeNull();
+      await userEvent.click(within(dialog).getByRole('radio', { name: /Word document/ }));
+      const embed = within(dialog).getByRole('switch', { name: 'Embed bundled fonts' });
+      expect(embed.getAttribute('aria-checked')).toBe('false');
+      const helpId = embed.getAttribute('aria-describedby') ?? '';
+      expect(document.getElementById(helpId)?.textContent).toMatch(/^Puts the fonts that come with OpenNote/);
+      await userEvent.click(embed);
+      await userEvent.click(within(dialog).getByRole('button', { name: 'Choose a folder…' }));
+      await within(dialog).findByText('C:\\Users\\Sample\\Documents');
+      await expectNoAxeViolations(dialog);
+      await userEvent.click(within(dialog).getByRole('button', { name: 'Export' }));
+      await within(dialog).findByRole('heading', { name: 'Export finished' });
+      expect(platform.interop.log.exports[0]).toMatchObject({
+        format: 'docx',
+        word: { removePersonal: false, embedFonts: true },
+      });
+    } finally {
+      localStorage.removeItem('opennote.export.embedFonts');
+    }
   });
 });
 

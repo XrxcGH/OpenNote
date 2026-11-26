@@ -44,11 +44,13 @@ impl<'p, 'a> Keyed<'p, 'a> {
         })
     }
 
+    #[cfg(any(test, feature = "testing"))]
     /// The plist indexes of every archived object, in archive order.
     pub fn objects(&self) -> &[usize] {
         &self.objects
     }
 
+    #[cfg(any(test, feature = "testing"))]
     /// The plist indexes of the archived objects once each, in the order they first appear.
     pub fn distinct(&self) -> &[usize] {
         &self.distinct
@@ -100,6 +102,7 @@ impl<'p, 'a> Keyed<'p, 'a> {
         })
     }
 
+    #[cfg(any(test, feature = "testing"))]
     /// A number.
     pub fn number(&self, index: usize) -> Option<f64> {
         match self.plist.get(self.resolve(index))? {

@@ -55,8 +55,11 @@ function inlineTags(markdown: string): string[] {
 function docOf(page: PageId, entry: Entry, held: PageJson | null): Doc {
   const blocks = (held?.blocks ?? [])
     .map((block) => {
-      const markdown = typeof block.data.markdown === 'string' ? block.data.markdown : '';
-      return { id: block.id, kind: blockKind(block.type), markdown, plain: plainText(markdown) };
+      const kind = blockKind(block.type);
+      // A block of a type search does not read is found by its fallback, as in the desktop search (doc.rs).
+      const source = kind === 'other' ? block.fallback?.markdown : block.data.markdown;
+      const markdown = typeof source === 'string' ? source : '';
+      return { id: block.id, kind, markdown, plain: plainText(markdown) };
     })
     .filter((block) => block.markdown !== '');
   const inline = blocks.flatMap((block) => (block.kind === 'text' ? inlineTags(block.markdown) : []));

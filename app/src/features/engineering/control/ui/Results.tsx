@@ -1,5 +1,6 @@
 // A tool's outcome in the window: the results table, any further tables, the plots, the assumptions, and the worked
 // steps with typeset math. Everything a plot shows is also in the tables and steps, as text.
+import '../text';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
 import { useMemo } from 'react';

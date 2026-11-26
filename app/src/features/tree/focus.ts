@@ -26,14 +26,38 @@ export function siblingOrParent(rows: readonly Row[], id: NodeId): NodeId | null
   return parentId;
 }
 
+function rowsAround(state: TreeState, node: NodeSummary): readonly Row[] {
+  return treeOf(node) === 'pages'
+    ? pageRows(state, node.parentId, qolStore.get().showArchived)
+    : notebookRows(state, new Set(sessionStore.get().expanded), qolStore.get().showArchived);
+}
+
 /** The row to focus once `node` has gone from the rows the store shows now. */
 export function focusTargetAfterRemoval(state: TreeState, node: NodeSummary): FocusTarget | null {
   const tree = treeOf(node);
-  const rows =
-    tree === 'pages'
-      ? pageRows(state, node.parentId, qolStore.get().showArchived)
-      : notebookRows(state, new Set(sessionStore.get().expanded), qolStore.get().showArchived);
-  const id = siblingOrParent(rows, node.id);
+  const id = siblingOrParent(rowsAround(state, node), node.id);
   if (id) return { tree, id };
   return node.kind === 'page' && node.parentId ? { tree: 'notebooks', id: node.parentId } : null;
+}
+
+/**
+ * The row to focus once several rows have gone: the first row after the last of them that stays, else the last
+ * one before the first, else the parent, as for one row. `removed` holds every id that leaves, subpages included.
+ */
+export function focusTargetAfterRemovals(
+  state: TreeState,
+  nodes: readonly NodeSummary[],
+  removed: ReadonlySet<NodeId>,
+): FocusTarget | null {
+  const [first] = nodes;
+  const rows = rowsAround(state, first);
+  const gone = rows.flatMap((row, index) => (removed.has(row.id) ? [index] : []));
+  if (gone.length === 0) return focusTargetAfterRemoval(state, first);
+  const parentId = rows[gone[0]].parentId;
+  const kept = (row: Row) => !removed.has(row.id) && row.parentId === parentId;
+  const next = rows.slice(gone[gone.length - 1] + 1).find(kept);
+  const before = rows.slice(0, gone[0]).findLast(kept);
+  const id = (next ?? before)?.id ?? parentId;
+  if (id) return { tree: treeOf(first), id };
+  return first.kind === 'page' && first.parentId ? { tree: 'notebooks', id: first.parentId } : null;
 }

@@ -1,3 +1,4 @@
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { solveTruss as solveStatics, starterTruss } from '../../structures/truss';
 import { numberLatex } from '../kit/format';

@@ -46,6 +46,8 @@ OneNote files come over without a Microsoft account. Pick a section file (`.one`
 
 Text, headings, lists, to-do tags, tables, pictures, and attached files come over. Other tags become page tags. Ink and other content that Microsoft does not describe in its published format are listed in the review. A password-protected section is skipped; unlock it in OneNote first. To make a package, in OneNote choose File, then Export, then OneNote Package.
 
+A Word file keeps its styles, lists, paper size and margins, headers and footers, footnotes, and endnotes. Its comments come over with their replies, and its tracked changes become suggestions with their authors and times. Hidden text comes in visible, so nothing is lost. The review counts each of them.
+
 Charts and clip art that Word and PowerPoint save as EMF or WMF pictures come over as sharp SVG pictures. If one is damaged, it becomes its description in brackets and the review counts it.
 
 Before anything is added, a review lists what comes over and what does not. Choose Save report to keep that list. Undo takes an import back.
@@ -79,13 +81,22 @@ Take a photo of a page, a whiteboard, or a slide, and OpenNote can tidy it.
 
 The cleanup runs on this PC. If the edges of the page are not clear, the whole photo is used.
 
+### Word files and text formatting
+
+Import keeps fonts, sizes, colors, paragraph spacing, indents, tab stops, direction, and language. Themes, footnotes, endnotes, comments, and tracked changes come over too. Export writes the same formats back, so a Word file opens with the look it had. A font OpenNote lacks is kept by name. Turn on Embed bundled fonts to carry Carlito and Caladea along.
+
+### Paste and text formatting
+
+Paste from Word, Google Docs, or OneNote keeps the source formatting. A Paste Options notice offers keep source, merge, or plain text. Ctrl+Shift+V pastes plain text. A copy leaves inline formatting for Word and Google Docs, and plain text for other apps. See [Text formatting](text-formatting.md).
+
 ## Export
 
 Open Share, then Export, or press Ctrl+K and choose Export.
 
 ![The Export dialog with a section and the Word document format chosen](../screens/export-light.png)
 
-- Pages, sections, and whole notebooks export as Markdown, Word, or a single HTML file.
+- Pages, sections, and whole notebooks export as Markdown, Word, or a single HTML file. A Markdown file starts with the page's title, dates, tags, and [properties](search-and-links.md#tags-and-properties), so apps such as Obsidian can read them.
+- For Word, turn on Remove personal information to leave the names of authors and the dates out of comments, suggestions, and the file details. Turn on Embed bundled fonts to put the fonts that come with OpenNote into the file. Then it looks the same on a computer without them. OpenNote remembers both choices.
 - Tables export as `.xlsx` or `.csv`. Pages export as a PowerPoint file. [LaTeX](#export-as-latex) makes a `.tex` file.
 - Choose PDF files to export a section or a whole notebook as PDF. Each page is printed the same way as a page's own Export as PDF, into folders that follow your sections, with an `index.html` that links every file. A page that can't be printed is listed in the summary, and the rest still export. Cancel stops at once and keeps nothing.
 - A page's own Export and Print menu makes one PDF of that page. The first time you export a page's PDF, the Save window asks where. After that, the same dialog has an Update button that saves over that file without asking. The old file goes to the Recycle Bin first, and a Replaced notice with Undo puts it back. If the old file is on a network or removable drive, which has no Recycle Bin, OpenNote keeps a copy beside it as "Name (replaced).pdf" and tells you. Update remembers the file until you close OpenNote.
@@ -173,8 +184,12 @@ In another app, choose Share, then OpenNote. Text, a web link, a picture, or up 
 
 Share to OpenNote is on in Beta builds. Windows only lists OpenNote in the Share window once the app has its package identity. A signed release gets it from its installer. A developer can try it with `packaging/msix/register-dev.ps1`. To save web pages, use the [web clipper](web-clipper.md).
 
+## Share as a file
+
+Share as a file is in the command palette. It opens the Export dialog in its share mode, which makes one `.opennote` file with an optional password and page history. Opening that file later brings it in as a new notebook.
+
 ## Not built yet
 
-Share as a file is not finished and has no screen yet. Ink in OneNote files does not come over yet.
+Ink in OneNote files does not come over yet.
 
 Import and export are built. Agents opened each dialog once. Nobody has tried a real import by hand. OneNote files were tested with files made to match Microsoft's published description, not yet with files OneNote saved.

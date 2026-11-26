@@ -209,15 +209,59 @@ function PenChoices() {
   );
 }
 
+/** How long a pen holds still before a stroke snaps to a shape, in milliseconds. */
+export const HOLD_TIMES_MS = [300, 500, 800, 1200] as const;
+
+/**
+ * Snapping a held stroke to a shape, and how long to hold (full walk 2, A1-A10-6): before, only the Draw tab's Ink to
+ * shape button reached the shapes, and the hold could not be turned off or slowed.
+ */
+export function ShapeSnapping() {
+  const shapes = useSettings((settings) => settings.ink.shapes);
+  return (
+    <div role="group" aria-label={t('ink.settings.snapping')}>
+      <h3>{t('ink.settings.snapping')}</h3>
+      <Switch
+        label={t('ink.settings.snapHold')}
+        checked={shapes.hold}
+        onChange={(hold) => void updateSettings({ ink: { shapes: { hold } } })}
+      />
+      {shapes.hold && (
+        <RadioGroup<string>
+          label={t('ink.settings.snapHoldTime')}
+          value={String(shapes.holdMs)}
+          onChange={(value) => void updateSettings({ ink: { shapes: { holdMs: Number(value) } } })}
+        >
+          {HOLD_TIMES_MS.map((ms) => (
+            <RadioCard<string>
+              key={ms}
+              value={String(ms)}
+              label={t('ink.settings.snapHoldValue', { seconds: ms / 1000 })}
+            />
+          ))}
+        </RadioGroup>
+      )}
+      <Switch
+        label={t('ink.settings.inkToShape')}
+        checked={shapes.inkToShape}
+        onChange={(inkToShape) => void updateSettings({ ink: { shapes: { inkToShape } } })}
+      />
+    </div>
+  );
+}
+
 /** The ruler's, the measure's, and the compass's units, also in the Draw tab's Units menu. */
 function RulerUnits() {
   const units = useStore(inkPrefs, (state) => state.rulerUnits);
   return (
-    <RadioGroup<UnitsChoice> label={t('ink.settings.rulerUnits')} value={units} onChange={setRulerUnits}>
-      <RadioCard<UnitsChoice> value="auto" label={t('ink.settings.rulerUnitsAuto')} />
-      <RadioCard<UnitsChoice> value="metric" label={t('ink.settings.rulerUnitsMetric')} />
-      <RadioCard<UnitsChoice> value="imperial" label={t('ink.settings.rulerUnitsImperial')} />
-    </RadioGroup>
+    <>
+      <h3>{t('ink.settings.rulerUnits')}</h3>
+      <RadioGroup<UnitsChoice> label={t('ink.settings.rulerUnits')} value={units} onChange={setRulerUnits}>
+        <RadioCard<UnitsChoice> value="auto" label={t('ink.settings.rulerUnitsAuto')} />
+        <RadioCard<UnitsChoice> value="metric" label={t('ink.settings.rulerUnitsMetric')} />
+        <RadioCard<UnitsChoice> value="imperial" label={t('ink.settings.rulerUnitsImperial')} />
+      </RadioGroup>
+    </>
   );
 }
 
@@ -259,11 +303,14 @@ export default function PenSettings() {
   const geometryFlag = useFlag('ink.geometry');
   const snapFlag = useFlag('ink.snapTools');
   const geometry = geometryFlag && snapFlag;
+  const shapesOn = useFlag('ink.shapes');
   const hovering = useStore(inkPrefs, (state) => state.hover);
   const fields = useStore(inkPrefs, (state) => state.penFields);
+  // The Settings page already shows this name as its heading, so the section only carries it as a label (VA-1).
   return (
-    <section className={styles.section} aria-labelledby="ink-settings">
-      <h2 id="ink-settings">{t('ink.settings.title')}</h2>
+    <section className={styles.section} aria-label={t('ink.settings.title')}>
+      {/* Each choice group has a visible name, not only an accessible one (full walk VA-50). */}
+      <h3>{t('ink.settings.handedness')}</h3>
       <RadioGroup<Handedness>
         label={t('ink.settings.handedness')}
         value={ink.handedness}
@@ -273,6 +320,7 @@ export default function PenSettings() {
         <RadioCard<Handedness> value="right" label={t('ink.settings.handednessRight')} />
         <RadioCard<Handedness> value="left" label={t('ink.settings.handednessLeft')} />
       </RadioGroup>
+      <h3>{t('ink.settings.fingerDraw')}</h3>
       <RadioGroup<FingerDraw>
         label={t('ink.settings.fingerDraw')}
         value={ink.touch.finger}
@@ -300,6 +348,7 @@ export default function PenSettings() {
       {hover && (
         <Switch label={t('ink.settings.hover')} checked={hovering} onChange={(on) => setPrefs({ hover: on })} />
       )}
+      {shapesOn && <ShapeSnapping />}
       {geometry && <RulerUnits />}
       <PenChoices />
       {zoomBox && <ZoomBoxSettings />}

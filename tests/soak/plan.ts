@@ -68,6 +68,56 @@ export function someWords(random: () => number): string {
   return Array.from({ length: count }, () => WORDS[Math.floor(random() * WORDS.length)]).join(' ');
 }
 
+export const ARROWS = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'] as const;
+export const JUMPS = ['Home', 'End', 'Control+Home', 'Control+End', 'PageUp', 'PageDown'] as const;
+
+/** One action with every random choice already made, so the draws never depend on what the app did. */
+export type Step =
+  | { id: 'enter' | 'switch' }
+  | { id: 'type' | 'list' | 'heading' | 'bold' | 'italic'; words: string }
+  | { id: 'backspace' | 'undo' | 'redo'; times: number }
+  | { id: 'move'; keys: (typeof ARROWS)[number][] }
+  | { id: 'jump'; key: (typeof JUMPS)[number] }
+  | { id: 'scroll'; delta: number };
+
+/**
+ * The next action and all its random choices. The draws are in the order the soak has always made them, so a seed
+ * keeps its meaning, and the action at a given position can be found without a browser: `stepAt(seed, index)`.
+ */
+export function nextStep(random: () => number): Step {
+  const id = pickAction(random);
+  const some = (n: number) => 1 + Math.floor(random() * n);
+  switch (id) {
+    case 'enter':
+    case 'switch':
+      return { id };
+    case 'type':
+    case 'list':
+    case 'heading':
+    case 'bold':
+    case 'italic':
+      return { id, words: someWords(random) };
+    case 'backspace':
+      return { id, times: some(12) };
+    case 'undo':
+    case 'redo':
+      return { id, times: some(4) };
+    case 'move':
+      return { id, keys: Array.from({ length: some(10) }, () => ARROWS[Math.floor(random() * ARROWS.length)]) };
+    case 'jump':
+      return { id, key: JUMPS[Math.floor(random() * JUMPS.length)] };
+    case 'scroll':
+      return { id, delta: (random() - 0.5) * 1200 };
+  }
+}
+
+/** The action a seed gives at a position, counting from 0 as the soak's "Action N" message does. */
+export function stepAt(seed: number, index: number): Step {
+  const random = seeded(seed);
+  for (let i = 0; i < index; i += 1) nextStep(random);
+  return nextStep(random);
+}
+
 /** One reading of the app while the soak runs. */
 export interface Sample {
   /** Minutes since the soak began. */

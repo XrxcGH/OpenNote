@@ -147,6 +147,9 @@ async function freeformWithPen(page: Page): Promise<CDPSession> {
   await expect(page.getByRole('textbox', { name: /^Text box 2 / })).toBeVisible();
   await page.getByRole('tab', { name: 'Draw' }).click();
   await choose(page, 'Pen, Ink, 0.5 mm');
+  // The palm filter loads as its own chunk; until it has, a finger is the page's, not the pen tool's, and a tap on a
+  // text box puts the caret in it. On a busy runner that load is still running when the first finger lands.
+  await page.waitForLoadState('networkidle');
   return page.context().newCDPSession(page);
 }
 

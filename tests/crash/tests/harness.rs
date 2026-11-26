@@ -95,3 +95,42 @@ fn the_harness_catches_a_core_writer_that_damages_pages() {
     );
     assert_eq!(summary["fail_points_reached"], 1);
 }
+
+/// The nightly kill job's own command line, with its folders, a run-number seed, and a few kills, runs to the
+/// end. The job once left out `--data` and exited with 2 before killing anything.
+#[test]
+fn the_nightly_kill_command_runs() {
+    let workflow = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../.github/workflows/nightly.yml");
+    let workflow = std::fs::read_to_string(workflow).unwrap();
+    let line = workflow
+        .lines()
+        .map(str::trim)
+        .find(|l| l.starts_with("target/debug/opennote-crashtest run "))
+        .expect("the kill job runs the harness");
+    let dir = tempfile::tempdir().unwrap();
+    let args: Vec<String> = line
+        .split_whitespace()
+        .skip(1)
+        .map(|word| match word.trim_matches('"') {
+            "$KILL_NOTEBOOK" => dir.path().join("kill-notebook").display().to_string(),
+            "$KILL_DATA" => dir.path().join("kill-data").display().to_string(),
+            "$KILLS" => "3".to_owned(),
+            "$GITHUB_RUN_ID" => "41184765694".to_owned(),
+            other => {
+                assert!(!other.starts_with('$'), "the test knows the variable {other}");
+                other.to_owned()
+            }
+        })
+        .collect();
+    std::fs::create_dir_all(dir.path().join("kill-notebook")).unwrap();
+    let output = std::process::Command::new(EXE).args(&args).output().unwrap();
+    assert!(
+        output.status.success(),
+        "{line}\n{}{}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let summary: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(summary["iterations"], 3);
+    assert!(failures(&summary).is_empty());
+}

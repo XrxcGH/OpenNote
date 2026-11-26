@@ -73,7 +73,10 @@ export function analyzeSeries(termText: string, start = 1): SeriesResult {
   if (!Number.isInteger(start) || Math.abs(start) > 1e6) throw new KitError('badStart');
   const fn = readFunction(termText, ['n']);
   const a: Term = (n) => fn([n]);
-  if (![start, start + 1, start + 2].every((n) => Number.isFinite(a(n)))) throw new KitError('undefinedTerm', termText);
+  // Every term from the start through n = 0, and the 40 plotted, must be a number: a pole hides in that range.
+  for (let n = start; n < Math.max(start + 40, 1); n++) {
+    if (!Number.isFinite(a(n))) throw new KitError('undefinedTerm', `${termText} at n = ${n}`);
+  }
   const steps: KitStep[] = [
     step('series', `\\sum_{n=${start}}^{\\infty} ${termText}`, { term: termText, start: String(start) }),
   ];

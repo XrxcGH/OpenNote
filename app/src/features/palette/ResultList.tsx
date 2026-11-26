@@ -2,7 +2,7 @@
 // Focus stays in the input, which points at the highlighted option with aria-activedescendant. An option's name is
 // its title, then its shortcut in a <kbd>; a path is its description, and a command's state is aria-checked.
 
-import { useLayoutEffect } from 'react';
+import { useLayoutEffect, useRef } from 'react';
 import { formatChord } from '../../commands/keymap';
 import type { PaletteResult } from '../../registries/types';
 import { t } from '../../strings/t';
@@ -77,9 +77,10 @@ export function ResultList({ id, ranked, activeIndex, onHover, onChoose }: Resul
   // Once every provider has answered, an empty list says so where the results would be. The announcer has told
   // screen readers already, so the line isn't a live region.
   const empty = ranked.settled && ranked.flat.length === 0;
+  const fitBelow = useFitBelow();
   return (
     <>
-      <div role="listbox" id={id} aria-label={t('palette.results')} className={styles.list}>
+      <div ref={fitBelow} role="listbox" id={id} aria-label={t('palette.results')} className={styles.list}>
         {ranked.groups.map((group, g) => (
           <div key={group.id} role="group" aria-labelledby={`${id}-group-${group.id}`} className={styles.group}>
             <div role="presentation" id={`${id}-group-${group.id}`} className={styles.groupLabel}>
@@ -104,4 +105,44 @@ export function ResultList({ id, ranked, activeIndex, onHover, onChoose }: Resul
       {empty && <p className={styles.empty}>{t('palette.none')}</p>}
     </>
   );
+}
+
+/** The room the list has under its top edge, down to 16 px above the window's bottom (the dialog layer's own padding). */
+export const LIST_BOTTOM_MARGIN = 16;
+
+/**
+ * Keeps the list inside the window whatever sits above it: a title bar and an app bar, bigger text, or the compact
+ * layout. A fixed sum for what is above the list (the old CSS) is wrong as soon as one of those changes
+ * (Beta 8 walk VA-14: 19 px outside a 300 x 450 window).
+ */
+function useFitBelow() {
+  const element = useRef<HTMLElement | null>(null);
+  useLayoutEffect(() => {
+    const list = element.current;
+    if (!list) return;
+    const fit = () => {
+      const room = window.innerHeight - list.getBoundingClientRect().top - LIST_BOTTOM_MARGIN;
+      list.style.setProperty('--palette-list-room', `${Math.max(0, Math.floor(room))}px`);
+    };
+    fit();
+    // The observer reports the resize that fitting itself causes, so it fits on the next frame, not inside its callback.
+    let frame = 0;
+    const fitLater = () => {
+      frame ||= requestAnimationFrame(() => {
+        frame = 0;
+        fit();
+      });
+    };
+    window.addEventListener('resize', fitLater);
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(fitLater);
+    if (list.parentElement) observer?.observe(list.parentElement);
+    return () => {
+      window.removeEventListener('resize', fitLater);
+      cancelAnimationFrame(frame);
+      observer?.disconnect();
+    };
+  }, []);
+  return (node: HTMLElement | null) => {
+    element.current = node;
+  };
 }

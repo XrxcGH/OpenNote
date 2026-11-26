@@ -1,6 +1,7 @@
 // The spacecraft sizing and link budgets tool against its validation cases (first principles) and independent
 // working. Masses give back their mass ratios; a brute-force search checks optimal staging; the SMAD textbook's worked
 // numbers check power and torques; and link budgets are redone in linear power ratios.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { C, G0, K_B, SIGMA } from '../kit/constants';
 import { specProblems } from '../kit/checkSpec';

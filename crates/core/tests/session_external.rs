@@ -248,3 +248,36 @@ fn an_edited_page_md_is_kept_aside_when_the_watcher_asks_without_a_new_save() {
     // Asking again keeps nothing new.
     assert_eq!(handle.collect_edited_copies().unwrap().len(), 1);
 }
+
+/// T2-D04-6: another program changes the text in `page.json` and keeps its revision fields. The next save must not
+/// write over it unseen: the outside version is kept in `.conflicts`.
+#[test]
+fn an_outside_page_json_edit_that_keeps_the_revision_is_kept() {
+    let mut real = Real::new();
+    let handle = real.open();
+    let (_, insert) = text_block(1, "ZEXT alpha");
+    handle.apply(real.request(vec![insert])).unwrap();
+    handle.save_now().unwrap();
+    let page_dir = real
+        .notebook
+        .path()
+        .join(real.section.to_string())
+        .join(real.page.to_string());
+    let path = page_dir.join("page.json");
+    let saved = std::fs::read_to_string(&path).unwrap();
+    assert!(saved.contains("ZEXT alpha"), "{saved}");
+    std::fs::write(&path, saved.replace("ZEXT alpha", "ZEXT CHANGED OUTSIDE")).unwrap();
+
+    let (_, more) = text_block(2, "typed after");
+    handle.apply(real.request(vec![more])).unwrap();
+    handle.save_now().unwrap();
+
+    let conflicts = handle.conflicts().unwrap();
+    assert_eq!(conflicts.len(), 1, "the outside edit is kept in .conflicts");
+    let kept = std::fs::read_dir(page_dir.join(".conflicts"))
+        .unwrap()
+        .filter_map(Result::ok)
+        .map(|e| std::fs::read_to_string(e.path()).unwrap_or_default())
+        .any(|text| text.contains("ZEXT CHANGED OUTSIDE"));
+    assert!(kept, "the kept copy holds the outside text");
+}

@@ -4,8 +4,8 @@ import { describe, expect, it, vi } from 'vitest';
 import type { CoreClient, DecodedEnvelope } from '../../core/client';
 import type { ImagesClient } from '../../platform/types';
 import { resetStores } from '../../state/store';
-import { coreStalled, saveHealthStore } from './saveHealth';
-import { clientPrefix, createTauriPageService, readOnlyInfo, toVersionInfo } from './tauri';
+import { coreStalled, pageWaiting, saveHealthStore } from './saveHealth';
+import { clientPrefix, createTauriPageService, readOnlyInfo, toCoreEdit, toVersionInfo } from './tauri';
 
 const AT = '2026-10-01T09:00:00.000Z';
 const block = (id: string, markdown: string) => ({
@@ -59,6 +59,21 @@ function fakeCore(pages: DecodedEnvelope[]) {
     emit: (event: string, payload: unknown) => handlers.get(event)?.(payload),
   };
 }
+
+const frameInfo = () => ({
+  seq: 1,
+  changes: { pageFields: false, blocksChanged: [], blocksRemoved: [], assetsChanged: [] },
+  ui: null,
+  texts: {},
+  blocks: [],
+  title: null,
+  tags: null,
+  view: null,
+  assets: [],
+  canUndo: true,
+  canRedo: false,
+  strokes: 0,
+});
 
 const images = {} as ImagesClient;
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -138,6 +153,30 @@ describe('the Tauri page service’s requests', () => {
     expect(page.assetUrl('../x?y#z')).toBe('http://opennote-asset.localhost/p1/..%2Fx%3Fy%23z');
   });
 
+  it('sends the removal of a frame and of a lock the way the core reads it, not as a null the core ignores', async () => {
+    const { core, calls } = fakeCore([envelope([])]);
+    const page = await createTauriPageService(core, images).open('p1', { viewport: null });
+    await page.send({
+      edits: [
+        { edit: 'moveBlock', block: 'b1', frame: null },
+        { edit: 'moveBlock', block: 'b1', frame: { x: 1, y: 2 }, after: 'b2' },
+        { edit: 'patchBlock', block: 'b1', lock: null },
+        { edit: 'patchBlock', block: 'b1', lock: 'all' },
+        { edit: 'patchBlock', block: 'b1', data: { a: 1 } },
+      ],
+    });
+    const [request] = calls.pageApply.mock.calls[0] as unknown as [{ edits: unknown[] }];
+    expect(request.edits).toEqual([
+      { edit: 'moveBlock', block: 'b1', frame: {} },
+      { edit: 'moveBlock', block: 'b1', frame: { x: 1, y: 2 }, after: 'b2' },
+      { edit: 'patchBlock', block: 'b1', lock: 'none' },
+      { edit: 'patchBlock', block: 'b1', lock: 'all' },
+      { edit: 'patchBlock', block: 'b1', data: { a: 1 } },
+    ]);
+    const unchanged = { edit: 'moveBlock', block: 'b1', after: 'b2' } as const;
+    expect(toCoreEdit(unchanged)).toBe(unchanged);
+  });
+
   it('keeps edits, undo, and restores in the order they were asked for', async () => {
     const { core, calls } = fakeCore([envelope([])]);
     const order: string[] = [];
@@ -160,6 +199,67 @@ describe('the Tauri page service’s requests', () => {
     await expect(page.send({ edits: [] })).rejects.toMatchObject({ code: 'outOfOrder', resync: true });
     await page.send({ edits: [] });
     expect(calls.pageApply.mock.calls.at(-1)).toMatchObject([{ clientSeq: 8 }]);
+  });
+});
+
+describe('the Tauri page service’s unwritten edits', () => {
+  it('keeps a page saving after the core answers an edit as not yet in its journal, until a save holds it', async () => {
+    resetStores();
+    const { core, calls, emit } = fakeCore([envelope([])]);
+    const unwritten = { seq: 9, orderKeys: {}, canUndo: true, canRedo: false, written: false };
+    calls.pageApply.mockImplementationOnce(() => Promise.resolve(unwritten));
+    const page = await createTauriPageService(core, images).open('p1', { viewport: null });
+    await page.send({ edits: [] });
+    expect(pageWaiting(saveHealthStore.get())).toBe(true);
+    emit('core:saved', { page: 'p1', revision: 'r2', at: AT, through: 9 });
+    expect(pageWaiting(saveHealthStore.get())).toBe(false);
+  });
+
+  it('keeps a page saving after it closes with an unwritten edit, until a save holds the edit', async () => {
+    resetStores();
+    const { core, calls, emit } = fakeCore([envelope([])]);
+    calls.pageApply.mockImplementationOnce(() =>
+      Promise.resolve({ seq: 9, orderKeys: {}, canUndo: true, canRedo: false, written: false }),
+    );
+    let closed = () => {};
+    calls.pageClose.mockImplementationOnce(() => new Promise<void>((resolve) => (closed = resolve)));
+    const page = await createTauriPageService(core, images).open('p1', { viewport: null });
+    await page.send({ edits: [] });
+    const closing = page.close();
+    await settle();
+    expect(calls.pageClose).toHaveBeenCalled();
+    expect(pageWaiting(saveHealthStore.get())).toBe(true);
+    closed();
+    await closing;
+    expect(pageWaiting(saveHealthStore.get())).toBe(true);
+    emit('core:saved', { page: 'p1', revision: 'r2', at: AT, through: 9 });
+    expect(pageWaiting(saveHealthStore.get())).toBe(false);
+  });
+
+  it('keeps a page that failed to save failing after it closes, until a save reports it (walk bug N1-N03-5)', async () => {
+    resetStores();
+    const { core, emit } = fakeCore([envelope([]), envelope([])]);
+    const service = createTauriPageService(core, images);
+    const page = await service.open('p1', { viewport: null });
+    emit('core:save-failed', { page: 'p1', kind: 'readOnlyFile', message: 'x', retryInMs: null });
+    await page.close();
+    expect([...saveHealthStore.get().failing]).toEqual(['p1']);
+    emit('core:saved', { page: 'p1', revision: 'r2', at: AT });
+    expect([...saveHealthStore.get().failing]).toEqual([]);
+  });
+
+  it('keeps a page saving after a redo the core answers as not yet in its journal, until a save holds it', async () => {
+    resetStores();
+    const { core, calls, emit } = fakeCore([envelope([])]);
+    const redone = { ...frameInfo(), seq: 11, written: false };
+    Object.assign(calls, { pageRedo: vi.fn(() => Promise.resolve(redone)) });
+    const page = await createTauriPageService(core, images).open('p1', { viewport: null });
+    await page.redo();
+    expect(pageWaiting(saveHealthStore.get())).toBe(true);
+    emit('core:saved', { page: 'p1', revision: 'r2', at: AT, through: 10 });
+    expect(pageWaiting(saveHealthStore.get())).toBe(true);
+    emit('core:saved', { page: 'p1', revision: 'r3', at: AT, through: 11 });
+    expect(pageWaiting(saveHealthStore.get())).toBe(false);
   });
 });
 

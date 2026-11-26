@@ -6,9 +6,9 @@ import type { BootData, IpcError, Platform, Settings, SettingsPatch } from '../p
 import { RUST_SETTINGS_DEFAULTS } from '../boot/rustDefaults';
 import { createStore, useStore } from './store';
 
-/** Settings schema version 1 (ARCHITECTURE.md section 16.3). A test compares it with Rust's defaults. */
+/** Settings schema version 2 (ARCHITECTURE.md section 16.3). A test compares it with Rust's defaults. */
 export const DEFAULT_SETTINGS: Settings = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   minWriterSchema: 1,
   appearance: {
     theme: 'system',
@@ -28,6 +28,9 @@ export const DEFAULT_SETTINGS: Settings = {
   editing: RUST_SETTINGS_DEFAULTS.editing,
   ink: RUST_SETTINGS_DEFAULTS.ink,
   language: { locale: 'en-US' },
+  text: RUST_SETTINGS_DEFAULTS.text,
+  tables: RUST_SETTINGS_DEFAULTS.tables,
+  code: RUST_SETTINGS_DEFAULTS.code,
 };
 
 export const settingsStore = createStore<{ settings: Settings; readOnly: boolean }>(

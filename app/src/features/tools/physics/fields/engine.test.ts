@@ -1,6 +1,7 @@
 // The electric and magnetic fields tool against its validation cases (first principles) and independent working:
 // the field as minus the gradient of the potential, Gauss's law against superposition, capacitor limits, a polygon
 // that closes in on a circular loop, and the Lorentz force's right-hand rule.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { EPS0, E_CHARGE, K_E, MU0, M_P } from '../kit/constants';
 import { specProblems } from '../kit/checkSpec';

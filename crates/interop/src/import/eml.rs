@@ -202,7 +202,7 @@ fn header_table(message: &mime::Message) -> Block {
         (!value.is_empty()).then(|| vec![vec![Inline::marked(label, bold.clone())], vec![Inline::text(value)]])
     })
     .collect();
-    Block::Table { header: false, rows }
+    Block::table(false, rows)
 }
 
 /// Plain text as paragraphs: a blank line starts a new one, and a line break inside one stays.

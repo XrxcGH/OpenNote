@@ -1,13 +1,14 @@
 // One tool of the aerospace window: its form, the answer with units in the chosen system, plots, worked steps and
 // the Insert buttons. The tool's spec supplies the fields and the calculation; everything else is drawn here, so
 // every tool looks and behaves the same, with labeled fields and results readable as text.
+import '../text';
 import { createElement, useEffect, useId, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { t } from '../../../../strings/t';
 import { Button } from '../../../../ui';
 import type { AeroStep } from '../common';
 import { DataTable } from './DataTable';
-import { insert } from './insert';
+import { insert, insertLive } from './insert';
 import { PLOT_H, PLOT_W, plotTree, svgText } from './plot';
 import type { SvgNode } from './plot';
 import { plotInSystem, readNumber, runSpec, unitKey, visibleFields } from './spec';
@@ -176,6 +177,19 @@ function Answer({ spec, output, system }: { spec: ToolSpec; output: ToolOutput; 
         </Button>
         <Button variant="quiet" onClick={() => insert({ text: stepsHtml(tool, output.steps) })}>
           {t('kitAero.insertSteps')}
+        </Button>
+        <Button
+          variant="quiet"
+          onClick={(event) =>
+            void insertLive(event.currentTarget, {
+              title: toolText(tool, 'title'),
+              summary: answer,
+              rows: rows.map((entry) => ({ label: entry.label, value: entry.value, unit: '' })),
+              latex: output.latex,
+            })
+          }
+        >
+          {t('kitAero.insertLive')}
         </Button>
       </div>
       {(output.notes ?? []).map((note) => (

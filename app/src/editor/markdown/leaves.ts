@@ -1,11 +1,11 @@
 // The inline content of one paragraph, heading, or title as a flat list of leaves, ready to be written (SPEC 7.7).
-// A leaf is a run of text, a hard break, or an atom such as an image. Marks over whitespace at either edge of their
-// range are moved off it here, so that a delimiter never has whitespace just inside it.
+// A leaf is a run of text, a hard break, or an atom such as an image or a footnote reference. Marks over whitespace
+// at either edge of their range are moved off it here, except marks that show on spaces (R-WS-1). A hard break
+// never carries a mark (R-WS-2), so it always sits outside every range.
 import type { Mark, Node as PMNode } from '@tiptap/pm/model';
-import { MARK_ORDER } from '../schema/specs';
-import type { MarkName } from '../schema/specs';
 import { cleanText } from './escape';
 import { isSpaceChar } from './flanking';
+import { canonicalMarks } from './markOrder';
 
 export type Leaf =
   | { readonly kind: 'text'; readonly text: string; readonly marks: readonly Mark[] }
@@ -19,9 +19,15 @@ export function isCode(leaf: Leaf): boolean {
 /** The marks a leaf is wrapped in, outermost first. Code is written inside its leaf, so it is left out. */
 export function wrapping(leaf: Leaf | undefined): Mark[] {
   if (!leaf) return [];
-  return leaf.marks
-    .filter((mark) => mark.type.name !== 'code')
-    .sort((a, b) => MARK_ORDER.indexOf(a.type.name as MarkName) - MARK_ORDER.indexOf(b.type.name as MarkName));
+  return canonicalMarks(leaf.marks.filter((mark) => mark.type.name !== 'code'));
+}
+
+const SHOW_ON_SPACES = new Set(['strike', 'highlight', 'shade', 'box', 'insertion', 'deletion', 'foreign']);
+
+/** R-WS-1: the marks a space under them shows, which keep the spaces at their edges. */
+export function showsOnSpaces(mark: Mark): boolean {
+  if (mark.type.name === 'underline') return mark.attrs.line !== 'words';
+  return SHOW_ON_SPACES.has(mark.type.name);
 }
 
 function textLeaves(text: string, marks: readonly Mark[], singleLine: boolean): Leaf[] {
@@ -30,7 +36,7 @@ function textLeaves(text: string, marks: readonly Mark[], singleLine: boolean): 
     .flatMap((part, i): Leaf[] => {
       const run: Leaf[] = part === '' ? [] : [{ kind: 'text', text: part, marks }];
       if (i === 0) return run;
-      return [singleLine ? { kind: 'text', text: ' ', marks } : { kind: 'break', marks }, ...run];
+      return [singleLine ? { kind: 'text', text: ' ', marks } : { kind: 'break', marks: [] }, ...run];
     });
 }
 
@@ -97,6 +103,7 @@ function trimOnce(leaves: readonly Leaf[]): Leaf[] | null {
   for (let i = 0; i < leaves.length; i++) {
     if (isCode(leaves[i])) continue;
     for (const mark of wrapping(leaves[i])) {
+      if (showsOnSpaces(mark)) continue;
       const sides = [
         ['start', !has(leaves[i - 1], mark)],
         ['end', !has(leaves[i + 1], mark)],
@@ -110,7 +117,8 @@ function trimOnce(leaves: readonly Leaf[]): Leaf[] | null {
   return null;
 }
 
-/** SPEC 7.7: whitespace at either edge of a marked range is moved outside the delimiters. */
+/** SPEC 7.7 and R-WS-1: whitespace at either edge of a marked range is moved outside it, except for marks that show
+ * on spaces. */
 export function trimMarkEdges(leaves: readonly Leaf[]): Leaf[] {
   let current = leaves;
   for (let next = trimOnce(current); next; next = trimOnce(current)) current = next;

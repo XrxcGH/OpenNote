@@ -1,0 +1,109 @@
+/*
+ * The active cell of a table with spreadsheet keys (ADR 0063). Grid mode draws a thick outline inside the cell, Edit
+ * mode a thin one, so the mode shows without color alone. Outlines stay visible in forced colors.
+ */
+@layer components {
+  /* Settings, then Tables. */
+  .settings {
+    display: grid;
+    gap: var(--space-4);
+    max-inline-size: var(--size-reading-measure);
+  }
+
+  .settings h2 {
+    margin: 0;
+    font-size: var(--type-subtitle-size);
+    line-height: var(--type-subtitle-line);
+  }
+
+  .help {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+  }
+
+  .active {
+    outline: calc(var(--size-focus-ring-width) * 1.5) solid var(--color-focus-ring);
+    outline-offset: calc(var(--size-focus-ring-width) * -1.5);
+  }
+
+  .editing {
+    outline: 1px solid var(--color-focus-ring);
+    outline-offset: -1px;
+  }
+
+  @media (forced-colors: active) {
+    .active,
+    .editing {
+      outline-color: Highlight;
+    }
+  }
+}
+
+/* The Table keys section of the shortcut list, drawn like the list's own tables (ShortcutList.module.css). */
+@layer components {
+  .note {
+    margin-block: 0 var(--space-2);
+    color: var(--color-text-secondary);
+  }
+
+  .table {
+    inline-size: 100%;
+    border-collapse: collapse;
+  }
+
+  .table th,
+  .table td {
+    padding: var(--space-2) var(--space-3);
+    border-block-end: 1px solid var(--color-border-subtle);
+    text-align: start;
+    vertical-align: middle;
+  }
+
+  .table th:first-child,
+  .table td:first-child {
+    padding-inline-start: 0;
+  }
+
+  .name {
+    font-weight: var(--font-weight-regular);
+  }
+
+  .or {
+    margin-inline: var(--space-2);
+    color: var(--color-text-secondary);
+  }
+
+  .kbd {
+    padding: var(--space-1) var(--space-3);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-sunken);
+    color: var(--color-text-primary);
+    font-family: var(--font-ui);
+    white-space: nowrap;
+  }
+
+  /* In a window under 30rem the two columns cannot both fit beside the key caps, so each row stacks: the name, then
+     the keys. */
+  @media (max-width: 30rem) {
+    .table tbody,
+    .table tr,
+    .table th,
+    .table td {
+      display: block;
+    }
+
+    .table tr {
+      padding-block: var(--space-2);
+      border-block-end: 1px solid var(--color-border-subtle);
+    }
+
+    .table th,
+    .table td {
+      padding: var(--space-1) 0;
+      border-block-end: 0;
+    }
+  }
+}

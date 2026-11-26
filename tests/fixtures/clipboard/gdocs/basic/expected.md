@@ -2,7 +2,7 @@
 
 ## Project plan
 
-Ship the **first** *milestone* <u>by Friday</u>
+Ship the **first** *milestone*<u> by Friday</u>
 
 - Design
 

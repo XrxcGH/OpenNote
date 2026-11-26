@@ -5,6 +5,8 @@ import type { Extensions } from '@tiptap/core';
 import { Table, TableCell, TableHeader, TableRow } from '@tiptap/extension-table';
 import type { Schema } from '@tiptap/pm/model';
 import type { MarkName } from './constants';
+import { FootnoteRef } from '../extensions/footnoteRef';
+import { tableRowView } from '../table/rowViewSeam';
 import * as marks from './marks';
 import * as nodes from './nodes';
 
@@ -24,7 +26,8 @@ export type TextNodeName =
   | 'text'
   | 'hardBreak'
   | 'image'
-  | 'mathInline';
+  | 'mathInline'
+  | 'footnoteRef';
 export type TableNodeName =
   | 'doc'
   | 'table'
@@ -35,20 +38,41 @@ export type TableNodeName =
   | 'text'
   | 'hardBreak'
   | 'image'
-  | 'mathInline';
+  | 'mathInline'
+  | 'footnoteRef';
 
-/** SPEC 7.7's marks, in nesting order, outermost first. */
+/** SPEC 7.10's marks, in nesting order (R-MRK-24), outermost first. */
 export const markExtensions: Extensions = [
+  marks.Float,
   marks.Link,
+  marks.Comment,
+  marks.Insertion,
+  marks.Deletion,
+  marks.FormatChange,
+  marks.Dir,
+  marks.Lang,
+  marks.CharStyle,
   marks.Bold,
+  marks.Weight,
   marks.Italic,
   marks.Strike,
   marks.Underline,
   marks.Highlight,
+  marks.Shade,
   marks.TextColor,
+  marks.Font,
   marks.TextSize,
+  marks.Caps,
+  marks.Tracking,
+  marks.Scale,
+  marks.Shift,
+  marks.Kern,
+  marks.Otf,
+  marks.Effect,
+  marks.Box,
   marks.Subscript,
   marks.Superscript,
+  marks.Foreign,
   marks.Code,
 ];
 
@@ -70,6 +94,7 @@ export const textExtensions: Extensions = [
   nodes.MathBlock,
   nodes.MathInline,
   nodes.ImageNode,
+  FootnoteRef,
   ...markExtensions,
 ];
 
@@ -89,24 +114,54 @@ const SPANS = {
   rowspan: { default: 1, parseHTML: spanOf('rowspan') },
 };
 
+/**
+ * A row's or column's ID from the table's data, so the mapping reads IDs from nodes, not positions. It is never
+ * written to HTML or Markdown and never read from them, so a pasted row gets a fresh ID.
+ */
+const ID_ATTR = { default: null, rendered: false, parseHTML: () => null, keepOnSplit: false };
+
+/** A row carries its row ID. */
+export const IdRow = TableRow.extend({
+  addAttributes() {
+    return { ...this.parent?.(), rowId: ID_ATTR };
+  },
+  // Row virtualization's row view when it is registered (editor/table/rowViewSeam.ts), else ProseMirror's rows.
+  addNodeView() {
+    return tableRowView();
+  },
+});
+
 /** A cell holds exactly one paragraph, because a table cell is one line of Markdown (SPEC 6.3). */
 export const OneParagraphCell = TableCell.extend({
   content: 'paragraph',
   addAttributes() {
-    return { ...this.parent?.(), ...SPANS };
+    return { ...this.parent?.(), ...SPANS, colId: ID_ATTR };
   },
 });
 export const OneParagraphHeader = TableHeader.extend({
   content: 'paragraph',
   addAttributes() {
-    return { ...this.parent?.(), ...SPANS };
+    return { ...this.parent?.(), ...SPANS, colId: ID_ATTR };
+  },
+});
+
+/**
+ * The table node carries the merged cells its block declares (editor/table/spans.ts), so the normalizer keeps those
+ * spans and splits any other. Never written to HTML or Markdown and never read from them.
+ */
+export const MergeTable = Table.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      merges: { default: null, rendered: false, parseHTML: () => null, keepOnSplit: false },
+    };
   },
 });
 
 export const tableExtensions: Extensions = [
   TableDoc,
-  Table.configure({ resizable: false }),
-  TableRow,
+  MergeTable.configure({ resizable: false }),
+  IdRow,
   OneParagraphHeader,
   OneParagraphCell,
   nodes.Paragraph,
@@ -114,6 +169,7 @@ export const tableExtensions: Extensions = [
   nodes.HardBreak,
   nodes.MathInline,
   nodes.ImageNode,
+  FootnoteRef,
   ...markExtensions,
 ];
 

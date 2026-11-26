@@ -40,7 +40,7 @@ export interface BlockJson {
  * A type a new block may have: a version 1 type (spec 6.3) or an extension type (spec 6.4), such as OpenNote's own
  * `ext:org.opennote/...`. The core refuses any other name, so a bare name like "mindmap" fails to type-check here.
  */
-export type NewBlockType = 'text' | 'ink' | 'image' | 'file' | 'table' | `ext:${string}`;
+export type NewBlockType = 'text' | 'break' | 'ink' | 'image' | 'file' | 'table' | `ext:${string}`;
 export interface NewBlock {
   id: BlockId;
   type: NewBlockType;
@@ -117,6 +117,8 @@ export interface EditBatch {
 
 export interface TxnAck {
   seq: number;
+  /** False when the edit isn't in the core's journal file yet, so only a save through `seq` makes it safe. */
+  written?: boolean;
   orderKeys: Record<BlockId, string>;
   canUndo: boolean;
   canRedo: boolean;
@@ -164,6 +166,8 @@ export interface PageHistory {
 export type HistoryScope = { kind: 'page' | 'section' | 'notebook'; id: string };
 export interface HistoryAdmin {
   deleteHistory(notebook: string, scope: HistoryScope, keepNamed: boolean): Promise<void>;
+  /** Puts back the newest saved version of a page whose page.json is damaged (page_recover_damaged). */
+  recoverDamaged?(page: string): Promise<boolean>;
 }
 
 export type ImageSource =
@@ -218,6 +222,10 @@ export type PageErrorCode =
   | 'downloadFailed'
   | 'staleToken'
   | 'notImplemented'
+  /** The page's page.json can't be read. */
+  | 'damaged'
+  /** A newer OpenNote wrote the page, so this one leaves it unchanged. */
+  | 'newerFormat'
   /** The command gave up waiting for the core, which another command has held for too long. */
   | 'coreBusy';
 

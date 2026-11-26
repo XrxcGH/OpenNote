@@ -1,6 +1,7 @@
 // The video on the page: a native video element playing the file from the page's own asset address. Nothing is
 // loaded from the network, so it works offline. The player keys work while the video has focus, and captions from a
 // .vtt file show as a text track the viewer can turn on and off.
+import './text';
 import { useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import type { BlockJson, OpenPage } from '../../../services/pages/types';

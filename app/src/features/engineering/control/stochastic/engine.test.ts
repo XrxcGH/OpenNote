@@ -1,6 +1,7 @@
 // Random processes and the Kalman filter against closed forms worked by hand: the Ornstein-Uhlenbeck variance
 // σ²/(2a), its transient σ²/(2a)(1 − e^(−2at)), Brownian variance σ²t, the second-order variance 1/(4ζω³), the scalar
 // Riccati quadratic, and the plan's cases.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { ControlError, readNumberMatrix } from '../lib/errors';
 import { add, mul, normMax, transpose } from '../lib/linalg';

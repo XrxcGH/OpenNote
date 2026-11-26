@@ -257,11 +257,14 @@ fn the_platform_engines_exist_only_where_the_platform_has_them() {
     let status = Engines::platform(IntelSettings::recommended()).status();
     let of = |feature| status.iter().find(|s| s.feature == feature).unwrap();
     let windows = cfg!(all(windows, feature = "winrt"));
-    assert_eq!(of(Feature::Ocr).available, windows);
-    assert_eq!(of(Feature::Handwriting).available, windows);
+    // A Mac reads text in pictures and handwriting with Vision. Linux has an engine only once opennote-intel-engines
+    // installs Tesseract, which these tests don't.
+    let reads = windows || cfg!(all(target_os = "macos", feature = "winrt"));
+    assert_eq!(of(Feature::Ocr).available, reads);
+    assert_eq!(of(Feature::Handwriting).available, reads);
     assert_eq!(of(Feature::ReadAloud).available, windows);
     assert!(of(Feature::Summaries).available, "the summarizer works everywhere");
-    if !windows {
+    if !reads {
         assert!(of(Feature::Ocr)
             .unavailable_reason
             .as_deref()

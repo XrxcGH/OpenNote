@@ -29,6 +29,8 @@ describe('the sheet strip', () => {
     expect(parent.querySelector('[data-sheet="1"]')?.getAttribute('aria-current')).toBe('true');
     expect(parent.querySelector('[data-sheet="0"]')?.hasAttribute('aria-current')).toBe(false);
     expect(parent.querySelectorAll('svg')).toHaveLength(3);
+    // The Properties chip keeps clear of the rail.
+    expect(root.matches('[data-page-pane]')).toBe(true);
   });
 
   it('goes to a sheet when its button is pressed, and adds one with the last button', () => {

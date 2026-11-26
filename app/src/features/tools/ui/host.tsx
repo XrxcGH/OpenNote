@@ -1,10 +1,13 @@
 // The tool windows (Phase 10), opened from the command palette. In the app they dock beside the page; "Open in its
 // own window" moves one to a window of its own, where the app can make one. Opening a tool that is already open
 // brings it forward. The layer mounts on first use, so nothing here costs anything until a tool is opened.
-import { useEffect, useLayoutEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useLayoutEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import type { Root } from 'react-dom/client';
+import { isEnabled } from '../../../app/flags';
 import { createStore, useStore } from '../../../state/store';
+import { t } from '../../../strings/t';
+import { showToast } from '../../../ui';
 import { CalculatorTool } from './CalculatorTool';
 import { TimersTool } from './TimersTool';
 import { ExtraToolBody } from './extraTools';
@@ -29,6 +32,13 @@ interface Layer {
   used: readonly ToolId[];
 }
 
+// The code studio loads the first time its window opens (code:L04 owns the window).
+const CodeStudioWindow = lazy(() =>
+  import('../../codestudio')
+    .then((studio) => studio.loadCodeStudioWindow())
+    .then((loaded) => ({ default: loaded.CodeStudioWindow })),
+);
+
 const layer = createStore<Layer>({ open: [], pinned: [], epoch: 0, widths: {}, used: [] }, 'tool windows');
 let root: Root | null = null;
 
@@ -36,6 +46,15 @@ export function ToolBody({ tool }: { tool: ToolId }) {
   if (tool === 'timers') return <TimersTool />;
   if (tool === 'calculator') return <CalculatorTool />;
   if (tool === 'upcoming') return <UpcomingTool />;
+  if (tool === 'code')
+    // A popped window that names the studio stays empty and loads nothing while code.studio is off.
+    return (
+      isEnabled('code.studio') && (
+        <Suspense fallback={null}>
+          <CodeStudioWindow />
+        </Suspense>
+      )
+    );
   return <ExtraToolBody tool={tool} />;
 }
 
@@ -48,7 +67,10 @@ async function popOut(tool: ToolId, pinned: boolean): Promise<void> {
     await invoke('tool_window_open', { tool, pinned });
     closeTool(tool);
   } catch {
-    // The tool stays where it is.
+    // The tool stays where it is, and the person is told, so the button never seems to do nothing.
+    showToast({
+      message: t('smart.tools.window.popOutFailed', { title: t(TOOLS.find((one) => one.id === tool)!.title) }),
+    });
   }
 }
 
@@ -89,9 +111,14 @@ function useLayoutSize(): number {
     const main = document.querySelector('main');
     const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => setTick((n) => n + 1));
     if (main) observer?.observe(main);
+    // The desk gutter moves the page's scroll bar in from the region's edge without resizing the region.
+    const gutter =
+      main && typeof MutationObserver !== 'undefined' ? new MutationObserver(() => setTick((n) => n + 1)) : null;
+    if (main) gutter?.observe(main, { attributes: true, attributeFilter: ['data-desk-gutter'] });
     return () => {
       window.removeEventListener('resize', onResize);
       observer?.disconnect();
+      gutter?.disconnect();
     };
   }, []);
   return viewport;
@@ -139,6 +166,7 @@ function Windows() {
             tool={tool}
             width={placed.width}
             right={placed.right}
+            down={placed.down}
             overlay={overlay}
             stack={stack(id)}
             maxWidth={
@@ -196,16 +224,38 @@ function dock(id: ToolId): void {
     root = createRoot(host);
     root.render(<Windows />);
   }
-  if (!layer.get().open.includes(id)) layer.set((current) => ({ ...current, open: [...current.open, id] }));
+  const opening = !layer.get().open.includes(id);
+  if (opening) {
+    const from = document.activeElement;
+    if (from instanceof HTMLElement && from !== document.body) openers.set(id, from);
+    layer.set((current) => ({ ...current, open: [...current.open, id] }));
+  }
   raise(id);
-  requestAnimationFrame(() =>
-    document
-      .querySelector<HTMLElement>(`[data-tool="${id}"] [data-move]`)
-      ?.focus({ focusVisible: false } as FocusOptions),
-  );
+  focusWindow(id, 10);
+}
+
+/** Where focus was when each tool window opened, so closing the window gives it back. */
+const openers = new Map<ToolId, HTMLElement>();
+
+/**
+ * Moves focus to the window's header once it has rendered. The first tool opened in a session mounts the layer's root,
+ * which renders after the next frame, so the window may not exist yet: it tries again for a few frames.
+ */
+function focusWindow(id: ToolId, frames: number): void {
+  requestAnimationFrame(() => {
+    const header = document.querySelector<HTMLElement>(`[data-tool="${id}"] [data-move]`);
+    if (header) header.focus({ focusVisible: false } as FocusOptions);
+    else if (frames > 0) focusWindow(id, frames - 1);
+  });
 }
 
 export function closeTool(id: ToolId): void {
+  const window_ = document.querySelector(`[data-tool="${id}"]`);
+  // Focus inside the closing window (or lost with it) goes back to where it was when the window opened.
+  const hadFocus = Boolean(window_?.contains(document.activeElement));
+  const opener = openers.get(id);
+  openers.delete(id);
+  if (hadFocus && opener?.isConnected) requestAnimationFrame(() => opener.focus());
   layer.set((current) => ({
     ...current,
     open: current.open.filter((one) => one !== id),

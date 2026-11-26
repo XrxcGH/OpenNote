@@ -170,7 +170,9 @@ impl PageSession {
         Ok(())
     }
 
-    /// The page's open conflicts: other versions kept in `.conflicts/` (spec 14.1).
+    /// The page's open conflicts: other versions kept in `.conflicts/` (spec 14.1). A copy whose revision the page
+    /// already lists among its ancestors is already part of the page (an app without block merge kept it while
+    /// another device merged the two, ADR 0089), so it is not shown.
     pub(crate) fn conflicts(&self) -> Result<Vec<ConflictInfo>, CoreError> {
         let dir = self.dir().join(CONFLICTS_DIR);
         let entries = match self.ctx.fs.read_dir(&dir) {
@@ -178,11 +180,15 @@ impl PageSession {
             Err(e) if e.kind == FsErrorKind::NotFound => return Ok(Vec::new()),
             Err(e) => return Err(e.into()),
         };
+        let included = self.state().page.revision.ancestors.clone();
         let mut found = Vec::new();
         for entry in entries.iter().filter(|e| !e.is_dir) {
             let Some(rev) = entry.name.strip_suffix(".json").and_then(|r| RevisionId::parse(r).ok()) else {
                 continue;
             };
+            if included.contains(&rev) {
+                continue;
+            }
             let bytes = self
                 .ctx
                 .fs
@@ -331,6 +337,9 @@ impl PageSession {
             )
         };
         let bytes = self.ctx.backend.read_asset(&dir, &asset, range.clone())?;
+        // The range read, not the one asked for: an open end (`bytes=0-`) asks up to u64::MAX, and a Content-Range
+        // that says so makes the media element refuse the file.
+        let range = range.map(|asked| asked.start..asked.start.saturating_add(bytes.len() as u64));
         Ok(AssetBytes {
             mime: asset.mime,
             total: asset.bytes,

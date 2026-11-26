@@ -21,7 +21,7 @@ export default defineScreens([
     prepare: async (page) => {
       await ready(page);
       await page.keyboard.press('Control+KeyK');
-      await page.getByRole('combobox').fill('dark');
+      await page.locator('[data-scope="palette"]').getByRole('combobox').fill('dark');
       await page.getByRole('option', { name: /Toggle dark mode/ }).waitFor();
     },
   },

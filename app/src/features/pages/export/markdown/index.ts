@@ -7,6 +7,7 @@ export {
   escapeAttr,
   escapeHtml,
   renderHtml,
+  renderHtmlEach,
   renderInlineHtml,
   safeHref,
   voidEnd,

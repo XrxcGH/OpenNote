@@ -1,3 +1,4 @@
+import './text';
 import { describe, expect, it } from 'vitest';
 import { fit, monteCarlo, position, rng, stack } from './tolerances';
 import type { StackItem } from './tolerances';

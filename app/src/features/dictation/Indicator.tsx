@@ -6,6 +6,7 @@ import { t } from '../../strings/t';
 import { useStore } from '../../state/store';
 import { Button } from '../../ui';
 import styles from './dictation.module.css';
+import { usePageTopSlot } from './pageSlot';
 import { dictationState, stopDictation } from './session';
 
 export function Indicator() {
@@ -17,6 +18,8 @@ export function Indicator() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, []);
+  // The bar sits over the page area, which makes room for it, so it never hides the title or the page list.
+  const { attach, style: place } = usePageTopSlot(phase !== 'idle');
   if (phase === 'idle') return null;
   const label =
     phase === 'starting'
@@ -25,7 +28,7 @@ export function Indicator() {
         ? t('intelMore.dictation.hearing')
         : t('intelMore.dictation.listening');
   return (
-    <div className={`${styles.bar} ${phase === 'speaking' ? styles.speaking : ''}`}>
+    <div ref={attach} style={place} className={`${styles.bar} ${phase === 'speaking' ? styles.speaking : ''}`}>
       <div className={styles.pill} role="region" aria-label={t('intelMore.dictation.region')}>
         <span className={styles.dot} aria-hidden="true" />
         <span role="status" aria-live="polite" title={t('intelMore.dictation.privacy')}>

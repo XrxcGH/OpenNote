@@ -8,6 +8,7 @@ import { executeCommand } from '../../../commands/registry';
 import { useStore } from '../../../state/store';
 import { dismissActionToasts } from '../../../state/toasts';
 import { t } from '../../../strings/t';
+import { TitleBarMenuItem } from '../../../shell/titlebar/TitleBarMenuItem';
 import { IconButton } from '../../../ui';
 import { undoStore } from '../../tree';
 import { shownQueue } from './shown';
@@ -38,8 +39,12 @@ function runRedo(): void {
   else void executeCommand('edit.redo', undefined, 'titleBar');
 }
 
-export function UndoButton(_props: Presentation) {
+export function UndoButton({ presentation }: Presentation) {
   const { canUndo } = useHistoryState();
+  // In the More menu a row shows the name and the shortcut, like the other items.
+  if (presentation === 'menuItem') {
+    return <TitleBarMenuItem label={t('pageSync.undo')} command="page.undo" disabled={!canUndo} onPress={runUndo} />;
+  }
   return (
     <IconButton
       label={t('pageSync.undo')}
@@ -51,8 +56,11 @@ export function UndoButton(_props: Presentation) {
   );
 }
 
-export function RedoButton(_props: Presentation) {
+export function RedoButton({ presentation }: Presentation) {
   const { canRedo } = useHistoryState();
+  if (presentation === 'menuItem') {
+    return <TitleBarMenuItem label={t('pageSync.redo')} command="page.redo" disabled={!canRedo} onPress={runRedo} />;
+  }
   return (
     <IconButton
       label={t('pageSync.redo')}

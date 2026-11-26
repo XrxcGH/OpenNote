@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "minWriterSchema": 1,
+  "appearance": {
+    "theme": "dark",
+    "pageColor": "matchTheme",
+    "textSize": 110,
+    "uiScale": 100,
+    "motion": "system",
+    "density": "auto"
+  },
+  "storage": { "notesFolder": null },
+  "startup": { "openLastPage": true },
+  "shortcuts": {},
+  "keymap": { "preset": "onenote" },
+  "updates": { "install": "auto", "channel": "beta", "skippedVersion": null },
+  "setup": { "completedSteps": ["welcome", "look"] },
+  "experimental": { "flags": {} },
+  "editing": { "markdownShortcuts": true, "slashMenu": false, "formattingBar": "touchAndPen" },
+  "ink": { "penSelectsAndTypes": false, "handedness": "left" },
+  "language": { "locale": "en-US" }
+}

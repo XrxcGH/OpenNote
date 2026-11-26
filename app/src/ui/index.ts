@@ -11,9 +11,11 @@ export { Dialog, confirm } from './Dialog';
 export { useDismiss } from './dismiss';
 export type { DialogAction, DialogProps } from './Dialog';
 export { FocusScope } from './FocusScope';
+export { PathText, displayPath } from './PathText';
 export {
   Books,
   Candle,
+  DeskMotifs,
   DeskScene,
   EmptyArt,
   Glint,
@@ -26,7 +28,7 @@ export {
 export type { ArtProps, EmptyKind, Sky } from './illustrations';
 export { useDelayedFlag, useLayer, useLongPress } from './hooks';
 export type { PointerHandlers, PressEvent } from './hooks';
-export type { IconName, IconProps } from './icons';
+export type { IconComponent, IconName, IconProps } from './icons';
 export { openMenu } from './Menu';
 export type { MenuAnchor, MenuItemSpec, MenuOptions } from './Menu';
 export { Popover, useHoverOpen } from './Popover';

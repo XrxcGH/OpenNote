@@ -31,7 +31,8 @@
   }
 
   .tab {
-    min-block-size: var(--size-target-pointer);
+    min-inline-size: var(--target-size);
+    min-block-size: var(--target-size);
     padding: var(--space-1) var(--space-2);
     font: inherit;
     color: var(--color-text-secondary);
@@ -76,7 +77,7 @@
     box-sizing: border-box;
     inline-size: 100%;
     min-inline-size: 0;
-    min-block-size: var(--size-target-pointer);
+    min-block-size: var(--target-size);
     padding: var(--space-1) var(--space-2);
     font: inherit;
     color: var(--color-text-primary);
@@ -94,6 +95,8 @@
   }
 
   .field small {
+    /* A hint is already small text; the browser's default for <small> would shrink it again (walk VB-12). */
+    font-size: inherit;
     color: var(--color-text-secondary);
   }
 
@@ -101,7 +104,7 @@
     display: flex;
     align-items: center;
     gap: var(--space-2);
-    min-block-size: var(--size-target-pointer);
+    min-block-size: var(--target-size);
   }
 
   .results {
@@ -147,8 +150,9 @@
     color: var(--color-text-secondary);
   }
 
-  .details summary {
-    min-block-size: var(--size-target-pointer);
+  .details summary,
+  .plainDetails summary {
+    min-block-size: var(--target-size);
     display: flex;
     align-items: center;
     cursor: pointer;
@@ -220,8 +224,8 @@
   }
 
   .key {
-    min-inline-size: var(--size-target-pointer);
-    min-block-size: var(--size-target-pointer);
+    min-inline-size: var(--target-size);
+    min-block-size: var(--target-size);
     padding: var(--space-1);
     font-size: var(--type-body-size);
     color: var(--color-text-primary);

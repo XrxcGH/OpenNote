@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+// checks-disable-file brand-consistency: colors and sizes here are clipboard CSS for other apps or test inputs, not design values.
 import { describe, expect, it } from 'vitest';
 import { daysToIso } from './dates';
 import { DE_DE, EN_US, FR_FR, type Locale } from './locale';
@@ -12,7 +13,10 @@ import {
   tableFromText,
 } from './paste';
 import type { PasteResult } from './paste';
-import { CALC_TABLE, EXCEL_DE, EXCEL_EN, sheetsTable } from './paste.fixtures';
+import { CALC_TABLE, EXCEL_DE, EXCEL_EN, EXCEL_STYLED, sheetsFormulaTable, sheetsTable } from './paste.fixtures';
+import { readClip, readOwn } from './paste/clip';
+import { cssBorder, cssColor, msoCode } from './paste/css';
+import { a1ToR1C1, r1c1ToA1 } from './paste/formula';
 import type { Value } from './values';
 
 const NARROW = String.fromCharCode(0x202f);
@@ -27,7 +31,9 @@ function text(input: string, locale: Locale = EN_US): PasteResult {
 const types = (r: PasteResult): string[] => r.table.columns.map((c) => c.type);
 const names = (r: PasteResult): string[] => r.table.columns.map((c) => c.name);
 const values = (r: PasteResult): Value[][] => r.table.rows.map((row) => row.cells.map((c) => c.value));
-const day = (iso: string): number => Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10)) / 86_400_000;
+/** The serial of an ISO date: days since 1899-12-30, which is 25569 days before 1970-01-01. */
+const day = (iso: string): number =>
+  Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10)) / 86_400_000 + 25_569;
 
 describe('delimited text', () => {
   it('reads RFC 4180 quoting', () => {
@@ -262,5 +268,105 @@ describe('ordinary web tables and the clipboard choice', () => {
   it('returns nothing when neither form is a table', () => {
     expect(tableFromClipboard({ html: `<p>Intro</p>${one}` }, EN_US)).toBeNull();
     expect(tableFromClipboard({}, EN_US)).toBeNull();
+  });
+});
+
+describe('clipboard formulas in R1C1 form', () => {
+  it('turns A1 references into steps from the cell, and back', () => {
+    // From A4 (row 3, column 0): A2 is two rows up, $B$1 is absolute row 1, column 2.
+    expect(a1ToR1C1('=SUM(A2:A3)+$B$1*B$2', { row: 3, col: 0 })).toBe('=SUM(R[-2]C[0]:R[-1]C[0])+R1C2*R2C[1]');
+    expect(r1c1ToA1('=SUM(R[-2]C[0]:R[-1]C[0])+R1C2*R2C[1]', { row: 3, col: 0 })).toBe('=SUM(A2:A3)+$B$1*B$2');
+  });
+
+  it('takes a header row off absolute rows only', () => {
+    expect(r1c1ToA1('=R[-1]C+R3C1', { row: 2, col: 1 }, 1)).toBe('=B2+$A$2');
+  });
+
+  it('leaves text, quoted sheet names, column names, and functions alone', () => {
+    expect(a1ToR1C1('=LOG10(A1)&"B2"&[Qty]&\'A1\'!A1', { row: 0, col: 0 })).toBe(
+      '=LOG10(R[0]C[0])&"B2"&[Qty]&\'A1\'!R[0]C[0]',
+    );
+    expect(r1c1ToA1('=_xlfn.CONCAT("R[1]C",RC)', { row: 0, col: 0 })).toBe('=CONCAT("R[1]C",A1)');
+  });
+
+  it('gives #REF! for a reference above the first row', () => {
+    expect(r1c1ToA1('=R[-2]C[0]', { row: 0, col: 0 })).toBe('=#REF!');
+  });
+
+  it('gives #REF! for a reference past the last row or column (1,048,576 rows, 16,384 columns)', () => {
+    expect(r1c1ToA1('=R[99999999]C[0]', { row: 0, col: 0 })).toBe('=#REF!');
+    expect(r1c1ToA1('=RC[20000]', { row: 0, col: 0 })).toBe('=#REF!');
+    expect(r1c1ToA1('=R1048577C1', { row: 0, col: 0 })).toBe('=#REF!');
+    // The last cell itself is XFD1048576.
+    expect(r1c1ToA1('=R1048576C16384', { row: 0, col: 0 })).toBe('=$XFD$1048576');
+  });
+});
+
+describe('clipboard styles', () => {
+  it('reads CSS colors, borders, and Excel number formats', () => {
+    expect(cssColor('rgb(255, 0, 0)')).toBe('#ff0000');
+    expect(cssColor('#0F0')).toBe('#00ff00');
+    expect(cssColor('windowtext')).toBeNull();
+    expect(cssBorder('.5pt solid windowtext')).toEqual({ style: 'thin' });
+    expect(cssBorder('2px solid #cc0000')).toEqual({ style: 'medium', color: '#cc0000' });
+    expect(cssBorder('2.0pt double black')).toEqual({ style: 'double' });
+    expect(msoCode(String.raw`"\0022$\0022\#\,\#\#0\.00"`)).toBe('"$"#,##0.00');
+    expect(msoCode('Percent')).toBe('0.00%');
+    expect(msoCode('General')).toBeNull();
+  });
+
+  it('reads an Excel copy as cells with styles, values, R1C1 formulas, and widths', () => {
+    const clip = readClip({ html: EXCEL_STYLED });
+    expect(clip?.source).toBe('excel');
+    expect(clip?.widths).toEqual([64]);
+    expect(clip?.rows.map((row) => row[0].style)).toEqual([
+      { font: { bold: true, color: '#ff0000' } },
+      { fmt: '#,##0.00' },
+      { fmt: '#,##0.00' },
+      { fmt: '#,##0.00' },
+    ]);
+    expect(clip?.rows[3][0]).toMatchObject({ num: 1244.5, formula: '=SUM(R[-2]C[0]:R[-1]C[0])' });
+  });
+
+  it('reads Sheets formulas as written and drops the body font every cell shares', () => {
+    const clip = readClip({ html: sheetsFormulaTable() });
+    expect(clip?.rows[2][0]).toEqual({ text: '5', num: 5, formula: '=R[-2]C[0]+R[-1]C[0]' });
+  });
+
+  it('reads LibreOffice format codes from sdnum and spans as merges', () => {
+    const clip = readClip({ html: CALC_TABLE });
+    expect(clip?.rows[1][1].style).toEqual({ fmt: '0.00' });
+    const merged = readClip({
+      html: '<table><tr><td colspan=2 rowspan=2>a</td><td>b</td></tr><tr><td>c</td></tr></table>',
+    });
+    expect(merged?.spans).toEqual([{ row: 0, col: 0, rows: 2, cols: 2 }]);
+    expect(merged?.rows.map((row) => row.map((cell) => cell.text))).toEqual([
+      ['a', '', 'b'],
+      ['', '', 'c'],
+    ]);
+  });
+
+  it('reads tab-separated text, and leaves one value to the editor', () => {
+    expect(readClip({ text: 'a\tb\r\nc\td\r\n' })?.rows.map((row) => row.map((c) => c.text))).toEqual([
+      ['a', 'b'],
+      ['c', 'd'],
+    ]);
+    expect(readClip({ text: 'one value' })).toBeNull();
+  });
+
+  it('ignores an own form it does not know, and invalid styles inside one', () => {
+    expect(readOwn('{"v":2,"rows":[[{"m":"a"}]]}')).toBeNull();
+    expect(readOwn('not json')).toBeNull();
+    const form = {
+      v: 1,
+      header: false,
+      top: 0,
+      left: 0,
+      rows: [[{ m: 'a', s: { fill: '<script>' } }]],
+      spans: [{ row: 0, col: 0, rows: 9, cols: 9 }],
+    };
+    const clip = readOwn(JSON.stringify(form));
+    expect(clip?.rows[0][0]).toEqual({ text: 'a', markdown: 'a' });
+    expect(clip?.spans).toEqual([]);
   });
 });

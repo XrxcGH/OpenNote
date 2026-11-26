@@ -9,6 +9,7 @@ import { isEnabled } from '../../app/flags';
 import { commandContext } from '../../commands/registry';
 import type { SearchHit, SearchResponse, Snippet, TagNode } from '../../services/search/types';
 import type { OverlayProps } from '../../shell/commandbar/overlays';
+import { qolStore } from '../../state/qol';
 import { formatDate } from '../../strings/format';
 import { t } from '../../strings/t';
 import { Button, Dialog, EmptyArt, Switch, TextField, announce } from '../../ui';
@@ -135,7 +136,7 @@ function Preview({ hit }: { hit: SearchHit | undefined }) {
   if (!hit) return <p className={styles.previewEmpty}>{t('search.panel.previewEmpty')}</p>;
   return (
     <div className={styles.preview} aria-label={t('search.panel.preview')} role="region">
-      <h3 className={styles.previewTitle}>
+      <h3 className={styles.previewTitle} data-user-content>
         <Highlighted text={hit.title || t('tree.page.noneTitle')} ranges={hit.title ? hit.titleHighlights : []} />
       </h3>
       <p className={styles.previewDate}>{t('search.panel.changed', { date: formatDate(hit.modified) })}</p>
@@ -256,7 +257,7 @@ function Results({ id, hits, index, status, empty, onHover, onOpen }: ResultsPro
           onPointerMove={() => onHover(hit.page)}
           onClick={() => onOpen(hit)}
         >
-          <span className={styles.optionTitle}>
+          <span className={styles.optionTitle} data-user-content>
             <Highlighted text={hit.title || t('tree.page.noneTitle')} ranges={hit.title ? hit.titleHighlights : []} />
           </span>
           {hit.heading && (
@@ -286,6 +287,8 @@ function useResultKeys(hits: SearchHit[], onClose: () => void, text: string) {
     if (!hit) return;
     const { notes } = commandContext('palette');
     onClose();
+    // Opening the page already selected under Home fires no navigation, so Home leaves here (walk 9).
+    qolStore.set((state) => (state.homeOpen ? { ...state, homeOpen: false } : state));
     // A result that points at a block jumps to it and marks it for a moment.
     if (isEnabled('search.paragraphLinks') && hit.snippet) void openAndReveal(notes, hit.page, hit.snippet.block);
     else void openPage(notes, hit.page);

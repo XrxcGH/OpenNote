@@ -25,6 +25,7 @@ pub fn call(app: &AppHandle, name: &str, args: &Value) -> IpcResult<Value> {
             Ok(json!({
                 "mine": handle.text(),
                 "theirs": handle.conflict_text(revision).map_err(core_error)?,
+                "blocks": handle.conflict_blocks(revision).map_err(core_error)?,
             }))
         }
         "conflict.resolve" => {

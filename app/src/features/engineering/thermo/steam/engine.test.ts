@@ -1,5 +1,6 @@
 // The steam tool as a student uses it: each pair of known properties, the worked steps, the units, and the
 // problems it explains in words.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { kitThermo } from '../../../../strings/en/kitThermo';
 import { ThermoError, type ThermoResult } from '../common/types';

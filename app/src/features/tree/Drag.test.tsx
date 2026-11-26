@@ -5,6 +5,8 @@ import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { renderApp } from '../../test';
 import type { NodeId } from '../../services/notes';
+import { act } from '@testing-library/react';
+import { multiStore } from './multi';
 
 const notebooksTree = () => screen.getByRole('tree', { name: 'Notebooks' });
 const pagesTree = () => screen.getByRole('tree', { name: 'Pages' });
@@ -120,6 +122,25 @@ describe('dragging with a mouse', () => {
     fire(mitosis, 'pointerup', middle.x, middle.y, 'mouse');
     await expect.poll(async () => (await notes.get('p-mitosis' as NodeId))?.parentId).toBe('s-labs');
     expect(screen.getByRole('status', { name: 'Notifications' }).textContent).toContain('Moved 1 page to Labs.');
+  });
+
+  it('moves every selected page when one of them is dragged (walk bug A1-A02-4)', async () => {
+    const { notes } = await renderTree();
+    await openLectures();
+    act(() =>
+      multiStore.set({ tree: 'pages', ids: ['p-mitosis', 'p-meiosis'] as NodeId[], anchor: 'p-mitosis' as NodeId }),
+    );
+    const mitosis = row(pagesTree(), 'Mitosis');
+    await startDrag(mitosis);
+    const labs = row(notebooksTree(), 'Labs');
+    const middle = at(labs, 0.5);
+    await moveTo(mitosis, middle);
+    expect(document.body.textContent).toContain('Move 2 pages to Labs');
+    fire(mitosis, 'pointerup', middle.x, middle.y, 'mouse');
+    await expect.poll(async () => (await notes.get('p-mitosis' as NodeId))?.parentId).toBe('s-labs');
+    expect((await notes.get('p-meiosis' as NodeId))?.parentId).toBe('s-labs');
+    expect(multiStore.get().ids).toEqual([]);
+    expect(screen.getByRole('status', { name: 'Notifications' }).textContent).toContain('Moved 2 items to Labs.');
   });
 
   it('shows no highlight over a place the row cannot go', async () => {

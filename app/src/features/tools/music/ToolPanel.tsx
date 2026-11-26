@@ -142,7 +142,11 @@ function Answer({ result, onTempo }: { result: KitOk; onTempo?(bpm: number): voi
           dangerouslySetInnerHTML={{ __html: result.svg.markup }}
         />
       ) : null}
-      {result.code ? <pre className={styles.code}>{result.code}</pre> : null}
+      {result.code ? (
+        <pre className={styles.code} tabIndex={0} role="group" aria-label={t('common.scrollCode')}>
+          {result.code}
+        </pre>
+      ) : null}
       {result.play ? <PlayBar plan={result.play} onTempo={onTempo} /> : null}
       <InsertBar result={result} />
       <h3 className={styles.heading}>{t('kitMusic.steps')}</h3>

@@ -1,5 +1,6 @@
 // The R-134a tool as a student uses it: the IIR reference values, the thermodynamic consistency check of the
 // validation plan, each pair of known properties, the ASHRAE reference, and problems in words.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { ThermoError, type ThermoResult } from '../common/types';
 import { solveRefrigerant, type RefrigerantInput } from './engine';

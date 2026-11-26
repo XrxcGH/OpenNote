@@ -1,3 +1,4 @@
+import './text';
 import { describe, expect, it } from 'vitest';
 import { eng, fmt } from './shared';
 
@@ -13,6 +14,11 @@ describe('number display', () => {
     expect(eng(300, '1/s')).toBe('300 s⁻¹');
     expect(eng(2e-3, '1/s')).toBe('2 × 10⁻³ s⁻¹');
     expect(eng(6283.2, 'rad/s', 4)).toBe('6.283 × 10³ rad/s');
+  });
+  it('never puts a prefix on a squared or cubed unit', () => {
+    // pi (80 m)^2 / 4 = 5026.548 m²; as "5.0265 km²" it would read 5 026 548 m².
+    expect(eng((Math.PI * 80 * 80) / 4, 'm²')).toBe('5026.5 m²');
+    expect(eng(0.0025, 'm³')).toBe('0.0025 m³');
   });
   it('still uses SI prefixes for ordinary units', () => {
     expect(eng(4700, 'Ω')).toBe('4.7 kΩ');

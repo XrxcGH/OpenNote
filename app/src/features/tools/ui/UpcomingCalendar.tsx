@@ -7,6 +7,7 @@ import { Button } from '../../../ui';
 import { addDays, addMonths, bucketByDay, dateKey, dayOfWeek, monthGrid, startOfWeek, weekGrid } from '../upcoming';
 import type { CalendarDay, CivilDate, UpcomingItem } from '../upcoming';
 import { dateIn } from '../upcoming/zone';
+import { isExamItem } from './homeUpcoming';
 import { whenText } from './UpcomingList';
 import { longDay, useMinute, weekday, zone } from './upcomingShared';
 import grid from './calendar.module.css';
@@ -193,7 +194,7 @@ export function UpcomingCalendar({ mode, items, selected, onSelect, onCheck, onO
               <input
                 type="checkbox"
                 checked={item.done}
-                disabled={Boolean(item.page) && !item.page?.task}
+                disabled={isExamItem(item) || (Boolean(item.page) && !item.page?.task)}
                 aria-label={t('smart.tools.upcoming.done', { title: item.title })}
                 onChange={(event) => onCheck(item, event.target.checked)}
               />

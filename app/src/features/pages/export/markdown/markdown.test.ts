@@ -72,8 +72,13 @@ describe('inline Markdown', () => {
   it('treats other HTML and unmatched tags as plain text', () => {
     expect(parseInline('<script>x</script>')).toEqual([text('<script>x</script>')]);
     expect(parseInline('<u>open')).toEqual([text('<u>open')]);
-    expect(parseInline('<span data-color="red;x">a</span>')).toEqual([text('<span data-color="red;x">a</span>')]);
-    expect(parseInline('<span data-size="huge">a</span>')).toEqual([text('<span data-size="huge">a</span>')]);
+    // A tag of the grammar that is no known mark is a foreign mark (R-INL-7): its text stays, drawn plain.
+    expect(parseInline('<span data-color="red;x">a</span>')).toEqual([
+      text('a', [{ foreign: '<span data-color="red;x">' }]),
+    ]);
+    expect(parseInline('<span data-size="huge">a</span>')).toEqual([
+      text('a', [{ foreign: '<span data-size="huge">' }]),
+    ]);
   });
 
   it('reads code spans, escapes, and character references', () => {
@@ -239,7 +244,7 @@ describe('HTML', () => {
     const md = '<span data-color="brick">a</span> <span data-color="#112233">b</span>';
     const out = html(md, { penColor: (n: string) => (n === 'brick' ? '#a8342a' : null) });
     expect(out).toContain('<span class="pen pen-brick" style="color:#a8342a">a</span>');
-    expect(out).toContain('<span class="pen pen--112233" style="color:#112233">b</span>');
+    expect(out).toContain('<span style="color:#112233">b</span>');
     expect(html('<span data-color="brick">a</span>', { penColor: () => 'red;x' })).not.toContain('style=');
   });
 

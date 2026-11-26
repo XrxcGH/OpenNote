@@ -1,5 +1,6 @@
 // A drawing that moves: a slider through the frames of a sweep or a run, a Play button that steps through them, and
 // a button that puts the frame on screen into the page as a picture. Nothing moves until a person presses Play.
+import '../text';
 import { useEffect, useId, useMemo, useState } from 'react';
 import { Button, announce } from '../../../../ui';
 import { PAGE, SCREEN } from '../kit/picture';

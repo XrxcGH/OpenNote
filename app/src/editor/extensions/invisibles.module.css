@@ -1,0 +1,58 @@
+/*
+ * The formatting marks (invisibles.ts). Each mark is drawn from the data-fmark attribute, so the text itself never
+ * changes. A mark in muted ink keeps the page readable; the tab and the space stay as wide as they were.
+ */
+@layer components {
+  :global([data-fmark]) {
+    --fmark-ink: var(--color-text-muted);
+  }
+
+  :global([data-fmark='space']),
+  :global([data-fmark='tab']),
+  :global([data-fmark='nbsp']),
+  :global([data-fmark='shy']) {
+    position: relative;
+  }
+
+  :global([data-fmark='space'])::after,
+  :global([data-fmark='tab'])::after,
+  :global([data-fmark='nbsp'])::after,
+  :global([data-fmark='shy'])::after {
+    position: absolute;
+    inset-inline-start: 0;
+    color: var(--fmark-ink);
+    pointer-events: none;
+    user-select: none;
+  }
+
+  :global([data-fmark='space'])::after {
+    content: '\00b7';
+    inset-inline-start: 50%;
+    translate: -50% 0;
+  }
+
+  :global([data-fmark='tab'])::after {
+    content: '\2192';
+  }
+
+  :global([data-fmark='nbsp'])::after {
+    content: '\00b0';
+  }
+
+  :global([data-fmark='shy'])::after {
+    content: '\00ac';
+    position: static;
+    display: inline-block;
+    inline-size: 0.6em;
+  }
+
+  :global([data-fmark='para']) {
+    color: var(--fmark-ink);
+    pointer-events: none;
+    user-select: none;
+  }
+
+  :global([data-fmark='para'])::after {
+    content: '\00b6';
+  }
+}

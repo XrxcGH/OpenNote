@@ -19,6 +19,8 @@ export interface OnDeviceTranscribeRequest {
   assetsDir: string;
   entry: RecordingEntry;
   onProgress?(fraction: number): void;
+  /** Called when the job starts, after the questions are answered and a model is found. */
+  onStart?(): void;
   /** Stops the job. The promise then rejects with a TranscribeCanceled. */
   signal?: AbortSignal;
   /** The spoken language as a BCP 47 tag, or null to detect it. */
@@ -96,6 +98,7 @@ function runJob(
       request.signal?.removeEventListener('abort', abort);
     };
     request.signal?.addEventListener('abort', abort);
+    request.onStart?.();
     host
       .start({
         assetsDir: request.assetsDir,

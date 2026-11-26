@@ -1,5 +1,6 @@
 // The Chemistry and materials window in a real browser: tabs can be switched and the window reopened with worked steps
 // drawn by KaTeX, and a narrow window offers a menu in place of the wrapping tab strip.
+import './text';
 import { screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';

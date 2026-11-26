@@ -1,3 +1,4 @@
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { AeroError } from '../common';
 import { IDEAL, cycle, ramRecovery, sweep } from './engine';

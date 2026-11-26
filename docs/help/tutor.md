@@ -2,6 +2,8 @@
 
 The tutor helps when you are stuck, without giving the answer away. It gives hints one small step at a time, and it explains a step that Check my work flagged. It runs on this device and reads only the text you show it.
 
+![The Tutor panel giving the first of four hints on a worked line, without the answer](../screens/study-tutor-light.png)
+
 ## Turn it on
 
 The tutor is off until you turn it on. The first time you use a tutor command, it asks. You can also open Settings, then Editing, and turn on Tutor.

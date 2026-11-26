@@ -13,29 +13,44 @@ import { createRoot } from 'react-dom/client';
 import type { Root } from 'react-dom/client';
 import { commandContext } from '../../../commands/registry';
 import { menuItemsFor } from '../../../commands/menus';
-import { applyTableOp, cellAt, cellTextPos, fitAddedColumn } from '../../../editor/commands/tables';
-import type { CellAt, TableChange, TableOp } from '../../../editor/commands/tables';
+import {
+  applyTableOp,
+  canApply,
+  cellAt,
+  cellTextPos,
+  fitAddedColumn,
+  isStructureOp,
+  withSelectionBox,
+} from '../../../editor/commands/tables';
+import type { CellAt, TableBook, TableChange, TableOp } from '../../../editor/commands/tables';
 import { createBlockEditor } from '../../../editor/extensions/kit';
 import { META_REMOTE } from '../../../editor/meta';
-import { renderStatic } from '../../../editor/schema/dom';
+import { renderStatic, staticOptions } from '../../../editor/schema/dom';
 import type { TableData } from '../../../editor/schema/specs';
 import { docToTableData, normalizeTableData, sameTableData, tableDataToDoc } from '../../../editor/table/mapping';
+import { spansOf } from '../../../editor/table/spans';
 import { tableName } from '../../../editor/table/tableKit';
 import type { BlockJson } from '../../../services/pages/types';
 import { t } from '../../../strings/t';
 import type { MessageKey } from '../../../strings/t';
-import { openMenu } from '../../../ui';
+import { confirm, openMenu } from '../../../ui';
 import { shownLayer } from '../mount';
 import type { StaticPool } from '../pool/pool';
 import { blockLaidOut } from '../seams/geometry';
 import { acceptRemoteText, attachTableSync } from '../sync';
 import type { TableSyncHandle } from '../sync';
+import { applyMergePatch } from '../../../platform/mergePatch';
+import { domFitInputs } from '../tables/fitInputs';
+import { loadSheetApi, sheetApi } from '../tables/lazySheet';
 import { tableExtras } from '../tables/extras';
 import type { TableExtraHandle, TableExtraHost } from '../tables/extras';
 import { currentTable } from '../tables/current';
 import type { TableHandle } from '../tables/current';
 import type { InnerView } from '../tables/lazyView';
 import { attachColumnHandles } from '../tables/columnResize';
+import { attachRowHandles } from '../tables/rowResize';
+import { staticDocOf } from '../tables/virtual/rows';
+import '../tables/virtual/register';
 import '../tables/commands';
 import { TableToolbar } from '../tables/TableToolbar';
 import tableStyles from '../tables/tables.module.css';
@@ -54,6 +69,9 @@ const ANNOUNCE: Partial<Record<TableOp['op'], MessageKey>> = {
 
 /** What a screen reader hears after a table command. */
 function announcement(op: TableOp, change: TableChange): string {
+  if (op.op === 'mergeCells' || op.op === 'unmergeCells' || op.op === 'splitCell')
+    return t(`sheetMerge.announce.${op.op}` as MessageKey);
+  if (isStructureOp(op)) return t(`sheetStructure.announce.${op.op}` as MessageKey);
   const key = ANNOUNCE[op.op];
   if (key) return t(key);
   if (op.op === 'headerRow') return t(change.data.header ? 'tables.announce.headerOn' : 'tables.announce.headerOff');
@@ -110,7 +128,10 @@ class TableView implements InnerView {
   private sync: TableSyncHandle | null = null;
   private toolbar: Root | null = null;
   private widthOpen = false;
+  private heightOpen = false;
   private extras: TableExtraHandle[] = [];
+  /** The merged cells the table shows now, as JSON, to tell a merge from outside from no change. */
+  private spanKey = '[]';
   private gone = false;
   private stopOverflow = () => {};
   private stopHandles = () => {};
@@ -133,16 +154,17 @@ class TableView implements InnerView {
     this.editRoot.dataset.scope = 'editor editor.table';
     this.handle = {
       block: current.id,
-      can: (op) => applyTableOp(this.data, this.caretCell(), op) !== null,
+      can: (op) => canApply(this.data, this.caretCell(), this.boxed(op), this.sheetData(), this.book()),
       header: () => this.data.header,
       run: (op) => this.run(op),
       deleteTable: () => this.deleteTable(),
       selectAll: () => this.selectAll(),
       openColumnWidth: () => this.openColumnWidth(),
+      openRowHeight: () => this.openRowHeight(),
     };
     this.watchOverflow();
     // Static first: the same DOM the editor will show, so nothing moves when it mounts.
-    this.showStatic(tableDataToDoc(this.data));
+    this.showStatic(this.docOf(this.data));
     this.mountEditor();
   }
 
@@ -168,7 +190,9 @@ class TableView implements InnerView {
   }
 
   private showStatic(doc: PMNode): void {
-    renderStatic(doc, this.editRoot);
+    // A table of thousands of rows shows its first rows until the editor, made in the same task, draws the rest.
+    const shown = this.editor || this.ctx.page.readOnly ? doc : staticDocOf(doc);
+    renderStatic(shown, this.editRoot, undefined, staticOptions(this.ctx.host));
     this.editRoot.querySelectorAll('th').forEach((th) => th.setAttribute('scope', 'col'));
     this.editRoot.querySelector('table')?.setAttribute('aria-label', tableName(doc));
     this.name(doc);
@@ -178,6 +202,26 @@ class TableView implements InnerView {
     return (this.editor && cellAt(this.editor.state)) || { row: 0, column: 0 };
   }
 
+  /**
+   * The table's document for `data`, with the merged cells `data.sheet` declares (ADR 0064). `extra` is the patch
+   * of a change that is not stored yet, so a merge shows as soon as the command runs.
+   */
+  private docOf(
+    data: TableData,
+    schema?: Parameters<typeof tableDataToDoc>[1],
+    extra?: Record<string, unknown>,
+  ): PMNode {
+    const spans = this.spansFor(data, extra);
+    this.spanKey = JSON.stringify(spans);
+    return tableDataToDoc(data, schema, spans);
+  }
+
+  private spansFor(data: TableData, extra?: Record<string, unknown>) {
+    const base = { sheet: this.sheetData() };
+    const next = extra ? applyMergePatch(base, extra) : base;
+    return spansOf(data, next.sheet);
+  }
+
   /** The data with the editor's latest typing. */
   private latest(): TableData {
     if (this.editor) this.data = docToTableData(this.editor.state.doc, this.data, this.ctx.cache);
@@ -185,12 +229,12 @@ class TableView implements InnerView {
   }
 
   /** Shows `next` in the editor without sending it, with the caret in `caret`. */
-  private show(next: TableData, caret: CellAt | null): void {
+  private show(next: TableData, caret: CellAt | null, extra?: Record<string, unknown>): void {
     this.data = next;
     const editor = this.editor;
-    if (!editor) return this.showStatic(tableDataToDoc(next));
+    if (!editor) return this.showStatic(this.docOf(next, undefined, extra));
     const { state } = editor;
-    const doc = tableDataToDoc(next, editor.schema);
+    const doc = this.docOf(next, editor.schema, extra);
     const tr = state.tr.replaceWith(0, state.doc.content.size, doc.content).setMeta(META_REMOTE, true);
     const pos = caret ? cellTextPos(tr.doc, caret) : null;
     if (pos !== null) tr.setSelection(TextSelection.create(tr.doc, pos));
@@ -200,28 +244,110 @@ class TableView implements InnerView {
     this.renderToolbar();
   }
 
-  private send(next: TableData, coalesce?: 'resize', extra: Record<string, unknown> = {}): Promise<unknown> {
+  /** `extra` with what the extras add to an edit that leaves the table as `data` (tables/extras.ts). */
+  private withExtras(data: TableData, extra: Record<string, unknown> = {}): Record<string, unknown> {
+    let out = extra;
+    for (const handle of this.extras) {
+      const more = handle.withEdit?.(data, out);
+      if (more) out = { ...out, ...more };
+    }
+    return out;
+  }
+
+  private send(
+    next: TableData,
+    coalesce?: 'resize',
+    extra: Record<string, unknown> = {},
+    also: NonNullable<TableChange['also']> = [],
+  ): Promise<unknown> {
     const { header, columns, rows } = next;
     const block = this.current.id;
     return this.ctx.sync.send({
-      edits: [{ edit: 'patchBlock', block, data: { header, columns, rows, ...extra } }],
+      edits: [
+        { edit: 'patchBlock', block, data: { header, columns, rows, ...this.withExtras(next, extra) } },
+        // The other tables whose formulas read this one follow in the same batch, so one undo brings both back.
+        ...also.map((one) => ({ edit: 'patchBlock' as const, block: one.block, data: one.data })),
+      ],
       ...(coalesce ? { coalesce: { kind: coalesce, target: block } } : {}),
     });
   }
 
+  /** The table's `data.sheet` as the page holds it, for commands that read or adjust it. */
+  private sheetData(): unknown {
+    const data = this.current.data as { sheet?: unknown } | undefined;
+    return data?.sheet;
+  }
+
+  /** The command with the cells a cell selection covers, for commands that act on a block. */
+  private boxed(op: TableOp): TableOp {
+    return withSelectionBox(op, this.editor?.state ?? null);
+  }
+
+  /** The page's tables: this one's name, and the other tables, whose references to this one follow a line change. */
+  private book(): TableBook | undefined {
+    const blocks = this.ctx.blocks?.();
+    if (!blocks) return undefined;
+    const tables = blocks.filter((block) => block.type === 'table');
+    const index = tables.findIndex((block) => block.id === this.current.id);
+    if (index < 0) return undefined;
+    const api = sheetApi();
+    const own = api?.tableName(api.readSheet(this.current.data));
+    return {
+      name: own ?? `Table${index + 1}`,
+      others: tables
+        .filter((block) => block.id !== this.current.id)
+        .map((block) => ({ block: block.id, data: block.data })),
+    };
+  }
+
+  /** Fit column width measures what the cells show, in the font they are drawn in, unless the command says more. */
+  private async measured(op: TableOp): Promise<TableOp> {
+    if (op.op !== 'fitColumns' || (op.measure && op.texts)) return op;
+    const inputs = domFitInputs(this.editRoot, (await loadSheetApi()).canvasMeasure);
+    return inputs ? { ...op, texts: op.texts ?? inputs.texts, measure: op.measure ?? inputs.measure } : op;
+  }
+
   private async run(op: TableOp): Promise<boolean> {
-    if (this.sync) await this.sync.flush('command');
+    await loadSheetApi();
+    // Other tables get the adjusted formulas as whole rows, so their own typing must be saved first, or it is lost.
+    if (this.book()?.others.length) await this.ctx.sync.flushAll('command');
+    else if (this.sync) await this.sync.flush('command');
     const before = this.latest();
-    const applied = applyTableOp(before, this.caretCell(), op);
-    if (!applied) return false;
+    const applied = applyTableOp(
+      before,
+      this.caretCell(),
+      await this.measured(this.boxed(op)),
+      this.sheetData(),
+      this.book(),
+    );
+    if (applied?.warn && !(await this.confirmLoss(applied.warn))) return false;
+    if (!applied) {
+      if (op.op === 'insertCells' || op.op === 'deleteCells')
+        this.ctx.host.announce(t('sheetStructure.announce.mergeBlocked'));
+      else if (op.op === 'mergeCells') this.ctx.host.announce(t('sheetMerge.announce.mergeBlocked'));
+      else if (op.op === 'moveRowUp' || op.op === 'moveRowDown')
+        this.ctx.host.announce(t('sheetMerge.announce.moveBlocked'));
+      return false;
+    }
     const adds = op.op === 'columnLeft' || op.op === 'columnRight';
     // The scroller is the page's width; its border takes a pixel on each side.
     const change = adds ? fitAddedColumn(before, applied, this.scroller.clientWidth - 2) : applied;
-    this.show(change.data, change.caret);
+    this.show(change.data, change.caret, change.extra);
+    // The block's data holds the new `data.sheet` from now on, so the next command reads merges this one wrote.
+    if (change.extra) this.echo(change.extra);
     this.editor?.commands.focus();
     this.ctx.host.announce(announcement(op, change));
-    await this.send(change.data);
+    await this.send(change.data, undefined, change.extra, change.also);
     return true;
+  }
+
+  /** Asks before a merge removes text, as Excel does. The change is one undo step, so Undo brings the text back. */
+  private confirmLoss(warn: NonNullable<TableChange['warn']>): Promise<boolean> {
+    return confirm({
+      title: t('sheetMerge.warn.title'),
+      body: t('sheetMerge.warn.body', { count: warn.lost }),
+      confirmLabel: t('sheetMerge.warn.confirm'),
+    });
   }
 
   private async deleteTable(): Promise<void> {
@@ -261,13 +387,37 @@ class TableView implements InnerView {
     if (width !== null) void this.run({ op: 'columnWidth', width });
   }
 
+  private openRowHeight(): void {
+    void loadSheetApi().then(() => this.renderToolbar());
+    this.heightOpen = true;
+    currentTable.set(this.handle);
+    this.setCurrent(true);
+  }
+
+  /** Applies the row height field's result to the rows the selection covers, or cancels with null. */
+  private closeRowHeight(result: { height: number; exact: boolean } | null): void {
+    this.heightOpen = false;
+    this.renderToolbar();
+    this.editor?.commands.focus();
+    if (result) void this.run({ op: 'rowHeight', ...result });
+  }
+
+  /** The height set on the caret's row: what the row height field starts with. */
+  private caretRowHeight(): { height: number | null; exact: boolean } {
+    const row = this.data.rows[Math.min(this.caretCell().row, this.data.rows.length - 1)];
+    const api = sheetApi();
+    const set = row && api ? api.rowHeight(api.readSheet(this.current.data), row.id) : null;
+    return { height: set?.height ?? null, exact: set?.exact ?? false };
+  }
+
   private renderToolbar(): void {
-    if (currentTable.get() !== this.handle && !this.widthOpen) return;
+    if (currentTable.get() !== this.handle && !this.widthOpen && !this.heightOpen) return;
     this.toolbar ??= createRoot(this.toolbarHost);
     const caret = this.caretCell();
     const columns = this.data.columns;
     this.toolbar.render(
       createElement(TableToolbar, {
+        block: this.current.id,
         can: this.handle.can,
         header: this.data.header,
         run: (op: TableOp) => void this.run(op),
@@ -276,6 +426,9 @@ class TableView implements InnerView {
         widthOpen: this.widthOpen,
         openWidth: this.handle.openColumnWidth,
         closeWidth: (width: number | null) => this.closeColumnWidth(width),
+        heightOpen: this.heightOpen,
+        rowHeight: this.heightOpen ? this.caretRowHeight() : { height: null, exact: false },
+        closeHeight: (result: { height: number; exact: boolean } | null) => this.closeRowHeight(result),
       }),
     );
   }
@@ -297,7 +450,7 @@ class TableView implements InnerView {
   private mountEditor(): void {
     if (this.editor || this.ctx.page.readOnly) return;
     const block = this.current.id;
-    const editor = createBlockEditor(this.editRoot, tableDataToDoc(this.data), {
+    const editor = createBlockEditor(this.editRoot, this.docOf(this.data), {
       kind: 'table',
       block,
       host: this.ctx.host,
@@ -308,13 +461,29 @@ class TableView implements InnerView {
     editor.registerPlugin(this.edgeKeys());
     handles.set(editor, this.handle);
     this.pool.adopt?.(block, editor);
-    this.sync = attachTableSync(editor, block, this.ctx.sync, (doc) => {
-      this.data = docToTableData(doc, this.data, this.ctx.cache);
-      return this.data;
-    });
+    // The sync reads the same document more than once in a row; a long table is read once (DESIGN.md section 18).
+    let read: { doc: PMNode; data: TableData } | null = null;
+    this.sync = attachTableSync(
+      editor,
+      block,
+      this.ctx.sync,
+      (doc) => {
+        if (read?.doc === doc && read.data === this.data) return this.data;
+        this.data = docToTableData(doc, this.data, this.ctx.cache);
+        read = { doc, data: this.data };
+        return this.data;
+      },
+      (data) => {
+        const extra = this.withExtras(data);
+        return Object.keys(extra).length > 0 ? extra : null;
+      },
+    );
     this.stopActive = this.ctx.pool.onActiveChange((active) => {
       // Focus visiting the palette or a menu keeps this the current table.
-      if (active !== null) this.setCurrent(active === block);
+      if (active === null) return;
+      this.setCurrent(active === block);
+      // Cells selected here do not stay lit once the person works somewhere else (Beta 8 walk B-B03-24).
+      if (active !== block) this.collapseCells(editor);
     });
     editor.on('focus', () => this.setCurrent(true));
     editor.on('selectionUpdate', () => this.renderToolbar());
@@ -325,11 +494,30 @@ class TableView implements InnerView {
     this.attachExtras(editor);
   }
 
+  /** Turns a block of selected cells into a caret in the first of them. */
+  private collapseCells(editor: Editor): void {
+    const { state, view } = editor;
+    if (!(state.selection instanceof CellSelection) || view.isDestroyed) return;
+    const inside = state.selection.$anchorCell.pos + 2;
+    const caret = TextSelection.near(state.doc.resolve(Math.min(inside, state.doc.content.size)));
+    view.dispatch(state.tr.setSelection(caret).setMeta('addToHistory', false));
+  }
+
+  /**
+   * An extra's own write reaches every extra at once: the block's data holds it, and each extra's update runs. So a
+   * second extra plans from the data the first one wrote, not from the data before it.
+   */
+  private echo(patch: Record<string, unknown>): void {
+    this.current = { ...this.current, data: applyMergePatch(this.current.data ?? {}, patch) } as BlockJson;
+    for (const extra of this.extras) extra.update(this.current);
+  }
+
   /** What features that add to the table may do (see tables/extras.ts). */
   private attachExtras(editor: Editor): void {
     const block = this.current.id;
     const host: TableExtraHost = {
       block,
+      page: `${this.ctx.page.id}:${this.ctx.page.client}`,
       element: this.element,
       editor,
       cache: this.ctx.cache,
@@ -339,14 +527,22 @@ class TableView implements InnerView {
         if (this.sync) await this.sync.flush('command');
         const next = change(this.latest());
         if (!next) return false;
-        this.show(next, this.caretCell());
+        this.show(next, this.caretCell(), extra);
+        if (extra) this.echo(extra);
         await this.send(next, undefined, extra);
         return true;
       },
-      patch: (data) => this.ctx.sync.send({ edits: [{ edit: 'patchBlock', block, data }] }),
+      patch: async (data) => {
+        this.echo(data);
+        if (this.sync) await this.sync.flush('command');
+        const all = this.withExtras(this.latest(), data);
+        return this.ctx.sync.send({ edits: [{ edit: 'patchBlock', block, data: all }] });
+      },
       announce: (text) => this.ctx.host.announce(text),
       flag: (id) => this.ctx.host.flag(id),
       insertTable: async (data) => (await import('../tables/insert')).insertTable(data as unknown as TableData),
+      insertTables: async (list) =>
+        (await import('../tables/insert')).insertTables(list as unknown as readonly TableData[]),
       insertMath: async (source) => (await import('../tables/insert')).insertMathBlock(source),
     };
     for (const def of tableExtras.list()) {
@@ -400,7 +596,47 @@ class TableView implements InnerView {
   private placeHandles(): void {
     this.stopHandles();
     const resize = (column: number, width: number) => this.resize(column, width);
-    this.stopHandles = attachColumnHandles(this.scroller, this.data.columns, this.ctx.viewport, resize);
+    // The size controls (edges to drag, double click to fit) are part of the structure controls: off with them.
+    const structure = this.ctx.host.flag('tables.structureUi');
+    const fitColumn = (column: number) =>
+      this.fitLine({ op: 'fitColumns' }, { row: 0, column }, 'sheetStructure.announce.fitColumns');
+    const stopColumns = attachColumnHandles(
+      this.scroller,
+      this.data.columns,
+      this.ctx.viewport,
+      resize,
+      structure ? fitColumn : undefined,
+    );
+    const stopRows = structure
+      ? attachRowHandles(
+          this.scroller,
+          this.ctx.viewport,
+          (row, height) =>
+            this.fitLine(
+              { op: 'rowHeight', height, exact: true },
+              { row, column: 0 },
+              'sheetStructure.announce.rowHeight',
+            ),
+          (row) => this.fitLine({ op: 'fitRows' }, { row, column: 0 }, 'sheetStructure.announce.fitRows'),
+        )
+      : () => {};
+    this.stopHandles = () => {
+      stopColumns();
+      stopRows();
+    };
+  }
+
+  /** The end of an edge drag or a double click on one: a size change of one line, sent with its sheet settings. */
+  private async fitLine(op: TableOp, at: { row: number; column: number }, said: MessageKey): Promise<void> {
+    await loadSheetApi();
+    if (this.sync) await this.sync.flush('command');
+    const applied = applyTableOp(this.latest(), at, await this.measured(op), this.sheetData(), this.book());
+    if (!applied) return this.placeHandles();
+    this.show(applied.data, applied.caret);
+    // The extras draw from the block's data: the new sheet settings reach them now, as an extra's own write does.
+    if (applied.extra) this.echo(applied.extra);
+    this.ctx.host.announce(t(said));
+    await this.send(applied.data, undefined, applied.extra, applied.also);
   }
 
   /** The end of a column edge drag: one change, coalesced with other resizes of the table. */
@@ -413,12 +649,17 @@ class TableView implements InnerView {
     void this.send(change.data, 'resize');
   }
 
+  liveData(): Record<string, unknown> {
+    const { header, columns, rows } = this.latest();
+    return { ...this.current.data, header, columns, rows };
+  }
+
   update(next: BlockJson): void {
     this.current = next;
     placeBlock(this.element, next);
     for (const extra of this.extras) extra.update(next);
     const incoming = normalizeTableData(next.data);
-    if (sameTableData(incoming, this.latest())) return;
+    if (sameTableData(incoming, this.latest()) && JSON.stringify(this.spansFor(incoming)) === this.spanKey) return;
     const caret = this.editor ? this.caretCell() : null;
     const rows = incoming.rows.length - 1;
     const columns = incoming.columns.length - 1;

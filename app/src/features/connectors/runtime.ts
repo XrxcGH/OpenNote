@@ -90,7 +90,7 @@ export async function connectTo(
     if (code === 'canceled') announce(t('connectors.announce.canceled'));
     else {
       setError(id, code);
-      announce(errorText(code, name));
+      announce(errorText(code, name, id));
     }
     await refreshConnectors(client);
     return false;
@@ -119,7 +119,7 @@ export async function disconnectFrom(id: string, client: ConnectorsClient = conn
   } catch (error) {
     const code = codeOf(error);
     setError(id, code);
-    announce(errorText(code, name));
+    announce(errorText(code, name, id));
     return false;
   }
 }

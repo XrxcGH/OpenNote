@@ -1,3 +1,4 @@
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { composite, differentiate, quadrature, rombergTable } from './calculus';
 import { dft, fft, nonlinearFit, polyfit, polynomialFit, spectrum } from './fit';

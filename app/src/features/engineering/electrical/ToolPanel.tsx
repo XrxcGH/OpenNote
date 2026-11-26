@@ -1,5 +1,6 @@
 // The body every tool in the kit shares: its fields, the answer, the assumptions, worked steps, a plot, and Insert.
 // A tool is only a ToolSpec; this draws it, so every tool behaves the same for the keyboard and a screen reader.
+import './text';
 import { useEffect, useId, useMemo, useState } from 'react';
 import { t } from '../../../strings/t';
 import { Button, announce } from '../../../ui';
@@ -25,7 +26,7 @@ function FieldInput({ field, value, onChange }: { field: Field; value: string; o
       <select id={id} className={styles.input} value={value} onChange={(event) => onChange(event.target.value)}>
         {field.options?.map((option) => (
           <option key={option.value} value={option.value}>
-            {fieldLabel(option.label)}
+            {option.literal ? option.label : fieldLabel(option.label)}
           </option>
         ))}
       </select>

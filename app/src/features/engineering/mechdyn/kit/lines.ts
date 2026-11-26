@@ -1,6 +1,6 @@
 // Tables typed one row per line, such as gear meshes or a Denavit-Hartenberg table: numbers split by spaces, commas,
 // or semicolons, each read with the expression engine so "pi/2" works. A row that can't be read names its line.
-import { evaluate } from '../../../../core/expr';
+import { evaluateTyped } from '../../../../core/expr';
 import { fail } from './errors';
 
 export interface Row {
@@ -21,7 +21,7 @@ export function readRows(text: string, count: number, most = count): Row[] {
     const numbers: number[] = [];
     const words: string[] = [];
     for (const cell of cells) {
-      const value = evaluate(cell);
+      const value = evaluateTyped(cell);
       if (value.ok && Number.isFinite(value.value)) numbers.push(value.value);
       else if (/^[a-z][a-z0-9]*$/i.test(cell)) words.push(cell.toLowerCase());
       else fail('listRow', { line: String(index + 1), count: String(count) });
@@ -41,7 +41,7 @@ export function readList(text: string): number[] {
     .map((cell) => cell.trim())
     .filter(Boolean);
   return cells.map((cell) => {
-    const value = evaluate(cell);
+    const value = evaluateTyped(cell);
     if (!value.ok || !Number.isFinite(value.value)) return fail('fieldUnreadable', { text: cell });
     return value.value;
   });

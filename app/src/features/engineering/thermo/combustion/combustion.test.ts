@@ -1,6 +1,7 @@
 // The combustion tool against the planning pass's validation values, then against independent routes. The
 // energy balance is rechecked with the shared NASA functions, and each equilibrium is checked by the law of mass
 // action for six reactions. Published flame temperatures, the rocket formulas, and every refusal are covered too.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { ThermoError, type ThermoResult } from '../common/types';
 import { toEngine } from '../common/units';

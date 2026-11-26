@@ -10,8 +10,8 @@ import { t } from '../../../strings/t';
 import type { MessageKey } from '../../../strings/t';
 import { tokens } from '../../../theme/tokens';
 import { announce, buttonClass, openMenu } from '../../../ui';
-import { compose, IDENTITY, scaling, translation } from '../geometry/matrix';
-import type { Bounds, Matrix } from '../geometry/types';
+import { compose, IDENTITY, quarterTurn, scaling, translation } from '../geometry/matrix';
+import type { Bounds, Matrix, Vec } from '../geometry/types';
 import { recolor, scaleWidths, THICKER, THINNER } from '../model/restyle';
 import type { InkStroke } from '../model/types';
 import { slotsForTool } from '../pens/palette';
@@ -36,7 +36,6 @@ import { makeLinkFromSelection } from './linkDialogs';
 import { startReplay } from './replay';
 import { strokeKind } from '../edits/filters';
 import { pagePoints } from '../geometry/strokeIndex';
-import type { Vec } from '../geometry/types';
 import { anchorsOf, nudge, snapMove, snapPoint } from '../snap';
 import { clearSnapMarks, paperSnapNow, showSnapMarks } from './paperSnap';
 import { followersForMatrix, shapeOfStroke } from './shapeEdit';
@@ -182,6 +181,7 @@ class FrameView implements SelectionFrame {
       ['ink.selection.recolor', 'recolor', () => void this.recolorMenu()],
       ['ink.selection.thicker', 'thicker', () => void this.widths(THICKER)],
       ['ink.selection.thinner', 'thinner', () => void this.widths(THINNER)],
+      ['ink.selection.rotate', 'rotate', () => void this.apply(quarterTurn(this.box()))],
       ...(handwritingAvailable(host)
         ? ([
             ['ink.handwriting.convert', 'convert', () => void convertSelection(host, surface)],

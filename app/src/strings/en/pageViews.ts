@@ -166,6 +166,9 @@ export const pageViews = {
   },
   files: {
     saved: 'Saved {name}.',
+    tableNumber: 'Table {number}',
+    staleTables:
+      'The formulas in {tables} are text, because their results are out of date. Reopen the page to refresh.',
     failed: "The file couldn't be saved.",
     markdownLabel: 'Markdown',
     htmlLabel: 'Web page',
@@ -174,6 +177,14 @@ export const pageViews = {
     svgLabel: 'SVG image',
     unavailable: 'Saving files needs the OpenNote app for Windows.',
     nothing: 'There is no page open to export.',
+    markdownFormatting: {
+      title: 'Keep the formatting?',
+      body:
+        'This page has fonts, sizes, or other formatting that Markdown cannot hold. ' +
+        'Keep it as HTML tags in the file, or remove it and keep only the text.',
+      remove: 'Remove formatting',
+      keep: 'Keep as HTML',
+    },
   },
   image: {
     title: 'Export selection as image',

@@ -1,3 +1,4 @@
+import './text';
 import { describe, expect, it } from 'vitest';
 import { inBounds, iso, isoFaces, project, standardViews } from './views';
 import type { Cube, Seg, View } from './views';

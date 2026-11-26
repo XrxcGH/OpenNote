@@ -9,6 +9,7 @@ use serde_json::Value;
 use super::place::place;
 use super::{find_block, invalid, locked, EditCtx};
 use crate::error::{ApplyError, EditError};
+use crate::format::page_json::stamp::BREAK_TYPE;
 use crate::id::{BlockId, Id};
 use crate::model::{Block, BlockData, Frame, JsonMap, Lock, NamedValue, Page};
 use crate::ops::apply::checks::{check_block, check_frame, lock_level, LockLevel};
@@ -135,8 +136,9 @@ fn normal_frame(mut frame: Frame) -> Option<Frame> {
 /// Reads a new block's type, data, and fallback.
 fn new_block_parts(new: &NewBlock) -> Result<(BlockData, Option<crate::model::Fallback>), EditError> {
     let type_name = new.type_name.as_str();
+    // `break` is reserved by version 1 and defined by version 2 (spec 6.12), so it may be inserted.
     let v1 = V1_TYPES.contains(&type_name);
-    if !v1 && !type_name.starts_with("ext:") {
+    if !v1 && type_name != BREAK_TYPE && !type_name.starts_with("ext:") {
         let why = if RESERVED_TYPES.contains(&type_name) {
             "reserved"
         } else {

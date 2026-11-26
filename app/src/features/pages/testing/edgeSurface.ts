@@ -29,6 +29,11 @@ const DRAWERS: Readonly<Record<string, string>> = {
   '../../tables': fileURLToPath(new URL('../../tables/smart/exportCharts.ts', import.meta.url)),
 };
 
+/** The table export loads the sheet reader through the tables index too, so it gets the light module instead. */
+const TABLE_VIEW: Readonly<Record<string, string>> = {
+  '../../tables': fileURLToPath(new URL('../../tables/exportView.ts', import.meta.url)),
+};
+
 /** The print entry as one script, built once per test run. */
 export function printBundle(): Promise<string> {
   bundle ??= build({
@@ -39,7 +44,9 @@ export function printBundle(): Promise<string> {
         name: 'print-drawers',
         enforce: 'pre',
         resolveId(source, importer) {
-          return importer !== undefined && importer.endsWith('export/renderers.ts') ? DRAWERS[source] : undefined;
+          if (importer === undefined) return undefined;
+          if (importer.endsWith('export/renderers.ts')) return DRAWERS[source];
+          return importer.endsWith('export/tableSheet.ts') ? TABLE_VIEW[source] : undefined;
         },
       },
     ],
@@ -72,13 +79,29 @@ export async function closeBrowser(browser: Browser | undefined, ms = 5000): Pro
 
 const require_ = createRequire(import.meta.url);
 
-/** `@font-face` rules for the three bundled font families, with the fonts inlined, so layout is the same everywhere. */
+/** `@font-face` rules for the bundled font families, with the fonts inlined, so layout is the same everywhere. */
 export function bundledFontFaces(): string {
   const font = (pkg: string, file: string) => readFileSync(require_.resolve(`${pkg}/files/${file}`)).toString('base64');
   const face = (family: string, weight: string, data: string, format: string) =>
     `@font-face{font-family:"${family}";font-style:normal;font-weight:${weight};font-display:block;` +
     `src:url(data:font/woff2;base64,${data}) format("${format}")}`;
+  // The metric stand-ins for Calibri and Cambria, the same files `host/fonts.ts` gives the app.
+  const base64 = (file: string) =>
+    readFileSync(new URL(`../../../theme/fonts/${file}.woff2`, import.meta.url)).toString('base64');
+  const standIn = (family: string, file: string, weight: string, style: 'normal' | 'italic') =>
+    `@font-face{font-family:"${family}";font-style:${style};font-weight:${weight};font-display:block;` +
+    `src:url(data:font/woff2;base64,${base64(file)}) format("woff2")}`;
+  const standIns = ['carlito', 'caladea'].flatMap((name) => {
+    const family = name === 'carlito' ? 'Carlito' : 'Caladea';
+    return [
+      standIn(family, `${name}-latin-400-normal`, '400', 'normal'),
+      standIn(family, `${name}-latin-400-italic`, '400', 'italic'),
+      standIn(family, `${name}-latin-700-normal`, '700', 'normal'),
+      standIn(family, `${name}-latin-700-italic`, '700', 'italic'),
+    ];
+  });
   return [
+    ...standIns,
     face(
       'Literata Variable',
       '200 900',

@@ -45,6 +45,12 @@ describe('page diff', () => {
     expect(changes[3].after?.index).toBe(2);
   });
 
+  it('keeps the items of a changed list on their own lines, so only the new item is marked', () => {
+    const [change] = diffText('- Prophase\n- Anaphase: pull apart', '- Prophase\n- Anaphase: pull apart\n- Telophase');
+    expect(change.status).toBe('changed');
+    expect(change.words?.filter((part) => part.kind !== 'same').map((part) => part.text)).toEqual(['\nTelophase']);
+  });
+
   it('aligns blocks by ID, keeps removed blocks in place, and notes moves', () => {
     const before = { blocks: [text('a', 'a0', 'First.'), text('b', 'a1', 'Second.'), text('c', 'a2', 'Third.')] };
     const after = {

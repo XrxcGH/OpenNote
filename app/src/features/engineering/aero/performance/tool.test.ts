@@ -1,5 +1,6 @@
 // The performance tool's form: every mode through its fields, with the planning cases for the polar, the jet
 // range and the neutral point, density from the standard atmosphere, k from e and AR, and US units.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { initialValues, runSpec, unitKey, visibleFields } from '../ui/spec';
 import type { ToolOutput } from '../ui/spec';

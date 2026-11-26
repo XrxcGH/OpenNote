@@ -9,7 +9,7 @@ import { Button, Switch, announce, confirm, showToast } from '../../ui';
 import { useOffline } from '../diagnostics';
 import { Devices } from './Devices';
 import { ChangePassphrase } from './Passphrase';
-import { codeOf, errorText, placeText, stateText, summaryLines, whenText } from './model';
+import { codeOf, errorText, keyStoreText, placeText, stateText, summaryLines, whenText } from './model';
 import { refreshSync, setView, syncClient, useSyncPolling, useSyncView } from './runtime';
 import styles from './sync.module.css';
 import type { SyncView } from './types';
@@ -23,7 +23,7 @@ function Explainer() {
       <h2 id="sync-explainer">{t('sync.explainer.title')}</h2>
       <ul className={styles.bullets}>
         {EXPLAINER.map((item) => (
-          <li key={item}>{t(`sync.explainer.${item}`)}</li>
+          <li key={item}>{item === 'item4' ? keyStoreText('sync.explainer.item4') : t(`sync.explainer.${item}`)}</li>
         ))}
       </ul>
     </section>

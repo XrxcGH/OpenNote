@@ -7,6 +7,8 @@ export const common = {
   close: 'Close',
   closeAnyway: 'Close anyway',
   notifications: 'Notifications',
+  scrollRegion: 'Worked math, scrolls sideways',
+  scrollCode: 'Code, scrolls sideways',
   editMenu: 'Edit',
   cut: 'Cut',
   copy: 'Copy',

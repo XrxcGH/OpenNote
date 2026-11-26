@@ -3,25 +3,21 @@
 // serializer against the same cases (SPEC 7.8).
 import type { Mark, Node as PMNode, Schema } from '@tiptap/pm/model';
 import { textSchema } from '../schema/schema';
-import { MARK_ORDER } from '../schema/specs';
-import type { MarkName } from '../schema/specs';
+import { canonicalMarks } from './markOrder';
+import { SPAN_ATTRIBUTE, SPAN_MARKS } from './tags';
 
-export type NeutralMark =
-  | 'strong'
-  | 'emphasis'
-  | 'strike'
-  | 'underline'
-  | 'highlight'
-  | 'sub'
-  | 'sup'
-  | 'code'
-  | { link: string }
-  | { highlight: string }
-  | { color: string }
-  | { size: string };
+/**
+ * A mark in the neutral tree: a name for a mark without values (`"strong"`), or one key and its value, as the
+ * inline-v2 README lists them (`{"font": "Georgia"}`, `{"underline": {"line": "double"}}`).
+ */
+export type NeutralMark = string | Readonly<Record<string, unknown>>;
 
 export type NeutralInline =
-  { text: string; marks: NeutralMark[] } | { hardBreak: true } | { image: string; alt: string } | { math: string };
+  | { text: string; marks: NeutralMark[] }
+  | { hardBreak: true }
+  | { image: string; alt: string }
+  | { math: string }
+  | { footnote: string; marks: NeutralMark[] };
 
 export interface NeutralItem {
   task: 'open' | 'done' | null;
@@ -44,37 +40,61 @@ export type NeutralBlock =
   | { type: 'math'; source: string }
   | { type: 'break' };
 
-const SIMPLE: Readonly<Partial<Record<MarkName, NeutralMark>>> = {
+const SIMPLE: Readonly<Record<string, string>> = {
   bold: 'strong',
   italic: 'emphasis',
   strike: 'strike',
   underline: 'underline',
+  highlight: 'highlight',
   subscript: 'sub',
   superscript: 'sup',
   code: 'code',
 };
 
-function markOf(mark: Mark): NeutralMark {
-  const name = mark.type.name as MarkName;
-  if (name === 'link') return { link: mark.attrs.href as string };
-  if (name === 'highlight') return mark.attrs.color ? { highlight: mark.attrs.color as string } : 'highlight';
-  if (name === 'textColor') return { color: mark.attrs.color as string };
-  if (name === 'textSize') return { size: mark.attrs.size as string };
-  return SIMPLE[name] as NeutralMark;
+/** The keys of a value that are set, for marks with more than one attribute. */
+function present(attrs: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(attrs).filter(([, value]) => value !== null && value !== ''));
 }
 
-const rank = (mark: Mark) => MARK_ORDER.indexOf(mark.type.name as MarkName);
+function markOf(mark: Mark): NeutralMark {
+  const { name } = mark.type;
+  const attrs = mark.attrs as Record<string, unknown>;
+  switch (name) {
+    case 'link':
+      return { link: attrs.href };
+    case 'strike':
+      return attrs.line === 'double' ? { strike: 'double' } : 'strike';
+    case 'underline': {
+      const value = present({ line: attrs.line, color: attrs.color });
+      return Object.keys(value).length > 0 ? { underline: value } : 'underline';
+    }
+    case 'highlight':
+      return attrs.color && attrs.color !== 'honey' ? { highlight: attrs.color } : 'highlight';
+    case 'box':
+      return { box: present({ style: attrs.style, color: attrs.color }) };
+    case 'foreign':
+      return { foreign: attrs.tag };
+  }
+  const attribute = SPAN_ATTRIBUTE[name as keyof typeof SPAN_ATTRIBUTE];
+  if (attribute) {
+    const { key } = SPAN_MARKS[attribute];
+    return { [key]: attrs[key] };
+  }
+  return SIMPLE[name] ?? name;
+}
+
+const marksOf = (marks: readonly Mark[]) => canonicalMarks(marks).map(markOf);
 
 function inlinesOf(node: PMNode): NeutralInline[] {
   const out: NeutralInline[] = [];
   node.forEach((child) => {
-    if (child.isText) {
-      const marks = [...child.marks].sort((a, b) => rank(a) - rank(b)).map(markOf);
-      out.push({ text: child.text as string, marks });
-    } else if (child.type.name === 'hardBreak') out.push({ hardBreak: true });
+    if (child.isText) out.push({ text: child.text as string, marks: marksOf(child.marks) });
+    else if (child.type.name === 'hardBreak') out.push({ hardBreak: true });
     else if (child.type.name === 'image')
       out.push({ image: child.attrs.src as string, alt: child.attrs.alt as string });
     else if (child.type.name === 'mathInline') out.push({ math: child.attrs.source as string });
+    else if (child.type.name === 'footnoteRef')
+      out.push({ footnote: child.attrs.id as string, marks: marksOf(child.marks) });
   });
   return out;
 }
@@ -131,30 +151,45 @@ export function toNeutral(doc: PMNode): NeutralBlock[] {
   return blocksOf(doc);
 }
 
+const SIMPLE_NAMES: Readonly<Record<string, string>> = Object.fromEntries(
+  Object.entries(SIMPLE).map(([name, neutral]) => [neutral, name]),
+);
+
 function markFrom(schema: Schema, mark: NeutralMark): Mark {
   const { marks } = schema;
-  if (typeof mark === 'string') {
-    const name = (Object.keys(SIMPLE) as MarkName[]).find((key) => SIMPLE[key] === mark);
-    return name ? marks[name].create() : marks.highlight.create();
+  if (typeof mark === 'string') return marks[SIMPLE_NAMES[mark] ?? mark].create();
+  const [key, value] = Object.entries(mark)[0] as [string, unknown];
+  switch (key) {
+    case 'link':
+      return marks.link.create({ href: value });
+    case 'strike':
+      return marks.strike.create({ line: value });
+    case 'underline':
+    case 'box':
+      return marks[key].create(value as Record<string, unknown>);
+    case 'highlight':
+      return marks.highlight.create({ color: value });
+    case 'foreign':
+      return marks.foreign.create({ tag: value });
   }
-  if ('link' in mark) return marks.link.create({ href: mark.link });
-  if ('highlight' in mark) return marks.highlight.create({ color: mark.highlight });
-  if ('color' in mark) return marks.textColor.create({ color: mark.color });
-  return marks.textSize.create({ size: mark.size });
+  const row = Object.values(SPAN_MARKS).find((candidate) => candidate.key === key);
+  if (!row) throw new Error(`Unknown neutral mark: ${key}`);
+  return marks[row.type].create({ [key]: value });
 }
+
+const marksFrom = (schema: Schema, list: readonly NeutralMark[]) =>
+  canonicalMarks(list.map((mark) => markFrom(schema, mark)));
 
 function inlinesFrom(schema: Schema, inlines: readonly NeutralInline[]): PMNode[] {
   return inlines.flatMap((inline): PMNode[] => {
     if ('hardBreak' in inline) return [schema.nodes.hardBreak.create()];
     if ('image' in inline) return [schema.nodes.image.create({ src: inline.image, alt: inline.alt })];
     if ('math' in inline) return [schema.nodes.mathInline.create({ source: inline.math })];
+    if ('footnote' in inline) {
+      return [schema.nodes.footnoteRef.create({ id: inline.footnote }, null, marksFrom(schema, inline.marks))];
+    }
     if (inline.text === '') return [];
-    return [
-      schema.text(
-        inline.text,
-        inline.marks.map((mark) => markFrom(schema, mark)),
-      ),
-    ];
+    return [schema.text(inline.text, marksFrom(schema, inline.marks))];
   });
 }
 

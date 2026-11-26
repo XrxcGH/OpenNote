@@ -117,6 +117,21 @@ describe('the expanded pages overlay', () => {
   });
 });
 
+describe('the medium drawer and presses outside it', () => {
+  it('closes on a press outside, and stays open for a menu or dialog opened from it', async () => {
+    await renderApp({ sizeClass: 'medium' });
+    fireEvent.click(screen.getByRole('button', { name: 'Show notebooks' }));
+    await screen.findByRole('dialog', { name: 'Notebooks' });
+    const menu = document.body.appendChild(document.createElement('div'));
+    menu.setAttribute('role', 'menu');
+    fireEvent.pointerDown(menu);
+    expect(screen.queryByRole('dialog', { name: 'Notebooks' })).not.toBeNull();
+    menu.remove();
+    fireEvent.pointerDown(document.body);
+    await expect.poll(() => screen.queryByRole('dialog', { name: 'Notebooks' })).toBeNull();
+  });
+});
+
 describe('the compact stack', () => {
   it('shows one screen at a time, going down by choosing and up with Back and Alt+Left', async () => {
     const { container } = await renderApp({ sizeClass: 'compact' });

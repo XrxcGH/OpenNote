@@ -1,13 +1,14 @@
 // The transcript block's word editing: fixing a misheard word offers to add the fix to the notebook's custom
 // vocabulary, and the Add button keeps it in the notebook's list on this device.
 import { screen, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it } from 'vitest';
-import { userEvent } from 'vitest/browser';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { page, userEvent } from 'vitest/browser';
 import { initFlags } from '../../../../app/flags';
 import { navigate } from '../../../../app/location';
 import type { BlockJson } from '../../../../services/pages/types';
 import { renderUi } from '../../../../test';
 import { Toaster } from '../../../../ui';
+import { toastLift } from '../../../../ui/toastHooks';
 import type { NodeId } from '../../../../services/notes/types';
 import { loadApi, loadTesting } from '../../../intel';
 import type { TranscriptData } from './model';
@@ -66,5 +67,41 @@ describe('fixing a word in a transcript', () => {
     await fixTheLine();
     await waitFor(() => expect(host.transport.calls).not.toContain('intel_vocabulary_offer'));
     expect(screen.queryByText(/to your vocabulary/)).toBeNull();
+  });
+});
+
+describe('the line checkboxes', () => {
+  it('sit in a label that is as big as a button, since the box itself is only as big as the text', async () => {
+    initFlags('dev', { 'transcripts.notes': true });
+    renderUi(<TranscriptView block={BLOCK} />);
+    const box = await screen.findByRole('checkbox', { name: /0:00/ });
+    const label = box.closest('label');
+    expect(label).not.toBeNull();
+    const size = label!.getBoundingClientRect();
+    expect(size.width).toBeGreaterThanOrEqual(32);
+    expect(size.height).toBeGreaterThanOrEqual(32);
+  });
+});
+
+describe('the "transcript is ready" toast', () => {
+  afterEach(() => page.viewport(1280, 800));
+
+  it.each([600, 1280])('stands above the first line when the line is at the window bottom (%i px)', async (width) => {
+    await page.viewport(width, 700);
+    renderUi(
+      <>
+        <div data-spacer="" />
+        <TranscriptView block={BLOCK} />
+        <Toaster />
+      </>,
+    );
+    const line = (await screen.findByText(/Today we cover/)).closest('li')!;
+    expect(line.hasAttribute('data-toast-above')).toBe(true);
+    // Push the block down until its first line sits in the toast's band at the bottom of the window.
+    const spacer = document.querySelector<HTMLElement>('[data-spacer]')!;
+    spacer.style.height = `${window.innerHeight - 80 - line.getBoundingClientRect().top}px`;
+    const region = document.querySelector('[data-region="notifications"]')!.getBoundingClientRect();
+    expect(toastLift()).toBe(Math.ceil(region.bottom - line.getBoundingClientRect().top));
+    expect(toastLift()).toBeGreaterThan(0);
   });
 });

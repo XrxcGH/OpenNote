@@ -3,6 +3,17 @@
  * category is underlined as in every other strip. The grid of symbols scrolls on its own and ends with room to spare.
  */
 @layer components {
+  /* The copy switch wraps its label in a narrow column instead of spilling out of the button (walk VB-8). */
+  .copyMode {
+    /* A button in the window's column never shrinks below its wrapped label (flex items shrink past a min-height). */
+    flex: none;
+    max-inline-size: 100%;
+    block-size: auto;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-align: center;
+  }
+
   .categories {
     display: flex;
     flex-wrap: wrap;

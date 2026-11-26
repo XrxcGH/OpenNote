@@ -1,0 +1,58 @@
+{
+  "formatVersion": 1,
+  "minReaderVersion": 1,
+  "kind": "opennote.page",
+  "id": "01m3sbcmt0000000000000p001",
+  "title": "Fixture",
+  "created": "2026-11-02T10:00:00.000Z",
+  "modified": "2026-11-02T10:00:00.000Z",
+  "view": {
+    "layout": "flow",
+    "mode": "paginated",
+    "print": {
+      "footer": {
+        "center": "{page} of {pages}",
+        "firstPage": {}
+      },
+      "header": {
+        "left": "{title}",
+        "right": "{date} {unknown}"
+      }
+    },
+    "text": {
+      "defaultTab": 36.5,
+      "hyphenate": true,
+      "lineNumbers": {
+        "countBy": 5,
+        "restart": "continuous"
+      },
+      "pageNumbers": {
+        "format": "lowerRoman",
+        "start": 0
+      }
+    }
+  },
+  "blocks": [
+    {
+      "id": "01m3sbcmt0000000000000b001",
+      "type": "text",
+      "order": "a0",
+      "created": "2026-11-02T10:00:00.000Z",
+      "modified": "2026-11-02T10:00:00.000Z",
+      "data": {
+        "markdown": "Printed text."
+      }
+    }
+  ],
+  "revision": {
+    "id": "01m3sbcmt0000000000000v001",
+    "parents": [],
+    "ancestors": [],
+    "savedAt": "2026-11-02T10:00:00.000Z",
+    "device": {
+      "id": "01m3sbcmt0000000000000d001",
+      "label": "Test device"
+    },
+    "writer": "Fixture"
+  }
+}

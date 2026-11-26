@@ -23,6 +23,9 @@ pub enum CoreEvent {
         revision: RevisionId,
         /// When it was saved.
         at: Timestamp,
+        /// The journal sequence number of the last edit the save holds, so the interface knows which edits it
+        /// made safe (`TxnAck::written`).
+        through: u64,
     },
     /// A save failed (`core:save-failed`, spec 17.6).
     SaveFailed {

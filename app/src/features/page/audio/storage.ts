@@ -17,6 +17,15 @@ import { closePlayback } from './playback';
 
 export const scanStorage = async (): Promise<StoredRecording[]> => (await moreClient()).storageScan();
 
+/** The space free where the notebooks are, or null when the app can't read it. A failed read is no reason to hide the list. */
+export const freeSpace = async (): Promise<number | null> => {
+  try {
+    return await (await moreClient()).freeSpace();
+  } catch {
+    return null;
+  }
+};
+
 /** The entry as the page holds it now. The shown page's entries may have changes the disk copy doesn't yet. */
 function liveEntry(stored: StoredRecording): RecordingEntry {
   return shownOpenPage.get()?.id === stored.page ? (entryOf(stored.entry.id) ?? stored.entry) : stored.entry;

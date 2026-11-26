@@ -1,0 +1,289 @@
+@layer components {
+  /* The formula bar sits under the table toolbar while the table is current. It wraps at narrow widths and at
+     400 percent zoom, so it needs no sideways scrolling. */
+  .bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: var(--space-1);
+    padding: var(--space-1);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-raised);
+    box-shadow: var(--elevation-2);
+    max-inline-size: 100%;
+    box-sizing: border-box;
+    font-family: var(--font-ui);
+    font-size: var(--type-small-size);
+  }
+
+  .nameBox {
+    inline-size: 9ch;
+    min-block-size: var(--target-size);
+    padding-inline: var(--space-2);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-page);
+    color: var(--color-text-primary);
+    font: inherit;
+    box-sizing: border-box;
+  }
+
+  .tools {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+  }
+
+  .entryWrap {
+    position: relative;
+    flex: 1 1 16rem;
+    min-inline-size: 10rem;
+  }
+
+  /* The entry is a text area over a copy of its text that carries the colors. The text area's own text is clear, so
+     the colors show through, and its caret and selection stay native. */
+  .entry,
+  .mirror {
+    margin: 0;
+    padding: var(--space-1) var(--space-2);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: inherit;
+    line-height: var(--type-small-line);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    box-sizing: border-box;
+    inline-size: 100%;
+    min-block-size: var(--target-size);
+  }
+
+  .entry {
+    position: relative;
+    display: block;
+    resize: none;
+    background: transparent;
+    color: transparent;
+    caret-color: var(--color-text-primary);
+  }
+
+  .entry:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+  }
+
+  .mirror {
+    position: absolute;
+    inset: 0;
+    background: var(--color-surface-page);
+    color: var(--color-text-primary);
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  .function {
+    color: var(--ink-indigo);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .string {
+    color: var(--ink-fern);
+  }
+
+  .number,
+  .bool {
+    color: var(--ink-walnut);
+  }
+
+  .error {
+    color: var(--color-status-danger);
+  }
+
+  .name {
+    color: var(--ink-plum);
+  }
+
+  .bracket {
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-sunken);
+    outline: 1px solid var(--color-border-control);
+  }
+
+  .ref1 {
+    color: var(--ink-indigo);
+  }
+  .ref2 {
+    color: var(--ink-brick);
+  }
+  .ref3 {
+    color: var(--ink-fern);
+  }
+  .ref4 {
+    color: var(--ink-plum);
+  }
+  .ref5 {
+    color: var(--ink-amber);
+  }
+  .ref6 {
+    color: var(--ink-walnut);
+  }
+
+  .popup {
+    position: absolute;
+    inset-inline-start: 0;
+    inset-block-start: 100%;
+    z-index: var(--layer-sticky);
+    min-inline-size: 16rem;
+    max-inline-size: min(32rem, 90vw);
+    margin-block-start: var(--space-1);
+    padding: var(--space-1);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-raised);
+    box-shadow: var(--elevation-2);
+    color: var(--color-text-primary);
+  }
+
+  .list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    max-block-size: 14rem;
+    overflow-y: auto;
+  }
+
+  .option {
+    display: flex;
+    gap: var(--space-2);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    cursor: default;
+  }
+
+  .option[aria-selected='true'] {
+    background: var(--color-surface-sunken);
+  }
+
+  .detail {
+    color: var(--color-text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .hint {
+    color: var(--color-text-secondary);
+  }
+
+  .hint strong {
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .errorButton {
+    min-block-size: var(--target-size);
+    padding-inline: var(--space-2);
+    border: 1px solid var(--color-status-danger);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-page);
+    color: var(--color-status-danger);
+    font: inherit;
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .explain {
+    display: grid;
+    gap: var(--space-2);
+    max-inline-size: 24rem;
+    padding: var(--space-2);
+  }
+
+  .explain p {
+    margin: 0;
+  }
+
+  /* A cell a formula refers to: its outer edges take the reference's color. */
+  .refCell {
+    --ref-color: var(--ink-indigo);
+    position: relative;
+  }
+
+  .refCell[data-formula-ref='2'] {
+    --ref-color: var(--ink-brick);
+  }
+  .refCell[data-formula-ref='3'] {
+    --ref-color: var(--ink-fern);
+  }
+  .refCell[data-formula-ref='4'] {
+    --ref-color: var(--ink-plum);
+  }
+  .refCell[data-formula-ref='5'] {
+    --ref-color: var(--ink-amber);
+  }
+  .refCell[data-formula-ref='6'] {
+    --ref-color: var(--ink-walnut);
+  }
+
+  .refCell::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border: 2px solid transparent;
+  }
+
+  .refCell[data-formula-ref-edges*='t']::after {
+    border-block-start-color: var(--ref-color);
+  }
+  .refCell[data-formula-ref-edges*='r']::after {
+    border-inline-end-color: var(--ref-color);
+  }
+  .refCell[data-formula-ref-edges*='b']::after {
+    border-block-end-color: var(--ref-color);
+  }
+  .refCell[data-formula-ref-edges*='l']::after {
+    border-inline-start-color: var(--ref-color);
+  }
+
+  /*
+   * Forced colors turn every border, even a transparent one, to the text color, and drop backgrounds. The outline
+   * keeps its own colors: only the outer edges of a reference show, in Highlight. The matched bracket gets an outline.
+   */
+  @media (forced-colors: active) {
+    .refCell,
+    .refCell[data-formula-ref] {
+      --ref-color: Highlight;
+    }
+    .refCell::after {
+      forced-color-adjust: none;
+    }
+    .bracket {
+      outline: 2px solid Highlight;
+    }
+  }
+
+  /* The fields of the bar's dialogs take the full width of the dialog. */
+  .field {
+    inline-size: 100%;
+    min-block-size: var(--target-size);
+    padding-inline: var(--space-2);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-page);
+    color: var(--color-text-primary);
+    font: inherit;
+    box-sizing: border-box;
+  }
+
+  .form {
+    display: grid;
+    gap: var(--space-1);
+    margin-block: var(--space-3);
+  }
+
+  .mirrorStatic {
+    font-family: var(--font-mono, ui-monospace, monospace);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+}

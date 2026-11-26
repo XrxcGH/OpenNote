@@ -1,5 +1,6 @@
 // The idealized section to scale: walls along their centerlines, each with its shear flow and an arrow the way the
 // flow runs, booms as dots sized by their areas, the centroid, and the shear center. y is up.
+import '../text';
 import { numberText } from '../kit/format';
 import { svg, text, W, H, type DrawContext } from '../kit/picture';
 import { toShown, unitOf } from '../kit/units';

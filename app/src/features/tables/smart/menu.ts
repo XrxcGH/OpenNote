@@ -4,6 +4,11 @@ import { t } from '../../../strings/t';
 import type { MenuItemSpec } from '../../../ui';
 import type { ChartKind, ColumnType, TotalKind } from '../engine';
 import { isEnabled } from '../../../app/flags';
+import { commandContext, executeCommand } from '../../../commands/registry';
+import type { CommandContext } from '../../../commands/types';
+import { commands } from '../../../registries';
+import { sheetMenu } from '../sheet/registry';
+import type { SheetMenu } from '../sheet/registry';
 import { addChart, changeChart, clearCalculated, fill, filterBy, setFormat, setTotal, sortColumn } from './ops';
 import { calculatedColumn } from './calculated';
 import { unitItems } from './units';
@@ -320,7 +325,41 @@ function analyzeItem({ inst }: Ctx): MenuItemSpec {
   };
 }
 
+/** The menu context, or null where commands are not set up (tests without the app). */
+function menuContext(): CommandContext | null {
+  try {
+    return commandContext('menu');
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The items the spreadsheet lanes add to one of the table's menus (sheet/registry.ts), by group and place, with a
+ * separator between groups. An item whose flag is off, or whose command is missing or does not apply, is left out.
+ */
+export function sheetItems(menu: SheetMenu): MenuItemSpec[] {
+  const ctx = menuContext();
+  const found = sheetMenu(menu).flatMap((item) => {
+    const def = commands.get(item.command);
+    if (!def || (item.flag && !isEnabled(item.flag)) || (def.flag && !isEnabled(def.flag))) return [];
+    if (ctx && def.when && !def.when(ctx)) return [];
+    const disabled = ctx && def.enabled ? !def.enabled(ctx) : false;
+    return [{ item, id: def.id, spec: { id: `sheet.${item.id}`, label: t(def.title), disabled } }];
+  });
+  return found.map(({ item, id, spec }, i): MenuItemSpec => ({
+    ...spec,
+    separatorBefore: i === 0 || found[i - 1].item.group !== item.group,
+    onSelect: () => void executeCommand(id, undefined, 'menu'),
+  }));
+}
+
+/** The Data menu: the smart-table items in their old places, then what the spreadsheet lanes add. */
 export function dataMenu(inst: SmartInstance): MenuItemSpec[] {
+  return [...smartDataItems(inst), ...sheetItems('data')];
+}
+
+function smartDataItems(inst: SmartInstance): MenuItemSpec[] {
   const model = inst.model();
   const caret = inst.caret();
   const column = Math.min(caret?.column ?? 0, model.columnIds.length - 1);

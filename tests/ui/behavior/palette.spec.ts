@@ -15,7 +15,7 @@ test('Ctrl+K runs a command by name, and announces the result count', async ({ p
   await expect(box).toHaveAttribute('aria-activedescendant', (await option.getAttribute('id')) ?? '');
   await expect(page.locator('[aria-live="polite"]')).toHaveText(/^\d+ results?$/);
   await page.keyboard.press('Enter');
-  await expect(page.getByRole('combobox')).toHaveCount(0);
+  await expect(page.locator('[data-scope="palette"]').getByRole('combobox')).toHaveCount(0);
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 });
 
@@ -23,7 +23,7 @@ test('typing in the palette keeps up', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByText('Biology 101')).toBeVisible();
   await page.keyboard.press('Control+KeyK');
-  const box = page.getByRole('combobox');
+  const box = page.locator('[data-scope="palette"]').getByRole('combobox');
   const text = 'toggle dark mode';
   const started = Date.now();
   await box.pressSequentially(text, { delay: 0 });

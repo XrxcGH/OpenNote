@@ -1,5 +1,6 @@
 // Psychrometrics against the published validation values, then against independent hand calculations: every pair
 // of known properties returns the same state, the balances close, and the ice formula meets the water one at 0 °C.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { ThermoError, type ThermoResult } from '../common/types';
 import { solveProcess, solveState, stateFrom, type StateInput } from './engine';

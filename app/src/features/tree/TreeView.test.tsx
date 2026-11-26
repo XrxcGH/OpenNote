@@ -3,6 +3,7 @@
 
 import { fireEvent, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import { userEvent } from 'vitest/browser';
 import { getLocation } from '../../app/location';
 import { expectFocus, expectNoAxeViolations, pressChord, renderApp } from '../../test';
 import { sessionStore } from '../../state/session';
@@ -187,6 +188,19 @@ describe('the middle button', () => {
   });
 });
 
+describe('long names', () => {
+  it('shows a name the row cuts short in a tooltip (T2-D04-5)', async () => {
+    await renderTree();
+    const title = row(notebooksTree(), 'Biology 101').querySelector<HTMLElement>('[id$="-title"]')!;
+    await userEvent.hover(title);
+    expect(title.hasAttribute('title')).toBe(false);
+    title.style.maxInlineSize = '20px';
+    await userEvent.unhover(title);
+    await userEvent.hover(title);
+    expect(title.getAttribute('title')).toBe('Biology 101');
+  });
+});
+
 describe('long trees', () => {
   it('windows past 300 rows and keeps the focused row mounted', async () => {
     const location = { view: 'workspace', notebookId: 'lg-n-1', sectionId: 'lg-s-1-1', pageId: null } as const;
@@ -236,4 +250,34 @@ describe('empty states and accessibility', () => {
       });
     }
   }
+});
+
+describe('the More button on a row', () => {
+  const parts = (item: HTMLElement) => {
+    const title = document.getElementById(`${item.getAttribute('aria-labelledby')}`)!;
+    const more = [...item.children].find((child) =>
+      child.contains(within(item).getByRole('button', { name: /^More actions for/ })),
+    )!;
+    return { title: title.parentElement!.getBoundingClientRect(), more: more.getBoundingClientRect() };
+  };
+
+  it('takes its own room in touch density, so it never covers the title (VA-3)', async () => {
+    await renderTree({ density: 'touch' });
+    const { title, more } = parts(row(notebooksTree(), 'Biology 101'));
+    expect(more.width).toBeGreaterThan(0);
+    expect(title.right).toBeLessThanOrEqual(more.left + 0.5);
+  });
+
+  it('sits inside the focus outline of the selected row, so the outline keeps its corners (VB-188)', async () => {
+    await renderTree();
+    await focusRow(notebooksTree, 'Biology 101');
+    const item = row(notebooksTree(), 'Biology 101');
+    const ring = parseFloat(getComputedStyle(item).outlineWidth);
+    const box = item.getBoundingClientRect();
+    const { more } = parts(item);
+    expect(ring).toBeGreaterThan(0);
+    expect(more.top).toBeGreaterThanOrEqual(box.top + ring - 0.5);
+    expect(more.bottom).toBeLessThanOrEqual(box.bottom - ring + 0.5);
+    expect(more.right).toBeLessThanOrEqual(box.right - ring + 0.5);
+  });
 });

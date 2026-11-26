@@ -95,10 +95,33 @@ function tokenBefore(state: EditorState, pos: number): { from: number; text: str
   return text && !text.includes('￼') ? { from: pos - text.length, text } : null;
 }
 
+const WEB_ADDRESS = /^(?:https?:\/\/[^\s/]+\S*|www\.[^\s.]+\.\S+)$/i;
+const EMAIL_ADDRESS = /^[\w.+-]+@[\w-]+(?:\.[\w-]+)+$/;
+
+/** A typed web or e-mail address, and the link it makes, without the punctuation that ends a sentence after it. */
+export function addressIn(token: string): { text: string; href: string } | null {
+  const text = token.replace(/[.,;:!?)\]}'"”’]+$/, '');
+  if (WEB_ADDRESS.test(text)) return { text, href: /^www\./i.test(text) ? `https://${text}` : text };
+  return EMAIL_ADDRESS.test(text) ? { text, href: `mailto:${text}` } : null;
+}
+
 /** The correction for the word ending at `pos`, as an automatic change, or null. */
-function correctionAt(state: EditorState, pos: number, list: readonly Replacement[]) {
+function correctionAt(state: EditorState, pos: number, list: readonly Replacement[], linking = true) {
   const token = tokenBefore(state, pos);
   if (!token) return null;
+  // An address is linked, never corrected: "(c)" in a URL is part of it (Beta 8 walk A-A04-4).
+  const address = addressIn(token.text);
+  if (address) {
+    // Only a space or Enter ends an address: a full stop in "example.com" does not.
+    if (!linking) return null;
+    const link = state.schema.marks.link;
+    const to = token.from + address.text.length;
+    if (!link || state.doc.rangeHasMark(token.from, to, link)) return null;
+    return {
+      tr: state.tr.addMark(token.from, to, link.create({ href: address.href })),
+      meta: { from: token.from, to, text: address.text },
+    };
+  }
   // The longest suffix of the token that has a correction: "(c)" in "x(c)", "teh" in "(teh".
   for (let start = 0; start < token.text.length; start += 1) {
     const piece = token.text.slice(start);
@@ -116,8 +139,9 @@ function correctionAt(state: EditorState, pos: number, list: readonly Replacemen
 function onWordEnd(view: EditorView, host: EditorHost, from: number, to: number, text: string): boolean {
   if (!ENDS.test(text) || from !== to || !canAutoChange(view, from)) return false;
   const list = listOf(host);
-  if (!list || !correctionAt(view.state, from, list)) return false;
-  typeThenChange(view, { from, to, text }, (state) => correctionAt(state, from, list));
+  const linking = /^\s$/.test(text);
+  if (!list || !correctionAt(view.state, from, list, linking)) return false;
+  typeThenChange(view, { from, to, text }, (state) => correctionAt(state, from, list, linking));
   return true;
 }
 

@@ -1,6 +1,7 @@
 // The keys of object mode (ARCHITECTURE.md sections 11.2 and 11.3; owner WP3), like a tree row's fixed keys: they
 // act on the focused wrapper and aren't commands. Commands with keys of their own (Delete, F2, and the z-order
-// keys) are in registrations/page.ts, in the pageObject scope that every wrapper carries.
+// keys) are in registrations/page.ts, in the pageObject scope that image and file wrappers carry. A text box's wrapper
+// does not, so Delete and F2 are also handled below.
 import type { BlockId } from '../../../services/pages/types';
 import type { PageBlockLayer } from '../blocks/blockLayer';
 import { FINE_NUDGE, NUDGE } from './objects';
@@ -74,8 +75,14 @@ function wrapperKey(objects: Objects, layer: PageBlockLayer, block: BlockId, eve
       objects.select(next, { announce: true });
       return true;
     }
+    // A text box's wrapper has no pageObject scope, because that scope would reach the keys typed in its editor, so
+    // the keys of the object commands that matter most are handled here: Delete as well as Backspace, and F2.
+    case 'Delete':
     case 'Backspace':
       objects.command('delete');
+      return true;
+    case 'F2':
+      objects.edit(block);
       return true;
     case 'a':
       if (!event.ctrlKey || event.shiftKey || event.altKey) return false;

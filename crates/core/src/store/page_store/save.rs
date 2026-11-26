@@ -76,7 +76,7 @@ impl PageStore {
         };
         before_commit(page.revision.id, req.through_seq)?;
         fail_point!("save.save_begin.flushed");
-        self.check_disk(dir, req.page, req.base_stamp)?;
+        self.check_disk(dir, req.base_stamp)?;
         let committed = self
             .config
             .fs
@@ -147,6 +147,7 @@ impl PageStore {
         let blocks: HashSet<_> = next.blocks.iter().map(|b| b.id).collect();
         next.view.reading_order.retain(|id| blocks.contains(id));
         fix_counts(&mut next.blocks, &page.ink);
+        drop_stale_paras(&mut next.blocks);
         next
     }
 
@@ -167,8 +168,10 @@ impl PageStore {
         }
     }
 
-    /// S7: `page.json` must still be the file this save started from, or hold the same revision.
-    fn check_disk(&self, dir: &Path, page: &Page, base: Option<crate::store::fs::FileStamp>) -> Result<(), SaveError> {
+    /// S7: `page.json` must still be the file this save started from. A changed file stops the save even when
+    /// it holds the same revision: another program can change the text and keep the revision fields (T2-D04-6).
+    /// The session compares the bytes and keeps an outside edit in `.conflicts` before it saves again.
+    fn check_disk(&self, dir: &Path, base: Option<crate::store::fs::FileStamp>) -> Result<(), SaveError> {
         let Some(base) = base else {
             return Ok(());
         };
@@ -182,10 +185,7 @@ impl PageStore {
                     .ok()
                     .and_then(|bytes| self.config.codec.read_page(&bytes, &self.config.limits).ok())
                     .map(|read| read.page.revision.id);
-                match disk {
-                    Some(revision) if revision == page.revision.id => Ok(()),
-                    disk => Err(SaveError::External { disk }),
-                }
+                Err(SaveError::External { disk })
             }
             Err(err) if err.kind == FsErrorKind::NotFound => Err(SaveError::External { disk: None }),
             Err(err) => Err(SaveError::Fs(err)),
@@ -223,6 +223,23 @@ fn fix_counts(blocks: &mut Blocks, ink: &Ink) {
         let mut fixed = Block::clone(&block);
         if let BlockData::Ink(data) = &mut fixed.data {
             data.stroke_count = ink.count_in_block(block.id);
+        }
+        // The block exists, so replacing it can't fail.
+        let _ = blocks.replace(Arc::new(fixed));
+    }
+}
+
+/// Drops the `paras` entries of text blocks that name no element of the block, as writers do (`R-PARA-2`).
+fn drop_stale_paras(blocks: &mut Blocks) {
+    let stale: Vec<Arc<Block>> = blocks
+        .iter()
+        .filter(|b| matches!(&b.data, BlockData::Text(text) if text.has_stale_paras()))
+        .cloned()
+        .collect();
+    for block in stale {
+        let mut fixed = Block::clone(&block);
+        if let BlockData::Text(text) = &mut fixed.data {
+            text.drop_stale_paras();
         }
         // The block exists, so replacing it can't fail.
         let _ = blocks.replace(Arc::new(fixed));

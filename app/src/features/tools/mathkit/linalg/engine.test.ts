@@ -1,3 +1,4 @@
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { characteristicPolynomial, eigenSteps, rationalRoots } from './eigenexact';
 import {

@@ -1,4 +1,5 @@
 // checks-disable-file modifiability, length: the editor is one component that holds the model and the grid focus
+import '../text';
 
 // The orthographic views tool: build a model from unit cubes one layer at a time and see its front, top, and right
 // views with hidden lines, in third-angle or first-angle layout, and an isometric picture. Either picture can be put

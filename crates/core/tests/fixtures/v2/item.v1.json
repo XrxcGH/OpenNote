@@ -1,0 +1,27 @@
+{
+  "formatVersion": 1,
+  "minReaderVersion": 1,
+  "kind": "opennote.trash-item",
+  "id": "01m3sa1yar0000000000007fqj",
+  "itemKind": "page",
+  "title": "Old notes",
+  "deletedAt": "2026-09-30T15:00:00.000Z",
+  "expiresAt": "2026-10-30T15:00:00.000Z",
+  "deletedBy": {
+    "id": "01m1e34qm04rx4vfj1927vgwgm",
+    "label": "Windows device GWGM"
+  },
+  "origin": {
+    "section": "01m3sa1bs00000000000002wsn",
+    "sectionTitle": "Lectures",
+    "entries": [
+      {
+        "id": "01m3sa48hr000000000000svf6",
+        "title": "Old notes",
+        "order": "a2",
+        "changed": "2026-09-30T14:20:05.300Z"
+      }
+    ]
+  },
+  "contents": ["01m3sa48hr000000000000svf6"]
+}

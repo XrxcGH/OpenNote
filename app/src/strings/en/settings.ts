@@ -58,26 +58,31 @@ export const settings = {
     webviewOther: 'Web view',
     webviews: { windows: 'WebView2', macos: 'WebKit (WKWebView)', linux: 'WebKitGTK' },
     limitsTitle: 'What works differently on {system}',
+    worksTitle: 'What works on this computer',
+    worksWindows: 'Every OpenNote feature works on Windows. Your notes stay on this computer.',
+    touchYes:
+      'Touch and pen: this computer reports a touch screen, so OpenNote shows larger touch targets when you use it.',
+    touchNo:
+      'Touch and pen: this computer reports no touch screen. A pen tablet or mouse works for writing and drawing.',
+    worksHello: 'Protected sections can open with Windows Hello when it is set up.',
+    worksAudio: 'Recordings can take the microphone, what the computer plays, or both.',
     limitsIntro: 'Everything else works as it does on Windows. Your notes stay on this computer either way.',
     limits: {
-      textInPictures:
-        "Text in pictures and scanned pages isn't found by search yet, because it needs Windows' text recognition.",
-      handwriting:
-        "Handwriting doesn't turn into text yet, because it needs Windows Ink Analysis. Your ink is kept as drawn.",
-      readAloud:
-        "Read aloud has no voices yet, because it uses the voices Windows has. Copy the text to your system's reader instead.",
+      textInPicturesTesseract:
+        'Text in pictures is read with Tesseract. Install tesseract-ocr and a language pack, like tesseract-ocr-eng.',
+      handwritingTesseract:
+        'Tesseract turns handwriting into text, and reads neat, printed letters best. It needs tesseract-ocr.',
+      systemTools:
+        'Read aloud and spell check use programs installed on this computer: espeak-ng for voices and ' +
+        'hunspell for spelling. Install them with your package manager if they are missing.',
       hello: 'Protected sections open with their password. Windows Hello is a Windows feature.',
-      pdf: "Saving a page as PDF and printing aren't here yet. Export the page as Word or HTML, then print that.",
       systemAudio:
         'Recording what the computer plays may not start, because the system has no loopback device. Record the microphone instead.',
       shareTarget:
         'Sharing to OpenNote from other apps is a Windows feature. Drag files or paste them into a page instead.',
       windowTools: 'Docking to a screen edge, Snap Layouts, and the custom title bar are Windows features.',
-      updates:
-        "OpenNote doesn't install updates itself on a Mac yet. Download the new dmg and drag OpenNote to Applications.",
-      commandLine:
-        "The opennote command-line tool isn't included yet. Build it from the source with cargo build -p opennote-cli.",
-      sync: "Sync can't be set up here yet, because each device keeps its key in Windows Credential Manager. Set it up on a Windows PC.",
+      syncKeyring:
+        "Sync keys and sign-ins are kept in GNOME Keyring or KWallet. Without one running, sync can't be set up.",
       penPressure:
         'Pen pressure depends on the desktop: some Linux setups report none, and strokes then have one width.',
     },

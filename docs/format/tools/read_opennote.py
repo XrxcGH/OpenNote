@@ -82,7 +82,18 @@ def table_cell(markdown: str) -> str:
     return "".join(out)
 
 
-def render_table(data: dict, rewrite) -> str | None:
+def text_of(page: dict):
+    """How a page's text blocks and cells read into `page.md`: as they are in version 1, and without the tags and
+    footnote references of version 2 in a page of version 2 (spec 11.1)."""
+    version = page.get("formatVersion")
+    if not isinstance(version, int) or version < 2:
+        return lambda markdown: markdown
+    from inline_read import readable_markdown  # Only version 2 pages need it, so version 1 never depends on it.
+
+    return readable_markdown
+
+
+def render_table(data: dict, rewrite, text_of_cell=lambda markdown: markdown) -> str | None:
     columns = data.get("columns", [])
     if not columns:
         return None
@@ -91,7 +102,7 @@ def render_table(data: dict, rewrite) -> str | None:
     def cells(row: dict) -> list[str]:
         found = row.get("cells", {})
         texts = [found[c["id"]]["markdown"] if c["id"] in found else None for c in columns]
-        return ["" if text is None else table_cell(rewrite_links(text, rewrite)) for text in texts]
+        return ["" if text is None else table_cell(rewrite_links(text_of_cell(text), rewrite)) for text in texts]
 
     header, body = (cells(rows[0]), rows[1:]) if data.get("header") and rows else ([""] * len(columns), rows)
     lines = [header, ["---"] * len(columns)] + [cells(row) for row in body]
@@ -102,7 +113,7 @@ def render_block(block: dict, page: dict, rewrite) -> str | None:
     """One block of `page.md` (spec 11.1)."""
     data, kind = block["data"], block["type"]
     if kind == "text":
-        return rewrite_links(data["markdown"], rewrite)
+        return rewrite_links(text_of(page)(data["markdown"]), rewrite)
     if kind == "image":
         alt = "" if data.get("decorative") else inline_text(data.get("alt", ""))
         return f"![{alt}]({asset_destination(page, data['asset'])})"
@@ -111,7 +122,7 @@ def render_block(block: dict, page: dict, rewrite) -> str | None:
         name = entry["name"] if entry else data["asset"]
         return f"[{inline_text(name)}]({asset_destination(page, data['asset'])})"
     if kind == "table":
-        return render_table(data, rewrite)
+        return render_table(data, rewrite, text_of(page))
     if kind == "ink":
         text = inline_text(data.get("alt", ""))
         drawing = data.get("role") == "drawing" and not data.get("decorative") and text

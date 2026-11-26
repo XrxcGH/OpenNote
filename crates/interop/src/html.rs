@@ -14,7 +14,7 @@ pre{overflow:auto;padding:.75rem;background:#f4f0ea}\
 .callout{padding:.5rem 1rem;border-left:3px solid #2F4F9A;background:#f4f0ea}.callout-title{font-weight:600}\
 mark{background:#FAECB7}mark[data-color=mint]{background:#D2EFDB}mark[data-color=rose]{background:#F9D9E3}\
 mark[data-color=apricot]{background:#FBE2CA}mark[data-color=lilac]{background:#E8E0F9}\
-[data-size=small]{font-size:.85em}[data-size=large]{font-size:1.25em}[data-size=xlarge]{font-size:1.6em}\
+[data-size=small]{font-size:.85em}[data-size=large]{font-size:1.25em}[data-size=xlarge]{font-size:1.5em}\
 li.task{list-style:none;margin-left:-1.2rem}";
 
 /// What the head of an exported page says besides its title, so an import can read it back.
@@ -152,7 +152,13 @@ fn block_html(block: &Block) -> String {
             format!("<pre><code{class}>{}</code></pre>\n", escape(text))
         }
         Block::Break => "<hr>\n".to_owned(),
-        Block::Table { header, rows } => table_html(*header, rows),
+        Block::Table {
+            header,
+            rows,
+            cell_styles,
+            merges,
+            widths,
+        } => crate::html_table::table_html(*header, rows, cell_styles, merges, widths),
     }
 }
 
@@ -203,20 +209,6 @@ fn callout_html(kind: &str, fold: Option<Fold>, title: &[Inline], blocks: &[Bloc
     }
 }
 
-fn table_html(header: bool, rows: &[Vec<Vec<Inline>>]) -> String {
-    let mut out = String::from("<table>\n");
-    for (i, row) in rows.iter().enumerate() {
-        let tag = if header && i == 0 { "th" } else { "td" };
-        out.push_str("<tr>");
-        for cell in row {
-            out.push_str(&format!("<{tag}>{}</{tag}>", inlines_html(cell)));
-        }
-        out.push_str("</tr>\n");
-    }
-    out.push_str("</table>\n");
-    out
-}
-
 /// Writes inlines as HTML. Each run carries its own tags, so runs with different marks never overlap.
 pub fn inlines_html(inlines: &[Inline]) -> String {
     let mut out = String::new();
@@ -233,6 +225,8 @@ pub fn inlines_html(inlines: &[Inline]) -> String {
                 )),
                 None => out.push_str(&escape(alt)),
             },
+            // Footnotes come with the version 2 HTML writer.
+            Inline::Note { .. } => {}
         }
     }
     out
@@ -250,7 +244,12 @@ fn run_html(text: &str, marks: &Marks) -> String {
         None => {}
     }
     if let Some(size) = &marks.size {
-        wrap(format!("<span data-size=\"{}\">", escape(size)), "</span>");
+        // A size in points has no rule in the style sheet, so it carries its own.
+        let style = match size.as_str() {
+            "small" | "large" | "xlarge" => String::new(),
+            points => format!(" style=\"font-size:{}pt\"", escape(points)),
+        };
+        wrap(format!("<span data-size=\"{}\"{style}>", escape(size)), "</span>");
     }
     if let Some(color) = &marks.color {
         let style = pen_hex(color).map_or(String::new(), |hex| format!(" style=\"color:#{hex}\""));

@@ -283,6 +283,13 @@ function recurrenceOutcome(v: Values): Outcome {
   };
 }
 
+/** n^k log^p n written in plain text: n for k = 1, no log for p = 0, log n for p = 1. */
+function plainGrowth(k: number, p: number): string {
+  const power = k === 0 ? '1' : k === 1 ? 'n' : `n^${num(k)}`;
+  const log = p === 0 ? '' : p === 1 ? 'log n' : `log^${num(p)} n`;
+  return [k === 0 && log ? '' : power, log].filter((part) => part !== '').join(' ');
+}
+
 function masterOutcome(v: Values): Outcome {
   const x = (id: string) => {
     const r = numbers(v[id] ?? '');
@@ -300,7 +307,7 @@ function masterOutcome(v: Values): Outcome {
         : `n^{${num(k)}}${p ? ` \\log^{${num(p)}} n` : ''}`;
   return {
     ok: true,
-    answer: s(`masterCase${r.case}`, { crit, k: num(k) }),
+    answer: s(`masterCase${r.case}`, { crit, k: num(k), growth: plainGrowth(k, r.case === 2 ? p + 1 : p) }),
     latex: `T(n) = \\Theta\\left(${growth}\\right)`,
     note: r.case === 3 ? s('masterRegularity') : undefined,
     steps: [s('steps.masterCrit', { a: num(a), b: num(b), crit })],

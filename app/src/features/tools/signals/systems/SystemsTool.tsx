@@ -144,8 +144,8 @@ function CorrelationMode() {
   return (
     <>
       <Fields>
-        <Field label={t('kitSignals.systems.x')} value={state.x} onChange={(x) => set({ x })} wide />
-        <Field label={t('kitSignals.systems.y')} value={state.y} onChange={(y) => set({ y })} wide />
+        <Field label={t('kitSignals.systems.x')} value={state.x} onChange={(x) => set({ x })} wide lines={2} />
+        <Field label={t('kitSignals.systems.y')} value={state.y} onChange={(y) => set({ y })} wide lines={2} />
       </Fields>
       {outcome.ok ? (
         <>

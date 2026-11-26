@@ -9,7 +9,14 @@ import { escapeAttr, escapeHtml } from '../export/markdown';
 import { readingOrder } from '../export/order';
 import type { ExportBlock, ExportPage, TableBlock } from '../export/source';
 import { snapY, type RuleGrid } from '../../../core/ruled';
-import { documentCss, type DocTheme, type NotebookStyles, type Ruled } from '../export/style';
+import {
+  documentCss,
+  paragraphBorderCss,
+  readStyles,
+  type DocTheme,
+  type NotebookStyles,
+  type Ruled,
+} from '../export/style';
 import { paperRules } from '../paper/rules';
 import type { FlowSlice } from '../layout/flow';
 import type { PageLayout } from '../layout/page';
@@ -17,8 +24,10 @@ import type { PagePlan } from '../layout/plan';
 import type { Rect } from '../pagination/geometry';
 import { paperPaths } from '../paper/patterns';
 import { paperSvg } from '../paper/svg';
+import { layoutStyle } from './textLayout';
 import { measureCss, paperStyle, printCss } from './css';
 import type { BandBox } from './headerFooter';
+import { lineNumberMarks, type LineMark } from './lineNumbers';
 import type { PrintPlan, PrintSheet } from './sheets';
 import type { FlowUnit, PageUnits } from './units';
 
@@ -51,9 +60,12 @@ function ruledOf(setup: DocumentSetup): Ruled | null {
   return grid ? { grid } : null;
 }
 
-function documentHead(setup: DocumentSetup, css: string): string {
+function documentHead(setup: DocumentSetup, css: string, body: string): string {
   const title = setup.page.title.trim() === '' ? setup.cx.labels.untitled : setup.page.title;
   const lang = LANGUAGE.test(setup.page.language) ? setup.page.language : 'en';
+  // The page's own style sheet joins the notebook's. One rule draws paragraph borders, added only when one has a border.
+  const border = body.includes(' data-border=') ? paragraphBorderCss() : '';
+  const sheet = documentCss(setup.theme, setup.styles, ruledOf(setup), readStyles(setup.page.rawStyles));
   return [
     '<!doctype html>',
     `<html lang="${escapeAttr(lang)}">`,
@@ -62,7 +74,7 @@ function documentHead(setup: DocumentSetup, css: string): string {
     `<meta http-equiv="Content-Security-Policy" content="${PRINT_CSP}">`,
     '<meta name="generator" content="OpenNote">',
     `<title>${escapeHtml(title)}</title>`,
-    `<style>\n${documentCss(setup.theme, setup.styles, ruledOf(setup))}${css}\n</style>`,
+    `<style>\n${sheet}${border}${css}\n</style>`,
     '</head>',
     '',
   ].join('\n');
@@ -81,6 +93,8 @@ function floatStyle(block: ExportBlock, rules: RuleGrid | null): string {
   if (f.w !== undefined) parts.push(`width:${px(f.w)}px`);
   else if (block.type === 'text') parts.push('width:max-content', 'min-width:120px', 'max-width:600px');
   if (f.h !== undefined) parts.push(`height:${px(f.h)}px`);
+  // Columns and vertical writing of a floating text box print as they show on the screen.
+  if (block.type === 'text' && block.layout) parts.push(layoutStyle(block.layout));
   if (f.rotate) parts.push(`transform:rotate(${px(f.rotate)}deg)`, 'transform-origin:center');
   return parts.join(';');
 }
@@ -99,7 +113,7 @@ export function measureDocument(setup: DocumentSetup): string {
     )
     .join('\n');
   const column = `left:${px(layout.column.x)}px;width:${px(layout.column.width)}px;padding-top:${px(layout.flowSheet.margins[0])}px`;
-  return `${documentHead(setup, measureCss())}<body>
+  return `${documentHead(setup, measureCss(), `${flow}\n${floating}`)}<body>
 <div id="measure"><div class="flow" style="${column}">
 ${flow}
 </div>
@@ -147,6 +161,8 @@ class SheetWriter {
   private readonly unitById: Map<string, FlowUnit>;
   private readonly rank: Map<string, number>;
   private readonly counts: Map<string, number>;
+  /** The line numbers to draw, by sheet (view.text.lineNumbers). Empty without them. */
+  private readonly numbers: Map<number, LineMark[]>;
 
   constructor(
     private readonly setup: DocumentSetup,
@@ -161,6 +177,33 @@ class SheetWriter {
     for (const piece of content.plan.flow?.pieces ?? []) {
       this.counts.set(piece.block, Math.max(this.counts.get(piece.block) ?? 0, piece.index + 1));
     }
+    // Only lines of text count: a table's rows, an image, and a column block do not.
+    const lines = (content.plan.flow?.pieces ?? []).filter((piece) => {
+      const unit = this.unitById.get(piece.block);
+      return unit?.flow.kind === 'text' && !unit.table;
+    });
+    this.numbers = print.lineNumbers ? lineNumberMarks(print.lineNumbers, lines, setup.layout.sheet.height) : new Map();
+  }
+
+  /** The numbers of one sheet's lines, right-aligned in the left margin. */
+  private lineNumbers(index: number): string {
+    const marks = this.numbers.get(index) ?? [];
+    if (marks.length === 0) return '';
+    const { column } = this.setup.layout;
+    const spans = marks.map((m) => {
+      const h = px(m.height);
+      const style = `position:absolute;left:0;right:0;top:${px(m.top)}px;height:${h}px;line-height:${h}px`;
+      return `<span style="${style}">${escapeHtml(m.label)}</span>`;
+    });
+    const box = [
+      'left:0',
+      `width:${px(Math.max(0, column.x - 8))}px`,
+      'top:0',
+      'height:100%',
+      `z-index:${LAYER.band}`,
+    ].join(';');
+    const look = 'position:absolute;text-align:right;font-size:9px';
+    return `<div class="line-numbers" aria-hidden="true" style="${box};${look}">${spans.join('')}</div>`;
   }
 
   private flowParts(index: number): Part[] {
@@ -254,6 +297,7 @@ class SheetWriter {
       this.ink(sheet.index, true),
       ...parts.map((p) => p.html),
       this.ink(sheet.index, false),
+      this.lineNumbers(sheet.index),
       this.band(this.print.header, sheet.header, 'header'),
       this.band(this.print.footer, sheet.footer, 'footer'),
       '</section>',
@@ -267,7 +311,7 @@ class SheetWriter {
 export function printDocument(setup: DocumentSetup, print: PrintPlan, content: SheetContent): string {
   const writer = new SheetWriter(setup, print, content);
   const sheets = print.sheets.map((s) => writer.sheet(s)).join('\n');
-  return `${documentHead(setup, printCss(print, setup.theme))}<body>
+  return `${documentHead(setup, printCss(print, setup.theme), sheets)}<body>
 <main class="sheets">
 ${sheets}
 </main>

@@ -60,6 +60,7 @@ export const pdf = {
     done: '{count, plural, one {Made # handout page.} other {Made # handout pages.}}',
     none: 'No PDF pages or slides to put on handouts.',
   },
+  tools: { failed: 'That did not work. Nothing was changed.' },
   paper: { label: 'Paper', ruled: 'Ruled', blank: 'Blank' },
   scope: {
     label: 'Pages',

@@ -18,6 +18,8 @@ export type { CivilDate, ClockTime, Due, Weekday } from './date';
 export { classifyDue, groupUpcoming } from './group';
 export type { GroupContext, GroupOptions, Repeat, UpcomingGroupId, UpcomingGroups, UpcomingItem } from './group';
 export { parseIcs } from './ics';
+export { escapeIcsText, writeIcs } from './icsWrite';
+export type { IcsSource } from './icsWrite';
 export type { IcsCalendar, IcsComponent } from './ics';
 export { MAX_OCCURRENCES, icsToItems } from './icsItems';
 export type { IcsTime } from './icsTime';

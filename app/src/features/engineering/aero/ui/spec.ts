@@ -2,7 +2,8 @@
 // window draws the form, the units, the answer, the steps, the plots, and the Insert buttons, so a tool file is only
 // its fields and a call to its engine. Text is named by key: a key such as "regime.design" is looked up in the tool's
 // own strings section, so specs and engines stay free of sentences and can be tested without a page.
-import { evaluate } from '../../../../core/expr';
+import { evaluateTyped } from '../../../../core/expr';
+import { switchedText } from '../../../../core/units';
 import { AeroError } from '../common';
 import type { AeroStep, XY } from '../common';
 import type { AeroToolId } from '../meta';
@@ -172,7 +173,9 @@ export function switchSystem(spec: ToolSpec, values: Values, system: UnitSystem)
     const to = defaultUnit(field.qty, system);
     const value = readNumber(values[field.id] ?? '');
     if (from.sym === to.sym || (value !== undefined && !Number.isFinite(value))) continue;
-    if (value !== undefined) next[field.id] = inputText(fromSI(toSI(value, from), to));
+    if (value !== undefined) {
+      next[field.id] = switchedText(values[field.id] ?? '', from.sym, to.sym, fromSI(toSI(value, from), to));
+    }
     next[unitKey(field.id)] = to.sym;
   }
   return next;
@@ -184,7 +187,7 @@ export function readNumber(text: string): number | undefined {
   if (plain === '') return undefined;
   const direct = Number(plain);
   if (Number.isFinite(direct)) return direct;
-  const result = evaluate(plain);
+  const result = evaluateTyped(plain);
   return result.ok && Number.isFinite(result.value) ? result.value : NaN;
 }
 
@@ -250,9 +253,16 @@ export type RunResult =
 /** Runs a tool, turning an input problem into a failure the window says in words. Other errors are bugs. */
 export function runSpec(spec: ToolSpec, values: Values, system: UnitSystem = 'si'): RunResult {
   try {
-    return { ok: true, output: spec.run(readInputs(spec, values, system)) };
+    const output = spec.run(readInputs(spec, values, system));
+    // An absurd input (1e12 of anything) makes an engine return Infinity or NaN: say so instead of printing it.
+    if (output.rows.some((row) => row.value !== undefined && !Number.isFinite(row.value))) {
+      return { ok: false, error: new AeroError('outOfRange') };
+    }
+    return { ok: true, output };
   } catch (error) {
     if (error instanceof AeroError) return { ok: false, error };
+    // A value too large for the arrays and loops an engine builds (RangeError) is an input problem, not a bug.
+    if (error instanceof RangeError) return { ok: false, error: new AeroError('outOfRange') };
     throw error;
   }
 }

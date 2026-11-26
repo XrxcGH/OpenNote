@@ -110,8 +110,11 @@ impl PageSession {
         *undo_bytes = undo_bytes.saturating_add_signed(delta);
         self.ctx.charge_undo(delta);
         let (can_undo, can_redo) = PageSession::undo_state(st, client);
+        // With no journal the edit is only in memory until the page saves.
+        let written = self.journal().as_ref().is_some_and(|j| j.written(seq));
         Ok(TxnAck {
             seq,
+            written,
             order_keys: PageSession::new_order_keys(txn),
             can_undo,
             can_redo,
@@ -199,8 +202,11 @@ impl PageSession {
             .map(InkRecord::Stroke)
             .collect();
         let (can_undo, can_redo) = PageSession::undo_state(st, client);
+        // An undo or redo is journaled like any edit, so it says the same: "Saving" until a save holds it.
+        let written = self.journal().as_ref().is_some_and(|j| j.written(seq));
         let info = FrameInfo {
             seq,
+            written,
             changes: changes.clone(),
             ui,
             texts,

@@ -1,6 +1,7 @@
 // Compensator design against the plan's cases and independent checks: the lead's phase at ωm from arctangents, the
 // angle and magnitude conditions at the target pole, closed-loop poles from the characteristic polynomial, and the
 // same loop measured by the frequency and systems tools.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { ControlError } from '../lib/errors';
 import { padd, pmul } from '../lib/poly';

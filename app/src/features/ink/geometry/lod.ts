@@ -32,6 +32,10 @@ export function polylineWidth(width: number, scale: number): number {
  * Strokes without pressure have none.
  */
 export function pressureExtremes(points: readonly InkPoint[], swing = 0.1): number[] {
+  // A swing of exactly `swing` counts, and so does one a rounding error short of it. Without the slack, a press that
+  // rose by 0.1 and fell back by 0.1 is a turn, but the same press with a tiny point dropped afterward (6.9e-18 off)
+  // falls 0.09999999999999999 and is not, so thinning a thinned stroke would thin it again.
+  const reaches = (gap: number) => Math.abs(gap) >= swing - 1e-9;
   const found: number[] = [];
   let direction = 0;
   let at = -1;
@@ -44,12 +48,12 @@ export function pressureExtremes(points: readonly InkPoint[], swing = 0.1): numb
     }
     const gap = value - points[at].pressure!;
     if (direction === 0) {
-      if (Math.abs(gap) < swing) continue;
+      if (!reaches(gap)) continue;
       direction = Math.sign(gap);
       at = i;
     } else if (gap * direction > 0) {
       at = i;
-    } else if (Math.abs(gap) >= swing) {
+    } else if (reaches(gap)) {
       found.push(at);
       direction = -direction;
       at = i;

@@ -24,6 +24,11 @@ use serde::{Deserialize, Serialize, Serializer};
 use thiserror::Error;
 
 pub use asset::Asset;
+pub use block::format::{
+    Align, BorderLine, Comment, Direction, DropCap, DropCapMode, Indent, LineRule, LineSpacing, ListAlign, ListDef,
+    ListLevel, ListRef, Note, NoteKind, ParaBorders, ParaFormat, Reply, Shade, Spacing, Suggestion, SuggestionKind,
+    TabAlign, TabLeader, TabStop, TextFormatting, TextLayout,
+};
 pub use block::{
     AnchorQuote, Block, BlockData, Crop, Fallback, FileData, FileDisplay, Frame, ImageData, InkAnchor, InkBlockData,
     InkRole, Lock, OtherData, TableCell, TableColumn, TableData, TableRow, TextData,
@@ -33,9 +38,13 @@ pub use history::{VersionEntry, VersionReason, VersionsFile};
 pub use ink::{Ink, InkRecord, SegmentRef, StrokeProps};
 pub use notebook::{
     is_archived, is_pinned, set_archived, set_pinned, Group, NotebookFile, NotebookStyles, NotebookTree, PageNode,
-    PageNodeState, SectionNode, StyleSpec, TreeChild, ARCHIVED_KEY, MAX_STYLES, MAX_STYLE_NAME_CHARS, STYLE_NAMES,
+    PageNodeState, SectionNode, StyleFormat, StyleSpec, StyleType, Theme, ThemeFonts, TreeChild, ARCHIVED_KEY,
+    MAX_STYLES, MAX_STYLE_NAME_CHARS, STYLES_CHANGED, STYLE_NAMES,
 };
-pub use page::{Access, DeviceRef, FormatInfo, Page, ReadOnlyReason, Rect, Revision, Warning};
+pub use page::{
+    Access, DeviceRef, FormatInfo, LineNumbers, Page, PageNumbers, PageStyleSheet, ReadOnlyReason, Rect, Revision,
+    TextSettings, Warning,
+};
 pub use section::{Moving, PageEntry, SectionFile};
 pub use stroke::{Affine, BBox, Channels, Point, Stroke, StrokeStyle};
 pub use trash::{TrashItemFile, TrashKind, TrashOrigin, TrashReason};

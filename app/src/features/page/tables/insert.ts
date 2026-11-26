@@ -2,22 +2,27 @@
 // paragraph with the caret. Text after that paragraph moves into a new text block below the table, so the page
 // reads in the same order. The text edit and both new blocks go to the core as one step, which one undo removes.
 import type { Editor } from '@tiptap/core';
+import { isEnabled } from '../../../app/flags';
+import type { EditorState } from '@tiptap/pm/state';
 import { newId } from '../../../editor/ids';
 import { createMarkdownCache, serializeTextBlock } from '../../../editor/markdown';
 import { META_REMOTE } from '../../../editor/meta';
 import type { TableData } from '../../../editor/schema/specs';
 import { newTableData, tableOf } from '../../../editor/table/mapping';
 import type { BlockId, BlockJson, Edit, Frame } from '../../../services/pages/types';
+import { getSettings } from '../../../state/settings';
 import { t } from '../../../strings/t';
 import { announce } from '../../../ui';
 import { syncOf } from '../blocks/textBlock';
 import { shownLayer } from '../mount';
 import { shownPool } from '../pool/shown';
 import { acceptRemoteText, shownQueue } from '../sync';
+// eslint-disable-next-line opennote/feature-boundaries -- The barrel pulls the whole engine into this chunk.
+import { SHEET_VERSION } from '../../tables/smart/version';
 import { whenViewReady } from './lazyView';
 
 /** Splits a text block's document after the top-level block with the caret. An empty paragraph there goes. */
-function splitAtCaret(editor: Editor): { head: string; tail: string; headEnd: number } {
+export function splitAtCaret(editor: Editor): { head: string; tail: string; headEnd: number } {
   const { doc, selection } = editor.state;
   const cache = createMarkdownCache();
   const $from = selection.$from;
@@ -34,28 +39,90 @@ function splitAtCaret(editor: Editor): { head: string; tail: string; headEnd: nu
   };
 }
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+/** A new table stores the setting "New tables use spreadsheet keys" as data.sheet.table.keys (ADR 0063). */
+export function withKeys(data: TableData): Record<string, unknown> {
+  const own = data as unknown as Record<string, unknown>;
+  if (!isEnabled('tables.sheetWrites')) return own;
+  const sheet = isRecord(own.sheet) ? own.sheet : {};
+  const table = isRecord(sheet.table) ? sheet.table : {};
+  if (table.keys !== undefined && sheet.v !== undefined) return own;
+  const keys = table.keys ?? getSettings().tables.newTableKeys;
+  // data.sheet.v makes the table follow Excel's rules (2^3^2 is 64, -2^2 is 4) instead of the textbook ones.
+  return { ...own, sheet: { ...sheet, v: sheet.v ?? SHEET_VERSION, table: { ...table, keys } } };
+}
+
+/**
+ * Splits a text block's document at the caret, as Word and Docs do for a break: the paragraph is cut where the caret
+ * is, and the rest of it goes below. At the end of a paragraph, or in an empty one, it is the same as `splitAtCaret`.
+ */
+export function splitAtPosition(state: EditorState): { head: string; tail: string; headEnd: number } {
+  const { doc, selection } = state;
+  const $from = selection.$from;
+  const atEnd = $from.depth === 0 || $from.parentOffset >= $from.parent.content.size;
+  if (atEnd) {
+    const index = $from.depth === 0 ? Math.min($from.index(0), doc.childCount - 1) : $from.index(0);
+    const start = $from.depth === 0 ? $from.pos : $from.before(1);
+    const end = start + doc.child(index).nodeSize;
+    const empty = $from.parent.type.name === 'paragraph' && $from.parent.content.size === 0 && doc.childCount > 1;
+    const headEnd = empty ? start : end;
+    const cache = createMarkdownCache();
+    return {
+      head: serializeTextBlock(doc.cut(0, headEnd), cache),
+      tail: serializeTextBlock(doc.cut(end), cache),
+      headEnd,
+    };
+  }
+  const cache = createMarkdownCache();
+  const at = selection.from;
+  return { head: serializeTextBlock(doc.cut(0, at), cache), tail: serializeTextBlock(doc.cut(at), cache), headEnd: at };
+}
+
 export async function insertTable(data: TableData = newTableData(3, 3, true)): Promise<boolean> {
-  return insertBlock('table', data as unknown as Record<string, unknown>);
+  return insertBlocks([{ type: 'table', data: withKeys(data) }]);
+}
+
+/** Several tables, one below the other after the block with focus, as one step: one undo removes them all. */
+export async function insertTables(list: readonly TableData[]): Promise<boolean> {
+  return insertBlocks(list.map((data) => ({ type: 'table', data: withKeys(data) })));
 }
 
 /** A display equation, as a text block of its own after the block with focus. */
 export function insertMathBlock(source: string): Promise<boolean> {
-  return insertBlock('text', {
-    markdown: `$$
+  return insertBlocks([
+    {
+      type: 'text',
+      data: {
+        markdown: `$$
 ${source}
 $$`,
-  });
+      },
+    },
+  ]);
 }
 
-async function insertBlock(type: 'table' | 'text', data: Record<string, unknown>): Promise<boolean> {
+/** A table's estimated height in page units, for stacking floating tables before they are measured. */
+const estimatedHeight = (data: Record<string, unknown>): number =>
+  (((data as Partial<TableData>).rows?.length ?? 1) + 1) * 36;
+
+async function insertBlocks(
+  items: readonly { type: 'table' | 'text'; data: Record<string, unknown> }[],
+): Promise<boolean> {
+  if (items.length === 0) return false;
+  const { type } = items[0];
   const queue = shownQueue.get();
   const layer = shownLayer.get();
   const pool = shownPool.get();
   if (!queue || !layer) return false;
   const active = pool?.active() ?? null;
-  const id: BlockId = newId();
+  const ids: BlockId[] = items.map(() => newId());
   const edits: Edit[] = [];
-  let after: BlockId | undefined = active?.block;
+  // A draft text box, such as the one on a page with no text yet, is not in the page until it is typed in, and the
+  // core has no block to put the table after. Then the table goes at the end, and the draft stays as it was.
+  const draft = active ? (syncOf(active.editor)?.unsaved ?? false) : false;
+  let after: BlockId | undefined = draft ? undefined : active?.block;
   let frame: Frame | undefined;
   let tail: { id: BlockId; markdown: string } | null = null;
   const source = active && layer.view(active.block);
@@ -78,16 +145,24 @@ async function insertBlock(type: 'table' | 'text', data: Record<string, unknown>
   } else if (!active) {
     after = undefined;
   }
-  edits.push({
-    edit: 'insertBlock',
-    block: { id, type, data: { ...data }, ...(frame ? { frame } : {}) },
-    after,
+  const frames: (Frame | undefined)[] = [];
+  let nextY = frame?.y;
+  items.forEach((item, i) => {
+    const at = frame && nextY !== undefined ? { x: frame.x, y: nextY } : undefined;
+    frames.push(at);
+    if (nextY !== undefined) nextY += estimatedHeight(item.data) + 16;
+    edits.push({
+      edit: 'insertBlock',
+      block: { id: ids[i], type: item.type, data: { ...item.data }, ...(at ? { frame: at } : {}) },
+      after: i === 0 ? after : ids[i - 1],
+    });
   });
+  const last = ids[ids.length - 1];
   if (tail)
     edits.push({
       edit: 'insertBlock',
       block: { id: tail.id, type: 'text', data: { markdown: tail.markdown } },
-      after: id,
+      after: last,
     });
   const ack = await queue.send({ edits });
   const now = new Date().toISOString();
@@ -100,12 +175,12 @@ async function insertBlock(type: 'table' | 'text', data: Record<string, unknown>
     data: blockData,
     ...(at ? { frame: at } : {}),
   });
-  layer.upsert(made(id, type, { ...data }, frame));
+  items.forEach((item, i) => layer.upsert(made(ids[i], item.type, { ...item.data }, frames[i])));
   if (tail) layer.upsert(made(tail.id, 'text', { markdown: tail.markdown }));
   if (type === 'table') announce(t('tables.announce.inserted'));
-  const view = layer.view(id);
+  const view = layer.view(last);
   if (view) await whenViewReady(view.element);
-  const editor = pool?.mount(id, { kind: 'start' }, 'focus');
+  const editor = pool?.mount(last, { kind: 'start' }, 'focus');
   editor?.commands.focus('start');
   return true;
 }

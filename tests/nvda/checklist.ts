@@ -23,6 +23,11 @@ export interface Item {
   readonly keys: readonly string[];
   /** Phrases NVDA must say, in this order. */
   readonly expect: readonly string[];
+  /**
+   * Has NVDA report the control that has focus before the keys. A focus moved by script is not spoken by NVDA as it
+   * lands, so the item asks for it, as a person would with NVDA+Tab.
+   */
+  readonly reportFocus?: boolean;
 }
 
 export const ITEMS: readonly Item[] = [
@@ -39,8 +44,9 @@ export const ITEMS: readonly Item[] = [
     title: 'Headings read with their level, in order',
     covers: 'Phase 4: typed notes',
     setup: { role: 'page' },
-    keys: ['h', 'h'],
-    expect: ['heading', 'Membranes', 'Short note'],
+    // The reading cursor stays where the last item left it (past the last landmark), so this starts at the top.
+    keys: ['Control+Home', 'h', 'h'],
+    expect: ['heading', 'Short note'],
   },
   {
     id: 'notebook-tree',
@@ -49,6 +55,7 @@ export const ITEMS: readonly Item[] = [
     setup: { role: 'tree', name: 'Notebooks', item: 'Lectures' },
     keys: ['ArrowDown'],
     expect: ['Lectures', 'Labs'],
+    reportFocus: true,
   },
   {
     id: 'command-tabs',
@@ -57,6 +64,7 @@ export const ITEMS: readonly Item[] = [
     setup: { role: 'tab', name: 'Home' },
     keys: ['ArrowRight'],
     expect: ['Home', 'Insert'],
+    reportFocus: true,
   },
   {
     id: 'page-text',
@@ -65,6 +73,7 @@ export const ITEMS: readonly Item[] = [
     setup: { role: 'textbox', name: 'Page text' },
     keys: [],
     expect: ['Page text', 'edit'],
+    reportFocus: true,
   },
   {
     id: 'palette',
@@ -72,9 +81,34 @@ export const ITEMS: readonly Item[] = [
     covers: 'Phase 2: command palette',
     setup: { role: 'page' },
     keys: ['Control+k'],
-    expect: ['Search commands and pages'],
+    // NVDA says the dialog's name and role when it opens. With the first result active, it then names that result,
+    // not the search box, because the box points at it with aria-activedescendant.
+    expect: ['Command palette', 'dialog'],
   },
 ];
+
+/** What to do when Guidepup cannot find NVDA, shown in place of its own short message. */
+export const NVDA_MISSING_HELP = [
+  'NVDA is not installed where Guidepup looks for it.',
+  'Guidepup needs two steps, from the tests/nvda folder, on Windows:',
+  '  npm ci',
+  '  npx guidepup setup --ci     (prepares Windows once per machine)',
+  '  npx guidepup install nvda   (downloads the NVDA build the pinned Guidepup version needs)',
+  'The nightly workflow runs them as "Install Guidepup" and "Set up the machine for NVDA". See docs/HARDENING.md.',
+].join('\n');
+
+/**
+ * Turns the error from starting NVDA into one that says how to fix a missing install. Any other error is returned
+ * as it is, because it says something different.
+ */
+export function explainStartFailure(error: unknown): Error {
+  const message = error instanceof Error ? error.message : String(error);
+  if (/not installed/i.test(message)) {
+    const said = message.split('\n')[0];
+    return new Error(`${NVDA_MISSING_HELP}\n\nGuidepup said: ${said}`, { cause: error });
+  }
+  return error instanceof Error ? error : new Error(message);
+}
 
 /**
  * Finds the phrases in the spoken log, in order. A phrase may be said in the same line as the one before it. It

@@ -79,20 +79,33 @@ export function Field(props: {
   unit?: string;
   hint?: string;
   wide?: boolean;
+  /** A text area of this many rows, for a long sequence that one line cannot show (walk bug VB-1). */
+  lines?: number;
 }) {
-  const { label, value, onChange, unit, hint, wide } = props;
+  const { label, value, onChange, unit, hint, wide, lines } = props;
   const hintId = useId();
   return (
     <label className={wide ? `${styles.field} ${styles.wide}` : styles.field}>
       <span>{label}</span>
       <span className={styles.withUnit}>
-        <input
-          inputMode="decimal"
-          value={value}
-          spellCheck={false}
-          aria-describedby={hint ? hintId : undefined}
-          onChange={(event) => onChange(event.target.value)}
-        />
+        {lines ? (
+          <textarea
+            className={styles.textarea}
+            value={value}
+            rows={lines}
+            spellCheck={false}
+            aria-describedby={hint ? hintId : undefined}
+            onChange={(event) => onChange(event.target.value)}
+          />
+        ) : (
+          <input
+            inputMode="decimal"
+            value={value}
+            spellCheck={false}
+            aria-describedby={hint ? hintId : undefined}
+            onChange={(event) => onChange(event.target.value)}
+          />
+        )}
         {unit ? <span className={styles.unit}>{unit}</span> : null}
       </span>
       {hint ? <small id={hintId}>{hint}</small> : null}

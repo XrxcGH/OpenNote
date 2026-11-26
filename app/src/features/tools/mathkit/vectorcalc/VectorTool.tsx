@@ -1,5 +1,6 @@
 // Vector calculus and optimization: gradients and tangent planes, critical points, Lagrange multipliers, divergence and
 // curl, line and surface integrals, and Green's, Stokes', and the divergence theorem with both sides worked out.
+import '../text';
 import { t } from '../../../../strings/t';
 import { NumView, lineText } from '../numerics/NumView';
 import styles from '../ui/mathkit.module.css';

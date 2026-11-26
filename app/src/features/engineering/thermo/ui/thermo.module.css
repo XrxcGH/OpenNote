@@ -45,7 +45,8 @@
   }
 
   .tab {
-    min-block-size: var(--size-target-pointer);
+    min-inline-size: var(--target-size);
+    min-block-size: var(--target-size);
     padding-inline: var(--space-3);
     font: inherit;
     font-size: var(--type-small-size);
@@ -100,6 +101,11 @@
     color: var(--color-text-secondary);
   }
 
+  /* A select is as wide as its longest option, so no option text is clipped; it wraps to its own line before it shrinks. */
+  .field:has(select) {
+    min-inline-size: fit-content;
+  }
+
   .wide {
     flex-basis: 100%;
   }
@@ -111,7 +117,7 @@
   }
 
   .input {
-    min-block-size: var(--size-target-pointer);
+    min-block-size: var(--target-size);
     padding-inline: var(--space-2);
     font: inherit;
     font-size: var(--type-body-size);

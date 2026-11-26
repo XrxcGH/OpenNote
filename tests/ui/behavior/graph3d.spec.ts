@@ -25,7 +25,9 @@ test('traces a parametric curve from the palette', async ({ page }) => {
   await openSmart(page);
   await page.getByRole('textbox', { name: 'Text' }).first().click();
   await runCommand(page, 'Insert parametric or polar graph');
-  await expect(page.getByRole('application', { name: /^Graph of 2 functions/ })).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByRole('application', { name: /^Graph of \(cos\(3t\), sin\(2t\)\); r = / })).toBeVisible({
+    timeout: 20_000,
+  });
   await page.getByRole('slider', { name: 'Trace position, t' }).fill('0');
   await expect(page.getByText('At t = 0: x = 1, y = 0')).toBeVisible();
 });

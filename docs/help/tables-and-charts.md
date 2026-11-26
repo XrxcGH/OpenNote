@@ -2,7 +2,28 @@
 
 A smart table holds typed columns, formulas, and several views of the same rows. A chart reads its numbers from a table.
 
-![A smart table with a formula cell, and the bar chart made from it](../screens/table-chart-light.png)
+![A smart table with its formula cell selected, showing =B2*0.6, and the bar chart made from it with its summary in words](../screens/table-chart-light.png)
+
+## Contents
+
+- [Make a table](#make-a-table)
+- [Analyze](#analyze)
+- [Formulas](#formulas)
+- [Views](#views)
+- [Charts](#charts)
+- [Take a table out](#take-a-table-out)
+- [Choices](#choices)
+- [Analyze: statistics, regression, and matrices](#analyze-statistics-regression-and-matrices)
+- [Saved views](#saved-views)
+- [Format cells](#format-cells)
+- [Format cells dialog and cell styles](#format-cells-dialog-and-cell-styles)
+- [Fill handle, row edges, and borders](#fill-handle-row-edges-and-borders)
+- [Copy and paste with spreadsheets](#copy-and-paste-with-spreadsheets)
+- [Large tables](#large-tables)
+- [Spreadsheet keys](#spreadsheet-keys)
+- [Conditional formatting](#conditional-formatting)
+- [Data validation](#data-validation)
+- [Arrays and spills](#arrays-and-spills)
 
 ## Make a table
 
@@ -10,11 +31,27 @@ A smart table holds typed columns, formulas, and several views of the same rows.
 - Format a column as number, currency, percent, date, or text. Sort and filter the rows, and use Board to group rows by any column of repeating text (the stand-in for a choice column).
 - Draw a grid with the pen and it becomes a table.
 - Import an Excel file and each sheet becomes a table page.
+- Right-click a cell, or press Shift+F10 or the Menu key in it, to open the table's menu. It has Cut, Copy, Paste, and Select all. Below those are the table's own commands. They add a row or a column, move a row, set the header row, change a column width, and delete a row, a column, or the table.
 - Give a number column a unit, such as kN or mm, and cells in other units of the same kind convert to it. See [Engineering tools](engineering-tools.md#units-in-tables).
+
+## Analyze
+
+- Select cells, with or without the header row, and choose a tool under Analyze: statistics, a histogram, a box plot, a fit, or a matrix tool. The answer lands below the table. A box plot or a fit adds two tables together, and one Undo takes both away.
+- A tool that cannot run says why on the screen, for example when a cell in a matrix is not a number.
 
 ## Formulas
 
 Add a calculated column and type a formula, such as `=Price * Qty`. The column fills in for every row and stays up to date as you edit.
+
+Formulas follow Excel's rules. Beyond math, text, and dates, they have these families:
+
+- Logic and information: IFS, SWITCH, XOR, IFNA, the IS functions, CELL, INFO, TYPE, and ERROR.TYPE.
+- Lookup: XLOOKUP, XMATCH, INDEX, MATCH, VLOOKUP, HLOOKUP, OFFSET, INDIRECT, ROW, COLUMN, FORMULATEXT, and HYPERLINK.
+- Arrays: FILTER, SORT, SORTBY, UNIQUE, SEQUENCE, TAKE, DROP, VSTACK, HSTACK, MMULT, MINVERSE, and the LAMBDA helpers MAP, REDUCE, SCAN, BYROW, BYCOL, and MAKEARRAY. An array result spills into the cells beside it.
+- Statistics: averages, deviations, ranks, percentiles, distributions such as NORM.DIST and T.DIST, regression such as LINEST, and FORECAST.ETS. These load the first time a formula uses one, so the cell shows #BUSY! for a moment.
+- Finance: all 55 of Excel's financial functions. They cover loans and savings (PV, FV, PMT, RATE, NPER), cash flows (NPV, IRR, XNPV, XIRR, MIRR), depreciation (SLN, DB, DDB, VDB), and bonds and bills (PRICE, YIELD, DURATION, ACCRINT, TBILLPRICE, and the ODD functions). Day counts follow Excel's bases 0 to 4. They load the first time a formula uses one, as the statistics do.
+
+Every function has a line in the [function reference](table-functions.md). The places where OpenNote's answers differ from Excel's are listed in `app/src/features/tables/fixtures/fn/DIFFERENCES.md` in the source tree.
 
 ## Views
 
@@ -28,13 +65,17 @@ Every chart has a text summary and a data table, so a screen reader can read it.
 
 ## Take a table out
 
-Export a table as an Excel file (`.xlsx`) or as `.csv`. Both are in the Export dialog.
+Export a table as an Excel file (`.xlsx`), as `.csv`, or as `.tsv`. All three are in the Export dialog.
+
+An Excel file keeps formulas and their last results, so Excel shows the numbers at once and then recalculates. It also keeps number formats, fonts, fills, borders, merged cells, column widths, row heights, frozen panes, hidden and grouped rows, named ranges, data validation, conditional formatting, and notes. A table with a header of plain, distinct names becomes an Excel table. The export report names a table whose results are out of date. A `.tsv` file holds the values as the cells show them, split by tabs.
+
+A page exported to Word, HTML, or Markdown keeps each table's last results. Word and HTML also keep fills, borders, alignment, fonts, and merged cells. When a table's results are out of date, the export report names it.
 
 Smart tables and charts are built. They have been checked by automated tests only. The [feature list](../FEATURES.md) shows their status.
 
 ## Choices
 
-To pick a value from a short list, such as a status or a tag, click in a column, open the Data menu, choose Format, then pick the format "Choice, pick one" or "Choice, pick several". The column starts with the values it already holds. Each value is a named, colored choice.
+To pick a value from a short list, such as a status or a tag, click in a column. Open the Data menu, choose Format, then pick the format "Choice, pick one" or "Choice, pick several". The column starts with the values it already holds. Each value is a named, colored choice.
 
 Press Alt+Down in a cell, or use Choose a value in the Data menu, to see the list. A column that picks several stays open after each choice, so you can pick more. Choose Done or press Escape to finish. You can still type in the cell. Text that is not one of the choices has a dashed outline and is kept.
 
@@ -57,3 +98,75 @@ A number can have a unit, such as 12.5 kg. When all the numbers in a column shar
 ## Saved views
 
 In the Data menu under a table, choose Saved views, then Save filters and sort as a view. Pick a view later to see the same rows in the same order. Each table keeps its own views.
+
+## Format cells
+
+When a table is current, a second row of tools sits under the table tools. It sets the font, size, bold, italic, underline, and strikethrough, the text and fill colors, borders, alignment, wrapping, rotation, and the number format. It also has Currency, Percent, the thousands separator, more and fewer decimals, and Clear formats.
+
+Select whole cells and a tool formats the cells. Select text inside one cell and the same tool formats only that text. Each change is one undo step.
+
+The Borders button draws the last border you used. Its arrow opens all 16 borders, the line style, and the line color. In a narrow window, the least used tools move into a More menu. Press Ctrl+K and type "Cell:" to find every format by name. Number format codes are described in [Table formatting](table-formatting.md).
+
+## Format cells dialog and cell styles
+
+Press Ctrl+1, or choose Format cells from the Format menu or the cell's context menu. The dialog has five tabs: Number, Alignment, Font, Border, and Fill. One preview cell shows the result, with a line of text that describes it. The Number tab has 12 categories. Custom takes your own format code and lists the codes the page already uses. A broken code shows an error that points to the bad character. OK writes only what you changed, as one undo step.
+
+Cell styles applies a named style, such as Heading, Total, Input, Good, Bad, or Accent 1 to 6. There are 16 built-in styles, and New style from the selected cell makes your own. Change a style and every cell that uses it changes too, in one undo step. Formats you set by hand stay.
+
+Format as table picks one of 21 looks, or No look. Options turn on a header row, a total row, the first and last column, and banded rows and columns.
+
+The format painter copies the look of the selected cell. Then select the cells to change and release the pointer, or press Enter. Esc cancels.
+
+## Fill handle, row edges, and borders
+
+A small square sits at the corner of the selection. Drag it down or across to fill the cells. Numbers, dates, month and weekday names, and text that ends in a number continue as a series. Formulas move their references. Hold Ctrl to copy the cells instead. After the drop, a menu offers Copy cells, Fill series, Fill formatting only, and Fill without formatting. The commands Fill series down and Fill series right do the same from the keyboard.
+
+Drag the bottom edge of a row to change its height. Double click or double tap a row or column edge to fit it to its content.
+
+On a touch screen, drag the selection handles to grow or shrink the selection. Tap a cell to select it, double tap to edit it, and press and hold to open its menu.
+
+Draw border and Erase border are in the Format menu. Drag a pen or the mouse along the lines of the table to draw or erase them. Press Esc to stop.
+
+## Copy and paste with spreadsheets
+
+Copy cells and paste them into Excel, Google Sheets, or LibreOffice. Formulas, number formats, fonts, colors, borders, merged cells, and column widths come along. Paste from those apps works the same way. Formulas move to where they land, and the table grows to fit. A paste is one undo step. A spreadsheet range pasted outside a table becomes a new table.
+
+Ctrl+Shift+V pastes the values only. Ctrl+Alt+V opens Paste special. It can paste all, formulas, values, formats, notes, validation rules, or column widths. It can also add, subtract, multiply, or divide into the cells below, skip blank cells, transpose rows and columns, or paste a link to the copied cells.
+
+## Large tables
+
+A table of more than 2,000 rows draws only the rows near the view, so it opens and scrolls fast. The caret, Find, and screen readers still reach every row. A screen reader hears the row number out of the total.
+
+## Spreadsheet keys
+
+A table can use spreadsheet keys. In Grid mode the arrow keys move between cells, Shift extends the selection, and Ctrl jumps to the edge of the data. Type to replace a cell, or press F2 to edit it with the caret at the end. Esc puts the old content back. Enter and Tab move to the next cell, and inside a selection they cycle through it.
+
+Ctrl+D and Ctrl+R fill down and right, and formula references move with them. Ctrl+; enters today's date and Ctrl+: the time. Alt+Enter starts a new line in a cell.
+
+Choose Use document keys in this table to get the old keys back, where Enter starts a new line. A setting chooses the keys for new tables. A screen reader hears each cell's position, column name, value, and formula. Keyboard shortcuts lists every key.
+
+## Conditional formatting
+
+A rule can color a cell by its value, its text, a date, blanks, errors, top or bottom values, values above or below the average, duplicates, or a formula. Color scales, data bars, and icon sets show a range at a glance. Rules run in priority order, and Stop if true keeps lower rules from applying.
+
+To manage rules, run Cell: Conditional formatting rules from the command palette (Ctrl+K) or the table's context menu. A window lists the rules of the selection, the table, or the page. You can raise or lower a rule, turn Stop if true on or off, or delete it. Undo takes each change back. Making a new rule from a window is not built yet.
+
+## Data validation
+
+A rule can limit what a cell takes. Select cells, open the Data menu, and choose Data validation. Or press Ctrl+K and type "Data validation".
+
+- **Allow** any value, a whole number, a decimal, a date, a time, a text length, a list, a custom formula, or a checkbox.
+- **Data** picks a test, such as between, not between, equal to, or greater than, with a minimum, a maximum, or one value. A value can be a formula.
+- **List** takes typed items, one per line, or the cells that hold the items. Show the list in the cell and a drop-down opens with Alt+Down.
+- **Checkbox** stores one value when checked and another when not. You choose both.
+- **Ignore blank** lets an empty cell pass.
+- **Input message** shows a title and a note when the cell is selected.
+- **Alert style** decides what a bad value does. Stop refuses it. Warning asks first. Information notes it and keeps it. You can write your own alert title and text, or use the default words.
+
+A table holds at most 256 rules. Use Circle invalid data to ring every cell that breaks a rule, and Clear validation circles to remove the rings. Rules are saved in the file.
+
+## Arrays and spills
+
+A formula can return a list or a grid. FILTER, SORT, UNIQUE, SEQUENCE, and the LAMBDA helpers spill their answer into the cells below and to the right. The spill is blocked, and the cell shows #SPILL! when a cell in its way is not empty. Point at the error to read "No room to spill". Arrays have a limit of 1,000,000 values, and MINVERSE and MDETERM take up to 500 rows. A bigger request shows "Too many values". Every function has a line in the [function reference](table-functions.md).
+
+The pages on data tools, formulas in depth, and import and export grow as those features ship. Until then, this page holds the short versions.

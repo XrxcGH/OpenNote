@@ -2,6 +2,7 @@
 // habits, the operator precedence table with a check for which of two operators binds first, and a blank trace table
 // to fill in by hand while reading code. Everything shown is plain text, so it reads in a screen reader and inserts as
 // a table.
+import '../text';
 import { useId, useMemo, useState } from 'react';
 import { Button, announce } from '../../../../ui';
 import {

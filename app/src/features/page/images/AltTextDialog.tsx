@@ -1,6 +1,7 @@
 // The "Alt text" dialog (Phase 4 ARCHITECTURE.md section 20.2): a multi-line description of up to 2,000
 // characters and a "Decorative" checkbox that disables it. Save sends one patchBlock. Phase 5's drawing dialog
 // uses the same component.
+import './text';
 import { useId, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { t } from '../../../strings/t';
@@ -120,14 +121,12 @@ export function editAltText(handle: ImageHandle): Promise<boolean> {
     const onSave = (value: AltTextValue) => {
       close();
       if (value.alt === initial.alt && value.decorative === initial.decorative) return resolve(false);
-      void handle.ctx.sync
-        .send({
-          edits: [{ edit: 'patchBlock', block: block.id, data: { alt: value.alt, decorative: value.decorative } }],
-        })
-        .then(
-          () => resolve(true),
-          () => resolve(false),
-        );
+      const data = { alt: value.alt, decorative: value.decorative };
+      handle.showChange({ data });
+      void handle.ctx.sync.send({ edits: [{ edit: 'patchBlock', block: block.id, data }] }).then(
+        () => resolve(true),
+        () => resolve(false),
+      );
     };
     const onCancel = () => {
       close();

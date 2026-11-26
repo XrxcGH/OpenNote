@@ -14,5 +14,5 @@ mod wic;
 
 pub use import::{image_import, image_import_clip, ImportedAsset};
 pub use probe::{probe, ImageFormat, Probe, ProbeError};
-pub use renditions::register_renditions;
+pub use renditions::register_image_schemes;
 pub use web::image_import_url;

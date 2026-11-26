@@ -1,0 +1,189 @@
+{
+  "cases": [
+    {
+      "name": "every paragraph key",
+      "rules": [
+        "R-PARA-1",
+        "R-PARA-2",
+        "R-STAMP-2",
+        "R-JSON-1",
+        "R-JSON-2",
+        "R-NUM-1",
+        "R-NUM-2"
+      ],
+      "file": "every-paragraph-key.json",
+      "stamp": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "minWriterVersion": 1
+      }
+    },
+    {
+      "name": "a key that names no element",
+      "rules": [
+        "R-PARA-2"
+      ],
+      "file": "a-key-that-names-no-element.json",
+      "stamp": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "minWriterVersion": 1
+      },
+      "ignored": [
+        "paras.01m3sbcmt0000000000000e006"
+      ]
+    },
+    {
+      "name": "lists that continue",
+      "rules": [
+        "R-LIST-1",
+        "R-LIST-2",
+        "R-LIST-3",
+        "R-LIST-4",
+        "R-STAMP-2"
+      ],
+      "file": "lists-that-continue.json",
+      "stamp": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "minWriterVersion": 1
+      }
+    },
+    {
+      "name": "a list that restarts",
+      "rules": [
+        "R-LIST-2",
+        "R-PARA-1"
+      ],
+      "file": "a-list-that-restarts.json",
+      "stamp": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "minWriterVersion": 1
+      }
+    },
+    {
+      "name": "columns",
+      "rules": [
+        "R-LAY-1",
+        "R-STAMP-2"
+      ],
+      "file": "columns.json",
+      "stamp": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "minWriterVersion": 1
+      }
+    },
+    {
+      "name": "text settings and headers",
+      "rules": [
+        "R-VIEW-1",
+        "R-VIEW-2",
+        "R-VIEW-3",
+        "R-PRN-1",
+        "R-PRN-2",
+        "R-STAMP-4",
+        "R-JSON-1"
+      ],
+      "file": "text-settings-and-headers.json",
+      "stamp": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "minWriterVersion": 1
+      }
+    },
+    {
+      "name": "an invalid text setting",
+      "rules": [
+        "R-VIEW-4",
+        "R-VIEW-2",
+        "R-NUM-1"
+      ],
+      "file": "an-invalid-text-setting.json",
+      "stamp": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "minWriterVersion": 1
+      },
+      "problems": [
+        "view.text.defaultTab: a number from 1 to 1584, step 0.05"
+      ]
+    },
+    {
+      "name": "a page style sheet and theme",
+      "rules": [
+        "R-COL-1",
+        "R-STY-1",
+        "R-STY-2",
+        "R-STY-3",
+        "R-STY-5",
+        "R-STY-7",
+        "R-THM-1",
+        "R-THM-2",
+        "R-STAMP-3",
+        "R-JSON-1"
+      ],
+      "file": "a-page-style-sheet-and-theme.json",
+      "stamp": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "minWriterVersion": 1
+      }
+    },
+    {
+      "name": "headings 7 to 9",
+      "rules": [
+        "R-STY-3",
+        "R-PARA-1"
+      ],
+      "file": "headings-7-to-9.json",
+      "stamp": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "minWriterVersion": 1
+      }
+    },
+    {
+      "name": "paras in a table are ignored",
+      "rules": [
+        "R-PARA-3",
+        "R-SHT-21"
+      ],
+      "file": "paras-in-a-table-are-ignored.json",
+      "stamp": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "minWriterVersion": 1
+      }
+    },
+    {
+      "name": "version 1 marks that keep spaces",
+      "rules": [
+        "R-WS-3",
+        "R-STAMP-5"
+      ],
+      "file": "version-1-marks-that-keep-spaces.json",
+      "stamp": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "minWriterVersion": 1
+      }
+    },
+    {
+      "name": "a style point key without its version 1 key",
+      "rules": [
+        "R-STY-2"
+      ],
+      "file": "a-style-point-key-without-its-version-1-key.json",
+      "stamp": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "minWriterVersion": 1
+      },
+      "problems": [
+        "styles.normal.size: 16.0, the value of sizePt in page units (R-STY-2)"
+      ]
+    }
+  ]
+}

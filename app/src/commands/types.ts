@@ -31,6 +31,14 @@ export type KeyScope =
   | 'editor'
   | 'editor.table'
   | 'editor.code'
+  /** A table in Grid mode: the selection is whole cells, and keys act like a spreadsheet's (Beta 10). */
+  | 'tableGrid'
+  /** A table cell in Edit mode: the caret is in the cell's text (Beta 10). */
+  | 'tableEdit'
+  /** A focused code editor, in the code studio or a code cell (Beta 11). Deeper than page and editor commands. */
+  | 'codeEditor'
+  /** A code editor while a debug session is paused, where F10 steps over (Beta 13). */
+  | 'codeDebug'
   | 'pageObject'
   | 'zoomBox';
 export type CommandCategory =
@@ -45,6 +53,8 @@ export type CommandCategory =
   | 'format'
   | 'insert'
   | 'table'
+  /** The code editor's commands: the shortcut list's "Code editor" group. */
+  | 'code'
   | 'object';
 export type FocusZone =
   'titleBar' | 'commandBar' | 'notebooks' | 'pages' | 'page' | 'textInput' | 'dialog' | 'palette' | 'none';
@@ -70,6 +80,8 @@ export interface CommandDef<Args = void> {
    * OneNote's meaning (AMENDMENTS.md P2-4). Missing sets use `keys`; an empty list means no shortcut there.
    */
   presetKeys?: { readonly [P in KeymapPresetId]?: readonly Chord[] };
+  /** Chords for the sets without their own list while `flag` is off, so a key that a flagged command takes over stays. */
+  keysWhileOff?: { readonly flag: FlagId; readonly keys: readonly Chord[] };
   /** Default 'global'. */
   scope?: KeyScope;
   /**
@@ -90,6 +102,8 @@ export interface CommandDef<Args = void> {
   when?: (ctx: CommandContext) => boolean;
   /** Shown but disabled when false. */
   enabled?: (ctx: CommandContext) => boolean;
+  /** Why a disabled command is disabled, in words: a menu shows it on the item (tooltip and aria-description). */
+  disabledReason?: (ctx: CommandContext) => string | undefined;
   /** For menuitemcheckbox, menuitemradio, and the palette. */
   checked?: (ctx: CommandContext) => boolean;
   /** Default true. */

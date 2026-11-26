@@ -10,7 +10,8 @@ use opennote_core::model::{
 };
 use opennote_core::{AssetId, PageId};
 
-use crate::doc::parse::{parse, SoftBreaks};
+use crate::doc::data::TextData;
+use crate::doc::parse::{parse_note, parse_page};
 use crate::doc::{visit_inlines_mut, Block, Inline, Marks};
 use crate::report::PageReport;
 
@@ -49,6 +50,8 @@ struct Tally {
     /// Blocks of OpenNote's own extra types (flashcards, study tape, live citations), which a file shows as text.
     own_with_fallback: usize,
     unknown: Vec<String>,
+    /// Tables whose formulas show their text because their cached results are out of date.
+    stale_tables: Vec<String>,
 }
 
 impl Tally {
@@ -86,6 +89,12 @@ impl Tally {
                 report.skipped(what, "This format cannot hold ink. Export to PDF to keep it.");
             }
         }
+        for name in &self.stale_tables {
+            report.simplified(
+                format!("table {name}"),
+                "Its formulas show their text, because its results are out of date. Open the page in OpenNote once to refresh them.",
+            );
+        }
         let missing = ("file that was not found", "files that were not found");
         report.skipped_count(self.missing_assets, missing, "Their names stay in the text.");
         for name in &self.unknown {
@@ -108,6 +117,48 @@ pub fn page_to_blocks_traced(
 ) -> (Vec<Block>, Vec<opennote_core::BlockId>) {
     let converted = convert_page(page, resolver, report, None);
     (converted.blocks, converted.origins)
+}
+
+/// A converted page with the records of its text blocks, for the exports that write paragraph formatting,
+/// lists, notes, comments, and suggestions.
+#[derive(Debug)]
+pub struct Document {
+    /// The blocks.
+    pub blocks: Vec<Block>,
+    /// The page block that each of `blocks` came from.
+    pub origins: Vec<opennote_core::BlockId>,
+    /// The records of each text block, by block. The blocks that came from one text block follow each other, so
+    /// [`TextData::elements`] of that run of blocks ties each element to its paragraph formatting.
+    pub texts: std::collections::BTreeMap<opennote_core::BlockId, TextData>,
+}
+
+/// Converts a page like [`page_to_blocks_traced`], with the records of its text blocks.
+pub fn page_to_document(page: &Page, resolver: &mut dyn Resolver, report: &mut PageReport) -> Document {
+    let converted = convert_page(page, resolver, report, None);
+    let texts = converted
+        .origins
+        .iter()
+        .filter_map(|id| match &page.blocks.get(*id)?.data {
+            BlockData::Text(text) => Some((*id, text_data(text))),
+            _ => None,
+        })
+        .collect();
+    Document {
+        blocks: converted.blocks,
+        origins: converted.origins,
+        texts,
+    }
+}
+
+/// The records of a core text block.
+pub fn text_data(text: &opennote_core::model::TextData) -> TextData {
+    let ids: Vec<String> = text.ids.iter().map(ToString::to_string).collect();
+    let styles = text
+        .styles
+        .iter()
+        .map(|(id, style)| (id.to_string(), style.clone()))
+        .collect();
+    TextData::read(&ids, &styles, &text.extra)
 }
 
 /// A converted page, for the exports that keep more than the blocks.
@@ -218,7 +269,9 @@ impl Convert<'_> {
     /// The inlines of a footnote: its paragraphs, joined by spaces.
     fn note(&mut self, markdown: &str) -> Vec<Inline> {
         let mut inlines = Vec::new();
-        for block in self.markdown(markdown) {
+        let mut blocks = parse_note(markdown).blocks;
+        visit_inlines_mut(&mut blocks, &mut |inlines| self.fix_inlines(inlines));
+        for block in blocks {
             if let Block::Paragraph(content) = block {
                 if !inlines.is_empty() {
                     inlines.push(Inline::text(" "));
@@ -230,7 +283,7 @@ impl Convert<'_> {
     }
 
     fn markdown(&mut self, markdown: &str) -> Vec<Block> {
-        let mut blocks = parse(markdown, SoftBreaks::Space).blocks;
+        let mut blocks = parse_page(markdown).blocks;
         visit_inlines_mut(&mut blocks, &mut |inlines| self.fix_inlines(inlines));
         blocks
     }
@@ -274,19 +327,46 @@ impl Convert<'_> {
 
     fn table(&mut self, table: &TableData) -> Block {
         self.tally.tables += 1;
+        let sheet = crate::sheet::read(table);
         let rows = table
             .rows
             .iter()
-            .map(|row| {
+            .enumerate()
+            .map(|(r, row)| {
                 let cells = table.columns.iter().map(|column| row.cells.get(&column.id));
                 cells
-                    .map(|cell| self.cell(cell.map_or("", |c| c.markdown.as_str())))
+                    .enumerate()
+                    .map(|(c, cell)| {
+                        let result = sheet.as_ref().and_then(|s| s.results[r][c].as_deref());
+                        match result {
+                            Some(text) => vec![Inline::text(text)],
+                            None => self.cell(cell.map_or("", |c| c.markdown.as_str())),
+                        }
+                    })
                     .collect()
             })
             .collect();
-        Block::Table {
-            header: table.header,
-            rows,
+        let widths = table
+            .columns
+            .iter()
+            .map(|c| c.width.map_or(0, |w| w.round().clamp(0.0, 100_000.0) as u32))
+            .collect::<Vec<_>>();
+        let widths = if widths.contains(&0) { Vec::new() } else { widths };
+        match sheet {
+            Some(sheet) => {
+                if sheet.stale {
+                    let name = sheet.name.clone().unwrap_or_else(|| self.tally.tables.to_string());
+                    self.tally.stale_tables.push(name);
+                }
+                Block::Table {
+                    header: table.header,
+                    rows,
+                    cell_styles: sheet.styles,
+                    merges: sheet.merges,
+                    widths,
+                }
+            }
+            None => Block::table(table.header, rows),
         }
     }
 
@@ -340,7 +420,7 @@ impl Convert<'_> {
         for inline in inlines {
             match inline {
                 Inline::Image { dest, alt } => *inline = self.fix_image(dest, alt),
-                Inline::Text { marks, .. } => {
+                Inline::Text { marks, .. } | Inline::Note { marks, .. } => {
                     if let Some(dest) = marks.link.take() {
                         marks.link = self.link(&dest);
                     }
@@ -394,3 +474,6 @@ impl Convert<'_> {
 fn asset_id(dest: &str) -> Option<AssetId> {
     AssetId::parse(dest.strip_prefix("asset:")?).ok()
 }
+
+#[cfg(test)]
+mod sheet_tests;

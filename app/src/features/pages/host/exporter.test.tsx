@@ -1,3 +1,4 @@
+// checks-disable-file brand-consistency: the test data names fonts and sizes.
 // The export jobs through the web platform's stand-ins, in a real browser: the page is measured and planned with real
 // layout, the stand-in PDF has the planned pages, and the files that would be saved are the ones the job writes.
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -5,8 +6,11 @@ import { createWebExports, standInPdf } from '../../../platform/web/exports';
 import type { ExportsClient } from '../../../platform/types';
 import { inspectPdf } from '../pdf';
 import { pageOf, textBlock } from '../testing/build';
-import { exportHtmlFile, exportMarkdownFile, exportPdfFile, PdfCheckError } from './exporter';
+import { sheetModel } from '../../tables';
+import { exportHtmlFile, exportMarkdownFile, exportPdfFile, PdfCheckError, prepareInput } from './exporter';
+import { configureStyleStorage, loadStyles, localStylesClient, saveStyles } from '../../page';
 import type { PageSource } from './source';
+import { readExportPage } from '../export';
 
 const PARAGRAPH =
   'The reading room was quiet. A lamp on the desk threw a warm circle over the page, and the pencil moved slowly ' +
@@ -41,6 +45,7 @@ function recording(overrides: Partial<ExportsClient> = {}): Recorded {
 
 afterEach(() => {
   document.querySelectorAll('iframe').forEach((frame) => frame.remove());
+  configureStyleStorage(null);
 });
 
 describe('exportPdfFile', () => {
@@ -151,5 +156,108 @@ describe('exportHtmlFile', () => {
     expect(html).toContain('<h1 class="page-title">Field notes</h1>');
     expect(html).toContain("default-src 'none'");
     expect(writes[0].files).toHaveLength(1);
+  });
+});
+
+function formattedSource(markdown: string): PageSource {
+  const page = pageOf([textBlock(markdown)], { title: 'Styled', view: { layout: 'flow', mode: 'paginated' } });
+  return { pageId: 'p2', title: 'Styled', notebook: 'Work', section: 'Notes', page, assetUrls: {} };
+}
+
+const decode = (bytes: Uint8Array) => new TextDecoder().decode(bytes);
+
+describe('the fonts of an exported web page', () => {
+  it('embeds the bundled stand-in for Calibri and names the font with its stack', async () => {
+    const { client, writes } = recording();
+    await exportHtmlFile(client, formattedSource('plain <span data-font="Calibri">calibri words</span>'));
+    const html = decode(writes[0].files[0].bytes);
+    expect(html).toContain('@font-face{font-family:"Carlito";font-style:normal;font-weight:400;');
+    expect(html).toContain('@font-face{font-family:"Carlito";font-style:italic;font-weight:700;');
+    expect(html).toMatch(/src:url\("data:font\/woff2;base64,[A-Za-z0-9+/=]{100,}"\) format\("woff2"\)/);
+    expect(html).toContain('&#34;Calibri&#34;, &#34;Carlito&#34;');
+    // Only the fonts the page uses are embedded.
+    expect(html).not.toContain('font-family:"Caladea"');
+  });
+
+  it('embeds nothing when no text names a bundled font', async () => {
+    const { client, writes } = recording();
+    await exportHtmlFile(client, formattedSource('plain words'));
+    expect(decode(writes[0].files[0].bytes)).not.toContain('@font-face');
+  });
+
+  it('gives the print window the stand-ins beside the base families', () => {
+    const faces = prepareInput(formattedSource('x'), {}).theme?.fontFaces ?? '';
+    for (const family of ['Literata Variable', 'OpenNote Sans', 'Atkinson Hyperlegible Mono', 'Carlito', 'Caladea']) {
+      expect(faces).toContain(`font-family:"${family}"`);
+    }
+  });
+});
+
+describe('the notebook styles of an export', () => {
+  it('reach the print input and the web page, by the notebook of the page', async () => {
+    configureStyleStorage({ client: localStylesClient(localStorage), persistent: false, storage: localStorage });
+    await loadStyles('nb-1');
+    await saveStyles('nb-1', { h2: { size: 40 } }, { undo: false });
+    const source = { ...formattedSource('## Head'), notebookId: 'nb-1' };
+    expect(prepareInput(source, {}).styles).toMatchObject({ h2: { size: 40 } });
+    const { client, writes } = recording();
+    await exportHtmlFile(client, source);
+    expect(decode(writes[0].files[0].bytes)).toContain('font-size:40px');
+    // A page in no notebook has none.
+    expect(prepareInput(formattedSource('x'), {}).styles).toEqual({});
+  });
+});
+
+describe('the Markdown export option for formatting', () => {
+  const markdown = 'a <span data-font="Georgia">b</span> c';
+  it('keeps the tags by default and removes them when asked', async () => {
+    const kept = recording();
+    await exportMarkdownFile(kept.client, formattedSource(markdown));
+    expect(decode(kept.writes[0].files[0].bytes)).toContain(markdown);
+    const removed = recording();
+    await exportMarkdownFile(removed.client, formattedSource(markdown), 'remove');
+    const text = decode(removed.writes[0].files[0].bytes);
+    expect(text).toContain('a b c');
+    expect(text).not.toContain('data-font');
+  });
+});
+
+/** A page with one table: B2 is `=2*3` with the cached result 6. */
+function tableSource(stale: boolean, name?: string): PageSource {
+  const columns = [
+    { id: 'k1', width: 100 },
+    { id: 'k2', width: 100 },
+  ];
+  const rows = [
+    { id: 'r1', cells: { k1: { markdown: 'A' }, k2: { markdown: 'B' } } },
+    { id: 'r2', cells: { k1: { markdown: 'x' }, k2: { markdown: '=2*3' } } },
+  ];
+  const valuesOf = stale ? 'fnv1a:0000000000000000' : sheetModel.fingerprint({ header: true, columns, rows });
+  const sheet = { values: { r2: { k2: 6 } }, valuesOf, ...(name ? { table: { name } } : {}) };
+  const page = readExportPage({
+    id: 'P',
+    title: 'Sheet',
+    blocks: [{ id: 'tb', order: 'a', type: 'table', data: { header: true, columns, rows, sheet } }],
+  });
+  return { pageId: 'p3', title: 'Sheet', notebook: 'Work', section: 'Notes', page, assetUrls: {} };
+}
+
+describe('the stale tables of a text export', () => {
+  it('names a table whose formulas were written as text, in Markdown and in the web page', async () => {
+    const md = recording();
+    const outcome = await exportMarkdownFile(md.client, tableSource(true, 'Totals'));
+    expect(decode(md.writes[0].files[0].bytes)).toContain('| x | =2*3 |');
+    expect(outcome).toMatchObject({ status: 'saved', staleTables: ['Totals'] });
+    const web = recording();
+    const html = await exportHtmlFile(web.client, tableSource(true));
+    expect(decode(web.writes[0].files[0].bytes)).toContain('<td>=2*3</td>');
+    expect(html).toMatchObject({ status: 'saved', staleTables: ['Table 1'] });
+  });
+
+  it('reports nothing when the results are fresh', async () => {
+    const md = recording();
+    const outcome = await exportMarkdownFile(md.client, tableSource(false));
+    expect(decode(md.writes[0].files[0].bytes)).toContain('| x | 6 |');
+    expect(outcome).toMatchObject({ status: 'saved', staleTables: [] });
   });
 });

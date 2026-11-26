@@ -1,5 +1,6 @@
 // One tool of the kit: its fields, a choice of SI or US units, ready-made examples, the results, and the Insert
 // menu. The typed texts are kept on this device for each tool, and the unit system for the whole kit.
+import '../text';
 import { useEffect, useId, useMemo, useState } from 'react';
 import { t } from '../../../../strings/t';
 import { followKitForm } from '../../../tools';
@@ -196,7 +197,8 @@ function insertItems(c: InsertContext, texts: Readonly<Record<string, string>>):
     label: say('kitFluidHeat.ui.insertLive'),
     onSelect: () => void insertLive(c, texts).then(done),
   });
-  return items;
+  // A tool with no worked steps has no entry for them: an empty list would insert nothing and say nothing.
+  return c.outcome.steps.length > 0 ? items : items.filter((item) => item.id !== 'steps');
 }
 
 export function ToolPanel({ tool, spec }: { tool: string; spec: ToolSpec }) {

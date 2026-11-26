@@ -7,8 +7,9 @@ use serde_json::Value;
 use super::escape::comment;
 use super::inline::picture_path;
 use super::writer::Writer;
+use crate::doc::data::Para;
 use crate::doc::{Block, Inline};
-use crate::export::convert::Converted;
+use crate::export::convert::{text_data, Converted};
 
 const CITATION: &str = "ext:org.opennote/citation";
 const BIBLIOGRAPHY: &str = "ext:org.opennote/bibliography";
@@ -60,8 +61,14 @@ impl Writer<'_> {
             if let Some(live) = self.live(page, origin) {
                 parts.push(live);
             } else {
-                for block in &converted.blocks[start..end] {
-                    parts.push(self.top_block(page, origin, block));
+                let run = &converted.blocks[start..end];
+                let paras = paragraph_formats(page, origin, run);
+                for (i, block) in run.iter().enumerate() {
+                    let text = self.top_block(page, origin, block);
+                    parts.push(match paras.get(i).and_then(Option::as_ref) {
+                        Some(para) => with_alignment(text, para),
+                        None => text,
+                    });
                 }
             }
             start = end;
@@ -158,6 +165,37 @@ impl Writer<'_> {
     }
 }
 
+/// The paragraph formatting of each top-level block of a run that came from one text block.
+fn paragraph_formats(page: &Page, origin: BlockId, run: &[Block]) -> Vec<Option<Para>> {
+    let mut out = vec![None; run.len()];
+    if let Some(BlockData::Text(text)) = page.blocks.get(origin).map(|b| &b.data) {
+        for element in text_data(text).elements(run) {
+            if let ([i], Some(para)) = (element.path.as_slice(), element.para) {
+                out[*i] = Some(para);
+            }
+        }
+    }
+    out
+}
+
+/// Wraps a paragraph in the environment for its alignment and sets its first-line indent: `center` and `flushright`
+/// for center and end, `\setlength{\parindent}` for a first-line indent in points.
+fn with_alignment(text: String, para: &Para) -> String {
+    if text.trim().is_empty() {
+        return text;
+    }
+    let mut out = text;
+    if let Some(first) = para.indent.map(|i| i.first).filter(|f| f.is_finite() && *f > 0.0) {
+        out = format!("{{\\setlength{{\\parindent}}{{{first:.1}pt}}\n{out}\n}}");
+    }
+    let environment = match para.align.as_deref() {
+        Some("center") => "center",
+        Some("end") => "flushright",
+        _ => return out,
+    };
+    format!("\\begin{{{environment}}}\n{out}\n\\end{{{environment}}}")
+}
+
 /// The commands that print the bibliography, listing these keys even when nothing cites them.
 pub(super) fn bibliography_commands(keys: &[String]) -> String {
     let mut out = String::new();
@@ -172,7 +210,8 @@ pub(super) fn bibliography_commands(keys: &[String]) -> String {
 mod tests {
     use opennote_core::model::{Crop, JsonMap};
 
-    use super::cropped;
+    use super::{cropped, with_alignment};
+    use crate::doc::data::{Indent, Para};
 
     fn crop(x: f64, y: f64, w: f64, h: f64) -> Crop {
         Crop {
@@ -211,5 +250,36 @@ mod tests {
             tex.contains(r"trim={0.5000\width 0.0000\height 0.0000\width 0.0000\height}"),
             "{tex}"
         );
+    }
+
+    #[test]
+    fn a_centered_paragraph_is_written_inside_the_center_environment() {
+        let para = Para {
+            align: Some("center".into()),
+            ..Para::default()
+        };
+        assert_eq!(with_alignment("Hi".into(), &para), "\\begin{center}\nHi\n\\end{center}");
+        let end = Para {
+            align: Some("end".into()),
+            ..Para::default()
+        };
+        assert_eq!(
+            with_alignment("Hi".into(), &end),
+            "\\begin{flushright}\nHi\n\\end{flushright}"
+        );
+    }
+
+    #[test]
+    fn a_first_line_indent_sets_parindent() {
+        let para = Para {
+            indent: Some(Indent {
+                start: 0.0,
+                end: 0.0,
+                first: 36.0,
+            }),
+            ..Para::default()
+        };
+        let tex = with_alignment("Hi".into(), &para);
+        assert!(tex.contains("\\setlength{\\parindent}{36.0pt}"), "{tex}");
     }
 }

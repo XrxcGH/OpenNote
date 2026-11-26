@@ -1,5 +1,6 @@
 // The orbital mechanics tool's Earth-orbit calculations: a ground track, J2 drift with Sun-synchronous orbits, and
 // eclipses in a cylindrical shadow.
+import '../text';
 import type { MessageKey } from '../../../../strings/t';
 import { deg, fmt, q } from '../kit/format';
 import type { KitStep, ModeDef, Outcome, Plot, PlotSeries, ResultRow } from '../kit/types';

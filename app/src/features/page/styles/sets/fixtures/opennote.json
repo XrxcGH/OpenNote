@@ -1,0 +1,19 @@
+{
+  "about": "Known answers for the OpenNote style set: each size names a type token of app/src/theme/tokens.ts (px), which the test turns into points (x 3/4, nearest 0.5 pt). Weights name font.weight tokens.",
+  "styles": {
+    "normal": { "size": "note" },
+    "title": { "size": "display", "weight": "semibold" },
+    "subtitle": { "size": "subtitle" },
+    "h1": { "size": "title1", "weight": "bold" },
+    "h2": { "size": "title2", "weight": "bold" },
+    "h3": { "size": "title3", "weight": "semibold" },
+    "h4": { "size": "subtitle", "weight": "semibold" },
+    "h5": { "size": "note", "weight": "semibold" },
+    "h6": { "size": "body", "weight": "semibold" },
+    "h7": { "size": "body", "weight": "semibold" },
+    "h8": { "size": "body", "weight": "medium" },
+    "h9": { "size": "body", "weight": "medium" },
+    "citation": { "size": "small" },
+    "code": { "size": "small" }
+  }
+}

@@ -82,6 +82,7 @@ export const study = {
     cancel: 'Cancel',
     remove: 'Remove card',
     removed: 'Card removed.',
+    undoRemove: 'Undo',
     saved: 'Card saved.',
     kind: 'Card type',
     kinds: {
@@ -174,6 +175,7 @@ export const study = {
     addDeck: 'Add as a new deck',
     imported: 'Added {count, plural, one {# card} other {# cards}} as the deck {name}.',
     failed: 'This file could not be read as cards.',
+    notText: 'This file is not a text file, so it cannot hold cards. Choose a CSV, TSV, or text file.',
     unsupported:
       'This Anki package is in a newer format than this app reads. ' +
       'Export it from Anki as a package with older versions supported, then try again.',
@@ -281,6 +283,8 @@ export const study = {
     text: 'Diagram text',
     label: '{kind}, drawn from the diagram text',
     problem: 'The diagram text has a problem. {message}',
+    checkLine: 'Check line {line} for a missing word, arrow, or bracket.',
+    checkGeneral: 'Check the first line and each arrow or bracket.',
     save: 'Save as SVG',
     svgLabel: 'SVG picture',
     exportLabel: 'Diagram',
@@ -330,6 +334,11 @@ export const study = {
   },
   calendar: {
     found: 'Found in {name}',
+    exportName: 'Upcoming.ics',
+    exportLabel: 'Calendar file',
+    exported: 'Saved your tasks, exams, and classes as a calendar file.',
+    exportCanceled: 'Nothing was saved.',
+    exportFailed: 'The calendar file could not be saved.',
     kinds: {
       classes: '{count, plural, one {# weekly class} other {# weekly classes}} for the class schedule',
       exams: '{count, plural, one {# exam date} other {# exam dates}}',
@@ -395,6 +404,11 @@ export const study = {
       // checks-disable-next-line length: a keyword list is one string the search matches against
       'unit converter convert length mass temperature volume speed force frequency density torque fuel economy mpg current voltage resistance',
     kind: 'Kind of unit',
+    swap: 'Swap units',
+    swapped: 'Swapped: now converting from {from} to {to}.',
+    copy: 'Copy result',
+    copied: 'Copied {text}.',
+    copyFailed: 'The result could not be copied.',
     categories: {
       length: 'Length',
       mass: 'Mass',
@@ -452,6 +466,10 @@ export const study = {
     recentCleared: 'Recent symbols cleared.',
     grid: 'Symbols',
     pick: 'Insert {name}',
+    pickCopy: 'Copy {name}',
+    copyMode: 'Copy to the clipboard instead of inserting',
+    copied: 'Copied {name}.',
+    copyFailed: 'The symbol could not be copied.',
     inserted: 'Inserted {name}.',
     noPage: 'Open a page first, then choose a symbol.',
     noMatch: 'No symbol matches "{query}".',

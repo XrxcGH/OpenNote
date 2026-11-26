@@ -3,6 +3,13 @@
 //! (`windows.rs`); this module holds the commands and the rules that don't need Windows: several languages at
 //! once, the personal dictionary, and the words the settings skip.
 
+// The checkers other than Windows are plain programs and scripts, so their parsing is built and tested everywhere.
+#[allow(dead_code)]
+pub mod linux;
+#[allow(dead_code)]
+pub mod macos;
+#[allow(dead_code)]
+mod system;
 pub mod windows;
 
 use std::collections::HashSet;

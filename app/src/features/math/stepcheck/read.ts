@@ -16,6 +16,7 @@ import { sumOf } from '../calculus/series';
 // eslint-disable-next-line opennote/feature-boundaries -- see the line above
 import { evaluateNotes } from '../../tools/calculator/notes';
 import { compareAt } from './sample';
+import { isRootList } from './rootList';
 import { evaluateMatrix, looksLikeMatrix, MatrixShape, type Matrix } from './matrix';
 import {
   dropLead,
@@ -736,6 +737,7 @@ function readStatement(line: string, ctx: Context): Statement {
     return c.rels.map((rel, i) => ({ left: sides[i], rel, right: sides[i + 1] }));
   };
   const all = groups.map(atomsOf);
+  if (join === 'and' && isRootList(all, variables)) join = 'or';
   const statement: Statement = { kind: 'relations', groups: join === 'or' ? all : [all.flat()], text };
   remember(statement, ctx);
   return statement;

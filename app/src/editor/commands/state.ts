@@ -22,7 +22,8 @@ function attrsMatch(mark: Mark, attrs: Record<string, unknown>): boolean {
   return Object.entries(attrs).every(([key, value]) => mark.attrs[key] === value);
 }
 
-/** Whether every character in the selection has the mark, or the caret will type with it. */
+/** Whether every character in the selection has the mark, or the caret will type with it. A selection of several
+ * ranges counts only the text of its ranges. */
 export function isMarkActive(state: EditorState, name: string, attrs?: Record<string, unknown>): boolean {
   const type = state.schema.marks[name] as MarkType | undefined;
   if (!type) return false;
@@ -30,12 +31,14 @@ export function isMarkActive(state: EditorState, name: string, attrs?: Record<st
   if (state.selection.empty) return marksAtSelection(state).some(matches);
   let all = true;
   let any = false;
-  state.doc.nodesBetween(state.selection.from, state.selection.to, (node: PMNode) => {
-    if (!node.isText) return true;
-    any = true;
-    if (!node.marks.some(matches)) all = false;
-    return false;
-  });
+  for (const range of state.selection.ranges) {
+    state.doc.nodesBetween(range.$from.pos, range.$to.pos, (node: PMNode) => {
+      if (!node.isText) return true;
+      any = true;
+      if (!node.marks.some(matches)) all = false;
+      return false;
+    });
+  }
   return any && all;
 }
 
@@ -54,6 +57,8 @@ export function caretInLink(state: EditorState): boolean {
 
 /** Whether the selection has text in it, or the caret is in a link: when Ctrl+K edits a link. */
 export function linkApplies(state: EditorState): boolean {
+  // Selected cells are not selected text: in a table's Grid mode Ctrl+K stays the palette (ADR 0063).
+  if ('$anchorCell' in state.selection) return caretInLink(state);
   return !state.selection.empty || caretInLink(state);
 }
 
@@ -92,10 +97,20 @@ export function blockKindAt(state: EditorState): BlockKindName | null {
   return parent.type.name === 'paragraph' ? 'paragraph' : null;
 }
 
-/** Whether the caret's textblock allows marks: code blocks and math don't. */
+/**
+ * Whether the caret's textblock allows marks: code blocks and math don't. A range holds when some textblock in it
+ * does, so Ctrl+A, whose range starts and ends outside every textblock, still takes formats (A1-A04-2).
+ */
 export function marksAllowed(state: EditorState): boolean {
-  const { $from } = state.selection;
-  return $from.parent.isTextblock && $from.parent.type.spec.code !== true;
+  const { $from, from, to, empty } = state.selection;
+  const allows = (node: PMNode) => node.isTextblock && node.type.spec.code !== true;
+  if (empty || allows($from.parent)) return allows($from.parent);
+  let found = false;
+  state.doc.nodesBetween(from, to, (node) => {
+    if (allows(node)) found = true;
+    return !found && !node.isTextblock;
+  });
+  return found;
 }
 
 /** Whether the caret is in a task item's first paragraph, where Check or uncheck applies. */
@@ -110,6 +125,16 @@ export function inTaskItem(state: EditorState): boolean {
 
 /** The event an editor sends when Backspace at its very start should merge it into the text block above. */
 export const MERGE_BLOCKS_EVENT = 'opennote:mergeblocks';
+
+/** Backspace at the start of a text block right after a break block: the page removes the break (as Word does). */
+export const REMOVE_BREAK_EVENT = 'opennote:removebreak';
+
+export interface RemoveBreakDetail {
+  /** The break block above. */
+  breakBlock: string;
+  /** The text block whose caret stays. */
+  block: string;
+}
 
 export interface MergeBlocksDetail {
   /** The block whose text moves up. */

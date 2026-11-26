@@ -189,13 +189,7 @@ fn apply_properties(properties: &[(String, String)], content: &mut NoteContent, 
         return;
     }
     table.insert(0, vec![vec![Inline::text("Property")], vec![Inline::text("Value")]]);
-    content.blocks.insert(
-        0,
-        Block::Table {
-            header: true,
-            rows: table,
-        },
-    );
+    content.blocks.insert(0, Block::table(true, table));
     report.came_over(format!("{} database properties as a table", properties.len()));
 }
 

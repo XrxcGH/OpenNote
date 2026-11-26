@@ -24,6 +24,8 @@ export interface CoreRestoreBlocksRequest {
 
 export interface CoreTxnAck {
   seq: number;
+  /** Whether the edit is in the journal file (crates/core/src/session/page.rs, TxnAck::written). */
+  written?: boolean;
   orderKeys: Record<string, string>;
   canUndo: boolean;
   canRedo: boolean;

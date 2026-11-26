@@ -1,3 +1,4 @@
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { greenTheorem, lineIntegral, potentialDifference } from './curves';
 import { divergenceCurl, gradient, jacobian } from './diff';

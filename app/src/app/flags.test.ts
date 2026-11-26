@@ -28,7 +28,6 @@ describe('flags', () => {
     expect(isEnabled('page.editor')).toBe(true);
     initFlags('stable');
     expect(isEnabled('page.editor')).toBe(true);
-    expect(isEnabled('page.imageRenditions')).toBe(false);
   });
 
   it('take overrides in development and nightly builds only, the later ones winning', () => {
@@ -48,5 +47,38 @@ describe('flags', () => {
       { id: 'c', flag: 'notes.sectionGroups' as const },
     ];
     expect(withEnabledFlags(items).map((item) => item.id)).toEqual(['a', 'c']);
+  });
+});
+
+describe('the Beta 10 flags', () => {
+  it('turn on the version 2 text and table controls up to Beta in Beta 10, not in Stable', () => {
+    for (const channel of ['dev', 'nightly', 'beta'] as const) {
+      initFlags(channel);
+      expect(isEnabled('text.v2Controls'), channel).toBe(true);
+      expect(isEnabled('tables.sheetWrites'), channel).toBe(true);
+    }
+    initFlags('stable');
+    expect(isEnabled('text.v2Controls')).toBe(false);
+    expect(isEnabled('tables.sheetWrites')).toBe(false);
+  });
+});
+
+describe('the Beta 11 code flags', () => {
+  it('turn on the studio and the code models up to Beta, and installed toolchains only in test builds', () => {
+    for (const channel of ['dev', 'nightly', 'beta'] as const) {
+      initFlags(channel);
+      expect(isEnabled('code.studio'), channel).toBe(true);
+      expect(isEnabled('code.models'), channel).toBe(true);
+    }
+    for (const channel of ['dev', 'nightly'] as const) {
+      initFlags(channel);
+      expect(isEnabled('code.tier2'), channel).toBe(true);
+    }
+    initFlags('beta');
+    expect(isEnabled('code.tier2')).toBe(false);
+    initFlags('stable');
+    expect(isEnabled('code.studio')).toBe(false);
+    expect(isEnabled('code.tier2')).toBe(false);
+    expect(isEnabled('code.models')).toBe(false);
   });
 });

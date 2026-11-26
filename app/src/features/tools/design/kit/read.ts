@@ -1,4 +1,5 @@
 // Turns what a person typed into the values a tool's engine takes, and says which field is wrong and why.
+import { switchedText } from '../../../../core/units';
 import { shownFields, type Field, type Result, type ToolSpec, type Values } from './spec';
 import { defaultUnit, fromEngine, toEngine, hasUnit, type System } from './units';
 
@@ -87,8 +88,13 @@ export function convertTexts(
     nextUnits[field.id] = to;
     const parsed = parseNumber(texts[field.id] ?? field.def);
     if (typeof parsed === 'number' && from !== to && hasUnit(field.dim, from)) {
-      nextTexts[field.id] = String(
-        Number(fromEngine(field.dim, to, toEngine(field.dim, from, parsed)).toPrecision(15)),
+      nextTexts[field.id] = switchedText(
+        texts[field.id] ?? field.def,
+        `${field.dim}:${from}`,
+        `${field.dim}:${to}`,
+        fromEngine(field.dim, to, toEngine(field.dim, from, parsed)),
+        // The cutter diameter must open at 50 mm, not 49.99996 mm, so the number keeps all its figures.
+        15,
       );
     }
   }

@@ -119,6 +119,7 @@ export async function syncRig(page: PageJson, options: { supportsSplice?: boolea
     },
     mount(block, markdown, insert) {
       const root = document.body.appendChild(document.createElement('div'));
+      root.dataset.blockId = block;
       const editor = createBlockEditor(root, parseTextBlock(markdown), {
         kind: 'text',
         block,

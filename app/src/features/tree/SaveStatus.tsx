@@ -1,6 +1,7 @@
 // The save status in the title bar (ARCHITECTURE.md section 13): "Saved", "Saving", "Offline", "Couldn't save",
 // or "Not responding" while a command holds the core. Only the trouble is announced, because the rest would
-// chatter. In the compact layout it is an icon whose name is its text.
+// chatter. In the compact layout it is an icon whose name is its text. "Couldn't save" is a button that opens the
+// notice (SaveNotice.tsx) with the reason, Retry, and Copy text.
 
 import { CloudCheckIcon } from '@phosphor-icons/react/dist/csr/CloudCheck';
 import { CloudSlashIcon } from '@phosphor-icons/react/dist/csr/CloudSlash';
@@ -10,11 +11,19 @@ import { CloudXIcon } from '@phosphor-icons/react/dist/csr/CloudX';
 import { useEffect } from 'react';
 import type { ComponentType } from 'react';
 import type { SaveStatus as Status } from '../../services/notes';
-import { anySaveFailing, combinedStatus, coreStalled, saveHealthStore } from '../../services/pages/saveHealth';
+import {
+  anySaveFailing,
+  combinedStatus,
+  coreStalled,
+  pageWaiting,
+  saveHealthStore,
+  waitingDetail,
+} from '../../services/pages/saveHealth';
 import { useStore } from '../../state/store';
 import { t } from '../../strings/t';
 import { announce } from '../../ui';
 import type { IconProps } from '../../ui';
+import { openSaveNotice } from './SaveNotice';
 import { treeStore } from './store';
 import styles from './Tree.module.css';
 
@@ -26,21 +35,66 @@ const ICONS: Record<Status, ComponentType<IconProps>> = {
   stalled: CloudXIcon,
 };
 
+/** The status the title bar shows: the notes bridge's, with the pages' saves and the core's health. */
+export function currentSaveStatus(): Status {
+  const health = saveHealthStore.get();
+  return combinedStatus(treeStore.get().saveStatus, anySaveFailing(health), coreStalled(health), pageWaiting(health));
+}
+
+/**
+ * Keeps the status on `root` as `data-save-state`, and what holds it at "Saving" as `data-save-waiting`, even when
+ * the title bar has no room for the item (it moves into More). The e2e specs read them there.
+ * The returned function stops.
+ */
+export function markSaveStatus(root: HTMLElement): () => void {
+  const mark = () => {
+    root.dataset.saveState = currentSaveStatus();
+    root.dataset.saveWaiting = waitingDetail(saveHealthStore.get());
+  };
+  mark();
+  const stops = [treeStore.subscribe(mark), saveHealthStore.subscribe(mark)];
+  return () => stops.forEach((stop) => stop());
+}
+
 export function SaveStatus({ presentation }: { presentation: 'full' | 'icon' | 'menuItem' }) {
   const notes = useStore(treeStore, (state) => state.saveStatus);
   const pageFailing = useStore(saveHealthStore, anySaveFailing);
   const stalled = useStore(saveHealthStore, coreStalled);
-  const status = combinedStatus(notes, pageFailing, stalled);
+  const sending = useStore(saveHealthStore, pageWaiting);
+  const status = combinedStatus(notes, pageFailing, stalled, sending);
   useEffect(() => {
     if (status === 'error') announce(t('tree.save.errorAnnounce'), 'assertive');
     if (status === 'stalled') announce(t('tree.save.stalledAnnounce'), 'assertive');
   }, [status]);
   const Icon = ICONS[status];
   const text = t(`tree.save.${status}`);
+  const label = presentation === 'icon' ? <span className={styles.visuallyHidden}>{text}</span> : <span>{text}</span>;
+  // The trouble is a button: it opens the notice with the reason, Retry, and Copy text.
+  if (status === 'error') {
+    return (
+      <button
+        type="button"
+        className={`${styles.saveStatus} ${styles.saveStatusButton}`}
+        data-save-status
+        data-status={status}
+        title={t('tree.save.errorDetails')}
+        aria-haspopup="dialog"
+        onClick={openSaveNotice}
+      >
+        <Icon aria-hidden />
+        {label}
+      </button>
+    );
+  }
   return (
-    <span className={styles.saveStatus} data-status={status} title={presentation === 'icon' ? text : undefined}>
+    <span
+      className={styles.saveStatus}
+      data-save-status
+      data-status={status}
+      title={presentation === 'icon' ? text : undefined}
+    >
       <Icon aria-hidden />
-      {presentation === 'icon' ? <span className={styles.visuallyHidden}>{text}</span> : <span>{text}</span>}
+      {label}
     </span>
   );
 }

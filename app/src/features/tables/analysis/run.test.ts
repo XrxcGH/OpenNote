@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createMarkdownCache } from '../../../editor/markdown';
+import { toastStore } from '../../../state/toasts';
 import { EN_US } from '../engine';
 import { EMPTY_SMART } from '../smart/data';
 import { buildModel } from '../smart/model';
@@ -25,8 +26,8 @@ function setup(texts: string[][], range: { row0: number; row1: number; col0: num
         equations.push(source);
         return true;
       }),
-      insertTable: vi.fn(async (data: Record<string, unknown>) => {
-        inserted.push(data);
+      insertTables: vi.fn(async (list: Record<string, unknown>[]) => {
+        inserted.push(...list);
         return true;
       }),
     },
@@ -82,13 +83,15 @@ describe('analysis tools on table data', () => {
   });
 
   it('fits a line and adds a summary and a data table with a scatter chart', async () => {
-    const { inserted } = await run('linear', [
+    const { inserted, inst } = await run('linear', [
       ['x', 'y'],
       ['1', '3'],
       ['2', '5'],
       ['3', '7'],
     ]);
     expect(inserted).toHaveLength(2);
+    // Both tables go in together, so one Undo removes the pair (Beta 8 walk B-B03-22).
+    expect(inst.host.insertTables).toHaveBeenCalledTimes(1);
     expect(cellText(inserted[0])[1]).toEqual(['Equation', 'y = 2x + 1']);
     expect((inserted[1].smart as { charts: { kind: string }[] }).charts[0].kind).toBe('scatter');
   });
@@ -166,6 +169,24 @@ describe('analysis tools on table data', () => {
     ]);
     expect(ok).toBe(false);
     expect(announced[0]).toContain('B1');
+  });
+
+  it('leaves the header row out of a matrix when the selection starts on it, and says why when a tool cannot run', async () => {
+    const grid = [
+      ['a', 'b'],
+      ['1', '2'],
+      ['3', '4'],
+    ];
+    const { ok, equations } = await (async () => {
+      const made = setup(grid, { row0: 0, row1: 2, col0: 0, col1: 1 });
+      return { ok: await runAnalysis(made.inst, 'determinant', 'equation'), ...made };
+    })();
+    expect(ok).toBe(true);
+    expect(equations[0]).toContain('-2');
+    toastStore.set(() => ({ current: null, queue: [] }));
+    const bad = await run('inverse', [['a'], ['x']]);
+    expect(bad.ok).toBe(false);
+    expect(toastStore.get().current?.message).toContain('not a number');
   });
 
   it('reads a whole table when only the cursor is in it', () => {

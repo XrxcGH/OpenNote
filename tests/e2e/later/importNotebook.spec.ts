@@ -2,13 +2,13 @@
 // notebook that shows in the tree with its pages. Nothing is added before the person presses Import.
 
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, before, describe, it } from 'node:test';
-import { launchApp, skipReason } from '../harness.ts';
+import { launchApp, skipReason, removeFolder } from '../harness.ts';
 import type { AppSession } from '../harness.ts';
-import { answerPickers, dialogWith, runCommand } from './steps.ts';
+import { dialogWith, pickerEnv, runCommand } from './steps.ts';
 
 describe('importing a notebook into the real app', { skip: skipReason() }, () => {
   let session: AppSession;
@@ -21,18 +21,17 @@ describe('importing a notebook into the real app', { skip: skipReason() }, () =>
     writeFileSync(join(vault, 'Plants', 'Ferns.md'), '# Ferns\n\nFerns reproduce by spores, not seeds.\n');
     writeFileSync(join(vault, 'Plants', 'Mosses.md'), '# Mosses\n\nMosses have no true roots.\n');
     writeFileSync(join(vault, 'Birds.md'), '# Birds\n\nA heron stands still in shallow water.\n');
-    session = await launchApp();
+    session = await launchApp({ env: pickerEnv({ folder: vault }) });
   });
 
   after(async () => {
     await session?.close();
-    rmSync(root, { recursive: true, force: true });
+    removeFolder(root);
   });
 
   it('shows what will come over, then adds the notebook with its pages', async () => {
     const { browser } = session;
     await browser.$('[role="tree"][aria-label="Notebooks"]').waitForExist({ timeout: 20_000 });
-    await answerPickers(browser, { folder: join(root, 'Field Guide') });
     await runCommand(browser, 'import notes', 'Import notes…');
     const dialog = dialogWith(browser, 'Choose a file or folder exported from another app');
     await dialog.waitForExist({ timeout: 10_000 });

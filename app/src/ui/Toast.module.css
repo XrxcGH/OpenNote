@@ -11,6 +11,8 @@
     z-index: var(--layer-toast);
     display: grid;
     justify-items: center;
+    /* Above what the toast must not cover, such as the setup footer's buttons (toastLift in toastHooks.ts). */
+    padding-block-end: var(--toast-lift, 0px);
     pointer-events: none;
   }
 

@@ -1,5 +1,6 @@
 // The matrix console: type MATLAB-style commands or a short script and see the answers as MATLAB would print them.
 // Variables last for the session. Nothing is installed or sent anywhere: the commands run in this window.
+import '../text';
 import { useEffect, useRef, useState } from 'react';
 import { t } from '../../../../strings/t';
 import { Button, announce } from '../../../../ui';
@@ -97,7 +98,7 @@ function Workspace({ rows }: { rows: ReturnType<Session['workspace']> }) {
       {rows.length === 0 ? (
         <Note>{t('kitMath.console.workspaceEmpty')}</Note>
       ) : (
-        <div className={styles.scroll}>
+        <div className={styles.scroll} tabIndex={0} role="region" aria-label={t('kitMath.console.workspaceCaption')}>
           <table className={styles.table}>
             <caption>{t('kitMath.console.workspaceCaption')}</caption>
             <thead>

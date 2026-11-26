@@ -47,7 +47,7 @@ async function clickRow(browser: Browser, tree: string, name: string): Promise<v
 export async function openTextBox(browser: Browser) {
   await clickRow(browser, 'Notebooks', 'Lectures');
   await clickRow(browser, 'Pages', 'Mitosis');
-  const box = browser.$('[role="textbox"][aria-label="Text"]');
+  const box = browser.$('[role="textbox"][aria-label="Page text"]');
   await box.waitForExist({ timeout: 20_000 });
   await box.click();
   await browser.keys(['Control', 'End']);

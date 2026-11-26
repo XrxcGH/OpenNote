@@ -74,7 +74,12 @@ export function shownCheck(): ShownCheck | null {
 
 function summaryText(results: readonly StepResult[]): string {
   const steps = results.filter((r) => r.method !== 'given');
-  if (steps.length === 0) return t('stepCheck.panel.nothing');
+  if (steps.length === 0) {
+    // One readable line has no step before it; Solve works on a single equation.
+    return t(
+      results.length === 1 && results[0].reason === 'start' ? 'stepCheck.panel.oneLine' : 'stepCheck.panel.nothing',
+    );
+  }
   const ok = steps.filter((r) => r.verdict === 'ok').length;
   const broken = steps.filter((r) => r.verdict === 'broken').length;
   const unchecked = steps.filter((r) => r.verdict === 'unchecked').length;
@@ -164,7 +169,7 @@ export function showMarks(mounted: MountedPage, check: ShownCheck, recheck: () =
     item.dataset.verdict = result.verdict;
     item.tabIndex = -1;
     const name = doc.createElement('strong');
-    name.textContent = t('stepCheck.panel.line', { number: i + 1 });
+    name.textContent = t('stepCheck.panel.lineNamed', { number: i + 1 });
     const why = doc.createElement('span');
     why.textContent = ` ${reasonText(result)}`;
     item.append(name, why);

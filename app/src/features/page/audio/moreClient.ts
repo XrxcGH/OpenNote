@@ -19,6 +19,7 @@ export const withoutHost: AudioMore = {
   enhance: notImplemented,
   compress: notImplemented,
   storageScan: notImplemented,
+  freeSpace: () => Promise.resolve(null),
   purgeHistory: notImplemented,
   exportAudio: notImplemented,
   exportVideo: notImplemented,

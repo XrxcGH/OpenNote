@@ -11,6 +11,7 @@ import {
   influence,
   maxEndShear,
   maxMomentAtSection,
+  midspanMoments,
   momentDistribution,
   triangularFixedEnd,
 } from './engine';
@@ -71,6 +72,11 @@ const continuousCalc: Calc = {
           unit: 'kN',
         })),
         row('structures.r.Mmax', peak.M, 'kN·m'),
+        ...midspanMoments(spans, r).map((v, i) => ({
+          label: 'structures.r.Mmid',
+          value: `${i + 1}: ${v.toFixed(4)}`,
+          unit: 'kN·m',
+        })),
       ],
       steps: mdSteps(r),
       latex: r.moments.map(([a, b], i) => `M_{${i + 1}L} = ${tex(a)},\\ M_{${i + 1}R} = ${tex(b)}`).join(';\\ '),

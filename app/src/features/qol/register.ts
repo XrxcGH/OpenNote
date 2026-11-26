@@ -13,7 +13,7 @@ import { commandBar, commands, paletteProviders, setupSteps, settingsSections } 
 import type { NodeSummary } from '../../services/notes';
 import { qolStore } from '../../state/qol';
 import { t } from '../../strings/t';
-import { announce, showToast } from '../../ui';
+import { announce } from '../../ui';
 import { commitHabits } from './setup/habits';
 import {
   currentNode,
@@ -29,7 +29,17 @@ import { followExternal } from './externalStore';
 import { followPower, setFocusMode, toggleDock, toggleFocusMode, toggleMiniWindow } from './modes';
 import { readPrefs } from './prefs';
 import { openQuickCapture } from './quickCaptureControls';
-import { closeActiveTab, duplicateTab, openInNewTab, openInWindow, reopenClosed, stepTab, trackTabs } from './tabs';
+import {
+  closeActiveTab,
+  duplicateTab,
+  followTabsSaved,
+  openInNewTab,
+  openInWindow,
+  reopenClosed,
+  restoreTabs,
+  stepTab,
+  trackTabs,
+} from './tabs';
 
 const register = (...defs: readonly CommandDef[]) => defs.forEach((def) => commands.register(def));
 
@@ -229,7 +239,9 @@ register(
     title: 'qol.commands.nextTab',
     category: 'navigation',
     flag: 'qol.tabs',
-    keys: [chord('Ctrl+Tab')],
+    keys: [chord('Ctrl+Tab'), chord('Ctrl+PageDown')],
+    // Ctrl+PageDown means next page in OneNote, so that set keeps Ctrl+Tab only.
+    presetKeys: { onenote: [chord('Ctrl+Tab')] },
     allowInTextInput: true,
     enabled: () => qolStore.get().tabs.length > 1,
     run: () => stepTab(1),
@@ -239,7 +251,8 @@ register(
     title: 'qol.commands.previousTab',
     category: 'navigation',
     flag: 'qol.tabs',
-    keys: [chord('Ctrl+Shift+Tab')],
+    keys: [chord('Ctrl+Shift+Tab'), chord('Ctrl+PageUp')],
+    presetKeys: { onenote: [chord('Ctrl+Shift+Tab')] },
     allowInTextInput: true,
     enabled: () => qolStore.get().tabs.length > 1,
     run: () => stepTab(-1),
@@ -392,14 +405,7 @@ register(
     title: 'qol.commands.backupNow',
     category: 'general',
     flag: 'qol.scheduledBackups',
-    run: async () => {
-      try {
-        await shellCall('backup.run');
-        showToast({ message: t('qol.backup.done') });
-      } catch {
-        showToast({ message: t('qol.backup.failed'), tone: 'danger' });
-      }
-    },
+    run: async () => void (await (await import('./backupNow')).runBackupNow()),
   }),
   defineCommand({
     id: 'notes.createShortcut',
@@ -493,6 +499,9 @@ if (typeof window !== 'undefined' && isMainWindow()) {
   void shellCall('external.start').catch(() => undefined);
   void readPrefs().then((prefs) => {
     if (prefs.startOnHome === true && isEnabled('qol.home')) qolStore.set((state) => ({ ...state, homeOpen: true }));
+    // The tabs of the last session come back, then every change to them is saved.
+    restoreTabs(prefs.tabs);
+    followTabsSaved();
   });
   // Escape leaves focus mode when nothing else uses it.
   document.addEventListener('keydown', (event) => {

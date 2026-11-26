@@ -150,6 +150,7 @@ export const storage = {
     password: 'Password',
     confirm: 'Type the password again',
     tooShort: 'Use at least 8 characters.',
+    weak: 'This password is easy to guess. A longer one, or a few words together, is safer.',
     mismatch: 'The passwords are different.',
     protectAction: 'Protect',
     protecting: 'Protecting the section…',

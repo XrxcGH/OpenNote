@@ -176,6 +176,8 @@ function push(turn: ShownTurn): void {
   tutorState.set((state) => ({ ...state, turns: [...state.turns, turn].slice(-60) }));
 }
 
+const MAX_QUESTION_CHARS = 1000;
+
 async function run(mode: Mode, rung: Rung, label: string | undefined, question?: string): Promise<void> {
   const state = tutorState.get();
   if (state.busy) return;
@@ -206,17 +208,17 @@ async function run(mode: Mode, rung: Rung, label: string | undefined, question?:
   }
 }
 
-/** The next rung of the hint ladder. After the last rung, it says so. */
+/** The next rung of the hint ladder. The last rung says so once, and there is no rung after it. */
 export async function nextHint(): Promise<void> {
   const state = tutorState.get();
-  if (state.rung >= LAST_RUNG) {
-    push({ who: 'tutor', text: t('tutor.panel.lastRung') });
-    announce(t('tutor.panel.lastRung'));
-    return;
-  }
+  if (state.rung >= LAST_RUNG) return;
   const rung = (state.rung + 1) as Rung;
   tutorState.set((one) => ({ ...one, rung, tried: true }));
   await run('hint', rung, t('tutor.panel.rung', { rung, name: rungName(rung) }));
+  if (rung === LAST_RUNG) {
+    push({ who: 'tutor', text: t('tutor.panel.lastRung') });
+    announce(t('tutor.panel.lastRung'));
+  }
 }
 
 /** Explains the flagged step, without the corrected line. */
@@ -226,8 +228,13 @@ export async function explainMistake(): Promise<void> {
 
 /** A question the person typed. */
 export async function askTutor(question: string): Promise<void> {
-  const text = question.trim().slice(0, 1000);
+  const text = question.trim();
   if (text === '') return;
+  if (text.length > MAX_QUESTION_CHARS) {
+    push({ who: 'tutor', text: t('tutor.errors.questionTooLong') });
+    announce(t('tutor.errors.questionTooLong'));
+    return;
+  }
   push({ who: 'you', text });
   const state = tutorState.get();
   tutorState.set((one) => ({ ...one, tried: true }));

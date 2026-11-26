@@ -1,3 +1,4 @@
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { rad } from '../num';
 import { fourBarAngles, grashof, LINKAGE_DEFAULTS, linkageState, solveLinkage, type LinkageInput } from './engine';

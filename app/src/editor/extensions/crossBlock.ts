@@ -13,7 +13,7 @@ import { Plugin, PluginKey, Selection } from '@tiptap/pm/state';
 import type { EditorState } from '@tiptap/pm/state';
 import type { EditorView } from '@tiptap/pm/view';
 import { t } from '../../strings/t';
-import { MERGE_BLOCKS_EVENT } from '../commands/state';
+import { MERGE_BLOCKS_EVENT, REMOVE_BREAK_EVENT, type RemoveBreakDetail } from '../commands/state';
 import type { MergeBlocksDetail } from '../commands/state';
 import type { EditorHost } from '../host';
 
@@ -134,6 +134,11 @@ function backspace(view: EditorView, host: EditorHost): boolean {
   const previous = neighbor(wrapper, -1);
   const previousId = previous?.dataset.blockId;
   if (!previous || !previousId) return false;
+  if (previous.dataset.breakKind) {
+    const detail: RemoveBreakDetail = { breakBlock: previousId, block };
+    view.dom.dispatchEvent(new CustomEvent(REMOVE_BREAK_EVENT, { bubbles: true, detail }));
+    return true;
+  }
   if (!isTextBlock(previous)) {
     host.selectBlocks([previousId], 'escape');
     return true;

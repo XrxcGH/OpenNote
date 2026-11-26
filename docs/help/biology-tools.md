@@ -2,6 +2,8 @@
 
 Work molecular biology, genetics, and evolution problems with worked steps, pictures, and tables you can put on the page. Everything works offline and keeps your work on this computer. The tools are for coursework and lab planning, not for clinical or diagnostic use.
 
+![The Biology tools kit on its DNA and RNA sequences tab, with a sequence and its details](../screens/kit-biology-light.png)
+
 Open the window from the command palette with **Open the biology tools**, or open one tool directly by its name, such as **Phylogenetic trees**. Each tab answers as you type. **Insert answer**, **Insert equation**, **Insert results table**, and **Insert steps** put that part at the caret, and each picture and table has its own Insert button. **Reset to the example** brings back the worked example.
 
 ## Molecular biology

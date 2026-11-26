@@ -27,13 +27,20 @@ The [nightly workflow](../.github/workflows/nightly.yml) runs every night on the
 | `proptest` | All tests of `opennote-core`, with more random cases | 10,000 cases |
 | `perf` | The benchmarks in `tests/perf/core`, with their budget check | A 1,000-page notebook |
 | `soak` | A scripted person edits one long note at random in the web build (`tests/soak`) and the job holds memory, nodes, and typing time flat | 120 minutes |
+| `e2e-full` | Builds the app with the test endpoints and runs every end-to-end spec on Windows | Every spec |
+| `palm-sweep` | The palm label oracle's full sweep, in four shards ([the sweep](testing/palm-sweep.md)) | 200,000 cases |
+| `bundles` | Builds the macOS dmg and the Linux AppImage unsigned, so a packaging problem shows the day it lands | Both bundles |
 | `nvda` | NVDA, driven by Guidepup, walks through the checklist for the keyboard and the screen reader in `tests/nvda` on Windows and records what it said | 6 checks |
+
+The `plan` job lists the fuzz targets, so a new target is never forgotten. The `report` job opens an issue when any job fails on the main branch, or adds a comment to the issue that is already open.
 
 The fuzz corpus is kept in the Actions cache, so each night starts from the inputs found the night before. A crashing input is uploaded with the run.
 
 The soak types, deletes, undoes, formats, moves, scrolls, and switches pages for the whole time. Every minute it forces a garbage collection and reads the heap, the nodes, and the listeners, and it times a fixed burst of keys. It fails when memory or nodes grow by half from the first quarter to the last, when typing slows by half, or when the page crashes or throws. The seed is the run number. The samples are kept for 90 days, with the table in the run summary.
 
-The NVDA job installs Guidepup and NVDA on the runner. It checks the phrases NVDA says, not its exact words: the names and roles the app sets, such as the notebook tree and the page text box. Each run keeps the table and everything NVDA said for 90 days. Add an item in `tests/nvda/checklist.ts`.
+The edits of a seed are drawn in `tests/soak/plan.ts` without the browser, so `stepAt(seed, index)` names the action a failed night stopped at, and `tests/soak/replay.spec.ts` replays a failure in seconds. It holds the failure of run 41792295946 (seed 58, action 13251): the soak's own trim had deleted the whole note, so the caret search found no text.
+
+The NVDA job installs the pinned Guidepup from `tests/nvda/package-lock.json`, sets up Windows with `guidepup setup`, and downloads NVDA with `guidepup install nvda`. A missing NVDA fails the job with those steps in the message. It checks the phrases NVDA says, not its exact words: the names and roles the app sets, such as the notebook tree and the page text box. Each run keeps the table and everything NVDA said for 90 days. Add an item in `tests/nvda/checklist.ts`.
 
 The performance job runs on a hosted runner. It catches large regressions. The budgets in BRAND.md still count only when they pass on the reference laptop.
 
@@ -60,8 +67,12 @@ cargo run --release -p opennote-perf -- bench all --pages 1000 ./perf-scratch
 # The soak for five minutes, with the seed from a failed run
 OPENNOTE_SOAK_MINUTES=5 OPENNOTE_SOAK_SEED=123456 npm run soak
 
-# The NVDA checklist, on Windows with NVDA set up by `npx @guidepup/setup setup`
-npm install --no-save --no-package-lock @guidepup/guidepup@0.35.0
+# The replays of past soak failures, in seconds
+npm run soak -- replay
+
+# The NVDA checklist, on Windows. Guidepup and its setup tool are pinned in tests/nvda/package.json. `setup` changes
+# the machine's registry and speech settings, so run it only on a machine meant for this; `install` downloads NVDA.
+cd tests/nvda && npm ci && npx guidepup setup --ci && npx guidepup install nvda && cd ../..
 OPENNOTE_NVDA=1 npm run nvda
 ```
 
@@ -136,9 +147,9 @@ OpenNote keeps a small record of how each session ended: counts and times, with 
 
 ## Screenshot matrix and component gallery
 
-Two test tools are in place for the phases that build screens, and both start empty.
+Two test tools are in place for the screens.
 
-- The **screenshot matrix** takes every screen state that a package lists in `tests/ui/screens` at four window sizes and in both themes. Run `npm run test:matrix` to check its plan. See [the interface tests README](../tests/ui/README.md).
+- The **screenshot matrix** takes every screen state that a package lists in `tests/ui/screens` at four window sizes and in both themes. `tests/ui/screens` holds the screen lists (`brand.ts`, `hardening.ts`, and `later.ts` among them). Run `npm run test:matrix` to check its plan. See [the interface tests README](../tests/ui/README.md).
 - The **component gallery** is a test-build page that shows each component state at its own address, and axe checks every entry on the day it is added. Run `npm run app:gallery` to see it. See [the gallery README](../app/src/dev/gallery/README.md).
 
 Baselines for pictures come only from the update-screenshots workflow, so a picture without one is skipped and says so.

@@ -1,9 +1,12 @@
 // The shape libraries in the Draw tab: basic shapes, then flowchart, network, and entity diagram pieces. Choosing one
 // adds it in the middle of the view, selected, with its handles. A second button puts a text box inside a shape.
-import { useFlag } from '../../../app/flags';
+import { SquareIcon } from '@phosphor-icons/react/dist/csr/Square';
+import { TextboxIcon } from '@phosphor-icons/react/dist/csr/Textbox';
+import { isEnabled, useFlag } from '../../../app/flags';
 import type { CommandBarComponentProps } from '../../../registries/types';
 import { t } from '../../../strings/t';
 import { openMenu } from '../../../ui';
+import type { MenuAnchor } from '../../../ui';
 import { LIBRARY } from '../geometry/shapes';
 import type { LibraryGroup } from '../geometry/shapes';
 import { viewContext } from './context';
@@ -13,37 +16,70 @@ import styles from './view.module.css';
 
 const GROUPS: readonly LibraryGroup[] = ['basic', 'flowchart', 'network', 'entity'];
 
+/** Pieces a second group also lists: a flowchart's data store is the network's database cylinder. */
+const ALSO_IN: Partial<Record<LibraryGroup, readonly string[]>> = { flowchart: ['database'] };
+
+/** The items a group's submenu lists, in order. */
+export function groupItems(group: LibraryGroup): string[] {
+  return [...LIBRARY.filter((item) => item.group === group).map((item) => item.id), ...(ALSO_IN[group] ?? [])];
+}
+
+/** The shape library's groups: the basic ones, then the engineering ones their flags turn on. */
+function shownGroups(): LibraryGroup[] {
+  return [
+    ...GROUPS,
+    ...(isEnabled('engineering.fbd') ? (['mechanics'] as const) : []),
+    ...(isEnabled('engineering.circuit') ? (['circuit'] as const) : []),
+  ];
+}
+
+/**
+ * Where the library opens when no anchor is given. A More menu item or a palette row closes as the library opens.
+ * A detached anchor puts the menu at the top-left corner, so those open at the More button or a point.
+ */
+function focusAnchor(): MenuAnchor {
+  const point = { x: Math.round(window.innerWidth / 2), y: 96 };
+  const focused = document.activeElement;
+  if (!(focused instanceof HTMLElement) || focused === document.body || !focused.isConnected) return point;
+  if (focused.closest('[role="menu"]')) {
+    const more = document.querySelector<HTMLElement>('[data-more]:not([data-measure]) button');
+    return more ?? point;
+  }
+  return focused.closest('[role="dialog"]') ? point : focused;
+}
+
+/**
+ * Opens the shape library. The Draw tab's Shapes button opens it under itself; More and the command palette open it
+ * at the control that has focus, so a narrow window still reaches every shape (full walk 2, A1-A10-2).
+ */
+export async function openShapeLibrary(anchor?: MenuAnchor): Promise<void> {
+  const at: MenuAnchor = anchor ?? focusAnchor();
+  await openMenu({
+    label: t('ink.library.menu'),
+    anchor: at,
+    returnFocus: at instanceof HTMLElement ? at : null,
+    items: shownGroups().map((group) => ({
+      id: group,
+      label: groupLabel(group),
+      submenu: groupItems(group).map((id) => ({
+        id: `${group}:${id}`,
+        label: itemLabel(id),
+        onSelect: () => {
+          const context = viewContext();
+          const surface = context?.surface();
+          if (context && surface) void insertLibraryShape(context.host, surface, id);
+        },
+      })),
+    })),
+  });
+}
+
 export function DrawShapes({ toolProps }: CommandBarComponentProps) {
   const on = useFlag('ink.shapeTools');
-  const mechanics = useFlag('engineering.fbd');
-  const circuit = useFlag('engineering.circuit');
+  // Read so the menu offers the engineering groups as soon as their flags turn on.
+  useFlag('engineering.fbd');
+  useFlag('engineering.circuit');
   if (!on) return null;
-  const groups: readonly LibraryGroup[] = [
-    ...GROUPS,
-    ...(mechanics ? (['mechanics'] as const) : []),
-    ...(circuit ? (['circuit'] as const) : []),
-  ];
-
-  const open = async (anchor: HTMLElement) => {
-    await openMenu({
-      label: t('ink.library.menu'),
-      anchor,
-      returnFocus: anchor,
-      items: groups.map((group) => ({
-        id: group,
-        label: groupLabel(group),
-        submenu: LIBRARY.filter((item) => item.group === group).map((item) => ({
-          id: item.id,
-          label: itemLabel(item.id),
-          onSelect: () => {
-            const context = viewContext();
-            const surface = context?.surface();
-            if (context && surface) void insertLibraryShape(context.host, surface, item.id);
-          },
-        })),
-      })),
-    });
-  };
 
   const text = () => {
     const context = viewContext();
@@ -59,11 +95,13 @@ export function DrawShapes({ toolProps }: CommandBarComponentProps) {
         className={styles.tool}
         aria-haspopup="menu"
         data-ink-library=""
-        onClick={(event) => void open(event.currentTarget)}
+        onClick={(event) => void openShapeLibrary(event.currentTarget)}
       >
+        <SquareIcon aria-hidden className={styles.toolIcon} />
         {t('ink.library.menu')}
       </button>
       <button type="button" {...toolProps} className={styles.tool} data-ink-shape-text="" onClick={text}>
+        <TextboxIcon aria-hidden className={styles.toolIcon} />
         {t('ink.library.addText')}
       </button>
     </div>

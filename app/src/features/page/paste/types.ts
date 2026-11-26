@@ -19,7 +19,23 @@ export interface PasteInput {
   readonly target?: 'text' | 'cell' | 'code' | 'page';
 }
 
+/** What Paste Options offers (ADR 0084). The names are the settings' values. */
+export type PasteChoice = 'keepSource' | 'mergeFormatting' | 'textOnly';
+
+/** The choice each program's paste starts with, from Settings, Editing. */
+export interface PasteDefaults {
+  readonly word: PasteChoice;
+  readonly docs: PasteChoice;
+  readonly onenote: PasteChoice;
+  readonly web: PasteChoice;
+}
+
 export interface PasteOptions {
+  /** Turns Paste Options on: `mode` or `defaults` choose how formatting is kept. Off gives the clean merge. */
+  readonly fidelity?: boolean;
+  /** The choice to use, as after a switch in the chip. Without it, `defaults` decide by source. */
+  readonly mode?: PasteChoice;
+  readonly defaults?: PasteDefaults;
   /** Makes IDs for table rows and columns. Defaults to ULIDs (SPEC 2.4). */
   readonly newId?: () => string;
   /** Ctrl+Shift+V: the plain text, one paragraph for each line, with no Markdown parsing. */
@@ -50,6 +66,8 @@ export interface PasteResult {
   readonly plainFallback: boolean;
   /** Plain text with broken PDF lines joined, when the text looks hard-wrapped. A separate undo step. */
   readonly joinedText: string | null;
+  /** The choice this paste used, or null when it had none to make (text, tables, code). */
+  readonly choice: PasteChoice | null;
 }
 
 /** Larger HTML is not kept: Phase 4 design, 15.1. */

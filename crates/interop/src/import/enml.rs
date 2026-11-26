@@ -13,6 +13,7 @@ use self::style::{code, descendants, parse_color};
 use super::xmltree::{Element, Node};
 use crate::dest::{self, ImportLink};
 use crate::doc::html_tags::{decode_entities, mark_name};
+use crate::doc::size_value;
 use crate::doc::{plain_text, Block, Fold, Inline, Item, Marks, Script};
 
 /// A piece of the converted note.
@@ -258,7 +259,7 @@ impl<'a> Converter<'a> {
             rows.push(cells.iter().map(|cell| self.cell(cell, marks)).collect());
         }
         if !rows.is_empty() {
-            pieces.push(Piece::Block(Block::Table { header, rows }));
+            pieces.push(Piece::Block(Block::table(header, rows)));
         }
     }
 
@@ -372,7 +373,7 @@ impl<'a> Converter<'a> {
             }
             "span" if self.html.is_some() => {
                 marks.color = e.attr("data-color").and_then(mark_name).or(marks.color);
-                marks.size = e.attr("data-size").and_then(mark_name).or(marks.size);
+                marks.size = e.attr("data-size").and_then(size_value).or(marks.size);
             }
             "a" => self.apply_link(e, &mut marks),
             "font" => {

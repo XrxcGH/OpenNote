@@ -1,3 +1,4 @@
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { COMPLIANT_DEFAULTS, elastica, solveCompliant, type CompliantInput } from './engine';
 
@@ -72,6 +73,14 @@ describe('compliant mechanisms', () => {
     const sigma = (6 * P * 1) / (0.01 * 1e-6);
     expect(Math.abs(r.stress.bending - sigma) / sigma).toBeLessThan(1e-6);
     expect(Math.abs(r.stress.axial)).toBeLessThan(1e-3 * sigma);
+  });
+
+  it('writes a tiny second moment of area in the step, not 0', () => {
+    // 6 mm x 1 mm: I = w t^3 / 12 = 0.006 x 1e-9 / 12 = 5e-13 m^4, and EI = 1.4e9 x 5e-13 = 7e-4 N m^2.
+    const result = ok(solveCompliant({ ...COMPLIANT_DEFAULTS, force: 1 }));
+    const section = result.steps.find((s) => s.key === 'compliantSection');
+    expect(section?.math).toContain(String.raw`I = \frac{wt^3}{12} = 5 \times 10^{-13}\ \mathrm{m^4}`);
+    expect(section?.math).toContain(String.raw`EI = 0.0007\ \mathrm{N\,m^2}`);
   });
 
   it('rejects impossible input with a reason', () => {

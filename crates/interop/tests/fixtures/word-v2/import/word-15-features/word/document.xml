@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document
+    xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+    xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+<w:body>
+  <w:p>
+<w:pPr>
+<w:pStyle w:val="Heading1"/>
+</w:pPr>
+<w:r>
+<w:t xml:space="preserve">Formatting</w:t>
+</w:r>
+</w:p>
+  <w:p>
+<w:r>
+<w:rPr>
+<w:b/>
+<w:bCs/>
+</w:rPr>
+<w:t xml:space="preserve">bold</w:t>
+</w:r>
+</w:p>
+  <w:p>
+<w:r>
+<w:rPr>
+<w:i/>
+<w:iCs/>
+</w:rPr>
+<w:t xml:space="preserve">italic</w:t>
+</w:r>
+</w:p>
+  <w:p>
+<w:r>
+<w:rPr>
+<w:u w:val="double" w:color="C00000"/>
+</w:rPr>
+<w:t xml:space="preserve">underlined</w:t>
+</w:r>
+</w:p>
+  <w:p>
+<w:r>
+<w:rPr>
+<w:strike/>
+</w:rPr>
+<w:t xml:space="preserve">struck</w:t>
+</w:r>
+</w:p>
+  <w:p>
+<w:r>
+<w:rPr>
+<w:dstrike/>
+</w:rPr>
+<w:t xml:space="preserve">double struck</w:t>
+</w:r>
+</w:p>
+  <w:p>
+<w:r>
+<w:rPr>
+<w:smallCaps/>
+</w:rPr>
+<w:t xml:space="preserve">small caps</w:t>
+</w:r>
+</w:p>
+  <w:p>
+<w:r>
+<w:rPr>
+<w:caps/>
+</w:rPr>
+<w:t xml:space="preserve">all caps</w:t>
+</w:r>
+</w:p>
+  <w:p>
+<w:r>
+<w:rPr>
+<w:color w:val="2F5496"/>
+</w:rPr>
+<w:t xml:space="preserve">blue</w:t>
+</w:r>
+</w:p>
+  <w:p>
+<w:r>
+<w:rPr>
+<w:highlight w:val="yellow"/>
+</w:rPr>
+<w:t xml:space="preserve">yellow</w:t>
+</w:r>
+</w:p>
+  <w:p>
+<w:r>
+<w:rPr>
+<w:rFonts w:ascii="Georgia" w:hAnsi="Georgia"/>
+</w:rPr>
+<w:t xml:space="preserve">Georgia</w:t>
+</w:r>
+</w:p>
+  <w:p>
+<w:r>
+<w:rPr>
+<w:sz w:val="28"/>
+<w:szCs w:val="28"/>
+</w:rPr>
+<w:t xml:space="preserve">fourteen</w:t>
+</w:r>
+</w:p>
+  <w:p>
+<w:r>
+<w:rPr>
+<w:spacing w:val="30"/>
+</w:rPr>
+<w:t xml:space="preserve">spaced</w:t>
+</w:r>
+</w:p>
+  <w:p>
+<w:r>
+<w:t>x</w:t>
+</w:r>
+<w:r>
+<w:rPr>
+<w:vertAlign w:val="superscript"/>
+</w:rPr>
+<w:t>2</w:t>
+</w:r>
+</w:p>
+  <w:p>
+<w:r>
+<w:rPr>
+<w:shd w:val="clear" w:color="auto" w:fill="123456"/>
+</w:rPr>
+<w:t xml:space="preserve">shaded</w:t>
+</w:r>
+</w:p>
+  <w:p>
+<w:pPr>
+<w:ind w:left="720" w:hanging="360"/>
+<w:spacing w:before="240" w:after="120"/>
+<w:jc w:val="center"/>
+</w:pPr>
+<w:r>
+<w:t xml:space="preserve">Centered</w:t>
+</w:r>
+</w:p>
+  <w:sectPr>
+<w:pgSz w:w="12240" w:h="15840"/>
+<w:pgMar
+    w:top="1440"
+    w:right="1440"
+    w:bottom="1440"
+    w:left="1440"
+    w:header="720"
+    w:footer="720"
+    w:gutter="0"/>
+<w:cols w:space="720"/>
+<w:docGrid w:linePitch="360"/>
+</w:sectPr>
+</w:body>
+</w:document>

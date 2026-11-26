@@ -49,7 +49,13 @@ function QuickCaptureSettings() {
     if (problem) setError(problem);
     else void save(enabled, key);
   };
+  const dirty = key.trim() !== status.choice.key;
+  // The problem shows while the keys are typed, and Enter or leaving the field saves usable keys, so nothing is
+  // refused without a word (full walk A-A02-8).
+  const live = dirty ? quickKeyProblem(key) : null;
+  const shown = live ?? error;
   const commit = () => {
+    if (!dirty) return;
     const problem = quickKeyProblem(key);
     if (problem) setError(problem);
     else void save(status.choice.enabled, key);
@@ -64,14 +70,27 @@ function QuickCaptureSettings() {
       <h2 id="qol-quick">{t('qol.capture.settingsTitle')}</h2>
       <p>{t('qol.capture.settingsBody')}</p>
       <Switch label={t('qol.capture.enable')} checked={status.choice.enabled} onChange={toggle} />
-      <TextField
-        label={t('qol.capture.keys')}
-        value={key}
-        onChange={setKey}
-        error={error ? t(error === 'altgr' ? 'qol.capture.keysAltGr' : 'qol.capture.keysInvalid') : undefined}
-        help={t('qol.capture.keysHelp')}
-        onCommit={commit}
-      />
+      <div
+        onBlur={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget as Node | null)) commit();
+        }}
+      >
+        <TextField
+          label={t('qol.capture.keys')}
+          value={key}
+          onChange={(next) => {
+            setKey(next);
+            setError(null);
+          }}
+          error={shown ? t(shown === 'altgr' ? 'qol.capture.keysAltGr' : 'qol.capture.keysInvalid') : undefined}
+          help={t('qol.capture.keysHelp')}
+          onCommit={commit}
+          onCancel={() => {
+            setKey(status.choice.key);
+            setError(null);
+          }}
+        />
+      </div>
       {status.choice.enabled && !status.registered && (
         <p className={styles.help}>
           {t(quickKeyProblem(status.choice.key) === 'altgr' ? 'qol.capture.keysAltGr' : 'qol.capture.taken')}

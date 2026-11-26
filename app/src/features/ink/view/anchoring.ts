@@ -26,10 +26,15 @@ const MIN_MOVE = 0.5;
 const JOIN_MS = 5000;
 const JOIN_NEAR = 120;
 
+/** Controls a block shows over its words, such as a table's toolbar. Their text is not the block's words. */
+const CHROME = '[role="toolbar"], [role="menu"], [role="dialog"]';
+
 const textNodes = (root: Node): Text[] => {
   const nodes: Text[] = [];
   const walker = root.ownerDocument!.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-  for (let node = walker.nextNode(); node; node = walker.nextNode()) nodes.push(node as Text);
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+    if (!node.parentElement?.closest(CHROME)) nodes.push(node as Text);
+  }
   return nodes;
 };
 
@@ -71,20 +76,23 @@ export function placeAt(doc: Document, clientX: number, clientY: number, reach =
     const x = Math.min(Math.max(clientX, rect.left + 1), rect.right - 1);
     const caret = caretAt(doc, x, clientY);
     if (!caret || !holder.contains(caret.node)) continue;
+    const caretRange = doc.createRange();
+    caretRange.setStart(caret.node, caret.offset);
+    caretRange.collapse(true);
+    // A caret on an element, between cells, counts the text before it.
     let index = 0;
     for (const node of textNodes(holder)) {
       if (node === caret.node) {
         index += caret.offset;
         break;
       }
+      if (caretRange.comparePoint(node, node.data.length) > 0) break;
       index += node.data.length;
     }
     const text = displayed(holder);
     const at = codePoints(text.slice(0, index));
-    const range = doc.createRange();
-    range.setStart(caret.node, caret.offset);
-    range.collapse(true);
-    const spot = range.getBoundingClientRect();
+    // Read the spot the way placeNow finds it again, so the ink does not jump when it is first followed.
+    const spot = spotAt(holder, index) ?? caretRange.getBoundingClientRect();
     return {
       block: holder.dataset.blockId,
       at,
@@ -101,14 +109,22 @@ export function placeNow(holder: HTMLElement, anchor: { at: number; quote: Quote
   const text = displayed(holder);
   const found = findAnchor(text, anchor.at, anchor.quote);
   if (found === null) return null;
-  let remaining = Array.from(text).slice(0, found).join('').length;
+  const spot = spotAt(holder, Array.from(text).slice(0, found).join('').length);
+  return spot ? { x: spot.left, y: spot.top } : null;
+}
+
+/** The screen box of the place `index` UTF-16 units into a block's words. */
+function spotAt(holder: HTMLElement, index: number): DOMRect | null {
+  let remaining = index;
   const range = holder.ownerDocument.createRange();
-  for (const node of textNodes(holder)) {
-    if (remaining <= node.data.length) {
+  const nodes = textNodes(holder);
+  for (const [i, node] of nodes.entries()) {
+    // A place where one text ends and the next begins is the start of the next: the end of the first can be in
+    // another table cell or on another line (walk 9, T1-D03-3).
+    if (remaining < node.data.length || (remaining === node.data.length && i === nodes.length - 1)) {
       range.setStart(node, remaining);
       range.collapse(true);
-      const rect = range.getBoundingClientRect();
-      return { x: rect.left, y: rect.top };
+      return range.getBoundingClientRect();
     }
     remaining -= node.data.length;
   }

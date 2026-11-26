@@ -12,6 +12,7 @@
 import type { Editor } from '@tiptap/core';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import type { Selection, Transaction } from '@tiptap/pm/state';
+import { TableMap } from '@tiptap/pm/tables';
 import { diffMarkdown, serializeTextBlock, utf8Offset } from '../../../editor/markdown';
 import type { MarkdownCache } from '../../../editor/markdown';
 import { META_AUTO_CHANGE, META_COMMAND, META_HIGHLIGHT, META_REMOTE } from '../../../editor/meta';
@@ -30,6 +31,8 @@ export interface TextSyncHandle {
   flush(reason: FlushReason): Promise<void>;
   /** The Markdown the core has. */
   lastSent(): string;
+  /** Whether the block is a draft the core does not have yet: its first change inserts it. */
+  readonly unsaved: boolean;
   /** Flushes first. */
   detach(): void;
 }
@@ -72,6 +75,19 @@ const isEmpty = (content: Content) => content.kind === 'text' && content.markdow
 
 const accepted = new WeakMap<TextSyncHandle, (markdown: string) => void>();
 
+/**
+ * Edits that ride in the same batch as a block's new Markdown, so one undo step holds both. For example, a deleted
+ * footnote reference takes its note along (R-NOTE-2). `before` is the Markdown the core has, empty for a new block.
+ */
+export type TextRider = (block: BlockId, before: string, after: string) => readonly Edit[];
+const riders = new Set<TextRider>();
+
+/** Adds a rider to every text block's batches. Returns a function that removes it. */
+export function addTextRider(rider: TextRider): () => void {
+  riders.add(rider);
+  return () => void riders.delete(rider);
+}
+
 /** Tells a text sync the core now has `markdown` for its block, after a frame replaced the editor's text. */
 export function acceptRemoteText(handle: TextSyncHandle, markdown: string): void {
   accepted.get(handle)?.(markdown);
@@ -104,6 +120,11 @@ function changedRange(tr: Transaction): { from: number; to: number } {
 class Sync implements TextSyncHandle {
   private readonly internals: QueueInternals;
   private sent: string;
+  /**
+   * How the editor writes the text the core holds, which can differ from `sent` (a trailing space, an empty
+   * paragraph): a document that still writes this has nothing to send. Sending it would clear the redo stack.
+   */
+  private echo: string | null = null;
   private insert: PendingInsert | null;
   /** The tag edit for the batch being built, which goes as a step of its own after the text. */
   private tagNext: Edit | null = null;
@@ -139,7 +160,16 @@ class Sync implements TextSyncHandle {
       composing: () => this.composing(),
       compositionDone: () => this.compositionDone(),
     });
-    accepted.set(this, (markdown) => (this.sent = markdown));
+    accepted.set(this, (markdown) => {
+      this.sent = markdown;
+      this.noteEcho();
+    });
+    if (!this.insert) this.noteEcho();
+  }
+
+  /** Notes how the editor writes the text the core holds now. */
+  private noteEcho(): void {
+    this.echo = keyOf(this.source.serialize(this.editor.state.doc));
   }
 
   get dirty(): boolean {
@@ -148,6 +178,10 @@ class Sync implements TextSyncHandle {
 
   lastSent(): string {
     return this.sent;
+  }
+
+  get unsaved(): boolean {
+    return this.insert !== null;
   }
 
   flush(reason: FlushReason): Promise<void> {
@@ -213,8 +247,11 @@ class Sync implements TextSyncHandle {
   private build(doc: PMNode, selections: EditBatch['ui'], target: string | null): EditBatch | null {
     const content = this.source.serialize(doc);
     const key = keyOf(content);
-    if (this.insert ? isEmpty(content) : key === this.sent) return null;
+    if (this.insert ? isEmpty(content) : key === this.sent || key === this.echo) return null;
     const edits = this.editsFor(content);
+    if (content.kind === 'text') {
+      for (const rider of riders) edits.push(...rider(this.block, this.insert ? '' : this.sent, content.markdown));
+    }
     // A typed #word becomes a tag in a step of its own, sent after the text, so Ctrl+Z leaves the plain #word.
     this.tagNext = null;
     if (content.kind === 'text' && isEnabled('page.hashtags') && pageExtrasPrefs.get().hashtags) {
@@ -222,6 +259,7 @@ class Sync implements TextSyncHandle {
     }
     const typing = target !== null && !this.insert;
     this.sent = key;
+    this.echo = null;
     this.insert = null;
     const batch: EditBatch = { edits };
     if (typing) batch.coalesce = { kind: 'typing', target };
@@ -380,34 +418,56 @@ function cellAt(doc: PMNode, pos: number): { row: number; column: number } | nul
   const $pos = doc.resolve(Math.min(pos, doc.content.size));
   for (let depth = $pos.depth; depth > 1; depth--) {
     const role = $pos.node(depth).type.spec.tableRole as string | undefined;
-    if (role === 'cell' || role === 'header_cell') return { row: $pos.index(depth - 2), column: $pos.index(depth - 1) };
+    if (role === 'cell' || role === 'header_cell') {
+      // The table's map gives the slot, so a merged cell earlier in the row does not shift the column (ADR 0064).
+      const table = $pos.node(depth - 2);
+      const found = TableMap.get(table).findCell($pos.before(depth) - $pos.start(depth - 2));
+      return { row: found.top, column: found.left };
+    }
   }
   return null;
 }
 
-/** A table's shape: everything but the cells' text. */
-const shapeOf = (data: TableData) =>
-  JSON.stringify([data.header, data.columns, data.rows.map((row) => [row.id, Object.keys(row.cells)])]);
+/** Whether two rows have the same ID and the same cells, in the same order. */
+function sameRowShape(a: TableData['rows'][number], b: TableData['rows'][number]): boolean {
+  if (a === b) return true;
+  if (a.id !== b.id) return false;
+  const keys = Object.keys(a.cells);
+  const others = Object.keys(b.cells);
+  return keys.length === others.length && keys.every((key, i) => key === others[i]);
+}
+
+/**
+ * Whether two reads of a table have the same shape: everything but the cells' text. A read after typing keeps every
+ * row the key left alone as the same object, so a long table compares them by reference, not as text.
+ */
+export function sameShape(a: TableData, b: TableData): boolean {
+  if (a === b) return true;
+  if (a.header !== b.header || a.rows.length !== b.rows.length) return false;
+  if (a.columns !== b.columns && JSON.stringify(a.columns) !== JSON.stringify(b.columns)) return false;
+  return a.rows.every((row, i) => sameRowShape(row, b.rows[i]));
+}
 
 /**
  * A table block's sync: a patchBlock of `data.rows` for typing, coalesced by cell as `<block>/<row>/<column>`
- * (P3-4). A change to the table's shape sends the whole data.
+ * (P3-4). A change to the table's shape sends the whole data. `extra` adds keys to the same patch, such as the
+ * formula results a smart table caches (ADR 0061), so one undo step takes back both.
  */
 export function attachTableSync(
   editor: Editor,
   block: BlockId,
   queue: SyncQueue,
   toData: (doc: PMNode) => TableData,
+  extra: (data: TableData) => Record<string, unknown> | null = () => null,
 ): TableSyncHandle {
-  let shape = shapeOf(toData(editor.state.doc));
+  let shaped = toData(editor.state.doc);
   const source: Source = {
     kind: 'data',
     serialize(doc) {
       const data = toData(doc);
-      const next = shapeOf(data);
-      const same = next === shape;
-      shape = next;
-      return { kind: 'data', data: same ? { rows: data.rows } : { ...data } };
+      const same = sameShape(shaped, data);
+      shaped = data;
+      return { kind: 'data', data: { ...(same ? { rows: data.rows } : data), ...extra(data) } };
     },
     target(doc, selection) {
       const cell = cellAt(doc, selection.head);
@@ -415,7 +475,7 @@ export function attachTableSync(
       const data = toData(doc);
       return `${block}/${data.rows[cell.row]?.id ?? cell.row}/${data.columns[cell.column]?.id ?? cell.column}`;
     },
-    structural: (before, after) => shapeOf(toData(before)) !== shapeOf(toData(after)),
+    structural: (before, after) => !sameShape(toData(before), toData(after)),
   };
   const initial = JSON.stringify({ rows: toData(editor.state.doc).rows });
   return new Sync(editor, block, queue, source, { sent: initial, insert: null });

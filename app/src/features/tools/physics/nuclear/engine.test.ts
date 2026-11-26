@@ -1,6 +1,7 @@
 // The nuclear science tool against its validation cases (first principles and AME2020 masses) and independent
 // working: a numerically integrated decay chain, conservation of nuclei, known decay energies, and a critical core
 // that comes back with k_eff = 1.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { N_A, U_MEV } from '../kit/constants';
 import { specProblems } from '../kit/checkSpec';

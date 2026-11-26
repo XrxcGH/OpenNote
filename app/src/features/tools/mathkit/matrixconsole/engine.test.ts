@@ -1,3 +1,4 @@
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { Session, type Entry } from './interp';
 import { EXAMPLES } from './examples';

@@ -80,3 +80,24 @@ export function resolveDrop(state: TreeState, dragged: NodeSummary, row: Row, fr
   else drop = beside(state, dragged, row, edge);
   return drop && !isNoop(state, dragged, drop) ? drop : null;
 }
+
+/**
+ * The drop for a dragged selection of several rows, from the drop for the row under the pointer. It is null when
+ * the target is one of the carried blocks or inside one. Carried rows are all pages or all sections, so the
+ * kind check for the dragged row holds for them all. A "before" row that is itself carried moves on to the next
+ * row that is not.
+ */
+export function groupDrop(state: TreeState, group: readonly Row[], drop: Drop): Drop | null {
+  const moving = new Set(group.flatMap((row) => blockOf(state, row.id)));
+  const inside = (id: NodeId | null) => {
+    for (let at = id ? state.nodes[id] : undefined; at; at = at.parentId ? state.nodes[at.parentId] : undefined) {
+      if (moving.has(at.id)) return true;
+    }
+    return false;
+  };
+  if (inside(drop.target.id) || inside(drop.rowId)) return null;
+  const list = state.children[keyOf(drop.placement.parentId)] ?? [];
+  let beforeId = drop.placement.beforeId;
+  while (beforeId !== null && moving.has(beforeId)) beforeId = list[list.indexOf(beforeId) + 1] ?? null;
+  return { ...drop, placement: { ...drop.placement, beforeId } };
+}

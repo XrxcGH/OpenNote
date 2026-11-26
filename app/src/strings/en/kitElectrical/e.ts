@@ -2,6 +2,8 @@
 export const e = {
   number: '{field} needs a number, such as 4.7k or 10u.',
   positive: '{field} must be greater than zero.',
+  outOfRange:
+    'These values are too large or too small for this tool to give a finite answer. Try values closer to real ones.',
   nonNegative: '{field} cannot be negative.',
   band: '"{band}" is not a color on a resistor.',
   bandCount: 'A resistor has 3 to 5 bands: digits, a multiplier, and usually a tolerance.',
@@ -29,6 +31,9 @@ export const e = {
   tiltRange: 'The tilt runs from 0 (flat) to 180 degrees.',
 
   stopLoss: 'The loss at the stop-band edge must be greater than the loss at the passband edge.',
+  orderTooHigh:
+    'This specification needs a filter of order {exact}, more than the {max} this tool designs. ' +
+    'Relax the stop-band loss or move the stop-band edge farther from the passband.',
   stopFrequency: 'The stop-band edge must be above the passband edge for a low-pass filter.',
 
   noConduction: 'The diode drop is as big as the peak input, so the diode never conducts.',

@@ -22,20 +22,34 @@ function adopt(node: NodeSummary): void {
   });
 }
 
-/** Moves a top-level page, with its subpages, above the others in its section. */
-async function moveToTop(notes: NotesService, node: NodeSummary): Promise<void> {
+/**
+ * Moves a top-level page, with its subpages, above the others in its section. Resolves with the item it stood
+ * before (null at the end of the list), so an undo can put it back, or undefined when it did not move.
+ */
+async function moveToTop(notes: NotesService, node: NodeSummary): Promise<NodeId | null | undefined> {
   const heads = topLevel(childrenOf(treeStore.get(), node.parentId));
   const first = heads[0];
-  if (!first || first.id === node.id || node.pageLevel !== 0) return;
+  if (!first || first.id === node.id || node.pageLevel !== 0) return undefined;
+  const at = heads.findIndex((head) => head.id === node.id);
+  const before = at === -1 ? null : (heads[at + 1]?.id ?? null);
   try {
-    await moveNodes(notes, [node.id], { parentId: node.parentId, beforeId: first.id });
+    await moveNodes(notes, [node.id], { parentId: node.parentId, beforeId: first.id }, { record: false });
+    return before;
   } catch (error) {
     toastError(error, titleOf(node));
+    return undefined;
   }
 }
 
-/** Pins or unpins a page or a section. */
-export async function setPinned(id: NodeId, pinned: boolean, notes?: NotesService): Promise<void> {
+/** Puts a page back before `beforeId` (or at the end when it is gone), where it stood before a pin moved it. */
+async function moveBack(notes: NotesService, node: NodeSummary, beforeId: NodeId | null): Promise<void> {
+  const siblings = childrenOf(treeStore.get(), node.parentId).map((one) => one.id);
+  const before = beforeId && siblings.includes(beforeId) ? beforeId : null;
+  await moveNodes(notes, [node.id], { parentId: node.parentId, beforeId: before }, { record: false });
+}
+
+/** Pins or unpins a page or a section. A pin joins the undo stack, with the move to the top it made. */
+export async function setPinned(id: NodeId, pinned: boolean, notes?: NotesService, record = true): Promise<void> {
   const node = getNode(id);
   if (!node || (node.kind !== 'page' && node.kind !== 'section')) return;
   try {
@@ -45,8 +59,19 @@ export async function setPinned(id: NodeId, pinned: boolean, notes?: NotesServic
     return;
   }
   // A pinned page goes to the top of its list, which is where a pin says it is.
-  if (pinned && notes) await moveToTop(notes, node);
-  announce(t(pinned ? 'qol.pin.pinned' : 'qol.pin.unpinned', { title: titleOf(node) }));
+  const before = pinned && notes ? await moveToTop(notes, node) : undefined;
+  const title = titleOf(node);
+  announce(t(pinned ? 'qol.pin.pinned' : 'qol.pin.unpinned', { title }));
+  if (!record) return;
+  recordUndo({
+    undone: t(pinned ? 'qol.pin.unpinned' : 'qol.pin.pinned', { title }),
+    redone: t(pinned ? 'qol.pin.pinned' : 'qol.pin.unpinned', { title }),
+    undo: async (service) => {
+      await setPinned(id, !pinned, undefined, false);
+      if (before !== undefined) await moveBack(service, node, before);
+    },
+    redo: (service) => setPinned(id, pinned, service, false),
+  });
 }
 
 /** Archives or restores a node. Archived rows leave the tree unless Show archived is on. */

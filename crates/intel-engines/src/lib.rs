@@ -5,10 +5,11 @@
 //! of anything that could reach a network, and so a build without a C++ toolchain still works.
 //!
 //! - [`whisper_cpp`] (feature `whisper-cpp`): whisper.cpp through whisper-rs, for transcription, dictation, and
-//!   live captions. It reads the model files the app downloads, and installs itself into
+//!   live captions. It reads the model files the app downloads. It installs itself into
 //!   `opennote_intel::whisper` as the speech backend.
 //! - [`onnx`] (feature `onnx`): ONNX Runtime for on-device translation and the meaning index.
 //! - [`protocol`]: the messages between the app and the language model program.
+//! - [`tesseract`] (Linux): Tesseract for text in pictures and handwriting, opened at run time when it is installed.
 //!
 //! The language model engine for Ask and the writing tools is in its own program (`crates/llm-host`), because
 //! llama.cpp and whisper.cpp both bundle ggml and cannot be linked into one program.
@@ -19,6 +20,8 @@
 #[cfg(feature = "onnx")]
 pub mod onnx;
 pub mod protocol;
+#[cfg(any(test, target_os = "linux"))]
+pub mod tesseract;
 #[cfg(feature = "whisper-cpp")]
 pub mod whisper_cpp;
 
@@ -31,6 +34,11 @@ pub fn install() -> Vec<&'static str> {
     {
         whisper_cpp::install();
         installed.push("whisper.cpp");
+    }
+    #[cfg(target_os = "linux")]
+    {
+        tesseract::install();
+        installed.push("Tesseract");
     }
     installed
 }

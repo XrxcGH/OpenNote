@@ -9,6 +9,7 @@ use crate::session::notebook::{NodePlacement, NodeRef, NotebookHandle, ParentRef
 use crate::store::layout::NotebookLayout;
 use crate::wire::envelope;
 
+mod outside;
 mod unreadable;
 
 fn secs(s: u64) -> Duration {
@@ -182,6 +183,39 @@ fn a_failed_save_backs_off_and_a_read_only_file_stops_saving() {
     assert!(!handle.has_unsaved());
 }
 
+/// N1-N03-4: the person clears the file's read-only attribute outside the app and presses Retry. The save looks at
+/// the file again, instead of failing on what it found the first time, and later edits are taken and saved.
+#[test]
+fn saving_now_after_the_read_only_attribute_is_cleared_saves_the_page() {
+    let s = setup();
+    let c = client("main-1");
+    let handle = s.notebook.open_page(s.page, c.clone()).unwrap();
+    let dir = s.notebook.inner.tree().store.page_dir(s.page).unwrap();
+    let json = NotebookLayout::page_json(&dir);
+    s.kit.fs.inner.set_read_only(&json, true);
+    s.kit.backend.fail_saves(Some(FsErrorKind::ReadOnlyFile));
+    handle
+        .commit_for_tests(&retitle(s.kit.clock.as_ref(), &c, "Photosynthesis", "A"))
+        .unwrap();
+    s.kit.advance(secs(1));
+    assert_eq!(handle.read_only(), Some(ReadOnlyReason::ReadOnlyFile));
+    // Saving now fails again while the file is still read-only. The page stays read-only.
+    assert!(handle.save_now().is_err());
+    assert_eq!(handle.read_only(), Some(ReadOnlyReason::ReadOnlyFile));
+    s.kit.fs.inner.set_read_only(&json, false);
+    s.kit.backend.fail_saves(None);
+    handle.save_now().unwrap();
+    assert_eq!(handle.read_only(), None);
+    assert!(!handle.has_unsaved());
+    assert_eq!(on_disk(&s).title, "A");
+    handle
+        .commit_for_tests(&retitle(s.kit.clock.as_ref(), &c, "A", "B"))
+        .unwrap();
+    s.kit.advance(secs(1));
+    assert!(!handle.has_unsaved());
+    assert_eq!(on_disk(&s).title, "B");
+}
+
 #[test]
 fn strokes_become_a_segment_and_survive_a_reopen() {
     let s = setup();
@@ -221,6 +255,41 @@ fn two_clients_share_a_session_and_hear_about_each_other() {
     assert!(second.has_unsaved());
     second.close(&b).unwrap();
     assert_eq!(on_disk(&s).title, "Shared");
+}
+
+/// A conflict copy whose revision the page already lists among its ancestors was merged into it on another
+/// device (ADR 0089): it is not offered as a conflict, while a copy the page never saw still is.
+#[test]
+fn a_conflict_copy_the_page_already_includes_is_not_shown() {
+    let s = setup();
+    let c = client("main-1");
+    let handle = s.notebook.open_page(s.page, c.clone()).unwrap();
+    let dir = s.notebook.inner.tree().store.page_dir(s.page).unwrap();
+    let older = on_disk(&s);
+    handle
+        .commit_for_tests(&retitle(s.kit.clock.as_ref(), &c, "Photosynthesis", "Mine"))
+        .unwrap();
+    handle.save_now().unwrap();
+    assert!(handle.page_for_tests().revision.ancestors.contains(&older.revision.id));
+    s.kit.fs.inner.mkdir_all(&dir.join(crate::store::layout::CONFLICTS_DIR));
+    let copy = NotebookLayout::conflict_path(&dir, older.revision.id);
+    s.kit
+        .fs
+        .replace_durable(&copy, &s.kit.codec.write_page(&older))
+        .unwrap();
+    assert!(handle.conflicts().unwrap().is_empty());
+
+    let mut unseen = older.clone();
+    unseen.revision.id = RevisionId(crate::id::Id::from_parts(1_700_000_000_000, 77));
+    unseen.title = "Theirs".into();
+    let other = NotebookLayout::conflict_path(&dir, unseen.revision.id);
+    s.kit
+        .fs
+        .replace_durable(&other, &s.kit.codec.write_page(&unseen))
+        .unwrap();
+    let shown = handle.conflicts().unwrap();
+    assert_eq!(shown.len(), 1);
+    assert_eq!(shown[0].revision, unseen.revision.id);
 }
 
 #[test]
@@ -355,6 +424,12 @@ fn assets_import_and_read_back_by_range() {
     assert_eq!(handle.import_asset(source).unwrap().id, asset.id);
     let part = handle.asset_bytes(asset.id, Some(10..13)).unwrap();
     assert_eq!((part.bytes.as_slice(), part.total), (&b"234"[..], 18));
+    // A video's first request is `Range: bytes=0-`, an open end. The range returned ends at the file's end, so the
+    // media element can play it (Beta 8 walk A1-A07-16).
+    let open_end = handle.asset_bytes(asset.id, Some(4..u64::MAX)).unwrap();
+    assert_eq!((open_end.range, open_end.bytes.len()), (Some(4..18), 14));
+    let past_end = handle.asset_bytes(asset.id, Some(16..40)).unwrap();
+    assert_eq!(past_end.range, Some(16..18));
     let fake = crate::store::assets::AssetSource::bytes("fake.png", "image/png", b"not a picture".to_vec());
     let refused = handle.import_asset(fake).unwrap_err();
     assert!(
@@ -555,6 +630,112 @@ fn requests_resolve_apply_and_undo() {
     assert_eq!(json["title"], "Photosynthesis");
     assert!(handle.redo(&c).unwrap().is_some());
     assert_eq!(handle.page_for_tests().title, "Resolved");
+}
+
+/// Bring to front and the other arrange commands move a block among its siblings; the answer carries the moved
+/// block's new order key so the interface can restack it without waiting for a reload.
+#[test]
+fn a_move_answers_with_the_moved_block_order_key() {
+    let page = crate::testing::sample::sample_page();
+    let ids: Vec<BlockId> = page.blocks.iter().map(|b| b.id).collect();
+    let [first, second, ..] = ids[..] else {
+        panic!("the sample page has two blocks")
+    };
+    let clock = crate::testing::sample::test_clock();
+    let limits = crate::Limits::default();
+    let ctx = crate::ops::resolve::ResolveCtx {
+        clock: &clock,
+        limits: &limits,
+        imported: &|_| None,
+    };
+    let req = TxnRequest {
+        page: page.id,
+        client: client("main-1"),
+        client_seq: 1,
+        coalesce: None,
+        ui: None,
+        edits: vec![crate::ops::resolve::Edit::MoveBlock {
+            block: second,
+            frame: None,
+            after: None,
+            before: Some(first),
+        }],
+    };
+    let txn = crate::ops::resolve::resolve(&page, &req, &ctx).unwrap();
+    let mut moved = page.clone();
+    moved.apply(&txn).unwrap();
+    let key = moved.blocks.get(second).unwrap().order.clone();
+    assert_eq!(PageSession::new_order_keys(&txn).get(&second), Some(&key));
+}
+
+/// An edit's answer says whether the edit is in the journal file. While it isn't (here, a journal that can't be
+/// written), the interface keeps saying "Saving" until a `core:saved` whose `through` covers the edit.
+#[test]
+fn an_answer_says_whether_the_edit_is_written_and_the_save_says_which_it_holds() {
+    let s = setup();
+    let c = client("main-1");
+    let handle = s.notebook.open_page(s.page, c.clone()).unwrap();
+    let rename = |n: u64, title: &str| TxnRequest {
+        page: s.page,
+        client: c.clone(),
+        client_seq: n,
+        coalesce: None,
+        ui: None,
+        edits: vec![crate::ops::resolve::Edit::SetPage {
+            title: Some(title.into()),
+            tags: None,
+            view: None,
+        }],
+    };
+    assert!(handle.apply(rename(1, "Journaled")).unwrap().written);
+    s.kit.backend.degrade_journal(true);
+    let ack = handle.apply(rename(2, "Unjournaled")).unwrap();
+    assert!(
+        !ack.written,
+        "an edit the journal couldn't take was answered as written"
+    );
+    s.kit.advance(secs(2));
+    let through = s.kit.events.events().iter().find_map(|e| match e {
+        CoreEvent::Saved { through, .. } => Some(*through),
+        _ => None,
+    });
+    assert_eq!(through, Some(ack.seq), "the save names the last edit it holds");
+}
+
+/// An undo is journaled like an edit, so its frame says whether it is written too. Undoing an erase brings a
+/// stroke back: while the journal can't take that, the interface must keep saying "Saving", not "Saved".
+#[test]
+fn an_undo_frame_says_whether_the_undo_is_written() {
+    let s = setup();
+    let c = client("main-1");
+    let handle = s.notebook.open_page(s.page, c.clone()).unwrap();
+    let req = TxnRequest {
+        page: s.page,
+        client: c.clone(),
+        client_seq: 1,
+        coalesce: None,
+        ui: None,
+        edits: vec![crate::ops::resolve::Edit::SetPage {
+            title: Some("Renamed".into()),
+            tags: None,
+            view: None,
+        }],
+    };
+    assert!(handle.apply(req).unwrap().written);
+    s.kit.backend.degrade_journal(true);
+    let frame = handle.undo(&c).unwrap().unwrap();
+    let (json, _) = crate::wire::frames::decode(&frame.bytes).unwrap();
+    assert_eq!(
+        json["written"], false,
+        "an undo the journal couldn't take was answered as written"
+    );
+    let seq = json["seq"].as_u64().unwrap();
+    s.kit.advance(secs(2));
+    let through = s.kit.events.events().iter().find_map(|e| match e {
+        CoreEvent::Saved { through, .. } => Some(*through),
+        _ => None,
+    });
+    assert_eq!(through, Some(seq), "the save names the undo it holds");
 }
 
 #[test]

@@ -5,6 +5,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { BlockChange, PageDiff, ParagraphChange } from '../../../editor/diff/pageDiff';
 import type { WordPart } from '../../../editor/diff/myers';
+import { describeFormatting } from '../../../editor/diff/formatDiff';
 import { parseTextBlock } from '../../../editor/markdown';
 import { renderStatic } from '../../../editor/schema/dom';
 import { t } from '../../../strings/t';
@@ -88,6 +89,7 @@ function Paragraph({ change, onRestore }: { change: ParagraphChange; onRestore: 
   return (
     <div className={styles.change} data-change="" tabIndex={-1}>
       {body}
+      {change.formatting && <p className={styles.words}>{describeFormatting(change.formatting)}</p>}
       {onRestore && (
         <Button variant="quiet" className={styles.restore} onClick={onRestore}>
           {t('history.restore.paragraph')}

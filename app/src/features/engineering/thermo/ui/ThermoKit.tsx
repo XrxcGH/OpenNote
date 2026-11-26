@@ -2,6 +2,7 @@
 // customary units. The tabs follow the ARIA tabs pattern across the lists, which share one panel: arrow keys move
 // between them, Home and End go to the ends, and only the chosen tab is in the Tab order. Each tool's form and engine
 // load the first time its tab opens.
+import '../text';
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { t } from '../../../../strings/t';
 import type { ToolSpec } from '../common/spec';

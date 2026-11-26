@@ -46,6 +46,8 @@
   }
 
   .field small {
+    /* A hint is already small text; the browser's default for <small> would shrink it again (walk VB-12). */
+    font-size: inherit;
     color: var(--color-text-secondary);
   }
 
@@ -108,6 +110,7 @@
   }
 
   .tab {
+    min-inline-size: var(--target-size);
     min-block-size: var(--target-size);
     padding: var(--space-2) var(--space-3);
     font: inherit;

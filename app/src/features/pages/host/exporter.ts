@@ -10,6 +10,8 @@ import {
   dataUri,
   exportHtml,
   exportMarkdown,
+  loadTableSheetFor,
+  readStyles,
   hasInk,
   inkExtent,
   inkShapes,
@@ -21,7 +23,8 @@ import { exportFileName, exportPdf } from '../pdf';
 import type { PdfExportResult, PdfProblem, PdfProgress, PrintSurface } from '../pdf';
 import type { PrepareInput, PrepareResult, PrintOptions } from '../print';
 import { preparePlayer } from '../../page';
-import { bundledFontFaces } from './fonts';
+import { bundledFontFaces, bundledFontSource } from './fonts';
+import { stylesFor } from '../../page';
 import type { PageSource } from './source';
 
 /** The words an export writes itself, from the app's strings. */
@@ -69,12 +72,18 @@ export interface PdfExportOptions {
   readonly replacePath?: string;
 }
 
+/** The notebook's text styles for a page, read and checked. The page's own style sheet is read where it is drawn. */
+export function notebookStylesOf(source: PageSource) {
+  return readStyles(stylesFor(source.notebookId ?? null));
+}
+
 /** The input the print window prepares: the page, its assets, the light theme with the app's fonts, and the options. */
 export function prepareInput(source: PageSource, print: PrintOptions): PrepareInput {
   return {
     page: source.page,
     assetUrls: source.assetUrls,
     theme: lightTheme(bundledFontFaces()),
+    styles: notebookStylesOf(source),
     labels: exportLabels(),
     print: {
       ...print,
@@ -153,7 +162,25 @@ export async function exportPdfFile(
 }
 
 export type TextOutcome =
-  { readonly status: 'canceled' } | { readonly status: 'saved'; readonly path: string; readonly name: string };
+  | { readonly status: 'canceled' }
+  | {
+      readonly status: 'saved';
+      readonly path: string;
+      readonly name: string;
+      /** The names of tables whose formulas were written as text, because their cached results are out of date. */
+      readonly staleTables: readonly string[];
+    };
+
+/** The names of the tables with these block IDs: the table's own name, or its place among the page's tables. */
+export function staleTableNames(page: PageSource['page'], ids: readonly string[]): string[] {
+  const tables = page.blocks.filter((block) => block.type === 'table');
+  return ids.map((id) => {
+    const at = tables.findIndex((block) => block.id === id);
+    const found = tables[at];
+    const name = found?.type === 'table' ? (found.sheet?.table as { name?: unknown } | undefined)?.name : undefined;
+    return typeof name === 'string' && name !== '' ? name : t('pageViews.files.tableNumber', { number: at + 1 });
+  });
+}
 
 /** An asset's bytes, or null when it can't be read. */
 async function assetBytes(url: string): Promise<Uint8Array | null> {
@@ -189,14 +216,22 @@ function stemOf(path: string): string {
 }
 
 /** Exports the page as a Markdown file, with its pictures in a folder beside it. */
-export async function exportMarkdownFile(client: ExportsClient, source: PageSource): Promise<TextOutcome> {
+export async function exportMarkdownFile(
+  client: ExportsClient,
+  source: PageSource,
+  formatting: 'keep' | 'remove' = 'keep',
+): Promise<TextOutcome> {
   const suggested = exportFileName(source.title || t('pageViews.print.untitled'), 'md');
   const path = await client.pickSave({ suggested, label: t('pageViews.files.markdownLabel'), extension: 'md' });
   if (path === null) return { status: 'canceled' };
+  await loadTableSheetFor(source.page);
   const folder = `${stemOf(path)}_files`;
   const ink = hasInk(source.page) ? pageInkSvg(source) : null;
+  const stale = new Set<string>();
   const made = exportMarkdown(source.page, {
+    onStaleTable: (id) => stale.add(id),
     frontMatter: 'basic',
+    formatting,
     assetPath: (_id, file) => `${folder}/${file}`,
     handwriting: ink ? `![${t('pageViews.print.handwriting')}](${encodeURIComponent(folder)}/ink.svg)` : null,
   });
@@ -210,7 +245,7 @@ export async function exportMarkdownFile(client: ExportsClient, source: PageSour
   }
   if (ink) files.push({ path: `${folder}/ink.svg`, bytes: encoder.encode(ink) });
   await client.write(path, files);
-  return { status: 'saved', path, name: baseName(path) };
+  return { status: 'saved', path, name: baseName(path), staleTables: staleTableNames(source.page, [...stale]) };
 }
 
 /** Exports the page as one web page file that holds its pictures inside it. */
@@ -218,6 +253,7 @@ export async function exportHtmlFile(client: ExportsClient, source: PageSource):
   const suggested = exportFileName(source.title || t('pageViews.print.untitled'), 'html');
   const path = await client.pickSave({ suggested, label: t('pageViews.files.htmlLabel'), extension: 'html' });
   if (path === null) return { status: 'canceled' };
+  await loadTableSheetFor(source.page);
   const uris = new Map<string, string>();
   await Promise.all(
     Object.values(source.page.assets).map(async (asset) => {
@@ -228,13 +264,27 @@ export async function exportHtmlFile(client: ExportsClient, source: PageSource):
   );
   // A recording goes beside the web page as an audio file, and the page plays it and follows the notes.
   const player = isEnabled('pages.exportPlayer') ? await preparePlayer(source.pageId, path).catch(() => null) : null;
-  // A web page file carries its own pictures, and reads in the reader's fonts: the app's font files aren't beside it.
-  const made = exportHtml(source.page, {
+  // A web page file carries its own pictures and the bundled fonts it uses. Any other font is named with a fallback stack.
+  const stale = new Set<string>();
+  const options = {
+    onStaleTable: (id: string) => stale.add(id),
     ...(player ? { player } : {}),
-    assetUrl: (asset) => uris.get(asset.id) ?? null,
+    assetUrl: (asset: { id: string }) => uris.get(asset.id) ?? null,
     theme: lightTheme(),
+    styles: notebookStylesOf(source),
     labels: exportLabels(),
+  };
+  // The bundled fonts the page uses travel inside the file. A first pass finds which, the second embeds them.
+  const wanted = new Set<string>();
+  const first = exportHtml(source.page, {
+    ...options,
+    fonts: (family) => {
+      wanted.add(family);
+      return [];
+    },
   });
+  const made =
+    wanted.size === 0 ? first : exportHtml(source.page, { ...options, fonts: await bundledFontSource(wanted) });
   await client.write(path, [{ path: '', bytes: new TextEncoder().encode(made.html) }]);
-  return { status: 'saved', path, name: baseName(path) };
+  return { status: 'saved', path, name: baseName(path), staleTables: staleTableNames(source.page, [...stale]) };
 }

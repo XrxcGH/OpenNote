@@ -1,5 +1,6 @@
 // The statics tool's form and results: one mode at a time, from pressure and forces on surfaces through buoyancy and
 // stability to the Bernoulli equation and the flow meters.
+import '../text';
 import { fail, q, type KitStep } from '../kit/types';
 import { readLines } from '../kit/lines';
 import { axisLine, svg, text } from '../kit/picture';

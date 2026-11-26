@@ -1,11 +1,14 @@
 # OpenNote help
 
-Short guides for using OpenNote, one for each area of the app. They describe beta 7 (0.1.0-beta.7). Nobody has tried most of these features by hand yet, so [tell us](../testing/beta-4-checklist.md#reporting-a-failure) if a step does not work as written.
+Short guides for using OpenNote, one for each area of the app. They describe beta 8. Many of these features have not been tried by hand yet, so [tell us](../testing/beta-4-checklist.md#reporting-a-failure) if a step does not work as written.
 
-Every picture is a real screenshot. [The screens folder](../screens/README.md) has all of them, in light and dark.
+For one sentence on every tool and feature, with a picture of each major page, see the [feature list](../FEATURE-LIST.md).
+
+Every picture is a real screenshot of the app, and most pages have one. [The screens folder](../screens/README.md) has all of them, in light and dark.
 
 ## Contents
 
+- [The workspace and settings](#the-workspace-and-settings)
 - [Write](#write)
 - [Draw and design pages](#draw-and-design-pages)
 - [Organize and find](#organize-and-find)
@@ -15,14 +18,23 @@ Every picture is a real screenshot. [The screens folder](../screens/README.md) h
 - [Smart features, privacy, and accounts](#smart-features-privacy-and-accounts)
 - [Install, update, and remove](#install-update-and-remove)
 
+## The workspace and settings
+
+- [The workspace, title bar, and windows](workspace-and-title-bar.md): the title bar, Home, page tabs, the compact layout, focus mode, keep on top, quick capture, and the command palette.
+- [Settings](settings.md): every Settings section, appearance, and shortcuts.
+- [Accessibility checker](accessibility-checker.md): find images with no description, skipped headings, and low contrast, and fix them.
+
 ## Write
 
 - [Typed notes](typed-notes.md): text, lists, checklists, the slash menu, templates, and find and replace.
+- [Text formatting](text-formatting.md): fonts, the Format pane, the ruler, language and direction, footnotes, comments and suggestions, and paste.
 - [Moving between blocks](moving-between-blocks.md): the keys that move between text, images, tables, and code.
 - [Math and graphs](math-and-graphs.md): equations, quick math, the grapher, and diagrams.
 - [Math solvers](math-solvers.md): integrals, differential equations, transforms, series, roots, uncertainty, probability, matrices, and projectiles, with worked steps.
 - [3D graphs, vectors, and motion](3d-graphs-vectors-and-motion.md): surfaces, curves, vectors, solids, and projectiles.
 - [Tables and charts](tables-and-charts.md): smart tables, formulas, views, and charts.
+- [Table formatting](table-formatting.md): cell formats and number format codes.
+- [Table function reference](table-functions.md): every formula function, generated from the registry.
 - [Language and spelling](language-and-spelling.md): American English by default, the other dialects and languages, and what the choice sets.
 - [Engineering tools](engineering-tools.md): free-body diagrams, beams, trusses, circuits, and units in tables.
 - [Economics and finance](economics-and-finance.md): money over time, markets, firms, macroeconomics, measurement, accounting, and investment calculators.
@@ -31,6 +43,11 @@ Every picture is a real screenshot. [The screens folder](../screens/README.md) h
 - [Music, script, camera, and studio tools](music-script-camera-and-studio-tools.md): score notation, music theory, voice leading, ear training, tuning and rhythm, a script formatter, camera and lighting arithmetic, and scale, color, and materials.
 - [Document structure](document-structure.md): equation numbers and references, formula sheets, practice mode, problem-set templates, and figure export.
 - [Code cells](code-cells.md): run short Python and JavaScript programs on a page, offline, in a sandbox.
+- [Code studio](code-studio.md): the window for code projects, with its console, Problems panel, keys, examples, and settings. On in Beta and Nightly builds.
+- [SQL and Lua in code projects](sql-and-lua-projects.md): SQLite with schema and seed files and CSV import, and Lua 5.4. Code projects are off in this beta.
+- [C and C++ in code projects](c-and-cpp-projects.md): clang from a pack, the standards, header hints, and what does not run. Code projects are off in this beta.
+- [JavaScript and TypeScript in code projects](javascript-and-typescript-projects.md): modules, tests, limits, and what does not run. Code projects are off in this beta.
+- [Python in code projects](python-projects.md): quick and full Python, input, errors, limits, and what does not run. Code projects are off in this beta.
 - [Data, seeds, and figures in the subject kits](subject-kit-data-and-figures.md): data input, page tables, repeatable random results, coefficient tables, plots, and figure blocks.
 - [Statistics kit](statistics-kit.md): describe data, tests, epidemiology, power, resampling, Bayesian updating, and study design.
 - [Statistical models](statistical-models.md): regression, econometrics and causal inference, survival, time series, PCA and clusters, machine learning, and spatial statistics.
@@ -85,5 +102,5 @@ OpenNote is one file, and it never needs administrator rights.
 - **On a Mac or Linux.** [OpenNote on macOS and Linux](install-macos-linux.md): the dmg and the AppImage, updates, Command shortcuts, and what works differently there.
 
 - **Install.** The first time it starts, setup offers to move OpenNote into your own Programs folder (`%LOCALAPPDATA%\Programs\OpenNote`) and add it to the Start menu. After the move, OpenNote also shows in Windows Settings, then **Apps**, then **Installed apps**, with its version.
-- **Updates.** OpenNote checks for updates in the background and installs them the way you chose in Settings, then **Updates**. A download that stops partway, because the PC slept or the network dropped, carries on from where it stopped the next time. If you are on a metered network, such as a phone hotspot, automatic updates wait until you are on a network without a data limit. Every update is checked against its signature before it is installed, whether it was downloaded in one go or in parts.
+- **Updates.** Once a signed release exists, OpenNote checks for updates in the background and installs them the way you chose in Settings, then **Updates**. The beta exe is unsigned and has no update key, so it does not update itself yet. A download that stops partway, because the PC slept or the network dropped, carries on from where it stopped the next time. If you are on a metered network, such as a phone hotspot, automatic updates wait until you are on a network without a data limit. Every update is checked against its signature before it is installed, whether it was downloaded in one go or in parts.
 - **Remove.** In **Installed apps**, choose the three dots next to OpenNote, then **Uninstall**. OpenNote asks first. It removes the app, its Start menu shortcut, the `opennote` command if you added it, and its Installed apps entry. Your notes folder is never touched, and your settings stay, so installing OpenNote again picks up where you left off. If OpenNote is open, close it first.

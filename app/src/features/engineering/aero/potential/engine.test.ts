@@ -1,3 +1,4 @@
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { AeroError, brent } from '../common';
 import { potentialFlow, type FlowElement } from './engine';

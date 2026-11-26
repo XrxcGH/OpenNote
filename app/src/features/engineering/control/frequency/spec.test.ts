@@ -1,4 +1,5 @@
 // The frequency response tool through the window's path: the plan's answers as shown, Hz display, and problems.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { runTool } from '../ui/read';
 import { firstTexts } from '../ui/spec';

@@ -20,11 +20,15 @@ function TableView({ table }: { table: Table }) {
         <caption>{table.caption}</caption>
         <thead>
           <tr>
-            {table.header.map((h, i) => (
-              <th key={i} scope="col">
-                {h}
-              </th>
-            ))}
+            {table.header.map((h, i) =>
+              h === '' ? (
+                <td key={i} />
+              ) : (
+                <th key={i} scope="col">
+                  {h}
+                </th>
+              ),
+            )}
           </tr>
         </thead>
         <tbody>

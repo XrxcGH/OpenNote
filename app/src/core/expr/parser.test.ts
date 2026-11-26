@@ -38,6 +38,8 @@ function show(node: Node): string {
       return `${node.value.text}[${node.unit.factors.map((f) => `${f.name}^${f.power}`).join(' ')}]`;
     case 'convert':
       return `${show(node.value)} in [${node.unit.factors.map((f) => `${f.name}^${f.power}`).join(' ')}]`;
+    default:
+      return node.type;
   }
 }
 

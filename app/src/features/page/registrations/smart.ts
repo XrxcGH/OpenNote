@@ -16,6 +16,7 @@ import { targetEditor } from '../formattingBar/target';
 import { shownMedia } from '../images/shown';
 import { slashItems } from '../registries';
 import { currentTable } from '../tables/current';
+import { insertMathAtCaret, insertTextAtCaret } from '../inserts/atCaret';
 import { tableExtras } from '../tables/extras';
 import type { SlashItemDef } from '../registries';
 
@@ -375,7 +376,15 @@ for (const spec of TABLE_COMMANDS) {
     category: inTable ? 'table' : 'insert',
     icon: spec.icon,
     flag: spec.flag ?? 'tables.smart',
-    ...(spec.keys ? { keys: spec.keys.map(chord), scope: 'editor.table' as const, allowInTextInput: true } : {}),
+    ...(spec.keys
+      ? {
+          keys: spec.keys.map(chord),
+          scope: 'editor.table' as const,
+          allowInTextInput: true,
+          // Ctrl+R aligns right in text (ADR 0085) and fills right in a table.
+          ...(spec.id === 'table.fillRight' ? { refines: 'para.alignEnd' } : {}),
+        }
+      : {}),
     when: () => currentTable.get() !== null,
     run: () => runSmart(spec.command),
   });
@@ -450,23 +459,9 @@ if (typeof window !== 'undefined') {
         },
       );
     } else if (detail.text !== undefined) {
-      // A double-click selects the word and the space after it. The text replaces the word, and the space stays.
-      const { from, to } = editor.state.selection;
-      const selected = editor.state.doc.textBetween(from, to, ' ', ' ');
-      const lead = selected.length - selected.trimStart().length;
-      const trail = selected.length - selected.trimEnd().length;
-      const range = selected.trim() === '' ? { from, to } : { from: from + lead, to: to - trail };
-      detail.handled = editor.chain().focus().insertContentAt(range, detail.text).run();
+      detail.handled = insertTextAtCaret(editor, detail.text);
     } else if (detail.math !== undefined) {
-      const { source, display } = detail.math;
-      const type = editor.schema.nodes[display ? 'mathBlock' : 'mathInline'];
-      if (type && source.trim() !== '') {
-        detail.handled = editor
-          .chain()
-          .focus()
-          .insertContent({ type: type.name, attrs: { source: source.trim() } })
-          .run();
-      }
+      detail.handled = insertMathAtCaret(editor, detail.math.source, detail.math.display);
     } else if (detail.graph !== undefined) {
       // The listener must answer at once, so a graph is claimed now and added when its code arrives.
       detail.handled = true;

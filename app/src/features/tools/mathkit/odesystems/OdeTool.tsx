@@ -1,5 +1,6 @@
 // Systems of ODEs and phase portraits: a linear system or a second-order equation with its eigenvalue analysis, or a
 // nonlinear system with its equilibria, nullclines and trajectories, drawn as a phase portrait.
+import '../text';
 import { t } from '../../../../strings/t';
 import { numberOf } from '../expr';
 import { fmt } from '../numeric';

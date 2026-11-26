@@ -142,7 +142,7 @@ describe('the calculator', () => {
     scientific.focus();
     fireEvent.keyDown(scientific, { key: 'ArrowRight' });
     expect(screen.getByRole('tab', { name: 'Graphing 2D' }).getAttribute('aria-selected')).toBe('true');
-    expect(await screen.findByRole('application', { name: /Graph of 1 function/ })).toBeTruthy();
+    expect(await screen.findByRole('application', { name: /^Graph of .*, x from/ })).toBeTruthy();
     fireEvent.keyDown(screen.getByRole('tab', { name: 'Graphing 2D' }), { key: 'ArrowRight' });
     expect(await screen.findByRole('application', { name: '3D graph of 1 function' })).toBeTruthy();
     fireEvent.keyDown(screen.getByRole('tab', { name: 'Graphing 3D' }), { key: 'End' });
@@ -195,13 +195,29 @@ describe('the calculator modes', () => {
     expect((screen.getByRole('textbox', { name: 'Expression' }) as HTMLInputElement).value).toBe('100000000');
   });
 
+  it('hides the answer buttons while the result is an error (walk 9, T4-D07-4)', async () => {
+    localStorage.setItem('opennote.tools.calculator.tab', JSON.stringify('scientific'));
+    renderUi(<CalculatorTool />);
+    const field = screen.getByRole('textbox', { name: 'Expression' });
+    await userEvent.fill(field, '2+2');
+    await userEvent.click(screen.getByRole('button', { name: 'Calculate' }));
+    expect(screen.getByRole('button', { name: 'Copy answer' })).toBeTruthy();
+    await userEvent.fill(field, 'integral(x^2,0,3)');
+    await userEvent.click(screen.getByRole('button', { name: 'Calculate' }));
+    expect(screen.queryByRole('button', { name: 'Copy answer' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Insert answer into page' })).toBeNull();
+  });
+
   it('summarizes data and fits a line on the statistics tab', async () => {
     localStorage.setItem('opennote.tools.calculator.tab', JSON.stringify('statistics'));
     renderUi(<CalculatorTool />);
     await userEvent.fill(screen.getByRole('textbox', { name: 'Data' }), '1 3\n2 5\n3 7');
     await userEvent.click(screen.getByRole('button', { name: 'Calculate' }));
     const table = screen.getByRole('table', { name: 'Statistics of the data' });
-    expect(within(table).getByRole('row', { name: /Mean/ }).textContent).toBe('Mean2');
+    // With x and y pairs, each column has its own statistics, labeled (walk 9, T3-D08-2).
+    expect(within(table).getByRole('row', { name: /Mean \(x\)/ }).textContent).toBe('Mean (x)2');
+    expect(within(table).getByRole('row', { name: /Mean \(y\)/ }).textContent).toBe('Mean (y)5');
+    expect(within(table).getByRole('row', { name: /Median \(y\)/ }).textContent).toBe('Median (y)5');
     expect(within(table).getByRole('row', { name: /Line of best fit/ }).textContent).toContain('y = 2x + 1');
     expect(screen.getByRole('button', { name: /Use 1 3/ })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Copy answer' })).toBeTruthy();
@@ -220,6 +236,64 @@ describe('the calculator modes', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Inverse of A' }));
     expect(screen.getByText('A has no inverse, so this has no single answer.')).toBeTruthy();
     expect(screen.getAllByRole('listitem').length).toBe(2);
+  });
+});
+
+describe('the calculator keys, angle unit, and history', () => {
+  it('repeats the last step when = is pressed again, and says what % means', async () => {
+    localStorage.setItem('opennote.tools.calculator.tab', JSON.stringify('basic'));
+    renderUi(<CalculatorTool />);
+    expect(screen.getByText(/200\+15% is 200\.15/)).toBeTruthy();
+    for (const key of ['9', '7', '−', '3']) await userEvent.click(screen.getByRole('button', { name: key }));
+    await userEvent.click(screen.getByRole('button', { name: 'Equals' }));
+    expect(document.getElementById('calc-result')!.textContent).toBe('= 94');
+    await userEvent.click(screen.getByRole('button', { name: 'Equals' }));
+    expect(document.getElementById('calc-result')!.textContent).toBe('= 91');
+  });
+
+  it('clears the expression on Escape and keeps the window; an empty field leaves Escape to the window', async () => {
+    const closed = vi.fn();
+    const { container } = renderUi(
+      <div
+        role="presentation"
+        onKeyDown={(event) => {
+          if (event.key === 'Escape' && !event.defaultPrevented) closed();
+        }}
+      >
+        <CalculatorTool />
+      </div>,
+    );
+    expect(container).toBeTruthy();
+    await userEvent.fill(screen.getByRole('textbox', { name: 'Expression' }), '2+3');
+    await userEvent.keyboard('{Escape}');
+    expect((screen.getByRole('textbox', { name: 'Expression' }) as HTMLInputElement).value).toBe('');
+    expect(closed).not.toHaveBeenCalled();
+    await userEvent.keyboard('{Escape}');
+    expect(closed).toHaveBeenCalledTimes(1);
+  });
+
+  it('cycles the angle unit through degrees, radians, and gradians', async () => {
+    renderUi(<CalculatorTool />);
+    const unit = () => screen.getByRole('button', { name: /^(Degrees|Radians|Gradians)$/ });
+    expect(unit().textContent).toBe('Degrees');
+    await userEvent.click(unit());
+    expect(unit().textContent).toBe('Radians');
+    await userEvent.click(unit());
+    expect(unit().textContent).toBe('Gradians');
+    await userEvent.fill(screen.getByRole('textbox', { name: 'Expression' }), 'sin(100)');
+    await userEvent.keyboard('{Enter}');
+    expect(document.getElementById('calc-result')!.textContent).toBe('= 1');
+  });
+
+  it('breaks a history entry with a very long number inside the panel', async () => {
+    renderUi(<CalculatorTool />);
+    await userEvent.fill(screen.getByRole('textbox', { name: 'Expression' }), '1'.repeat(80));
+    await userEvent.keyboard('{Enter}');
+    const entry = screen
+      .getAllByRole('button')
+      .find((button) => button.getAttribute('aria-label')?.includes('11111111'));
+    expect(entry).toBeTruthy();
+    expect(getComputedStyle(entry!).overflowWrap).toBe('anywhere');
   });
 });
 

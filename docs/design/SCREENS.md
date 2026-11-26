@@ -2,7 +2,7 @@
 
 These wireframes show the layout of each major screen, with sizes, keep-out zones, and the rules behind them. They follow [BRAND.md](../BRAND.md) and use its exact colors from [`brand/tokens.json`](../../brand/tokens.json). They are layout guides, not pixel-perfect mockups: icons are placeholders, and gray bars stand in for text.
 
-They were redrawn for beta 4 to match the app as built. For real pictures of every screen, in the light and the dark theme, see [the screenshots](../screens/README.md).
+They were redrawn for beta 4, so they do not show the Home screen, the tablet and compact layouts, quick capture, the tutor, practice exams, the tool kit windows, sync, protected sections, or code cells. For those, and for what the title bar shows now, use [the workspace help page](../help/workspace-and-title-bar.md) and the real pictures. For real pictures of every screen, in the light and the dark theme, see [the screenshots](../screens/README.md).
 
 ## Contents
 
@@ -61,7 +61,7 @@ The window in every desktop drawing has the same parts:
 
 | Part | What it holds |
 |---|---|
-| Title bar | The logo, back and forward arrows, a breadcrumb that starts with the notebook's color, the save status, Upcoming, search, and the theme toggle, then the window buttons. |
+| Title bar | The logo, back and forward arrows, a breadcrumb that starts with the notebook's color, undo and redo, the save status, the daily note, search, and the theme toggle, then the window buttons. Chips for sync, timers, updates, offline, safe mode, and audio appear only in their own state. See [the title bar](../help/workspace-and-title-bar.md#the-title-bar). |
 | Command bar | Home, Insert, Draw, and View tabs, with the active tab's tools to the right. Tools that do not fit move under More. |
 | Notebooks pane (272, resizable 220 to 400) | Notebooks, section groups, and sections, each with a color. Trash and the plant are at the foot. Settings opens with Ctrl+, (comma). |
 | Pages pane (300, resizable 240 to 420) | Pages in the selected section, each with its changed date. Subpages are indented. |

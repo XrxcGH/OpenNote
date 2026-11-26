@@ -10,10 +10,11 @@ import { derivativeSteps as explain } from '../calculus/derivative';
 import { latexOf } from '../calculus/print';
 import { expression } from '../calculus/read';
 import { Unsupported } from './convert';
+import { equationSteps } from './equationSteps';
 
 export type { Step, StepRule } from '../calculus';
 
-export type StepsKind = 'derivative' | 'integral' | 'limit' | 'sum';
+export type StepsKind = 'derivative' | 'integral' | 'limit' | 'sum' | 'equation';
 
 export type StepsResult =
   { ok: true; kind: StepsKind; steps: Step[]; result: string } | { ok: false; reason: NoAnswer; steps: Step[] };
@@ -36,7 +37,7 @@ function expressionSteps(latex: string): StepsResult {
     at >= 0 && /^\s*(?:y|[a-zA-Z]\s*(?:\\left)?\(\s*[a-z]\s*(?:\\right)?\))\s*=/.test(latex)
       ? latex.slice(at + 1)
       : latex;
-  if (body.includes('=')) return { ok: false, reason: 'unsupported', steps: [] };
+  if (body.includes('=')) return equationSteps(body) ?? { ok: false, reason: 'unsupported', steps: [] };
   const node = parse(body);
   if (!node) return { ok: false, reason: 'unsupported', steps: [] };
   const names = freeNames(node).filter((name) => !CONSTANTS.has(name));

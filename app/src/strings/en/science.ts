@@ -133,6 +133,7 @@ export const science = {
     ambiguous:
       'The zeros at the end of a whole number may or may not count. Write it as {example} to make the count clear.',
     roundTo: 'Round to this many figures',
+    figuresRange: 'Use a whole number of figures from 1 to 50. The number is shown unrounded.',
     rounded: 'Rounded to {count, plural, one {# figure} other {# figures}}',
     notation: 'Notation',
     notations: { plain: 'Plain', scientific: 'Scientific', engineering: 'Engineering' },

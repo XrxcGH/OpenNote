@@ -2,6 +2,8 @@
 
 Number your equations and refer to them, gather a formula sheet, practice a worked problem, start from a problem-set template, and save a graph as a captioned figure.
 
+![The math actions on an equation: a solved equation on the page, and the worked steps of a derivative inserted below an equation](../screens/math-actions-light.png)
+
 ## Number equations and refer to them
 
 1. Put the caret on or next to a display equation (the kind written between `$$` lines). The command acts on the one nearest the caret.

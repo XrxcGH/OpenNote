@@ -106,3 +106,74 @@ describe('differential equations', () => {
     expect(() => solveOde({ kind: 'separable', rhs: 'x + y', x0: 0, y0: 0, from: 0, to: 1 })).toThrow('not-separable');
   });
 });
+
+describe('first-order answers read simplified', () => {
+  const linear = (p: string, q: string, x0: number, y0: number) =>
+    solveOde({ kind: 'linear', p, q, x0, y0, from: 0.5, to: 2 }).solution;
+
+  it('combines the exponentials and powers', () => {
+    // y' + 2y = 4, y(0) = 0 gives 2 - 2e^(-2x), not (2e^(2x) - 2)/e^(2x).
+    expect(linear('2', '4', 0, 0)).toBe('2-2·exp(-2·x)');
+    expect(linear('2', '4', 0, 1)).toBe('2-exp(-2·x)');
+    // y' - 2y = 4e^(2x), y(0) = 1 gives (4x + 1)e^(2x).
+    expect(linear('-2', '4*exp(2*x)', 0, 1)).not.toContain('/');
+    // y' + y/x = x, y(1) = 1 gives x^2/3 + 2/(3x); the term x^3/(3x) is x^2/3.
+    expect(linear('1/x', 'x', 1, 1)).not.toContain('x^3');
+  });
+});
+
+describe('the general solution when the starting values are cleared', () => {
+  it('gives C₁ and C₂ for a second-order equation', () => {
+    const result = solveOde({
+      kind: 'second',
+      a: '1',
+      b: '2',
+      c: '5',
+      g: '0',
+      x0: 0,
+      y0: Number.NaN,
+      v0: Number.NaN,
+      from: 0,
+      to: 6,
+    });
+    expect(result.general).toBe(true);
+    expect(result.solution).toMatch(/C₁/);
+    expect(result.solution).toMatch(/C₂/);
+    expect(result.curve).toEqual([]);
+    expect(result.steps.at(-1)?.key).toBe('odeGeneral');
+  });
+
+  it('adds the particular solution to the homogeneous one', () => {
+    const result = solveOde({
+      kind: 'second',
+      a: '1',
+      b: '0',
+      c: '-1',
+      g: 'exp(2*x)',
+      x0: 0,
+      y0: Number.NaN,
+      v0: 0,
+      from: 0,
+      to: 1,
+    });
+    expect(result.solution).toMatch(/C₁.*C₂|C₂.*C₁/);
+    // y'' - y = e^(2x) has y_p = e^(2x)/3.
+    expect(result.solution).toContain('exp(2·x)');
+  });
+
+  it('gives C for a first-order linear equation', () => {
+    const result = solveOde({ kind: 'linear', p: '2', q: '4', x0: 0, y0: Number.NaN, from: 0, to: 3 });
+    expect(result.general).toBe(true);
+    expect(result.solution).toBe('2+C·exp(-2·x)');
+  });
+
+  it('names a missing start for a separable equation', () => {
+    expect(() => solveOde({ kind: 'separable', rhs: 'x*y', x0: 0, y0: Number.NaN, from: 0, to: 1 })).toThrow(
+      'ode-start',
+    );
+  });
+
+  it('still asks for a left-to-right range with starting values given', () => {
+    expect(() => solveOde({ kind: 'second', a: '1', x0: 0, y0: 1, v0: 0, from: 3, to: 0 })).toThrow('ode-range');
+  });
+});

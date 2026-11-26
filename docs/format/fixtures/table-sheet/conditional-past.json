@@ -1,0 +1,472 @@
+{
+  "name": "conditional formats with values just outside their grammar",
+  "rules": [
+    "R-SHT-15",
+    "R-SHT-22"
+  ],
+  "page": {
+    "formatVersion": 1,
+    "minReaderVersion": 1,
+    "kind": "opennote.page",
+    "id": "01m3sbcmt0000000000000p001",
+    "title": "Fixture",
+    "created": "2026-11-02T10:00:00.000Z",
+    "modified": "2026-11-02T10:00:00.000Z",
+    "view": {
+      "layout": "flow"
+    },
+    "blocks": [
+      {
+        "id": "01m3sbcmt0000000000000b001",
+        "type": "table",
+        "order": "a0",
+        "created": "2026-11-02T10:00:00.000Z",
+        "modified": "2026-11-02T10:00:00.000Z",
+        "data": {
+          "columns": [
+            {
+              "id": "01m3sbcmt0000000000000k001",
+              "width": 120
+            },
+            {
+              "id": "01m3sbcmt0000000000000k002",
+              "width": 120
+            },
+            {
+              "id": "01m3sbcmt0000000000000k003",
+              "width": 120
+            }
+          ],
+          "rows": [
+            {
+              "id": "01m3sbcmt0000000000000r001",
+              "cells": {
+                "01m3sbcmt0000000000000k001": {
+                  "markdown": "Item"
+                },
+                "01m3sbcmt0000000000000k002": {
+                  "markdown": "Qty"
+                },
+                "01m3sbcmt0000000000000k003": {
+                  "markdown": "Note"
+                }
+              }
+            },
+            {
+              "id": "01m3sbcmt0000000000000r002",
+              "cells": {
+                "01m3sbcmt0000000000000k001": {
+                  "markdown": "Tea"
+                },
+                "01m3sbcmt0000000000000k002": {
+                  "markdown": "2"
+                },
+                "01m3sbcmt0000000000000k003": {
+                  "markdown": "x"
+                }
+              }
+            },
+            {
+              "id": "01m3sbcmt0000000000000r003",
+              "cells": {
+                "01m3sbcmt0000000000000k001": {
+                  "markdown": "Rice"
+                },
+                "01m3sbcmt0000000000000k002": {
+                  "markdown": "4"
+                },
+                "01m3sbcmt0000000000000k003": {
+                  "markdown": "y"
+                }
+              }
+            }
+          ],
+          "sheet": {
+            "conditional": {
+              "q01": {
+                "order": 0,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "style": "xpb9b9",
+                "type": "blank"
+              },
+              "q02": {
+                "order": 257,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "style": "xpb9b9",
+                "type": "blank"
+              },
+              "q03": {
+                "order": 1,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "rank": 0,
+                "style": "xpb9b9",
+                "type": "top"
+              },
+              "q04": {
+                "order": 1,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "rank": 1001,
+                "style": "xpb9b9",
+                "type": "top"
+              },
+              "q05": {
+                "order": 1,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "stdDev": 4,
+                "style": "xpb9b9",
+                "type": "average"
+              },
+              "q06": {
+                "order": 1,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "stdDev": -1,
+                "style": "xpb9b9",
+                "type": "average"
+              },
+              "q07": {
+                "op": "contains",
+                "order": 1,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "style": "xpb9b9",
+                "text": "",
+                "type": "text"
+              },
+              "q08": {
+                "op": "contains",
+                "order": 1,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "style": "xpb9b9",
+                "text": "tttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt",
+                "type": "text"
+              },
+              "q09": {
+                "order": 1,
+                "period": "someday",
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "style": "xpb9b9",
+                "type": "date"
+              },
+              "q10": {
+                "order": 1,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "stops": [
+                  {
+                    "at": "min",
+                    "color": "ink"
+                  }
+                ],
+                "type": "scale"
+              },
+              "q11": {
+                "order": 1,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "stops": [
+                  {
+                    "at": "min",
+                    "color": "ink"
+                  },
+                  {
+                    "at": "num",
+                    "color": "fern",
+                    "value": "1"
+                  },
+                  {
+                    "at": "percent",
+                    "color": "plum",
+                    "value": "2"
+                  },
+                  {
+                    "at": "max",
+                    "color": "brick"
+                  }
+                ],
+                "type": "scale"
+              },
+              "q12": {
+                "axis": "left",
+                "color": "ink",
+                "order": 1,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "type": "bar"
+              },
+              "q13": {
+                "order": 1,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "set": "3Arrows",
+                "thresholds": [
+                  {
+                    "at": "num",
+                    "value": "1"
+                  }
+                ],
+                "type": "icons"
+              },
+              "q14": {
+                "order": 1,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "set": "3Arrows",
+                "thresholds": [
+                  {
+                    "at": "num",
+                    "value": "1"
+                  },
+                  {
+                    "at": "num",
+                    "value": "1"
+                  },
+                  {
+                    "at": "num",
+                    "value": "1"
+                  }
+                ],
+                "type": "icons"
+              },
+              "q15": {
+                "order": 1,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "set": "4Rating",
+                "thresholds": [
+                  {
+                    "at": "num",
+                    "value": "1"
+                  },
+                  {
+                    "at": "num",
+                    "value": "1"
+                  }
+                ],
+                "type": "icons"
+              },
+              "q16": {
+                "order": 1,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "set": "5Boxes",
+                "thresholds": [
+                  {
+                    "at": "num",
+                    "value": "1"
+                  },
+                  {
+                    "at": "num",
+                    "value": "1"
+                  },
+                  {
+                    "at": "num",
+                    "value": "1"
+                  },
+                  {
+                    "at": "num",
+                    "value": "1"
+                  },
+                  {
+                    "at": "num",
+                    "value": "1"
+                  }
+                ],
+                "type": "icons"
+              },
+              "q17": {
+                "order": 1,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "set": "6Arrows",
+                "thresholds": [
+                  {
+                    "at": "num",
+                    "value": "1"
+                  },
+                  {
+                    "at": "num",
+                    "value": "1"
+                  },
+                  {
+                    "at": "num",
+                    "value": "1"
+                  },
+                  {
+                    "at": "num",
+                    "value": "1"
+                  },
+                  {
+                    "at": "num",
+                    "value": "1"
+                  }
+                ],
+                "type": "icons"
+              },
+              "q18": {
+                "order": 1,
+                "style": "xpb9b9",
+                "type": "blank"
+              },
+              "q19": {
+                "order": 1,
+                "ranges": [],
+                "style": "xpb9b9",
+                "type": "blank"
+              },
+              "q20": {
+                "a": "1",
+                "op": "between",
+                "order": 1,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "style": "UPPER",
+                "type": "cell"
+              },
+              "q21": {
+                "order": 1,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "stop": "yes",
+                "style": "xpb9b9",
+                "type": "blank"
+              },
+              "q22": {
+                "order": 1,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "stops": [
+                  {
+                    "at": "min",
+                    "color": "ink"
+                  },
+                  {
+                    "at": "max",
+                    "color": "fern"
+                  }
+                ],
+                "style": "xpb9b9",
+                "type": "scale"
+              }
+            },
+            "styles": {
+              "xpb9b9": {
+                "fill": "#fde68a"
+              }
+            }
+          }
+        }
+      }
+    ],
+    "revision": {
+      "id": "01m3sbcmt0000000000000v001",
+      "parents": [],
+      "ancestors": [],
+      "savedAt": "2026-11-02T10:00:00.000Z",
+      "device": {
+        "id": "01m3sbcmt0000000000000d001",
+        "label": "Test device"
+      },
+      "writer": "Fixture"
+    }
+  },
+  "stamp": {
+    "formatVersion": 2,
+    "minReaderVersion": 1,
+    "minWriterVersion": 2
+  },
+  "problems": [
+    "blocks[0].data.sheet.conditional.q01.order: an integer from 1 to 256",
+    "blocks[0].data.sheet.conditional.q02.order: an integer from 1 to 256",
+    "blocks[0].data.sheet.conditional.q03.rank: an integer from 1 to 1000",
+    "blocks[0].data.sheet.conditional.q04.rank: an integer from 1 to 1000",
+    "blocks[0].data.sheet.conditional.q05.stdDev: an integer from 0 to 3",
+    "blocks[0].data.sheet.conditional.q06.stdDev: an integer from 0 to 3",
+    "blocks[0].data.sheet.conditional.q07.text: a string of 1 to 255 characters",
+    "blocks[0].data.sheet.conditional.q08.text: a string of 1 to 255 characters",
+    "blocks[0].data.sheet.conditional.q09.period: one of yesterday, today, tomorrow, last7Days, lastWeek, thisWeek, nextWeek, lastMonth, thisMonth, nextMonth",
+    "blocks[0].data.sheet.conditional.q10.stops: an array of 2 to 3 items",
+    "blocks[0].data.sheet.conditional.q11.stops: an array of 2 to 3 items",
+    "blocks[0].data.sheet.conditional.q12.axis: one of auto, middle, none",
+    "blocks[0].data.sheet.conditional.q13.thresholds: an array of 2 to 4 items",
+    "blocks[0].data.sheet.conditional.q16.thresholds: an array of 2 to 4 items",
+    "blocks[0].data.sheet.conditional.q17.set: one of 3Arrows, 3Triangles, 3TrafficLights, 3Signs, 3Symbols, 3Flags, 3Stars, 4Arrows, 4Rating, 5Arrows, 5Rating, 5Quarters, 5Boxes",
+    "blocks[0].data.sheet.conditional.q17.thresholds: an array of 2 to 4 items",
+    "blocks[0].data.sheet.conditional.q18.ranges: required",
+    "blocks[0].data.sheet.conditional.q19.ranges: an array of 1 to 64 items",
+    "blocks[0].data.sheet.conditional.q20.style: a style ID",
+    "blocks[0].data.sheet.conditional.q21.stop: a boolean",
+    "blocks[0].data.sheet.conditional.q22.style: not a key of this object",
+    "blocks[0].data.sheet.conditional.q13.thresholds: one fewer than the icons (R-SHT-15)",
+    "blocks[0].data.sheet.conditional.q14.thresholds: one fewer than the icons (R-SHT-15)",
+    "blocks[0].data.sheet.conditional.q15.thresholds: one fewer than the icons (R-SHT-15)",
+    "blocks[0].data.sheet.conditional.q16.thresholds: one fewer than the icons (R-SHT-15)"
+  ]
+}

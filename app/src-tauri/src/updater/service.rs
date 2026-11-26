@@ -268,6 +268,14 @@ impl Service {
         if !ready {
             return Err(IpcError::invalid("updater", "no update is ready"));
         }
+        if opennote_updater::platform::PlatformKey::current().is_some_and(|platform| !platform.replaces_itself()) {
+            // A Mac: the checked dmg opens, and the person drags OpenNote to Applications.
+            let staged = self
+                .updater()
+                .and_then(|updater| updater.staged(None))
+                .ok_or_else(|| IpcError::invalid("updater", "the downloaded update isn't there"))?;
+            return open_installer(&staged.path);
+        }
         lifecycle::request_exit(app, ExitReason::RestartToUpdate);
         Ok(())
     }
@@ -285,4 +293,15 @@ impl Service {
         lifecycle::request_exit(app, ExitReason::GoBack);
         Ok(())
     }
+}
+
+/// Opens a downloaded dmg, which mounts it. Only a Mac has one.
+#[cfg(not(windows))]
+fn open_installer(path: &std::path::Path) -> IpcResult<()> {
+    crate::desktop::open_with_default(path.as_os_str(), false)
+}
+
+#[cfg(windows)]
+fn open_installer(_path: &std::path::Path) -> IpcResult<()> {
+    Err(IpcError::invalid("updater", "Windows has no installer to open"))
 }

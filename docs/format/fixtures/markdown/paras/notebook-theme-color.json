@@ -1,0 +1,37 @@
+{
+  "formatVersion": 1,
+  "minReaderVersion": 1,
+  "kind": "opennote.notebook",
+  "id": "01m3sbcmt0000000000000n001",
+  "title": "Fixture",
+  "color": "fern",
+  "created": "2026-11-02T10:00:00.000Z",
+  "changed": "2026-11-02T10:00:00.000Z",
+  "styles": {
+    "normal": {
+      "size": 16,
+      "sizePt": 12,
+      "textColor": "theme:text"
+    },
+    "h1": {
+      "size": 26.67,
+      "sizePt": 20,
+      "textColor": "theme:accent1"
+    },
+    "quote": {
+      "color": "brick",
+      "textColor": "brick"
+    },
+    "u-aside": {
+      "color": "#2f6f4e",
+      "label": "Aside",
+      "textColor": "#2f6f4e"
+    }
+  },
+  "theme": {
+    "colors": {
+      "accent1": "#1f4e8c",
+      "text": "#202124"
+    }
+  }
+}

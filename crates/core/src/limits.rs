@@ -44,6 +44,18 @@ pub struct Limits {
     pub tag_chars: u32,
     /// Most element IDs in one text block (spec 6.6).
     pub elements_per_block: u32,
+    /// Most tab stops of one paragraph (version 2, spec 6.8).
+    pub tab_stops: u32,
+    /// Most list definitions in one text block (version 2, spec 6.9).
+    pub lists_per_block: u32,
+    /// Most levels of one list definition.
+    pub list_levels: u32,
+    /// Most notes, comments, or suggestions of each kind in one block (version 2, spec 6.10).
+    pub records_per_block: u32,
+    /// Most replies to one comment.
+    pub replies_per_comment: u32,
+    /// Most styles in a page's style sheet (version 2, spec 4.6).
+    pub styles_per_page: u32,
 }
 
 impl Default for Limits {
@@ -65,6 +77,12 @@ impl Default for Limits {
             tags_per_page: 1_000,
             tag_chars: 200,
             elements_per_block: 100_000,
+            tab_stops: 64,
+            lists_per_block: 256,
+            list_levels: 9,
+            records_per_block: 10_000,
+            replies_per_comment: 256,
+            styles_per_page: 64,
         }
     }
 }

@@ -5,6 +5,7 @@ import type { kitEarthTools } from './kitEarthTools';
 
 const LIGHT = {
   title: 'Earth sciences',
+  resultTable: 'Table of values',
   open: 'Open the earth sciences kit',
   keywords: 'earth geology geophysics atmosphere weather ocean climate',
   topic: 'Topic',
@@ -16,6 +17,8 @@ const LIGHT = {
   source: 'Source: {source}',
   insertAnswer: 'Insert answer',
   insertMore: 'More ways to insert',
+  insertLive: 'Live calculation block',
+  liveInserted: 'Added a live calculation block. Use Open in tool to change it.',
   insertMenu: 'Insert',
   insertEquation: 'Insert the equation',
   insertTable: 'Insert the table',

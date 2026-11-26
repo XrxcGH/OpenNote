@@ -1,4 +1,5 @@
 // The transient conduction form end to end, checked against closed forms, then by round trip.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { refuses, row, solver } from '../kit/testing';
 import { transientSpec } from './spec';

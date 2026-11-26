@@ -1,4 +1,4 @@
-// Drawing PDF pages with pdf.js inside the webview (ADR 0041). A PDF from elsewhere is untrusted, so it is parsed here,
+// Drawing PDF pages with pdf.js inside the webview (ADR 0040). A PDF from elsewhere is untrusted, so it is parsed here,
 // in the browser engine's sandbox and pdf.js's own worker, never by native code. The reader runs with the safe
 // choices: no scripting, no XFA forms, no WebAssembly (the page's security policy blocks it), and nothing fetched,
 // since the file arrives as bytes. Each page becomes a PNG drawn at twice its size, its words with their boxes, its

@@ -12,6 +12,7 @@ import { showOverlay } from '../../shell/commandbar/overlays';
 import type { ToolDeps } from './actions';
 import type { MountedPageHook } from '../page';
 import { t } from '../../strings/t';
+import { pickFiles } from './pick';
 
 const LazyTools = lazy(() => import('./PdfToolsDialog'));
 const LazyHighlights = lazy(() => import('./HighlightsDialog'));
@@ -19,6 +20,10 @@ const LazyScan = lazy(() => import('./ScanDialog'));
 const tools = () => import('./pageTools');
 
 const PDF_TYPES = 'application/pdf,.pdf';
+
+// Each command opens the file chooser before its first await. The webview shows a chooser only while the click or
+// key press that ran the command still counts, and loading the PDF code first used up that time, so Import a PDF
+// closed the Import notes dialog and nothing opened (full walk B2-B13-9).
 
 const inSection = () => {
   const here = getLocation();
@@ -52,12 +57,9 @@ commands.register(
     flag: 'interop.pdfImport',
     when: inSection,
     async run(ctx) {
-      const [{ pickFiles }, { importPdfAsPages }, { openPage }] = await Promise.all([
-        import('./pick'),
-        import('./importPdf'),
-        import('../search'),
-      ]);
-      const [file] = await pickFiles(PDF_TYPES);
+      const picked = pickFiles(PDF_TYPES);
+      const [{ importPdfAsPages }, { openPage }] = await Promise.all([import('./importPdf'), import('../search')]);
+      const [file] = await picked;
       if (!file) return;
       const first = await importPdfAsPages(ctx.platform, ctx.notes, file);
       if (first) await openPage(ctx.notes, first);
@@ -75,15 +77,15 @@ commands.register(
     flag: 'interop.pdfImport',
     when: onPage,
     async run() {
-      const [{ pickFiles }, { insertPdfIntoPage, bottomOf }, { shownMounted }, { shownTarget }] = await Promise.all([
-        import('./pick'),
+      const picked = pickFiles(PDF_TYPES);
+      const [{ insertPdfIntoPage, bottomOf }, { shownMounted }, { shownTarget }] = await Promise.all([
         import('./importPdf'),
         import('../page'),
         import('./target'),
       ]);
       const mounted = shownMounted.get();
+      const [file] = await picked;
       if (!mounted) return;
-      const [file] = await pickFiles(PDF_TYPES);
       if (!file) return;
       await insertPdfIntoPage(await shownTarget(mounted), file, bottomOf(mounted.layer.blocks()));
     },
@@ -303,15 +305,11 @@ commands.register(
     flag: 'pdf.scan',
     when: onPage,
     async run() {
+      const picked = pickFiles('image/png,image/jpeg,image/webp', true);
       const mounted = await shownPage();
-      if (!mounted) return;
-      const [{ pickFiles }, { shownTarget }, { bottomOf }] = await Promise.all([
-        import('./pick'),
-        import('./target'),
-        import('./importPdf'),
-      ]);
-      const photos = await pickFiles('image/png,image/jpeg,image/webp', true);
-      if (photos.length === 0) return;
+      const [{ shownTarget }, { bottomOf }] = await Promise.all([import('./target'), import('./importPdf')]);
+      const photos = await picked;
+      if (!mounted || photos.length === 0) return;
       showOverlay('pdf-scan', LazyScan, {
         target: await shownTarget(mounted),
         block: null,

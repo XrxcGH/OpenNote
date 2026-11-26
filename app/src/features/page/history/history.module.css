@@ -1,6 +1,16 @@
 /* Page history and compare versions (ARCHITECTURE.md section 21). */
 @layer components {
+  /* A column beside the page in the page row; the page narrows to make room. In a narrow page the row turns it into
+     a drawer over the page's end edge (readingOrder/pane.module.css). */
   .host {
+    position: relative;
+    flex: none;
+    inline-size: min(30rem, 100%);
+    min-block-size: 0;
+  }
+
+  /* Where the page has no row, as in a bare test page, the panel lies over the page's end edge. */
+  .hostOverlay {
     position: absolute;
     inset-block: 0;
     inset-inline-end: 0;
@@ -43,7 +53,7 @@
 
   .versions {
     display: grid;
-    gap: var(--space-1);
+    gap: var(--space-3);
     margin: 0;
     padding: 0;
     list-style: none;
@@ -107,7 +117,7 @@
   .actions {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--space-2);
+    gap: var(--space-3);
   }
 
   .form {
@@ -141,6 +151,8 @@
   .static > :first-child,
   .words {
     margin-block-start: 0;
+    /* Each item of a changed list is on its own line, as on the page. */
+    white-space: pre-line;
   }
 
   .static > :last-child,

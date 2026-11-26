@@ -1,5 +1,6 @@
 // Reads a tool's fields and runs it. Numbers are read in the chosen unit system and handed to the tool in SI; a
 // field that cannot be read, or an engine that cannot go on, becomes a problem the window says in words.
+import { switchedText } from '../../../../core/units';
 import { ControlError } from '../lib/errors';
 import { MatError } from '../lib/linalg';
 import { TFError } from '../lib/tf';
@@ -89,7 +90,7 @@ export function pinUnits(
     if (!/^\s*[-−+]?[\d.]+(e[-+]?\d+)?\s*$/i.test(text)) continue;
     try {
       const si = readQuantity(text, field.unit, from, field.id);
-      next[field.id] = String(Number(toShown(si, field.unit, to).toPrecision(6)));
+      next[field.id] = switchedText(text, `${field.unit}:${from}`, `${field.unit}:${to}`, toShown(si, field.unit, to));
     } catch {
       // A field that cannot be read stays as typed.
     }

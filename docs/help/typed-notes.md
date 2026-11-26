@@ -6,32 +6,72 @@ A page holds text boxes, headings, lists, checklists, quotes, code, callouts, ta
 
 ## Add things to a page
 
-| To do this | Do this |
-|---|---|
-| Insert a table, code block, callout, divider, or date | Type `/` on an empty line to open the slash menu. The Insert tab has the same items. |
-| Make a heading | Press Ctrl+Alt+1, Ctrl+Alt+2, or Ctrl+Alt+3. |
-| Make text bold | Press Ctrl+B. |
-| Link to another page | Type `[[` and pick a page. |
-| Show another page inside this one | Type `![[` and pick a page. To show one paragraph, write `![[Page#^id]]` with the paragraph ID you copied. When you export, the embedded text is included. |
-| Paste with the structure and without stray fonts | Press Ctrl+V. Press Ctrl+Shift+V to paste plain text. |
-| Paste a screenshot | Press Win+Shift+S, then Ctrl+V. |
+| To do this                                            | Do this                                                                                                                                                    |
+| ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Insert a table, code block, callout, divider, or date | Type `/` on an empty line to open the slash menu. The Insert tab has the same items.                                                                       |
+| Make a heading                                        | Press Ctrl+Alt+1, Ctrl+Alt+2, or Ctrl+Alt+3.                                                                                                               |
+| Make text bold                                        | Press Ctrl+B.                                                                                                                                              |
+| Link to another page                                  | Type `[[` and pick a page.                                                                                                                                 |
+| Show another page inside this one                     | Type `![[` and pick a page. To show one paragraph, write `![[Page#^id]]` with the paragraph ID you copied. When you export, the embedded text is included. |
+| Paste with the structure and without stray fonts      | Press Ctrl+V. Press Ctrl+Shift+V to paste plain text. A table from a web page or a spreadsheet, or cells copied as tab-separated text, becomes a table.    |
+| Copy text to another app                              | Press Ctrl+C. The other app gets the words as plain text, with list markers and without Markdown marks, or the formatted text if it takes that.            |
+| Paste a screenshot                                    | Press Win+Shift+S, then Ctrl+V.                                                                                                                            |
 
 Moving around without a mouse is in [moving between blocks](moving-between-blocks.md).
 
 ## Checklists
 
-Press Ctrl+Enter to check or uncheck an item. Finished items move down, and the list shows a count. Choose Check all to finish a whole list.
+Press Ctrl+Enter to check or uncheck an item. Finished items move down, and the list shows a count. Choose Check all to finish a whole list. Choose Show done count to turn the count on or off; it shows beside each checklist and the command says which it did.
+
+## Callouts, dividers, equations, and code
+
+- In a callout, press Tab in the title to reach the type button and again for the fold button. Enter or Space opens the type menu or folds the callout, and Escape returns to the text. Each of the eleven types has its own symbol and color.
+- Type `---`, or `***` or `___` and Enter, on a line of its own to make a divider.
+- A page that ends on an equation always has an empty line below it to continue on. Escape in the box of a new equation that is still empty takes the equation away.
+- A code block has a Copy button beside its language button. It copies the whole block.
 
 ## Find, count, and navigate
 
-| To do this | Do this |
-|---|---|
-| Find on the page | Press Ctrl+F. |
-| Replace on the page | Press Ctrl+H. |
-| See the word count and reading time | Press Ctrl+K and choose Word count. |
-| Jump between headings | Press Ctrl+K and choose Contents. Select a heading to go to it. |
-| Stop accidental edits and ink | Press Ctrl+K and choose Lock page. Choose it again to turn the lock off. |
-| Make the caret easier to see | The caret follows the Windows text cursor settings: its thickness, its blinking, and the indicator color. Turn on Settings, Accessibility, Text cursor in Windows, or choose a width in OpenNote's settings. |
+| To do this                          | Do this                                                                                                                                                                                                      |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Find on the page                    | Press Ctrl+F.                                                                                                                                                                                                |
+| Replace on the page                 | Press Ctrl+H.                                                                                                                                                                                                |
+| See the word count and reading time | Press Ctrl+K and choose Word count.                                                                                                                                                                          |
+| Jump between headings               | Press Ctrl+K and choose Contents. Select a heading to go to it.                                                                                                                                              |
+| Stop accidental edits and ink       | Press Ctrl+K and choose Lock page. Choose it again to turn the lock off.                                                                                                                                     |
+| Make the caret easier to see        | The caret follows the Windows text cursor settings: its thickness, its blinking, and the indicator color. Turn on Settings, Accessibility, Text cursor in Windows, or choose a width in OpenNote's settings. |
+
+### Find by format, special characters, and patterns
+
+- Choose Format in the Find bar to find text by bold, italic, underline, font, size, text color, highlight, language, or character style. Turn on Any for any format that has a value to find every value of it. In Replace, choose Format to set formats on the replacement, or on the found text when the replacement is empty.
+- Choose Special to add a paragraph mark (^p), tab (^t), any character (^?), digit (^#), letter (^$), manual line break (^l), nonbreaking space (^s), or caret (^^). Replacing a paragraph mark joins that paragraph with the next one.
+- Turn on Wildcards for ?, *, [abc], [!abc], <, >, {n,m}, and @. Wildcards always match case.
+- Turn on Regular expressions to use a full pattern. In the replacement, $1 to $9 give the parts in parentheses.
+- A pattern may have at most 250 characters. A pattern that takes more than a moment stops with a message. Make it simpler. A class such as \s or [^x] never takes the paragraph mark. Only ^p (or \n in a regular expression) does.
+- In the replacement, ^p splits the paragraph. Replacing ^p with nothing removes an empty paragraph.
+
+## Format pane and ruler
+
+These are on the beta branch behind flags that are off.
+
+- Press Ctrl+D to open the Format pane on Text. Its tabs are Text, Advanced, Paragraph, Tabs, Borders and shading, and Lists. A preview line shows the selected text. The arrow keys move between tabs, and Escape returns to the page.
+- Type a value with its unit: pt, in, cm, mm, px, or pc. A value out of range shows the range and changes nothing.
+- Choose Reveal formatting to see each format at the caret and where it comes from: the text itself, the paragraph, or a style.
+- Modify on a style opens the same pane for the style. A change there applies to every paragraph that uses it.
+- On the View tab, choose Ruler to show the ruler above the text box with the cursor. Drag the first line, hanging, left, and right indent markers. Click the ruler to add a tab stop of the type shown at its left, drag it to move it, and drag it off the ruler to remove it. Hold Alt to drag without snapping. A marker moves with the arrow keys and tells a screen reader its place.
+
+## Comments and suggestions
+
+These are on the beta branch behind a flag that is off.
+
+- Choose New comment on the Insert or Review tab. The comment covers the selected text, or the word at the caret. Comments can sit inside other comments.
+- The comments pane opens beside the page. Post a comment, reply, resolve, reopen, or delete it, and click one to go to its text. Type your name in the pane; it stays on this device.
+- Previous comment and Next comment move around the page in reading order.
+- Turn on Track changes (Ctrl+Shift+E with Word keys) to make edits as suggestions. Typed text shows as an insertion, deleted text stays with a deletion mark, and formatting shows as a format change.
+- Accept or reject the change at the caret, every change, or every change by one person. Previous change and Next change move between them.
+- Simple shows the text with the changes made and a bar at each insertion. All shows every mark. No markup hides the marks.
+- Page history's compare view lists formatting changes, such as "Formatting changed: bold added".
+- Paragraph splits and joins, paragraph formatting, tables, and code blocks are not tracked yet.
 
 ## Templates, series, and the source
 
@@ -52,11 +92,16 @@ Press Ctrl+Enter to check or uncheck an item. Finished items move down, and the 
 
 ## Spelling and reading aloud
 
-A misspelled word is marked. Right-click it for fixes. Select text, press Ctrl+K, and choose Read aloud to hear it in a Windows voice. Nothing is sent anywhere.
+A misspelled word is marked. Right-click it for fixes. Select text, open the command palette, and choose Read aloud to hear it in a Windows voice. Nothing is sent anywhere.
 
-Typed notes are built and, in beta 4, not yet tried by hand. The [feature list](../FEATURES.md) says where each one stands.
+The [feature list](../FEATURE-LIST.md) has one sentence on every typed-note feature.
+
 - In the Elements library, choose Move to put an element in another folder. Folders have Rename and Move too.
 
 ## Checking accessibility before you export
 
 Turn on Check accessibility first in the Export, Print or PDF, or Send dialog. OpenNote then looks for problems such as images with no description before it writes the file. You can continue anyway, review and fix, or cancel. The choice is remembered.
+
+## Menus with a pen or a finger
+
+Every menu that opens with a right-click opens another way on a touch screen. Press and hold a finger or a pen on a block, a table, or an empty part of the page, and keep still, to open its menu. With a pen, press its side button and lift without dragging. Right-click empty page for Insert table and Insert image.

@@ -53,6 +53,10 @@ pub fn install(app_dir: &Path) {
 
 /// Brings the tool up to date when this exe runs from the user's Programs folder. Runs at each start.
 pub fn refresh(paths: &crate::paths::Paths, settings_flags: &std::collections::BTreeMap<String, bool>) {
+    if !cfg!(windows) {
+        super::cli_unix::refresh(settings_flags);
+        return;
+    }
     if EMBEDDED.is_empty() || !crate::platform_flags::is_on_now(crate::platform_flags::API_LOCAL, settings_flags) {
         return;
     }

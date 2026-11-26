@@ -1,6 +1,6 @@
 // checks-disable-file brand-consistency: the test colors are inputs to the code under test, not design colors
 import { describe, expect, it, vi } from 'vitest';
-import { createTrail, requestPresenter } from './delegatedTrail';
+import { createTrail, requestPresenter, trailShows } from './delegatedTrail';
 import type { InkPresenter } from './delegatedTrail';
 
 const event = (trusted: boolean) => ({ isTrusted: trusted }) as PointerEvent;
@@ -40,5 +40,14 @@ describe('the delegated ink trail', () => {
     const none = createTrail(null);
     none.update(event(true), 'red', 3);
     expect(none.stats()).toEqual({ supported: false, updates: 0, skipped: 0, totalMs: 0, maxMs: 0 });
+  });
+});
+
+describe('the trail and a held stroke (full walk 2, A1-A10-8)', () => {
+  it('draws the raw trail only for a stroke no ruler, protractor, or grid holds', () => {
+    expect(trailShows({})).toBe(true);
+    expect(trailShows({ snapHold: { kind: 'none' } })).toBe(true);
+    expect(trailShows({ snapHold: { kind: 'ruler' } })).toBe(false);
+    expect(trailShows({ snapHold: { kind: 'grid' } })).toBe(false);
   });
 });

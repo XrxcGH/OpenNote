@@ -9,6 +9,8 @@ import { spawnSync } from 'node:child_process';
 import { describe, expect, it } from 'vitest';
 import { findTool } from '../../../../../tests/crosscheck/tools';
 import { createTable, setColumnFormula } from './edit';
+import { functions as ARRAY_FUNCTIONS } from './formula/fn/arrays';
+import { REGISTRY } from './formula/fn';
 import { FUNCTIONS } from './formula/functions';
 import { EN_US } from './locale';
 import { ERROR_TOKENS, type Value } from './values';
@@ -65,6 +67,22 @@ const CASES: Record<string, string[]> = {
   MONTH: ['MONTH(DATE(2024,1,15))', 'MONTH(DATE(2024,12,31))'],
   DAY: ['DAY(DATE(2024,1,15))', 'DAY(DATE(2024,2,29))'],
   DAYS: ['DAYS(DATE(2024,3,1),DATE(2024,2,1))', 'DAYS(DATE(2024,1,1),DATE(2024,12,31))'],
+  VLOOKUP: [
+    'VLOOKUP(2.5,{1,"a";2,"b";3,"c"},2,TRUE)',
+    'VLOOKUP(2,{1,"a";2,"b"},2,FALSE)',
+    'VLOOKUP(9,{1,"a"},2,FALSE)',
+  ],
+  HLOOKUP: ['HLOOKUP("b",{"a","b";1,2},2,FALSE)', 'HLOOKUP(2.5,{1,2,3;"x","y","z"},2)'],
+  LOOKUP: ['LOOKUP(4.19,{4.14,4.19,5.17},{"red","orange","yellow"})', 'LOOKUP(0,{1,2},{"a","b"})'],
+  MATCH: ['MATCH(25,{10,20,30},1)', 'MATCH(25,{30,20,10},-1)', 'MATCH("b*",{"apple","banana"},0)'],
+  XLOOKUP: ['XLOOKUP(5,{1,3,7},{"a","b","c"},"none",-1)', 'XLOOKUP(2,{2,1,2},{"x","y","z"},"none",0,-1)'],
+  XMATCH: ['XMATCH(5,{1,3,5})', 'XMATCH(4,{1,3,5},1)'],
+  INDEX: ['INDEX({1,2;3,4},2,1)', 'INDEX({1,2,3},2)', 'INDEX({1,2;3,4},3,1)'],
+  CHOOSE: ['CHOOSE(2,"a","b","c")', 'CHOOSE(4,"a","b","c")'],
+  ROWS: ['ROWS({1,2;3,4;5,6})', 'ROWS(7)'],
+  COLUMNS: ['COLUMNS({1,2;3,4;5,6})', 'COLUMNS(7)'],
+  ADDRESS: ['ADDRESS(2,3)', 'ADDRESS(2,3,4)', 'ADDRESS(2,3,1,FALSE)', 'ADDRESS(1,28)'],
+  HYPERLINK: ['HYPERLINK("https://example.com","Site")', 'HYPERLINK("https://example.com")'],
   OPERATORS: [
     '2+3*4',
     '(2+3)*4',
@@ -89,6 +107,7 @@ const CASES: Record<string, string[]> = {
 
 /** Differences that are understood. The key is the formula; the value says why the two engines part. */
 const KNOWN: Record<string, string> = {
+  'UPPER("straße")': 'OpenNote keeps the sharp s (STRAßE), as Excel does. GridCraft expands it to SS.',
   '2^3^2': 'OpenNote chains powers to the right, as in mathematics (512). Excel chains to the left (64).',
   '-2^2': 'OpenNote binds the power tighter than the minus sign (-4), as in mathematics. Excel negates first (4).',
   'ROUND(7)':
@@ -97,10 +116,47 @@ const KNOWN: Record<string, string> = {
     'Decided to keep: a table cell with empty text is an empty cell, and COUNTA over a column must not count those.',
 };
 
-/** Functions that cannot be compared with a fixed answer: their result depends on the day it runs. */
-const NOT_COMPARABLE = new Set(['TODAY']);
+/** Date and time functions with hand-worked cases in fixtures/fn/datetime.json (lane fn-datetime) instead of a diff. */
+const HAND_WORKED = new Set([
+  ...'HOUR MINUTE SECOND TIME TIMEVALUE DATEVALUE DAYS360 EDATE EOMONTH WEEKDAY WEEKNUM ISOWEEKNUM'.split(' '),
+  ...'NETWORKDAYS NETWORKDAYS.INTL WORKDAY WORKDAY.INTL DATEDIF YEARFRAC EPOCHTODATE'.split(' '),
+]);
+
+// The text, regular expression, and math families have their own hand-worked fixtures (fixtures/fn/text.json and
+// math.json), so only the functions that were here before need a case here.
+/**
+ * Functions that cannot be compared with a fixed answer. TODAY and NOW depend on the day they run. The lookup functions
+ * read the cells or the position of the formula's table, which the other engine does not have.
+ */
+const NOT_COMPARABLE = new Set([
+  'TODAY',
+  'NOW',
+  'ROW',
+  'COLUMN',
+  'OFFSET',
+  'INDIRECT',
+  'AREAS',
+  'FORMULATEXT',
+  ...HAND_WORKED,
+  ...[...REGISTRY.values()]
+    .filter((spec) => ['text', 'regex', 'math'].includes(spec.family) && !(spec.name in CASES))
+    .map((spec) => spec.name),
+]);
+
+/** Functions the other engine's shared set does not cover. Their cases are fixtures of the family's own test. */
+const OWN_FIXTURES = new Set([
+  ...['IFNA', 'IFS', 'SWITCH', 'XOR', 'TRUE', 'FALSE', 'LET', 'LAMBDA', 'ISOMITTED', 'CELL', 'ERROR.TYPE', 'INFO'],
+  ...['ISDATE', 'ISEMAIL', 'ISERR', 'ISERROR', 'ISEVEN', 'ISFORMULA', 'ISLOGICAL', 'ISNA', 'ISNONTEXT', 'ISNUMBER'],
+  ...['ISODD', 'ISREF', 'ISTEXT', 'ISURL', 'N', 'NA', 'SHEET', 'SHEETS', 'TYPE'],
+]);
+/** Functions that give arrays, which the tool's eval cannot print: fn/arrays.test.ts checks them by hand. */
+const ARRAY_RESULTS = new Set(ARRAY_FUNCTIONS.map((spec) => spec.name));
 
 const DATE_RESULTS = new Set(['DATE']);
+
+// The financial family is checked by fn/finance.test.ts and fixtures/fn/finance.json, with published and hand-worked
+// answers. Its code loads lazily, so a diff run here would see #BUSY!.
+for (const spec of REGISTRY.values()) if (spec.family === 'finance') NOT_COMPARABLE.add(spec.name);
 
 function opennote(formula: string): Value {
   const base = createTable([{ name: 'A', type: 'number' }, { name: 'Out' }], [['1']], EN_US);
@@ -134,12 +190,25 @@ function normalize(value: Value | Other): string {
   return `${typeof value} ${String(value)}`;
 }
 
+// The statistical families are checked by fn/stats.test.ts and fixtures/fn/stats.json, with hand-worked answers.
+for (const spec of REGISTRY.values()) {
+  const statistical = spec.family === 'stats' || spec.family === 'statsCompat';
+  if (statistical && CASES[spec.name] === undefined) NOT_COMPARABLE.add(spec.name);
+}
+
 const tool = findTool('gridcraft-cli');
 
 describe('the formula function set', () => {
   it('has a differential case for every function', () => {
     const covered = new Set(Object.keys(CASES));
-    const missing = Object.keys(FUNCTIONS).filter((name) => !covered.has(name) && !NOT_COMPARABLE.has(name));
+    const missing = Object.keys(FUNCTIONS).filter(
+      (name) =>
+        !covered.has(name) &&
+        !NOT_COMPARABLE.has(name) &&
+        !HAND_WORKED.has(name) &&
+        !OWN_FIXTURES.has(name) &&
+        !ARRAY_RESULTS.has(name),
+    );
     expect(missing, 'add cases for these functions to CASES').toEqual([]);
   });
 });

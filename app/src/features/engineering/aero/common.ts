@@ -1,5 +1,6 @@
 // Shared pieces for the aerospace tools' engines: worked steps, errors, number text, and the two scalar solvers
 // (Brent's root finder and golden-section search) that the inverses use. Engines stay pure: no DOM, no React, no t().
+import './text';
 import type { kitAero } from '../../../strings/en/kitAero';
 
 type Sections = (typeof kitAero)['t'];

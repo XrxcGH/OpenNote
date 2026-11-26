@@ -75,6 +75,13 @@
     align-items: center;
   }
 
+  /* An item whose component renders nothing (the idle timer chip, the recording indicator) leaves an empty wrapper,
+     and the group's gap would still space it out as a blank slot. It takes no part in the layout. */
+  .item:empty,
+  .breadcrumbItem:empty {
+    display: none;
+  }
+
   .breadcrumbItem {
     display: flex;
     flex: none;
@@ -127,8 +134,15 @@
     block-size: var(--space-3);
     margin-inline: var(--space-2);
     border-radius: var(--radius-pill);
-    background: var(--crumb-ink);
+    background: var(--notebook-accent);
     forced-color-adjust: none;
+  }
+
+  /* Like the tree's chip, the dot keeps an outline under Windows contrast themes. */
+  @media (forced-colors: active) {
+    .crumb[data-ink]::before {
+      outline: 1px solid CanvasText;
+    }
   }
 
   .crumb[aria-current] {
@@ -159,11 +173,14 @@
     min-block-size: var(--size-toolbar-touch);
   }
 
+  /* Back gives way to the title: at 300 px (a 600 px window at 200 percent text) it shrinks to its arrow and the
+     start of its label, so the screen title keeps room to read. */
   .back {
     display: flex;
-    flex: none;
+    flex: 0 1 auto;
     align-items: center;
     gap: var(--space-2);
+    min-inline-size: calc(var(--size-icon-md) + var(--space-5));
     max-inline-size: 40%;
     min-block-size: var(--size-target-pointer);
     padding-inline: var(--space-2) var(--space-3);
@@ -196,6 +213,7 @@
   }
 
   .backLabel {
+    min-inline-size: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -203,7 +221,7 @@
 
   .screenTitle {
     flex: 1;
-    min-inline-size: 0;
+    min-inline-size: 5rem;
     margin: 0;
     font-size: inherit;
     overflow: hidden;
@@ -222,7 +240,7 @@
     display: flex;
     justify-content: space-between;
     gap: var(--space-7);
-    min-block-size: var(--size-target-pointer);
+    min-block-size: var(--target-size);
     padding-inline: var(--space-4);
     border: none;
     border-radius: var(--radius-sm);

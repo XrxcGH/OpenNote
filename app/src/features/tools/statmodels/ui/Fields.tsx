@@ -3,6 +3,7 @@
 // labeled, says what it takes, and marks a problem in words beside it.
 import { useId, useRef } from 'react';
 import { Button, announce } from '../../../../ui';
+import { useFileRead } from '../../subjects/ui/fileRead';
 import { columnNames, parseTable } from '../kit/data';
 import { COLUMN_SEPARATOR, columnList, type Field } from '../kit/spec';
 import type { StatError } from '../kit/types';
@@ -44,10 +45,11 @@ function DataInput(props: FieldProps) {
   const { field, text, say, problem } = props;
   const id = useId();
   const file = useRef<HTMLInputElement>(null);
+  const { status, read, clear } = useFileRead(props.onChange);
   const open = async (chosen: File | undefined) => {
     if (!chosen) return;
     if (chosen.size > MAX_FILE) announce(say('kitStatModels.ui.fileTooLarge'));
-    else props.onChange(await chosen.text());
+    else await read(chosen);
   };
   return (
     <div className={`${styles.field} ${styles.wide}`}>
@@ -60,7 +62,10 @@ function DataInput(props: FieldProps) {
         spellCheck={false}
         aria-invalid={problem ? true : undefined}
         aria-describedby={`${id}-hint`}
-        onChange={(event) => props.onChange(event.target.value)}
+        onChange={(event) => {
+          clear();
+          props.onChange(event.target.value);
+        }}
       />
       <div className={styles.buttons}>
         <Button onClick={() => file.current?.click()}>{say('kitStatModels.ui.openFile')}</Button>
@@ -72,6 +77,13 @@ function DataInput(props: FieldProps) {
           onChange={(event) => void open(event.target.files?.[0])}
         />
       </div>
+      {status && (
+        <span className={status === 'failed' ? styles.problem : styles.hint} role="status">
+          {status === 'failed'
+            ? say('kitStatModels.ui.fileFailed')
+            : say('kitStatModels.ui.fileRead', { name: status.name })}
+        </span>
+      )}
       {problem ? (
         <Problem id={`${id}-hint`} problem={problem} errorText={props.errorText} />
       ) : (

@@ -12,6 +12,7 @@ import { t } from '../../strings/t';
 import { Button, RadioCard, RadioGroup, Switch, TextField, confirm, showToast } from '../../ui';
 import { settingsHost as host, settingsStyles as styles } from '../settings';
 import { NotesFolderSettings, ProtectedSectionsSettings } from '../protect';
+import { COPY_RANGES, parseCopies, runBackupNow } from './backupNow';
 import { CloudNotice, useCloud } from './CloudNotice';
 
 interface BackupConfig {
@@ -167,21 +168,13 @@ function Backups() {
     const folder = await host().install.pickNotesFolder(config.destination || null);
     if (folder) await save({ destination: folder, enabled: true });
   };
-  const run = async () => {
-    try {
-      await shellCall('backup.run');
-    } catch {
-      showToast({ message: t('qol.backup.failed'), tone: 'danger' });
-    }
-  };
+  const run = () => void runBackupNow();
   const last = status?.last;
   const lastText = !last
     ? t('qol.backup.never')
     : last.ok
       ? t('qol.backup.last', { when: formatDate(last.at), count: last.notebooks })
       : t('qol.backup.lastFailed', { when: formatDate(last.at) });
-  const number = (value: string, fallback: number) =>
-    Number.isFinite(Number(value)) && value !== '' ? Number(value) : fallback;
   return (
     <section className={`${styles.block} ${styles.spaced}`} aria-labelledby="qol-backup">
       <h2 id="qol-backup">{t('qol.backup.title')}</h2>
@@ -215,20 +208,23 @@ function Backups() {
         ))}
       </RadioGroup>
       <div className={styles.fields}>
-        <TextField
+        <CopiesField
           label={t('qol.backup.daily')}
-          value={String(config.daily)}
-          onChange={(value) => void save({ daily: number(value, config.daily) })}
+          value={config.daily}
+          range={COPY_RANGES.daily}
+          onSave={(daily) => void save({ daily })}
         />
-        <TextField
+        <CopiesField
           label={t('qol.backup.weekly')}
-          value={String(config.weekly)}
-          onChange={(value) => void save({ weekly: number(value, config.weekly) })}
+          value={config.weekly}
+          range={COPY_RANGES.weekly}
+          onSave={(weekly) => void save({ weekly })}
         />
-        <TextField
+        <CopiesField
           label={t('qol.backup.monthly')}
-          value={String(config.monthly)}
-          onChange={(value) => void save({ monthly: number(value, config.monthly) })}
+          value={config.monthly}
+          range={COPY_RANGES.monthly}
+          onSave={(monthly) => void save({ monthly })}
         />
       </div>
       <p className={styles.help} role="status">
@@ -236,6 +232,48 @@ function Backups() {
       </p>
       <p className={styles.help}>{t('qol.backup.restore')}</p>
     </section>
+  );
+}
+
+/** A copies box. Text that is not a whole number in range stays in the box with a message, and is not saved. Leaving the box settles it. */
+function CopiesField(props: {
+  label: string;
+  value: number;
+  range: readonly [number, number];
+  onSave(value: number): void;
+}) {
+  const { label, value, range, onSave } = props;
+  const [draft, setDraft] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const bad = draft !== null && parseCopies(draft, range) === null;
+  const rangeText = t('qol.backup.copiesRange', { min: range[0], max: range[1] });
+  // Leaving the field settles it: a number outside the range is clamped to it, and anything else gives way to the
+  // saved value. Either way the box shows a valid number and a short note names the range (walk 9, T1-D05-3).
+  const settle = () => {
+    if (draft === null) return;
+    const trimmed = draft.trim();
+    if (/^\d+$/.test(trimmed)) {
+      const clamped = Math.min(range[1], Math.max(range[0], Number(trimmed)));
+      if (clamped !== value) onSave(clamped);
+    }
+    setDraft(null);
+    setNotice(rangeText);
+  };
+  return (
+    <TextField
+      label={label}
+      value={draft ?? String(value)}
+      error={bad ? rangeText : undefined}
+      help={bad ? undefined : (notice ?? undefined)}
+      onChange={(text) => {
+        const parsed = parseCopies(text, range);
+        setDraft(parsed === null ? text : null);
+        setNotice(null);
+        if (parsed !== null && parsed !== value) onSave(parsed);
+      }}
+      onBlur={settle}
+      onCancel={() => setDraft(null)}
+    />
   );
 }
 

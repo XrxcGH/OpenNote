@@ -34,6 +34,7 @@ export const MENU_CATEGORIES: readonly CommandCategory[] = [
   'insert',
   'format',
   'table',
+  'code',
   'object',
   'appearance',
   'updates',

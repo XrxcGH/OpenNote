@@ -487,7 +487,7 @@ export function PrintDialog(props: PrintDialogProps) {
     label: t(mode === 'print' ? 'pageViews.print.print' : 'pageViews.print.export'),
     variant: 'primary' as const,
     // Print waits for the printer list, so it never goes to a printer the person has not seen.
-    disabled: printers === null || !printerOk,
+    disabled: printers === null || !printerOk || rangeError,
     onPress: () =>
       preview.status === 'ready' && !rangeError && copiesOk && printerOk && printers !== null ? run() : undefined,
   };
@@ -523,22 +523,24 @@ export function PrintDialog(props: PrintDialogProps) {
       {working ? (
         <Progress working={working} printing={printing !== null} />
       ) : (
-        <div className={styles.split}>
-          <div className={styles.form}>
-            {printing ? (
-              <PrinterFields
-                form={printerForm}
-                printers={printing.printers}
-                paper={preview.status === 'ready' ? sheetSize(preview.result.plan.paper) : null}
-                set={(key, value) => setPrinterForm((before) => ({ ...before, [key]: value }))}
-              />
-            ) : wantsPrinter && printers !== null ? (
-              <p className={styles.hint}>{t('pageViews.print.noPrinter')}</p>
-            ) : null}
-            <Fields form={form} total={total} rangeError={rangeError} set={set} />
-          </div>
-          <div className={styles.preview} aria-live="polite">
-            <PreviewPane preview={preview} sheet={sheet} setSheet={setSheet} />
+        <div className={styles.splitBox}>
+          <div className={styles.split}>
+            <div className={styles.form}>
+              {printing ? (
+                <PrinterFields
+                  form={printerForm}
+                  printers={printing.printers}
+                  paper={preview.status === 'ready' ? sheetSize(preview.result.plan.paper) : null}
+                  set={(key, value) => setPrinterForm((before) => ({ ...before, [key]: value }))}
+                />
+              ) : wantsPrinter && printers !== null ? (
+                <p className={styles.hint}>{t('pageViews.print.noPrinter')}</p>
+              ) : null}
+              <Fields form={form} total={total} rangeError={rangeError} set={set} />
+            </div>
+            <div className={styles.preview} aria-live="polite">
+              <PreviewPane preview={preview} sheet={sheet} setSheet={setSheet} />
+            </div>
           </div>
         </div>
       )}

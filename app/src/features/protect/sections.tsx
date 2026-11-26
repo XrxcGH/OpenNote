@@ -16,6 +16,7 @@ import { t } from '../../strings/t';
 import { announce, Button, confirm, Dialog, showToast, Switch, TextField } from '../../ui';
 import { settingsStyles } from '../settings';
 import { ancestors, currentNode, getNode, isProtectedNode, relist, titleOf, treeStore } from '../tree';
+import { noteHello } from './helloState';
 import styles from './sections.module.css';
 
 export const IDLE_PREF = 'protectIdleMinutes';
@@ -24,6 +25,19 @@ export const LEAVE_PREF = 'protectLockOnLeave';
 export const IDLE_CHOICES = [1, 5, 10, 30, 0] as const;
 const DEFAULT_IDLE = 10;
 const MIN_PASSWORD = 8;
+
+const COMMON = new Set(['password', 'password1', '12345678', '123456789', 'qwertyui', 'iloveyou', 'abcdefgh']);
+
+/**
+ * Whether a new password is easy to guess: a common one, one character over and over, or short with few kinds of
+ * characters. It is a warning only; the password still works (full walk B2-B14-9).
+ */
+export function isWeakPassword(password: string): boolean {
+  if (!password) return false;
+  if (COMMON.has(password.toLowerCase()) || /^(.)\1+$/u.test(password)) return true;
+  const kinds = [/[a-z]/u, /[A-Z]/u, /[0-9]/u, /[^a-zA-Z0-9]/u].filter((kind) => kind.test(password)).length;
+  return [...password].length < 12 && kinds < 3;
+}
 
 export interface SectionStatus {
   protection: 'none' | 'locked' | 'unlocked';
@@ -171,6 +185,7 @@ function PasswordDialog(props: {
           value={password}
           secret
           error={twice ? undefined : (error ?? undefined)}
+          help={twice && isWeakPassword(password) ? t('storage.sections.weak') : undefined}
           onChange={(value) => {
             setPassword(value);
             setError(null);
@@ -238,7 +253,9 @@ function askPassword(
 
 export async function sectionStatus(section: NodeSummary): Promise<SectionStatus | null> {
   try {
-    return await shellCall<SectionStatus | null>('protect.status', { id: section.id });
+    const status = await shellCall<SectionStatus | null>('protect.status', { id: section.id });
+    if (status) noteHello(section.id, status.hello);
+    return status;
   } catch {
     return null;
   }
@@ -353,6 +370,7 @@ export async function setHello(section: NodeSummary, on: boolean): Promise<boole
     if (code !== 'helloCanceled') showToast({ message: t('storage.sections.helloUnavailable'), tone: 'danger' });
     return false;
   }
+  noteHello(section.id, on);
   announce(on ? t('storage.sections.helloSet', { title }) : t('storage.sections.helloRemoved', { title }));
   return true;
 }

@@ -25,6 +25,11 @@ export interface ManifestChunk {
 }
 export type Manifest = Record<string, ManifestChunk>;
 
+export interface AfterRule {
+  within: string | readonly string[];
+  entry: string;
+}
+
 export interface Budget {
   startup: { jsKb: number; cssKb: number };
   /** Limits for lazy groups whose source path contains the key, such as "features/palette". */
@@ -34,7 +39,7 @@ export interface Budget {
    * Lazy groups that load only after another one: a group whose source path contains `within` (or any of them, when
    * it is a list) counts without the files of the group whose path contains `entry`, which is loaded by then.
    */
-  after?: { within: string | readonly string[]; entry: string };
+  after?: AfterRule | readonly AfterRule[];
 }
 
 export interface Group {
@@ -76,18 +81,27 @@ export function groups(manifest: Manifest, budget: Budget): Group[] {
     },
   ];
   const lazyKeys = keys.filter((k) => manifest[k].isDynamicEntry);
-  const first = budget.after && lazyKeys.find((k) => k.includes(budget.after!.entry));
-  const loadedFirst = first ? staticClosure(manifest, [first]) : new Set<string>();
+  const rules: AfterRule[] =
+    budget.after === undefined ? [] : 'entry' in budget.after ? [budget.after] : [...budget.after];
+  const firsts = rules.map((rule) => ({ rule, key: lazyKeys.find((k) => k.includes(rule.entry)) }));
+  const closures = new Map(firsts.flatMap((f) => (f.key ? [[f.key, staticClosure(manifest, [f.key])] as const] : [])));
   for (const key of lazyKeys) {
-    const follows =
-      first !== undefined && key !== first && [budget.after!.within].flat().some((fragment) => key.includes(fragment));
-    const loaded = (k: string) => startup.has(k) || (follows && loadedFirst.has(k));
+    const behind = firsts.filter(
+      (f) => f.key !== undefined && f.key !== key && [f.rule.within].flat().some((fragment) => key.includes(fragment)),
+    );
+    const loaded = (k: string) => startup.has(k) || behind.some((f) => closures.get(f.key!)!.has(k));
     const own = [...staticClosure(manifest, [key])].filter((k) => !loaded(k)).map((k) => manifest[k]);
     const limit = Object.entries(budget.lazyKb).find(([fragment]) => key.includes(fragment))?.[1];
     const files = [...own.map((chunk) => chunk.file), ...new Set(own.flatMap((chunk) => chunk.css ?? []))];
     result.push({ name: manifest[key].src ?? key, files, limitKb: limit ?? budget.lazyDefaultKb });
   }
   return result;
+}
+
+/** The lazyKb keys that match no dynamic entry, so a lane that names its entry differently gets the default limit. */
+export function unmatchedKeys(manifest: Manifest, budget: Budget): string[] {
+  const lazyKeys = Object.keys(manifest).filter((key) => manifest[key].isDynamicEntry);
+  return Object.keys(budget.lazyKb).filter((fragment) => !lazyKeys.some((key) => key.includes(fragment)));
 }
 
 export function measure(dist: string, group: Group): Measured {
@@ -128,6 +142,9 @@ function main(): void {
   const manifest = JSON.parse(readFileSync(join(dist, '.vite', 'manifest.json'), 'utf8')) as Manifest;
   const budget = JSON.parse(readFileSync(values.budget, 'utf8')) as Budget;
   const measured = groups(manifest, budget).map((group) => measure(dist, group));
+  for (const fragment of unmatchedKeys(manifest, budget)) {
+    console.warn(`The lazyKb key "${fragment}" matches no dynamic entry yet, so it sets no limit.`);
+  }
   const compare = values['compare-with'];
   const baseline = compare && existsSync(compare) ? (JSON.parse(readFileSync(compare, 'utf8')) as Measured[]) : null;
   const table = summary(measured, baseline);

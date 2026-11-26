@@ -9,17 +9,22 @@ import type { Node as PMNode } from '@tiptap/pm/model';
 import { textSchema } from '../schema/schema';
 import { CALLOUT_TYPE_PATTERN, LANGUAGE_PATTERN, isBlockedHref } from '../schema/specs';
 import { inlineNodes } from './parseInline';
-import { highlightPlugin, mathPlugin } from './rules';
+import { footnotePlugin, highlightPlugin, mathPlugin } from './rules';
 
 const { nodes } = textSchema;
 const DATA_IMAGE = /^data:image\/(?:gif|png|jpeg|webp);/i;
 
-/** One markdown-it instance: CommonMark, strikethrough, highlights, and math. The paste parser also turns tables on. */
-export function createMarkdown(tables = false): Md {
+/**
+ * One markdown-it instance: CommonMark, strikethrough, highlights, math, and footnote references. The paste parser
+ * also turns tables on. A note's, comment's, or cell note's Markdown holds no references (R-FN-4), so its parser
+ * passes `footnotes: false` and reads `[^ID]` as literal text.
+ */
+export function createMarkdown(tables = false, footnotes = true): Md {
   const md = new MarkdownIt('commonmark', { html: true, linkify: false, typographer: false });
   md.enable('strikethrough');
   if (tables) md.enable('table');
   md.use(highlightPlugin).use(mathPlugin);
+  if (footnotes) md.use(footnotePlugin);
   // Links are kept as written: no percent-encoding, no punycode. The writer and the reader then agree.
   md.normalizeLink = (url) => url;
   md.normalizeLinkText = (text) => text;
@@ -29,6 +34,7 @@ export function createMarkdown(tables = false): Md {
 }
 
 const dialect = createMarkdown();
+const noteDialect = createMarkdown(false, false);
 
 interface Cursor {
   readonly tokens: readonly Token[];
@@ -219,8 +225,20 @@ export function parseInlineNodes(text: string): PMNode[] {
 
 /** The text block document for a block's `markdown` string. Any string gives a valid document. */
 export function parseTextBlock(markdown: string): PMNode {
+  return parseWith(dialect, markdown);
+}
+
+/**
+ * The document for the Markdown of a footnote, comment, or cell note. It reads like a text block, except that
+ * `[^ID]` stays literal text, because a note never refers to another note (R-FN-4).
+ */
+export function parseNoteText(markdown: string): PMNode {
+  return parseWith(noteDialect, markdown);
+}
+
+function parseWith(md: Md, markdown: string): PMNode {
   try {
-    return buildDoc(dialect.parse(markdown, {}), dialect);
+    return buildDoc(md.parse(markdown, {}), md);
   } catch {
     const lines = markdown
       .split(/\n{2,}/)

@@ -62,7 +62,9 @@ export function setLink(href: string, text?: string): Command {
       let { from, to } = tr.selection;
       if (existing && from === to) ({ from, to } = existing);
       const words = text?.trim();
-      if (from === to || (words && words !== tr.doc.textBetween(from, to))) {
+      // The dialog shows the words as selected but saves them trimmed: only a change to the words themselves rewrites the
+      // text, so "beta " keeps its trailing space when just the address changes (Beta 8 walk A-A05-6).
+      if (from === to || (words && words !== tr.doc.textBetween(from, to).trim())) {
         const marks = mark.addToSet(type.removeFromSet(tr.doc.resolve(from).marks()));
         const node = tr.doc.type.schema.text(words || normalized, marks);
         tr.replaceWith(from, to, node);

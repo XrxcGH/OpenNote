@@ -3,6 +3,7 @@
 // back as the smallest changes to the page (planSource), sends them as one step, and puts the caret back in the text.
 import type { Node as PMNode } from '@tiptap/pm/model';
 import type { BlockJson, Edit } from '../../../services/pages/types';
+import { showSentText } from '../blocks/showText';
 import { liveText } from '../blocks/textBlock';
 import { assetTable } from '../images/assets';
 import { showInserted } from '../images/insert';
@@ -85,11 +86,9 @@ async function apply(mounted: MountedPage, edits: readonly SourceEdit[]): Promis
   showInserted(mounted, sent, ack.orderKeys);
   for (const edit of edits) {
     if (edit.kind !== 'setText') continue;
-    // The text box may be the one the caret was in: its editor goes, so the new text shows and later typing
-    // goes on from it.
-    mounted.pool.reload(edit.block);
-    const current = mounted.layer.block(edit.block);
-    if (current) mounted.layer.upsert({ ...current, data: { ...current.data, markdown: edit.markdown } });
+    // The text box may be the one the caret was in: its editor takes the new text, and later typing goes on
+    // from it.
+    showSentText(mounted.pool, mounted.layer, edit.block, edit.markdown);
   }
 }
 

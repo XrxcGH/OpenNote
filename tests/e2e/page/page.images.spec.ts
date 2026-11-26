@@ -1,11 +1,11 @@
 // Images in the real app (Phase 4 ARCHITECTURE.md section 26, `page.images`): a screenshot on the clipboard pastes
 // as an image block whose size came from the shell's probe, and it survives a restart through the asset scheme.
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, describe, it } from 'node:test';
-import { launchApp, skipReason } from '../harness.ts';
+import { launchApp, skipReason, removeFolder } from '../harness.ts';
 import type { AppSession } from '../harness.ts';
 import { clipset, openTextBox } from './clipboard.ts';
 
@@ -17,7 +17,7 @@ describe('images on the real clipboard', { skip }, () => {
 
   after(async () => {
     await session?.close();
-    rmSync(profileDir, { recursive: true, force: true });
+    removeFolder(profileDir);
   });
 
   const imageSize = (session: AppSession) =>

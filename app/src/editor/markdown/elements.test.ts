@@ -94,3 +94,32 @@ describe('text elements', () => {
     expect(short.lastChild?.attrs.id).toBeNull();
   });
 });
+
+describe('paragraph formatting of elements', () => {
+  it('reads paragraph formatting by element ID into attributes, and writes the same entries back (spec 6.8)', () => {
+    const paras = {
+      [IDS[0]]: { outline: 1, align: 'center' },
+      [IDS[1]]: { indent: { start: 36, first: -18 }, tabs: [{ pos: 144, align: 'decimal', leader: 'dot' }] },
+      [IDS[2]]: { list: { id: 'l1' }, keepNext: true },
+      [IDS[6]]: { future: 'a key from a later version' },
+    };
+    const doc = applyElementData(parseTextBlock(MARKDOWN), { ids: IDS, paras });
+    expect(doc.firstChild?.attrs.align).toBe('center');
+    expect(doc.child(1).attrs.indent).toEqual({ start: 36, first: -18 });
+    expect(serializeTextBlock(doc)).toBe(MARKDOWN);
+    expect(extractElementData(doc, counter()).data.paras).toEqual(paras);
+  });
+
+  it('keeps keys it does not know and values out of range as the file had them', () => {
+    const entry = { align: 'sideways', before: 9999, later: { nested: [1, 2] } };
+    const doc = applyElementData(parseTextBlock('one'), { ids: ['a'], paras: { a: entry } });
+    expect(extractElementData(doc, counter()).data.paras).toEqual({ a: entry });
+  });
+
+  it('drops the entries of elements that are not in the document (R-PARA-2)', () => {
+    const paras = { a: { align: 'end' }, b: { align: 'center' }, stale: { align: 'start' } };
+    const doc = applyElementData(parseTextBlock('one\n\ntwo'), { ids: ['a', 'b'], paras });
+    const shorter = doc.copy(doc.content.cut(0, doc.firstChild!.nodeSize));
+    expect(extractElementData(shorter, counter()).data.paras).toEqual({ a: { align: 'end' } });
+  });
+});

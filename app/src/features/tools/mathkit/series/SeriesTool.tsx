@@ -1,5 +1,6 @@
 // Series and convergence: type a term to see which tests apply, what each one says, the verdict, the sum when it is
 // known, and the interval of convergence for a power series.
+import '../text';
 import { t } from '../../../../strings/t';
 import { fmt } from '../numeric';
 import {

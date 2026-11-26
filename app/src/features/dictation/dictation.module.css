@@ -48,11 +48,10 @@
     }
   }
 
+  /* The words wrap rather than end in an ellipsis, so the whole of the help (up to "undo that") can be read. */
   .words {
     min-inline-size: 0;
-    overflow: hidden;
     color: var(--color-text-secondary);
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    overflow-wrap: anywhere;
   }
 }

@@ -239,3 +239,37 @@ test('a suppression for a rule left out by --rules is not unknown', async () => 
   const all = await run({ rule: grammar, path: 'a.md', text, knownRules: ['spelling', 'grammar'] });
   assert.deepEqual(all, []);
 });
+
+test('spelling has at least 200 British forms', async () => {
+  const { americanDictionary } = await import('../rules/spelling.ts');
+  assert.ok(americanDictionary().size >= 200);
+});
+
+test('spelling ignores a key or identifier and reads only the value', async () => {
+  const text = "export const colour = {\n  centre: 'Pick a colour for the label',\n};\n";
+  const found = await run({
+    rule: spelling,
+    path: 'app/src/ui/Thing.tsx',
+    text,
+    settings: { strings: ['app/src/**/*.tsx'] },
+  });
+  assert.deepEqual(
+    found.map((f) => f.fix?.from),
+    ['colour'],
+  );
+  assert.equal(found[0]?.line, 2);
+});
+
+test('spelling reads checks/american-allow.json, and only entries that name a reason and a narrow path', async () => {
+  const allow = (entries: object[]) => ({ 'checks/american-allow.json': JSON.stringify({ allow: entries }) });
+  const text = '# T\n\nGrey Street.\n';
+  const run1 = (entries: object[], path = 'docs/a.md') =>
+    run({ rule: spelling, path, text, files: allow(entries) }).then((f) => f.length);
+  assert.equal(await run1([]), 1);
+  assert.equal(await run1([{ word: 'Grey', reason: 'A street name' }]), 0);
+  assert.equal(await run1([{ word: 'grey', path: 'docs/a.md', reason: 'A street name' }]), 0);
+  assert.equal(await run1([{ word: 'grey', path: 'docs/b.md', reason: 'A street name' }]), 1);
+  assert.equal(await run1([{ word: 'grey' }]), 1);
+  assert.equal(await run1([{ word: 'grey', path: 'docs/**', reason: 'Whole directory' }]), 1);
+  assert.equal(await run1([{ word: 'grey', path: 'docs/*.md', reason: 'Whole directory' }]), 1);
+});

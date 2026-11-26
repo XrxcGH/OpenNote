@@ -1,5 +1,6 @@
 // The dynamic modes tool's form: the planning matrix typed as text, the lateral modes named, the matrix built
 // from derivatives, and a matrix it cannot read.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { initialValues, runSpec } from '../ui/spec';
 import type { ToolOutput } from '../ui/spec';

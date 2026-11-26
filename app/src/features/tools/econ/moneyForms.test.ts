@@ -55,3 +55,15 @@ describe('money forms', () => {
     expect(headline(run('cea', { effectNew: '3.5' }))).toMatch(/same effect/);
   });
 });
+
+describe('loan with absurd sizes (B2-B09-3, B2-B09-4)', () => {
+  it('does not throw for a tiny amount', () => {
+    expect(() => run('loan', { amount: '1e-12' })).not.toThrow();
+  });
+  it('answers a huge term at once with a message', () => {
+    const t0 = Date.now();
+    const out = run('loan', { years: '1e12', perYear: '1e12' });
+    expect(out.ok).toBe(false);
+    expect(Date.now() - t0).toBeLessThan(2000);
+  });
+});

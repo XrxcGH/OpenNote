@@ -10,12 +10,14 @@ import { tokens } from '../../theme/tokens';
 import { blockOf, titleOf } from './actions';
 import { dragStore, findRowElement, geometryOf, hostAt, hostFor } from './dragState';
 import type { DragHost } from './dragState';
-import { resolveDrop, rowAt } from './drop';
+import { groupDrop, resolveDrop, rowAt } from './drop';
 import type { Drop } from './drop';
-import { dropNode } from './movement';
+import { dropNode, dropNodes } from './movement';
+import { multiStore } from './multi';
 import { setOpen } from './navigation';
 import type { Row } from './rows';
 import type { TreeId } from './store';
+import { treeOf } from './store';
 import { settle } from './settle';
 import { treeStore } from './store';
 import styles from './Tree.module.css';
@@ -81,14 +83,32 @@ function hitAt(session: Session): Hit {
   const at = host && geometry ? rowAt(y, geometry) : null;
   const row = host && at ? (host.rows()[at.index] ?? null) : null;
   const drop = row && at ? resolveDrop(treeStore.get(), session.row.node, row, at.fraction) : null;
-  return { host, row, drop };
+  const group = carried(session);
+  return { host, row, drop: drop && group.length > 1 ? groupDrop(treeStore.get(), group, drop) : drop };
+}
+
+/**
+ * The rows a drag carries: the whole multi-selection when the dragged row belongs to it, else the row alone.
+ * They come in tree order, whatever order they were picked in.
+ */
+function carried(session: Session): Row[] {
+  const { tree, ids } = multiStore.get();
+  if (ids.length < 2 || tree !== treeOf(session.row.node) || !ids.includes(session.row.id)) return [session.row];
+  const rows = session.env.rows().filter((row) => ids.includes(row.id));
+  return rows.length > 1 && rows.some((row) => row.id === session.row.id) ? rows : [session.row];
 }
 
 function labelFor(session: Session, drop: Drop): string {
   const { node } = session.row;
   const target = titleOf(drop.target);
+  const state = treeStore.get();
+  const group = carried(session);
+  if (group.length > 1) {
+    const count = new Set(group.flatMap((row) => blockOf(state, row.id))).size;
+    return t('tree.moves.dragPages', { count, target });
+  }
   return node.kind === 'page'
-    ? t('tree.moves.dragPages', { count: blockOf(treeStore.get(), node.id).length, target })
+    ? t('tree.moves.dragPages', { count: blockOf(state, node.id).length, target })
     : t('tree.moves.dragItem', { title: titleOf(node), target });
 }
 
@@ -230,7 +250,14 @@ function finish(session: Session, commit: boolean): void {
     settle(ghost, offset, done(element));
     return;
   }
-  void dropNode(session.env.notes, session.row.node, drop);
+  const group = carried(session);
+  if (group.length > 1)
+    void dropNodes(
+      session.env.notes,
+      group.map((row) => row.node),
+      drop,
+    );
+  else void dropNode(session.env.notes, session.row.node, drop);
   // The store has changed, and React renders at the end of this event, before the next paint.
   queueMicrotask(() => {
     const moved = findRowElement(session.row.id);

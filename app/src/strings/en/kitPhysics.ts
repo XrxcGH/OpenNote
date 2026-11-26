@@ -40,6 +40,8 @@ export const kitPhysics = {
     insertEquation: 'Equation',
     insertTable: 'Table',
     insertSteps: 'Steps',
+    insertLive: 'Live calculation block',
+    liveInserted: 'Added a live calculation block. Use Open in tool to change it.',
     insertPicture: 'Picture',
     inserted: 'Inserted into the page.',
     noPage: 'Click in a page first, then insert.',

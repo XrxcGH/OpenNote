@@ -15,6 +15,7 @@ import { insertIntoPage } from './CalculatorTool';
 import { loadStored, saveStored } from './storage';
 import extra from './extra.module.css';
 import science from './science.module.css';
+import { moveBetweenTabs } from './tabKeys';
 import styles from './tools.module.css';
 
 const STORE = 'latex';
@@ -72,8 +73,10 @@ function useLatex() {
     () => (clean === '' || render === null ? null : render(clean, { displayMode: state.display })),
     [clean, render, state.display],
   );
+  // Source that does not draw is never put on the page: it would replace a selected equation with raw text.
+  const drawable = drawn?.ok === true;
   const insert = () => {
-    if (clean === '') return;
+    if (clean === '' || !drawable) return;
     const ok = insertIntoPage({ math: { source: clean, display: state.display } });
     announce(t(ok ? 'science.latex.inserted' : 'science.latex.noPage'));
   };
@@ -105,7 +108,7 @@ function useLatex() {
     setNote('');
     update({ ...state, source });
   };
-  return { state, note, area, clean, drawn, update, insert, copy, addSnippet, onPaste, edit };
+  return { state, note, area, clean, drawn, drawable, update, insert, copy, addSnippet, onPaste, edit };
 }
 
 type Latex = ReturnType<typeof useLatex>;
@@ -169,7 +172,7 @@ function Palette({ addSnippet }: { addSnippet: Latex['addSnippet'] }) {
   const [group, setGroup] = useState<SnippetGroup>('basics');
   return (
     <>
-      <div className={styles.tabs} role="tablist" aria-label={t('science.latex.snippets')}>
+      <div className={styles.tabs} role="tablist" aria-label={t('science.latex.snippets')} onKeyDown={moveBetweenTabs}>
         {SNIPPET_GROUPS.map((one) => (
           <button
             key={one}
@@ -178,6 +181,7 @@ function Palette({ addSnippet }: { addSnippet: Latex['addSnippet'] }) {
             id={`latex-tab-${one}`}
             aria-selected={group === one}
             aria-controls="latex-snippets"
+            tabIndex={group === one ? 0 : -1}
             className={styles.tab}
             onClick={() => setGroup(one)}
           >
@@ -213,7 +217,7 @@ export function LatexTool() {
       </p>
       <Preview drawn={latex.drawn} />
       <div className={styles.buttons}>
-        <Button variant="primary" disabled={latex.clean === ''} onClick={latex.insert}>
+        <Button variant="primary" disabled={latex.clean === '' || !latex.drawable} onClick={latex.insert}>
           {t('science.latex.insert')}
         </Button>
         <Button variant="quiet" disabled={latex.clean === ''} onClick={() => void latex.copy()}>

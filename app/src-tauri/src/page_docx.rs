@@ -69,6 +69,7 @@ fn build_document(png: &[u8], facts: &Facts, when: Timestamp) -> IpcResult<Vec<u
         modified: when,
         parts: vec![Part::Blocks(vec![Block::Paragraph(vec![picture])])],
         media,
+        setup: docx::Setup::default(),
     };
     docx::build(&input).map_err(|error| IpcError::new("export", error.to_string()))
 }

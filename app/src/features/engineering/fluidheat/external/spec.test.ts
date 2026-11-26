@@ -1,4 +1,5 @@
 // The external flow form end to end, checked against closed forms.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { refuses, row, solver } from '../kit/testing';
 import { externalSpec } from './spec';

@@ -16,7 +16,7 @@ use crate::model::{NotebookTree, PageNode, PageNodeState, SectionNode, TreeChild
 pub fn render_index_md(tree: &NotebookTree) -> Vec<u8> {
     let mut text = String::from("---\nopennote:\n  kind: \"notebook-index\"\n");
     text.push_str(&format!("  notebook: {}\n", quoted(&tree.notebook.to_string())));
-    text.push_str(&format!("  format: {}\n", crate::FORMAT_VERSION));
+    text.push_str(&format!("  format: {}\n", crate::FIRST_FORMAT_VERSION));
     text.push_str("  checksum: \"crc32:00000000\"\n---\n");
     let mut walk = Walk {
         tree,

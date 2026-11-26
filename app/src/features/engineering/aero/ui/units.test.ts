@@ -1,3 +1,4 @@
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { UNITS, defaultUnit, findUnit, fromSI, toSI, unitsFor } from './units';
 import type { QtyKind } from './units';

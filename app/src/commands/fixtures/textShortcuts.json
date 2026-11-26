@@ -1,0 +1,440 @@
+{
+  "about": "Documented Word and Docs formatting shortcuts that OpenNote binds, as test input. Chords are in the canonical form (Ctrl+Shift+> is Ctrl+>, and a Mac Command key is Ctrl). Each row names its source. beats lists commands in wider scopes that this key takes over while the caret is in text; beatenBy lists commands in the text editor itself that apply first when they can.",
+  "sets": {
+    "word": "default",
+    "opennote": "default",
+    "docs": "docs",
+    "word-mac": "default",
+    "docs-mac": "docs"
+  },
+  "rows": [
+    {
+      "app": "word",
+      "chord": "Ctrl+B",
+      "command": "format.bold",
+      "source": "Microsoft Word keyboard shortcuts, formatting (published by Microsoft Support)"
+    },
+    {
+      "app": "word",
+      "chord": "Ctrl+I",
+      "command": "format.italic",
+      "source": "Microsoft Word keyboard shortcuts, formatting (published by Microsoft Support)"
+    },
+    {
+      "app": "word",
+      "chord": "Ctrl+U",
+      "command": "format.underline",
+      "source": "Microsoft Word keyboard shortcuts, formatting (published by Microsoft Support)"
+    },
+    {
+      "app": "word",
+      "chord": "Ctrl+>",
+      "command": "format.larger",
+      "source": "Microsoft Word keyboard shortcuts, formatting (published by Microsoft Support)"
+    },
+    {
+      "app": "word",
+      "chord": "Ctrl+<",
+      "command": "format.smaller",
+      "source": "Microsoft Word keyboard shortcuts, formatting (published by Microsoft Support)"
+    },
+    {
+      "app": "word",
+      "chord": "Ctrl+]",
+      "command": "format.fontSizeUp",
+      "source": "Microsoft Word keyboard shortcuts, formatting (published by Microsoft Support)"
+    },
+    {
+      "app": "word",
+      "chord": "Ctrl+[",
+      "command": "format.fontSizeDown",
+      "source": "Microsoft Word keyboard shortcuts, formatting (published by Microsoft Support)"
+    },
+    {
+      "app": "word",
+      "chord": "Ctrl+=",
+      "command": "format.subscript",
+      "source": "Microsoft Word keyboard shortcuts, formatting (published by Microsoft Support)",
+      "beats": ["view.zoomIn"]
+    },
+    {
+      "app": "word",
+      "chord": "Ctrl++",
+      "command": "format.superscript",
+      "source": "Microsoft Word keyboard shortcuts, formatting (published by Microsoft Support)"
+    },
+    {
+      "app": "word",
+      "chord": "Ctrl+Shift+A",
+      "command": "format.allCaps",
+      "source": "Microsoft Word keyboard shortcuts, formatting (published by Microsoft Support)"
+    },
+    {
+      "app": "word",
+      "chord": "Ctrl+Shift+K",
+      "command": "format.smallCaps",
+      "source": "Microsoft Word keyboard shortcuts, formatting (published by Microsoft Support)"
+    },
+    {
+      "app": "word",
+      "chord": "Shift+F3",
+      "command": "format.cycleCase",
+      "source": "Microsoft Word keyboard shortcuts, formatting (published by Microsoft Support)"
+    },
+    {
+      "app": "word",
+      "chord": "Ctrl+Space",
+      "command": "format.clearCharacter",
+      "source": "Microsoft Word keyboard shortcuts, formatting (published by Microsoft Support)"
+    },
+    {
+      "app": "word",
+      "chord": "Ctrl+Shift+C",
+      "command": "format.copyFormat",
+      "source": "Microsoft Word keyboard shortcuts, formatting (published by Microsoft Support)"
+    },
+    {
+      "app": "word",
+      "chord": "F4",
+      "command": "format.repeat",
+      "source": "Microsoft Word keyboard shortcuts, formatting (published by Microsoft Support)"
+    },
+    {
+      "app": "word",
+      "chord": "Ctrl+L",
+      "command": "para.alignStart",
+      "source": "Microsoft Word keyboard shortcuts, formatting (published by Microsoft Support)"
+    },
+    {
+      "app": "word",
+      "chord": "Ctrl+E",
+      "command": "para.alignCenter",
+      "source": "Microsoft Word keyboard shortcuts, formatting (published by Microsoft Support)"
+    },
+    {
+      "app": "word",
+      "chord": "Ctrl+R",
+      "command": "para.alignEnd",
+      "source": "Microsoft Word keyboard shortcuts, formatting (published by Microsoft Support)"
+    },
+    {
+      "app": "word",
+      "chord": "Ctrl+J",
+      "command": "para.justify",
+      "source": "Microsoft Word keyboard shortcuts, formatting (published by Microsoft Support)"
+    },
+    {
+      "app": "word",
+      "chord": "Ctrl+Shift+J",
+      "command": "para.distribute",
+      "source": "Microsoft Word keyboard shortcuts, formatting (published by Microsoft Support)"
+    },
+    {
+      "app": "word",
+      "chord": "Ctrl+1",
+      "command": "para.lineSingle",
+      "source": "Microsoft Word keyboard shortcuts, formatting (published by Microsoft Support)"
+    },
+    {
+      "app": "word",
+      "chord": "Ctrl+2",
+      "command": "para.lineDouble",
+      "source": "Microsoft Word keyboard shortcuts, formatting (published by Microsoft Support)"
+    },
+    {
+      "app": "word",
+      "chord": "Ctrl+5",
+      "command": "para.line15",
+      "source": "Microsoft Word keyboard shortcuts, formatting (published by Microsoft Support)"
+    },
+    {
+      "app": "word",
+      "chord": "Ctrl+M",
+      "command": "para.indent",
+      "source": "Microsoft Word keyboard shortcuts, formatting (published by Microsoft Support)"
+    },
+    {
+      "app": "word",
+      "chord": "Ctrl+Shift+M",
+      "command": "para.outdent",
+      "source": "Microsoft Word keyboard shortcuts, formatting (published by Microsoft Support)"
+    },
+    {
+      "app": "word",
+      "chord": "Ctrl+T",
+      "command": "para.hanging",
+      "source": "Microsoft Word keyboard shortcuts, formatting (published by Microsoft Support)",
+      "beats": ["notes.newSection"]
+    },
+    {
+      "app": "word",
+      "chord": "Ctrl+Q",
+      "command": "para.reset",
+      "source": "Microsoft Word keyboard shortcuts, formatting (published by Microsoft Support)"
+    },
+    {
+      "app": "word",
+      "chord": "Ctrl+Shift+N",
+      "command": "block.normal",
+      "source": "Microsoft Word keyboard shortcuts, formatting (published by Microsoft Support)"
+    },
+    {
+      "app": "word",
+      "chord": "Ctrl+Alt+1",
+      "command": "block.heading1",
+      "source": "Microsoft Word keyboard shortcuts, formatting (published by Microsoft Support)"
+    },
+    {
+      "app": "word",
+      "chord": "Ctrl+Alt+2",
+      "command": "block.heading2",
+      "source": "Microsoft Word keyboard shortcuts, formatting (published by Microsoft Support)"
+    },
+    {
+      "app": "word",
+      "chord": "Ctrl+Alt+3",
+      "command": "block.heading3",
+      "source": "Microsoft Word keyboard shortcuts, formatting (published by Microsoft Support)"
+    },
+    {
+      "app": "word",
+      "chord": "Ctrl+Shift+L",
+      "command": "block.bulletList",
+      "source": "Microsoft Word keyboard shortcuts, formatting (published by Microsoft Support)"
+    },
+    {
+      "app": "word",
+      "chord": "Ctrl+K",
+      "command": "format.link",
+      "source": "Microsoft Word keyboard shortcuts, formatting (published by Microsoft Support)",
+      "beats": ["app.palette"]
+    },
+    {
+      "app": "word",
+      "chord": "Ctrl+Shift+S",
+      "command": "format.applyStyle",
+      "source": "Microsoft Word keyboard shortcuts, formatting (published by Microsoft Support)"
+    },
+    {
+      "app": "opennote",
+      "chord": "Ctrl+`",
+      "command": "format.code",
+      "source": "ADR 0085: inline code moves here when Ctrl+E centers"
+    },
+    {
+      "app": "opennote",
+      "chord": "Ctrl+Enter",
+      "command": "block.toggleCheck",
+      "source": "ADR 0085 (OpenNote's own key): in a task item the check wins over the page break",
+      "beats": ["insert.pageBreak"]
+    },
+    {
+      "app": "word",
+      "chord": "Ctrl+Enter",
+      "command": "insert.pageBreak",
+      "source": "Microsoft Word keyboard shortcuts, formatting (published by Microsoft Support)",
+      "beatenBy": ["block.toggleCheck"]
+    },
+    {
+      "app": "docs",
+      "chord": "Ctrl+B",
+      "command": "format.bold",
+      "source": "Google Docs keyboard shortcuts, text and paragraph formatting (published by Google Docs Help)"
+    },
+    {
+      "app": "docs",
+      "chord": "Ctrl+I",
+      "command": "format.italic",
+      "source": "Google Docs keyboard shortcuts, text and paragraph formatting (published by Google Docs Help)"
+    },
+    {
+      "app": "docs",
+      "chord": "Ctrl+U",
+      "command": "format.underline",
+      "source": "Google Docs keyboard shortcuts, text and paragraph formatting (published by Google Docs Help)"
+    },
+    {
+      "app": "docs",
+      "chord": "Alt+Shift+5",
+      "command": "format.strike",
+      "source": "Google Docs keyboard shortcuts, text and paragraph formatting (published by Google Docs Help)"
+    },
+    {
+      "app": "docs",
+      "chord": "Ctrl+.",
+      "command": "format.superscript",
+      "source": "Google Docs keyboard shortcuts, text and paragraph formatting (published by Google Docs Help)"
+    },
+    {
+      "app": "docs",
+      "chord": "Ctrl+>",
+      "command": "format.larger",
+      "source": "Google Docs keyboard shortcuts, text and paragraph formatting (published by Google Docs Help)"
+    },
+    {
+      "app": "docs",
+      "chord": "Ctrl+<",
+      "command": "format.smaller",
+      "source": "Google Docs keyboard shortcuts, text and paragraph formatting (published by Google Docs Help)"
+    },
+    {
+      "app": "docs",
+      "chord": "Ctrl+\\",
+      "command": "format.clear",
+      "source": "Google Docs keyboard shortcuts, text and paragraph formatting (published by Google Docs Help)"
+    },
+    {
+      "app": "docs",
+      "chord": "Ctrl+Alt+C",
+      "command": "format.copyFormat",
+      "source": "Google Docs keyboard shortcuts, text and paragraph formatting (published by Google Docs Help)"
+    },
+    {
+      "app": "docs",
+      "chord": "Ctrl+Shift+L",
+      "command": "para.alignStart",
+      "source": "Google Docs keyboard shortcuts, text and paragraph formatting (published by Google Docs Help)"
+    },
+    {
+      "app": "docs",
+      "chord": "Ctrl+Shift+E",
+      "command": "para.alignCenter",
+      "source": "Google Docs keyboard shortcuts, text and paragraph formatting (published by Google Docs Help)"
+    },
+    {
+      "app": "docs",
+      "chord": "Ctrl+Shift+R",
+      "command": "para.alignEnd",
+      "source": "Google Docs keyboard shortcuts, text and paragraph formatting (published by Google Docs Help)"
+    },
+    {
+      "app": "docs",
+      "chord": "Ctrl+Shift+J",
+      "command": "para.justify",
+      "source": "Google Docs keyboard shortcuts, text and paragraph formatting (published by Google Docs Help)"
+    },
+    {
+      "app": "docs",
+      "chord": "Ctrl+]",
+      "command": "para.indent",
+      "source": "Google Docs keyboard shortcuts, text and paragraph formatting (published by Google Docs Help)"
+    },
+    {
+      "app": "docs",
+      "chord": "Ctrl+[",
+      "command": "para.outdent",
+      "source": "Google Docs keyboard shortcuts, text and paragraph formatting (published by Google Docs Help)"
+    },
+    {
+      "app": "docs",
+      "chord": "Ctrl+Shift+7",
+      "command": "block.orderedList",
+      "source": "Google Docs keyboard shortcuts, text and paragraph formatting (published by Google Docs Help)"
+    },
+    {
+      "app": "docs",
+      "chord": "Ctrl+Shift+8",
+      "command": "block.bulletList",
+      "source": "Google Docs keyboard shortcuts, text and paragraph formatting (published by Google Docs Help)"
+    },
+    {
+      "app": "docs",
+      "chord": "Ctrl+Shift+9",
+      "command": "block.checklist",
+      "source": "Google Docs keyboard shortcuts, text and paragraph formatting (published by Google Docs Help)"
+    },
+    {
+      "app": "docs",
+      "chord": "Ctrl+Alt+0",
+      "command": "block.normal",
+      "source": "Google Docs keyboard shortcuts, text and paragraph formatting (published by Google Docs Help)",
+      "beats": ["page.zoom100"]
+    },
+    {
+      "app": "docs",
+      "chord": "Ctrl+Alt+1",
+      "command": "block.heading1",
+      "source": "Google Docs keyboard shortcuts, text and paragraph formatting (published by Google Docs Help)"
+    },
+    {
+      "app": "docs",
+      "chord": "Ctrl+Alt+6",
+      "command": "block.heading6",
+      "source": "Google Docs keyboard shortcuts, text and paragraph formatting (published by Google Docs Help)"
+    },
+    {
+      "app": "docs",
+      "chord": "Ctrl+K",
+      "command": "format.link",
+      "source": "Google Docs keyboard shortcuts, text and paragraph formatting (published by Google Docs Help)",
+      "beats": ["app.palette"]
+    },
+    {
+      "app": "opennote",
+      "chord": "Ctrl+Enter",
+      "command": "block.toggleCheck",
+      "source": "ADR 0085 (OpenNote's own key): in a task item the check wins over the page break",
+      "beats": ["insert.pageBreak"]
+    },
+    {
+      "app": "docs",
+      "chord": "Ctrl+Enter",
+      "command": "insert.pageBreak",
+      "source": "Google Docs keyboard shortcuts, text and paragraph formatting (published by Google Docs Help)",
+      "beatenBy": ["block.toggleCheck"]
+    },
+    {
+      "app": "docs",
+      "chord": "Ctrl+=",
+      "command": "format.subscript",
+      "source": "ADR 0085: Docs' Ctrl+, opens Settings here",
+      "beats": ["view.zoomIn"]
+    },
+    {
+      "app": "word-mac",
+      "chord": "Ctrl+Shift+X",
+      "command": "format.strike",
+      "source": "Microsoft Word for Mac keyboard shortcuts, strikethrough (Command+Shift+X)",
+      "platform": "macos"
+    },
+    {
+      "app": "docs-mac",
+      "chord": "Ctrl+Shift+X",
+      "command": "format.strike",
+      "source": "Google Docs keyboard shortcuts on Mac, strikethrough (Command+Shift+X)",
+      "platform": "macos"
+    }
+  ],
+  "notBound": [
+    {
+      "app": "word",
+      "chord": "Ctrl+0",
+      "command": "para.spaceBefore",
+      "why": "Ctrl+0 resets the interface text size"
+    },
+    {
+      "app": "word",
+      "chord": "Ctrl+Shift+T",
+      "command": "para.removeHanging",
+      "why": "Ctrl+Shift+T reopens a closed page tab"
+    },
+    {
+      "app": "word",
+      "chord": "Ctrl+Shift+V",
+      "command": "format.pasteFormat",
+      "why": "Ctrl+Shift+V pastes as plain text; pasting a format is Ctrl+Alt+Shift+V"
+    },
+    {
+      "app": "docs",
+      "chord": "Ctrl+,",
+      "command": "format.subscript",
+      "why": "Ctrl+, opens Settings"
+    },
+    {
+      "app": "docs",
+      "chord": "Ctrl+Alt+V",
+      "command": "format.pasteFormat",
+      "why": "Ctrl+Alt+V is dictation; pasting a format is Ctrl+Alt+Shift+V"
+    }
+  ]
+}

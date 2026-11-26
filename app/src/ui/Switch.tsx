@@ -27,7 +27,7 @@ export function Switch(props: SwitchProps) {
       role="switch"
       className={children ? styles.iconSwitch : styles.labeled}
       aria-checked={checked}
-      aria-label={children ? label : undefined}
+      aria-label={label}
       aria-describedby={describedBy}
       aria-disabled={disabled === 'aria' ? true : undefined}
       aria-keyshortcuts={keyShortcuts}

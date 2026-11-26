@@ -5,7 +5,7 @@
 import type { Channel } from '../platform/bindings/Channel';
 import { INK_FLAGS } from '../features/ink/flags';
 import { PAGE_FLAGS } from '../features/page/flags';
-import type { QolPageFlagId } from '../features/page/flags';
+import type { QolPageFlagId, TextFlagId } from '../features/page/flags';
 import { PAGES_FLAGS } from '../features/pages/flags';
 import { AUDIO_FLAGS } from '../features/audio/flags';
 import { INTEROP_FLAGS } from '../features/interop/flags';
@@ -91,6 +91,7 @@ export type FlagId =
   | 'interop.legacyFormats'
   | Phase4FlagId
   | QolPageFlagId
+  | TextFlagId
   | Phase5FlagId
   | Phase6FlagId
   | ExprFlagId
@@ -126,7 +127,19 @@ export type FlagId =
   /** The tutor (features/tutor/flags.ts). */
   | TutorFlagId
   /** The physics tool kit window (features/tools/physics). */
-  | 'kits.physics';
+  | 'kits.physics'
+  /** The controls that create version 2 text formatting. Beta 9 reads and keeps it; Beta 10 turns it on up to Beta. */
+  | 'text.v2Controls'
+  /** Writing cell formats and formulas to a table's data.sheet. Beta 9 reads it; Beta 10 turns it on up to Beta. */
+  | 'tables.sheetWrites'
+  /** The structure commands (row height, hide, freeze, group, fit). Off for users until the live table draws data.sheet. */
+  | 'tables.structureUi'
+  /** The code studio: the editor, projects, and the sandboxed runtimes (Beta 11 onward, on up to Beta). */
+  | 'code.studio'
+  /** Running code with the person's installed toolchains (tier 2). Development and nightly builds only. */
+  | 'code.tier2'
+  /** The on-device code models: completion, fixes, and explanations (on up to Beta). */
+  | 'code.models';
 
 /**
  * Flags the Phase 4 and Phase 5 designs name (AMENDMENTS.md P2-1). Each phase adds its FLAGS entries when it
@@ -145,7 +158,6 @@ type Phase4FlagId =
   | 'page.formattingBar'
   | 'page.readingOrder'
   | 'page.history'
-  | 'page.imageRenditions'
   | 'page.heicImport'
   | 'editor.spelling'
   | 'editor.readAloud'
@@ -358,7 +370,7 @@ export function defineFlag(def: FlagDef): FlagDef {
 const ISSUES = 'https://github.com/XrxcGH/OpenNote/issues?q=label%3Aflag%3A';
 const on = { dev: true, nightly: true, beta: true, stable: true };
 const testBuilds = { dev: true, nightly: true, beta: false, stable: false };
-/** The flags the shell reads too (platform_flags.rs): on up to Beta, off in Stable. */
+/** On up to Beta, off in Stable (platform_flags.rs mirrors the ones the shell reads). */
 const betaBuilds = { dev: true, nightly: true, beta: true, stable: false };
 
 const flag = (id: FlagId, description: string, enabled: Record<Channel, boolean>) =>
@@ -387,6 +399,20 @@ export const FLAGS: readonly FlagDef[] = [
     'The physics tools: fields, waves, optics, relativity, nuclear, orbits, and spacecraft.',
     betaBuilds,
   ),
+  flag(
+    'text.v2Controls',
+    'The controls that create version 2 text formatting: fonts, sizes, weights, underlines, spacing, and styles.',
+    betaBuilds,
+  ),
+  flag('tables.sheetWrites', 'Cell, row, column, and table formatting and formulas saved in a table.', betaBuilds),
+  flag(
+    'tables.structureUi',
+    'Row height, hide, freeze, group, fit, and shift-cell commands for a table, which the table draws.',
+    testBuilds,
+  ),
+  flag('code.studio', 'The code studio: write, run, and test programs in a sandbox on this device.', betaBuilds),
+  flag('code.tier2', 'Run code with the compilers and interpreters installed on this device.', testBuilds),
+  flag('code.models', 'On-device code models for completion, fixes, and explanations.', betaBuilds),
   ...PAGE_FLAGS,
   ...INK_FLAGS,
   ...PAGES_FLAGS,

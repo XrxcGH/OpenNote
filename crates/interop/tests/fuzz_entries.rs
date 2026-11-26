@@ -14,7 +14,7 @@ mod search_entry;
 
 type Entry = fn(&[u8]);
 
-const ENTRIES: [(&str, Entry); 14] = [
+const ENTRIES: [(&str, Entry); 15] = [
     ("zip", fuzzing::zip),
     ("enex", fuzzing::enex),
     ("docx", fuzzing::docx),
@@ -24,6 +24,7 @@ const ENTRIES: [(&str, Entry); 14] = [
     ("html", fuzzing::html),
     ("mht", fuzzing::mht),
     ("markdown", fuzzing::markdown),
+    ("page_markdown", fuzzing::page_markdown),
     ("csv", fuzzing::csv),
     ("sqlite", fuzzing::sqlite),
     ("onenote", fuzzing::onenote),
@@ -77,6 +78,13 @@ fn seeds(name: &str) -> Vec<Vec<u8>> {
         "html" => vec![corpus("corpus/html/site/about.html")],
         "mht" => vec![corpus("corpus/onenote-mht/Lecture 3.mht")],
         "markdown" => vec![corpus("corpus/obsidian/Vault/Welcome.md")],
+        "page_markdown" => vec![concat!(
+            "# Title\n\nA <span data-color=\"#A1B2C3\">color</span>, <u data-line=\"wave\">line</u>[^n1], ",
+            "<span data-otf=\"ss+1\">foreign</span> <mark data-color=\"red\">mark</mark>\n\n",
+            "- [ ] task\n  1. nested\n\n> quote\n\n| a | b |\n|---|---|\n| 1 | 2 |\n"
+        )
+        .as_bytes()
+        .to_vec()],
         "csv" => vec![corpus("corpus/csv/data/People.csv")],
         "sqlite" => vec![corpus("corpus/sticky/LocalState/plum.sqlite")],
         "onenote" => {
@@ -119,6 +127,27 @@ fn every_entry_returns_on_its_seeds_cut_short_or_with_flipped_bytes() {
             }
         }
     }
+}
+
+/// Every crash the nightly fuzzer found and that was fixed, kept in `fuzz/regressions/<entry>/`. A crash fixed
+/// once stays fixed.
+#[test]
+fn past_crashes_never_panic() {
+    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("fuzz")
+        .join("regressions");
+    let mut replayed = 0;
+    for (name, entry) in ENTRIES {
+        let Ok(files) = fs::read_dir(root.join(name)) else {
+            continue;
+        };
+        for file in files {
+            let path = file.expect("lists a regression").path();
+            entry(&fs::read(&path).expect("reads a regression"));
+            replayed += 1;
+        }
+    }
+    assert!(replayed > 0, "the regressions folder holds the fixed crashes");
 }
 
 proptest! {

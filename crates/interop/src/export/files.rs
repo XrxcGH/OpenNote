@@ -158,7 +158,8 @@ fn export_page(
     let blocks = page_to_blocks(&page, run, &mut report);
     let body = match format {
         Format::Markdown => {
-            let head = frontmatter::write(&page.title, page.created, page.modified, &page.tags);
+            let properties = opennote_core::format::readable::property_lines(&page);
+            let head = frontmatter::write(&page.title, page.created, page.modified, &page.tags, &properties);
             format!("{head}{}\n", to_markdown(&blocks))
         }
         Format::Html => {

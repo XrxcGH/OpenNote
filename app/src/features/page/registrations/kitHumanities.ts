@@ -14,7 +14,7 @@ addCommand({
   icon: 'Books',
   flag: 'kits.humanities',
   anywhere: true,
-  run: async () => (await import('../../tools')).openHumanitiesTool(HUMANITIES_TOOLS[0].id),
+  run: async () => (await import('../../tools')).openTool('kit-humanities'),
 });
 
 for (const tool of HUMANITIES_TOOLS) {

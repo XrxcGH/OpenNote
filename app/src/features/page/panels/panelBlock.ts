@@ -2,11 +2,13 @@
 // map. Each draws a small interface of its feature into the block's wrapper. The data is the block's own, kept by
 // the page like a table's: a change goes to the core as a patch and one undo takes it back. A reader without the
 // feature still sees the block's fallback text, which is also what search and read aloud use.
+import { applyMergePatch } from '../../../platform/mergePatch';
 import type { BlockJson } from '../../../services/pages/types';
 import blockStyles from '../blocks/blocks.module.css';
 import { placeBlock } from '../blocks/textBlock';
 import type { BlockRenderContext } from '../blocks/types';
 import type { InnerView } from '../tables/lazyView';
+import { forgetPanel, trackPanel } from './focused';
 import type { PanelHandle, PanelKind, PanelProps } from './kinds';
 
 export function createPanelInner(
@@ -26,19 +28,16 @@ export function createPanelInner(
     readOnly: ctx.page.readOnly !== null,
     patch: (data, fallback) => {
       const edit = { edit: 'patchBlock' as const, block: latest.id, data };
-      // The page core keeps the data, but nothing tells this view: draw the change now, as the table does.
-      const merged: Record<string, unknown> = { ...latest.data };
-      for (const [key, value] of Object.entries(data)) {
-        if (value === null) delete merged[key];
-        else merged[key] = value;
-      }
-      latest = { ...latest, data: merged } as BlockJson;
+      // The page core keeps the data, but nothing tells this view: draw the change now, as the table does. The
+      // core merges the patch at every level (RFC 7396), so a patch of one nested key keeps its siblings here too.
+      latest = { ...latest, data: applyMergePatch(latest.data, data) } as BlockJson;
       handle?.update(props());
       void ctx.sync.send({ edits: [fallback === undefined ? edit : { ...edit, fallback: { markdown: fallback } }] });
     },
     announce: (text) => ctx.host.announce(text),
   });
   placeBlock(element, block);
+  trackPanel(element, block.id, ctx.page.readOnly !== null);
   void kind.load().then(({ mount }) => {
     if (!gone) handle = mount(body, props());
   });
@@ -48,11 +47,13 @@ export function createPanelInner(
     update(next) {
       latest = next;
       placeBlock(element, next);
+      trackPanel(element, next.id, ctx.page.readOnly !== null);
       handle?.update(props());
     },
     measure: () => ({ x: element.offsetLeft, y: element.offsetTop, w: element.offsetWidth, h: element.offsetHeight }),
     destroy() {
       gone = true;
+      forgetPanel(latest.id);
       handle?.destroy();
       element.remove();
     },

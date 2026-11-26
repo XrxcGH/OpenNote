@@ -1,6 +1,7 @@
 // One tool of the kit: its fields, the unit system when the tool has physical quantities, ready-made examples, the
 // results, and the Insert menu. The typed texts are kept on this device for each tool, and the unit
 // system for the whole kit.
+import '../text';
 import { useDeferredValue, useEffect, useId, useMemo, useState } from 'react';
 import { t } from '../../../../strings/t';
 import { followKitForm } from '../../../tools';

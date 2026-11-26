@@ -89,6 +89,13 @@ doc = false
 bench = false
 
 [[bin]]
+name = "page_markdown"
+path = "fuzz_targets/page_markdown.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
 name = "csv"
 path = "fuzz_targets/csv.rs"
 test = false

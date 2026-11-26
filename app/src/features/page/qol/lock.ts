@@ -28,6 +28,18 @@ export function attachLock(mounted: MountedPage): () => void {
       mounted.title?.textbox.setAttribute('contenteditable', locked ? 'false' : 'plaintext-only');
     }
     announce(t(locked ? 'pageExtras.lock.on' : 'pageExtras.lock.off'));
+    keepFocusOnPage();
+  };
+  // Locking turns the focused editor off, which drops the focus onto the body, where the page's own chords, the lock
+  // chord among them, are not heard. The page itself takes the focus then, so the same chord unlocks (Beta 8 walk A1-A08-4).
+  const keepFocusOnPage = () => {
+    const doc = root.ownerDocument;
+    const settle = () => {
+      const focused = doc.activeElement;
+      if (!focused || focused === doc.body) root.focus({ preventScroll: true });
+    };
+    settle();
+    requestAnimationFrame(settle);
   };
   const stop = readingLock.subscribe(apply);
   // An editor that mounts while the page is locked reads the store itself, but one that was demoted and mounted

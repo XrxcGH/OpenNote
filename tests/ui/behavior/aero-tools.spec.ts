@@ -1,8 +1,12 @@
 // The aerospace window in the app: opened from the palette, it puts its worked steps on the page as a numbered list
 // with inline math, its results as a table, and a plot as an image block. It also fits a narrow window and draws
 // in dark mode.
-import { expect, test } from '../fixtures';
+import { expect as strict, test } from '../fixtures';
 import { newLine, openSmart, runCommand } from './smart';
+
+// A kit window fetches its code and words before it draws, which takes longer under load, so its checks wait as long
+// as runCommand does.
+const expect = strict.configure({ timeout: 15_000 });
 
 test('inserts steps, a result table and a plot into the page', async ({ page }) => {
   await openSmart(page);

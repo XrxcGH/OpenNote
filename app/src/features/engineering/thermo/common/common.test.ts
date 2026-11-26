@@ -1,3 +1,4 @@
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { convertUnit } from '../../../../core/units';
 import { kitThermo } from '../../../../strings/en/kitThermo';

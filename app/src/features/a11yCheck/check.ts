@@ -1,12 +1,13 @@
 // The accessibility checker (docs/FEATURES.md, "Accessibility checker"). It reads a page as the page service gives it.
 // It lists what makes the page hard to use with a screen reader, a keyboard, or low vision. The problems are images
-// with no description, skipped heading levels, tables without a header row, text colors that are hard to read,
+// with no description, skipped heading levels, empty headings, tables without a header row, text colors that are hard to read,
 // meaning that only color carries, and free-form pages with no reading order. Each problem carries the edit that
 // fixes it, so the report can apply the fix with one press. Nothing here changes a page.
 
 import type { BlockJson, Edit, PageJson } from '../../services/pages/types';
 
-export type IssueKind = 'imageAlt' | 'headingSkip' | 'tableHeader' | 'lowContrast' | 'colorOnly' | 'readingOrder';
+export type IssueKind =
+  'imageAlt' | 'headingSkip' | 'emptyHeading' | 'tableHeader' | 'lowContrast' | 'colorOnly' | 'readingOrder';
 
 /** How an issue gets fixed: ready-made edits, or edits that need some text from the person. */
 export type Fix =
@@ -22,6 +23,7 @@ export interface Issue {
 }
 
 const HEADING = /^(#{1,6})\s+\S/;
+const EMPTY_HEADING = /^#{1,6}\s*$/;
 const COLOR_SPAN = /<span\s+[^>]*data-color="([^"]+)"[^>]*>(.*?)<\/span>/gs;
 const EMPHASIS = /\*\*|__|<u>|<mark|<strong|<em>|(^|\s)\*\S|(^|\s)_\S/;
 
@@ -107,6 +109,31 @@ function headingIssues(blocks: readonly BlockJson[]): Issue[] {
         issues[i] = { ...issues[i], fix: { kind: 'edits', edits: [edit] } };
       }
     }
+  }
+  return issues;
+}
+
+/** A heading line with no words: a screen reader announces a heading with nothing in it. The fix removes the line. */
+function emptyHeadingIssues(blocks: readonly BlockJson[]): Issue[] {
+  const issues: Issue[] = [];
+  for (const block of blocks) {
+    if (block.type !== 'text') continue;
+    const lines = textOf(block).split('\n');
+    lines.forEach((line, index) => {
+      if (!EMPTY_HEADING.test(line)) return;
+      const edit: Edit = {
+        edit: 'setText',
+        block: block.id,
+        markdown: lines.filter((_, at) => at !== index).join('\n'),
+      };
+      issues.push({
+        id: `${block.id}:emptyHeading:${index}`,
+        kind: 'emptyHeading',
+        block: block.id,
+        params: { level: line.trim().length },
+        fix: { kind: 'edits', edits: [edit] },
+      });
+    });
   }
   return issues;
 }
@@ -203,7 +230,13 @@ function orderIssues(page: PageJson): Issue[] {
 /** Every accessibility problem of a page, in the order a reader meets them. */
 export function checkPage(page: PageJson): Issue[] {
   const blocks = readingBlocks(page);
-  return [...objectIssues(blocks), ...headingIssues(blocks), ...colorIssues(blocks), ...orderIssues(page)];
+  return [
+    ...objectIssues(blocks),
+    ...headingIssues(blocks),
+    ...emptyHeadingIssues(blocks),
+    ...colorIssues(blocks),
+    ...orderIssues(page),
+  ];
 }
 
 /** The edits for a description the person typed, or for marking the image as decorative. */

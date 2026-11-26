@@ -148,7 +148,7 @@ fn answer(mut stream: TcpStream, files: &[(&'static str, Vec<u8>)], seen: &Mutex
 struct Local;
 
 impl Source for Local {
-    fn open(&self, url: &str, from: u64) -> Result<Opened, String> {
+    fn open(&self, url: &str, from: u64, _size: u64) -> Result<Opened, String> {
         if !url.starts_with("http://127.0.0.1:") {
             return Err("That address is not one OpenNote downloads from.".to_owned());
         }
@@ -441,9 +441,9 @@ fn the_pinned_files_name_only_the_official_hosts() {
         assert!(part.url.starts_with("https://"));
     }
     let source = HttpSource::allowing(ALLOWED);
-    assert!(source.open("https://example.com/x", 0).is_err());
+    assert!(source.open("https://example.com/x", 0, 1).is_err());
     assert!(source
-        .open("http://www.gutenberg.org/files/3202/files/mthesaur.txt", 0)
+        .open("http://www.gutenberg.org/files/3202/files/mthesaur.txt", 0, 1)
         .is_err());
 }
 

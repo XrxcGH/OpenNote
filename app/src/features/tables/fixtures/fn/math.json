@@ -1,0 +1,108 @@
+{
+  "cases": [
+    {
+      "formula": "=SUMIF(A1:A4,\">2\")",
+      "cells": { "A1": 1, "A2": 2, "A3": 3, "A4": 4 },
+      "expected": 7,
+      "source": "hand",
+      "note": "3 plus 4."
+    },
+    {
+      "formula": "=SUMIFS(C1:C4,A1:A4,\">1\",B1:B4,\"x\")",
+      "cells": {
+        "A1": 1,
+        "A2": 2,
+        "A3": 3,
+        "A4": 4,
+        "B1": "x",
+        "B2": "x",
+        "B3": "y",
+        "B4": "x",
+        "C1": 10,
+        "C2": 20,
+        "C3": 30,
+        "C4": 40
+      },
+      "expected": 60,
+      "source": "hand",
+      "note": "Rows 2 and 4 pass both tests: 20 plus 40."
+    },
+    {
+      "formula": "=SUMPRODUCT(A1:A3,B1:B3)",
+      "cells": { "A1": 1, "A2": 2, "A3": 3, "B1": 4, "B2": 5, "B3": 6 },
+      "expected": 32,
+      "source": "hand",
+      "note": "4 plus 10 plus 18."
+    },
+    { "formula": "=MROUND(10,3)", "expected": 9, "source": "hand", "note": "10 over 3 rounds to 3, times 3." },
+    {
+      "formula": "=MROUND(-10,-3)",
+      "expected": -9,
+      "source": "hand",
+      "note": "Both negative: the same as 10 and 3, with the sign."
+    },
+    { "formula": "=MROUND(5,-2)", "expected": "#NUM!", "source": "hand", "note": "Signs differ." },
+    { "formula": "=CEILING(2.5,1)", "expected": 3, "source": "hand", "note": "Up to the next multiple of 1." },
+    { "formula": "=CEILING.MATH(-4.5)", "expected": -4, "source": "hand", "note": "Toward positive infinity." },
+    {
+      "formula": "=FLOOR.MATH(-5.5,2,-1)",
+      "expected": -4,
+      "source": "hand",
+      "note": "A nonzero mode rounds a negative number toward zero: -2.75 to -2, times 2."
+    },
+    { "formula": "=ROMAN(499)", "expected": "CDXCIX", "source": "hand", "note": "400 is CD, 90 is XC, 9 is IX." },
+    { "formula": "=ARABIC(\"MCMXCIX\")", "expected": 1999, "source": "hand", "note": "1000 plus 900 plus 90 plus 9." },
+    { "formula": "=GCD(24,36)", "expected": 12, "source": "hand", "note": "24 and 36 share 12." },
+    { "formula": "=LCM(4,6)", "expected": 12, "source": "hand", "note": "The least common multiple." },
+    { "formula": "=FACTDOUBLE(7)", "expected": 105, "source": "hand", "note": "7 times 5 times 3 times 1." },
+    { "formula": "=COMBINA(4,3)", "expected": 20, "source": "hand", "note": "COMBIN(6,3) is 20." },
+    { "formula": "=MULTINOMIAL(2,3,4)", "expected": 1260, "source": "hand", "note": "9 factorial over 2, 6, and 24." },
+    { "formula": "=TRUNC(-8.9)", "expected": -8, "source": "hand", "note": "Toward zero." },
+    { "formula": "=INT(-8.9)", "expected": -9, "source": "hand", "note": "Down." },
+    { "formula": "=EVEN(-1)", "expected": -2, "source": "hand", "note": "Away from zero to an even number." },
+    { "formula": "=ODD(2)", "expected": 3, "source": "hand", "note": "Away from zero to an odd number." },
+    { "formula": "=QUOTIENT(-10,3)", "expected": -3, "source": "hand", "note": "The whole part of -3.33." },
+    { "formula": "=BASE(7,2)", "expected": "111", "source": "hand", "note": "4 plus 2 plus 1." },
+    { "formula": "=DECIMAL(\"FF\",16)", "expected": 255, "source": "hand", "note": "15 times 16 plus 15." },
+    {
+      "formula": "=ATAN2(1,1)",
+      "expected": 0.785398163397448,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "A quarter of pi, since x and y are equal."
+    },
+    {
+      "formula": "=SQRTPI(1)",
+      "expected": 1.77245385090552,
+      "tolerance": 1e-12,
+      "source": "hand",
+      "note": "The square root of pi."
+    },
+    {
+      "formula": "=SUBTOTAL(9,A1:A4)",
+      "cells": { "A1": 1, "A2": 2, "A3": 3, "A4": 4 },
+      "expected": 10,
+      "source": "hand",
+      "note": "No rows are hidden."
+    },
+    {
+      "formula": "=AGGREGATE(14,6,A1:A4,1)",
+      "cells": { "A1": 5, "A2": 9, "A3": 2, "A4": 7 },
+      "expected": 9,
+      "source": "hand",
+      "note": "The largest of the four."
+    },
+    {
+      "formula": "=ROMAN(999,1)",
+      "expected": "LMVLIV",
+      "source": "hand",
+      "note": "LM is 950, VL is 45, IV is 4."
+    },
+    {
+      "formula": "=ROMAN(950,1)",
+      "expected": "LM",
+      "source": "hand",
+      "note": "Fifty before a thousand, the form 1 pair."
+    }
+  ]
+}

@@ -56,6 +56,7 @@ export function otherSide(state: State): string | null {
   return result.ok ? formatNumber(result.value) : null;
 }
 
+// checks-disable-next-line modifiability: one window whose parts share its state; split it when it grows again
 export function ConverterTool() {
   const [state, setState] = useState<State>(() => {
     const saved = loadStored<Partial<State>>(STORE, {});
@@ -87,6 +88,22 @@ export function ConverterTool() {
     if (invalid) return;
     const text = `${fromText} ${state.from} = ${toText} ${state.to}`;
     announce(t(insertIntoPage({ text }) ? 'study.converter.inserted' : 'study.converter.noPage'));
+  };
+
+  const swap = () => {
+    // The converted value becomes the typed one, so swapping twice comes back to where it started.
+    update({ ...state, from: state.to, to: state.from, text: toText === '' ? state.text : toText, side: 'from' });
+    announce(t('study.converter.swapped', { from: state.to, to: state.from }));
+  };
+  const copy = async () => {
+    if (invalid) return;
+    const text = `${fromText} ${state.from} = ${toText} ${state.to}`;
+    try {
+      await navigator.clipboard.writeText(text);
+      announce(t('study.converter.copied', { text }));
+    } catch {
+      announce(t('study.converter.copyFailed'));
+    }
   };
 
   const side = (which: 'from' | 'to', text: string, unit: string) => (
@@ -143,6 +160,12 @@ export function ConverterTool() {
       <div className={styles.buttons}>
         <Button variant="primary" disabled={invalid} onClick={insert}>
           {t('study.converter.insert')}
+        </Button>
+        <Button variant="quiet" disabled={invalid} onClick={() => void copy()}>
+          {t('study.converter.copy')}
+        </Button>
+        <Button variant="quiet" onClick={swap}>
+          {t('study.converter.swap')}
         </Button>
       </div>
       <p className={styles.note}>{t('study.converter.note')}</p>

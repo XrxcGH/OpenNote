@@ -96,7 +96,7 @@ describe('the import queue', () => {
     const cancelled = queue.add(photo(1), controller.signal);
     controller.abort();
     running[0].finish();
-    await expect(cancelled).rejects.toThrow(/cancelled/);
+    await expect(cancelled).rejects.toThrow(/canceled/);
     expect(running).toHaveLength(4);
   });
 });

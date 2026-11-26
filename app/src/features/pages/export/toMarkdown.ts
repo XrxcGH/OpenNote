@@ -6,6 +6,8 @@ import { own } from '../layout/json';
 import { escapeText, oneLine, rewriteLinks, writeDestination } from './escape';
 import { readingOrder } from './order';
 import type { ExportBlock, ExportPage, TableBlock } from './source';
+import { removeFormatting } from './markdown/strip';
+import { tableMarkdown } from './tableMarkdown';
 import { propertyFrontMatter } from './propertyFrontMatter';
 
 /** The line for a block of a type this version doesn't know, and for a block that couldn't be read. */
@@ -27,6 +29,15 @@ export interface MarkdownOptions {
   readonly handwriting?: string | null;
   /** The line for a block this version can't show. */
   readonly newerVersion?: string;
+  /**
+   * What to do with formatting that Markdown cannot hold, such as fonts and sizes in points. They are written as
+   * `<span data-...>` tags. `keep` writes the tags as the page stores them. Another copy of OpenNote shows them, and a
+   * Markdown tool shows the text between them. `remove` takes them out and keeps the text and the formatting of
+   * version 1. Default `keep`.
+   */
+  readonly formatting?: 'keep' | 'remove';
+  /** Hears of a table whose formula results are out of date, so its formulas export as text (the report names it). */
+  readonly onStaleTable?: (blockId: string) => void;
 }
 
 export interface BodyPart {
@@ -67,7 +78,7 @@ class Exporter {
   }
 
   rewrite(markdown: string): string {
-    return rewriteLinks(markdown, {
+    return rewriteLinks(this.o.formatting === 'remove' ? removeFormatting(markdown) : markdown, {
       page: (id) => this.o.pagePath?.(id) ?? null,
       asset: (id) => {
         const file = own(this.page.assets, id)?.file;
@@ -113,14 +124,14 @@ class Exporter {
 
   /** A GFM table, with an empty header row when the table has none. Null for a table without columns. */
   private table(table: TableBlock): string | null {
-    if (table.columns.length === 0) return null;
-    const line = (cells: readonly string[]) => `| ${cells.join(' | ')} |`;
-    const cellsOf = (row: TableBlock['rows'][number]) =>
-      table.columns.map((c) => tableCell(this.rewrite(own(row.cells, c.id) ?? '')));
-    const [first, ...rest] = table.rows;
-    const header = table.header && first ? cellsOf(first) : table.columns.map(() => '');
-    const body = table.header && first ? rest : table.rows;
-    return [line(header), line(table.columns.map(() => '---')), ...body.map((r) => line(cellsOf(r)))].join('\n');
+    return tableMarkdown(
+      table,
+      {
+        markdown: (md) => tableCell(this.rewrite(md)),
+        text: (text) => tableCell(escapeText(text, false)),
+      },
+      this.o.onStaleTable,
+    );
   }
 }
 

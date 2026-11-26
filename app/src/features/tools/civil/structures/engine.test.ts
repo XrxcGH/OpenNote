@@ -8,6 +8,7 @@ import {
   influence,
   maxEndShear,
   modalCombination,
+  midspanMoments,
   momentDistribution,
   newmark,
   portal,
@@ -29,6 +30,14 @@ const key = (run: () => unknown): string => {
 };
 
 describe('continuous beams', () => {
+  it('gives the midspan moment of each span, wL^2/16 for two equal spans under a uniform load', () => {
+    // Pinned ends, w = 10 kN/m, L = 6 m: end reaction 3wL/8 = 22.5 kN, so M(L/2) = 22.5 x 3 - 10 x 3^2 / 2 = 22.5.
+    const spans = [span(6, 10), span(6, 10)];
+    const m = midspanMoments(spans, momentDistribution(spans, 'pinned', 'pinned'));
+    expect(m).toHaveLength(2);
+    expect(m[0]).toBeCloseTo((10 * 36) / 16, 3);
+    expect(m[1]).toBeCloseTo((10 * 36) / 16, 3);
+  });
   const span = (L: number, w: number) => ({ L, EI: 1, w, P: 0, a: 0 });
 
   it('gives the plan two-span beam', () => {

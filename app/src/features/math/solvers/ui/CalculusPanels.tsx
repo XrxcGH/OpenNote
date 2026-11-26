@@ -9,7 +9,8 @@ import {
   type Limit,
   type RegionKind,
 } from '../multiple';
-import { solveOde, type OdeInput, type OdeKind } from '../ode';
+import { solveOde, type OdeInput, type OdeKind, type OdeResult } from '../ode';
+import type { XY } from '../steps';
 import { taylor } from '../series';
 import { Plot } from './Plot';
 import {
@@ -189,6 +190,33 @@ export function IntegralsPanel() {
 
 const ODE_KINDS: readonly OdeKind[] = ['separable', 'linear', 'second'];
 
+/** The graphs of a solved equation: the solution (over the slope field for first order), and the phase plane. */
+function OdePlots({ kind, result, start }: { kind: OdeKind; result: OdeResult; start: XY }) {
+  return (
+    <>
+      <Plot
+        label={say(kind === 'second' ? 'solvers.ui.solutionPlot' : 'solvers.ui.slopeFieldPlot')}
+        include={result.curve}
+        layers={[
+          ...(kind === 'second' ? [] : [{ kind: 'arrows' as const, arrows: result.field, tone: 6 }]),
+          { kind: 'line', points: result.curve, tone: 0, label: say('solvers.ui.solution') },
+          { kind: 'dots', points: [start], tone: 3 },
+        ]}
+      />
+      {kind === 'second' && (
+        <Plot
+          label={say('solvers.ui.phasePlot')}
+          include={result.phase}
+          layers={[
+            { kind: 'arrows', arrows: result.field, tone: 6 },
+            { kind: 'line', points: result.phase, tone: 1, label: say('solvers.ui.phasePath') },
+          ]}
+        />
+      )}
+    </>
+  );
+}
+
 export function EquationsPanel() {
   const [state, set] = useStored('equations', {
     kind: 'second' as OdeKind,
@@ -260,31 +288,13 @@ export function EquationsPanel() {
       {result && (
         <>
           <Result>{result.solution ? `y = ${result.solution}` : say('solvers.ui.numericOnly')}</Result>
-          <Plot
-            label={say(state.kind === 'second' ? 'solvers.ui.solutionPlot' : 'solvers.ui.slopeFieldPlot')}
-            include={result.curve}
-            layers={[
-              ...(state.kind === 'second' ? [] : [{ kind: 'arrows' as const, arrows: result.field, tone: 6 }]),
-              { kind: 'line', points: result.curve, tone: 0, label: say('solvers.ui.solution') },
-              { kind: 'dots', points: [{ x: input.x0, y: input.y0 }], tone: 3 },
-            ]}
-          />
-          {state.kind === 'second' && (
-            <Plot
-              label={say('solvers.ui.phasePlot')}
-              include={result.phase}
-              layers={[
-                { kind: 'arrows', arrows: result.field, tone: 6 },
-                { kind: 'line', points: result.phase, tone: 1, label: say('solvers.ui.phasePath') },
-              ]}
-            />
-          )}
+          {!result.general && <OdePlots kind={state.kind} result={result} start={{ x: input.x0, y: input.y0 }} />}
           <StepList steps={result.steps} />
         </>
       )}
       <Actions
         text={result ? stepsText(say(`solvers.ode.${state.kind}`), result.steps) : null}
-        graph={result?.solution ? `y = ${graphLine(result.solution)}` : null}
+        graph={result?.solution && !result.general ? `y = ${graphLine(result.solution)}` : null}
       />
     </div>
   );

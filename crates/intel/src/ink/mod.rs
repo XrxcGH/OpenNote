@@ -1,7 +1,9 @@
 //! Handwriting recognition: words, alternatives, and stroke IDs from ink.
 //!
 //! [`InkRecognizer`] is the platform-neutral interface. On Windows, [`default_recognizer`] returns
-//! a recognizer backed by the Windows Ink Analysis API, which groups strokes into lines and words.
+//! a recognizer backed by the Windows Ink Analysis API, which groups strokes into lines and words. Elsewhere it
+//! draws the strokes as a picture and reads it with the platform's OCR engine ([`PictureInk`]): Apple's Vision,
+//! which reads handwriting, on a Mac, and Tesseract on Linux.
 
 use serde::{Deserialize, Serialize};
 
@@ -17,6 +19,9 @@ pub use self::winrt::WindowsInk;
 use self::winrt::WindowsInk;
 
 pub use self::key::StrokeKey;
+
+mod picture;
+pub use self::picture::PictureInk;
 
 /// The most strokes one call accepts. A page the size of a sheet of paper holds far fewer.
 pub const MAX_STROKES: usize = 50_000;
@@ -156,9 +161,12 @@ engine_api! {
         }
         #[cfg(not(all(windows, feature = "winrt")))]
         {
-            Err(IntelError::Unsupported {
-                feature: "handwriting recognition",
-            })
+            match crate::ocr::default_engine() {
+                Ok(ocr) => Ok(Box::new(PictureInk::new(std::sync::Arc::from(ocr)))),
+                Err(_) => Err(IntelError::Unsupported {
+                    feature: "handwriting recognition",
+                }),
+            }
         }
     }
 }

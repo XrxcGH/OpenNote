@@ -1,6 +1,7 @@
 // The object menu (ARCHITECTURE.md sections 11.3, 11.6, and 11.7; owner WP3): right-click, a long press, the
 // barrel button, Shift+F10, or the Menu key on a selected block. Every drag on the page has a menu or field
 // alternative here, and z-order items at an end say why they are off ("Already in front").
+import '../images/text';
 import { menuItemsFor } from '../../../commands/menus';
 import { commandContext, executeCommand } from '../../../commands/registry';
 import type { MessageKey } from '../../../strings/t';

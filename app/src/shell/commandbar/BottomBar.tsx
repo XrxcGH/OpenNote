@@ -1,5 +1,5 @@
 // The compact layout's bottom bar (ARCHITECTURE.md section 11.1), a navigation landmark with 44 px targets:
-// Notebooks, Search, New page, and More. More holds Settings, Keyboard shortcuts, the title bar items placed
+// Notebooks, Search, New page, and More. More holds Record, Settings, Keyboard shortcuts, the title bar items placed
 // there (such as the update chip), and Trash, under the last few pages opened when bottomBar.recent is on.
 // Buttons show only when their command exists and is available.
 
@@ -7,14 +7,16 @@ import { BooksIcon } from '@phosphor-icons/react/dist/csr/Books';
 import { DotsThreeIcon } from '@phosphor-icons/react/dist/csr/DotsThree';
 import { FilePlusIcon } from '@phosphor-icons/react/dist/csr/FilePlus';
 import { MagnifyingGlassIcon } from '@phosphor-icons/react/dist/csr/MagnifyingGlass';
+import { TextAaIcon } from '@phosphor-icons/react/dist/csr/TextAa';
 import { useEffect, useRef, useState } from 'react';
 import type { ComponentType } from 'react';
 import { ariaKeyShortcuts, formatChord, useKeysFor } from '../../commands/keymap';
 import { useFlag } from '../../app/flags';
 import { executeCommand } from '../../commands/registry';
 import type { CommandId } from '../../commands/types';
+import type { CompactScreen } from '../../state/layout';
 import { titleBarItems, useRegistry } from '../../registries';
-import { useSizeClass } from '../../state/layout';
+import { useLayout, useSizeClass } from '../../state/layout';
 import { t } from '../../strings/t';
 import type { MessageKey } from '../../strings/t';
 import { Popover, Tooltip } from '../../ui';
@@ -28,15 +30,21 @@ interface BottomAction {
   command: CommandId;
   label: MessageKey;
   icon: ComponentType<IconProps>;
+  /** The screen this button opens: its icon is Fill while that screen is open. */
+  screen?: CompactScreen;
 }
 
 const ACTIONS: readonly BottomAction[] = [
-  { command: 'layout.toggleNotebooks', label: 'commands.bar.notebooks', icon: BooksIcon },
+  { command: 'layout.toggleNotebooks', label: 'commands.bar.notebooks', icon: BooksIcon, screen: 'notebooks' },
   { command: 'app.palette', label: 'commands.bar.search', icon: MagnifyingGlassIcon },
   { command: 'notes.newPage', label: 'commands.bar.newPage', icon: FilePlusIcon },
+  // The Aa sheet shows while a text block is being edited (text.v2Controls).
+  { command: 'text.compactSheet', label: 'textHome.sheet.open', icon: TextAaIcon },
 ];
 
 const MORE: readonly { command: CommandId; label: MessageKey }[] = [
+  // The ribbon's Record button is not on this layout, so recording starts here (walk bug B1-B01-5).
+  { command: 'audio.record', label: 'audio.commands.record' },
   { command: 'app.settings', label: 'commands.bar.settings' },
   { command: 'app.shortcuts', label: 'commands.bar.shortcuts' },
 ];
@@ -48,15 +56,19 @@ function ActionButton({ action }: { action: BottomAction }) {
   const keys = useKeysFor(action.command);
   const label = t(action.label);
   const Icon = action.icon;
+  const open = useLayout((state) => action.screen !== undefined && state.compactScreen === action.screen);
   const button = (
     <button
       type="button"
       className={styles.bottomButton}
+      aria-current={open || undefined}
       aria-keyshortcuts={keys.length ? ariaKeyShortcuts(keys) : undefined}
       onClick={() => void executeCommand(action.command, undefined, 'commandBar')}
     >
-      <Icon aria-hidden />
-      {label}
+      <Icon aria-hidden weight={open ? 'fill' : 'regular'} />
+      <span className={styles.bottomLabel} title={label}>
+        {label}
+      </span>
     </button>
   );
   // The button shows its label, so a tooltip only earns its place when it adds the shortcut.

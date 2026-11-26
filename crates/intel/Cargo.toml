@@ -46,6 +46,36 @@ windows = { version = "0.62", features = [
   "Win32_System_Threading",
 ] }
 
+# Apple's Vision framework for text in pictures and handwriting on a Mac. Every crate gets only the classes it needs;
+# Foundation's networking classes stay off, and tests/no_network.rs holds the crate list.
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2 = { version = "0.6.4", default-features = false, features = ["std"] }
+objc2-core-foundation = { version = "0.3.2", default-features = false, features = ["std", "CFCGTypes", "CFData"] }
+objc2-core-graphics = { version = "0.3.2", default-features = false, features = [
+  "std",
+  "CGColorSpace",
+  "CGDataProvider",
+  "CGImage",
+] }
+objc2-foundation = { version = "0.3.2", default-features = false, features = [
+  "std",
+  "NSArray",
+  "NSDictionary",
+  "NSError",
+  "NSRange",
+  "NSString",
+] }
+objc2-vision = { version = "0.3.2", default-features = false, features = [
+  "std",
+  "objc2-core-foundation",
+  "objc2-core-graphics",
+  "VNObservation",
+  "VNRecognizeTextRequest",
+  "VNRequest",
+  "VNRequestHandler",
+  "VNTypes",
+] }
+
 [dev-dependencies]
 opennote-intel = { path = ".", default-features = false, features = ["unstable-engines"] }
 proptest = { workspace = true }

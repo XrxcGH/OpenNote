@@ -1,8 +1,11 @@
 // Pieces every tool of the kit shares: fields that keep their text between visits, an equation drawn by KaTeX, the
 // worked steps as a numbered list, a small line plot, and the buttons that put the work into the page.
+import '../text';
+import { ScrollMath } from '../../ui/ScrollMath';
 import { useEffect, useId, useMemo, useState, type ReactNode } from 'react';
 import { t } from '../../../../strings/t';
 import { Button, announce } from '../../../../ui';
+import { insertLive as keepLive } from '../../kits/liveInsert';
 import { insertIntoPage } from '../../ui/insert';
 import { loadStored, saveStored } from '../../ui/storage';
 import { KitError, type KitStep } from '../types';
@@ -69,7 +72,7 @@ export function MathView({ latex, display = true }: { latex: string; display?: b
   const render = useRenderer();
   const drawn = useMemo(() => (render ? render(latex, { displayMode: display }) : null), [render, latex, display]);
   if (drawn && drawn.ok) {
-    return <div className={styles.math} dangerouslySetInnerHTML={{ __html: drawn.html }} />;
+    return <ScrollMath as="div" className={styles.math} html={drawn.html} />;
   }
   return <code className={styles.mono}>{latex}</code>;
 }
@@ -228,6 +231,24 @@ export function InsertBar(props: {
       {table ? (
         <Button variant="quiet" onClick={() => done(insertIntoPage({ table }))}>
           {t('kitMath.ui.insertTable')}
+        </Button>
+      ) : null}
+      {answer ? (
+        <Button
+          variant="quiet"
+          onClick={(event) =>
+            void keepLive(event.currentTarget, {
+              summary: answer,
+              rows: (table?.rows ?? []).slice(0, 12).map((row) => ({
+                label: row[0] ?? '',
+                value: row.slice(1).join(' '),
+                unit: '',
+              })),
+              ...(latex ? { latex } : {}),
+            }).then((ok) => announce(t(ok ? 'kitMath.ui.liveInserted' : 'kitMath.ui.noPage')))
+          }
+        >
+          {t('kitMath.ui.insertLive')}
         </Button>
       ) : null}
     </div>

@@ -1,8 +1,13 @@
-//! Where the secrets live: Windows Credential Manager, as generic credentials named
-//! `OpenNote/<connector>/<account>`. This is the only place a token, a refresh token, or a pasted personal token
-//! is kept. They never go into the notes folder, the settings files, the connections file, a log, a crash report, or
-//! the feedback file. The same trait has a memory store for tests and for systems that have no credential manager
-//! yet, where a secret lasts until the app exits and the connection then reads as "Sign-in expired".
+//! Where the secrets live: the system's own credential store, under names like `OpenNote/<connector>/<account>`.
+//! On Windows that is Credential Manager (generic credentials), on a Mac the login Keychain (generic passwords of
+//! the service `OpenNote`), and on Linux the Secret Service over D-Bus (GNOME Keyring or KWallet). This is the only
+//! place a token, a refresh token, a pasted personal token, or a sync key is kept. They never go into the notes
+//! folder, the settings files, the connections file, a log, a crash report, or the feedback file.
+//!
+//! The same trait has a memory store for tests and for a Linux desktop with no Secret Service running, where a
+//! secret lasts until the app exits and the connection then reads as "Sign-in expired". On Linux the keyring is
+//! looked for when a secret is first needed, not at startup, and again while it is missing, so starting GNOME
+//! Keyring or KWallet takes effect without restarting OpenNote.
 
 use std::{
     collections::HashMap,
@@ -19,6 +24,16 @@ pub trait SecretStore: Send + Sync {
     fn get(&self, target: &str) -> Result<Option<Secret>, StoreError>;
     /// Removes the secret. A secret that isn't there is not an error.
     fn delete(&self, target: &str) -> Result<(), StoreError>;
+
+    /// Whether a secret is still there after the app restarts. Sync is set up only with a store that keeps them.
+    fn keeps_secrets(&self) -> bool {
+        false
+    }
+
+    /// Where the secrets are kept, written to start a sentence, for the messages that say a store failed.
+    fn place(&self) -> &'static str {
+        "This computer's credential store"
+    }
 }
 
 /// The credential name for a connector's account. Control characters are dropped and a long name is cut, so the
@@ -36,9 +51,119 @@ pub fn platform_store() -> Arc<dyn SecretStore> {
     {
         Arc::new(windows_store::WindowsStore)
     }
-    #[cfg(not(windows))]
+    #[cfg(target_os = "macos")]
+    {
+        Arc::new(keychain_store::KeychainStore)
+    }
+    #[cfg(target_os = "linux")]
+    {
+        static KEYRING: Probe = Probe::new(
+            secret_service_store::SecretServiceStore::available,
+            std::time::Duration::from_secs(2),
+        );
+        Arc::new(FallbackStore::new(
+            &KEYRING,
+            Arc::new(secret_service_store::SecretServiceStore),
+        ))
+    }
+    #[cfg(not(any(windows, target_os = "macos", target_os = "linux")))]
     {
         Arc::new(MemoryStore::default())
+    }
+}
+
+/// Whether a system store answers, shared by every store that asks it. A store once found is kept; a store not
+/// found is asked again after `retry`, so a keyring started later is used, without asking it on every call.
+#[cfg(any(target_os = "linux", test))]
+struct Probe {
+    check: fn() -> bool,
+    retry: std::time::Duration,
+    found: std::sync::atomic::AtomicBool,
+    missed_at: Mutex<Option<std::time::Instant>>,
+}
+
+#[cfg(any(target_os = "linux", test))]
+impl Probe {
+    const fn new(check: fn() -> bool, retry: std::time::Duration) -> Probe {
+        Probe {
+            check,
+            retry,
+            found: std::sync::atomic::AtomicBool::new(false),
+            missed_at: Mutex::new(None),
+        }
+    }
+
+    fn found(&self) -> bool {
+        use std::sync::atomic::Ordering;
+        if self.found.load(Ordering::Acquire) {
+            return true;
+        }
+        // One caller asks at a time; the others wait for its answer.
+        let mut missed_at = self.missed_at.lock().unwrap_or_else(PoisonError::into_inner);
+        if self.found.load(Ordering::Acquire) {
+            return true;
+        }
+        if missed_at.is_some_and(|at| at.elapsed() < self.retry) {
+            return false;
+        }
+        if (self.check)() {
+            self.found.store(true, Ordering::Release);
+            *missed_at = None;
+            true
+        } else {
+            *missed_at = Some(std::time::Instant::now());
+            false
+        }
+    }
+}
+
+/// The system store when its probe finds it, and memory until then.
+#[cfg(any(target_os = "linux", test))]
+struct FallbackStore {
+    probe: &'static Probe,
+    system: Arc<dyn SecretStore>,
+    memory: MemoryStore,
+}
+
+#[cfg(any(target_os = "linux", test))]
+impl FallbackStore {
+    fn new(probe: &'static Probe, system: Arc<dyn SecretStore>) -> FallbackStore {
+        FallbackStore {
+            probe,
+            system,
+            memory: MemoryStore::default(),
+        }
+    }
+
+    fn current(&self) -> &dyn SecretStore {
+        if self.probe.found() {
+            &*self.system
+        } else {
+            &self.memory
+        }
+    }
+}
+
+#[cfg(any(target_os = "linux", test))]
+impl SecretStore for FallbackStore {
+    fn put(&self, target: &str, secret: &Secret) -> Result<(), StoreError> {
+        self.current().put(target, secret)
+    }
+
+    fn get(&self, target: &str) -> Result<Option<Secret>, StoreError> {
+        self.current().get(target)
+    }
+
+    fn delete(&self, target: &str) -> Result<(), StoreError> {
+        self.current().delete(target)
+    }
+
+    fn keeps_secrets(&self) -> bool {
+        self.current().keeps_secrets()
+    }
+
+    fn place(&self) -> &'static str {
+        self.current().place()
     }
 }
 
@@ -226,6 +351,14 @@ mod windows_store {
             }
             Ok(())
         }
+
+        fn keeps_secrets(&self) -> bool {
+            true
+        }
+
+        fn place(&self) -> &'static str {
+            "Windows Credential Manager"
+        }
     }
 
     #[cfg(test)]
@@ -239,6 +372,144 @@ mod windows_store {
             assert!(parts.iter().all(|part| part.len() <= PART_BYTES));
             assert_eq!(parts.concat(), text);
             assert_eq!(split("short"), vec!["short"]);
+        }
+    }
+}
+
+#[cfg(target_os = "macos")]
+mod keychain_store {
+    //! The login Keychain. Each secret is a generic password of the service `OpenNote` whose account is the
+    //! target name. A Keychain item holds a long refresh token whole, so nothing is split.
+
+    use security_framework::base::Error;
+    use security_framework::passwords::{delete_generic_password, get_generic_password, set_generic_password};
+    use zeroize::Zeroizing;
+
+    use super::{Secret, SecretStore, StoreError};
+
+    const SERVICE: &str = "OpenNote";
+    /// `errSecItemNotFound`.
+    const NOT_FOUND: i32 = -25300;
+
+    pub struct KeychainStore;
+
+    fn missing(error: &Error) -> bool {
+        error.code() == NOT_FOUND
+    }
+
+    impl SecretStore for KeychainStore {
+        fn put(&self, target: &str, secret: &Secret) -> Result<(), StoreError> {
+            // An item that is already there is updated in place.
+            set_generic_password(SERVICE, target, secret.expose().as_bytes()).map_err(|_| StoreError)
+        }
+
+        fn get(&self, target: &str) -> Result<Option<Secret>, StoreError> {
+            match get_generic_password(SERVICE, target) {
+                Ok(bytes) => {
+                    let bytes = Zeroizing::new(bytes);
+                    let text = std::str::from_utf8(&bytes).map_err(|_| StoreError)?;
+                    Ok(Some(Secret::new(text)))
+                }
+                Err(error) if missing(&error) => Ok(None),
+                Err(_) => Err(StoreError),
+            }
+        }
+
+        fn delete(&self, target: &str) -> Result<(), StoreError> {
+            match delete_generic_password(SERVICE, target) {
+                Ok(()) => Ok(()),
+                Err(error) if missing(&error) => Ok(()),
+                Err(_) => Err(StoreError),
+            }
+        }
+
+        fn keeps_secrets(&self) -> bool {
+            true
+        }
+
+        fn place(&self) -> &'static str {
+            "The Keychain"
+        }
+    }
+}
+
+#[cfg(target_os = "linux")]
+mod secret_service_store {
+    //! The Secret Service, the freedesktop.org keyring that GNOME Keyring and KWallet provide over D-Bus. Each secret
+    //! is an item of the default collection with the attributes `application=OpenNote` and `target=<target>`. A
+    //! locked collection or item is unlocked first, which may show the desktop's own unlock prompt.
+
+    use std::collections::HashMap;
+
+    use secret_service::blocking::SecretService;
+    use secret_service::EncryptionType;
+    use zeroize::Zeroizing;
+
+    use super::{Secret, SecretStore, StoreError};
+
+    pub struct SecretServiceStore;
+
+    fn attributes(target: &str) -> HashMap<&str, &str> {
+        HashMap::from([("application", "OpenNote"), ("target", target)])
+    }
+
+    fn connect() -> Result<SecretService<'static>, StoreError> {
+        SecretService::connect(EncryptionType::Dh).map_err(|_| StoreError)
+    }
+
+    impl SecretServiceStore {
+        /// Whether a Secret Service answers on the session bus. A desktop without one keeps secrets in memory.
+        pub fn available() -> bool {
+            connect().is_ok_and(|service| service.get_default_collection().is_ok())
+        }
+    }
+
+    impl SecretStore for SecretServiceStore {
+        fn put(&self, target: &str, secret: &Secret) -> Result<(), StoreError> {
+            let service = connect()?;
+            let collection = service.get_default_collection().map_err(|_| StoreError)?;
+            collection.ensure_unlocked().map_err(|_| StoreError)?;
+            // `replace` swaps an item with the same attributes for the new one.
+            collection
+                .create_item(
+                    &format!("OpenNote: {target}"),
+                    attributes(target),
+                    secret.expose().as_bytes(),
+                    true,
+                    "text/plain",
+                )
+                .map(|_| ())
+                .map_err(|_| StoreError)
+        }
+
+        fn get(&self, target: &str) -> Result<Option<Secret>, StoreError> {
+            let service = connect()?;
+            let found = service.search_items(attributes(target)).map_err(|_| StoreError)?;
+            let Some(item) = found.unlocked.first().or(found.locked.first()) else {
+                return Ok(None);
+            };
+            item.ensure_unlocked().map_err(|_| StoreError)?;
+            let bytes = Zeroizing::new(item.get_secret().map_err(|_| StoreError)?);
+            let text = std::str::from_utf8(&bytes).map_err(|_| StoreError)?;
+            Ok(Some(Secret::new(text)))
+        }
+
+        fn delete(&self, target: &str) -> Result<(), StoreError> {
+            let service = connect()?;
+            let found = service.search_items(attributes(target)).map_err(|_| StoreError)?;
+            for item in found.unlocked.iter().chain(&found.locked) {
+                item.ensure_unlocked().map_err(|_| StoreError)?;
+                item.delete().map_err(|_| StoreError)?;
+            }
+            Ok(())
+        }
+
+        fn keeps_secrets(&self) -> bool {
+            true
+        }
+
+        fn place(&self) -> &'static str {
+            "The system keyring"
         }
     }
 }
@@ -284,6 +555,15 @@ mod tests {
     }
 
     #[test]
+    fn only_a_system_store_says_it_keeps_secrets() {
+        assert!(!MemoryStore::default().keeps_secrets());
+        // Windows and macOS always have their store. Linux has one only when a Secret Service is running.
+        if cfg!(any(windows, target_os = "macos")) {
+            assert!(platform_store().keeps_secrets());
+        }
+    }
+
+    #[test]
     fn two_connectors_keep_separate_secrets() {
         let store = MemoryStore::default();
         store.put("OpenNote/a/x", &Secret::new("one")).expect("stores");
@@ -298,6 +578,106 @@ mod tests {
     fn windows_credential_manager_round_trips() {
         let target = format!("OpenNote-test/{}/round-trip", std::process::id());
         let store = windows_store::WindowsStore;
+        round_trip(&store, &target);
+        store.delete(&target).expect("cleans up");
+    }
+
+    /// The real Keychain, under a name no connector uses, removed at the end.
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn the_keychain_round_trips() {
+        let target = format!("OpenNote-test/{}/round-trip", std::process::id());
+        let store = keychain_store::KeychainStore;
+        round_trip(&store, &target);
+        store.delete(&target).expect("cleans up");
+    }
+
+    /// A system store that lasts, for the fallback tests.
+    #[derive(Default)]
+    struct Lasting(MemoryStore);
+
+    impl SecretStore for Lasting {
+        fn put(&self, target: &str, secret: &Secret) -> Result<(), StoreError> {
+            self.0.put(target, secret)
+        }
+        fn get(&self, target: &str) -> Result<Option<Secret>, StoreError> {
+            self.0.get(target)
+        }
+        fn delete(&self, target: &str) -> Result<(), StoreError> {
+            self.0.delete(target)
+        }
+        fn keeps_secrets(&self) -> bool {
+            true
+        }
+    }
+
+    #[test]
+    fn a_keyring_started_after_the_app_is_used_and_then_asked_no_more() {
+        use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+        static RUNNING: AtomicBool = AtomicBool::new(false);
+        static ASKED: AtomicUsize = AtomicUsize::new(0);
+        fn check() -> bool {
+            ASKED.fetch_add(1, Ordering::SeqCst);
+            RUNNING.load(Ordering::SeqCst)
+        }
+        static PROBE: Probe = Probe::new(check, std::time::Duration::ZERO);
+        let system = Arc::new(Lasting::default());
+        // Made at startup, before anything asks: nothing is looked for yet.
+        let first = FallbackStore::new(&PROBE, system.clone());
+        let second = FallbackStore::new(&PROBE, system.clone());
+        assert_eq!(ASKED.load(Ordering::SeqCst), 0);
+
+        assert!(!first.keeps_secrets(), "no keyring yet");
+        first.put("OpenNote/test/early", &Secret::new("one")).expect("stores");
+        assert_eq!(system.get("OpenNote/test/early"), Ok(None), "kept in memory");
+
+        RUNNING.store(true, Ordering::SeqCst);
+        assert!(first.keeps_secrets(), "trying again finds the keyring started since");
+        second.put("OpenNote/test/later", &Secret::new("two")).expect("stores");
+        assert_eq!(system.get("OpenNote/test/later"), Ok(Some(Secret::new("two"))));
+        let asked = ASKED.load(Ordering::SeqCst);
+        assert!(second.keeps_secrets() && first.get("OpenNote/test/later").is_ok());
+        assert_eq!(
+            ASKED.load(Ordering::SeqCst),
+            asked,
+            "a keyring once found is not looked for again"
+        );
+    }
+
+    #[test]
+    fn a_missing_keyring_is_not_looked_for_on_every_call() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        static ASKED: AtomicUsize = AtomicUsize::new(0);
+        fn check() -> bool {
+            ASKED.fetch_add(1, Ordering::SeqCst);
+            false
+        }
+        static PROBE: Probe = Probe::new(check, std::time::Duration::from_secs(3600));
+        let store = FallbackStore::new(&PROBE, Arc::new(Lasting::default()));
+        for _ in 0..5 {
+            assert!(!store.keeps_secrets());
+        }
+        assert_eq!(ASKED.load(Ordering::SeqCst), 1);
+    }
+
+    /// The real Secret Service when the session has one. A build machine without a desktop has none, unless
+    /// `OPENNOTE_EXPECT_KEYRING` is set, as CI sets it after starting GNOME Keyring: then a skip is a failure.
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn the_secret_service_round_trips_when_there_is_one() {
+        if !secret_service_store::SecretServiceStore::available() {
+            assert!(
+                std::env::var_os("OPENNOTE_EXPECT_KEYRING").is_none(),
+                "a Secret Service was expected in this session"
+            );
+            assert!(
+                !platform_store().keeps_secrets(),
+                "without a Secret Service, secrets stay in memory"
+            );
+            return;
+        }
+        let target = format!("OpenNote-test/{}/round-trip", std::process::id());
+        let store = secret_service_store::SecretServiceStore;
         round_trip(&store, &target);
         store.delete(&target).expect("cleans up");
     }

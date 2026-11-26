@@ -356,3 +356,45 @@ describe('the title unit', () => {
     expect(withTitle(units, { ...page, title: '  ' }, cx).flow[0].html).toContain(ENGLISH_LABELS.untitled);
   });
 });
+
+describe('the style sheets of the print documents', () => {
+  it('carry the page style sheet and the paragraph border rule, in both documents', () => {
+    const border = { top: { style: 'single', width: 1, space: 2, color: 'brick' } };
+    const page = readExportPage({
+      id: 'P',
+      title: 'T',
+      styles: { 'u-key': { weight: 900 } },
+      blocks: [
+        {
+          id: 'b1',
+          order: 'a',
+          type: 'text',
+          data: { markdown: 'One', ids: ['A'], paras: { A: { border } }, styles: { A: 'u-key' } },
+        },
+      ],
+    });
+    const cx: BlockContext = {
+      page,
+      labels: ENGLISH_LABELS,
+      assetUrl: () => null,
+      strokes: strokesByBlock(page.strokes),
+    };
+    const units = pageUnits(readingOrder(page.blocks, page.view.readingOrder), cx);
+    const setup: DocumentSetup = { page, layout: pageLayout(page.view), units, cx, theme: lightTheme() };
+    const html = measureDocument(setup);
+    expect(html).toMatch(/.style-u-key{[^}]*font-weight:900/);
+    expect(html).toContain('[data-border]{border-block-start:var(--bd-top,0 none)');
+    expect(html).toContain('data-border=""');
+    // The unit takes the class of its named style, as the page does on screen.
+    expect(html).toContain('<p class="style-u-key"');
+    // A page with no border leaves the rule out.
+    const plain = readExportPage({
+      id: 'P',
+      title: 'T',
+      blocks: [{ id: 'b1', order: 'a', type: 'text', data: { markdown: 'One' } }],
+    });
+    const plainCx = { ...cx, page: plain };
+    const plainUnits = pageUnits(readingOrder(plain.blocks, plain.view.readingOrder), plainCx);
+    expect(measureDocument({ ...setup, page: plain, cx: plainCx, units: plainUnits })).not.toContain('[data-border]');
+  });
+});

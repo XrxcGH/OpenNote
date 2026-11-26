@@ -3,7 +3,6 @@
 // place before the block layer renders. Paste and drop data is read synchronously in the event, and the pipeline
 // loads on first use (and on idle), so the start-up and page chunks stay small. Copy runs synchronously too.
 import { commandContext } from '../../../commands/registry';
-import { serializeTextBlock } from '../../../editor/markdown';
 import type { ClipboardClient } from '../../../platform/types';
 import { DOMSerializer } from '@tiptap/pm/model';
 import { fileBlockRenderer } from '../blocks/fileBlock';
@@ -12,6 +11,7 @@ import type { MountedPage } from '../mount';
 import { blockRenderers } from '../registries';
 import { pageSelection, selectOnPage } from '../seams/selectionStore';
 import { writeBlocks } from '../paste/blocks';
+import { plainCopy } from '../paste/plainCopy';
 import type { PasteRequest } from '../paste/pipeline';
 import { shownMedia } from './shown';
 
@@ -57,7 +57,7 @@ function ownPaste(mounted: MountedPage, target: EventTarget | null): 'code' | 't
   return editor?.state.selection.$from.parent.type.name === 'codeBlock' ? 'code' : null;
 }
 
-/** Copies the editor's selection as HTML and Markdown, so plain text keeps its list markers. */
+/** Copies the editor's selection as HTML and as plain text, which keeps its list markers and drops the Markdown marks. */
 function copyText(mounted: MountedPage, data: DataTransfer): boolean {
   const editor = mounted.pool.active()?.editor;
   if (!editor || editor.state.selection.empty) return false;
@@ -67,7 +67,7 @@ function copyText(mounted: MountedPage, data: DataTransfer): boolean {
   const holder = document.createElement('div');
   holder.append(DOMSerializer.fromSchema(editor.schema).serializeFragment(slice.content));
   data.setData('text/html', holder.innerHTML);
-  data.setData('text/plain', serializeTextBlock(doc, mounted.cache));
+  data.setData('text/plain', plainCopy(doc));
   return true;
 }
 

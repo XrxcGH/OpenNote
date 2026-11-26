@@ -27,11 +27,17 @@ describe('objects from the keyboard', { skip: skipReason() }, () => {
     await makeBox(browser, 100, 300, 'Upper');
     await makeBox(browser, 100, 330, 'Lower');
     await browser.keys('Escape');
+    const lowerId = (await textBoxes(browser)).find((box) => box.text === 'Lower')!.block;
     const wrapper = await focused(browser);
-    assert.equal(wrapper.label, 'Lower', 'Escape focuses the box as an object');
+    assert.equal(wrapper.block, lowerId, 'Escape focuses the box as an object');
     for (let i = 0; i < 6; i += 1) await browser.keys('ArrowUp');
     await browser.waitUntil(async () => (await textBoxes(browser))[0]?.text === 'Lower', { timeout: 5_000 });
-    assert.deepEqual(await focused(browser), wrapper, 'focus stayed on the moved box');
+    // The box moved above the other, so its name follows its new place in the reading order.
+    assert.deepEqual(
+      await focused(browser),
+      { block: wrapper.block, label: 'Text box 1 of 2' },
+      'focus stayed on the moved box, which is now first',
+    );
     await browser.keys('Enter');
     await browser.keys(' first');
     await browser.waitUntil(async () => (await textBoxes(browser))[0]?.text === 'Lower first', { timeout: 5_000 });
@@ -41,6 +47,7 @@ describe('objects from the keyboard', { skip: skipReason() }, () => {
     const { browser } = session!;
     await browser.keys('Escape');
     await browser.keys('Tab');
-    assert.equal((await focused(browser)).label, 'Upper');
+    const upperId = (await textBoxes(browser)).find((box) => box.text === 'Upper')!.block;
+    assert.equal((await focused(browser)).block, upperId);
   });
 });

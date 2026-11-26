@@ -1,13 +1,14 @@
 // Crop mode (Phase 4 ARCHITECTURE.md section 12.4): the whole image shows dimmed with the crop rectangle bright and
 // 8 crop handles. Enter or a click outside keeps the crop as one batch: a patchBlock with data.crop, and a
 // moveBlock so the image keeps its scale. Escape cancels. Each handle moves by the arrow keys too, 1% a press.
+import './text';
 import type { Edit, Frame } from '../../../services/pages/types';
 import { t } from '../../../strings/t';
 import { announce } from '../../../ui';
 import type { ImageHandle } from '../blocks/imageBlock';
 import type { Crop, Handle } from './geometry';
 import { cropDrag, cropOf, frameForCrop, HANDLES, isWhole } from './geometry';
-import { arrowStep, trackDrag } from './drag';
+import { arrowStep, ownsItsDrag, trackDrag } from './drag';
 import styles from './images.module.css';
 
 /** The edits that change an image's crop and keep its scale, or none when nothing changed. */
@@ -30,6 +31,10 @@ export function cropEdits(handle: ImageHandle, next: Crop | null): Edit[] {
 export function applyCrop(handle: ImageHandle, next: Crop | null): Promise<boolean> {
   const edits = cropEdits(handle, next);
   if (edits.length === 0) return Promise.resolve(false);
+  for (const edit of edits) {
+    if (edit.edit === 'patchBlock') handle.showChange({ data: edit.data ?? {} });
+    if (edit.edit === 'moveBlock' && edit.frame) handle.showChange({ frame: edit.frame });
+  }
   return handle.ctx.sync.send({ edits }).then(
     () => true,
     () => false,
@@ -71,7 +76,11 @@ class CropSession {
     this.region.className = styles.cropWindow;
     this.region.setAttribute('role', 'group');
     this.region.setAttribute('aria-label', t('images.cropMode.label'));
-    this.bright = this.region.appendChild(picture.cloneNode() as HTMLImageElement);
+    // The bright picture is clipped to the window, but the handles, centered on its edge, are not: a clipped handle
+    // loses the half of its hit area outside the window, and its center falls on the clip edge (A1-A07-2).
+    const clip = this.region.appendChild(document.createElement('div'));
+    clip.className = styles.cropClip;
+    this.bright = clip.appendChild(picture.cloneNode() as HTMLImageElement);
     this.bright.alt = '';
     frame.append(this.region);
     const buttons = HANDLES.map((edge) => this.addHandle(edge));
@@ -82,7 +91,7 @@ class CropSession {
   }
 
   private addHandle(edge: Handle): HTMLButtonElement {
-    const button = this.region.appendChild(document.createElement('button'));
+    const button = ownsItsDrag(this.region.appendChild(document.createElement('button')));
     button.type = 'button';
     button.className = `${styles.handle} ${styles[edge]}`;
     button.setAttribute('aria-label', t('images.cropMode.handle', { edge: t(`images.edges.${edge}`) }));
