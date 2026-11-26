@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## Contents
 
 - [Unreleased](#unreleased)
+- [0.1.0-beta.12](#010-beta12---2026-11-26)
 - [0.1.0-beta.4](#010-beta4---2026-10-03)
 - [0.1.0-beta.3](#010-beta3---2026-10-03)
 - [0.1.0-beta.2](#010-beta2---2026-10-03)
@@ -14,7 +15,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
-The current build is beta 8. The block below lists Beta 9 to 12 work on the beta branch. The version files still say 0.1.0-beta.7. Betas 5 to 7 have no section of their own here; the wiki's development updates say what they added.
+Nothing yet.
+
+## 0.1.0-beta.12 - 2026-11-26
+
+This is the beta 12 build. The beta branch is promoted into `main` with it. The block below lists the work since beta 7, which is the last version the changelog had a number for. Betas 5 to 7 have no section of their own here; the wiki's development updates say what they added.
 
 ### Added
 
@@ -41,6 +46,11 @@ The current build is beta 8. The block below lists Beta 9 to 12 work on the beta
 - Beta 12 Word work: import reads theme colors, outline levels, and numbering links. Export embeds bundled fonts.
 - Block-level merge on sync, with a merger and a conflict view per block type.
 - ADRs 0056 to 0089 record these designs. Records 0056 to 0058, 0060, 0063, 0064, 0067, 0068, 0070, 0074, 0075, and 0079 to 0089 are Accepted. Record 0069 is Accepted, pending a hand test.
+
+### Fixed
+
+- Eleven walks of the real app by agents found and fixed about 190 bugs. They covered saving and recovery, with a notice and Retry when a page can't save. They covered ink, narrow layouts and large text, Excel and Word export, the code studio, and the math checker.
+- Flaky tests are fixed at their causes, and the layout audit checks every screen for overlap and clipping.
 
 ### Changed
 

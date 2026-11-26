@@ -20,9 +20,11 @@ OpenNote is an open-source note-taking app that combines your favorite writing, 
 
 ## Status
 
-OpenNote is in beta testing on Windows, with first builds for macOS and Linux. The current beta is beta 8. The version files still say 0.1.0-beta.7, and there is no public release yet.
+OpenNote is in beta testing on Windows, with first builds for macOS and Linux. The current build is 0.1.0-beta.12, and there is no public release yet.
 
-Phases 0 to 4 of the [development plan](docs/DEVELOPMENT.md#5-phases) merged into `main` first. Phases 5 to 14 were built on branch `beta` and merged into `main` on 2026-10-29 through [pull request #16](https://github.com/XrxcGH/OpenNote/pull/16). Work since then goes to `beta` first. Branch `beta` holds the newest build. The Beta 9 to 12 programs (Word-level text, Excel-level tables, and the Code studio) land on `beta` in batches. Recent fix batches from the hand-test walks:
+Phases 0 to 4 of the [development plan](docs/DEVELOPMENT.md#5-phases) merged into `main` first. Phases 5 to 14 were built on branch `beta`. The beta-testing branch has now been promoted into `main` as 0.1.0-beta.12, with the Beta 9 to 12 programs (Word-level text, Excel-level tables, and the Code studio). Work from here goes to `beta` first.
+
+Agents have walked the real app eleven times and fixed about 190 bugs. A walk shows that a feature starts and works the way an agent can drive it. It does not show how the app feels in a person's hands. Nobody has used most of it by hand yet. Still open are the owner-only items: the update signing key, code signing, and the hand test of pen and touch. Recent fix batches from the walks:
 
 - The eighth walk's fix batch fixes paragraph undo, new tables, and formula cell clicks. It adds JavaScript timers and `console.table`, and fixes silence trimming, the Pyodide pack, per-profile sync keys, and layout bugs.
 - The ninth walk's fix batch adds ink rotate and ink copy and paste, a way to put back a damaged page, a notice when a page can't save, and tabs that come back at start. It also fixes outside edits being overwritten, Code studio completion, Excel export of dates, and narrow layouts.
@@ -46,10 +48,10 @@ Beta 7 added ink fixes and smoother shapes, layout fixes, more course and subjec
 | 2                                         | [App shell and navigation](https://github.com/XrxcGH/OpenNote/pull/8)                    | Done and merged 2026-10-02                                                                                 |
 | 3                                         | [Document model and storage](https://github.com/XrxcGH/OpenNote/pull/9)                  | Done and merged 2026-10-03                                                                                 |
 | 4                                         | [Typed notes (text, Markdown, tables, code)](https://github.com/XrxcGH/OpenNote/pull/15) | Done and merged 2026-10-03                                                                                 |
-| [5 to 12](docs/DEVELOPMENT.md#5-phases)   | Ink, page views, export, tables, charts, search, audio, math, import, and intelligence   | Built, merged 2026-10-29 ([pull request #16](https://github.com/XrxcGH/OpenNote/pull/16)), in beta testing |
+| [5 to 12](docs/DEVELOPMENT.md#5-phases)   | Ink, page views, export, tables, charts, search, audio, math, import, and intelligence   | Built, promoted into `main` as 0.1.0-beta.12, walked by agents, not yet tested by hand |
 | [13 and 14](docs/DEVELOPMENT.md#5-phases) | Hardening and privacy; the release pipeline                                              | Built, waiting on the beta period, code signing, and the update key, which are the owner's                 |
 
-Agents built and unit-tested beta 8 and started the real app. Most of it has not been tested by hand yet. [docs/FEATURES.md](docs/FEATURES.md) marks every feature as built, built but untested by hand, not built yet, or needing the owner.
+Agents built and unit-tested beta 12 and walked the real app. Most of it has not been tested by hand yet. [docs/FEATURES.md](docs/FEATURES.md) marks every feature as built, built but untested by hand, not built yet, or needing the owner.
 
 ## What the app does
 

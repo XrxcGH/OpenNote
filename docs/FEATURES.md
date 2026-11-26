@@ -1,6 +1,6 @@
 # OpenNote feature specification
 
-This spec lists what OpenNote does, beyond the basics in [DEVELOPMENT.md](DEVELOPMENT.md). Each feature notes the phase that builds it, and a status that says where it stands in beta 8 (the version files still say 0.1.0-beta.7). The [feature list](FEATURE-LIST.md) groups everything by category, with every command and tool window the app registers.
+This spec lists what OpenNote does, beyond the basics in [DEVELOPMENT.md](DEVELOPMENT.md). Each feature notes the phase that builds it, and a status that says where it stands in beta 8 (the version files now say 0.1.0-beta.12). The [feature list](FEATURE-LIST.md) groups everything by category, with every command and tool window the app registers.
 
 ## Contents
 
