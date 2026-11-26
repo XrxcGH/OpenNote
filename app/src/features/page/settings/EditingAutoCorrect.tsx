@@ -78,32 +78,34 @@ export default function EditingAutoCorrect() {
         {t('editor.autocorrect.enabledHint')}
       </p>
       <h3>{t('editor.autocorrect.list')}</h3>
-      <table className={styles.list}>
-        <thead>
-          <tr>
-            <th scope="col">{t('editor.autocorrect.from')}</th>
-            <th scope="col">{t('editor.autocorrect.to')}</th>
-            <td />
-          </tr>
-        </thead>
-        <tbody>
-          {list.map((entry) => (
-            <tr key={entry.from}>
-              <td>{entry.from}</td>
-              <td>{entry.to}</td>
-              <td>
-                <Button
-                  variant="quiet"
-                  aria-label={t('editor.autocorrect.remove', { from: entry.from })}
-                  onClick={() => save(list.filter((other) => other.from !== entry.from))}
-                >
-                  {t('editor.autocorrect.removeShort')}
-                </Button>
-              </td>
+      <div className={styles.listScroll}>
+        <table className={styles.list}>
+          <thead>
+            <tr>
+              <th scope="col">{t('editor.autocorrect.from')}</th>
+              <th scope="col">{t('editor.autocorrect.to')}</th>
+              <td />
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {list.map((entry) => (
+              <tr key={entry.from}>
+                <td>{entry.from}</td>
+                <td>{entry.to}</td>
+                <td>
+                  <Button
+                    variant="quiet"
+                    aria-label={t('editor.autocorrect.remove', { from: entry.from })}
+                    onClick={() => save(list.filter((other) => other.from !== entry.from))}
+                  >
+                    {t('editor.autocorrect.removeShort')}
+                  </Button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
       {list.length === 0 ? <p className={styles.help}>{t('editor.autocorrect.empty')}</p> : null}
       <AddReplacement list={list} />
       {custom ? (

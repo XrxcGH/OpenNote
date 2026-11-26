@@ -250,6 +250,13 @@
     display: flex;
     align-items: center;
     gap: var(--space-6);
+    /* The window drops under the logo in a narrow column and shrinks to fit it (walk 11, R-VA-2). */
+    flex-wrap: wrap;
+  }
+
+  .mark > svg {
+    max-inline-size: 100%;
+    block-size: auto;
   }
 
   /* A block, so no text line under it pushes the mark above the window's middle. */
