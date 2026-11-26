@@ -141,6 +141,6 @@
     "sucrase": "3.35.1",
     "wasmoon": "1.16.0"
   },
-  "version": "0.1.0-beta.7",
+  "version": "0.1.0-beta.12",
   "license": "Apache-2.0"
 }
