@@ -145,7 +145,7 @@ Open it with the command "Open the code studio".
 | Command | What it does | Default keys |
 | --- | --- | --- |
 | Accept suggestion (not in the palette) | Accepts the whole suggestion shown in gray in the code editor. | Ctrl+Tab |
-| Show a suggestion (not in the palette) | Asks for a suggestion at the caret in the code editor. | Alt+\ |
+| Show a suggestion (not in the palette) | Asks for a suggestion at the caret in the code editor. | Alt+\\ |
 | Show completions (not in the palette) | Opens the list of completions at the caret in the code editor. | Ctrl+Space |
 | Accept the next word of the suggestion (not in the palette) | Accepts the next word of the suggestion. | Ctrl+Right |
 | Accept the next line of the suggestion (not in the palette) | Accepts the next line of the suggestion. |  |
@@ -224,7 +224,7 @@ Open it with the command "Open the code studio".
 | Smaller text | Makes the selected text smaller. | Ctrl+< |
 | Text color | Sets the color of the selected text. |  |
 | Text size | Sets the size of the selected text. |  |
-| Clear formatting | Removes the character formatting from the selected text. | Ctrl+\ |
+| Clear formatting | Removes the character formatting from the selected text. | Ctrl+\\ |
 | Clear all formatting | Removes all formatting from the selected text, including block styles. |  |
 | Link | Adds a link to the selected text, or edits it. | Ctrl+K |
 | Normal text | Turns the block into normal text. | Ctrl+Shift+N |
