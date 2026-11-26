@@ -181,7 +181,7 @@ describe('the registry', () => {
       expect(entry?.description, name).toMatch(/^[A-Z].*\.$/);
       for (const param of paramsOf(spec)) expect(entry?.params[param.name], `${name} ${param.name}`).toMatch(/\.$/);
       expect(spec.meta.signature.startsWith(`${name}(`), name).toBe(true);
-      expect(spec.meta.example, name).toMatch(new RegExp(`^=${name.replace(/\./g, '\\.')}\\(`));
+      expect(spec.meta.example, name).toMatch(new RegExp(`^=${name.replace(/[\\.]/g, '\\$&')}\\(`));
     }
   });
 

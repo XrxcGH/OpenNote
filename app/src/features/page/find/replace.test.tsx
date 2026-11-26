@@ -54,5 +54,5 @@ it('replaces bold cell with red cell in one step and changes only the color', as
   const markdown = page.markdown(TEXT);
   expect(markdown).toContain('data-color="brick"');
   expect(markdown).toContain('**');
-  expect(markdown.replace(/<[^>]+>|\*\*/g, '')).toBe('cell cell cell');
+  expect(markdown.replace(/<[^>]+>|\*\*/g, '').replace(/[<>]/g, '')).toBe('cell cell cell');
 });

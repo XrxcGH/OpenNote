@@ -124,7 +124,7 @@ export function commandsWithoutText(registry: Registry, features: string): strin
 
 /** A command's title, marked when the palette leaves it out. */
 const commandName = (c: Command) => (c.palette === false ? `${c.title} (not in the palette)` : c.title);
-const cell = (text: string) => text.replace(/\|/g, '\\|');
+const cell = (text: string) => text.replace(/\\/g, '\\\\').replace(/\|/g, '\\|');
 const anchor = (title: string) =>
   title
     .toLowerCase()

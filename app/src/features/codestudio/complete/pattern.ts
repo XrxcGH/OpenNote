@@ -32,7 +32,7 @@ const sure = (text: string | null, confidence = 0.9) => (text ? { text, confiden
 
 /** `import numpy as` gives ` np`; with the space already typed, `np`. */
 function alias(module: string, short: string): Idiom {
-  const pattern = new RegExp(`^\\s*import ${module.replace(/\./g, '\\.')} as( ?)$`);
+  const pattern = new RegExp(`^\\s*import ${module.replace(/[\\.]/g, '\\$&')} as( ?)$`);
   return ({ before }) => {
     const match = pattern.exec(before);
     return match ? sure(match[1] ? short : ` ${short}`) : null;

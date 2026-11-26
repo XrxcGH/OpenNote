@@ -26,7 +26,7 @@ export const GRAMMAR_LANGUAGES = Object.keys(LOADERS) as EditorLanguage[];
 export function cachedLoader(loaders: Partial<Record<EditorLanguage, () => Promise<Parser>>>): ParserLoader {
   const cache = new Map<EditorLanguage, Promise<Parser>>();
   return (language) => {
-    const load = loaders[language];
+    const load = Object.hasOwn(loaders, language) ? loaders[language] : undefined;
     if (!load) return null;
     let parser = cache.get(language);
     if (!parser) cache.set(language, (parser = load()));
