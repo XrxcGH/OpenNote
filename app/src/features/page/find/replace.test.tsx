@@ -9,6 +9,7 @@ import { cleanupPages, renderPage } from '../test/harness';
 import { FindBar } from './FindBar';
 import { textPageFixture } from '../test/fixtures';
 import { collectMatches, replaceMatches } from './search';
+import { markupText } from '../../../core/markupText';
 
 const TEXT = '01k6f0000000000000000t0001';
 
@@ -54,5 +55,5 @@ it('replaces bold cell with red cell in one step and changes only the color', as
   const markdown = page.markdown(TEXT);
   expect(markdown).toContain('data-color="brick"');
   expect(markdown).toContain('**');
-  expect(markdown.replace(/<[^>]+>|\*\*/g, '').replace(/[<>]/g, '')).toBe('cell cell cell');
+  expect(markupText(markdown).replaceAll('**', '')).toBe('cell cell cell');
 });

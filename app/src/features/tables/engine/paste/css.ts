@@ -62,7 +62,7 @@ function withoutComments(css: string): string {
 export function styleRules(html: string): Map<string, Declarations> {
   const text = new Map<string, string>();
   for (const block of styleBodies(html)) {
-    const body = withoutComments(block.replace(/<!--|--!?>/g, '').replace(/<!--|--!?>/g, ''));
+    const body = withoutComments(block.replace(/<!--|--!?>/g, ' '));
     let at = 0;
     for (;;) {
       const open = body.indexOf('{', at);
