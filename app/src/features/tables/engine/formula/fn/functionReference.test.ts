@@ -59,7 +59,7 @@ function render(): string {
   const byFamily = new Map<Family, string[]>();
   for (const spec of [...REGISTRY.values()].sort((a, b) => a.name.localeCompare(b.name))) {
     const rows = byFamily.get(spec.family) ?? [];
-    const cell = (s: string) => s.replace(/[|]/g, '\\|');
+    const cell = (s: string) => s.replace(/\\/g, '\\\\').replace(/[|]/g, '\\|');
     rows.push(`| \`${spec.name}\` | \`${cell(spec.meta.signature)}\` | ${cell(describe1(spec.name))} |`);
     byFamily.set(spec.family, rows);
   }

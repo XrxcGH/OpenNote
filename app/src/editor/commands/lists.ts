@@ -171,7 +171,7 @@ function redefine(kind: 'bulletList' | 'orderedList' | null, edit: (levels: Leve
 }
 
 /** A level pattern for the item's depth: `%` in a library entry stands for the level's own number. */
-const patternAt = (text: string, depth: number) => text.replace('%', `%${depth + 1}`);
+const patternAt = (text: string, depth: number) => text.replaceAll('%', `%${depth + 1}`);
 
 /** A look from the numbering library at the caret's level. */
 export function applyNumberLook(look: NumberLook): Command {

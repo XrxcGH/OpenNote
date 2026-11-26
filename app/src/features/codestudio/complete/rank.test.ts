@@ -13,7 +13,7 @@ const PARSERS = { python: pythonLanguage.parser, javascript: javascriptLanguage.
 /** The ranked labels at the end of `text` (or at `|`), parsed like the editor parses it. */
 function labels(language: keyof typeof PARSERS, source: string): string[] {
   const pos = source.includes('|') ? source.indexOf('|') : source.length;
-  const text = source.replace('|', '');
+  const text = source.replaceAll('|', '');
   const tree = PARSERS[language].parse(text);
   return rank(contextAt(language, text, pos), { tree }).map((item) => item.label);
 }
@@ -68,7 +68,7 @@ describe('the ranked list', () => {
 
   it('hides names from another function', () => {
     const text = 'def a(secret):\n    pass\ndef b(other):\n    return sec';
-    const found = rank(contextAt('python', text.replace('|', ''), text.length), {
+    const found = rank(contextAt('python', text.replaceAll('|', ''), text.length), {
       tree: pythonLanguage.parser.parse(text),
     });
     expect(found.find((item) => item.label === 'secret')?.source).toBe('words');

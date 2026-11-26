@@ -25,7 +25,25 @@ export const CHECK_MS = 150;
 const CHECK_LENGTH = 1_000_000;
 
 /** Only statements that change the schema run in the checked file. Changes to rows do not matter to a check. */
-const SCHEMA_STATEMENT = /^(?:\s|--[^\n]*|\/\*[\s\S]*?\*\/)*(?:create|alter|drop)\b/i;
+const SCHEMA_WORD = /^(?:create|alter|drop)\b/i;
+
+/** Skips leading blanks and comments, then reads the first word. */
+function isSchemaStatement(text: string): boolean {
+  let at = 0;
+  for (;;) {
+    while (at < text.length && /\s/.test(text[at])) at++;
+    if (text.startsWith('--', at)) {
+      const end = text.indexOf('\n', at);
+      if (end < 0) return false;
+      at = end + 1;
+    } else if (text.startsWith('/*', at)) {
+      const end = text.indexOf('*/', at + 2);
+      if (end < 0) return false;
+      at = end + 2;
+    } else break;
+  }
+  return SCHEMA_WORD.test(text.slice(at, at + 8));
+}
 
 /** The `.import` line's table, made as the run makes it. A failure there is the run's to report, not the check's. */
 function importQuietly(db: Db, files: readonly RunFile[], line: string): void {
@@ -64,7 +82,7 @@ export function checkSql(s3: Sqlite3Static, file: RunFile, files: readonly RunFi
     for (const setup of setupFiles(files, file.path)) quietly(s3, db, setup, files);
     walk(s3, db, file.text, {
       statement(stmt, _start, text) {
-        if (SCHEMA_STATEMENT.test(text) && s3.capi.sqlite3_column_count(stmt) === 0) s3.capi.sqlite3_step(stmt);
+        if (isSchemaStatement(text) && s3.capi.sqlite3_column_count(stmt) === 0) s3.capi.sqlite3_step(stmt);
       },
       directive: (line) => importQuietly(db, files, line),
       failure(failure) {
