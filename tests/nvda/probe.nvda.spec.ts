@@ -148,8 +148,7 @@ test.describe('probe', () => {
       await open(page, async () => {
         await page.evaluate(async () => {
           const hooks = (window as unknown as { __OPENNOTE_TEST__: Hooks }).__OPENNOTE_TEST__;
-          await hooks.codeEditorMount({ language: 'python', text: 'print(totl)
-' });
+          await hooks.codeEditorMount({ language: 'python', text: 'print(totl)\n' });
           hooks.codeEditorProblem(6, 4, "Undefined name 'totl'");
         });
       });
