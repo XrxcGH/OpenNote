@@ -41,8 +41,18 @@ async function openRunStudio(page: Page): Promise<void> {
   await page.goto(`${BASE_URL}/?fixture=smart`);
   await page.getByRole('tree', { name: 'Notebooks' }).getByRole('treeitem', { name: 'Lectures' }).click();
   await page.getByRole('tree', { name: 'Pages' }).getByRole('treeitem', { name: 'Membranes' }).click();
-  await page.getByRole('textbox', { name: 'Text' }).first().click();
-  await page.keyboard.press('Control+k');
+  const text = page.getByRole('textbox', { name: 'Text' }).first();
+  await text.click();
+  await expect(text).toHaveAttribute('contenteditable', 'true');
+  await page.keyboard.press('Control+End');
+  await page.keyboard.press('Enter');
+  // The palette is a lazy chunk and its key handler is installed late: press Ctrl+K until the box has focus, and
+  // only then type, so the text is not lost into the page.
+  const palette = page.locator('[data-scope="palette"]').getByRole('combobox').first();
+  await expect(async () => {
+    if (!(await palette.isVisible())) await page.keyboard.press('Control+k');
+    await expect(palette).toBeFocused({ timeout: 2000 });
+  }).toPass({ timeout: 30_000 });
   await page.keyboard.type('New code project');
   await page.getByRole('option', { name: 'New code project' }).first().click();
   const studio = page.getByRole('dialog', { name: 'Code studio' });
@@ -146,7 +156,8 @@ ${log}`,
   test('reads a row of the Problems panel', async () => {
     const log = await speak(openRunStudio, async (page) => {
       await page.getByRole('tab', { name: /Problems/ }).click();
-      await page.getByRole('tabpanel').getByRole('button').first().focus();
+      // The ribbon has tab panels of its own, so the row is found inside the studio.
+      await page.getByRole('dialog', { name: 'Code studio' }).getByRole('button', { name: /boom/ }).focus();
     });
     for (const phrase of PROBLEMS_PHRASES)
       expect(

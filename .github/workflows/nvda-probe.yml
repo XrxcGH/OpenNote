@@ -17,8 +17,11 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm install --no-save --no-package-lock @guidepup/guidepup@0.35.0
-      - run: npx --yes @guidepup/setup@0.29.1 setup --ci
+      - run: npm ci --prefix tests/nvda --ignore-scripts --omit=optional --no-audit --no-fund
+      - working-directory: tests/nvda
+        run: |
+          npx --no-install guidepup setup --ci
+          npx --no-install guidepup install nvda
       - name: Probe
         env:
           OPENNOTE_NVDA: '1'
