@@ -22,6 +22,17 @@ export function fromChange(change: Change): Command {
   };
 }
 
+/**
+ * Maps a position in the transaction's document as it is now through the steps added after this call. A change
+ * that reads positions from `tr.doc` partway through a transaction must not map them through the steps before it,
+ * which `tr.mapping` holds too. Turning a list item into a heading lifts it out of the list first. Mapping its
+ * position through the lift again moved it twice, past the end of the note.
+ */
+export function mapFromHere(tr: Transaction): (pos: number, assoc?: number) => number {
+  const start = tr.mapping.maps.length;
+  return (pos, assoc) => tr.mapping.slice(start).map(pos, assoc);
+}
+
 /** A change from a ProseMirror command, run on the transaction's current document and selection. */
 export function viaCommand(command: Command): Change {
   return (tr) => {

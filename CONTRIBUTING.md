@@ -55,6 +55,8 @@ The first start compiles the Rust dependencies, which takes several minutes. Lat
 
 Also run `npm run setup-hooks` once, so CHECKS runs before each commit.
 
+Every `npm install` and `npm ci` ends with `app/scripts/patch-dependencies.ts`, which corrects a bug in a dependency (the file says which). Don't install with `--ignore-scripts`. If a new version of the dependency changes the patched text, the install stops there, so the patch gets a fresh look.
+
 Audio recording encodes with libopus, which the `opus` crate builds from source with CMake. The Visual Studio C++ tools include CMake, but it may not be on your `PATH`. The encoder sits behind the `opus` feature of `opennote-media`, so you need CMake only to test it with `cargo test -p opennote-media --features opus`. Tests without the feature use a stand-in encoder.
 
 ## npm scripts

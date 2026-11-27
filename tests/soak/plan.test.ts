@@ -71,6 +71,15 @@ describe('the soak plan', () => {
     assert.deepEqual(stepAt(87, 37_502), { id: 'enter' });
   });
 
+  it('finds the action a failed night stopped at: seed 91 makes a list at 8266, after an undo', () => {
+    // Nightly run 45994565206 ran 8267 actions. The undo gave the caret back by number, and the number pointed at
+    // the end of a list, after its last item, not into text. Two of the list's Enters there threw "Cannot join
+    // bulletList onto paragraph". A caret placed by number now lands in text (app/src/editor/extensions/
+    // textSelection.ts), and app/src/editor/commands/blockFuzz.test.ts holds that for every key and command.
+    assert.deepEqual(stepAt(91, 8_265), { id: 'undo', times: 3 });
+    assert.deepEqual(stepAt(91, 8_266), { id: 'list', words: 'a a dog jumps jumps' });
+  });
+
   it('draws only whole choices', () => {
     const random = seeded(9);
     for (let i = 0; i < 2000; i += 1) {
