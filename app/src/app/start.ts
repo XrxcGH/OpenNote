@@ -4,6 +4,7 @@
 import { hasInjectedBoot, readBoot, readDevOptions } from '../boot/read';
 import { installAppMenu } from '../commands/appMenu';
 import { installDispatcher } from '../commands/dispatcher';
+import { installKeySelection } from '../editor/keySelection';
 import { configureCommands } from '../commands/registry';
 import '../features';
 import { installDiagnostics, offerSafeStart } from '../features/diagnostics';
@@ -56,6 +57,8 @@ export function installApp(
   configureCommands({ platform, notes });
   const stops = [
     initTheme(platform, { keepInStorage: options.keepThemeInStorage }),
+    // Before the dispatcher: a shortcut and the editor's own keys act on the selection the browser shows.
+    installKeySelection(),
     installDispatcher(),
     installLayerEscape(),
     initLayout(),
