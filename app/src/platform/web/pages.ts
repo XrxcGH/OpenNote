@@ -27,9 +27,7 @@ export function createWebPages(fixture: string | null = fixtureFromAddress()): M
   registerTestHook('pagesHeld', (page?: string) => service.held(page ?? last ?? ''));
   // The service keeps every saved version in memory, where the core keeps them on disk. The soak deletes them before
   // it reads the heap, so its memory line is the app's, not the stand-in disk's.
-  registerTestHook('pagesDeleteHistory', () =>
-    service.admin?.deleteHistory('', { kind: 'notebook', id: '' }, false),
-  );
+  registerTestHook('pagesDeleteHistory', () => service.admin?.deleteHistory('', { kind: 'notebook', id: '' }, false));
   return {
     ...service,
     open(pageId, options) {
