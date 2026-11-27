@@ -195,9 +195,6 @@ test.describe('probe', () => {
         log(`text after accept: ${JSON.stringify(await text())}`);
       }
     } finally {
-        await ctx.close();
-      }
-    } finally {
       await nvda.stop().catch(() => undefined);
       await browser.close();
     }
