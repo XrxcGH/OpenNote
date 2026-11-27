@@ -1,0 +1,29 @@
+name: nvda-probe
+on:
+  push:
+    branches: [nm-nvda]
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm install --no-save --no-package-lock @guidepup/guidepup@0.35.0
+      - run: npx --yes @guidepup/setup@0.29.1 setup --ci
+      - name: Probe
+        env:
+          OPENNOTE_NVDA: '1'
+        run: npm run app:build:test && npx playwright test --config tests/nvda/playwright.config.ts probe.nvda.spec.ts
+      - name: Show
+        if: always()
+        shell: bash
+        run: cat tests/nvda/results/probe.txt || true
