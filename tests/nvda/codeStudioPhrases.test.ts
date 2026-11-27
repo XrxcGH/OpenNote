@@ -21,6 +21,8 @@ test('the NVDA suggestion phrases match the announcement strings', () => {
   const [suggested, inserted] = CODE_EDITOR_PHRASES;
   assert.match('Suggestion: nt(total). Ctrl+Tab to accept.', suggested!);
   assert.match('Inserted: nt(total)', inserted!);
+  // The nightly run of 2026-11-27 heard the chord's plus as a word.
+  assert.match('Suggestion: nt(total). Ctrl plus Tab to accept.', suggested!);
 });
 
 // The console and Problems scripts expect what these strings make, so a reworded string fails here first.
@@ -30,6 +32,8 @@ test('the NVDA console and Problems phrases match the studio strings', () => {
   assert.ok(strings.includes("where: 'Line {line}, column {column}'"));
   const link = 'Open {file} at line {line}'.replace('{file}', 'main.py').replace('{line}', '3');
   for (const phrase of CONSOLE_PHRASES) assert.match(link, phrase);
+  // NVDA says the dot of a file name as a word, as the nightly run of 2026-11-27 recorded.
+  for (const phrase of CONSOLE_PHRASES) assert.match('Open main dot py at line 3, button, focused', phrase);
   const row = 'Error boom Line {line}, column {column} · ValueError'.replace('{line}', '3').replace('{column}', '1');
   for (const phrase of PROBLEMS_PHRASES) assert.match(row, phrase);
 });
