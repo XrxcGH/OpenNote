@@ -38,6 +38,23 @@ function lineBreak(editor: Editor): boolean {
   return true;
 }
 
+/**
+ * Enter over a selection that spans text blocks deletes the selection first. It then returns false, so the Enter
+ * keys that follow act on the caret the deletion leaves. Those keys pick the split from the selection's start before
+ * they delete it. A selection can hold a whole list item, and the deletion takes the item. The start then points
+ * between list items, not into a text block. Tiptap's splitBlock split the list there with a paragraph after it, and
+ * threw "Cannot join bulletList onto paragraph" (nightly soak, seed 87).
+ */
+export function deleteBeforeEnter(editor: Editor): boolean {
+  const { state, view } = editor;
+  const { selection } = state;
+  if (view.composing || !(selection instanceof TextSelection) || selection.$from.sameParent(selection.$to)) {
+    return false;
+  }
+  view.dispatch(state.tr.deleteSelection().scrollIntoView());
+  return false;
+}
+
 function pageHistory(editor: Editor, id: 'page.undo' | 'page.redo'): boolean {
   if (editor.view.composing) return false;
   void executeCommand(id, undefined, 'keyboard');
@@ -65,6 +82,14 @@ export function keysExtensions(host: EditorHost): Extensions {
           'Mod-y': () => pageHistory(this.editor, 'page.redo'),
           'Mod-Shift-z': () => pageHistory(this.editor, 'page.redo'),
         };
+      },
+    }),
+    Extension.create({
+      name: 'opennoteEnterOverBlocks',
+      // Ahead of every other Enter key. Code keys are at 1200, the slash menu at 1100, and the list keys at 100.
+      priority: 1300,
+      addKeyboardShortcuts() {
+        return { Enter: () => deleteBeforeEnter(this.editor) };
       },
     }),
   ];
