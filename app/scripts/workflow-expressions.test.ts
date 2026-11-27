@@ -2,7 +2,7 @@
 // GitHub Actions expressions have no arithmetic: `${{ matrix.shard * 50000 }}` is a syntax error that makes the whole
 // workflow file invalid. GitHub then starts a failed run with no jobs on every push, and a schedule on the default
 // branch would not run at all. This reads every workflow file and fails on an operator that expressions lack.
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -43,5 +43,45 @@ describe('nightly typing gate', () => {
     expect(job).toContain("OPENNOTE_TYPING_GATE: '1'");
     expect(job).toContain('npm run perf:typing');
     expect(text).toMatch(/needs: \[[^\]]*perf-typing-gate/);
+  });
+});
+
+describe('nightly E2E specs', () => {
+  const E2E = join(import.meta.dirname, '..', '..', 'tests', 'e2e');
+
+  /** Every spec file under tests/e2e, as a path from it with forward slashes. */
+  function specs(dir = E2E, base = ''): string[] {
+    return readdirSync(dir, { withFileTypes: true }).flatMap((entry) =>
+      entry.isDirectory()
+        ? specs(join(dir, entry.name), `${base}${entry.name}/`)
+        : entry.name.endsWith('.spec.ts')
+          ? [`${base}${entry.name}`]
+          : [],
+    );
+  }
+
+  const run = () => {
+    const text = readFileSync(join(DIR, 'nightly.yml'), 'utf8');
+    return text.slice(text.indexOf('  e2e-full:'), text.indexOf('  soak:'));
+  };
+
+  it('runs with node --test only the specs that drive the real app', () => {
+    // The loop runs each spec with node --test. A web-build spec (Playwright) cannot load there: the nightly on main
+    // failed with "Cannot find module .../helpers". Those folders have a playwright.config.ts, and the loop skips
+    // them.
+    expect(run()).toContain('playwright.config.ts');
+    const realApp = specs().filter(
+      (spec) => !existsSync(join(E2E, ...spec.split('/').slice(0, -1), 'playwright.config.ts')),
+    );
+    expect(realApp.length).toBeGreaterThan(20);
+    for (const spec of realApp) {
+      // What the loop runs imports the harness. A spec that does not is a web-build spec in a folder with no config.
+      expect(readFileSync(join(E2E, ...spec.split('/')), 'utf8'), spec).toMatch(/harness\.ts'/);
+    }
+  });
+
+  it('keeps the web-build specs in a CI job', () => {
+    const ci = readFileSync(join(DIR, 'ci.yml'), 'utf8');
+    expect(ci).toContain('npm run test:e2e:text');
   });
 });

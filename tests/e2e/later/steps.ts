@@ -5,6 +5,7 @@
 
 import { Key } from 'webdriverio';
 import type { Browser } from '../harness.ts';
+import { paletteOption } from '../locators.ts';
 
 /** Clicks the row of a tree whose label reads `name`, once it shows. */
 export async function clickRow(browser: Browser, tree: string, name: string): Promise<void> {
@@ -48,7 +49,7 @@ export async function runCommand(browser: Browser, search: string, title: string
   const box = browser.$('[role="combobox"]');
   await box.waitForExist({ timeout: 5_000 });
   await box.setValue(search);
-  const option = browser.$(`//*[@role="option"][contains(normalize-space(.), ${JSON.stringify(title)})]`);
+  const option = browser.$(paletteOption(title));
   await option.waitForExist({ timeout: 5_000, timeoutMsg: `The palette never offered "${title}".` });
   await option.click();
 }

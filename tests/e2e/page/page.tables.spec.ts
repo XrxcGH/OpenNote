@@ -1,6 +1,7 @@
-// Tables in the real app (Phase 4 PLAN.md section 10.5). Insert a table from the palette, type its header cells
-// with Tab between them, and add a row with Ctrl+Enter. The table is a real <table>, named by its header cells,
-// and it survives a restart. It skips where the WebDriver tools aren't installed, like the smoke specs.
+// Tables in the real app (Phase 4 PLAN.md section 10.5). Insert a table from the palette. Type its header cells
+// with Tab between them. Add a row with Ctrl+Enter, once to commit the cell and once more to add the row. The
+// table is a real <table>, named by its header cells, and it survives a restart. It skips where the WebDriver tools
+// aren't installed, like the smoke specs.
 
 import assert from 'node:assert/strict';
 import { mkdtempSync } from 'node:fs';
@@ -9,6 +10,7 @@ import { join } from 'node:path';
 import { after, describe, it } from 'node:test';
 import { launchApp, skipReason, removeFolder } from '../harness.ts';
 import type { AppSession, Browser } from '../harness.ts';
+import { runCommand } from '../later/steps.ts';
 
 /** Clicks the row of a tree whose label reads `name`, once it shows. */
 async function clickRow(browser: Browser, tree: string, name: string): Promise<void> {
@@ -34,15 +36,6 @@ async function clickRow(browser: Browser, tree: string, name: string): Promise<v
 async function openMitosis(browser: Browser): Promise<void> {
   await clickRow(browser, 'Notebooks', 'Lectures');
   await clickRow(browser, 'Pages', 'Mitosis');
-}
-
-/** Runs a command by its title from the command palette. */
-async function runCommand(browser: Browser, title: string): Promise<void> {
-  await browser.keys(['Control', 'k']);
-  const input = browser.$('[role="combobox"]');
-  await input.waitForExist({ timeout: 5_000 });
-  await input.setValue(title);
-  await browser.keys('Enter');
 }
 
 /** The table's name and its rows' cell text. */
@@ -73,11 +66,22 @@ describe('tables in a page', { skip: skipReason() }, () => {
     const box = browser.$('[role="textbox"][aria-label="Page text"]');
     await box.waitForExist({ timeout: 20_000 });
     await box.click();
-    await runCommand(browser, 'Insert table');
+    await runCommand(browser, 'Insert table', 'Insert table');
     await browser.waitUntil(async () => (await readTable(browser)) !== null, { timeout: 10_000 });
     await browser.keys(['S', 't', 'a', 'g', 'e', 'Tab', 'W', 'h', 'e', 'r', 'e']);
+    // A table has spreadsheet keys (ADR 0063). In a cell that is being edited, Ctrl+Enter commits the cell, and stays
+    // on it, in Grid mode. A new row needs a second press. With one cell selected, Ctrl+Enter goes on to Add row
+    // below, as the table's context menu says.
     await browser.keys(['Control', 'Enter']);
-    await browser.waitUntil(async () => (await readTable(browser))?.rows.length === 4, { timeout: 5_000 });
+    await browser
+      .$('[data-block-id] table [aria-selected="true"]')
+      .waitForExist({ timeout: 5_000, timeoutMsg: 'Ctrl+Enter did not commit the cell and select it.' });
+    assert.equal((await readTable(browser))?.rows.length, 3, 'the first Ctrl+Enter adds no row');
+    await browser.keys(['Control', 'Enter']);
+    await browser.waitUntil(async () => (await readTable(browser))?.rows.length === 4, {
+      timeout: 5_000,
+      timeoutMsg: 'The second Ctrl+Enter did not add a row.',
+    });
     const table = await readTable(browser);
     assert.equal(table?.name, 'Table: Stage, Where');
     assert.deepEqual(table?.rows[0].slice(0, 2), ['Stage', 'Where']);
