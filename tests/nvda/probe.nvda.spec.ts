@@ -125,26 +125,49 @@ test.describe('probe', () => {
           [id, text],
         );
       };
-      // 1. A plain live region changed by script, before any real input.
-      await live('p1', 'Probe live region one');
-      await watch('B1 plain live region by script, no real input yet', 6000, true);
-      // 2. Make NVDA look at its focus (a real key), then the same again.
-      await nvda.perform(guidepup.NVDAKeyCodeCommands.reportCurrentFocus);
-      await watch('B2 after report focus', 6000, true);
-      await live('p2', 'Probe live region two');
-      await watch('B3 plain live region by script after report focus', 6000, true);
-      // 3. The app's suggestion, typed by CDP, after report focus.
+      log(`config: ${JSON.stringify((nvda as unknown as { getConfig(): unknown }).getConfig())}`);
       await page.locator('[data-testid="code-editor-host"] .cm-content').click();
-      await page.keyboard.type('pri');
-      await watch('C suggestion, typed with CDP keys', 8000, true);
-      await page.keyboard.press('Control+Tab');
-      await watch('D accepted with CDP Ctrl+Tab', 6000, true);
-      // 4. The same with real keys, and a long wait.
+      // Plain live regions by script after different kinds of real input.
+      await live('q1', 'Probe one after Tab and Shift+Tab');
+      await nvda.press('Tab');
+      await nvda.press('Shift+Tab');
+      await live('q2', 'Probe two after Tab and Shift+Tab');
+      await watch('V1 after real Tab, Shift+Tab', 6000, true);
+      await nvda.type('x');
+      await live('q3', 'Probe three right after an OS key');
+      await watch('V2 live region 0.8 s after an OS typed key', 6000, true);
+      await nvda.press('ArrowLeft');
+      await page.evaluate(() => {
+        document.getElementById('q4')?.remove();
+        const el = document.createElement('div');
+        el.setAttribute('aria-live', 'assertive');
+        el.id = 'q4';
+        document.body.append(el);
+        setTimeout(() => (el.textContent = 'Probe four assertive after ArrowLeft'), 800);
+      });
+      await watch('V3 assertive live region after an OS key', 6000, true);
+      await page.evaluate(() => {
+        document.getElementById('q5')?.remove();
+        const el = document.createElement('div');
+        el.setAttribute('role', 'alert');
+        el.id = 'q5';
+        document.body.append(el);
+        setTimeout(() => (el.textContent = 'Probe five role alert'), 800);
+      });
+      await watch('V4 role alert after the same', 6000, true);
+      await page.evaluate(() => {
+        const el = document.createElement('div');
+        el.setAttribute('role', 'status');
+        el.id = 'q6';
+        el.textContent = 'Probe six status present at insert';
+        document.body.append(el);
+      });
+      await watch('V5 status element inserted with text', 6000, true);
+      // The app, fresh editor, OS keys only.
       await open(page, suggest);
       await nvda.clearSpokenPhraseLog();
       await nvda.type('pri');
-      await watch('E suggestion, typed with OS keys', 9000, true);
-      // 5. The squiggle, with CDP F8 after real input, then real F8.
+      await watch('E suggestion typed with OS keys', 9000, true);
       await open(page, async () => {
         await page.evaluate(async () => {
           const hooks = (window as unknown as { __OPENNOTE_TEST__: Hooks }).__OPENNOTE_TEST__;
@@ -153,10 +176,8 @@ test.describe('probe', () => {
         });
       });
       await nvda.clearSpokenPhraseLog();
-      await page.keyboard.press('F8');
-      await watch('G F8 with CDP key', 6000, true);
       await nvda.press('F8');
-      await watch('H F8 with OS key', 6000, true);
+      await watch('H fresh editor, OS F8 only', 6000, true);
     } finally {
       await nvda.stop().catch(() => undefined);
       await browser.close();
