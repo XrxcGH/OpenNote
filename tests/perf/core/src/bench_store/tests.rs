@@ -87,15 +87,15 @@ fn save_p95(save_ms: u64, stalled: usize) -> Duration {
 
 #[test]
 fn one_disk_stall_cannot_set_the_save_percentile() {
-    // A hosted runner's disk stalled for 20 saves in a row at most, and a nightly with 100 saves failed when 6
-    // of them took 60 ms. The save count must outlast such a stall, so the 95th percentile stays the save's own.
+    // A hosted runner's disk stalled for 20 saves in a row at most. A nightly with 100 saves failed when 6 of them
+    // took 60 ms. The save count must outlast such a stall, so the 95th percentile stays the save's own.
     assert_eq!(save_p95(4, 20), Duration::from_millis(4));
     assert!(ms(save_p95(4, 20)) < SAVE_BUDGET_MS);
 }
 
 #[test]
 fn a_slower_save_still_moves_the_save_percentile() {
-    // A save that is twice as slow doubles the 95th percentile, stall or no stall, so the budget still catches it.
+    // A save that is twice as slow doubles the 95th percentile, even with a stall. So the budget still catches it.
     assert_eq!(save_p95(8, 20), save_p95(4, 20) * 2);
     assert_eq!(save_p95(30, 0), Duration::from_millis(30));
     assert!(ms(save_p95(30, 20)) > SAVE_BUDGET_MS);
