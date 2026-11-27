@@ -164,43 +164,37 @@ test.describe('probe', () => {
    page live changes: ${JSON.stringify(seen)}
    NVDA: ${events.join(' ')}`);
       };
-      const typeThenDismiss = async (pg: Page) => {
-        await pg.locator('[data-testid="code-editor-host"] .cm-content').click();
-        await pg.keyboard.type('pri');
-        await pg.waitForTimeout(500);
-        await pg.keyboard.press('Escape');
-        await pg.waitForTimeout(2600);
-      };
-      await open(page, suggest);
-      await typeThenDismiss(page);
-      await stamped(page, 'S1 OS Alt+Backslash requests the suggestion', async () => {
-        await nvda.press('Alt+Backslash');
-      });
-      await stamped(page, 'S2 OS Ctrl+Right accepts a word', async () => {
-        await nvda.press('Control+ArrowRight');
-      });
-      log(`S2 text: ${await page.evaluate(() => (window as unknown as { __OPENNOTE_TEST__: Hooks }).__OPENNOTE_TEST__.codeEditorText())}`);
-      // The app window: no tab strip, so Ctrl+Tab may reach the page.
-      const dir = mkdtempSync(join(tmpdir(), 'nvda-app-'));
-      const ctx = await chromium.launchPersistentContext(dir, {
-        channel: browserChannel(),
-        headless: false,
-        viewport: null,
-        args: ['--force-renderer-accessibility', `--app=${BASE_URL}/?fixture=short`],
-      });
-      try {
-        const app = ctx.pages()[0] ?? (await ctx.waitForEvent('page'));
-        log(`app window pages: ${ctx.pages().length}; fg=${foreground()}`);
-        await open(app, suggest);
-        await typeThenDismiss(app);
-        await stamped(app, 'T1 app window: OS Alt+Backslash', async () => {
-          await nvda.press('Alt+Backslash');
+      const text = () =>
+        page.evaluate(() =>
+          (window as unknown as { __OPENNOTE_TEST__: Hooks }).__OPENNOTE_TEST__.codeEditorText(),
+        );
+      for (const then of ['nt(total)', 'ntotal']) {
+        await open(page, () =>
+          page.evaluate(
+            (t) =>
+              (window as unknown as { __OPENNOTE_TEST__: Hooks }).__OPENNOTE_TEST__.codeEditorMount({
+                language: 'python',
+                text: '',
+                suggest: { when: 'pri', then: t },
+              }),
+            then,
+          ),
+        );
+        await page.keyboard.type('pri');
+        await page.waitForTimeout(3000);
+        await stamped(page, `R1 ${then}: OS ArrowLeft`, async () => {
+          await nvda.press('ArrowLeft');
+        }, 3000);
+        await page.waitForTimeout(2600);
+        await stamped(page, `R2 ${then}: OS ArrowRight shows it again`, async () => {
+          await nvda.press('ArrowRight');
         });
-        await stamped(app, 'T2 app window: OS Ctrl+Tab accepts', async () => {
-          await nvda.press('Control+Tab');
+        await stamped(page, `R3 ${then}: OS Ctrl+Right accepts`, async () => {
+          await nvda.press('Control+ArrowRight');
         });
-        log(`T2 text: ${await app.evaluate(() => (window as unknown as { __OPENNOTE_TEST__: Hooks }).__OPENNOTE_TEST__.codeEditorText())}`);
-      } finally {
+        log(`text after accept: ${JSON.stringify(await text())}`);
+      }
+    } finally {
         await ctx.close();
       }
     } finally {
