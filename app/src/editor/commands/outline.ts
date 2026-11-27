@@ -7,7 +7,7 @@
 // Each returns what happened, for the announcement.
 import type { Fragment, Node as PMNode } from '@tiptap/pm/model';
 import { liftListItem, sinkListItem } from '@tiptap/pm/schema-list';
-import { TextSelection } from '@tiptap/pm/state';
+import { AllSelection, NodeSelection, Selection, TextSelection } from '@tiptap/pm/state';
 import type { EditorState, Transaction } from '@tiptap/pm/state';
 import { ancestorDepth } from './command';
 import { itemDepth, sectionEnd } from './fold';
@@ -78,6 +78,17 @@ function siblingUnit(state: EditorState, unit: Unit, direction: -1 | 1): { from:
   return null;
 }
 
+/** The selection after a move: everything stays everything, a selected block stays selected, text stays in text. */
+function movedSelection(selection: Selection, doc: PMNode, moved: (pos: number) => number): Selection {
+  if (selection instanceof AllSelection) return new AllSelection(doc);
+  if (selection instanceof NodeSelection) {
+    const pos = moved(selection.from);
+    const node = doc.nodeAt(pos);
+    return node && NodeSelection.isSelectable(node) ? NodeSelection.create(doc, pos) : Selection.near(doc.resolve(pos));
+  }
+  return TextSelection.between(doc.resolve(moved(selection.anchor)), doc.resolve(moved(selection.head)));
+}
+
 /** Swaps the current unit with its neighbor, keeping the selection where it was in the text. */
 export function moveItem(direction: 'up' | 'down') {
   return (state: EditorState, dispatch?: Dispatch): OutlineResult => {
@@ -90,9 +101,16 @@ export function moveItem(direction: 'up' | 'down') {
       const [from, to] = direction === 'up' ? [sibling.from, unit.to] : [unit.from, sibling.to];
       const swapped = direction === 'up' ? own.append(other) : other.append(own);
       const tr = state.tr.replaceWith(from, to, swapped as Fragment);
-      const shift = direction === 'up' ? sibling.from - unit.from : sibling.to - unit.to;
-      const { anchor, head } = state.selection;
-      tr.setSelection(TextSelection.create(tr.doc, anchor + shift, head + shift));
+      // A position in the unit moves by the sibling's size, and one in the sibling by the unit's. The selection can
+      // reach past both, or be the whole note, so each end moves by where it is, not by one shift for both.
+      const ownSize = unit.to - unit.from;
+      const otherSize = sibling.to - sibling.from;
+      const moved = (pos: number) => {
+        if (pos >= unit.from && pos < unit.to) return pos + (direction === 'up' ? -otherSize : otherSize);
+        if (pos >= sibling.from && pos < sibling.to) return pos + (direction === 'up' ? ownSize : -ownSize);
+        return pos;
+      };
+      tr.setSelection(movedSelection(state.selection, tr.doc, moved));
       dispatch(tr.scrollIntoView());
     }
     return { kind: 'moved', direction };

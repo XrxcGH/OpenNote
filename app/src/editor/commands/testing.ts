@@ -115,6 +115,39 @@ export function typeInto(editor: Editor, text: string): void {
   }
 }
 
+/** Presses a key by its ProseMirror name, such as "Mod-Shift-Enter", through the editor's key handlers. */
+export function pressKey(editor: Editor, name: string): void {
+  const parts = name.split('-');
+  let key = parts.pop() || '-';
+  const has = (modifier: string) => parts.includes(modifier);
+  if (key.length === 1 && has('Shift')) key = key.toUpperCase();
+  const event = new KeyboardEvent('keydown', {
+    key,
+    bubbles: true,
+    cancelable: true,
+    ctrlKey: has('Mod') || has('Ctrl'),
+    shiftKey: has('Shift'),
+    altKey: has('Alt'),
+    metaKey: has('Meta'),
+  });
+  editor.view.someProp('handleKeyDown', (handle) => handle(editor.view, event));
+}
+
+/** What is wrong with the editor's state, or null: a document that breaks the schema, or a caret out of text. */
+export function stateProblem(editor: Editor): string | null {
+  const { doc, selection } = editor.state;
+  try {
+    doc.check();
+  } catch (error) {
+    return `the document breaks the schema: ${String(error)}`;
+  }
+  if (selection instanceof TextSelection) {
+    const out = [selection.$anchor, selection.$head].find(($pos) => !$pos.parent.inlineContent);
+    if (out) return `the text selection ends at ${out.pos} in a ${out.parent.type.name}, not in text`;
+  }
+  return null;
+}
+
 /** jsdom has no layout: ranges get empty rectangles, so ProseMirror can scroll and measure without throwing. */
 export function stubLayout(): void {
   if (typeof Range === 'undefined' || 'getClientRects' in Range.prototype) return;

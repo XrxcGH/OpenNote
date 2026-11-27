@@ -8,7 +8,7 @@ import { META_ELEMENT_DATA } from '../meta';
 import { PARA_KEYS, PARA_NODES, paraFormat } from '../paragraph/attributes';
 import type { Align, Indent, LineSpacing, ParaFormat, ParaKey } from '../paragraph/attributes';
 import { getDefaultTab } from '../paragraph/defaultTab';
-import { fromChange, textblocksBetween } from './command';
+import { fromChange, mapFromHere, textblocksBetween } from './command';
 import type { Change, Command } from './command';
 import { viaFormatTarget } from './formatTarget';
 import { clearFormattingChange } from './marks';
@@ -68,9 +68,10 @@ export function setParaChange(key: ParaKey, value: unknown): Change {
     if (!validParaValue(key, value)) return false;
     const clean = cleanParaValue(key, value);
     let changed = false;
+    const map = mapFromHere(tr);
     for (const { node, pos } of selectionParaTargets(tr.doc, tr.selection)) {
       if (JSON.stringify(node.attrs[key] ?? null) === JSON.stringify(clean)) continue;
-      tr.setNodeAttribute(tr.mapping.map(pos), key, clean);
+      tr.setNodeAttribute(map(pos), key, clean);
       changed = true;
     }
     if (changed) tr.setMeta(META_ELEMENT_DATA, true);
@@ -88,12 +89,13 @@ export function setPara(key: ParaKey, value: unknown): Command {
 export function setParaEach(key: ParaKey, edit: (format: ParaFormat) => unknown): Command {
   const change = fromChange((tr) => {
     let changed = false;
+    const map = mapFromHere(tr);
     for (const { node, pos } of selectionParaTargets(tr.doc, tr.selection)) {
       const value = edit(paraFormat(node.attrs));
       if (!validParaValue(key, value)) return false;
       const clean = cleanParaValue(key, value);
       if (JSON.stringify(node.attrs[key] ?? null) === JSON.stringify(clean)) continue;
-      tr.setNodeAttribute(tr.mapping.map(pos), key, clean);
+      tr.setNodeAttribute(map(pos), key, clean);
       changed = true;
     }
     if (changed) tr.setMeta(META_ELEMENT_DATA, true);
@@ -180,11 +182,12 @@ function indentOf(node: PMNode): Indent {
 function reindent(edit: (indent: Indent) => Indent): Change {
   return (tr) => {
     let changed = false;
+    const map = mapFromHere(tr);
     for (const { node, pos } of selectionParaTargets(tr.doc, tr.selection)) {
       const before = indentValue(indentOf(node));
       const after = indentValue(edit(indentOf(node)));
       if (JSON.stringify(before) === JSON.stringify(after)) continue;
-      tr.setNodeAttribute(tr.mapping.map(pos), 'indent', after);
+      tr.setNodeAttribute(map(pos), 'indent', after);
       changed = true;
     }
     if (changed) tr.setMeta(META_ELEMENT_DATA, true);
@@ -216,10 +219,11 @@ const KEPT_ON_RESET: ReadonlySet<string> = new Set(['list']);
 /** Word Ctrl+Q: takes the paragraph formatting off, back to the style. */
 export const resetParagraphChange: Change = (tr) => {
   let changed = false;
+  const map = mapFromHere(tr);
   for (const { node, pos } of selectionParaTargets(tr.doc, tr.selection)) {
     for (const key of PARA_KEYS) {
       if (KEPT_ON_RESET.has(key) || node.attrs[key] === null || node.attrs[key] === undefined) continue;
-      tr.setNodeAttribute(tr.mapping.map(pos), key, null);
+      tr.setNodeAttribute(map(pos), key, null);
       changed = true;
     }
   }
@@ -236,11 +240,12 @@ const normalStyleChange: Change = (tr) => {
   let changed = false;
   const blocks = tr.selection.ranges.flatMap((range) => textblocksBetween(tr.doc, range.$from.pos, range.$to.pos));
   const seen = new Set<number>();
+  const map = mapFromHere(tr);
   for (const { node, pos } of blocks) {
     if (seen.has(pos)) continue;
     seen.add(pos);
     if (node.attrs.style === null || node.attrs.style === undefined) continue;
-    tr.setNodeAttribute(tr.mapping.map(pos), 'style', null);
+    tr.setNodeAttribute(map(pos), 'style', null);
     changed = true;
   }
   return changed;

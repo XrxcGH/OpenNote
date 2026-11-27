@@ -483,3 +483,68 @@ fn an_empty_folder_named_like_a_restored_page_is_not_the_page() {
     );
     assert_eq!(fresh.sections[&s1].entry(back).and_then(|e| e.moving), None);
 }
+
+/// The nightly fuzzer's second notebook_tree crash that changed a `section.json` on the second scan. A restore
+/// of three pages stopped part way: one folder came back, one is nowhere, and one was moved by hand to another
+/// section. A sync tool also left a plain entry for the page that came back in the other section.
+///
+/// The scan kept the plain entry, which comes first by section ID, and dropped the marked one only in name: the
+/// marked entry stayed in the file without being settled. Settling the hand-moved page then forgot the Trash
+/// item, so the second scan cleared the mark the first scan left. The scan now keeps the marked entry and
+/// settles it in the same pass, whichever section comes first.
+#[test]
+fn a_page_listed_twice_during_a_restore_settles_in_one_scan() {
+    let (kit, mut store, [s1, s2], _) = setup();
+    let (home, other) = if s1 > s2 { (s1, s2) } else { (s2, s1) };
+    let top = store.create_page(home, None, None, "D").unwrap();
+    let mut three = vec![top];
+    for title in ["E", "F"] {
+        three.push(store.create_page(home, Some(top), None, title).unwrap());
+    }
+    let item = store.delete(&[NodeRef::Page(top)], TrashReason::Deleted).unwrap()[0];
+    let item_dir = store.layout.trash_item_dir(item);
+    let entries = match &store.trash[&item].file.origin {
+        crate::model::TrashOrigin::Pages { entries, .. } => entries.clone(),
+        _ => Vec::new(),
+    };
+    let [gone, back, moved] = [three[0], three[1], three[2]];
+    for mut entry in entries {
+        if entry.id == back {
+            store.sections.get_mut(&other).unwrap().file.pages.push(entry.clone());
+        }
+        entry.moving = Some(Moving::FromTrash(item));
+        store.sections.get_mut(&home).unwrap().file.pages.push(entry);
+    }
+    store.write_section(home).unwrap();
+    store.write_section(other).unwrap();
+    kit.fs.remove_dir_all(&item_dir.join(gone.to_string())).unwrap();
+    kit.fs
+        .rename_dir(
+            &item_dir.join(back.to_string()),
+            &section_dir(&kit, home).join(back.to_string()),
+        )
+        .unwrap();
+    kit.fs
+        .rename_dir(
+            &item_dir.join(moved.to_string()),
+            &section_dir(&kit, other).join(moved.to_string()),
+        )
+        .unwrap();
+
+    let mut fresh = kit.open().unwrap();
+    fresh.scan().unwrap();
+    let before = snapshot(&kit.fs.inner);
+    let again = fresh.scan().unwrap();
+    assert!(!again.changed_files(), "{again:?}");
+    assert!(snapshot(&kit.fs.inner) == before, "a second scan changed the notebook");
+    assert!(!fresh.trash.contains_key(&item), "the restore finished");
+    for page in [back, moved] {
+        let listed: Vec<_> = fresh
+            .sections
+            .values()
+            .flat_map(|s| s.file.pages.iter().map(move |e| (s.file.id, e.id, e.moving)))
+            .filter(|(_, id, _)| *id == page)
+            .collect();
+        assert_eq!(listed, vec![(home, page, None)], "one settled entry for {page}");
+    }
+}
