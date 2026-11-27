@@ -434,3 +434,52 @@ fn a_restore_and_a_second_deletion_of_one_page_settle_in_one_scan() {
         "the section file doesn't list the page"
     );
 }
+
+/// The nightly fuzzer's notebook_tree crash of an empty folder named like a page. A restore of three pages
+/// stopped part way: one folder came back, one is nowhere, and one left only an empty folder.
+///
+/// The first scan finished the page that came back and forgot the Trash item. The second scan then took the
+/// empty folder for the page and cleared its mark. An empty folder is not the page, so no scan clears it.
+#[test]
+fn an_empty_folder_named_like_a_restored_page_is_not_the_page() {
+    let (kit, mut store, [s1, _], _) = setup();
+    let top = store.create_page(s1, None, None, "D").unwrap();
+    let mut three = vec![top];
+    for title in ["E", "F"] {
+        three.push(store.create_page(s1, Some(top), None, title).unwrap());
+    }
+    let item = store.delete(&[NodeRef::Page(top)], TrashReason::Deleted).unwrap()[0];
+    let item_dir = store.layout.trash_item_dir(item);
+    let entries = match &store.trash[&item].file.origin {
+        crate::model::TrashOrigin::Pages { entries, .. } => entries.clone(),
+        _ => Vec::new(),
+    };
+    for mut entry in entries {
+        entry.moving = Some(Moving::FromTrash(item));
+        store.sections.get_mut(&s1).unwrap().file.pages.push(entry);
+    }
+    store.write_section(s1).unwrap();
+    let [back, empty, gone] = [three[0], three[1], three[2]];
+    let dir = section_dir(&kit, s1);
+    kit.fs
+        .rename_dir(&item_dir.join(back.to_string()), &dir.join(back.to_string()))
+        .unwrap();
+    kit.fs.remove_dir_all(&item_dir.join(empty.to_string())).unwrap();
+    kit.fs.inner.mkdir_all(&dir.join(empty.to_string()));
+    kit.fs.remove_dir_all(&item_dir.join(gone.to_string())).unwrap();
+
+    let mut fresh = kit.open().unwrap();
+    let first = fresh.scan().unwrap();
+    assert!(first.unavailable.contains(&empty), "{first:?}");
+    let before = snapshot(&kit.fs.inner);
+    let again = fresh.scan().unwrap();
+    assert!(!again.changed_files(), "{again:?}");
+    assert!(snapshot(&kit.fs.inner) == before, "a second scan changed the notebook");
+    let entry = fresh.sections[&s1].entry(empty).cloned().unwrap();
+    assert_eq!(
+        entry.moving,
+        Some(Moving::FromTrash(item)),
+        "the empty folder is not the page"
+    );
+    assert_eq!(fresh.sections[&s1].entry(back).and_then(|e| e.moving), None);
+}

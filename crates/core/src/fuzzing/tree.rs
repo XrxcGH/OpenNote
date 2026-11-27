@@ -319,6 +319,16 @@ mod tests {
         assert!(failed.is_empty(), "failed with seeds {failed:?}");
     }
 
+    /// The nightly crash of a restore that stopped part way and left an empty folder named like one of its
+    /// pages. The second scan took that folder for the page and cleared its mark.
+    #[test]
+    fn an_empty_folder_named_like_a_restored_page_passes_with_every_seed() {
+        let crash =
+            include_bytes!("../../fuzz/regressions/notebook_tree/crash-b437e2a06be88bf4ef9b31fb84901340fd5aa807");
+        let failed = failing_seeds(crash);
+        assert!(failed.is_empty(), "failed with seeds {failed:?}");
+    }
+
     #[test]
     fn empty_and_tiny_inputs_run() {
         notebook_tree(&[]);
