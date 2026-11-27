@@ -43,7 +43,14 @@ const base = EditorView.theme({
     height: '100%',
   },
   '&.cm-focused': { outline: 'var(--size-focus-ring-width) solid var(--color-focus-ring)' },
-  '.cm-scroller': { fontFamily: 'var(--font-mono)', lineHeight: '1.5', touchAction: 'pan-x pan-y' },
+  '.cm-scroller': {
+    fontFamily: 'var(--font-mono)',
+    lineHeight: '1.5',
+    touchAction: 'pan-x pan-y',
+    // The browser shows a typed character with the 5 px margin CodeMirror keeps around the caret. Without it, a key at
+    // the end of a long line scrolled twice: the browser scrolled, then CodeMirror did, in a second frame.
+    scrollPadding: '5px',
+  },
   '.cm-content': { caretColor: 'var(--color-text-primary)' },
   '.cm-cursor, .cm-dropCursor': { borderLeftColor: 'var(--color-text-primary)' },
   '&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground, .cm-selectionBackground': {

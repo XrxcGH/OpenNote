@@ -26,7 +26,12 @@ export function useRovingTools(ref: RefObject<HTMLElement | null>) {
   const mark = useCallback(
     (target: HTMLElement) => {
       current.current = target;
-      toolsIn(ref.current).forEach((tool) => (tool.tabIndex = tool === target ? 0 : -1));
+      // This runs after every render of the bar, which can come between two keys: a tool already right is left
+      // alone, so a render that changed nothing writes nothing.
+      toolsIn(ref.current).forEach((tool) => {
+        const index = tool === target ? 0 : -1;
+        if (tool.tabIndex !== index) tool.tabIndex = index;
+      });
     },
     [ref],
   );

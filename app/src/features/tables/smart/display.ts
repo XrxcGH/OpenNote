@@ -68,7 +68,7 @@ function chipDecorations(cell: PMNode, from: number, info: ChoiceInfo): Decorati
     const attrs = found.option
       ? { class: styles.chip, 'data-chip': found.option.color }
       : { class: `${styles.chip} ${styles.chipUnknown}`, 'data-chip': 'unknown' };
-    return [Decoration.inline(base + span.start, base + span.end, attrs, { kind: 'chip' })];
+    return [Decoration.inline(base + span.start, base + span.end, attrs, { kind: 'chip', attrs })];
   });
 }
 
@@ -135,7 +135,8 @@ export function buildDecorations(
     if (dataRow < 0) return;
     const rowFrom = 1 + rowOffset;
     if (!visible.has(dataRow)) {
-      found.push(Decoration.node(rowFrom, rowFrom + row.nodeSize, { class: styles.hiddenRow }, { kind: 'hidden' }));
+      const attrs = { class: styles.hiddenRow };
+      found.push(Decoration.node(rowFrom, rowFrom + row.nodeSize, attrs, { kind: 'hidden', attrs }));
       return;
     }
     row.forEach((cell, cellOffset, c) => {
@@ -146,7 +147,9 @@ export function buildDecorations(
       const shown = shownFor(model, smart, dataRow, c, locale);
       if (!shown) {
         // A typed cell inside a spill range cannot happen (it blocks the spill), so only the outline is drawn here.
-        if (edge) found.push(Decoration.node(from, from + cell.nodeSize, { 'data-spill': edge }, { kind: 'spill' }));
+        if (!edge) return;
+        const attrs = { 'data-spill': edge };
+        found.push(Decoration.node(from, from + cell.nodeSize, attrs, { kind: 'spill', attrs }));
         return;
       }
       const label = shown.error
@@ -157,28 +160,33 @@ export function buildDecorations(
       const classes = [styles.shown, KIND_CLASS[shown.kind]];
       if (shown.error === 'SPILL') classes.push(styles.spillBlocked);
       if (shown.error === 'BUSY') classes.push(styles.busy);
-      found.push(
-        Decoration.node(
-          from,
-          from + cell.nodeSize,
-          {
-            class: classes.join(' '),
-            'data-shown': shown.text,
-            title: label ? label.words : typedLabel(cell.textContent),
-            // A formula's cell says its formula to a screen reader too, not only in the tooltip (walk 9 T4-D07-12).
-            ...(label
-              ? { 'aria-description': label.description, 'data-error': shown.error ?? 'SYNTAX' }
-              : cell.textContent.trim().startsWith('=')
-                ? { 'aria-description': typedLabel(cell.textContent) }
-                : {}),
-            ...(edge ? { 'data-spill': edge } : {}),
-          },
-          { kind: 'shown' },
-        ),
-      );
+      const attrs = {
+        class: classes.join(' '),
+        'data-shown': shown.text,
+        title: label ? label.words : typedLabel(cell.textContent),
+        // A formula's cell says its formula to a screen reader too, not only in the tooltip (walk 9 T4-D07-12).
+        ...(label
+          ? { 'aria-description': label.description, 'data-error': shown.error ?? 'SYNTAX' }
+          : cell.textContent.trim().startsWith('=')
+            ? { 'aria-description': typedLabel(cell.textContent) }
+            : {}),
+        ...(edge ? { 'data-spill': edge } : {}),
+      };
+      found.push(Decoration.node(from, from + cell.nodeSize, attrs, { kind: 'shown', attrs }));
     });
   });
   return DecorationSet.create(doc, found);
+}
+
+/**
+ * Whether two decoration sets draw the same: the same kinds at the same places with the same attributes. Each spec
+ * keeps its attributes for this. A recalculation whose results did not change then sends nothing to the editor.
+ */
+export function sameDisplay(a: DecorationSet, b: DecorationSet): boolean {
+  const one = a.find();
+  const two = b.find();
+  const key = (deco: Decoration) => JSON.stringify([deco.from, deco.to, deco.spec]);
+  return one.length === two.length && one.every((deco, at) => key(deco) === key(two[at]));
 }
 
 /** The position before the cell that holds a text selection, or null. */

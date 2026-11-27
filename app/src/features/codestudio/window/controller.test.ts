@@ -361,3 +361,26 @@ describe('changing the language (walk fix T3-C04-5)', () => {
     unmount();
   });
 });
+
+describe('the live checks', () => {
+  it('draw the studio again only when a file’s problems change (nightly perf-typing-gate)', () => {
+    const controller = new StudioController();
+    const unmount = controller.mount();
+    controller.open(scratchSource());
+    const project = controller.project()!;
+    const path = project.files[project.main]!.path;
+    const problem = { file: path, from: 0, to: 3, severity: 'error' as const, code: 'syntax', message: 'Invalid' };
+    let draws = 0;
+    const stop = controller.subscribe(() => (draws += 1));
+    controller.setDiagnostics(path, [{ ...problem, source: 'lezer' }]);
+    expect(draws).toBe(1);
+    // The checks publish again after each key; the same problems draw nothing.
+    controller.setDiagnostics(path, [{ ...problem, source: 'lezer' }]);
+    expect(draws).toBe(1);
+    controller.setDiagnostics(path, [{ ...problem, source: 'lezer', message: 'Unexpected name' }]);
+    expect(draws).toBe(2);
+    expect(controller.problems().map((one) => one.message)).toEqual(['Unexpected name']);
+    stop();
+    unmount();
+  });
+});

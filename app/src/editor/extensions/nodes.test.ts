@@ -118,6 +118,21 @@ describe('callouts', () => {
     expect(root.querySelector<HTMLButtonElement>('button[aria-expanded]')?.hidden).toBe(true);
   });
 
+  it('write none of their names and buttons again while their text is typed (nightly perf-typing-gate)', () => {
+    const page = mount('> [!note]+ Title\n> Body');
+    const { view } = page.editor;
+    view.dispatch(view.state.tr.setSelection(TextSelection.atEnd(view.state.doc)));
+    const note = page.root.querySelector('[role="note"]')!;
+    const writes = new MutationObserver(() => {});
+    writes.observe(note, { attributes: true });
+    note.querySelectorAll('button').forEach((button) => writes.observe(button, { attributes: true }));
+    // Each key draws the callout again. An unchanged name or button that is written again restyles the callout.
+    for (const key of 'abc') view.dispatch(view.state.tr.insertText(key));
+    expect(writes.takeRecords()).toEqual([]);
+    writes.disconnect();
+    expect(page.markdown()).toBe('> [!note]+ Title\n> Bodyabc');
+  });
+
   it('turn back into text on Backspace at the start of the title', () => {
     const page = mount('> [!note] []Title\n> Body');
     press(page.editor, 'Backspace');

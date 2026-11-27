@@ -4,6 +4,7 @@
 import { isEnabled } from '../../../app/flags';
 import { firstRuleBelow } from '../../../core/ruled';
 import { announce } from '../../../ui';
+import { setHidden, setStyle, setText } from '../../../ui/domWrites';
 import { t } from '../../../strings/t';
 import { shownPaginated, shownPaper } from '../../page';
 import type { MountedPage } from '../../page';
@@ -183,9 +184,10 @@ class PagesView {
     const { viewport, world } = this.mounted.viewport;
     const host = viewport.parentElement;
     if (!host) return;
+    // The world grows as text is typed, so this runs while typing: an unchanged size is not written again.
     const measure = () => {
-      host.style.setProperty('--scrollbar-inline', `${Math.max(0, viewport.offsetWidth - viewport.clientWidth)}px`);
-      host.style.setProperty('--scrollbar-block', `${Math.max(0, viewport.offsetHeight - viewport.clientHeight)}px`);
+      setStyle(host, '--scrollbar-inline', `${Math.max(0, viewport.offsetWidth - viewport.clientWidth)}px`);
+      setStyle(host, '--scrollbar-block', `${Math.max(0, viewport.offsetHeight - viewport.clientHeight)}px`);
     };
     measure();
     if (typeof ResizeObserver === 'undefined') return;
@@ -524,7 +526,8 @@ class PagesView {
   private updateCounter(): void {
     this.strip?.mark();
     const show = this.spec.mode === 'paginated' && this.sheets > 1;
-    this.counter.hidden = !show;
+    // The camera moves this, a scroll included: an unchanged counter is not written again.
+    setHidden(this.counter, !show);
     if (!show) return;
     const camera = this.mounted.viewport.camera();
     const view = { zoom: camera.zoom, left: camera.scrollX / camera.zoom, top: camera.scrollY / camera.zoom };
@@ -534,7 +537,7 @@ class PagesView {
       { width: camera.viewport.w, height: camera.viewport.h },
       this.sheets,
     );
-    this.counter.textContent = t('pageViews.status.sheetCount', { sheet: at + 1, sheets: this.sheets });
+    setText(this.counter, t('pageViews.status.sheetCount', { sheet: at + 1, sheets: this.sheets }));
   }
 }
 

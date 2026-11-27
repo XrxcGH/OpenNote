@@ -8,6 +8,7 @@ import { Plugin, PluginKey } from '@tiptap/pm/state';
 import type { EditorView } from '@tiptap/pm/view';
 import { t } from '../../../strings/t';
 import { announce } from '../../../ui';
+import { setHidden } from '../../../ui/domWrites';
 import { completions, symbolFor } from '../symbols/data';
 import type { MathSymbol } from '../symbols/data';
 import { pushRecent } from '../symbols/recent';
@@ -79,7 +80,8 @@ function listFor(view: EditorView): { root: HTMLElement; show(open: Open | null)
     root,
     show(open) {
       if (!open) {
-        root.hidden = true;
+        // Every key that opens no list comes here: the list is left alone when it is already hidden.
+        setHidden(root, true);
         shownKey = '';
         return;
       }
@@ -122,7 +124,7 @@ function listFor(view: EditorView): { root: HTMLElement; show(open: Open | null)
       } catch {
         // A position that cannot be drawn leaves the list where it was.
       }
-      root.hidden = false;
+      setHidden(root, false);
       const chosen = open.items[open.index];
       if (chosen) announce(t('study.symbols.choice', { name: chosen.symbol.name, command: `\\${chosen.command}` }));
     },

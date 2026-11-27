@@ -5,6 +5,7 @@
 import type { BlockId, BlockJson } from '../../../services/pages/types';
 import { getDensity } from '../../../state/layout';
 import { t } from '../../../strings/t';
+import { setAttr, setData, setHidden, setStyle, setText } from '../../../ui/domWrites';
 import type { PageBlockLayer } from '../blocks/blockLayer';
 import { hasGrip, isFloating, liveBlock } from '../blocks/textBlock';
 import type { PagePool } from '../pool/pool';
@@ -92,14 +93,14 @@ class ChromeLayer implements Chrome {
   }
 
   setMarquee(rect: DOMRectReadOnly | null): void {
-    this.marquee.hidden = rect === null;
+    setHidden(this.marquee, rect === null);
     if (!rect) return;
     const origin = this.element.getBoundingClientRect();
     this.place(this.marquee, new DOMRect(rect.x - origin.left, rect.y - origin.top, rect.width, rect.height));
   }
 
   setDropLine(y: number | null): void {
-    this.dropLine.hidden = y === null;
+    setHidden(this.dropLine, y === null);
     if (y === null) return;
     const flow = this.parts.layer.blocks().find((block) => !isFloating(block));
     const box = flow ? this.parts.layer.view(flow.id)?.element.getBoundingClientRect() : null;
@@ -133,8 +134,10 @@ class ChromeLayer implements Chrome {
     });
   }
 
+  // Typing redraws the chrome as its text box grows. What did not change is not written again, so the redraw does not
+  // restyle the chrome or ask for another frame.
   private draw(): void {
-    this.element.dataset.density = getDensity();
+    setData(this.element, 'density', getDensity());
     const used = new Set<string>();
     const origin = this.element.getBoundingClientRect();
     const seen = new Set<Element>();
@@ -174,8 +177,8 @@ class ChromeLayer implements Chrome {
       this.marks.delete(key);
     }
     const count = pageSelection.get().blocks.length;
-    this.badge.hidden = count < 2;
-    this.badge.textContent = t('page.selection.badge', { count });
+    setHidden(this.badge, count < 2);
+    setText(this.badge, t('page.selection.badge', { count }));
   }
 
   /** A grip bar along the top of a text box, or a width handle on its right edge, with a full-size hit area. */
@@ -186,12 +189,16 @@ class ChromeLayer implements Chrome {
         ? this.gripArea(block, box, origin, hit)
         : new DOMRect(box.right - hit / 2, box.y, hit, Math.max(box.height, hit));
     const element = this.mark(used, `${kind}:${block.id}`, kind === 'grip' ? styles.grip! : styles.width!, area);
-    element.dataset.handle = kind;
-    element.dataset.block = block.id;
-    element.style.clipPath = kind === 'grip' ? this.gripHoles(block, area, origin) : '';
-    element.title = t(kind === 'grip' ? 'page.object.grip' : 'page.object.widthHandle', {
-      name: name(liveBlock(this.parts.layer, block)),
-    });
+    setData(element, 'handle', kind);
+    setData(element, 'block', block.id);
+    setStyle(element, 'clip-path', kind === 'grip' ? this.gripHoles(block, area, origin) : '');
+    setAttr(
+      element,
+      'title',
+      t(kind === 'grip' ? 'page.object.grip' : 'page.object.widthHandle', {
+        name: name(liveBlock(this.parts.layer, block)),
+      }),
+    );
   }
 
   /**
@@ -248,9 +255,9 @@ class ChromeLayer implements Chrome {
   }
 
   private place(element: HTMLElement, box: DOMRectReadOnly): void {
-    element.style.transform = `translate(${box.x}px, ${box.y}px)`;
-    element.style.inlineSize = `${box.width}px`;
-    element.style.blockSize = `${box.height}px`;
+    setStyle(element, 'transform', `translate(${box.x}px, ${box.y}px)`);
+    setStyle(element, 'inline-size', `${box.width}px`);
+    setStyle(element, 'block-size', `${box.height}px`);
   }
 
   private readonly onOver = (event: PointerEvent) => {

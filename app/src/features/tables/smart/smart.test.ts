@@ -17,7 +17,7 @@ import type { Sheet } from '../sheet/model';
 import { applyPatch } from '../sheet/model/json';
 import type { Json } from '../sheet/model/json';
 import { gridOfData, PageBook, valuesPatch } from './book';
-import { buildDecorations, errorLabel, spillEdges } from './display';
+import { buildDecorations, errorLabel, sameDisplay, spillEdges } from './display';
 import { smart as smartStrings } from '../../../strings/en/smart';
 import { dataMenu } from './menu';
 import { EMPTY_SMART, pruneSmart, readSmart, smartPatch, withColumn } from './data';
@@ -436,6 +436,21 @@ describe('the value cache', () => {
         '01m3sbcmt0000000000000k007': circular,
       },
     ]);
+  });
+});
+
+describe('a recalculation whose results did not change', () => {
+  it('draws the same, so the table sends nothing to the editor (nightly perf-typing-gate)', () => {
+    const data = dataOf([...ROWS.slice(0, 1), ['x', '2', '3', '=B1*C1']]);
+    const doc = tableDataToDoc(data);
+    const draw = (rows: string[][]) =>
+      buildDecorations(doc, buildModel(gridOfData(dataOf(rows)), EMPTY_SMART, EN_US), EMPTY_SMART, EN_US, (t) => t);
+    const before = draw([...ROWS.slice(0, 1), ['x', '2', '3', '=B1*C1']]);
+    expect(before.find().length).toBeGreaterThan(0);
+    expect(sameDisplay(before, draw([...ROWS.slice(0, 1), ['x', '2', '3', '=B1*C1']]))).toBe(true);
+    // A new result, or a result that is gone, draws again.
+    expect(sameDisplay(before, draw([...ROWS.slice(0, 1), ['x', '2', '4', '=B1*C1']]))).toBe(false);
+    expect(sameDisplay(before, draw([...ROWS.slice(0, 1), ['x', '2', '3', '6']]))).toBe(false);
   });
 });
 

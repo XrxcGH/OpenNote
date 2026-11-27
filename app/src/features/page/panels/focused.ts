@@ -2,6 +2,8 @@
 // A panel block has no text editor in the pool, so the pool's active block cannot name it.
 // A command run from the palette reads this. Focus moving into the palette is ignored. Focus moving into a text block clears it.
 
+import { setData } from '../../../ui/domWrites';
+
 export interface FocusedPanel {
   block: string;
   readOnly: boolean;
@@ -31,8 +33,8 @@ function install(): void {
 /** Marks a panel block's element so focus inside it is tracked. */
 export function trackPanel(element: HTMLElement, block: string, readOnly: boolean): void {
   install();
-  element.dataset.panelBlock = block;
-  element.dataset.panelReadonly = String(readOnly);
+  setData(element, 'panelBlock', block);
+  setData(element, 'panelReadonly', String(readOnly));
 }
 
 /** The panel block that last had focus, or null. A block that is gone is checked by the caller. */

@@ -20,6 +20,7 @@ import {
   waitingDetail,
 } from '../../services/pages/saveHealth';
 import { useStore } from '../../state/store';
+import { setData } from '../../ui/domWrites';
 import { t } from '../../strings/t';
 import { announce } from '../../ui';
 import type { IconProps } from '../../ui';
@@ -47,9 +48,10 @@ export function currentSaveStatus(): Status {
  * The returned function stops.
  */
 export function markSaveStatus(root: HTMLElement): () => void {
+  // The stores change as typing saves; an unchanged status is not written to the root again.
   const mark = () => {
-    root.dataset.saveState = currentSaveStatus();
-    root.dataset.saveWaiting = waitingDetail(saveHealthStore.get());
+    setData(root, 'saveState', currentSaveStatus());
+    setData(root, 'saveWaiting', waitingDetail(saveHealthStore.get()));
   };
   mark();
   const stops = [treeStore.subscribe(mark), saveHealthStore.subscribe(mark)];

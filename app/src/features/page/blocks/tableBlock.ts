@@ -33,6 +33,7 @@ import { tableName } from '../../../editor/table/tableKit';
 import type { BlockJson } from '../../../services/pages/types';
 import { t } from '../../../strings/t';
 import type { MessageKey } from '../../../strings/t';
+import { setAttr, toggleAttr } from '../../../ui/domWrites';
 import { confirm, openMenu } from '../../../ui';
 import { shownLayer } from '../mount';
 import type { StaticPool } from '../pool/pool';
@@ -174,8 +175,9 @@ class TableView implements InnerView {
       const { scrollLeft, scrollWidth, clientWidth } = this.scroller;
       const start = Math.abs(scrollLeft) > 1;
       const end = scrollWidth - clientWidth - Math.abs(scrollLeft) > 1;
-      this.element.toggleAttribute('data-more-start', start);
-      this.element.toggleAttribute('data-more-end', end);
+      // Typing in a cell resizes the table: an unchanged edge is not marked again.
+      toggleAttr(this.element, 'data-more-start', start);
+      toggleAttr(this.element, 'data-more-end', end);
     };
     this.scroller.addEventListener('scroll', mark, { passive: true });
     if (typeof ResizeObserver === 'undefined') return;
@@ -186,7 +188,8 @@ class TableView implements InnerView {
   }
 
   private name(doc: PMNode): void {
-    this.element.setAttribute('aria-label', tableName(doc));
+    // Every key in a cell names the table again; most keys leave the name as it was.
+    setAttr(this.element, 'aria-label', tableName(doc));
   }
 
   private showStatic(doc: PMNode): void {
@@ -443,7 +446,7 @@ class TableView implements InnerView {
   private setCurrent(on: boolean): void {
     if (on) currentTable.set(this.handle);
     else if (currentTable.get() === this.handle) currentTable.set(null);
-    this.element.toggleAttribute('data-current', on);
+    toggleAttr(this.element, 'data-current', on);
     if (on) this.renderToolbar();
   }
 

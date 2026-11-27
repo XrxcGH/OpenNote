@@ -26,7 +26,15 @@ import { Chrome } from './Chrome';
 import type { ChartItem, ChromeProps } from './Chrome';
 import type { ChartSmart, SmartData } from './data';
 import { readSmart, sameSmart, smartPatch } from './data';
-import { buildDecorations, displayKey, displayPlugin, displayState, gridOf } from './display';
+import {
+  buildDecorations,
+  decorationsOf,
+  displayKey,
+  displayPlugin,
+  displayState,
+  gridOf,
+  sameDisplay,
+} from './display';
 import { appLocale } from './locale';
 import { chartMenu, dataMenu, CHART_KINDS } from './menu';
 import type { Grid, Prepared, SmartModel } from './model';
@@ -252,7 +260,10 @@ class SmartTable implements SmartInstance, TableExtraHandle, BookMember {
     if (!busy) this.result = { raw, table };
     const shown = this.finish(prepared, table);
     const set = buildDecorations(this.editor.state.doc, shown, this.current, this.locale, typedLabel);
-    this.editor.view.dispatch(this.editor.state.tr.setMeta(displayKey, set).setMeta('addToHistory', false));
+    // Typing in a table recalculates it a moment after each key. Results that did not change send nothing to the
+    // editor, so the recalculation draws no frame, and the next key does not wait behind one.
+    if (!sameDisplay(set, decorationsOf(this.editor.state)))
+      this.editor.view.dispatch(this.editor.state.tr.setMeta(displayKey, set).setMeta('addToHistory', false));
     this.render(shown);
   }
 
