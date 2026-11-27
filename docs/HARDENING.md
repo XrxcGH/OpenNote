@@ -42,6 +42,8 @@ The edits of a seed are drawn in `tests/soak/plan.ts` without the browser, so `s
 
 The NVDA job installs the pinned Guidepup from `tests/nvda/package-lock.json`, sets up Windows with `guidepup setup`, and downloads NVDA with `guidepup install nvda`. A missing NVDA fails the job with those steps in the message. It checks the phrases NVDA says, not its exact words: the names and roles the app sets, such as the notebook tree and the page text box. Each run keeps the table and everything NVDA said for 90 days. Add an item in `tests/nvda/checklist.ts`.
 
+The code editor and Code studio scripts (`codeEditor.nvda.spec.ts`, `codeStudio.nvda.spec.ts`) follow what NVDA does on the runner. A key that Playwright sends is not input to NVDA, so the scripts send real keys with `nvda.press`. NVDA says a live region that changes within about half a second of a real key. It says nothing for one that changes while a character is typed, or a second or more after the key. So the suggestion script presses F9, and a test hook shows and accepts the suggestion. Edge keeps a real Ctrl+Tab for its own tabs. A script that moves focus by script asks NVDA to report the focus. Every script reads the log until the phrases arrive (`tests/nvda/speech.ts`).
+
 The performance job runs on a hosted runner. It catches large regressions. The budgets in BRAND.md still count only when they pass on the reference laptop.
 
 ## Running a nightly test yourself
