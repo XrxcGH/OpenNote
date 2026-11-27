@@ -25,8 +25,8 @@ jobs:
       - name: Probe
         env:
           OPENNOTE_NVDA: '1'
-        run: npm run app:build:test && npx playwright test --config tests/nvda/playwright.config.ts probe.nvda.spec.ts
+        run: npm run app:build:test && npx playwright test --config tests/nvda/playwright.config.ts
       - name: Show
         if: always()
         shell: bash
-        run: cat tests/nvda/results/probe.txt || true
+        run: cat tests/nvda/results/nvda.md || true
