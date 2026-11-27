@@ -254,6 +254,11 @@ impl PageHandle {
         self.session.history()
     }
 
+    /// The page's saved versions, newest first, with the page as it is now at the top (the History panel's list).
+    pub fn history_with_current(&self) -> Result<Vec<VersionEntry>, CoreError> {
+        self.session.history_with_current()
+    }
+
     /// A saved version, read-only.
     pub fn open_version(&self, rev: RevisionId) -> Result<Envelope, CoreError> {
         self.session.open_version(rev)

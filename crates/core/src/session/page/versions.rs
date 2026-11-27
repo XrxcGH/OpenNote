@@ -43,6 +43,37 @@ impl PageSession {
         Ok(versions)
     }
 
+    /// The page's saved versions, newest first, with the page as it is now at the top. A page that was edited since
+    /// its last version gets one first, from the saved revision, as an interval version does. Without it the newest
+    /// version is the page as it was at the last close or the last ten minutes of editing, so a comparison with "the
+    /// current page" would leave out what was just typed. A page with unsaved edits, or one that can't be written,
+    /// gets none.
+    pub(crate) fn history_with_current(&self) -> Result<Vec<VersionEntry>, CoreError> {
+        let due = {
+            let st = self.state();
+            if !st.versions.edited || st.dirty.is_some() || st.read_only.is_some() {
+                None
+            } else {
+                Some((st.dir.clone(), st.bytes.clone(), st.page.clone()))
+            }
+        };
+        if let Some((dir, bytes, page)) = due {
+            let version = VersionToWrite {
+                dir: &dir,
+                bytes: &bytes,
+                page: &page,
+                reason: VersionReason::Interval,
+                name: None,
+            };
+            if self.ctx.backend.write_version(version).is_ok() {
+                let mut st = self.state();
+                st.versions.last = Some(self.ctx.clock.monotonic());
+                st.versions.edited = st.dirty.is_some();
+            }
+        }
+        self.history()
+    }
+
     /// A saved version, read-only.
     pub(crate) fn open_version(&self, rev: RevisionId) -> Result<Envelope, CoreError> {
         let dir = self.dir();

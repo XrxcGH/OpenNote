@@ -223,3 +223,36 @@ fn walk(dir: &std::path::Path) -> Vec<std::path::PathBuf> {
     }
     out
 }
+
+#[test]
+fn the_history_list_starts_with_the_page_as_it_is_now() {
+    let mut real = Real::new();
+    let handle = real.open();
+    let (_, block) = new_table(91, "Typed just now");
+    handle.apply(real.request(vec![insert(block)])).unwrap();
+    let saved = handle.save_now().unwrap();
+    // The newest saved version is the page as it was before the first edit, so a comparison "with the current
+    // page" that used it would leave out what was just typed.
+    assert_ne!(handle.history().unwrap()[0].revision, saved.revision);
+
+    let listed = handle.history_with_current().unwrap();
+    assert_eq!(
+        listed[0].revision, saved.revision,
+        "the page as it is now is the newest entry"
+    );
+    let now = handle.open_version(listed[0].revision).unwrap();
+    assert!(String::from_utf8_lossy(&now.bytes).contains("Typed just now"));
+
+    // Looking again adds nothing, and an edit adds one more entry, the new page, at the top.
+    assert_eq!(handle.history_with_current().unwrap().len(), listed.len());
+    handle
+        .apply(real.request(vec![patch_cell(
+            BlockId(Id::from_parts(1_800_000_000_000, 91)),
+            "Typed again",
+        )]))
+        .unwrap();
+    let saved = handle.save_now().unwrap();
+    let again = handle.history_with_current().unwrap();
+    assert_eq!(again.len(), listed.len() + 1);
+    assert_eq!(again[0].revision, saved.revision);
+}
