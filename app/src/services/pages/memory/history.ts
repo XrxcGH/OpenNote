@@ -14,6 +14,12 @@ export const TYPING_SPAN = 10_000;
 export const TYPING_CHARS = 100;
 /** A slider joins a step only this soon after its last change. */
 export const SLIDER_GAP = 1000;
+/**
+ * The most steps one client's undo stack keeps, as the core's MAX_UNDO_ENTRIES (crates/core/src/session/page/edits.rs,
+ * plan 7.3). The oldest goes first. Each step keeps two copies of the page. Without a limit, the stack grows for as
+ * long as the page is edited. The nightly soak saw the web build's memory double in two hours.
+ */
+export const MAX_UNDO_STEPS = 1000;
 
 /** What a batch did, as the stacks need to know it. */
 export interface Applied {
@@ -124,6 +130,10 @@ function joins(top: Step, applied: Applied, now: number): boolean {
 export function createUndoStacks(): UndoStacks {
   const done: Step[] = [];
   const undone: Step[] = [];
+  const keep = (step: Step) => {
+    done.push(step);
+    if (done.length > MAX_UNDO_STEPS) done.splice(0, done.length - MAX_UNDO_STEPS);
+  };
   return {
     record(before, after, applied, now) {
       undone.length = 0;
@@ -136,7 +146,7 @@ export function createUndoStacks(): UndoStacks {
         return;
       }
       const { coalesce, ui } = applied.batch;
-      done.push({
+      keep({
         before,
         after,
         coalesce: coalesce ?? null,
@@ -148,7 +158,7 @@ export function createUndoStacks(): UndoStacks {
     },
     push(before, after, now) {
       undone.length = 0;
-      done.push({ before, after, coalesce: null, ui: null, applied: [], first: now, last: now });
+      keep({ before, after, coalesce: null, ui: null, applied: [], first: now, last: now });
     },
     peekUndo: () => done.at(-1) ?? null,
     peekRedo: () => undone.at(-1) ?? null,

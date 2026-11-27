@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CONTRACT_PAGE, describePageService } from '../contract';
 import { keyBetween } from './apply';
+import { MAX_UNDO_STEPS } from './history';
 import type { OpenPage, PageJson } from '../types';
 import { imageSize } from './imageSize';
 import { createMemoryPageService } from '.';
@@ -113,6 +114,17 @@ describe('other undo steps in memory', () => {
       }
     });
     expect(steps).toBe(1);
+  });
+
+  it('keeps the newest 1000 steps, as the core does, so a long session does not hold every page it had', async () => {
+    // The nightly soak's memory doubled in two hours: every step kept two copies of the page, and none went away.
+    expect(MAX_UNDO_STEPS).toBe(1000);
+    const steps = await undoCount(async (page) => {
+      for (let i = 0; i <= MAX_UNDO_STEPS + 4; i++) {
+        await page.send({ edits: [{ edit: 'setText', block: FIRST, markdown: `Step ${i}` }] });
+      }
+    });
+    expect(steps).toBe(MAX_UNDO_STEPS);
   });
 
   it('records no step for a batch that changes nothing', async () => {

@@ -64,6 +64,13 @@ describe('the soak plan', () => {
     assert.deepEqual(stepAt(58, 13_251), { id: 'italic', words: 'cell' });
   });
 
+  it('finds the action a failed night stopped at: seed 87 presses Enter at 37502, after an undo', () => {
+    // Nightly run 45943934575 ran 37503 actions. The undo left a selection over a whole list item. Enter over it
+    // threw "Cannot join bulletList onto paragraph". tests/soak/replay.spec.ts replays the Enter in a browser.
+    assert.deepEqual(stepAt(87, 37_501), { id: 'undo', times: 2 });
+    assert.deepEqual(stepAt(87, 37_502), { id: 'enter' });
+  });
+
   it('draws only whole choices', () => {
     const random = seeded(9);
     for (let i = 0; i < 2000; i += 1) {

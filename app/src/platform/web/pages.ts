@@ -1,7 +1,7 @@
 // The web platform's pages (owner after WP0: WP2): the memory page service. A page the fixtures don't hold opens
 // empty, or as the page fixture that the address names, such as ?fixture=sampler, so every page shows it. The
 // pagesSent test hook lists what a page was sent, and pagesHeld gives the page as the service holds it after those
-// edits; both are for the page opened last by default.
+// edits; both are for the page opened last by default. The pagesDeleteHistory hook deletes every page's saved versions.
 import { isPageFixtureName, pageFixture } from '../../services/pages/fixtures';
 import { createMemoryPageService } from '../../services/pages/memory';
 import type { MemoryPageService } from '../../services/pages/memory';
@@ -25,6 +25,9 @@ export function createWebPages(fixture: string | null = fixtureFromAddress()): M
   let last: string | null = null;
   registerTestHook('pagesSent', (page?: string) => service.sent(page ?? last ?? ''));
   registerTestHook('pagesHeld', (page?: string) => service.held(page ?? last ?? ''));
+  // The service keeps every saved version in memory, where the core keeps them on disk. The soak deletes them before
+  // it reads the heap, so its memory line is the app's, not the stand-in disk's.
+  registerTestHook('pagesDeleteHistory', () => service.admin?.deleteHistory('', { kind: 'notebook', id: '' }, false));
   return {
     ...service,
     open(pageId, options) {
