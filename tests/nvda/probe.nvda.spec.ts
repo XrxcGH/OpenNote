@@ -99,6 +99,12 @@ test.describe('probe', () => {
           }),
         );
       await open(page, suggest);
+      await page.evaluate(() => {
+        const el = document.createElement('div');
+        el.id = 'pre-static';
+        el.setAttribute('aria-live', 'polite');
+        document.body.append(el);
+      });
       log(`before start: fg=${foreground()}`);
       await nvda.start();
       await page.waitForTimeout(3000);
@@ -125,59 +131,59 @@ test.describe('probe', () => {
           [id, text],
         );
       };
-      log(`config: ${JSON.stringify((nvda as unknown as { getSettings(): unknown }).getSettings())}`);
       await page.locator('[data-testid="code-editor-host"] .cm-content').click();
-      // Plain live regions by script after different kinds of real input.
-      await live('q1', 'Probe one after Tab and Shift+Tab');
-      await nvda.press('Tab');
-      await nvda.press('Shift+Tab');
-      await live('q2', 'Probe two after Tab and Shift+Tab');
-      await watch('V1 after real Tab, Shift+Tab', 6000, true);
-      await nvda.type('x');
-      await live('q3', 'Probe three right after an OS key');
-      await watch('V2 live region 0.8 s after an OS typed key', 6000, true);
-      await nvda.press('ArrowLeft');
-      await page.evaluate(() => {
-        document.getElementById('q4')?.remove();
-        const el = document.createElement('div');
-        el.setAttribute('aria-live', 'assertive');
-        el.id = 'q4';
-        document.body.append(el);
-        setTimeout(() => (el.textContent = 'Probe four assertive after ArrowLeft'), 800);
-      });
-      await watch('V3 assertive live region after an OS key', 6000, true);
-      await page.evaluate(() => {
-        document.getElementById('q5')?.remove();
-        const el = document.createElement('div');
-        el.setAttribute('role', 'alert');
-        el.id = 'q5';
-        document.body.append(el);
-        setTimeout(() => (el.textContent = 'Probe five role alert'), 800);
-      });
-      await watch('V4 role alert after the same', 6000, true);
-      await page.evaluate(() => {
-        const el = document.createElement('div');
-        el.setAttribute('role', 'status');
-        el.id = 'q6';
-        el.textContent = 'Probe six status present at insert';
-        document.body.append(el);
-      });
-      await watch('V5 status element inserted with text', 6000, true);
-      // The app, fresh editor, OS keys only.
-      await open(page, suggest);
-      await nvda.clearSpokenPhraseLog();
-      await nvda.type('pri');
-      await watch('E suggestion typed with OS keys', 9000, true);
-      await open(page, async () => {
-        await page.evaluate(async () => {
-          const hooks = (window as unknown as { __OPENNOTE_TEST__: Hooks }).__OPENNOTE_TEST__;
-          await hooks.codeEditorMount({ language: 'python', text: 'print(totl)\n' });
-          hooks.codeEditorProblem(6, 4, "Undefined name 'totl'");
-        });
-      });
-      await nvda.clearSpokenPhraseLog();
-      await nvda.press('F8');
-      await watch('H fresh editor, OS F8 only', 6000, true);
+      // A matrix: a live region that existed at load or was added later, set 0 to 1500 ms after a real F9, or a CDP F9.
+      for (const kind of ['static', 'dynamic']) {
+        for (const delay of [0, 100, 400, 1500]) {
+          const id = `m-${kind}-${delay}`;
+          await page.evaluate(
+            ([i, k, d]) => {
+              let el = document.getElementById(`pre-${k}`);
+              if (!el) {
+                el = document.createElement('div');
+                el.id = `pre-${k}`;
+                el.setAttribute('aria-live', 'polite');
+                document.body.append(el);
+              }
+              const target = el;
+              const onKey = (event: KeyboardEvent) => {
+                if (event.key !== 'F9') return;
+                document.removeEventListener('keydown', onKey, true);
+                setTimeout(() => {
+                  const span = document.createElement('span');
+                  span.textContent = `Matrix ${i} said`;
+                  target.replaceChildren(span);
+                }, Number(d));
+              };
+              document.addEventListener('keydown', onKey, true);
+            },
+            [id, kind, String(delay)],
+          );
+          await nvda.clearSpokenPhraseLog();
+          await nvda.press('F9');
+          await watch(`M ${id} (OS F9)`, 5000, true);
+        }
+      }
+      for (const delay of [0, 400]) {
+        await page.evaluate(
+          ([d]) => {
+            const target = document.getElementById('pre-static')!;
+            const onKey = (event: KeyboardEvent) => {
+              if (event.key !== 'F9') return;
+              document.removeEventListener('keydown', onKey, true);
+              setTimeout(() => {
+                const span = document.createElement('span');
+                span.textContent = `Matrix CDP ${d} said`;
+                target.replaceChildren(span);
+              }, Number(d));
+            };
+            document.addEventListener('keydown', onKey, true);
+          },
+          [String(delay)],
+        );
+        await page.keyboard.press('F9');
+        await watch(`M static ${delay} (CDP F9)`, 5000, true);
+      }
     } finally {
       await nvda.stop().catch(() => undefined);
       await browser.close();
