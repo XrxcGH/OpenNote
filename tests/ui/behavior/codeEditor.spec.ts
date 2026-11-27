@@ -115,6 +115,36 @@ test('Ctrl+Tab accepts a suggestion and keeps the page tab; Ctrl+Shift+Tab goes 
   await expect.poll(() => selectedTab(page)).not.toBe(before);
 });
 
+/** The text of the app's live regions that have any, which is what a screen reader is told. */
+const spoken = (page: Page) =>
+  page.evaluate(() =>
+    [...document.querySelectorAll('[aria-live]')].map((region) => region.textContent ?? '').filter(Boolean),
+  );
+
+test('the suggestion hook shows a suggestion and accepts it, with the announcements the NVDA run expects', async ({
+  page,
+}) => {
+  // The NVDA run (tests/nvda) cannot type: NVDA says nothing for a live region that changes while a character is
+  // typed. It calls this hook from a real F9 instead, and expects these two phrases.
+  await mountEditor(page, { language: 'python', text: 'pri', suggest: { when: 'pri', then: 'nt(total)' } });
+  await content(page).click();
+  await page.keyboard.press('End');
+  expect(
+    await page.evaluate(() =>
+      (window as unknown as { __OPENNOTE_TEST__: Hooks }).__OPENNOTE_TEST__.codeEditorSuggest('show'),
+    ),
+  ).toBe(true);
+  await expect(page.locator('[data-testid="code-editor-host"] .cm-ghost-text')).toHaveText('nt(total)');
+  await expect.poll(() => spoken(page)).toContain('Suggestion: nt(total). Ctrl+Tab to accept.');
+  expect(
+    await page.evaluate(() =>
+      (window as unknown as { __OPENNOTE_TEST__: Hooks }).__OPENNOTE_TEST__.codeEditorSuggest('accept'),
+    ),
+  ).toBe(true);
+  expect(await text(page)).toBe('print(total)');
+  await expect.poll(() => spoken(page)).toContain('Inserted: nt(total)');
+});
+
 test.describe('touch and pen', () => {
   test.use({ hasTouch: true });
 
