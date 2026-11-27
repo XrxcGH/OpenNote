@@ -65,9 +65,8 @@ test('Enter over a selection that holds a whole list item splits without an erro
   await key(page, 'Shift+Home');
   const selected = await page.evaluate(() => window.getSelection()?.toString().replace(/\s+/g, ' ').trim());
   expect(selected).toMatch(/^ef ab/);
-  // ProseMirror reads the new selection on the browser's selectionchange event.
-  await page.waitForTimeout(150);
-
+  // No wait for the browser's selectionchange event: the editor reads the selection before it handles a key
+  // (app/src/editor/keySelection.ts).
   await perform(page, enter);
   await page.waitForTimeout(200);
   expect(errors).toEqual([]);
