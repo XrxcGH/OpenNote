@@ -71,13 +71,13 @@ test.describe('probe', () => {
       args: ['--force-renderer-accessibility'],
     });
     const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
-    const watch = async (label: string, ms = 8000) => {
+    const watch = async (label: string, ms = 8000, full = false) => {
       const start = Date.now();
       let said: string[] = [];
       while (Date.now() - start < ms) {
         await page.waitForTimeout(500);
         said = await nvda.spokenPhraseLog();
-        if (said.length > 0 && Date.now() - start > 2500) break;
+        if (!full && said.length > 0 && Date.now() - start > 2500) break;
       }
       const state = await page.evaluate(() => ({
         focus: document.hasFocus(),
@@ -105,51 +105,59 @@ test.describe('probe', () => {
       log(`after start: fg=${foreground()}`);
       await nvda.clearSpokenPhraseLog();
       await page.bringToFront();
-      await watch('A bringToFront only');
-
-      // 1. A plain live region of our own, changed by script.
-      await page.evaluate(() => {
-        const live = document.createElement('div');
-        live.setAttribute('aria-live', 'polite');
-        live.id = 'probe-live';
-        document.body.append(live);
-      });
-      await page.waitForTimeout(1000);
-      await page.evaluate(() => {
-        document.getElementById('probe-live')!.textContent = 'Probe live region one';
-      });
-      await watch('B plain live region by script');
-
-      // 2. The app's suggestion, typed by CDP.
+      const live = async (id: string, text: string) => {
+        await page.evaluate(
+          ([i, t]) => {
+            let el = document.getElementById(i!);
+            if (!el) {
+              el = document.createElement('div');
+              el.setAttribute('aria-live', 'polite');
+              el.id = i!;
+              document.body.append(el);
+            }
+            return new Promise<void>((resolve) =>
+              setTimeout(() => {
+                el!.textContent = t!;
+                resolve();
+              }, 800),
+            );
+          },
+          [id, text],
+        );
+      };
+      // 1. A plain live region changed by script, before any real input.
+      await live('p1', 'Probe live region one');
+      await watch('B1 plain live region by script, no real input yet', 6000, true);
+      // 2. Make NVDA look at its focus (a real key), then the same again.
+      await nvda.perform(guidepup.NVDAKeyCodeCommands.reportCurrentFocus);
+      await watch('B2 after report focus', 6000, true);
+      await live('p2', 'Probe live region two');
+      await watch('B3 plain live region by script after report focus', 6000, true);
+      // 3. The app's suggestion, typed by CDP, after report focus.
       await page.locator('[data-testid="code-editor-host"] .cm-content').click();
       await page.keyboard.type('pri');
-      await watch('C suggestion, typed with CDP keys');
+      await watch('C suggestion, typed with CDP keys', 8000, true);
       await page.keyboard.press('Control+Tab');
-      await watch('D accepted with CDP Ctrl+Tab');
-
-      // 3. The same with real keys.
+      await watch('D accepted with CDP Ctrl+Tab', 6000, true);
+      // 4. The same with real keys, and a long wait.
       await open(page, suggest);
       await nvda.clearSpokenPhraseLog();
       await nvda.type('pri');
-      await watch('E suggestion, typed with NVDA/OS keys');
-      await nvda.press('Control+Tab');
-      await watch('F accepted with OS Ctrl+Tab');
-
-      // 4. The squiggle, with CDP F8 and real F8.
+      await watch('E suggestion, typed with OS keys', 9000, true);
+      // 5. The squiggle, with CDP F8 after real input, then real F8.
       await open(page, async () => {
         await page.evaluate(async () => {
           const hooks = (window as unknown as { __OPENNOTE_TEST__: Hooks }).__OPENNOTE_TEST__;
-          await hooks.codeEditorMount({ language: 'python', text: 'print(totl)\n' });
+          await hooks.codeEditorMount({ language: 'python', text: 'print(totl)
+' });
           hooks.codeEditorProblem(6, 4, "Undefined name 'totl'");
         });
       });
       await nvda.clearSpokenPhraseLog();
       await page.keyboard.press('F8');
-      await watch('G F8 with CDP key');
+      await watch('G F8 with CDP key', 6000, true);
       await nvda.press('F8');
-      await watch('H F8 with OS key');
-      await nvda.perform(guidepup.NVDAKeyCodeCommands.reportCurrentFocus);
-      await watch('I report focus');
+      await watch('H F8 with OS key', 6000, true);
     } finally {
       await nvda.stop().catch(() => undefined);
       await browser.close();
