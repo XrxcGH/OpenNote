@@ -8,6 +8,7 @@ import { TextSelection } from '@tiptap/pm/state';
 import type { NodeView, ViewMutationRecord } from '@tiptap/pm/view';
 import { t } from '../../strings/t';
 import type { MessageKey } from '../../strings/t';
+import { setAttr, setData, setHidden } from '../../ui/domWrites';
 import { fromChange, runCommand } from '../commands/command';
 import type { EditorHost } from '../host';
 import { META_COMMAND } from '../meta';
@@ -72,19 +73,21 @@ class CalloutView implements NodeView {
     this.render();
   }
 
+  // Every key typed in the callout comes here. Values that did not change are not written again, so a key does not
+  // restyle the callout.
   private render(): void {
     const { type, fold } = this.node.attrs as { type: string; fold: string };
     const name = calloutName(this.node);
-    this.dom.dataset.callout = type;
-    if (fold) this.dom.dataset.fold = fold;
-    else delete this.dom.dataset.fold;
-    this.dom.setAttribute('aria-label', name);
-    this.typeButton.setAttribute('aria-label', t('editor.callout.typeButton', { type: calloutTypeName(type) }));
-    this.typeButton.hidden = !this.editor.isEditable;
-    this.foldButton.hidden = fold === '';
-    this.foldButton.setAttribute('aria-expanded', String(fold !== '-'));
+    setData(this.dom, 'callout', type);
+    setData(this.dom, 'fold', fold || undefined);
+    setAttr(this.dom, 'aria-label', name);
+    setAttr(this.typeButton, 'aria-label', t('editor.callout.typeButton', { type: calloutTypeName(type) }));
+    setHidden(this.typeButton, !this.editor.isEditable);
+    setHidden(this.foldButton, fold === '');
+    setAttr(this.foldButton, 'aria-expanded', String(fold !== '-'));
     const title = this.node.firstChild?.textContent.trim() || calloutTypeName(type);
-    this.foldButton.setAttribute(
+    setAttr(
+      this.foldButton,
       'aria-label',
       t(fold === '-' ? 'editor.fold.expand' : 'editor.fold.collapse', { name: title }),
     );

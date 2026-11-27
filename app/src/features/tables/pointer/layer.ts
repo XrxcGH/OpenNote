@@ -12,6 +12,7 @@ import type { PointerRunner } from './active';
 import { attachFill } from './fillHandle';
 import { createGeometry } from './geometry';
 import styles from './pointer.module.css';
+import { setHidden, setStyle, toggleAttr } from '../../../ui/domWrites';
 import { attachBorders } from './stroke';
 import { attachTouch } from './touch';
 
@@ -46,8 +47,8 @@ function createElements(doc: Document, scroller: HTMLElement): Elements {
 }
 
 const put = (el: HTMLElement, x: number, y: number) => {
-  el.style.left = `${x}px`;
-  el.style.top = `${y}px`;
+  setStyle(el, 'left', `${x}px`);
+  setStyle(el, 'top', `${y}px`);
 };
 
 /** Puts the handles at the corners of the range: the fill handle at the last cell, touch handles just outside. */
@@ -58,12 +59,14 @@ function placeHandles(ctx: PointerContext): void {
   const g = ranged && keysOn(view.state) && sheetKeysKey.getState(view.state)?.focused ? gridOf(view.state) : null;
   const first = g && geo.cellElement({ row: g.box.top, column: g.box.left });
   const last = g && geo.cellElement({ row: g.box.bottom, column: g.box.right });
-  els.fill.hidden = !first || !last;
-  els.start.hidden = els.end.hidden = !first || !last || !ctx.touch;
+  // Each key in a cell comes here with the handles already hidden: they are left alone, so the key writes nothing.
+  setHidden(els.fill, !first || !last);
+  setHidden(els.start, !first || !last || !ctx.touch);
+  setHidden(els.end, !first || !last || !ctx.touch);
   if (!first || !last) return;
   const a = geo.local(first.getBoundingClientRect());
   const b = geo.local(last.getBoundingClientRect());
-  els.layer.toggleAttribute('data-touch', ctx.touch);
+  toggleAttr(els.layer, 'data-touch', ctx.touch);
   put(els.fill, b.right, b.bottom);
   // The selection handles are for fingers. They sit just outside the corners so they never cover the fill handle.
   put(els.start, a.left - 8, a.top - 8);

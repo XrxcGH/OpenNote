@@ -119,3 +119,26 @@ describe('the grip of a text box under a floating panel', () => {
     expect(grip.style.clipPath).toContain('polygon(evenodd');
   });
 });
+
+describe('the chrome drawn again with nothing changed', () => {
+  it('writes nothing, so a redraw while typing asks for no frame (nightly perf-typing-gate)', async () => {
+    const fixture = textPageFixture('Steady');
+    const harness = await renderPage({ fixture });
+    const id = fixture.page.blocks[0].id;
+    harness.mounted.objects.select([id]);
+    await frame();
+    await frame();
+    const { element } = harness.mounted.chrome;
+    expect(element.querySelector('[data-handle="grip"]')).not.toBeNull();
+    const records: MutationRecord[] = [];
+    const writes = new MutationObserver((found) => records.push(...found));
+    writes.observe(element, { attributes: true, childList: true, characterData: true, subtree: true });
+    // A box that grows as text is typed draws the chrome again (its resize observer).
+    harness.mounted.chrome.update();
+    await frame();
+    await frame();
+    records.push(...writes.takeRecords());
+    writes.disconnect();
+    expect(records).toEqual([]);
+  });
+});

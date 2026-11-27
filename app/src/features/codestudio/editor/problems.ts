@@ -10,7 +10,8 @@ import {
   setDiagnostics,
 } from '@codemirror/lint';
 import type { Action, Diagnostic as CmDiagnostic } from '@codemirror/lint';
-import type { Extension } from '@codemirror/state';
+import { StateEffect, StateField } from '@codemirror/state';
+import type { Extension, StateEffect as Effect } from '@codemirror/state';
 import type { EditorView } from '@codemirror/view';
 import { t } from '../../../strings/t';
 import { announce } from '../../../ui/announce';
@@ -72,6 +73,53 @@ function toCodeMirror(item: Diagnostic, length: number, language?: EditorLanguag
   };
 }
 
+/** A problem as shown: its place, and what it says and offers, as one string. */
+interface ShownProblem {
+  from: number;
+  to: number;
+  says: string;
+}
+
+interface Shown {
+  problems: readonly ShownProblem[];
+  /** The first place the text was edited since the problems were shown. */
+  editedFrom: number;
+}
+
+const showEffect = StateEffect.define<readonly ShownProblem[]>();
+
+/** The problems last shown, and where the text was first edited since. */
+const shownField = StateField.define<Shown>({
+  create: () => ({ problems: [], editedFrom: Infinity }),
+  update(value, tr) {
+    for (const effect of tr.effects) if (effect.is(showEffect)) return { problems: effect.value, editedFrom: Infinity };
+    if (!tr.docChanged) return value;
+    let editedFrom = value.editedFrom;
+    tr.changes.iterChangedRanges((from) => (editedFrom = Math.min(editedFrom, from)));
+    return { problems: value.problems, editedFrom };
+  },
+});
+
+/**
+ * Whether the editor shows these problems already. Typing after a problem leaves it where it was, and the checks
+ * publish it again after each key. Drawing it again would draw a frame just before the next key, which then waits a
+ * whole frame to be drawn (docs/perf/phase-4.md). Text edited at or before a problem's end may have moved its mark,
+ * so it is drawn again.
+ */
+function alreadyShown(view: EditorView, problems: readonly ShownProblem[]): boolean {
+  const shown = view.state.field(shownField, false);
+  if (!shown || shown.problems.length !== problems.length) return false;
+  return problems.every((problem, at) => {
+    const before = shown.problems[at];
+    return (
+      problem.to < shown.editedFrom &&
+      before.from === problem.from &&
+      before.to === problem.to &&
+      before.says === problem.says
+    );
+  });
+}
+
 /**
  * Shows a file's problems, replacing the ones shown before. With a context the problems first get their quick fixes
  * (fixMenu, DESIGN 7.1) and an Explain entry, so the hover menu, the lightbulb, and Ctrl+. offer them.
@@ -79,12 +127,17 @@ function toCodeMirror(item: Diagnostic, length: number, language?: EditorLanguag
 export function showProblems(view: EditorView, items: readonly Diagnostic[], ctx?: Omit<FixContext, 'text'>): void {
   const length = view.state.doc.length;
   const withFixes = ctx ? fixMenu(items, { ...ctx, text: view.state.doc.toString() }).items : items;
-  view.dispatch(
-    setDiagnostics(
-      view.state,
-      withFixes.map((item) => toCodeMirror(item, length, ctx?.language)),
-    ),
-  );
+  const diagnostics = withFixes.map((item) => toCodeMirror(item, length, ctx?.language));
+  const problems = withFixes
+    .map((item, at): ShownProblem => {
+      const { from, to } = diagnostics[at];
+      const { severity, source, code, message, fixes } = item;
+      return { from, to, says: JSON.stringify([severity, source, code, message, fixes ?? [], ctx?.language ?? '']) };
+    })
+    .sort((a, b) => a.from - b.from || a.to - b.to || (a.says < b.says ? -1 : a.says > b.says ? 1 : 0));
+  if (alreadyShown(view, problems)) return;
+  const effects: Effect<unknown>[] = [setDiagnostics(view.state, diagnostics).effects ?? []].flat();
+  view.dispatch({ effects: [...effects, showEffect.of(problems)] });
 }
 
 function problemAt(view: EditorView): CmDiagnostic | null {
@@ -140,4 +193,4 @@ export function goToProblem(view: EditorView, direction: 1 | -1): boolean {
   return moved;
 }
 
-export const problemExtensions: Extension = [lintGutter()];
+export const problemExtensions: Extension = [lintGutter(), shownField];

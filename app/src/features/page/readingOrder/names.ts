@@ -4,6 +4,7 @@
 // line, so object mode reads "Light reactions, text box". The same names serve the Reading order pane.
 import type { BlockJson } from '../../../services/pages/types';
 import { t } from '../../../strings/t';
+import { setAttr } from '../../../ui/domWrites';
 import type { BlockView } from '../blocks/types';
 
 const floating = (block: BlockJson) => block.frame?.x !== undefined && block.frame?.y !== undefined;
@@ -44,8 +45,9 @@ export function nameBlocks(order: readonly BlockJson[], view: (id: string) => Bl
           ? t('page.block.flowPartName', { index: part + 1, count: textParts.length })
           : t('page.block.flowName');
     }
-    shown.editRoot?.setAttribute('aria-label', name);
-    shown.element.setAttribute('aria-roledescription', t('page.block.roleText'));
-    shown.element.setAttribute('aria-label', summary(block) || name);
+    // The blocks are named again whenever one changes, typing included: a name that stayed is not written again.
+    if (shown.editRoot) setAttr(shown.editRoot, 'aria-label', name);
+    setAttr(shown.element, 'aria-roledescription', t('page.block.roleText'));
+    setAttr(shown.element, 'aria-label', summary(block) || name);
   }
 }

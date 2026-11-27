@@ -5,6 +5,7 @@
 import type { Editor } from '@tiptap/core';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import { CellSelection } from '@tiptap/pm/tables';
+import { TextSelection } from '@tiptap/pm/state';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { initFlags } from '../../../app/flags';
 import { createBlockEditor } from '../../../editor/extensions/kit';
@@ -400,5 +401,27 @@ describe('Border modes and the menu after a drop, from the keyboard', () => {
           .slice(0, 3),
       ).toEqual(['2026-01-02', '2026-01-03', '2026-01-04']),
     );
+  });
+});
+
+describe('typing in a cell', () => {
+  it('writes nothing to the handles, so the key asks for no frame for them (nightly perf-typing-gate)', () => {
+    const sheet = mount(GRID, {}, true);
+    const view = sheet.editor.view;
+    sheet.select('C3');
+    const cell = (view.state.selection as CellSelection).$anchorCell.pos;
+    view.dispatch(view.state.tr.setSelection(TextSelection.create(view.state.doc, cell + 2)));
+    const handles = view.dom.parentElement!.querySelector('[data-sheet-handle]')!.parentElement!;
+    const writes = new MutationObserver(() => {});
+    writes.observe(handles, { attributes: true, childList: true, subtree: true });
+    // The sheet pointer plugin updates the layer on every transaction (plugin.ts).
+    const layer = layers[layers.length - 1];
+    for (const key of 'abc') {
+      view.dispatch(view.state.tr.insertText(key));
+      layer.update();
+    }
+    expect(writes.takeRecords()).toEqual([]);
+    writes.disconnect();
+    expect(sheet.texts()[2][2]).toBe('abc');
   });
 });

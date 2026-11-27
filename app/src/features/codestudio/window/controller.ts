@@ -698,10 +698,12 @@ export class StudioController {
   setDiagnostics(file: string, items: readonly Diagnostic[]): void {
     const id = this.idOfPath(file);
     const text = id ? (this.project()?.files[id]?.text ?? '') : '';
-    this.checkProblems.set(
-      file,
-      items.map((item) => fromDiagnostic(item, text)),
-    );
+    const problems = items.map((item) => fromDiagnostic(item, text));
+    // The checks publish again after each key. The same problems draw the panel again for nothing: a frame just
+    // before the next key, which then waits a whole frame to be drawn (docs/perf/phase-4.md).
+    const before = this.checkProblems.get(file);
+    if (before && JSON.stringify(before) === JSON.stringify(problems)) return;
+    this.checkProblems.set(file, problems);
     this.changed();
   }
 

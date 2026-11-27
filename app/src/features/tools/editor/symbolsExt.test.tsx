@@ -87,4 +87,17 @@ describe('symbol autocompletion', () => {
     await type('a\\alpha \\\\beta ');
     expect(text()).toBe('a\\alpha \\\\beta ');
   });
+
+  it('leaves the hidden list alone while plain words are typed (nightly perf-typing-gate)', async () => {
+    await type('a');
+    const records: MutationRecord[] = [];
+    const writes = new MutationObserver((found) => records.push(...found));
+    writes.observe(list()!, { attributes: true, childList: true, subtree: true });
+    // Each key comes to the list. One that opens none must not hide it again: that restyles it and asks for a frame.
+    await type('bc de');
+    records.push(...writes.takeRecords());
+    writes.disconnect();
+    expect(records).toEqual([]);
+    expect(list()?.hidden).toBe(true);
+  });
 });
