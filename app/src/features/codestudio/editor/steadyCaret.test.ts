@@ -28,7 +28,8 @@ describe('the steady caret', () => {
     vi.useFakeTimers();
     for (const key of 'abc') {
       const at = editor.view.state.selection.main.head;
-      editor.view.dispatch({ changes: { from: at, insert: key }, selection: { anchor: at + 1 }, userEvent: 'input.type' });
+      const changes = { from: at, insert: key };
+      editor.view.dispatch({ changes, selection: { anchor: at + 1 }, userEvent: 'input.type' });
       vi.advanceTimersByTime(BLINK_AGAIN_MS / 2);
       expect(layer.classList.contains(STEADY_CLASS)).toBe(true);
     }

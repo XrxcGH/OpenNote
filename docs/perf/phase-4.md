@@ -89,7 +89,7 @@ The nightly `perf-typing-gate` job runs this benchmark with the gate on, on a ho
 | Code studio, 1,000-line file | none | 22.7 to 23.9 | 23.2 | CodeMirror blinks its caret with a CSS animation that never ends, so every key waited for the next tick (p50 16.7 ms). That part is fixed: the caret stays solid while keys come, as a native caret does, and blinks again after 1 s. The rest is the studio's own work per key (parse, completion, problem marks), tracked as B12-TYPING-1000 in [code-studio.md](code-studio.md). |
 | Code studio, 5,000 console lines | none | 22.1 to 23.8 | 22.0 | As above. |
 
-The budget stays at 16 ms. On the development laptop, under load, the fixes moved the studio's p50 from 19 to 13 ms, the burst p95 from 17.5 to 16.3 ms, and the 20-page note's p95 from 10.5 to 8.5 ms. The table, the burst, and the studio are still over budget on a hosted runner.
+The budget stays at 16 ms. The fixes were measured on the development laptop under load. The studio's p50 went from 19 to 13 ms. The burst p95 went from 17.5 to 16.3 ms. The 20-page note's p95 went from 10.5 to 8.5 ms. The table, the burst, and the studio are still over budget on a hosted runner.
 
 ## Not yet measured
 

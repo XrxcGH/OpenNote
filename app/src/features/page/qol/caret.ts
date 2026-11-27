@@ -105,8 +105,8 @@ export function attachCaret(mounted: MountedPage): () => void {
   const schedule = () => {
     if (frame === 0) frame = requestAnimationFrame(place);
   };
-  // With the browser's own caret there is nothing to place, and a frame asked for on every key would keep the
-  // frame clock running, so the next key waits for its tick.
+  // With the browser's own caret there is nothing to place. A frame asked for on every key would keep the frame
+  // clock running, and the next key would wait for its tick.
   const follow = () => {
     if (look.custom || !element.hidden) schedule();
   };

@@ -1,9 +1,9 @@
 // A solid caret while the person types, as a native caret is.
 //
 // CodeMirror draws its caret and blinks it with a CSS animation that never ends. A running animation keeps the
-// browser's frame clock ticking, so each key waits for the clock's next tick before it is drawn: up to 16.7 ms more
-// at 60 Hz, which put typing in the Code studio over its 16 ms budget. So the blink stops while keys come and starts
-// again after a pause. The class goes on and off once per run of typing, not once per key.
+// browser's frame clock ticking. Each key then waits for the clock's next tick before it is drawn, up to 16.7 ms
+// more at 60 Hz. That put typing in the Code studio over its 16 ms budget. So the blink stops while keys come and
+// starts again after a pause. The class goes on and off once per run of typing, not once per key.
 
 import { EditorView, ViewPlugin } from '@codemirror/view';
 import type { ViewUpdate } from '@codemirror/view';
