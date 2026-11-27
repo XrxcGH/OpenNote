@@ -1,6 +1,7 @@
 // TEMPORARY diagnostic: what does NVDA say for live regions, and who has the foreground. Removed before merge.
 import { execFileSync } from 'node:child_process';
-import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs';
+import { appendFileSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { chromium, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
@@ -132,8 +133,8 @@ test.describe('probe', () => {
         );
       };
       // Time stamps: when the page announced, and when NVDA's log grew.
-      const stamped = async (label: string, act: () => Promise<void>, ms = 7000) => {
-        await page.evaluate(() => {
+      const stamped = async (pg: Page, label: string, act: () => Promise<void>, ms = 7000) => {
+        await pg.evaluate(() => {
           const w = window as unknown as { __seen?: string[]; __obs?: MutationObserver };
           w.__seen = [];
           w.__obs?.disconnect();
@@ -151,42 +152,57 @@ test.describe('probe', () => {
         let last = 0;
         const events: string[] = [];
         while (Date.now() - t0 < ms) {
-          await page.waitForTimeout(250);
+          await pg.waitForTimeout(250);
           const said = await nvda.spokenPhraseLog();
           if (said.length !== last) {
             events.push(`${Date.now() - t0}ms:${JSON.stringify(said.slice(last))}`);
             last = said.length;
           }
         }
-        const seen = await page.evaluate(() => (window as unknown as { __seen: string[] }).__seen);
+        const seen = await pg.evaluate(() => (window as unknown as { __seen: string[] }).__seen);
         log(`${label}: act took ${acted} ms
    page live changes: ${JSON.stringify(seen)}
    NVDA: ${events.join(' ')}`);
       };
-      await stamped('E1 OS-typed pri', async () => {
-        await nvda.type('pri');
-      });
+      const typeThenDismiss = async (pg: Page) => {
+        await pg.locator('[data-testid="code-editor-host"] .cm-content').click();
+        await pg.keyboard.type('pri');
+        await pg.waitForTimeout(500);
+        await pg.keyboard.press('Escape');
+        await pg.waitForTimeout(2600);
+      };
       await open(page, suggest);
-      await stamped('E2 OS pr, pause, OS i', async () => {
-        await nvda.type('pr');
-        await page.waitForTimeout(1500);
-        await nvda.type('i');
+      await typeThenDismiss(page);
+      await stamped(page, 'S1 OS Alt+Backslash requests the suggestion', async () => {
+        await nvda.press('Alt+Backslash');
       });
-      await open(page, suggest);
-      await stamped('E3 CDP pri then OS F9 at once', async () => {
-        await page.keyboard.type('pri');
-        await nvda.press('F9');
+      await stamped(page, 'S2 OS Ctrl+Right accepts a word', async () => {
+        await nvda.press('Control+ArrowRight');
       });
-      await stamped('E4 CDP Ctrl+Tab then OS F9 at once', async () => {
-        await page.keyboard.press('Control+Tab');
-        await nvda.press('F9');
+      log(`S2 text: ${await page.evaluate(() => (window as unknown as { __OPENNOTE_TEST__: Hooks }).__OPENNOTE_TEST__.codeEditorText())}`);
+      // The app window: no tab strip, so Ctrl+Tab may reach the page.
+      const dir = mkdtempSync(join(tmpdir(), 'nvda-app-'));
+      const ctx = await chromium.launchPersistentContext(dir, {
+        channel: browserChannel(),
+        headless: false,
+        viewport: null,
+        args: ['--force-renderer-accessibility', `--app=${BASE_URL}/?fixture=short`],
       });
-      await open(page, suggest);
-      await stamped('E5 CDP pri, wait 600, OS F9', async () => {
-        await page.keyboard.type('pri');
-        await page.waitForTimeout(600);
-        await nvda.press('F9');
-      });
+      try {
+        const app = ctx.pages()[0] ?? (await ctx.waitForEvent('page'));
+        log(`app window pages: ${ctx.pages().length}; fg=${foreground()}`);
+        await open(app, suggest);
+        await typeThenDismiss(app);
+        await stamped(app, 'T1 app window: OS Alt+Backslash', async () => {
+          await nvda.press('Alt+Backslash');
+        });
+        await stamped(app, 'T2 app window: OS Ctrl+Tab accepts', async () => {
+          await nvda.press('Control+Tab');
+        });
+        log(`T2 text: ${await app.evaluate(() => (window as unknown as { __OPENNOTE_TEST__: Hooks }).__OPENNOTE_TEST__.codeEditorText())}`);
+      } finally {
+        await ctx.close();
+      }
     } finally {
       await nvda.stop().catch(() => undefined);
       await browser.close();
