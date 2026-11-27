@@ -40,14 +40,28 @@ export async function ensureCaret(page: Page): Promise<void> {
  * Deletes the oldest text, a screen at a time from the top of the note, until the note is no longer than `limit`
  * characters. It never takes more than one screen past the limit, so the note stays about the size it started. The
  * soak used to delete from the caret back to the start, which empties the note whenever the caret is at the end.
+ *
+ * Each Backspace must delete the screen the browser shows selected: some text, and no more than that. Nightly run
+ * 46047189415 left 14,730 of 44,947 characters. The Backspace had come before the browser's selectionchange event,
+ * so the editor deleted an old selection or none (app/src/editor/keySelection.ts).
  */
 export async function trim(page: Page, limit: number): Promise<void> {
   await key(page, 'Control+Home');
-  for (let round = 0; round < 40 && (await textLength(page)) > limit; round += 1) {
+  for (let round = 0; round < 40; round += 1) {
+    const before = await textLength(page);
+    if (before <= limit) return;
     await key(page, 'Shift+PageDown');
+    const selected = await selectedLength(page);
     await key(page, 'Backspace');
+    const deleted = before - (await textLength(page));
+    if (deleted <= 0 || deleted > selected) {
+      throw new Error(`Trim round ${round}: Backspace deleted ${deleted} characters with ${selected} selected.`);
+    }
   }
 }
+
+/** The characters in the browser's selection, with one for each line break between blocks. */
+const selectedLength = (page: Page) => page.evaluate(() => window.getSelection()?.toString().length ?? 0);
 
 /** Opens the next page in the list and comes back to this one. */
 export async function switchPages(page: Page): Promise<void> {

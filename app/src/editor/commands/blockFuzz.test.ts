@@ -191,6 +191,10 @@ function actions(editor: Editor): Action[] {
   return [...keys, ...commands, ...pastes, ...typed, cut];
 }
 
+/** The cases for each seed, and how many one test runs. */
+const CASES = 400;
+const RUN = 100;
+
 let mounted: TestEditor;
 let all: Action[];
 beforeAll(() => {
@@ -199,12 +203,15 @@ beforeAll(() => {
 });
 afterAll(() => mounted.destroy());
 
-/** Runs `cases` random cases from `seed` and returns the failures, each with what reproduces it. */
-function fuzz(seed: number, cases: number, steps: number): string[] {
-  const random = seeded(seed);
+/**
+ * Runs the random cases `first` to `first + cases - 1` of `seed` and returns the failures, each with what reproduces
+ * it. Each case draws from a generator of its own, so a run of cases is the same alone as after the ones before it.
+ */
+function fuzz(seed: number, first: number, cases: number, steps: number): string[] {
   const failures = new Set<string>();
   const { editor } = mounted;
-  for (let index = 0; index < cases; index += 1) {
+  for (let index = first; index < first + cases; index += 1) {
+    const random = seeded(seed * CASES + index);
     const doc = documentOf(random);
     editor.commands.setContent(doc);
     editor.view.dispatch(editor.state.tr.setSelection(Selection.atStart(editor.state.doc)));
@@ -250,9 +257,13 @@ describe('every key and block command over lists', () => {
     expect(names).toContain('command block.bulletList {}');
   });
 
+  // Each test runs a run of a seed's cases. One test of all 400 took 3 of its 5 seconds on Windows, and ran out of
+  // them on macOS when the runner was busy.
   for (const seed of [1, 2, 3, 91]) {
-    it(`keeps a valid document and selection (seed ${seed})`, () => {
-      expect(fuzz(seed, 400, 5)).toEqual([]);
-    });
+    for (let first = 0; first < CASES; first += RUN) {
+      it(`keeps a valid document and selection (seed ${seed}, cases ${first} to ${first + RUN - 1})`, () => {
+        expect(fuzz(seed, first, RUN, 5)).toEqual([]);
+      });
+    }
   }
 });
