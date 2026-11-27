@@ -22,8 +22,13 @@ pub struct Workload {
     pub strokes: usize,
     /// Points in each stroke.
     pub points: usize,
-    /// Timed page opens, and timed saves after one new stroke.
+    /// Timed page opens.
     pub runs: usize,
+    /// Timed saves after one new stroke. A save waits on several flushes, so a disk that stalls slows every save
+    /// in the stall. On a hosted runner 100 saves took half a second, and one stall of a third of a second made
+    /// their whole top 5 percent. 500 saves span about two and a half seconds, so one stall can't set the 95th
+    /// percentile.
+    pub saves: usize,
     /// Timed journal appends with their flushes.
     pub appends: usize,
     /// The journal bytes that recovery replays.
@@ -43,6 +48,7 @@ impl Workload {
             strokes: 5_000,
             points: 80,
             runs: if quick { 20 } else { 100 },
+            saves: if quick { 20 } else { 500 },
             appends: if quick { 200 } else { 1_000 },
             journal_bytes: 4 << 20,
             recoveries: if quick { 1 } else { 3 },
