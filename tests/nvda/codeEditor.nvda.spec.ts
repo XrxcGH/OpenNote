@@ -4,13 +4,13 @@
 // whose test hook mounts an editor with a fake suggestion source.
 //
 // What NVDA hears, measured on the runner (nightly run of 2026-11-27):
-// - A key that Playwright sends is not input to NVDA, and NVDA says nothing for a live region that changes after it.
+// - A key that Playwright sends is not input to NVDA. NVDA says nothing for a live region that changes after it.
 //   Keys go through NVDA (nvda.press), which sends real ones to the window.
-// - NVDA says a live region that changes within about half a second of a real key, but not one that changes while a
-//   character is typed, and not one that changes a second or more after the key.
-// So the spec cannot type and wait for the suggestion. A real F9, which does nothing else, runs a test hook that asks
-// the source for the suggestion (the same code as Alt+\), and a second F9 accepts it. Edge keeps Ctrl+Tab for its own
-// tabs when it is a real key, so the accept goes through the hook too. The announcements are the app's own.
+// - NVDA says a live region that changes within about half a second of a real key.
+// - NVDA does not say one that changes while a character is typed, or a second or more after the key.
+// So the spec cannot type and wait for the suggestion. A real F9, which does nothing else, runs a test hook. The hook
+// asks the source for the suggestion, as Alt+\ does. A second F9 accepts it. Edge keeps a real Ctrl+Tab for its own
+// tabs, so the accept goes through the hook too. The announcements are the app's own.
 
 import { chromium, expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';

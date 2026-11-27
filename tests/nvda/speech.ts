@@ -45,10 +45,9 @@ export interface Presser extends Listener {
 }
 
 /**
- * Presses a key and listens; if NVDA did not say the phrases, presses it again, up to `attempts` times. NVDA says
- * "totl selected" for the caret that F8 moves, and on some runs that speech replaces the announcement that came with
- * it, so the first press says only the selection. A person would press the key again, as this does. The returned log
- * holds everything NVDA said over all the presses.
+ * Presses a key and listens. If NVDA did not say the phrases, it presses the key again, up to `attempts` times.
+ * NVDA says "totl selected" for the caret that F8 moves. On some runs that speech replaces the announcement that came
+ * with it. A person would press the key again, as this does. The log holds everything NVDA said over all the presses.
  */
 export async function pressUntilHeard(
   nvda: Presser,

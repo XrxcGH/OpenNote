@@ -4,9 +4,9 @@
 // The console and the Problems panel have scripts too: a run's error line is a link, and a problem is a row. The
 // debugger has no screen yet, so its phrases are fixed here and its script waits (test.fixme below).
 //
-// The keys go through NVDA (nvda.press), as real keys: a key that Playwright sends is not input to NVDA, and NVDA
-// says nothing for what changes after it (see codeEditor.nvda.spec.ts). Moving focus by script is not spoken either,
-// so the console and Problems scripts ask NVDA to report the focus, as nvda.spec.ts does.
+// The keys go through NVDA (nvda.press), as real keys. A key that Playwright sends is not input to NVDA, and NVDA
+// says nothing for what changes after it (see codeEditor.nvda.spec.ts). Moving focus by script is not spoken either.
+// So the console and Problems scripts ask NVDA to report the focus, as nvda.spec.ts does.
 
 import { chromium, expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
@@ -40,8 +40,8 @@ async function openRunStudio(page: Page): Promise<void> {
   await expect(text).toHaveAttribute('contenteditable', 'true');
   await page.keyboard.press('Control+End');
   await page.keyboard.press('Enter');
-  // The palette is a lazy chunk and its key handler is installed late: press Ctrl+K until the box has focus, and
-  // only then type, so the text is not lost into the page.
+  // The palette is a lazy chunk, and its key handler is installed late. Press Ctrl+K until the box has focus. Only
+  // then type, so the text is not lost into the page.
   const palette = page.locator('[data-scope="palette"]').getByRole('combobox').first();
   await expect(async () => {
     if (!(await palette.isVisible())) await page.keyboard.press('Control+k');

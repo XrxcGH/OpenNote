@@ -1,9 +1,9 @@
 // Test hooks for the code editor's behavior specs. Only `vite build --mode test` builds have them.
 // window.__OPENNOTE_TEST__.codeEditorMount mounts an editor on top of the app. Its `suggest` option gives it a fake
 // suggestion source that completes a fixed prefix. codeEditorText and codeEditorHead read its text and caret.
-// codeEditorProblem puts one problem on it. codeEditorSuggest('show') asks the source for a suggestion and shows it,
-// and codeEditorSuggest('accept') inserts what shows, with the same announcements as the keys. The NVDA run calls it
-// from a real key, because NVDA does not speak a live region that changes while someone types.
+// codeEditorProblem puts one problem on it. codeEditorSuggest shows a suggestion, or accepts the one that shows, with
+// the announcements the keys make. The NVDA run calls it from a real key. NVDA says nothing for a live region that
+// changes while someone types.
 import type { CodeEditor } from './create';
 
 interface MountOptions {
