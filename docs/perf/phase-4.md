@@ -99,16 +99,18 @@ Each slow key followed a frame drawn by work on a timer after the previous key. 
 
 - **Table.** The smart table recalculates 120 ms after a key, just before the next key at a typist's pace. It sent its results to the editor even when they had not changed. That drew the table's toolbar and the pointer layer again, and the pointer layer wrote `hidden` on its three handles. Now a recalculation whose results did not change sends nothing, and the handles are written only when they change.
 - **Code studio.** The syntax check publishes a file's problems 50 ms after a key. The editor drew them and its gutter again each time, though typing after a problem leaves it where it was. The studio's Problems panel drew again too. Now the same problems draw nothing. A key at the end of a long line also scrolled twice: the browser scrolled the caret into view, then CodeMirror scrolled again for its 5 px margin, in a second frame. The editor's scroller now has the same `scroll-padding`, so one scroll does.
-- **The whole class.** A probe recorded every write of an unchanged `hidden`, attribute, boolean attribute, or style property while each condition typed. It found the same pattern in the symbol list, callouts, the page chrome, table blocks, reading order names, the save status, panel blocks, the page counter, and the command bar's roving tab stop. All of them now skip a value the element already has, through `app/src/ui/domWrites.ts`. The behavior spec `tests/ui/behavior/typing-writes.spec.ts` runs that probe in four conditions and fails on any such write.
+- **The whole class.** A probe recorded every unchanged write while each condition typed. It found the same pattern in nine more places, from the symbol list to the command bar. They now skip a value the element has, through `app/src/ui/domWrites.ts`. `tests/ui/behavior/typing-writes.spec.ts` runs the probe in four conditions.
 
-Painted p95 on the development laptop, in ms:
+Painted p95, in ms. Hosted numbers come from the pull request job: main first, then this change twice.
 
-| Condition | Before | After |
-|---|---|---|
-| Table cell | 17.5 | 10.6 |
-| Code studio | 18.9 | 8.3 |
-| Code studio, 5,000 console lines | 20.3 | 7.9 |
-| Bursts of 30 keys a second | 17.2 | 16.0 to 17.5 |
+| Condition | Laptop before | Laptop after | Hosted before | Hosted after |
+|---|---|---|---|---|
+| Table cell | 17.5 | 10.6 | 18.4 | 12.4, 11.1 |
+| Code studio | 18.9 | 8.3 | 20.3 | 17.0, 17.4 |
+| Code studio, 5,000 console lines | 20.3 | 7.9 | 21.6 | 17.8, 18.0 |
+| Bursts of 30 keys a second | 17.2 | 16.0 to 17.5 | 16.2 | 17.4, 17.2 |
+
+The table is under budget. The studio is not, on the slower hosted runner. Most of each key's work there is CodeMirror's own: the incremental parse and the view update. CodeMirror also measures its completion list again 50 ms after the list changes size, a frame before some keys. A 1.6 times CPU throttle on the laptop gives the hosted numbers.
 
 The burst stays at the edge. At 30 keys a second, each key comes about two ticks after the last one's frame, just when Chromium stops the clock. About one key in ten waits most of a tick. The app's work after the tick is about 2 ms. That is Chromium's frame scheduling, not app work, and it needs the owner's decision.
 
