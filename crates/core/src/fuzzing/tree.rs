@@ -23,7 +23,7 @@ use crate::store::fs::Fs;
 use crate::store::layout::{temp_name, ITEM_JSON, SECTION_JSON};
 use crate::store::notebook_store::kit::Kit;
 use crate::store::notebook_store::{copy_tree, NotebookStore};
-use crate::testing::MemFs;
+use crate::testing::{MemFs, RegistryCodec};
 
 /// The most steps a script runs, so a long input can't take long.
 const MAX_STEPS: usize = 48;
@@ -70,27 +70,35 @@ fn run_script(data: &[u8]) {
     assert!(
         after == before,
         "a second scan changed the notebook: {}",
-        changes(&before, &after)
+        changes(&kit.codec, &before, &after)
     );
 }
 
-/// The files that differ between two snapshots, as `+ added`, `- removed`, and `~ changed` lines.
-fn changes(before: &BTreeMap<PathBuf, Vec<u8>>, after: &BTreeMap<PathBuf, Vec<u8>>) -> String {
+/// The files that differ between two snapshots, as `+ added`, `- removed`, and `~ changed` lines. A changed
+/// file shows what it held before and after, so a crash report says what the second scan rewrote.
+fn changes(codec: &RegistryCodec, before: &BTreeMap<PathBuf, Vec<u8>>, after: &BTreeMap<PathBuf, Vec<u8>>) -> String {
+    let show = |bytes: &[u8]| {
+        codec
+            .describe(bytes)
+            .unwrap_or_else(|| String::from_utf8_lossy(bytes).into_owned())
+    };
     let mut lines = Vec::new();
     for (path, bytes) in after {
         match before.get(path) {
             None => lines.push(format!("+ {}", path.display())),
-            Some(old) if old != bytes => lines.push(format!("~ {}", path.display())),
+            Some(old) if old != bytes => lines.push(format!(
+                "~ {}\n  before: {}\n  after:  {}",
+                path.display(),
+                show(old),
+                show(bytes)
+            )),
             Some(_) => {}
         }
     }
     for path in before.keys().filter(|p| !after.contains_key(*p)) {
         lines.push(format!("- {}", path.display()));
     }
-    lines.join(
-        "
-",
-    )
+    lines.join("\n")
 }
 
 fn snapshot(fs: &MemFs) -> BTreeMap<PathBuf, Vec<u8>> {
@@ -327,6 +335,124 @@ mod tests {
             include_bytes!("../../fuzz/regressions/notebook_tree/crash-b437e2a06be88bf4ef9b31fb84901340fd5aa807");
         let failed = failing_seeds(crash);
         assert!(failed.is_empty(), "failed with seeds {failed:?}");
+    }
+
+    /// The nightly crash of a page listed twice while a restore of it stopped part way. The scan settled one
+    /// entry and kept the other, so the second scan cleared the mark the first one left. Whether it failed hung
+    /// on the order of the sections' random IDs, so it runs over many seeds.
+    #[test]
+    fn the_second_section_file_crash_passes_with_every_seed() {
+        let crash =
+            include_bytes!("../../fuzz/regressions/notebook_tree/crash-c831e76a2fd168be3b91f46dcb129146270122fd");
+        let failed = failing_seeds(crash);
+        assert!(failed.is_empty(), "failed with seeds {failed:?}");
+    }
+
+    /// Every crash the nightly fuzzer found, which the driver mutates as `cargo fuzz` would.
+    const CRASHES: [&[u8]; 5] = [
+        include_bytes!("../../fuzz/regressions/notebook_tree/crash-44a77e0e2af24a100413c37c3a4dd97037cc49b9"),
+        include_bytes!("../../fuzz/regressions/notebook_tree/crash-b437e2a06be88bf4ef9b31fb84901340fd5aa807"),
+        include_bytes!("../../fuzz/regressions/notebook_tree/crash-c7416f02a7a547015e63402d8537fc43ac2a8a9c"),
+        include_bytes!("../../fuzz/regressions/notebook_tree/crash-e691c790279917580bc59fa65208f421aefcb917"),
+        include_bytes!("../../fuzz/regressions/notebook_tree/crash-c831e76a2fd168be3b91f46dcb129146270122fd"),
+    ];
+
+    /// A script for the driver: random bytes, or a known crash with a few random changes.
+    fn driver_script(next: &mut impl FnMut() -> u64) -> Vec<u8> {
+        let mut below = |n: usize| usize::try_from(next() % u64::try_from(n.max(1)).unwrap_or(1)).unwrap_or(0);
+        if below(3) == 0 {
+            let len = 16 + below(497);
+            return (0..len).map(|_| u8::try_from(below(256)).unwrap_or(0)).collect();
+        }
+        let mut bytes = CRASHES[below(CRASHES.len())].to_vec();
+        for _ in 0..=below(8) {
+            let at = below(bytes.len() + 1);
+            match below(6) {
+                0 if at < bytes.len() => bytes[at] ^= 1 << below(8),
+                1 if at < bytes.len() => bytes[at] = u8::try_from(below(256)).unwrap_or(0),
+                2 => {
+                    let n = 1 + below(16);
+                    let new: Vec<u8> = (0..n).map(|_| u8::try_from(below(256)).unwrap_or(0)).collect();
+                    bytes.splice(at..at, new);
+                }
+                3 => {
+                    let end = (at + 1 + below(32)).min(bytes.len());
+                    bytes.drain(at.min(end)..end);
+                }
+                4 => {
+                    let end = (at + 1 + below(32)).min(bytes.len());
+                    let copy = bytes[at.min(end)..end].to_vec();
+                    let to = below(bytes.len() + 1);
+                    bytes.splice(to..to, copy);
+                }
+                _ => {
+                    let other = CRASHES[below(CRASHES.len())];
+                    let from = below(other.len());
+                    let end = (from + 1 + below(64)).min(other.len());
+                    bytes.splice(at..at, other[from..end].iter().copied());
+                }
+            }
+        }
+        bytes
+    }
+
+    /// Runs `runs` driver scripts from `seed`, each with its own ID seed, and returns how each failing one
+    /// failed. With `out`, it writes each failing script there.
+    fn run_driver(runs: u64, seed: u64, out: Option<&std::path::Path>) -> Vec<String> {
+        let mut state = seed;
+        let mut next = || {
+            state = state.wrapping_add(0x9e37_79b9_7f4a_7c15);
+            let mut z = state;
+            z = (z ^ (z >> 30)).wrapping_mul(0xbf58_476d_1ce4_e5b9);
+            z = (z ^ (z >> 27)).wrapping_mul(0x94d0_49bb_1331_11eb);
+            z ^ (z >> 31)
+        };
+        let hook = std::panic::take_hook();
+        std::panic::set_hook(Box::new(|_| {}));
+        let mut failed = Vec::new();
+        for run in 0..runs {
+            let bytes = driver_script(&mut next);
+            let ids = next();
+            let result = std::panic::catch_unwind(|| notebook_tree_seeded(&bytes, ids));
+            crate::id::seed_ids(None);
+            let Err(e) = result else { continue };
+            let text = e
+                .downcast_ref::<String>()
+                .cloned()
+                .or_else(|| e.downcast_ref::<&str>().map(|s| (*s).to_owned()))
+                .unwrap_or_default();
+            failed.push(format!("run {run} seed {ids}: {}", text.replace('\n', " | ")));
+            if let Some(dir) = out {
+                let _ = std::fs::create_dir_all(dir);
+                let _ = std::fs::write(dir.join(format!("run-{run}-seed-{ids}")), &bytes);
+            }
+        }
+        std::panic::set_hook(hook);
+        failed
+    }
+
+    /// A short run of the driver on every test run: the nightly crashes, changed a little, with many ID seeds.
+    #[test]
+    fn changed_crash_scripts_settle_with_many_seeds() {
+        let failed = run_driver(1_500, 0x5eed, None);
+        assert!(failed.is_empty(), "{} scripts failed: {failed:#?}", failed.len());
+    }
+
+    /// A local stand-in for `cargo fuzz`, which runs on Linux only. It runs `TREE_DRIVER_RUNS` driver scripts
+    /// (50,000 by default) from `TREE_DRIVER_SEED`, writes each failing one to `TREE_DRIVER_OUT`, and fails
+    /// with the count. Run it in release mode:
+    /// `cargo test -p opennote-core --release --lib tree_driver -- --ignored`.
+    #[test]
+    #[ignore = "a long local driver; run it by hand"]
+    fn tree_driver() {
+        let env = |name: &str, default: u64| std::env::var(name).ok().and_then(|v| v.parse().ok()).unwrap_or(default);
+        let runs = env("TREE_DRIVER_RUNS", 50_000);
+        let out = std::env::var("TREE_DRIVER_OUT").ok().map(PathBuf::from);
+        let failed = run_driver(runs, env("TREE_DRIVER_SEED", 1), out.as_deref());
+        for line in &failed {
+            eprintln!("{line}");
+        }
+        assert!(failed.is_empty(), "{} of {runs} scripts failed", failed.len());
     }
 
     #[test]
