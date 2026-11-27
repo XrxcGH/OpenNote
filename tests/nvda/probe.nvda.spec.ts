@@ -131,59 +131,62 @@ test.describe('probe', () => {
           [id, text],
         );
       };
-      await page.locator('[data-testid="code-editor-host"] .cm-content').click();
-      // A matrix: a live region that existed at load or was added later, set 0 to 1500 ms after a real F9, or a CDP F9.
-      for (const kind of ['static', 'dynamic']) {
-        for (const delay of [0, 100, 400, 1500]) {
-          const id = `m-${kind}-${delay}`;
-          await page.evaluate(
-            ([i, k, d]) => {
-              let el = document.getElementById(`pre-${k}`);
-              if (!el) {
-                el = document.createElement('div');
-                el.id = `pre-${k}`;
-                el.setAttribute('aria-live', 'polite');
-                document.body.append(el);
-              }
-              const target = el;
-              const onKey = (event: KeyboardEvent) => {
-                if (event.key !== 'F9') return;
-                document.removeEventListener('keydown', onKey, true);
-                setTimeout(() => {
-                  const span = document.createElement('span');
-                  span.textContent = `Matrix ${i} said`;
-                  target.replaceChildren(span);
-                }, Number(d));
-              };
-              document.addEventListener('keydown', onKey, true);
-            },
-            [id, kind, String(delay)],
-          );
-          await nvda.clearSpokenPhraseLog();
-          await nvda.press('F9');
-          await watch(`M ${id} (OS F9)`, 5000, true);
+      // Time stamps: when the page announced, and when NVDA's log grew.
+      const stamped = async (label: string, act: () => Promise<void>, ms = 7000) => {
+        await page.evaluate(() => {
+          const w = window as unknown as { __seen?: string[]; __obs?: MutationObserver };
+          w.__seen = [];
+          w.__obs?.disconnect();
+          const t0 = performance.now();
+          w.__obs = new MutationObserver(() => {
+            const texts = [...document.querySelectorAll('[aria-live]')].map((e) => e.textContent).filter(Boolean);
+            w.__seen!.push(`${Math.round(performance.now() - t0)}ms:${texts.join('|')}`);
+          });
+          w.__obs.observe(document.body, { childList: true, subtree: true, characterData: true });
+        });
+        await nvda.clearSpokenPhraseLog();
+        const t0 = Date.now();
+        await act();
+        const acted = Date.now() - t0;
+        let last = 0;
+        const events: string[] = [];
+        while (Date.now() - t0 < ms) {
+          await page.waitForTimeout(250);
+          const said = await nvda.spokenPhraseLog();
+          if (said.length !== last) {
+            events.push(`${Date.now() - t0}ms:${JSON.stringify(said.slice(last))}`);
+            last = said.length;
+          }
         }
-      }
-      for (const delay of [0, 400]) {
-        await page.evaluate(
-          ([d]) => {
-            const target = document.getElementById('pre-static')!;
-            const onKey = (event: KeyboardEvent) => {
-              if (event.key !== 'F9') return;
-              document.removeEventListener('keydown', onKey, true);
-              setTimeout(() => {
-                const span = document.createElement('span');
-                span.textContent = `Matrix CDP ${d} said`;
-                target.replaceChildren(span);
-              }, Number(d));
-            };
-            document.addEventListener('keydown', onKey, true);
-          },
-          [String(delay)],
-        );
-        await page.keyboard.press('F9');
-        await watch(`M static ${delay} (CDP F9)`, 5000, true);
-      }
+        const seen = await page.evaluate(() => (window as unknown as { __seen: string[] }).__seen);
+        log(`${label}: act took ${acted} ms
+   page live changes: ${JSON.stringify(seen)}
+   NVDA: ${events.join(' ')}`);
+      };
+      await stamped('E1 OS-typed pri', async () => {
+        await nvda.type('pri');
+      });
+      await open(page, suggest);
+      await stamped('E2 OS pr, pause, OS i', async () => {
+        await nvda.type('pr');
+        await page.waitForTimeout(1500);
+        await nvda.type('i');
+      });
+      await open(page, suggest);
+      await stamped('E3 CDP pri then OS F9 at once', async () => {
+        await page.keyboard.type('pri');
+        await nvda.press('F9');
+      });
+      await stamped('E4 CDP Ctrl+Tab then OS F9 at once', async () => {
+        await page.keyboard.press('Control+Tab');
+        await nvda.press('F9');
+      });
+      await open(page, suggest);
+      await stamped('E5 CDP pri, wait 600, OS F9', async () => {
+        await page.keyboard.type('pri');
+        await page.waitForTimeout(600);
+        await nvda.press('F9');
+      });
     } finally {
       await nvda.stop().catch(() => undefined);
       await browser.close();
