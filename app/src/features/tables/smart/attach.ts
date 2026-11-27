@@ -8,7 +8,6 @@ import type { Root } from 'react-dom/client';
 import { cellAt, selectionBox } from '../../../editor/commands/tables';
 import { t } from '../../../strings/t';
 import { openMenu } from '../../../ui';
-import { setAttr } from '../../../ui/domWrites';
 import type { TableData } from '../../../editor/schema/specs';
 import type { BlockJson } from '../../../services/pages/types';
 import type { TableExtraHandle, TableExtraHost } from '../../page';
@@ -249,7 +248,7 @@ class SmartTable implements SmartInstance, TableExtraHandle, BookMember {
 
   /** The worker calculates the page: the table says it is busy, for screen readers and the UI tests. */
   working(on: boolean): void {
-    if (on) setAttr(this.host.element, 'aria-busy', 'true');
+    if (on) this.host.element.setAttribute('aria-busy', 'true');
     else this.host.element.removeAttribute('aria-busy');
   }
 

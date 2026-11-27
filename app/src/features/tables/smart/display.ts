@@ -183,23 +183,10 @@ export function buildDecorations(
  * keeps its attributes for this. A recalculation whose results did not change then sends nothing to the editor.
  */
 export function sameDisplay(a: DecorationSet, b: DecorationSet): boolean {
-  if (a === b) return true;
   const one = a.find();
   const two = b.find();
-  if (one.length !== two.length) return false;
-  return one.every((deco, i) => {
-    const other = two[i];
-    const mine = deco.spec as { kind?: string; attrs?: Record<string, unknown> };
-    const theirs = other.spec as { kind?: string; attrs?: Record<string, unknown> };
-    if (deco.from !== other.from || deco.to !== other.to || mine.kind !== theirs.kind) return false;
-    const keys = Object.keys(mine.attrs ?? {});
-    return (
-      mine.attrs !== undefined &&
-      theirs.attrs !== undefined &&
-      keys.length === Object.keys(theirs.attrs).length &&
-      keys.every((key) => mine.attrs![key] === theirs.attrs![key])
-    );
-  });
+  const key = (deco: Decoration) => JSON.stringify([deco.from, deco.to, deco.spec]);
+  return one.length === two.length && one.every((deco, at) => key(deco) === key(two[at]));
 }
 
 /** The position before the cell that holds a text selection, or null. */
