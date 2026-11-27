@@ -185,6 +185,7 @@ impl NotebookStore {
     ) -> HashSet<PageId> {
         let now = self.now();
         let mut listed = HashSet::new();
+        self.drop_duplicate_entries(folders, dirty);
         let entries: Vec<(SectionId, PageId, bool)> = self
             .sections
             .values()
@@ -209,6 +210,52 @@ impl NotebookStore {
             }
         }
         listed
+    }
+
+    /// Keeps one entry of a page listed more than once and drops the others, before any entry is matched.
+    ///
+    /// The kept entry is the one the scan then settles, so it is chosen by a rule, not by the order of the
+    /// sections. An entry marked as moving wins, so a restore or move finishes now: its mark names the Trash
+    /// item to forget. Next comes an entry in the section that holds the folder, then the first one. Dropping
+    /// the entry the scan did not settle, and keeping one it never looked at, left a mark for the next scan to
+    /// clear (property P11).
+    fn drop_duplicate_entries(&mut self, folders: &HashMap<PageId, Vec<Folder>>, dirty: &mut HashSet<SectionId>) {
+        let mut listings: HashMap<PageId, Vec<(SectionId, usize, bool)>> = HashMap::new();
+        for state in self.sections.values().filter(|s| !self.hidden.contains(&s.file.id.0)) {
+            for (i, entry) in state.file.pages.iter().enumerate() {
+                listings
+                    .entry(entry.id)
+                    .or_default()
+                    .push((state.file.id, i, entry.moving.is_some()));
+            }
+        }
+        let mut drop: Vec<(SectionId, usize)> = Vec::new();
+        for (page, list) in listings.iter().filter(|(_, list)| list.len() > 1) {
+            let home = folders.get(page).and_then(|l| primary(l, None)).map(|f| f.section);
+            let at_home = |(section, ..): &&(SectionId, usize, bool)| Some(*section) == home;
+            let keep = list
+                .iter()
+                .find(|e| e.2 && at_home(e))
+                .or_else(|| list.iter().find(|e| e.2))
+                .or_else(|| list.iter().find(at_home))
+                .or_else(|| list.first())
+                .map(|(section, i, _)| (*section, *i));
+            drop.extend(
+                list.iter()
+                    .map(|(section, i, _)| (*section, *i))
+                    .filter(|e| Some(*e) != keep),
+            );
+        }
+        // Later positions first, so each index still points at its entry.
+        drop.sort_unstable_by(|a, b| b.cmp(a));
+        for (section, i) in drop {
+            if let Some(state) = self.sections.get_mut(&section) {
+                if i < state.file.pages.len() {
+                    state.file.pages.remove(i);
+                    dirty.insert(section);
+                }
+            }
+        }
     }
 
     /// A pending move or restore whose folder wasn't where the mark says: it may have been renamed or moved

@@ -80,6 +80,12 @@ impl RegistryCodec {
         format!("{body}:{:08x}\n", crc32fast::hash(body.as_bytes())).into_bytes()
     }
 
+    /// The value a token names, for a failure message, or `None` when the bytes are not a token.
+    pub fn describe(&self, bytes: &[u8]) -> Option<String> {
+        let kind = std::str::from_utf8(bytes).ok()?.split(':').nth(1)?.to_owned();
+        self.load(bytes, &kind).ok().map(|entry| format!("{entry:?}"))
+    }
+
     /// Finds the value a token names. Checks the token's kind and checksum first.
     fn load(&self, bytes: &[u8], kind: &str) -> Result<Entry, FormatError> {
         let syntax = |detail: &str| FormatError::new(FormatErrorKind::Syntax, detail.to_owned());
