@@ -8,6 +8,7 @@ use opennote_core::session::notebook::HistoryScope;
 use opennote_core::store::history::Retention;
 use real_core::{frame_json, page_json, Real};
 use serde_json::{json, Value};
+use std::time::Duration;
 
 const COLUMN: &str = "01m3sabc31y0rfa24eeh6j4ky4";
 
@@ -230,8 +231,8 @@ fn the_history_list_starts_with_the_page_as_it_is_now() {
     let handle = real.open();
     let (_, block) = new_table(91, "Typed just now");
     handle.apply(real.request(vec![insert(block)])).unwrap();
-    // Versions sort by the time they were saved, to the millisecond, so a fast machine needs a moment between saves.
-    std::thread::sleep(std::time::Duration::from_millis(5));
+    // Versions sort by the time they were saved, and the test clock stands still until it is moved.
+    real.clock.advance(Duration::from_secs(5));
     let saved = handle.save_now().unwrap();
     // The newest saved version is the page as it was before the first edit, so a comparison "with the current
     // page" that used it would leave out what was just typed.
@@ -253,7 +254,7 @@ fn the_history_list_starts_with_the_page_as_it_is_now() {
             "Typed again",
         )]))
         .unwrap();
-    std::thread::sleep(std::time::Duration::from_millis(5));
+    real.clock.advance(Duration::from_secs(5));
     let saved = handle.save_now().unwrap();
     let again = handle.history_with_current().unwrap();
     assert_eq!(again.len(), listed.len() + 1);
