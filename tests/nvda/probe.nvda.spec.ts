@@ -174,22 +174,18 @@ test.describe('probe', () => {
             (t) =>
               (window as unknown as { __OPENNOTE_TEST__: Hooks }).__OPENNOTE_TEST__.codeEditorMount({
                 language: 'python',
-                text: '',
+                text: 'pri',
                 suggest: { when: 'pri', then: t },
               }),
             then,
           ),
         );
-        await page.keyboard.type('pri');
+        await page.keyboard.press('End');
         await page.waitForTimeout(3000);
-        await stamped(page, `R1 ${then}: OS ArrowLeft`, async () => {
-          await nvda.press('ArrowLeft');
-        }, 3000);
-        await page.waitForTimeout(2600);
-        await stamped(page, `R2 ${then}: OS ArrowRight shows it again`, async () => {
-          await nvda.press('ArrowRight');
+        await stamped(page, `T1 ${then}: OS Alt+Backslash`, async () => {
+          await nvda.press('Alt+Backslash');
         });
-        await stamped(page, `R3 ${then}: OS Ctrl+Right accepts`, async () => {
+        await stamped(page, `T2 ${then}: OS Ctrl+Right`, async () => {
           await nvda.press('Control+ArrowRight');
         });
         log(`text after accept: ${JSON.stringify(await text())}`);
