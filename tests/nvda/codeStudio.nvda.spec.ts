@@ -13,7 +13,7 @@ import type { Page } from '@playwright/test';
 import { browserChannel } from '../browser';
 import { explainStartFailure } from './checklist';
 import { CONSOLE_PHRASES, DEBUGGER_PHRASES, PROBLEMS_PHRASES, SQUIGGLE_PHRASES } from './phrases';
-import { listenFor } from './speech';
+import { listenFor, pressUntilHeard } from './speech';
 
 interface Nvda {
   start(): Promise<void>;
@@ -134,8 +134,7 @@ test.describe('NVDA in the Code studio', () => {
       });
       await page.bringToFront();
       await nvda.clearSpokenPhraseLog();
-      await nvda.press('F8');
-      log = await listenFor(nvda, SQUIGGLE_PHRASES);
+      log = await pressUntilHeard(nvda, 'F8', SQUIGGLE_PHRASES);
     } finally {
       await nvda.stop().catch(() => undefined);
       await browser.close();

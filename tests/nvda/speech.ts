@@ -39,3 +39,29 @@ export async function listenFor(
     waited += pollMs;
   }
 }
+
+export interface Presser extends Listener {
+  press(key: string): Promise<void>;
+}
+
+/**
+ * Presses a key and listens; if NVDA did not say the phrases, presses it again, up to `attempts` times. NVDA says
+ * "totl selected" for the caret that F8 moves, and on some runs that speech replaces the announcement that came with
+ * it, so the first press says only the selection. A person would press the key again, as this does. The returned log
+ * holds everything NVDA said over all the presses.
+ */
+export async function pressUntilHeard(
+  nvda: Presser,
+  key: string,
+  phrases: readonly RegExp[],
+  options: { attempts?: number; timeoutMs?: number; sleep?: (ms: number) => Promise<void> } = {},
+): Promise<string> {
+  const { attempts = 3, timeoutMs = 5000, sleep } = options;
+  let log = '';
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    await nvda.press(key);
+    log = await listenFor(nvda, phrases, { timeoutMs, sleep });
+    if (heardInOrder(log, phrases)) break;
+  }
+  return log;
+}
