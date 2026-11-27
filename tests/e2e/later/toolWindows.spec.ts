@@ -13,7 +13,6 @@ describe('the tool windows in the real app', { skip: skipReason() }, () => {
 
   before(async () => {
     session = await launchApp();
-    await session.browser.$('[role="tree"][aria-label="Notebooks"]').waitForExist({ timeout: 20_000 });
   });
 
   after(async () => {

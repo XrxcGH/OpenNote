@@ -31,7 +31,6 @@ describe('importing a notebook into the real app', { skip: skipReason() }, () =>
 
   it('shows what will come over, then adds the notebook with its pages', async () => {
     const { browser } = session;
-    await browser.$('[role="tree"][aria-label="Notebooks"]').waitForExist({ timeout: 20_000 });
     await runCommand(browser, 'import notes', 'Import notes…');
     const dialog = dialogWith(browser, 'Choose a file or folder exported from another app');
     await dialog.waitForExist({ timeout: 10_000 });

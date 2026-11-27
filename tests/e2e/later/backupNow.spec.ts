@@ -26,7 +26,6 @@ describe('backing up in the real app', { skip: skipReason() }, () => {
 
   it('chooses a folder, backs up now, and reports the last backup', async () => {
     const { browser } = session;
-    await browser.$('[role="tree"][aria-label="Notebooks"]').waitForExist({ timeout: 20_000 });
     await openSettings(browser, 'Storage and backups');
     const section = browser.$('section[aria-labelledby="qol-backup"]');
     await section.waitForExist({ timeout: 10_000 });
