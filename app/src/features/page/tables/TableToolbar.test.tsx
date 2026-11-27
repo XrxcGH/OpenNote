@@ -132,4 +132,20 @@ describe('the toolbar of a table', () => {
     if (!group) throw new Error('The toolbar has no group of buttons.');
     expect(Number.parseFloat(getComputedStyle(group).columnGap)).toBeGreaterThanOrEqual(4);
   });
+
+  it('writes no attributes when typing in a cell draws it again (nightly perf-typing-gate, table)', async () => {
+    // The table block draws the toolbar again on every caret move, with new functions each time. Rewriting each
+    // button's attributes then made every key restyle the whole toolbar.
+    const { rerender } = renderUi(shown(props()));
+    const writes: string[] = [];
+    const watch = new MutationObserver((records) =>
+      records.forEach((record) => writes.push(`${record.attributeName ?? record.type}`)),
+    );
+    watch.observe(toolbar(), { attributes: true, subtree: true });
+    for (let key = 0; key < 3; key++) rerender(shown(props()));
+    await Promise.resolve();
+    watch.disconnect();
+    expect(writes).toEqual([]);
+    expect(toolbar().querySelectorAll('button:not([data-tool])')).toHaveLength(0);
+  });
 });

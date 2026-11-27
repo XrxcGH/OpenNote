@@ -158,7 +158,8 @@ test.describe('touch and pen', () => {
     const box = await line.boundingBox();
     if (!box) throw new Error('No second line');
     await page.touchscreen.tap(box.x + 2, box.y + box.height / 2);
-    expect(await head(page)).toBeGreaterThanOrEqual(11);
+    // CodeMirror takes a tap's caret from the selection change the browser sends after the tap, a task later.
+    await expect.poll(() => head(page)).toBeGreaterThanOrEqual(11);
 
     await page.keyboard.press('End');
     await page.keyboard.type(' pri');

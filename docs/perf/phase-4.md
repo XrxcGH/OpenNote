@@ -78,6 +78,19 @@ From one unit-suite run on the loaded machine. The machine scale stayed at its c
 - **Undo in the outline.** A range re-parse covers whole top-level blocks, and an outline is one list. Its undo frames parse all 43 KB again: 38 ms on the loaded machine, most of undo's 50 ms.
 - **Script per key, 5.6 to 7 ms p95 in the 20-page note,** against 4.5 ms. Most of it is Chromium's text insertion and ProseMirror reading the change back.
 
+## The nightly gate on a hosted runner
+
+The nightly `perf-typing-gate` job runs this benchmark with the gate on, on a hosted Windows runner. Its first run on main (2026-11-26) failed four conditions. The pull request job measures the same way without the gate, so its artifacts give a history on the same kind of machine.
+
+| Condition | 2026-10-31 p95 | 2026-11-07 to 11-25 p95 | Nightly p95 | Cause |
+|---|---|---|---|---|
+| Table cell after the 20-page note | 8.0 | 10.2 to 19.2 | 18.0 | A regression in November. The table toolbar draws again on every caret move, and it rewrote the attributes of all its buttons each time. That part is fixed: it writes no attributes when nothing changed. Background work (the smart table's 120 ms recalculation and the 300 ms text sync) still lands just before some keys. |
+| Bursts of 30 keys a second | 17.1 | 16.4 to 19.2 | 18.3 | Not a regression: over budget since it was first measured, on the reference laptop too (16.4). The runner's frame clock is 60 Hz. Any frame asked for after a key keeps the clock running, so the next key, 33 ms later, waits for its tick. One source is fixed: the page's caret asked for a frame on every key even when the browser draws the caret. |
+| Code studio, 1,000-line file | none | 22.7 to 23.9 | 23.2 | CodeMirror blinks its caret with a CSS animation that never ends, so every key waited for the next tick (p50 16.7 ms). That part is fixed: the caret stays solid while keys come, as a native caret does, and blinks again after 1 s. The rest is the studio's own work per key (parse, completion, problem marks), tracked as B12-TYPING-1000 in [code-studio.md](code-studio.md). |
+| Code studio, 5,000 console lines | none | 22.1 to 23.8 | 22.0 | As above. |
+
+The budget stays at 16 ms. The fixes were measured on the development laptop under load. The studio's p50 went from 19 to 13 ms. The burst p95 went from 17.5 to 16.3 ms. The 20-page note's p95 went from 10.5 to 8.5 ms. The table, the burst, and the studio are still over budget on a hosted runner.
+
 ## Not yet measured
 
 - The 4-core reference laptop, and the screen measure (Desktop Duplication), both in section 24.5's nightly run.

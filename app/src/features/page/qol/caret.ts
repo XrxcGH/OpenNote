@@ -105,6 +105,11 @@ export function attachCaret(mounted: MountedPage): () => void {
   const schedule = () => {
     if (frame === 0) frame = requestAnimationFrame(place);
   };
+  // With the browser's own caret there is nothing to place. A frame asked for on every key would keep the frame
+  // clock running, and the next key would wait for its tick.
+  const follow = () => {
+    if (look.custom || !element.hidden) schedule();
+  };
   const refresh = () => {
     look = caretLook(pageExtrasPrefs.get(), windows, window.devicePixelRatio || 1);
     schedule();
@@ -115,20 +120,20 @@ export function attachCaret(mounted: MountedPage): () => void {
     refresh();
   });
   const stopPrefs = pageExtrasPrefs.subscribe(refresh);
-  doc.addEventListener('selectionchange', schedule);
-  scroller.addEventListener('scroll', schedule, { passive: true });
-  scroller.addEventListener('input', schedule, true);
-  scroller.addEventListener('focusin', schedule, true);
-  scroller.addEventListener('focusout', schedule, true);
-  window.addEventListener('resize', schedule);
+  doc.addEventListener('selectionchange', follow);
+  scroller.addEventListener('scroll', follow, { passive: true });
+  scroller.addEventListener('input', follow, true);
+  scroller.addEventListener('focusin', follow, true);
+  scroller.addEventListener('focusout', follow, true);
+  window.addEventListener('resize', follow);
   return () => {
     stopPrefs();
-    doc.removeEventListener('selectionchange', schedule);
-    scroller.removeEventListener('scroll', schedule);
-    scroller.removeEventListener('input', schedule, true);
-    scroller.removeEventListener('focusin', schedule, true);
-    scroller.removeEventListener('focusout', schedule, true);
-    window.removeEventListener('resize', schedule);
+    doc.removeEventListener('selectionchange', follow);
+    scroller.removeEventListener('scroll', follow);
+    scroller.removeEventListener('input', follow, true);
+    scroller.removeEventListener('focusin', follow, true);
+    scroller.removeEventListener('focusout', follow, true);
+    window.removeEventListener('resize', follow);
     if (frame !== 0) cancelAnimationFrame(frame);
     scroller.removeAttribute('data-custom-caret');
     element.remove();
