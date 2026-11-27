@@ -224,9 +224,13 @@ impl NotebookStore {
 
     /// Moves a folder, or finds it already moved. A folder held open is left for a retry, and its page is
     /// read and saved where it is until then. Returns whether the folder is at `to`.
+    ///
+    /// An empty folder with the right name at `to` is not the folder, as the listing of page folders says: it
+    /// is a leftover that the scan cleans up. Counting it as arrived would let the next scan finish a restore
+    /// that this one left open, as a second scan must not (property P11).
     fn move_folder(&mut self, id: Id, from: &Path, to: &Path) -> bool {
         let fs = self.env.fs.as_ref();
-        if fs.metadata(to).is_ok_and(|m| m.is_dir) {
+        if fs.metadata(to).is_ok_and(|m| m.is_dir) && holds_content(&fs.read_dir(to).unwrap_or_default()) {
             self.places.remove(&PageId(id));
             return true;
         }
@@ -265,6 +269,12 @@ fn is_partial(name: &str, is_dir: bool) -> bool {
     } else {
         parse_temp_name(name).is_some()
     }
+}
+
+/// Whether a folder holds anything but temporary files and partial copies. The listing of page folders
+/// cleans up a folder that holds nothing else, so it is not a page or a section.
+fn holds_content(names: &[crate::store::fs::DirEntry]) -> bool {
+    names.iter().any(|e| !is_partial(&e.name, e.is_dir))
 }
 
 /// Whether a page folder listing has a `page.json`, looked up exactly first and then without case (spec 3.3).
