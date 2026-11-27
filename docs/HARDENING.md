@@ -38,7 +38,12 @@ The fuzz corpus is kept in the Actions cache, so each night starts from the inpu
 
 The soak types, deletes, undoes, formats, moves, scrolls, and switches pages for the whole time. Every minute it forces a garbage collection and reads the heap, the nodes, and the listeners, and it times a fixed burst of keys. It fails when memory or nodes grow by half from the first quarter to the last, when typing slows by half, or when the page crashes or throws. The seed is the run number. The samples are kept for 90 days, with the table in the run summary.
 
-The edits of a seed are drawn in `tests/soak/plan.ts` without the browser, so `stepAt(seed, index)` names the action a failed night stopped at, and `tests/soak/replay.spec.ts` replays a failure in seconds. It holds the failure of run 41792295946 (seed 58, action 13251): the soak's own trim had deleted the whole note, so the caret search found no text.
+The edits of a seed are drawn in `tests/soak/plan.ts` without the browser, so `stepAt(seed, index)` names the action a failed night stopped at, and `tests/soak/replay.spec.ts` replays a failure in seconds. It holds two failures:
+
+- Run 41792295946 (seed 58, action 13251): the soak's own trim had deleted the whole note, so the caret search found no text.
+- Run 45943934575 (seed 87, action 37502): Enter over a selection that held a whole list item threw "Cannot join bulletList onto paragraph". The editor now deletes such a selection before Enter splits.
+
+Every night since run 45159841411, the soak also failed on memory. The web build's page service stands in for the core. It keeps each saved version in the page's memory, where the core keeps them on disk, and each page switch saves one. The soak now deletes them before it reads the heap. The service's undo stack also keeps only the newest 1000 steps now, as the core's does.
 
 The NVDA job installs the pinned Guidepup from `tests/nvda/package-lock.json`, sets up Windows with `guidepup setup`, and downloads NVDA with `guidepup install nvda`. A missing NVDA fails the job with those steps in the message. It checks the phrases NVDA says, not its exact words: the names and roles the app sets, such as the notebook tree and the page text box. Each run keeps the table and everything NVDA said for 90 days. Add an item in `tests/nvda/checklist.ts`.
 

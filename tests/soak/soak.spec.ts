@@ -29,8 +29,16 @@ const minutes = soakMinutes(process.env.OPENNOTE_SOAK_MINUTES);
 const seed = Number(process.env.OPENNOTE_SOAK_SEED ?? Date.now() % 1_000_000);
 const sampleSeconds = Number(process.env.OPENNOTE_SOAK_SAMPLE_SECONDS ?? Math.min(60, (minutes * 60) / 10));
 
-/** Forces a garbage collection, then reads what the page keeps. */
+/**
+ * Forces a garbage collection, then reads what the page keeps. The web build's page service stands in for the core
+ * and keeps every saved version in the page's memory. The core keeps them on disk. A page switch saves one, so they
+ * grew the heap by about 1 MB a minute (nightly runs 45159841411 to 45943934575). The reading deletes them first.
+ */
 async function readMetrics(page: Page) {
+  await page.evaluate(async () => {
+    const hooks = (window as unknown as { __OPENNOTE_TEST__: Record<string, () => Promise<void>> }).__OPENNOTE_TEST__;
+    await hooks.pagesDeleteHistory();
+  });
   const client = await page.context().newCDPSession(page);
   try {
     await client.send('Performance.enable');
