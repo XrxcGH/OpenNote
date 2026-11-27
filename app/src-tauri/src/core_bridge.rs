@@ -841,13 +841,16 @@ pub async fn page_close(bridge: State<'_, CoreBridge>, page: String, client: Str
         .await
 }
 
-/// The page's saved versions, newest first (core plan 8).
+/// The page's saved versions, newest first, with the page as it is now at the top (core plan 8).
 #[tauri::command]
 pub async fn history_list(bridge: State<'_, CoreBridge>, page: String, client: String) -> IpcResult<Vec<VersionEntry>> {
     bridge
         .run(move |bridge| {
             bridge.with_named("history_list", |bridge| {
-                bridge.open_handle(&page, &client)?.history().map_err(core_error)
+                bridge
+                    .open_handle(&page, &client)?
+                    .history_with_current()
+                    .map_err(core_error)
             })
         })
         .await

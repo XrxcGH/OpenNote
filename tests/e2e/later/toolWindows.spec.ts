@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 import { after, before, describe, it } from 'node:test';
 import { launchApp, skipReason } from '../harness.ts';
 import type { AppSession } from '../harness.ts';
+import { CALCULATOR_EXPRESSION } from '../locators.ts';
 import { runCommand } from './steps.ts';
 
 describe('the tool windows in the real app', { skip: skipReason() }, () => {
@@ -22,7 +23,7 @@ describe('the tool windows in the real app', { skip: skipReason() }, () => {
   it('answers in the calculator', async () => {
     const { browser } = session;
     await runCommand(browser, 'calculator', 'Open calculator');
-    const expression = browser.$('//label[normalize-space(.)="Expression"]//input');
+    const expression = browser.$(CALCULATOR_EXPRESSION);
     await expression.waitForExist({ timeout: 10_000 });
     await expression.setValue('2pi * 3');
     await browser.keys('Enter');
@@ -36,6 +37,10 @@ describe('the tool windows in the real app', { skip: skipReason() }, () => {
     await browser.waitUntil(async () => (await result.getText()) === 'Dividing by zero has no answer.', {
       timeout: 5_000,
     });
+    // Escape clears what was typed and keeps the window. Only with the field empty does it close the window.
+    await browser.keys('Escape');
+    assert.equal(await expression.getValue(), '', 'the first Escape clears the expression');
+    assert.ok(await expression.isExisting(), 'the first Escape keeps the window');
     await browser.keys('Escape');
     await expression.waitForExist({ reverse: true, timeout: 5_000 });
   });

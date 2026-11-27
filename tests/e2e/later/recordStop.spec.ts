@@ -6,10 +6,9 @@
 import assert from 'node:assert/strict';
 import { after, before, describe, it } from 'node:test';
 import { launchApp, skipReason } from '../harness.ts';
+import { RECORDING_GROUP, namedButton } from '../locators.ts';
 import type { AppSession } from '../harness.ts';
 import { openPage } from './steps.ts';
-
-const GROUP = '//*[@role="group"][@aria-label="Recording"]';
 
 describe('recording in the real app', { skip: skipReason() }, () => {
   let session: AppSession;
@@ -25,7 +24,7 @@ describe('recording in the real app', { skip: skipReason() }, () => {
 
   it('records, shows the indicator, and stops into a player', async (context) => {
     const { browser } = session;
-    const options = browser.$(`${GROUP}//button[normalize-space(.)="Options"]`);
+    const options = browser.$(namedButton(RECORDING_GROUP, 'Options'));
     await options.waitForExist({ timeout: 20_000 });
     await options.click();
     // The panel lists the microphones once the app has looked for them.
@@ -37,7 +36,7 @@ describe('recording in the real app', { skip: skipReason() }, () => {
     }
     await browser.keys('Escape');
 
-    await browser.$(`${GROUP}//button[normalize-space(.)="Record"]`).click();
+    await browser.$(namedButton(RECORDING_GROUP, 'Record')).click();
     const indicator = browser.$('[data-testid="recording-indicator"]');
     await indicator.waitForExist({ timeout: 20_000, timeoutMsg: 'The recording indicator never showed.' });
     assert.match(
@@ -46,7 +45,7 @@ describe('recording in the real app', { skip: skipReason() }, () => {
     );
     await browser.$('[data-testid="recording-bar"]').waitForExist({ timeout: 10_000 });
     await browser.pause(2_000);
-    await browser.$(`${GROUP}//button[normalize-space(.)="Stop"]`).click();
+    await browser.$(namedButton(RECORDING_GROUP, 'Stop')).click();
     await indicator.waitForExist({ reverse: true, timeout: 20_000 });
     const block = browser.$('//*[@role="group"][starts-with(@aria-label, "Recording, ")]');
     await block.waitForExist({ timeout: 30_000, timeoutMsg: 'The recording never became a player.' });

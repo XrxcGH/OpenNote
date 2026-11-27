@@ -4,18 +4,9 @@
 import assert from 'node:assert/strict';
 import { after, describe, it } from 'node:test';
 import { launchApp, skipReason, removeFolder } from '../harness.ts';
-import type { AppSession, Browser } from '../harness.ts';
+import type { AppSession } from '../harness.ts';
+import { runCommand } from '../later/steps.ts';
 import { clickRow, flaggedProfile, openMitosisText } from './helpers.ts';
-
-/** Runs a command from the palette by its title. */
-async function runCommand(browser: Browser, title: string): Promise<void> {
-  // Ctrl+K opens the palette in the text box when nothing is selected. Ctrl+Shift+P is not a key of the app.
-  await browser.keys(['Control', 'k']);
-  const input = browser.$('[role="combobox"]');
-  await input.waitForExist({ timeout: 5_000 });
-  await browser.keys(title);
-  await browser.keys(['Enter']);
-}
 
 describe('page history', { skip: skipReason() }, () => {
   const profileDir = flaggedProfile('opennote-e2e-history-', { 'page.history': true });
@@ -38,7 +29,8 @@ describe('page history', { skip: skipReason() }, () => {
     // modifier stays down until its keys call ends, so each chord has a call of its own.
     await browser.keys(['Control', 'a']);
     await browser.keys([...'A later line.']);
-    await runCommand(browser, 'Page history');
+    // The palette lists its results a moment after the typing, so the spec waits for the option and clicks it.
+    await runCommand(browser, 'Page history', 'Page history');
     const panel = browser.$('aside[aria-label="Page history"]');
     await panel.waitForExist({ timeout: 5_000 });
     const versionButtons = 'ul[aria-label="Versions"] button:not([disabled])';

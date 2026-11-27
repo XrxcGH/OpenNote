@@ -335,7 +335,12 @@ jobs:
         # next one starts, so one spec that dies cannot reset the connections of the 70 after it.
         run: |
           $failed = @()
-          foreach ($spec in Get-ChildItem tests/e2e -Recurse -Filter '*.spec.ts' | Sort-Object FullName) {
+          # A folder with a playwright.config.ts holds web-build specs, which `npm run test:e2e:text` runs in ci.yml.
+          # They need Playwright, not WebDriver, so node --test cannot load them.
+          $specs = Get-ChildItem tests/e2e -Recurse -Filter '*.spec.ts' |
+            Where-Object { -not (Test-Path (Join-Path $_.DirectoryName 'playwright.config.ts')) } |
+            Sort-Object FullName
+          foreach ($spec in $specs) {
             node --test --test-concurrency=1 --test-timeout=1800000 $spec.FullName
             if ($LASTEXITCODE -ne 0) { $failed += $spec.Name }
             Get-Process -Name opennote, msedgedriver, tauri-driver -ErrorAction SilentlyContinue |
