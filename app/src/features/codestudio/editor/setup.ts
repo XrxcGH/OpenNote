@@ -38,6 +38,7 @@ import type { CompletionSource, ProjectLanguage } from '../contracts';
 import { CODE_EDITOR_COMMANDS } from './commands';
 import { ghostField, thinkingField } from './ghost';
 import { debugGutter, markExtensions } from './marks';
+import { steadyCaretWhileTyping } from './steadyCaret';
 import { problemExtensions } from './problems';
 
 /**
@@ -90,6 +91,7 @@ export function editingExtensions(onBreakpointToggle?: (line: number) => void): 
     problemExtensions,
     history({ newGroupDelay: 500 }),
     drawSelection(),
+    steadyCaretWhileTyping,
     EditorState.allowMultipleSelections.of(true),
     EditorView.clickAddsSelectionRange.of((event) => event.altKey && !event.shiftKey),
     rectangularSelection({ eventFilter: (event) => event.altKey && event.shiftKey }),

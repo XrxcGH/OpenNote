@@ -686,7 +686,7 @@ export function CellFormatBar({ block }: CellFormatBarProps) {
   const attach = useCallback((element: HTMLDivElement | null) => setBar(element), []);
   // Every button is a toolbar item, and the bar has one tab stop (roving.ts).
   useLayoutEffect(() => {
-    bar?.querySelectorAll('[data-cell-tool] button').forEach((one) => one.setAttribute('data-tool', ''));
+    bar?.querySelectorAll('[data-cell-tool] button:not([data-tool])').forEach((one) => one.setAttribute('data-tool', ''));
     if (bar) rove(bar);
   });
   if (!host || !cells) return null;

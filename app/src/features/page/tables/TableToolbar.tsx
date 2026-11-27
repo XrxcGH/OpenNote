@@ -224,6 +224,14 @@ function useRoomBelow(wrap: { current: HTMLDivElement | null }) {
   }, [wrap]);
 }
 
+/**
+ * Marks the toolbar's buttons for the arrow keys (roving.ts). It is one function for every render, so React calls it
+ * once per mount rather than on each render, which typing in a cell causes.
+ */
+function markTools(element: HTMLDivElement | null): void {
+  element?.querySelectorAll('button:not([data-tool])').forEach((one) => one.setAttribute('data-tool', ''));
+}
+
 export function TableToolbar(props: TableToolbarProps) {
   const { block, can, header, run, more, width, widthOpen, openWidth, closeWidth } = props;
   const moreButton = useRef<HTMLSpanElement>(null);
@@ -252,7 +260,7 @@ export function TableToolbar(props: TableToolbarProps) {
         onMouseDown={(event) => {
           if ((event.target as HTMLElement).closest('button')) event.preventDefault();
         }}
-        ref={(element) => element?.querySelectorAll('button').forEach((one) => one.setAttribute('data-tool', ''))}
+        ref={markTools}
       >
         {GROUPS.map((group, g) => (
           <span key={g} className={styles.group}>

@@ -9,7 +9,12 @@ export const toolsOf = (bar: HTMLElement): HTMLElement[] => [...bar.querySelecto
 export function rove(bar: HTMLElement, active?: HTMLElement): void {
   const buttons = toolsOf(bar);
   const stop = active ?? buttons.find((button) => button.tabIndex === 0) ?? buttons[0];
-  buttons.forEach((button) => (button.tabIndex = button === stop ? 0 : -1));
+  // Bars call this on every render, which typing in a cell causes: an unchanged button is left alone, so a key
+  // writes no attributes.
+  buttons.forEach((button) => {
+    const index = button === stop ? 0 : -1;
+    if (button.tabIndex !== index) button.tabIndex = index;
+  });
 }
 
 export function moveFocus(event: KeyboardEvent<HTMLElement>): void {
