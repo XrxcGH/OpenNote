@@ -125,7 +125,7 @@ test.describe('probe', () => {
           [id, text],
         );
       };
-      log(`config: ${JSON.stringify((nvda as unknown as { getConfig(): unknown }).getConfig())}`);
+      log(`config: ${JSON.stringify((nvda as unknown as { getSettings(): unknown }).getSettings())}`);
       await page.locator('[data-testid="code-editor-host"] .cm-content').click();
       // Plain live regions by script after different kinds of real input.
       await live('q1', 'Probe one after Tab and Shift+Tab');
