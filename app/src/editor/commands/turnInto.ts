@@ -8,7 +8,7 @@ import { TextSelection } from '@tiptap/pm/state';
 import type { Transaction } from '@tiptap/pm/state';
 import { findWrapping, liftTarget } from '@tiptap/pm/transform';
 import { attrsFromEntry, entryFromAttrs } from '../paragraph/attributes';
-import { ancestorDepth, fromChange, selectedTextblocks, viaCommand } from './command';
+import { ancestorDepth, fromChange, mapFromHere, selectedTextblocks, viaCommand } from './command';
 import type { Change, Command } from './command';
 
 export type BlockKind =
@@ -59,10 +59,11 @@ export const liftOutOfLists: Change = (tr) => {
 function setTextblocks(type: NodeType, attrs: Record<string, unknown> | null): Change {
   return (tr) => {
     let changed = false;
+    const map = mapFromHere(tr);
     for (const { node, pos } of selectedTextblocks(tr)) {
       if (node.type.name === 'calloutTitle') continue;
       if (node.type === type && (!attrs || Object.entries(attrs).every(([k, v]) => node.attrs[k] === v))) continue;
-      const at = tr.mapping.map(pos);
+      const at = map(pos);
       tr.setBlockType(at, at + 1, type, { ...keptAttrs(node, type), ...attrs });
       changed = true;
     }

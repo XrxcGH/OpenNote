@@ -5,7 +5,7 @@
 import type { Editor } from '@tiptap/core';
 import type { Mark, Node as PMNode } from '@tiptap/pm/model';
 import { deepHeadingAttrs, paraFormat } from '../../../editor/paragraph/attributes';
-import { selectedTextblocks } from '../../../editor/commands/command';
+import { mapFromHere, selectedTextblocks } from '../../../editor/commands/command';
 import type { Change } from '../../../editor/commands/command';
 import {
   HEADING_STYLES,
@@ -75,10 +75,11 @@ function target(
 export function applyParagraphStyle(name: string, levelOf: (name: string) => number = level): Change {
   return (tr) => {
     let changed = false;
+    const map = mapFromHere(tr);
     for (const { node, pos } of selectedTextblocks(tr)) {
       if (node.type.name !== 'paragraph' && node.type.name !== 'heading') continue;
       const want = target(node, name, levelOf);
-      const at = tr.mapping.map(pos);
+      const at = map(pos);
       const $at = tr.doc.resolve(at);
       const index = $at.index();
       let type = tr.doc.type.schema.nodes[want.type];

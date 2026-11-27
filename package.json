@@ -8,6 +8,7 @@
   },
   "scripts": {
     "start": "tauri dev",
+    "postinstall": "node app/scripts/patch-dependencies.ts",
     "tauri": "tauri",
     "app:dev": "vite --config app/vite.config.ts",
     "app:build": "npm run tokens && vite build --config app/vite.config.ts",

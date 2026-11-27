@@ -4,7 +4,7 @@
 import type { Node as PMNode } from '@tiptap/pm/model';
 import { TextSelection } from '@tiptap/pm/state';
 import type { EditorState, Transaction } from '@tiptap/pm/state';
-import { fromChange } from './command';
+import { fromChange, mapFromHere } from './command';
 import type { Command } from './command';
 
 export const CASE_MODES = ['sentence', 'lower', 'upper', 'title', 'toggle'] as const;
@@ -129,6 +129,9 @@ function segments(state: EditorState | Transaction): { from: number; to: number;
 export function changeCaseChange(mode: CaseMode | 'cycle'): (tr: Transaction) => boolean {
   return (tr) => {
     const { from, to, parts } = segments(tr);
+    const map = mapFromHere(tr);
+    // A selected block or the whole note maps through the replacements by itself and stays what it was.
+    const textual = tr.selection instanceof TextSelection;
     const texts = parts.map((part) => part.text);
     const chosen = mode === 'cycle' ? nextCycleMode(texts.join('')) : mode;
     if (!chosen) return false;
@@ -144,7 +147,8 @@ export function changeCaseChange(mode: CaseMode | 'cycle'): (tr: Transaction) =>
     }
     if (!changed) return false;
     // A selection of several ranges maps through the replacements by itself; one range keeps all its new text.
-    if (tr.selection.ranges.length <= 1) tr.setSelection(TextSelection.create(tr.doc, from, tr.mapping.map(to)));
+    if (textual && tr.selection.ranges.length <= 1)
+      tr.setSelection(TextSelection.create(tr.doc, map(from, -1), map(to)));
     return true;
   };
 }

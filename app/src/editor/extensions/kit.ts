@@ -24,6 +24,7 @@ import { foreignExtensions } from './foreign';
 import { highlightExtensions } from './highlight';
 import { imageExtensions } from './image';
 import { keysExtensions } from './keys';
+import { TextSelectionCommand } from './textSelection';
 import { listItemExtensions } from './listItem';
 import { graphFenceExtensions } from './graphFence';
 import { mathBlockExtensions, mathInlineExtensions } from './math';
@@ -94,6 +95,7 @@ function markKit(host: EditorHost): Extensions {
 /** Behavior that adds no nodes or marks, shared by both kinds. */
 function behaviorKit(host: EditorHost): Extensions {
   return [
+    TextSelectionCommand,
     ...keysExtensions(host),
     ...autoChangeExtensions(host),
     ...autocorrectExtensions(host),
