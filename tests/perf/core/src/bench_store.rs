@@ -109,7 +109,7 @@ fn save_after_one_stroke(
 ) -> Result<(), String> {
     let mut saves = Samples::default();
     let mut snapshots = Samples::default();
-    for _ in 0..workload.runs {
+    for _ in 0..workload.saves {
         session.draw(&*parts.applier, workload)?;
         let plan = plan_compaction(&session.page.ink);
         let (outcome, took) = time(|| session.save(notebook, plan));
