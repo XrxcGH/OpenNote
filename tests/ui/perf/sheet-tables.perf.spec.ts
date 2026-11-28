@@ -8,23 +8,24 @@
 // The budgets hold on the reference laptop (a Surface Laptop Studio 2). The fixed benchmark of tree.perf.spec.ts
 // tells how fast this machine is. A faster machine is throttled to the laptop's speed. A slower one, such as a CI
 // runner, scales the budgets by how much slower it is. Performance checks never retry.
+//
+// The first paint is the median of five opens. Its scale and the scroll frames' scale are the median of six
+// benchmark samples: one before each open, and one before the scroll (calibration.ts).
 import type { CDPSession, Page } from '@playwright/test';
 import { expect, test } from '../fixtures';
 import { installKeyTimer, percentile, readKeys, recordKeys } from '../../perf/typing/keyTimer';
+import {
+  FRAME_MS,
+  REFERENCE_BENCHMARK_MS,
+  WORST_FRAME_MS,
+  median,
+  paintBudget,
+  scaleOf,
+  throttleRate,
+} from './calibration';
 
-const FIRST_PAINT_MS = 250;
-/**
- * The first paint is not all script: loading the table's code, layout, and the compositor do not slow in step with the
- * calibration benchmark. On a runner several times slower than the laptop, the budget gets this much extra room.
- */
-const SLOW_RUNNER_PAINT_ALLOWANCE = 1.25;
-const FRAME_MS = 8;
-/** The 99th percentile of the scroll frames must meet FRAME_MS; no single frame may take more than this. */
-const WORST_FRAME_MS = 2 * FRAME_MS;
 /** The typing budget: the script time per key, at the 95th percentile (perf/typing). */
 const TYPING_MS = 16;
-/** The fixed benchmark's time on the reference laptop, in ms (tree.perf.spec.ts). */
-const REFERENCE_BENCHMARK_MS = 60;
 
 type Timing = { opened: number; painted: number; frames: number[] };
 type Win = Window & { __timing: Timing };
@@ -53,13 +54,68 @@ async function benchmark(page: Page): Promise<number> {
  * slower. Returns the scale.
  */
 async function calibrate(page: Page): Promise<{ scale: number; client: CDPSession }> {
-  const ms = Math.max(1, await benchmark(page));
+  const ms = await benchmark(page);
   const client = await page.context().newCDPSession(page);
-  await client.send('Emulation.setCPUThrottlingRate', { rate: Math.max(1, REFERENCE_BENCHMARK_MS / ms) });
-  return { scale: Math.max(1, ms / REFERENCE_BENCHMARK_MS), client };
+  await client.send('Emulation.setCPUThrottlingRate', { rate: throttleRate(ms) });
+  return { scale: scaleOf([ms]), client };
+}
+
+/**
+ * Starts the first paint's timer. It runs from the next click to the second animation frame after a new 10,000-row
+ * table appears, so the table's first frame is on the screen. The page that was open has such a table too. So the
+ * timer waits for a table element that was not there before, and no other change in the page stops it.
+ */
+async function startPaintTimer(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const before = document.querySelector('main table');
+    const timing: Timing = { opened: 0, painted: 0, frames: [] };
+    (window as unknown as Win).__timing = timing;
+    document.addEventListener('click', (event) => (timing.opened = event.timeStamp), { capture: true, once: true });
+    const seen = new MutationObserver(() => {
+      const table = document.querySelector('main table[aria-rowcount="10001"]');
+      if (!table || table === before) return;
+      seen.disconnect();
+      requestAnimationFrame(() => requestAnimationFrame((now) => (timing.painted = now)));
+    });
+    seen.observe(document.body, { childList: true, subtree: true });
+  });
+}
+
+/** The first paint the timer measured, in ms, once the new table's second frame is drawn. */
+async function readPaint(page: Page): Promise<number> {
+  await expect
+    .poll(() => page.evaluate(() => (window as unknown as Win).__timing.painted), { timeout: 30_000 })
+    .toBeGreaterThan(0);
+  return page.evaluate(() => {
+    const timing = (window as unknown as Win).__timing;
+    return timing.painted - timing.opened;
+  });
 }
 
 const pages = (page: Page) => page.getByRole('tree', { name: 'Pages' });
+
+/**
+ * Opens each of MEASURED_PAGES from the tree and times its first paint. The benchmark runs before each open and once
+ * after the last, under the same load as the opens. Returns the paints and the benchmark samples, in ms.
+ */
+async function timeOpens(page: Page): Promise<{ paints: number[]; benchmarks: number[] }> {
+  const paints: number[] = [];
+  const benchmarks: number[] = [];
+  for (const name of MEASURED_PAGES) {
+    benchmarks.push(await benchmark(page));
+    await startPaintTimer(page);
+    await pages(page).getByRole('treeitem', { name }).click();
+    paints.push(await readPaint(page));
+    await expect(page.getByRole('heading', { level: 1, name })).toBeVisible();
+  }
+  benchmarks.push(await benchmark(page));
+  return { paints, benchmarks };
+}
+
+/** The page opened first, which loads the table's code. */
+const WARM_UP_PAGE = 'Mitosis';
+/** The pages the first paint is timed on, in order: each holds the same 10,000-row table. */
+const MEASURED_PAGES = ['Membranes', 'Meiosis', 'Photosynthesis', 'Cell structure', 'Membranes'];
 
 /** Opens a notebook of the sample library, where every page holds the page fixture `fixture`. */
 async function openLibrary(page: Page, fixture: string): Promise<void> {
@@ -93,32 +149,17 @@ function scrollerOf(page: Page) {
 test('a 10,000-row table paints within 250 ms of opening its page, and its scroll frames take 8 ms or less', async ({
   page,
 }) => {
-  test.setTimeout(120_000);
+  test.setTimeout(180_000);
   await openLibrary(page, 'tenThousandRows');
-  // The first opening loads the table's code; the measured one opens another page with the same table.
-  await openPage(page, 'Mitosis');
+  // The first opening loads the table's code; the measured ones open other pages with the same table.
+  await openPage(page, WARM_UP_PAGE);
   await expect(table(page)).toHaveAttribute('aria-rowcount', '10001', { timeout: 30_000 });
-  const { scale, client } = await calibrate(page);
-  await page.evaluate(() => {
-    const timing: Timing = { opened: 0, painted: 0, frames: [] };
-    (window as unknown as Win).__timing = timing;
-    document.addEventListener('click', (event) => (timing.opened = event.timeStamp), { capture: true, once: true });
-    // The painted time: the second animation frame after the long table's editor appears, so its first frame is on
-    // the screen.
-    const seen = new MutationObserver(() => {
-      if (!document.querySelector('main table[aria-rowcount="10001"]')) return;
-      seen.disconnect();
-      requestAnimationFrame(() => requestAnimationFrame((now) => (timing.painted = now)));
-    });
-    seen.observe(document.body, { childList: true, subtree: true });
-  });
-  await pages(page).getByRole('treeitem', { name: 'Membranes' }).click();
-  await expect.poll(() => page.evaluate(() => (window as unknown as Win).__timing.painted)).toBeGreaterThan(0);
-  const paint = await page.evaluate(() => {
-    const timing = (window as unknown as Win).__timing;
-    return timing.painted - timing.opened;
-  });
-  await expect(page.getByRole('heading', { level: 1, name: 'Membranes' })).toBeVisible();
+  const { client } = await calibrate(page);
+  const { paints, benchmarks } = await timeOpens(page);
+  const scale = scaleOf(benchmarks);
+  const paint = median(paints);
+  // A click comes before its table: a paint of 0 ms or less is a broken timer, not a fast table.
+  expect(Math.min(...paints)).toBeGreaterThan(0);
   // Only the rows near the view are drawn; the document keeps every row.
   expect(await rows(page).count()).toBeLessThan(400);
   expect(await rowNodes(page)).toBe(10_001);
@@ -170,23 +211,46 @@ test('a 10,000-row table paints within 250 ms of opening its page, and its scrol
   await client.send('Emulation.setCPUThrottlingRate', { rate: 1 });
   const worst = Math.max(...frames);
   const p99 = percentile(frames, 99);
-  const paintBudget = FIRST_PAINT_MS * scale * (scale > 1.5 ? SLOW_RUNNER_PAINT_ALLOWANCE : 1);
+  const budget = paintBudget(scale);
   test.info().annotations.push(
     {
       type: 'first paint',
-      description: `${paint.toFixed(1)} ms (budget ${paintBudget.toFixed(0)})`,
+      description: `median ${paint.toFixed(1)} ms of ${paints.length} opens (budget ${budget.toFixed(0)})`,
     },
     { type: 'scroll frame p99', description: `${p99.toFixed(1)} ms of ${frames.length} frames` },
     { type: 'worst scroll frame', description: `${worst.toFixed(1)} ms` },
-    { type: 'scale', description: scale.toFixed(2) },
+    { type: 'scale', description: `${scale.toFixed(2)}, the median of ${benchmarks.length} benchmarks` },
   );
-  const summary = `first paint ${paint.toFixed(0)} ms, scroll frame p99 ${p99.toFixed(1)} ms, worst ${worst.toFixed(1)} ms`;
-  console.log(`sheet tables: ${summary}, scale ${scale.toFixed(2)}`);
-  expect.soft(paint).toBeLessThanOrEqual(paintBudget);
+  const opens = paints.map((ms) => ms.toFixed(0)).join(' ');
+  const samples = benchmarks.map((ms) => (ms / REFERENCE_BENCHMARK_MS).toFixed(2)).join(' ');
+  const scroll = `scroll frame p99 ${p99.toFixed(1)} ms, worst ${worst.toFixed(1)} ms`;
+  const first = `first paint ${paint.toFixed(0)} ms (${opens})`;
+  console.log(`sheet tables: ${first}, ${scroll}, scale ${scale.toFixed(2)} (${samples})`);
+  expect.soft(paint).toBeLessThanOrEqual(budget);
   expect.soft(p99).toBeLessThanOrEqual(FRAME_MS * scale);
   expect.soft(worst).toBeLessThanOrEqual(WORST_FRAME_MS * scale);
   // Every jump landed on drawn rows.
   expect(blank).toEqual([]);
+});
+
+test("the first paint's timer waits for the new page's table, not the open page's", async ({ page }) => {
+  test.setTimeout(120_000);
+  await openLibrary(page, 'tenThousandRows');
+  await openPage(page, WARM_UP_PAGE);
+  await expect(table(page)).toHaveAttribute('aria-rowcount', '10001', { timeout: 30_000 });
+  await startPaintTimer(page);
+  // A change in the page while the open page's table is still there, as a late render makes before the click. The
+  // old timer stopped on it, and timed a paint of 0 ms or less.
+  await page.evaluate(async () => {
+    const stray = document.body.appendChild(document.createElement('div'));
+    stray.remove();
+    const frame = () => new Promise((resolve) => requestAnimationFrame(resolve));
+    for (let count = 0; count < 3; count += 1) await frame();
+  });
+  expect(await page.evaluate(() => (window as unknown as Win).__timing.painted)).toBe(0);
+  await pages(page).getByRole('treeitem', { name: 'Membranes' }).click();
+  expect(await readPaint(page)).toBeGreaterThan(0);
+  await expect(page.getByRole('heading', { level: 1, name: 'Membranes' })).toBeVisible();
 });
 
 test('typing in a cell of a 10,000-row table keeps the script time per key at or under 16 ms', async ({ page }) => {

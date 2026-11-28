@@ -14,6 +14,7 @@ tests/e2e/.drivers/
 tests/e2e/logs/
 tests/ui/report/
 tests/ui/results/
+tests/ui/results-perf/
 tests/perf/typing/results/
 tests/e2e/text/results/
 extensions/dist/

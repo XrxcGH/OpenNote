@@ -43,9 +43,11 @@ The times are from one unthrottled run on the development machine and show only 
 
 `tests/ui/perf/sheet-tables.perf.spec.ts` runs in the perf project of the UI suite. It uses two page fixtures: `tenThousandRows` (a header and 10,000 rows) and `rows1999`.
 
-- **First paint.** From the click on the page in the tree to the second animation frame after the long table's editor appears.
+- **First paint.** From the click on the page in the tree to the second animation frame after the new page's table appears. The page that was open has the same table, so the timer waits for a new table element.
+- **Five opens.** The test opens five pages with the same table, one after another. The median of the five holds the budget.
 - **Scrolling.** 240 frames of 80 pixels each, about 600 rows. Each frame's work runs from the start of its animation frame to the first task after it. The 8 ms target holds for the 99th percentile of the 240 frames, the third slowest, so one stray frame under load does not fail the run. No frame may take over twice the target. Ten jumps of 4,000 pixels follow, as a scroll bar drag does. They must show the rows they land on. Each draws a whole new screen of rows, so the frame budget does not apply to them.
-- **Scale.** The fixed benchmark of `tree.perf.spec.ts` tells how fast the machine is. A faster machine is throttled to the laptop's speed. A slower one, such as a CI runner, scales every budget by how much slower it is.
+- **Scale.** The fixed benchmark of `tree.perf.spec.ts` tells how fast the machine is. A faster machine is throttled to the laptop's speed. A slower one, such as a CI runner, scales every budget by how much slower it is. The benchmark runs before each open and before the scroll, and the scale is the median of those six samples (`tests/ui/perf/calibration.ts`).
+- **Alone.** CI runs the perf project in its own step, in one worker, after the rest of the UI suite (`OPENNOTE_UI_PERF`). Beside another test, the runner's speed changed from one second to the next, so one benchmark sample did not tell the speed the opens and the frames met.
 - **Each jump.** Three frames after each jump, a drawn row must cover the middle of the screen, unless the table does not reach it.
 - **Typing.** Forty keys typed into a cell, 120 ms apart, with the typing benchmark's key timer. The script time per key (p95) must meet the 16 ms budget, scaled as above. The run also reports the frames over 50 ms.
 - **Keys.** Ctrl+End selects the last cell. The cell has `aria-rowindex` 10,001, the table has `aria-rowcount` 10,001, and the live region says its address.
