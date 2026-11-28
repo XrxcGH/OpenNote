@@ -11,7 +11,8 @@
 // prosemirror-view writes its hide-selection class on the editor each time it draws the selection. It removes the
 // class when the selection shows and adds it when it doesn't, whether the editor has it or not. Removing a class the
 // element lacks still writes its class attribute. So an update between two keys wrote the editor's class with the
-// value it had, as when a table's feature joins its editor (typing-writes spec). The patch writes it only on a change.
+// value it had, as when a table's feature joins its editor (typing-writes spec). The patch toggles the class with the
+// state it should have, which writes nothing when the editor has that state already.
 //
 // Each patch names the exact text it replaces. When a new version of the dependency changes that text, the install
 // fails here, so the patch is looked at again rather than lost.
@@ -35,10 +36,7 @@ const HIDE = new RegExp(
   String.raw`if \(sel\.visible\) \{\s*view\.dom\.classList\.remove\("ProseMirror-hideselection"\);\s*\}` +
     String.raw`\s*else \{\s*view\.dom\.classList\.add\("ProseMirror-hideselection"\);`,
 );
-const HIDE_FIXED =
-  'if (sel.visible) { if (view.dom.classList.contains("ProseMirror-hideselection")) ' +
-  'view.dom.classList.remove("ProseMirror-hideselection"); } else { if (!view.dom.classList.contains(' +
-  '"ProseMirror-hideselection")) view.dom.classList.add("ProseMirror-hideselection");';
+const HIDE_FIXED = 'view.dom.classList.toggle("ProseMirror-hideselection", !sel.visible); if (!sel.visible) {';
 
 export const PATCHES: readonly Patch[] = [
   { file: 'node_modules/prosemirror-transform/dist/index.js', from: FITTER, to: FITTER_FIXED },

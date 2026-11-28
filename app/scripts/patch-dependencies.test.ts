@@ -28,25 +28,29 @@ describe('patched', () => {
 
   it('writes the hide-selection class only when it changes', () => {
     const hide = PATCHES.find((patch) => patch.file.startsWith('node_modules/prosemirror-view/'))!;
+    // A class list as the DOM has it: add and remove always write the attribute; toggle with a state writes it
+    // only when the state changes.
     const draw = (source: string, visible: boolean, has: boolean) => {
       const writes: string[] = [];
       const classList = {
-        contains: () => has,
         add: () => void writes.push('add'),
         remove: () => void writes.push('remove'),
+        toggle: (_name: string, on: boolean) => void (on !== has && writes.push(on ? 'add' : 'remove')),
       };
-      new Function('view', 'sel', source)({ dom: { classList } }, { visible });
-      return writes;
+      const hidden: string[] = [];
+      new Function('view', 'sel', 'hide', source)({ dom: { classList } }, { visible }, () => hidden.push('guard'));
+      return [...writes, ...hidden];
     };
     const shipped =
       'if (sel.visible) {\n  view.dom.classList.remove("ProseMirror-hideselection");\n}\nelse {\n' +
-      '  view.dom.classList.add("ProseMirror-hideselection");\n}';
+      '  view.dom.classList.add("ProseMirror-hideselection");\n  hide();\n}';
     const fixed = patched(shipped, hide);
     expect(draw(shipped, true, false)).toEqual(['remove']);
     expect(draw(fixed, true, false)).toEqual([]);
     expect(draw(fixed, true, true)).toEqual(['remove']);
-    expect(draw(fixed, false, true)).toEqual([]);
-    expect(draw(fixed, false, false)).toEqual(['add']);
+    // A hidden selection still sets its guard, as the shipped code does after adding the class.
+    expect(draw(fixed, false, true)).toEqual(['guard']);
+    expect(draw(fixed, false, false)).toEqual(['add', 'guard']);
     expect(patched(fixed, hide)).toBe(fixed);
   });
 

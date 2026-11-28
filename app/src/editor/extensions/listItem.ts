@@ -12,7 +12,6 @@ import { Plugin, PluginKey } from '@tiptap/pm/state';
 import type { EditorState, Transaction } from '@tiptap/pm/state';
 import type { NodeView, ViewMutationRecord } from '@tiptap/pm/view';
 import { t } from '../../strings/t';
-import { setAttr, setData } from '../../ui/domWrites';
 import type { EditorHost } from '../host';
 import { META_COMMAND, META_REMOTE } from '../meta';
 import { carriedParaAttrs } from '../paragraph/carry';
@@ -213,13 +212,17 @@ class TaskItemView implements NodeView {
     this.render();
   }
 
-  /** Draws the item. It runs on each update of the node, which typing in the item causes: it writes only changes. */
+  /**
+   * Draws the item. It runs on each update of the node, which typing in the item causes, so it writes only changes.
+   * The browser takes an attribute written again as a change (ui/domWrites.ts).
+   */
   private render(): void {
-    const checked = this.node.attrs.checked === true;
-    setData(this.dom, 'checked', String(checked));
-    if (this.box.checked !== checked) this.box.checked = checked;
-    setAttr(this.box, 'aria-label', itemText(this.node));
-    if (this.box.disabled === this.editor.isEditable) this.box.disabled = !this.editor.isEditable;
+    const checked = String(this.node.attrs.checked === true);
+    const label = itemText(this.node);
+    if (this.dom.dataset.checked !== checked) this.dom.dataset.checked = checked;
+    this.box.checked = checked === 'true';
+    if (this.box.getAttribute('aria-label') !== label) this.box.setAttribute('aria-label', label);
+    this.box.disabled = !this.editor.isEditable;
   }
 
   private toggle(): void {
