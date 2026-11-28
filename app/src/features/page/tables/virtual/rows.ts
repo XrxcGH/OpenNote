@@ -72,13 +72,17 @@ export function visibleRows(
 
 /**
  * The window to draw for the visible rows `first` to `last`. The window keeps `margin` rows on each side. It moves
- * only when the visible rows come within half a margin of its edge. So a slow scroll redraws now and then, not on
- * every frame. Returns `current` itself when it still covers what is needed.
+ * once the visible rows have less than three quarters of a margin beyond its edge, so it moves about a quarter of a
+ * margin at a time. So a slow scroll redraws now and then, not on every frame.
+ *
+ * A move's cost grows with the rows it changes: ProseMirror looks up each of the table's rows in each mark, and the
+ * rows that come are drawn and numbered. Moving half a margin at a time made each move twice as costly, and those
+ * frames were the scroll's slowest. Returns `current` itself when it still covers what is needed.
  */
 export function nextWindow(current: RowWindow, first: number, last: number, count: number, margin: number): RowWindow {
-  const half = Math.ceil(margin / 2);
-  const needFrom = Math.max(0, first - half);
-  const needTo = Math.min(count, last + 1 + half);
+  const keep = margin - Math.floor(margin / 4);
+  const needFrom = Math.max(0, first - keep);
+  const needTo = Math.min(count, last + 1 + keep);
   if (current.from <= needFrom && current.to >= needTo && current.to <= count) return current;
   return { from: Math.max(0, first - margin), to: Math.min(count, last + 1 + margin) };
 }

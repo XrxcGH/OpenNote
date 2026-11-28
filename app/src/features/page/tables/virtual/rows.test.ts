@@ -44,6 +44,23 @@ describe('nextWindow', () => {
     expect(nextWindow({ from: 0, to: 60 }, 45, 64, 10_000, 20)).toEqual({ from: 25, to: 85 });
     expect(nextWindow({ from: 0, to: 60 }, 9990, 9999, 10_000, 20)).toEqual({ from: 9970, to: 10_000 });
   });
+
+  it('moves a quarter of a margin at a time, so a move draws few new rows', () => {
+    // A scroll down one row at a time, with 22 rows in view and the margin as large as them. Each move draws the rows
+    // that come and drops as many; ProseMirror's work for a move grows with them.
+    const margin = 22;
+    let window = { from: 0, to: 22 + margin };
+    const came: number[] = [];
+    for (let first = 0; first < 600; first++) {
+      const next = nextWindow(window, first, first + 21, 10_000, margin);
+      if (next !== window) came.push(next.to - window.to);
+      window = next;
+    }
+    // Half a margin at a time drew 11 new rows a move.
+    expect(Math.max(...came)).toBeLessThanOrEqual(Math.ceil(margin / 4));
+    // Most rows still move nothing: about one move per six rows.
+    expect(came.length).toBeLessThan(600 / 4);
+  });
 });
 
 describe('the threshold and the static view', () => {
