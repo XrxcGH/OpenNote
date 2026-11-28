@@ -320,7 +320,10 @@ function sheetView(view: EditorView, options: SheetKeysOptions) {
       if (text) options.announce(text);
     },
     destroy() {
-      markGrid(view, false);
+      // A plugin added to the editor or taken from it rebuilds every plugin's view, and the new view marks the same
+      // grid. Unmarking it here and marking it again would write four attributes back between two keys. So only a
+      // view whose plugin left the editor unmarks the grid. A destroyed editor's table goes with it.
+      if (!sheetKeysKey.getState(view.state)) markGrid(view, false);
       view.dom.removeEventListener('focusin', focus);
       clearActiveSheet(runner);
     },

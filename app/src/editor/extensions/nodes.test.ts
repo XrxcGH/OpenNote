@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { META_COMMAND } from '../meta';
 import { mountEditor, testHost } from '../commands/testing';
 import type { TestEditor } from '../commands/testing';
+import type { MathRenderer } from '../host';
 
 let mounted: TestEditor | null = null;
 afterEach(() => {
@@ -24,6 +25,19 @@ function press(editor: TestEditor['editor'], key: string, init: KeyboardEventIni
   editor.view.someProp('handleKeyDown', (handle) => handle(editor.view, event));
 }
 
+/** Watches `root` for attributes written with the value they had, as a typing-writes check does in the browser. */
+function sameWrites(root: Element): () => string[] {
+  const watch = new MutationObserver(() => {});
+  watch.observe(root, { attributes: true, subtree: true, attributeOldValue: true });
+  return () => {
+    const records = watch.takeRecords();
+    watch.disconnect();
+    return records
+      .filter((record) => record.oldValue === (record.target as Element).getAttribute(record.attributeName!))
+      .map((record) => `${record.attributeName} on ${(record.target as Element).tagName.toLowerCase()}`);
+  };
+}
+
 describe('task items', () => {
   it('draw a native checkbox named by the item’s text', () => {
     const { root } = mount('- [ ] Water the plants\n- [x] Buy soil\n- plain');
@@ -32,6 +46,15 @@ describe('task items', () => {
       ['Water the plants', false],
       ['Buy soil', true],
     ]);
+  });
+
+  it('write nothing the item shows already when typing leaves its name the same', () => {
+    const page = mount('- [ ] Water the plants[]');
+    const written = sameWrites(page.root);
+    // The checkbox is named by the item's trimmed text, so a space changes neither its name nor its state.
+    page.editor.commands.insertContent(' ');
+    expect(written()).toEqual([]);
+    expect(page.root.querySelector('input[type="checkbox"]')?.getAttribute('aria-label')).toBe('Water the plants');
   });
 
   it('check and uncheck from the checkbox as one command', () => {
@@ -153,6 +176,25 @@ describe('math', () => {
     field.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
     expect(page.markdown()).toBe('Area $\\tau r$ here');
     expect(page.editor.state.selection).toBeInstanceOf(TextSelection);
+  });
+
+  it('writes nothing its field shows already as the person types in it', async () => {
+    // A space draws the same equation: its preview, its state, and its problem line stay as they are.
+    const renderer: MathRenderer = { render: (source) => ({ ok: true, html: `<b>${source.trim()}</b>` }) };
+    const page = mount('$x$', testHost({ math: () => Promise.resolve(renderer) }));
+    await Promise.resolve();
+    page.root.querySelector('[data-math]')!.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+    const field = page.root.querySelector<HTMLInputElement>('input[aria-label="Math source"]')!;
+    field.value = 'x+1';
+    field.dispatchEvent(new Event('input'));
+    const written = sameWrites(page.root);
+    const drawn = new MutationObserver(() => {});
+    drawn.observe(page.root, { childList: true, subtree: true });
+    field.value = 'x+1 ';
+    field.dispatchEvent(new Event('input'));
+    expect(drawn.takeRecords()).toHaveLength(0);
+    drawn.disconnect();
+    expect(written()).toEqual([]);
   });
 
   it('puts the old source back on Escape', () => {

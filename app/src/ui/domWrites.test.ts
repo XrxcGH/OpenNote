@@ -2,7 +2,7 @@
 // The DOM writes that skip a value the element already has (domWrites.ts). The browser counts an unchanged write as a
 // change: a mutation observer gets a record for it, as the browser restyles for it.
 import { afterEach, describe, expect, it } from 'vitest';
-import { setAttr, setData, setHidden, setStyle, setText, toggleAttr } from './domWrites';
+import { setAttr, setData, setHidden, setHtml, setStyle, setText, toggleAttr } from './domWrites';
 
 const watched: MutationObserver[] = [];
 afterEach(() => watched.splice(0).forEach((observer) => observer.disconnect()));
@@ -53,5 +53,18 @@ describe('DOM writes', () => {
     expect('fold' in el.dataset).toBe(false);
     expect(el.style.left).toBe('4px');
     expect(el.textContent).toBe('3 selected');
+  });
+
+  it('write HTML that differs from the HTML last written, and again after a text write', () => {
+    const el = document.createElement('div');
+    setHtml(el, '<b>x</b>');
+    const records = watch(el);
+    setHtml(el, '<b>x</b>');
+    expect(records()).toEqual([]);
+    setText(el, '$x$');
+    setHtml(el, '<b>x</b>');
+    expect(el.innerHTML).toBe('<b>x</b>');
+    setHtml(el, '<b>y</b>');
+    expect(el.innerHTML).toBe('<b>y</b>');
   });
 });

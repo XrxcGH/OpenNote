@@ -25,7 +25,7 @@ import { TextAlignCenterIcon } from '@phosphor-icons/react/dist/csr/TextAlignCen
 import { TextAlignJustifyIcon } from '@phosphor-icons/react/dist/csr/TextAlignJustify';
 import { TextAlignLeftIcon } from '@phosphor-icons/react/dist/csr/TextAlignLeft';
 import { TextAlignRightIcon } from '@phosphor-icons/react/dist/csr/TextAlignRight';
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
 import type { ComponentType, RefObject } from 'react';
 import { commandOn, runEditorCommand } from '../../../../editor/commands/catalog';
 import { BODY_POINTS } from '../../../../editor/commands/sizes';
@@ -121,6 +121,36 @@ type Run = (action: unknown) => void;
 function useHost(block: string): TableExtraHost | undefined {
   useSyncExternalStore(subscribeHosts, hostsVersion);
   return hostOfBlock(block);
+}
+
+/** The marks whose buttons show pressed for text in a cell. */
+const PRESSED = ['format.bold', 'format.italic', 'format.underline', 'format.strike'];
+
+/** What the bar shows for the table's selection, as one string. */
+function shownKey(host: TableExtraHost): string {
+  if (host.editor.isDestroyed) return '';
+  const cells = cellsOf(host);
+  if (!cells) return '';
+  const state = host.editor.state;
+  const pressed = PRESSED.map((command) => commandOn(command, state) ?? null);
+  return JSON.stringify([cells, state.selection.empty, pressed, currentScheme(), paperOf(host.element) ?? null]);
+}
+
+/**
+ * Draws the bar again when what it shows changes. The table draws its toolbar again on each caret move, and so on
+ * each key typed in a cell. The bar drew its two dozen tools and its font and size boxes again with it, which
+ * wrote the boxes' attributes on every key (nightly perf-typing 'table').
+ */
+function useShown(host: TableExtraHost | undefined): void {
+  const subscribe = useCallback(
+    (changed: () => void) => {
+      if (!host) return () => {};
+      host.editor.on('transaction', changed);
+      return () => void host.editor.off('transaction', changed);
+    },
+    [host],
+  );
+  useSyncExternalStore(subscribe, () => (host ? shownKey(host) : ''));
 }
 
 interface ToolProps {
@@ -677,8 +707,9 @@ export interface CellFormatBarProps {
   block: string;
 }
 
-export function CellFormatBar({ block }: CellFormatBarProps) {
+export const CellFormatBar = memo(function CellFormatBar({ block }: CellFormatBarProps) {
   const host = useHost(block);
+  useShown(host);
   // The element is state, not a ref, so the width watch starts when the bar first shows and again after it remounts.
   const [bar, setBar] = useState<HTMLDivElement | null>(null);
   const narrow = useNarrow(bar);
@@ -721,4 +752,4 @@ export function CellFormatBar({ block }: CellFormatBarProps) {
       <ClearGroup {...group} />
     </div>
   );
-}
+});

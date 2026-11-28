@@ -32,5 +32,16 @@ export function setStyle(el: HTMLElement, name: string, value: string): void {
 
 /** Sets the text of `el`, unless it already has it. A text write replaces the element's children. */
 export function setText(el: Node, text: string): void {
+  drawnHtml.delete(el);
   if (el.textContent !== text) el.textContent = text;
+}
+
+/** The HTML last written to each element by `setHtml`. Reading `innerHTML` back would serialize the children. */
+const drawnHtml = new WeakMap<Node, string>();
+
+/** Sets the HTML of `el`, unless it is the HTML last written to it. A drawn equation is the same on most keys. */
+export function setHtml(el: Element, html: string): void {
+  if (drawnHtml.get(el) === html) return;
+  el.innerHTML = html;
+  drawnHtml.set(el, html);
 }

@@ -469,6 +469,28 @@ describe('the grid that screen readers read', () => {
   });
 });
 
+describe('the grid when the editor gains a plugin', () => {
+  it('keeps the grid marked, writing nothing, when another plugin joins the editor', () => {
+    // A table's features load after it shows, each adding a plugin, which rebuilds every plugin's view. A person can
+    // be typing in a cell by then (nightly typing-writes table case).
+    const sheet = mount(FIVE);
+    const table = sheet.editor.view.dom.querySelector('table')!;
+    const watch = new MutationObserver(() => {});
+    watch.observe(table, {
+      attributes: true,
+      attributeFilter: ['role', 'aria-label', 'aria-rowcount', 'aria-colcount'],
+    });
+    sheet.editor.registerPlugin(new Plugin({ view: () => ({}) }));
+    expect(watch.takeRecords().map((record) => record.attributeName)).toEqual([]);
+    expect(table.getAttribute('role')).toBe('grid');
+    // The grid is unmarked when its own plugin leaves.
+    sheet.editor.unregisterPlugin(sheetKeysKey);
+    watch.disconnect();
+    expect(table.getAttribute('role')).toBeNull();
+    expect(table.getAttribute('aria-rowcount')).toBeNull();
+  });
+});
+
 describe('merged cells', () => {
   // A1 spans two columns: A1 (A1:B1), C1 / A2, B2, C2. Pasted HTML can make one.
   function mergedDoc(): PMNode {

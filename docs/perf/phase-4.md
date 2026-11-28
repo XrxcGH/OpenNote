@@ -2,6 +2,19 @@
 
 Phase 4's exit gate is typing within 16 ms with a 20-page note ([DEVELOPMENT.md](../DEVELOPMENT.md#phase-4-typed-notes)). This page records how it was measured, the numbers, what the gate run fixed, and what is still over budget. The budgets and conditions come from sections 24 and 26 of the Phase 4 architecture.
 
+Contents:
+
+1. [Machine and method](#machine-and-method)
+2. [Typing](#typing)
+3. [Motion](#motion)
+4. [Microbenchmarks](#microbenchmarks)
+5. [What the gate run fixed](#what-the-gate-run-fixed)
+6. [Still over budget](#still-over-budget)
+7. [The nightly gate on a hosted runner](#the-nightly-gate-on-a-hosted-runner)
+8. [Not yet measured](#not-yet-measured)
+9. [Accessibility found in passing](#accessibility-found-in-passing)
+10. [Bundle budgets left raised](#bundle-budgets-left-raised)
+
 ## Machine and method
 
 - **Machine:** Surface Laptop Studio 2 (Intel Core i7-13800H, 20 logical processors, 32 GB, 2400 by 1600 at 120 Hz, 150% scaling), Windows 11 Pro, Microsoft Edge 154 headless. Phase 2's perf tests treat this laptop as the reference machine. The 4-core reference laptop of section 24.5 was not available, so its column is still empty.
@@ -111,6 +124,14 @@ Painted p95, in ms. Hosted numbers come from the pull request job: main first, t
 | Bursts of 30 keys a second | 17.2 | 16.0 to 17.5 | 16.2 | 17.4, 17.2 |
 
 The table is under budget. The studio is not, on the slower hosted runner. Most of each key's work there is CodeMirror's own: the incremental parse and the view update. CodeMirror also measures its completion list again 50 ms after the list changes size, a frame before some keys. A 1.6 times CPU throttle on the laptop gives the hosted numbers.
+
+A later look at the table found two more costs:
+
+- **Toolbar on every key.** The table draws its toolbar again on each caret move, so on each key. The cell format bar and the formula bar's name box drew again with it, and their inputs wrote their attributes. Each bar now draws only when what it shows changes.
+- **Features that load late.** Each of a table's features adds a plugin to its editor after the table shows. That rebuilds every plugin's view. The spreadsheet keys took their grid marks off and put them back. The toolbar's room below the table was cleared and written again. On a slow runner this landed between keys. A rebuilt view now keeps what it shows.
+- **Every block type.** A second probe typed in each one: paragraph, lists, task list, quote, heading, callout, code, table, smart table, sheet, long sheet, and equation. It found the same pattern in the task item and the equation field. The app has no image caption to type in.
+
+On the laptop the table's painted p50 went from 5.7 to 5.0 ms, and its script p50 from 3.0 to 2.5 ms.
 
 The burst stays at the edge. At 30 keys a second, each key comes about two ticks after the last one's frame, just when Chromium stops the clock. About one key in ten waits most of a tick. The app's work after the tick is about 2 ms. That is Chromium's frame scheduling, not app work, and it needs the owner's decision.
 

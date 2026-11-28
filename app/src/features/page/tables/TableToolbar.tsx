@@ -19,6 +19,7 @@ import { MAX_COLUMN_WIDTH, MIN_COLUMN_WIDTH } from '../../../editor/table/mappin
 import { t } from '../../../strings/t';
 import type { MessageKey } from '../../../strings/t';
 import { IconButton, Switch, TextField } from '../../../ui';
+import { toggleAttr } from '../../../ui/domWrites';
 import type { IconProps } from '../../../ui';
 import styles from './tables.module.css';
 
@@ -178,6 +179,9 @@ function HeightField(props: {
   );
 }
 
+/** The room each block keeps below it for its tools, on top of its own bottom margin. */
+const roomKept = new WeakMap<HTMLElement, number>();
+
 /**
  * Tools below the table would cover the block after it (a second table, whose cells could not be clicked), so the
  * table keeps their room below it while they show. `tall` is the tools' height, 0 when they are hidden.
@@ -185,10 +189,19 @@ function HeightField(props: {
 function keepRoomBelow(tools: HTMLElement, tall: number): void {
   const block = tools.offsetParent instanceof HTMLElement ? tools.offsetParent : tools.parentElement?.parentElement;
   if (!block) return;
-  block.style.marginBlockEnd = '';
-  if (tall <= 0 || tools.getBoundingClientRect().top < block.getBoundingClientRect().bottom - 1) return;
-  const margin = parseFloat(getComputedStyle(block).marginBlockEnd) || 0;
-  block.style.marginBlockEnd = `${margin + tall}px`;
+  // The room is kept without clearing it first. Clearing it and writing it back wrote the block's style twice each
+  // time the tools changed size, as when the table's features load while the person types in a cell.
+  const ours = block.style.marginBlockEnd === '' ? 0 : (roomKept.get(block) ?? 0);
+  const keep = tall > 0 && tools.getBoundingClientRect().top >= block.getBoundingClientRect().bottom - 1;
+  if (!keep) {
+    roomKept.delete(block);
+    if (ours > 0) block.style.marginBlockEnd = '';
+    return;
+  }
+  const margin = (parseFloat(getComputedStyle(block).marginBlockEnd) || 0) - ours;
+  const room = `${Math.round((margin + tall) * 100) / 100}px`;
+  roomKept.set(block, tall);
+  if (block.style.marginBlockEnd !== room) block.style.marginBlockEnd = room;
 }
 
 /**
@@ -205,8 +218,7 @@ function useRoomBelow(wrap: { current: HTMLDivElement | null }) {
       // view never jumps to its end.
       const owner = node.offsetParent;
       const long = owner instanceof HTMLElement && owner.getBoundingClientRect().height > window.innerHeight;
-      if (long) node.setAttribute('data-above', '');
-      else node.removeAttribute('data-above');
+      toggleAttr(node, 'data-above', long);
       const tall = node.getBoundingClientRect().height;
       keepRoomBelow(node, tall);
       if (tall > 0 && !shown && !long) node.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });

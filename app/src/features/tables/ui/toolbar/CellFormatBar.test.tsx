@@ -295,3 +295,34 @@ describe('the cell format bar, names, menus, and width', () => {
     expect(await screen.findByRole('button', { name: 'More cell formats' })).toBeTruthy();
   });
 });
+
+describe('the cell format bar, drawing', () => {
+  it('draws again when what it shows changes, not on each key typed in a cell (nightly perf-typing table)', async () => {
+    const host = mount();
+    // The table draws its toolbar again on each caret move, so on each key typed in a cell.
+    const page = () => (
+      <div>
+        <CellFormatBar block="b1" />
+      </div>
+    );
+    const { rerender } = renderUi(page());
+    const bar = await screen.findByRole('toolbar', { name: 'Cell format' });
+    const writes: string[] = [];
+    const watch = new MutationObserver((records) =>
+      records.forEach((record) => writes.push(`${record.attributeName}`)),
+    );
+    watch.observe(bar, { attributes: true, subtree: true });
+    for (const key of 'abc') {
+      host.editor.commands.insertContent(key);
+      rerender(page());
+    }
+    await new Promise((done) => requestAnimationFrame(done));
+    expect(writes).toEqual([]);
+    // What it shows still follows the cell: Bold for the text typed next shows pressed.
+    host.editor.commands.toggleMark('bold');
+    await expect
+      .poll(() => within(bar).getByRole('button', { name: 'Bold' }).getAttribute('aria-pressed'))
+      .toBe('true');
+    watch.disconnect();
+  });
+});
