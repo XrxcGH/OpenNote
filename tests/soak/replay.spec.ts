@@ -10,7 +10,7 @@
 
 import { expect, test } from '@playwright/test';
 import { openFixture } from '../perf/typing/conditions';
-import { ensureCaret, key, perform, textLength, trim } from './drive';
+import { caretInEditor, ensureCaret, key, perform, textLength, trim } from './drive';
 import { stepAt } from './plan';
 
 const SEED = 58;
@@ -81,6 +81,30 @@ test('the trim takes the oldest text and leaves the note near its limit', async 
   const limit = Math.floor(length * 0.8);
   // The caret at the end of the note is where deleting back to the start emptied it.
   await key(page, 'Control+End');
+  await trim(page, limit);
+  const left = await textLength(page);
+  expect(left).toBeLessThanOrEqual(limit);
+  expect(left).toBeGreaterThan(limit * 0.6);
+});
+
+// Nightly run 46095329270 (seed 93) threw "Trim round 0: Backspace deleted 0 characters with 0 selected." The soak's
+// loop starts a trim after every 50th action, and action 18799 was a page switch. The switch leaves the focus on the
+// page list, so the trim's Control+Home and Shift+PageDown selected nothing in the note. Nothing the editor did was
+// wrong: a person who clicks a page in the list has the focus there too. The trim now puts the caret in the note.
+const TRIM_SEED = 93;
+const TRIM_SWITCH_INDEX = 18_799;
+
+test('the trim right after a page switch puts the caret back in the note first', async ({ page }) => {
+  const step = stepAt(TRIM_SEED, TRIM_SWITCH_INDEX);
+  expect(step.id).toBe('switch');
+  await openFixture(page, 'twentyPage');
+  await ensureCaret(page);
+  const length = await textLength(page);
+  const limit = Math.floor(length * 0.8);
+
+  await perform(page, step);
+  // The state the soak's trim met: the focus on the page list, not in the note.
+  expect(await caretInEditor(page)).toBe(false);
   await trim(page, limit);
   const left = await textLength(page);
   expect(left).toBeLessThanOrEqual(limit);

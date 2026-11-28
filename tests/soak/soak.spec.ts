@@ -94,7 +94,7 @@ test(`random editing for ${minutes} minutes`, async ({ page }) => {
   while (Date.now() - start < minutes * 60_000 && crashes.length === 0) {
     const step = nextStep(random);
     try {
-      await ensureCaret(page);
+      // perform() and trim() put the caret back in the note themselves.
       await perform(page, step);
     } catch (error) {
       if (crashes.length > 0) break;

@@ -80,6 +80,13 @@ describe('the soak plan', () => {
     assert.deepEqual(stepAt(91, 8_266), { id: 'list', words: 'a a dog jumps jumps' });
   });
 
+  it('finds the action a failed night stopped at: seed 93 switches pages at 18799, before the trim at 18800', () => {
+    // Nightly run 46095329270 failed in the trim the loop starts after action 18800. The switch left the focus on the
+    // page list, and the trim's keys selected nothing. tests/soak/replay.spec.ts replays the switch and the trim.
+    assert.deepEqual(stepAt(93, 18_799), { id: 'switch' });
+    assert.equal((18_799 + 1) % 50, 0);
+  });
+
   it('draws only whole choices', () => {
     const random = seeded(9);
     for (let i = 0; i < 2000; i += 1) {
