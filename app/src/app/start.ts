@@ -57,7 +57,7 @@ export function installApp(
   configureCommands({ platform, notes });
   const stops = [
     initTheme(platform, { keepInStorage: options.keepThemeInStorage }),
-    // Before the dispatcher: a shortcut and the editor's own keys act on the selection the browser shows.
+    // Before the dispatcher: a shortcut, a press, and the editor's own keys act on the selection the browser shows.
     installKeySelection(),
     installDispatcher(),
     installLayerEscape(),
