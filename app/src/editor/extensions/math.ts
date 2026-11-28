@@ -8,6 +8,7 @@ import type { Node as PMNode } from '@tiptap/pm/model';
 import { NodeSelection, Plugin, PluginKey, TextSelection } from '@tiptap/pm/state';
 import type { NodeView } from '@tiptap/pm/view';
 import { t } from '../../strings/t';
+import { setAttr, setHidden, setHtml, setText } from '../../ui/domWrites';
 import type { EditorHost, MathActionResult, MathRenderer, MathSuggestion, VisualMathField } from '../host';
 import { META_COMMAND } from '../meta';
 import { GRAPH_LANGUAGE } from './graphFence';
@@ -125,22 +126,22 @@ class MathView implements NodeView {
   private render(): void {
     const source = this.source();
     const drawing = this.draw(source);
-    this.dom.setAttribute(this.display ? 'data-math-block' : 'data-math', source);
-    this.dom.setAttribute('aria-label', t(this.display ? 'editor.math.block' : 'editor.math.inline', { source }));
+    setAttr(this.dom, this.display ? 'data-math-block' : 'data-math', source);
+    setAttr(this.dom, 'aria-label', t(this.display ? 'editor.math.block' : 'editor.math.inline', { source }));
     this.dom.classList.toggle(drawn.invalid, drawing !== null && !drawing.ok);
-    if (drawing && !drawing.ok) this.dom.title = drawing.message;
+    if (drawing && !drawing.ok) setAttr(this.dom, 'title', drawing.message);
     else this.dom.removeAttribute('title');
     this.showAnswer(drawing?.ok ? (this.renderer?.live?.(source) ?? null) : null);
     this.offer(drawing?.ok ? source : '');
     if (drawing?.ok) {
-      this.dom.setAttribute('role', 'math');
-      this.shown.className = drawn.drawn;
-      this.shown.innerHTML = drawing.html;
+      setAttr(this.dom, 'role', 'math');
+      setAttr(this.shown, 'class', drawn.drawn);
+      setHtml(this.shown, drawing.html);
       return;
     }
     this.dom.removeAttribute('role');
-    this.shown.className = '';
-    this.shown.textContent = this.display ? `$$\n${source}\n$$` : `$${source}$`;
+    this.shown.removeAttribute('class');
+    setText(this.shown, this.display ? `$$\n${source}\n$$` : `$${source}$`);
   }
 
   /** The live answer after the drawn equation, such as "x = 4", or none. */
@@ -209,11 +210,12 @@ class MathView implements NodeView {
     return drawing?.ok ? drawing.html : null;
   }
 
-  /** Offers the answer in the open field's preview, for Tab to add. */
+  /** Offers the answer in the field's preview, for Tab to add. It goes when the field no longer ends with "=". */
   private offerInField(value: string): void {
     const suggest = this.renderer?.suggest;
     this.fieldOffer = null;
-    if (!suggest || !/=\s*$/.test(value)) return;
+    if (!/=\s*$/.test(value)) return void this.preview?.querySelector('[data-math-ghost]')?.remove();
+    if (!suggest) return;
     void suggest(value).then((found) => {
       const { field, preview, problem } = this;
       if (!found || !field || !preview || !problem || (this.visual ? this.visual.value : field.value) !== value) return;
@@ -532,12 +534,13 @@ class MathView implements NodeView {
   private showPreview(): void {
     const { field, preview, problem } = this;
     if (!field || !preview || !problem) return;
-    const drawing = this.draw(this.visual ? this.visual.value : field.value);
-    field.setAttribute('aria-invalid', String(drawing !== null && !drawing.ok));
-    preview.hidden = !drawing?.ok;
-    if (drawing?.ok) preview.innerHTML = drawing.html;
-    problem.textContent = drawing && !drawing.ok ? t('smart.math.problem', { message: drawing.message }) : '';
-    if (drawing?.ok) this.offerInField(this.visual ? this.visual.value : field.value);
+    const value = this.visual ? this.visual.value : field.value;
+    const drawing = this.draw(value);
+    setAttr(field, 'aria-invalid', String(drawing !== null && !drawing.ok));
+    setHidden(preview, !drawing?.ok);
+    if (drawing?.ok) setHtml(preview, drawing.html);
+    setText(problem, drawing && !drawing.ok ? t('smart.math.problem', { message: drawing.message }) : '');
+    if (drawing?.ok) this.offerInField(value);
     else this.fieldOffer = null;
   }
 

@@ -5,7 +5,7 @@
 import { CalculatorIcon } from '@phosphor-icons/react/dist/csr/Calculator';
 import { FunctionIcon } from '@phosphor-icons/react/dist/csr/Function';
 import { TagIcon } from '@phosphor-icons/react/dist/csr/Tag';
-import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from 'react';
+import { memo, useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from 'react';
 import type { KeyboardEvent, ReactElement, RefObject } from 'react';
 import { useSettings } from '../../../../state/settings';
 import { t } from '../../../../strings/t';
@@ -47,16 +47,39 @@ export interface FormulaBarProps {
   block: string;
 }
 
-export function FormulaBar({ block }: FormulaBarProps) {
+/**
+ * The bar draws from its own watch of the table's editor. The table draws its toolbar again on each key typed in a
+ * cell, which drew the bar again with it.
+ */
+export const FormulaBar = memo(function FormulaBar({ block }: FormulaBarProps) {
   const on = useSettings((settings) => settings.tables.formulaBar);
   useSyncExternalStore(subscribeHosts, hostsVersion);
   const host = hostOfBlock(block);
   if (!on || !host || !host.flag('tables.sheetWrites')) return null;
   return <Bar host={host} />;
+});
+
+interface NameBoxProps {
+  host: TableExtraHost;
+  active: Active | null;
 }
 
+/** What the name box reads of the active cell: a key typed in the cell changes none of it. */
+function nameKey(active: Active | null): string {
+  return active ? JSON.stringify([active.box, active.header, active.size, active.names]) : '';
+}
+
+/**
+ * The name box draws again only when what it reads changes. The bar draws again on each key typed in a cell, for
+ * the cell's text. The name box drew with it and wrote its input's attributes on every key (nightly perf-typing).
+ */
+const NameBox = memo(
+  NameBoxView,
+  (before, after) => before.host === after.host && nameKey(before.active) === nameKey(after.active),
+);
+
 /** The name box: Enter selects the cell, range, or name typed; Esc goes back to the table. */
-function NameBox({ host, active }: { host: TableExtraHost; active: Active | null }) {
+function NameBoxView({ host, active }: NameBoxProps) {
   const [typed, setTyped] = useState<string | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
   const list = useId();

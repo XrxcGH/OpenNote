@@ -212,11 +212,16 @@ class TaskItemView implements NodeView {
     this.render();
   }
 
+  /**
+   * Draws the item. It runs on each update of the node, which typing in the item causes, so it writes only changes.
+   * The browser takes an attribute written again as a change (ui/domWrites.ts).
+   */
   private render(): void {
-    const checked = this.node.attrs.checked === true;
-    this.dom.dataset.checked = String(checked);
-    this.box.checked = checked;
-    this.box.setAttribute('aria-label', itemText(this.node));
+    const checked = String(this.node.attrs.checked === true);
+    const label = itemText(this.node);
+    if (this.dom.dataset.checked !== checked) this.dom.dataset.checked = checked;
+    this.box.checked = checked === 'true';
+    if (this.box.getAttribute('aria-label') !== label) this.box.setAttribute('aria-label', label);
     this.box.disabled = !this.editor.isEditable;
   }
 

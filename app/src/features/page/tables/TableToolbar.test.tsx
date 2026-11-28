@@ -148,4 +148,34 @@ describe('the toolbar of a table', () => {
     expect(writes).toEqual([]);
     expect(toolbar().querySelectorAll('button:not([data-tool])')).toHaveLength(0);
   });
+
+  it('keeps its room below the table without writing it again when it changes size', async () => {
+    // The tools grow when the table's features load, which can be while the person types in a cell. Clearing the
+    // room and writing it back wrote the block's style between two keys (nightly typing-writes, table).
+    renderUi(
+      <div data-layout="" style={{ marginBlockStart: 200 }}>
+        <style>{'.own-margin { margin-block-end: 10px; }'}</style>
+        <div className={`${styles.wrapper} own-margin`} data-current="" style={{ blockSize: 100 }}>
+          <TableToolbar {...props()} />
+        </div>
+      </div>,
+    );
+    const block = toolbar().closest<HTMLElement>(`.${styles.wrapper}`)!;
+    const tall = () => toolbar().parentElement!.getBoundingClientRect().height;
+    await expect.poll(() => block.style.marginBlockEnd).toBe(`${Math.round((10 + tall()) * 100) / 100}px`);
+    const writes: string[] = [];
+    const watch = new MutationObserver((records) => records.forEach((record) => writes.push(record.oldValue ?? '')));
+    watch.observe(block, { attributes: true, attributeFilter: ['style'], attributeOldValue: true });
+    // Wider tools, as tall as before: the room stays as it is.
+    const height = tall();
+    toolbar().parentElement!.style.minInlineSize = '640px';
+    await new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done)));
+    expect(tall()).toBe(height);
+    expect(writes).toEqual([]);
+    // Taller tools keep more room, on top of the block's own margin.
+    toolbar().style.paddingBlockEnd = '20px';
+    await expect.poll(() => block.style.marginBlockEnd).toBe(`${Math.round((10 + tall()) * 100) / 100}px`);
+    watch.disconnect();
+    expect(writes).toHaveLength(1);
+  });
 });

@@ -21,6 +21,7 @@ import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import type { EditorView, NodeView, ViewMutationRecord } from '@tiptap/pm/view';
 import { FIRST_WINDOW_ROWS, isVirtualCount, isVirtualDoc, nextWindow, rowAt, tableOf, visibleRows } from './rows';
 import type { RowWindow } from './rows';
+import { setAttr, setStyle, toggleAttr } from '../../../../ui/domWrites';
 import { virtualRowsKey } from './key';
 import type { VirtualRowsState } from './key';
 import styles from './virtual.module.css';
@@ -367,15 +368,15 @@ class Watcher {
       host.style.removeProperty('--opennote-vrows-below');
       return;
     }
-    const count = String(state.rows);
-    if (table.getAttribute('aria-rowcount') !== count) table.setAttribute('aria-rowcount', count);
-    if (!table.hasAttribute('data-virtual-rows')) table.setAttribute('data-virtual-rows', '');
-    host.classList.add(styles.host);
+    // The window moves as the person scrolls and types: what the table shows already is not written again.
+    setAttr(table, 'aria-rowcount', String(state.rows));
+    toggleAttr(table, 'data-virtual-rows', true);
+    if (!host.classList.contains(styles.host)) host.classList.add(styles.host);
     const at = this.offsetsFor(this.typical(table));
     // The pinned rows are drawn first, so the padding holds only the rows between them and the window.
     const { from } = state.window;
-    host.style.setProperty('--opennote-vrows-above', `${at[from] - at[Math.min(state.pinned, from)]}px`);
-    host.style.setProperty('--opennote-vrows-below', `${at[state.rows] - at[state.window.to]}px`);
+    setStyle(host, '--opennote-vrows-above', `${at[from] - at[Math.min(state.pinned, from)]}px`);
+    setStyle(host, '--opennote-vrows-below', `${at[state.rows] - at[state.window.to]}px`);
   }
 
   private measure(): void {
