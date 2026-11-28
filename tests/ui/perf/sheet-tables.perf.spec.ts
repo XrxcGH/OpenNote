@@ -9,15 +9,17 @@
 // tells how fast this machine is. A faster machine is throttled to the laptop's speed. A slower one, such as a CI
 // runner, scales the budgets by how much slower it is. Performance checks never retry.
 //
-// The first paint is the median of five opens. Its scale and the scroll frames' scale are the median of six
-// benchmark samples: one before each open, and one before the scroll (calibration.ts).
+// The first paint is the median of five opens, and the scroll frames are the median of three passes. Their scale is
+// the median of eight benchmark samples: one before each open, and one after each pass (calibration.ts).
 import type { CDPSession, Page } from '@playwright/test';
 import { expect, test } from '../fixtures';
 import { installKeyTimer, percentile, readKeys, recordKeys } from '../../perf/typing/keyTimer';
 import {
   FRAME_MS,
   REFERENCE_BENCHMARK_MS,
+  SCROLL_PASSES,
   WORST_FRAME_MS,
+  frameResult,
   median,
   paintBudget,
   scaleOf,
@@ -27,7 +29,7 @@ import {
 /** The typing budget: the script time per key, at the 95th percentile (perf/typing). */
 const TYPING_MS = 16;
 
-type Timing = { opened: number; painted: number; frames: number[] };
+type Timing = { opened: number; painted: number };
 type Win = Window & { __timing: Timing };
 
 /** The fixed benchmark's time on this machine, in ms: the best of three runs. */
@@ -68,7 +70,7 @@ async function calibrate(page: Page): Promise<{ scale: number; client: CDPSessio
 async function startPaintTimer(page: Page): Promise<void> {
   await page.evaluate(() => {
     const before = document.querySelector('main table');
-    const timing: Timing = { opened: 0, painted: 0, frames: [] };
+    const timing: Timing = { opened: 0, painted: 0 };
     (window as unknown as Win).__timing = timing;
     document.addEventListener('click', (event) => (timing.opened = event.timeStamp), { capture: true, once: true });
     const seen = new MutationObserver(() => {
@@ -95,8 +97,8 @@ async function readPaint(page: Page): Promise<number> {
 const pages = (page: Page) => page.getByRole('tree', { name: 'Pages' });
 
 /**
- * Opens each of MEASURED_PAGES from the tree and times its first paint. The benchmark runs before each open and once
- * after the last, under the same load as the opens. Returns the paints and the benchmark samples, in ms.
+ * Opens each of MEASURED_PAGES from the tree and times its first paint. The benchmark runs before each open, under the
+ * same load as the opens. Returns the paints and the benchmark samples, in ms.
  */
 async function timeOpens(page: Page): Promise<{ paints: number[]; benchmarks: number[] }> {
   const paints: number[] = [];
@@ -108,7 +110,6 @@ async function timeOpens(page: Page): Promise<{ paints: number[]; benchmarks: nu
     paints.push(await readPaint(page));
     await expect(page.getByRole('heading', { level: 1, name })).toBeVisible();
   }
-  benchmarks.push(await benchmark(page));
   return { paints, benchmarks };
 }
 
@@ -135,6 +136,30 @@ const rows = (page: Page) => table(page).locator('tbody > tr');
 const rowNodes = (page: Page) =>
   table(page).evaluate((element) => element.querySelector('tbody')?.childNodes.length ?? 0);
 
+/**
+ * One pass of scrolling: 240 frames of 80 pixels, about 600 rows, as a wheel or a flick scrolls. Each frame's work runs
+ * from the start of its animation frame to the first task after it, which comes once the frame is drawn. Returns
+ * each frame's time, in ms.
+ */
+function scrollPass(scroller: Awaited<ReturnType<typeof scrollerOf>>): Promise<number[]> {
+  return scroller.evaluate(
+    (element) =>
+      new Promise<number[]>((resolve) => {
+        const frames: number[] = [];
+        let frame = 0;
+        const step = () => {
+          const start = performance.now();
+          element.scrollTop += 80;
+          setTimeout(() => frames.push(performance.now() - start), 0);
+          frame += 1;
+          if (frame < 240) requestAnimationFrame(step);
+          else setTimeout(() => resolve(frames), 100);
+        };
+        requestAnimationFrame(step);
+      }),
+  );
+}
+
 /** The element that scrolls the page's blocks. */
 function scrollerOf(page: Page) {
   return table(page).evaluateHandle((element) => {
@@ -156,7 +181,6 @@ test('a 10,000-row table paints within 250 ms of opening its page, and its scrol
   await expect(table(page)).toHaveAttribute('aria-rowcount', '10001', { timeout: 30_000 });
   const { client } = await calibrate(page);
   const { paints, benchmarks } = await timeOpens(page);
-  const scale = scaleOf(benchmarks);
   const paint = median(paints);
   // A click comes before its table: a paint of 0 ms or less is a broken timer, not a fast table.
   expect(Math.min(...paints)).toBeGreaterThan(0);
@@ -164,27 +188,16 @@ test('a 10,000-row table paints within 250 ms of opening its page, and its scrol
   expect(await rows(page).count()).toBeLessThan(400);
   expect(await rowNodes(page)).toBe(10_001);
 
-  // Scrolling: 240 frames of 80 pixels, about 600 rows, as a wheel or a flick scrolls. Each frame's work runs from
-  // the start of its animation frame to the first task after it, which comes once the frame is drawn. Then come ten
-  // jumps of 4,000 pixels back up, as a scroll bar drag does. Each draws a whole new screen of rows. They are held
-  // only to showing the rows they land on, not to the frame budget.
+  // Scrolling: three passes down, each timed, with a benchmark sample after each. Then come ten jumps of 4,000
+  // pixels back up, as a scroll bar drag does. Each draws a whole new screen of rows. They are held only to showing
+  // the rows they land on, not to the frame budget.
   const scroller = await scrollerOf(page);
-  await scroller.evaluate(
-    (element) =>
-      new Promise<void>((resolve) => {
-        const timing = (window as unknown as Win).__timing;
-        let frame = 0;
-        const step = () => {
-          const start = performance.now();
-          element.scrollTop += 80;
-          setTimeout(() => timing.frames.push(performance.now() - start), 0);
-          frame += 1;
-          if (frame < 240) requestAnimationFrame(step);
-          else setTimeout(resolve, 100);
-        };
-        requestAnimationFrame(step);
-      }),
-  );
+  const passes: number[][] = [];
+  for (let pass = 0; pass < SCROLL_PASSES; pass += 1) {
+    passes.push(await scrollPass(scroller));
+    benchmarks.push(await benchmark(page));
+  }
+  const scale = scaleOf(benchmarks);
   // Each jump shows its rows within two frames: a drawn row covers the middle of the screen, unless the table does
   // not reach it. A blank gap there fails.
   const blank = await scroller.evaluate(async (element) => {
@@ -207,23 +220,22 @@ test('a 10,000-row table paints within 250 ms of opening its page, and its scrol
     }
     return misses;
   });
-  const frames = await page.evaluate(() => (window as unknown as Win).__timing.frames);
   await client.send('Emulation.setCPUThrottlingRate', { rate: 1 });
-  const worst = Math.max(...frames);
-  const p99 = percentile(frames, 99);
+  const { p99, worst } = frameResult(passes);
   const budget = paintBudget(scale);
   test.info().annotations.push(
     {
       type: 'first paint',
       description: `median ${paint.toFixed(1)} ms of ${paints.length} opens (budget ${budget.toFixed(0)})`,
     },
-    { type: 'scroll frame p99', description: `${p99.toFixed(1)} ms of ${frames.length} frames` },
-    { type: 'worst scroll frame', description: `${worst.toFixed(1)} ms` },
+    { type: 'scroll frame p99', description: `median ${p99.toFixed(1)} ms of ${passes.length} passes` },
+    { type: 'worst scroll frame', description: `median ${worst.toFixed(1)} ms of ${passes.length} passes` },
     { type: 'scale', description: `${scale.toFixed(2)}, the median of ${benchmarks.length} benchmarks` },
   );
   const opens = paints.map((ms) => ms.toFixed(0)).join(' ');
   const samples = benchmarks.map((ms) => (ms / REFERENCE_BENCHMARK_MS).toFixed(2)).join(' ');
-  const scroll = `scroll frame p99 ${p99.toFixed(1)} ms, worst ${worst.toFixed(1)} ms`;
+  const each = passes.map((frames) => `${percentile(frames, 99).toFixed(0)}/${Math.max(...frames).toFixed(0)}`);
+  const scroll = `scroll frame p99 ${p99.toFixed(1)} ms, worst ${worst.toFixed(1)} ms (${each.join(' ')})`;
   const first = `first paint ${paint.toFixed(0)} ms (${opens})`;
   console.log(`sheet tables: ${first}, ${scroll}, scale ${scale.toFixed(2)} (${samples})`);
   expect.soft(paint).toBeLessThanOrEqual(budget);

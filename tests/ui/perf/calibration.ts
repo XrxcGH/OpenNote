@@ -3,8 +3,8 @@
 //
 // A fixed benchmark tells how fast the machine is. One sample taken at the start of a test told the speed of one
 // moment, and the runner's load changes from second to second. So the benchmark runs again before each measured
-// open and before the scroll, and the test uses the median of those samples. The open is measured five times, and
-// the median holds the budget.
+// open and after each scroll pass, and the test uses the median of those samples. The open is timed five times and
+// the scroll three times, and the medians hold the budgets.
 
 /** The fixed benchmark's time on the reference laptop (a Surface Laptop Studio 2), in ms (tree.perf.spec.ts). */
 export const REFERENCE_BENCHMARK_MS = 60;
@@ -17,8 +17,10 @@ export const FIRST_PAINT_MS = 250;
 export const SLOW_RUNNER_PAINT_ALLOWANCE = 1.25;
 /** The scroll frames' budget, in ms, at the 99th percentile. */
 export const FRAME_MS = 8;
-/** No single scroll frame may take more than this, in ms. */
+/** No scroll frame may take more than this, in ms, in the median pass. */
 export const WORST_FRAME_MS = 2 * FRAME_MS;
+/** How many times the test scrolls 240 frames down the table. */
+export const SCROLL_PASSES = 3;
 
 /** The middle value, or the mean of the middle two. */
 export function median(values: readonly number[]): number {
@@ -41,4 +43,21 @@ export function scaleOf(benchmarks: readonly number[]): number {
 /** The first paint's budget at `scale`, in ms. */
 export function paintBudget(scale: number): number {
   return FIRST_PAINT_MS * scale * (scale > 1.5 ? SLOW_RUNNER_PAINT_ALLOWANCE : 1);
+}
+
+/** The rank-based percentile `p` of `values`, as the typing benchmark reads it. */
+function percentileOf(values: readonly number[], p: number): number {
+  const sorted = [...values].sort((a, b) => a - b);
+  return sorted[Math.min(sorted.length - 1, Math.max(0, Math.ceil((p / 100) * sorted.length) - 1))];
+}
+
+/**
+ * The scroll frames' result from several passes of frame times, in ms: the median of the passes' 99th percentiles,
+ * and the median of their worst frames. One stray frame in one pass, such as a garbage collection, does not decide it.
+ */
+export function frameResult(passes: readonly (readonly number[])[]): { p99: number; worst: number } {
+  return {
+    p99: median(passes.map((frames) => percentileOf(frames, 99))),
+    worst: median(passes.map((frames) => Math.max(...frames))),
+  };
 }

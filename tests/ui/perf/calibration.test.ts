@@ -4,8 +4,12 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
   FIRST_PAINT_MS,
+  FRAME_MS,
   REFERENCE_BENCHMARK_MS,
+  SCROLL_PASSES,
   SLOW_RUNNER_PAINT_ALLOWANCE,
+  WORST_FRAME_MS,
+  frameResult,
   median,
   paintBudget,
   scaleOf,
@@ -65,5 +69,29 @@ describe('the first paint budget', () => {
       assert.ok(median(opens) <= paintBudget(scale));
       assert.ok(median(opens.map((ms) => 2 * ms)) > paintBudget(scale));
     }
+  });
+});
+
+describe('the scroll frames', () => {
+  // 240 frames of a pass that meets the budgets on the laptop: 237 of 5 ms and three of 7.5 ms.
+  const pass = (slowest = 7.5) => [...Array.from({ length: 237 }, () => 5), 7.5, 7.5, slowest];
+
+  it('are the median of the passes, so one stray frame in one pass does not decide them', () => {
+    const { p99, worst } = frameResult([pass(), pass(40), pass()]);
+    assert.equal(p99, 7.5);
+    assert.equal(worst, 7.5);
+  });
+
+  it('fail a long frame that comes in most passes', () => {
+    const { worst } = frameResult([pass(40), pass(40), pass()]);
+    assert.ok(worst > WORST_FRAME_MS);
+  });
+
+  it('fail a scroll that runs twice as slowly', () => {
+    const slow = (frames: number[]) => frames.map((ms) => 2 * ms);
+    const { p99, worst } = frameResult([slow(pass()), slow(pass()), slow(pass())]);
+    assert.ok(p99 > FRAME_MS);
+    assert.equal(worst, 15);
+    assert.equal(SCROLL_PASSES, 3);
   });
 });
