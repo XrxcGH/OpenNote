@@ -150,10 +150,21 @@ jobs:
       - name: Build the test interface (web platform)
         run: npm run app:build:test
       - name: Playwright
-        # The blob reporter keeps what the merge job needs to build one report from the four shards.
+        # The blob reporter keeps what the merge job needs to build one report from the four shards. The perf
+        # project runs in the next step instead.
         run: npx playwright test --config tests/ui/playwright.config.ts --shard=${{ matrix.shard }}/4 --reporter=list,github,blob
         env:
           PLAYWRIGHT_BLOB_OUTPUT_DIR: blob-report
+          OPENNOTE_UI_PERF: skip
+      - name: Playwright perf, alone on the runner
+        # The perf specs time the interface against a benchmark of the runner's speed. A test in the other worker
+        # changed that speed from one second to the next: the 10,000-row table always ran beside the ink spec,
+        # which draws 10,000 strokes for 30 s. So the perf specs run on their own, in one worker, after the rest.
+        if: matrix.shard == 4 && !cancelled()
+        run: npx playwright test --config tests/ui/playwright.config.ts --reporter=list,github,blob
+        env:
+          PLAYWRIGHT_BLOB_OUTPUT_DIR: blob-report-perf
+          OPENNOTE_UI_PERF: alone
       - name: Keep this shard's report data
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -168,6 +179,22 @@ jobs:
         with:
           name: playwright-results-${{ matrix.shard }}
           path: tests/ui/results
+          retention-days: 7
+          if-no-files-found: ignore
+      - name: Keep the perf run's report data
+        if: always() && matrix.shard == 4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: playwright-blob-perf
+          path: blob-report-perf
+          retention-days: 7
+          if-no-files-found: ignore
+      - name: Keep the perf run's failure traces and screenshots
+        if: failure() && matrix.shard == 4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: playwright-results-perf
+          path: tests/ui/results-perf
           retention-days: 7
           if-no-files-found: ignore
 

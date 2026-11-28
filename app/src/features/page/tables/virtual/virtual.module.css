@@ -1,5 +1,27 @@
 /* Row virtualization (plugin.ts): the padding that holds the place of a long table's rows outside the window. The
-   heights are set on the element around the editor, outside it, so ProseMirror's DOM observer never sees them. */
+   heights are set on the element around the editor, outside it, so ProseMirror's DOM observer never sees them.
+
+   The heights change each time the window moves. An ordinary custom property is inherited, so a new value restyled
+   every drawn cell, about 460 elements a move. These two are not inherited: only the editor and the table's wrapper
+   take them, by asking for them, so a move restyles those two (sheet-tables.perf.spec.ts counts it). */
+@property --opennote-vrows-above {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+
+@property --opennote-vrows-below {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+
+.host > :global(.ProseMirror),
+.host > :global(.ProseMirror) > :global(.tableWrapper) {
+  --opennote-vrows-above: inherit;
+  --opennote-vrows-below: inherit;
+}
+
 .host > :global(.ProseMirror) > :global(.tableWrapper) {
   padding-block-start: var(--opennote-vrows-above, 0px);
   padding-block-end: var(--opennote-vrows-below, 0px);

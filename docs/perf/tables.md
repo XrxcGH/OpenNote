@@ -16,7 +16,7 @@ The code is in `app/src/features/page/tables/virtual/`.
 | Part           | What it does                                                                                                                                                                                                                                                                                                      |
 | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Threshold      | A table of more than 2,000 rows is virtual. A smaller table keeps exactly the document object model (DOM) it had before: no attribute, no placeholder, and no padding.                                                                                                                                            |
-| Window         | A virtual table draws one run of rows near the view, with a margin on each side as large as the visible rows (at least 20). The window moves only when the visible rows come within half a margin of its edge.                                                                                                    |
+| Window         | A virtual table draws one run of rows near the view, with a margin on each side as large as the visible rows (at least 20). The window moves once the visible rows have less than three quarters of a margin beyond its edge, so each move draws about a quarter of a margin of new rows.                        |
 | Placeholders   | Every other row is an empty comment node. The browser never styles or lays out a comment. A hidden `<tr>` was tried first: each row that came or went then restyled the 10,000 rows beside it, about 17 ms a move.                                                                                                |
 | Place          | Padding above and below the table holds the place of the rows outside the window. Each row counts at the height it had when last drawn. A row never drawn counts at the typical drawn row's height. The heights are CSS variables on the element around the editor, so the editor's DOM observer never sees them. |
 | Node views     | A node view per row draws the row or its placeholder. The row node asks `editor/table/rowViewSeam.ts` for it, because Tiptap draws an editor's first view before any plugin is in. When the window moves, a decoration marks only the rows that come and go. Typing and moving the caret cost nothing here.       |
@@ -43,9 +43,11 @@ The times are from one unthrottled run on the development machine and show only 
 
 `tests/ui/perf/sheet-tables.perf.spec.ts` runs in the perf project of the UI suite. It uses two page fixtures: `tenThousandRows` (a header and 10,000 rows) and `rows1999`.
 
-- **First paint.** From the click on the page in the tree to the second animation frame after the long table's editor appears.
-- **Scrolling.** 240 frames of 80 pixels each, about 600 rows. Each frame's work runs from the start of its animation frame to the first task after it. The 8 ms target holds for the 99th percentile of the 240 frames, the third slowest, so one stray frame under load does not fail the run. No frame may take over twice the target. Ten jumps of 4,000 pixels follow, as a scroll bar drag does. They must show the rows they land on. Each draws a whole new screen of rows, so the frame budget does not apply to them.
-- **Scale.** The fixed benchmark of `tree.perf.spec.ts` tells how fast the machine is. A faster machine is throttled to the laptop's speed. A slower one, such as a CI runner, scales every budget by how much slower it is.
+- **First paint.** From the click on the page in the tree to the second animation frame after the new page's table appears. The page that was open has the same table, so the timer waits for a new table element.
+- **Five opens.** The test opens five pages with the same table, one after another. The median of the five holds the budget.
+- **Scrolling.** 240 frames of 80 pixels each, about 600 rows. Each frame's work runs from the start of its animation frame to the first task after it. The test scrolls three such passes. The 8 ms target holds for the median of the passes' 99th percentiles, each the third slowest of its 240 frames. In the median pass, no frame may take over twice the target. So one stray frame under load does not fail the run. Ten jumps of 4,000 pixels follow, as a scroll bar drag does. They must show the rows they land on. Each draws a whole new screen of rows, so the frame budget does not apply to them.
+- **Scale.** The fixed benchmark of `tree.perf.spec.ts` tells how fast the machine is. A faster machine is throttled to the laptop's speed. A slower one, such as a CI runner, scales every budget by how much slower it is. The benchmark runs before each open and after each scroll pass, and the scale is the median of those eight samples (`tests/ui/perf/calibration.ts`).
+- **Alone.** CI runs the perf project in its own step, in one worker, after the rest of the UI suite (`OPENNOTE_UI_PERF`). Beside another test, the runner's speed changed from one second to the next, so one benchmark sample did not tell the speed the opens and the frames met.
 - **Each jump.** Three frames after each jump, a drawn row must cover the middle of the screen, unless the table does not reach it.
 - **Typing.** Forty keys typed into a cell, 120 ms apart, with the typing benchmark's key timer. The script time per key (p95) must meet the 16 ms budget, scaled as above. The run also reports the frames over 50 ms.
 - **Keys.** Ctrl+End selects the last cell. The cell has `aria-rowindex` 10,001, the table has `aria-rowcount` 10,001, and the live region says its address.
@@ -67,6 +69,38 @@ The same machine later that day, at scale 1.7 to 1.8, after the typing work belo
 | Scroll frame, p99      | about 14 ms          | 10 to 13 ms |
 | Worst scroll frame     | about 28 ms          | 11 to 14 ms |
 | Typing, script per key | about 28 ms          | 17 to 18 ms |
+
+## Scroll frames
+
+In CI the scroll frames failed 2 of 3 runs once the benchmark was quiet: 8.1 to 8.2 ms at the laptop's speed. Most frames take 2 ms. The slow ones are the frames where the window moves, about one in six, so they set the 99th percentile. A trace of those frames found the browser restyling every drawn row, about 555 elements, for the 12 rows that came:
+
+| Cause                                                                                                                                                                                                                                                  | Fix                                                                                                                                                              |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The padding's heights were ordinary custom properties on the element around the editor. They are inherited, so each new height restyled every drawn cell.                                                                                              | `@property` registers them as not inherited. The editor and the table's wrapper take them with `inherit`, so only those two restyle (`virtual.module.css`).      |
+| The text styles' first block rule (`blocks.module.css`) had `:first-child` before a `+`. A table block's editor carries the text class itself, so the browser tried the rule on every row. When the first drawn row changed, it restyled all its siblings. | `:not(* + *)` says first child without the sibling test on rows, and `:where(:not(tr))` turns rows away. The rule matches the same blocks, with the same weight. |
+
+A window move now restyles about 196 elements, close to the 175 it restyles with no style rules at all. The page's scroll container holds container queries, so the browser does that restyle inside layout. In a trace it showed as 7 to 10 ms of layout per move under load. It is now about 2.5 ms.
+
+`sheet-tables.perf.spec.ts` counts the restyled elements of each move and fails at half the drawn elements. `app/src/features/page/tables/virtual/restyle.css.test.ts` keeps both rules from coming back.
+
+What a move still costs is mostly ProseMirror's. Its view update visits every one of the 10,000 row views once, and looks each one up in every decoration set that marks drawn rows. That second part grows with the rows a move changes: the window's marks, and the spreadsheet keys' numbers for the rows that come and go. Under load, the script of a move took these times:
+
+| Rows that come and go | Script per move |
+| --------------------- | --------------- |
+| 12 each way           | 8.1 ms          |
+| 7 each way            | about 4 ms      |
+| 1 each way            | 3.0 ms          |
+
+So the window now moves a quarter of a margin at a time (`nextWindow` in `rows.ts`). It keeps at least three quarters of a margin drawn ahead, more than before. It moves about twice as often: 78 moves in the test's 240 frames instead of 42. Most frames still move nothing.
+
+Results on the development machine, 2026-11-28, with other jobs keeping its processor at 70 to 100% busy. Each row is 10 passes of the test's scroll, the two builds in turn in one browser, so both met the same load:
+
+| CPU throttling | Scroll frame p99, before | After   | Move frame median, before | After   |
+| -------------- | ------------------------ | ------- | ------------------------- | ------- |
+| 1x             | 24.7 ms                  | 17.9 ms | 19.8 ms                   | 13.2 ms |
+| 4x             | 174 ms                   | 120 ms  | 62.8 ms                   | 47.8 ms |
+
+The spec itself ran 10 times on each of two builds: the build before, and the build with the two style fixes but not the smaller moves. The scale was about 2.1. The frames' p99 over the scale went from a median of 9.5 to 7.6 ms. That is the laptop's speed under load, where frames slow more than the benchmark. The load kept the machine from showing the quiet number. CI's runs are in pull request 260.
 
 ## Typing in a long table
 

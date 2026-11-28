@@ -11,9 +11,10 @@ Contents:
 5. [What the gate run fixed](#what-the-gate-run-fixed)
 6. [Still over budget](#still-over-budget)
 7. [The nightly gate on a hosted runner](#the-nightly-gate-on-a-hosted-runner)
-8. [Not yet measured](#not-yet-measured)
-9. [Accessibility found in passing](#accessibility-found-in-passing)
-10. [Bundle budgets left raised](#bundle-budgets-left-raised)
+8. [Long table scroll frames](#long-table-scroll-frames)
+9. [Not yet measured](#not-yet-measured)
+10. [Accessibility found in passing](#accessibility-found-in-passing)
+11. [Bundle budgets left raised](#bundle-budgets-left-raised)
 
 ## Machine and method
 
@@ -134,6 +135,20 @@ A later look at the table found two more costs:
 On the laptop the table's painted p50 went from 5.7 to 5.0 ms, and its script p50 from 3.0 to 2.5 ms.
 
 The burst stays at the edge. At 30 keys a second, each key comes about two ticks after the last one's frame, just when Chromium stops the clock. About one key in ten waits most of a tick. The app's work after the tick is about 2 ms. That is Chromium's frame scheduling, not app work, and it needs the owner's decision.
+
+## Long table scroll frames
+
+The 10,000-row table's scroll frames (`tests/ui/perf/sheet-tables.perf.spec.ts`, 8 ms at the 99th percentile) failed 2 of 3 CI runs once the test measured with a quiet benchmark: 8.1 to 8.2 ms at the laptop's speed. The slow frames are the ones where the row window moves. [tables.md](tables.md#scroll-frames) has the details. In short:
+
+| Cost of a window move | Before | After |
+|---|---|---|
+| Elements restyled | 555, every drawn row | 196 |
+| Rows drawn and dropped | 11 to 12 each way | 5 to 7 each way |
+| Script, under load | 8.1 ms | about 4 ms |
+
+Two style rules restyled every drawn row: the padding's inherited custom properties, and the text styles' first block rule. Both are fixed. The window now moves a quarter of a margin at a time, so each move changes fewer rows.
+
+Scroll frame p99 on the development machine under 70 to 100% load, 10 passes each, the builds in turn: 24.7 to 17.9 ms at 1x CPU, and 174 to 120 ms at 4x throttling.
 
 ## Not yet measured
 
