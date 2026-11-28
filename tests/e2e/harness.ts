@@ -3,6 +3,8 @@
 // because tauri-driver doesn't speak WebDriver BiDi. The app gets a fresh OPENNOTE_PROFILE_DIR, so tests never
 // touch real settings or notes, and starts as a person who has finished first-run setup, unless a spec asks for the
 // first run. Specs run with `node --test`, one file at a time, because they share the machine's windows and theme.
+// A launch returns once the workspace has loaded its notebooks (tests/e2e/ready.ts). So a spec's first step waits
+// for its own element, not for the app to start.
 //
 // These variables say where the tools are:
 //
@@ -32,6 +34,7 @@ import { createServer, connect } from 'node:net';
 import { EOL, homedir, tmpdir } from 'node:os';
 import { basename, dirname, join, resolve, sep } from 'node:path';
 import { remote } from 'webdriverio';
+import { waitForNotes } from './ready.ts';
 
 export type Browser = Awaited<ReturnType<typeof remote>>;
 
@@ -317,6 +320,20 @@ export async function launchApp(options: LaunchOptions = {}): Promise<AppSession
     keepAppLogs(profileDir, stamp);
     removeProfile();
     throw error;
+  }
+  // A ready profile opens the workspace, so the spec starts once the notebooks are there (tests/e2e/ready.ts).
+  // First-run setup has no tree to wait for.
+  if (options.profile !== 'fresh') {
+    try {
+      await waitForNotes(browser);
+    } catch (error) {
+      if (process.env.OPENNOTE_E2E_DIAG) await keepWindow(browser, stamp);
+      await browser.deleteSession().catch(() => {});
+      stopDriver(driver);
+      keepAppLogs(profileDir, stamp);
+      removeProfile();
+      throw error;
+    }
   }
   if (options.keyboardOnly) keyboardOnly(browser);
   return {
