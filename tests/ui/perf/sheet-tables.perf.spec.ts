@@ -14,6 +14,7 @@
 import type { CDPSession, Page } from '@playwright/test';
 import { expect, test } from '../fixtures';
 import { installKeyTimer, percentile, readKeys, recordKeys } from '../../perf/typing/keyTimer';
+import { restylesPerMove } from './restyles';
 import {
   FRAME_MS,
   REFERENCE_BENCHMARK_MS,
@@ -263,6 +264,34 @@ test("the first paint's timer waits for the new page's table, not the open page'
   await pages(page).getByRole('treeitem', { name: 'Membranes' }).click();
   expect(await readPaint(page)).toBeGreaterThan(0);
   await expect(page.getByRole('heading', { level: 1, name: 'Membranes' })).toBeVisible();
+});
+
+test('a window move restyles the rows that come, not every drawn row', async ({ page }) => {
+  test.setTimeout(120_000);
+  await openLibrary(page, 'tenThousandRows');
+  await openPage(page, 'Membranes');
+  await expect(table(page)).toHaveAttribute('aria-rowcount', '10001', { timeout: 30_000 });
+  const scroller = await scrollerOf(page);
+  // The page's scroll container holds container queries, so the browser restyles what is in it during layout, where
+  // a trace does not count the elements. Strict containment on it, for this test only, gives the style pass its own
+  // trace event with the count. It moves nothing: the container's size comes from its place.
+  await scroller.evaluate(async (element) => {
+    element.style.contain = 'strict';
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  });
+  const drawn = await table(page).evaluate((element) => element.querySelectorAll('tbody *').length);
+  // 60 steps scroll about 130 rows: the window moves several times.
+  const restyled = await restylesPerMove(page, scroller, 60);
+  test.info().annotations.push({
+    type: 'restyled per move',
+    description: `${restyled.join(' ')} of ${drawn} drawn elements`,
+  });
+  console.log(`sheet tables: a window move restyled ${restyled.join(' ')} of ${drawn} drawn elements`);
+  expect(restyled.length).toBeGreaterThanOrEqual(3);
+  // A move draws about 6 new rows, 7 elements each, and restyles them and a few more: about 80 elements. It once
+  // restyled every drawn row as well (about 550): through the padding's inherited custom properties, and through
+  // the text styles' first block rule (blocks.module.css). Either one alone did it.
+  expect(median(restyled)).toBeLessThan(drawn / 2);
 });
 
 test('typing in a cell of a 10,000-row table keeps the script time per key at or under 16 ms', async ({ page }) => {

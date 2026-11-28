@@ -76,8 +76,14 @@
   /* The first block of text keeps this with and without an editor: an editor's widgets, such as a heading's fold
      button, don't count as the first child. The selectors are the cheap form of `:nth-child(1 of ...)`: with
      that one, every widget the editor redrew restyled all of a long note's blocks, 3.5 ms a key. */
-  .text :global(.ProseMirror) > :first-child,
-  .text :global(.ProseMirror) > :global(.ProseMirror-widget):first-child + * {
+
+  /* A table block's editor has both classes itself, so the browser tries these on every element of its table. The
+     first drawn row of a long table changes on each window move. With `:first-child` before the `+` and a bare
+     `+ *`, the browser then restyled every drawn row: 555 elements a move, not 196. `:not(* + *)` says first child
+     without that. A row is never a block of text, so `:not(tr)` turns it away. `:where` keeps the rule's weight.
+     sheet-tables.perf.spec.ts counts the restyled elements. */
+  .text :global(.ProseMirror) > :where(:not(tr)):first-child,
+  .text :global(.ProseMirror) > :global(.ProseMirror-widget):not(* + *) + :where(:not(tr)) {
     margin-block-start: 0;
   }
 
