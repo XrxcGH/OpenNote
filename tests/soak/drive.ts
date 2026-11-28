@@ -20,13 +20,26 @@ export const textLength = (page: Page) =>
     TEXT_BLOCKS,
   );
 
-/** Puts the caret back in the longest text box if a page switch or a click took it out. */
-export async function ensureCaret(page: Page): Promise<void> {
-  const inEditor = await page.evaluate(() => {
+/** Whether the focus and the selection are in one of the note's text boxes, where the keys edit the note. */
+export const caretInEditor = (page: Page) =>
+  page.evaluate(() => {
     const active = document.activeElement;
-    return active instanceof HTMLElement && active.isContentEditable && active.closest('[data-block]') !== null;
+    const anchor = window.getSelection()?.anchorNode ?? null;
+    return (
+      active instanceof HTMLElement &&
+      active.isContentEditable &&
+      active.closest('[data-block]') !== null &&
+      anchor !== null &&
+      active.contains(anchor)
+    );
   });
-  if (inEditor) return;
+
+/**
+ * Puts the caret back in the longest text box if a page switch or a click took it out. Every helper that sends keys
+ * calls it first: a key pressed with the focus on the page list or the toolbar does not reach the note.
+ */
+export async function ensureCaret(page: Page): Promise<void> {
+  if (await caretInEditor(page)) return;
   const id = await page.evaluate((selector) => {
     const blocks = [...document.querySelectorAll<HTMLElement>(selector)];
     const lengths = blocks.map((block) => block.textContent?.length ?? 0);
@@ -44,9 +57,15 @@ export async function ensureCaret(page: Page): Promise<void> {
  * Each Backspace must delete the screen the browser shows selected: some text, and no more than that. Nightly run
  * 46047189415 left 14,730 of 44,947 characters. The Backspace had come before the browser's selectionchange event,
  * so the editor deleted an old selection or none (app/src/editor/keySelection.ts).
+ *
+ * The trim puts the caret in the note first. The soak's loop calls it right after an action, and a page switch leaves
+ * the focus on the page list. There, Control+Home and Shift+PageDown select nothing, and Backspace deletes nothing.
+ * Nightly run 46095329270 (seed 93) failed so at action 18800, right after the switch at 18799.
  */
 export async function trim(page: Page, limit: number): Promise<void> {
+  await ensureCaret(page);
   await key(page, 'Control+Home');
+  if (!(await caretInEditor(page))) throw new Error('Control+Home took the caret out of the note.');
   for (let round = 0; round < 40; round += 1) {
     const before = await textLength(page);
     if (before <= limit) return;
@@ -78,7 +97,9 @@ export async function switchPages(page: Page): Promise<void> {
   await page.waitForTimeout(150);
 }
 
+/** Does one step. It puts the caret back in the note first, since the step before may have left the focus outside. */
 export async function perform(page: Page, step: Step): Promise<void> {
+  await ensureCaret(page);
   switch (step.id) {
     case 'type':
       await page.keyboard.type(step.words, { delay: 4 });
@@ -117,15 +138,11 @@ export async function perform(page: Page, step: Step): Promise<void> {
       await switchPages(page);
       return;
     case 'list':
-      await key(page, 'Enter');
-      await page.keyboard.type(`- ${step.words}`, { delay: 4 });
-      await key(page, 'Enter');
-      await key(page, 'Enter');
-      return;
     case 'heading':
+      // A list ends with a second Enter, which leaves it. A heading ends with one.
       await key(page, 'Enter');
-      await page.keyboard.type(`## ${step.words}`, { delay: 4 });
-      await key(page, 'Enter');
+      await page.keyboard.type(`${step.id === 'list' ? '-' : '##'} ${step.words}`, { delay: 4 });
+      await key(page, 'Enter', step.id === 'list' ? 2 : 1);
       return;
   }
 }
