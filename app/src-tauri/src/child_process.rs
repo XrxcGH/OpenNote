@@ -4,12 +4,12 @@
 //!
 //! Its output is read on threads to the end of each pipe. The end comes when every process that holds the pipe has
 //! closed it. That is the program, and any program it started that inherited the pipe and still runs. So the wait for
-//! the end is bounded too, and what was read by then is kept: a grandchild can't hold the call, and a reader that
-//! starts late, on a loaded machine, still gets everything the program wrote.
+//! the end is bounded too, and what was read by then is kept. A grandchild can't hold the call. A reader that starts
+//! late, on a loaded machine, still gets everything the program wrote.
 
 use std::{
     io::{ErrorKind, Read},
-    process::{Child, Command, Stdio},
+    process::{Child, Command, ExitStatus, Stdio},
     sync::{Arc, Condvar, Mutex, MutexGuard, PoisonError},
     time::{Duration, Instant},
 };
@@ -55,8 +55,8 @@ impl Output {
     }
 }
 
-/// Reads a pipe to its end on its own thread, so a program that writes more than the pipe holds never blocks. What
-/// it reads is kept as it comes, so a wait that ends early still has it. `late` holds the reader back before its
+/// Reads a pipe to its end on its own thread, so a program that writes more than the pipe holds never blocks. It
+/// keeps what it reads as it comes. A wait that ends early still has it. The reader waits `late` before its
 /// first read; only tests set it, to stand for a reader that a loaded machine runs late.
 fn read_all(pipe: Option<impl Read + Send + 'static>, late: Duration) -> Arc<Output> {
     let output = Arc::new(Output::default());
@@ -150,14 +150,22 @@ fn run(command: &mut Command, limit: Duration, late: Duration) -> Result<String,
             }
         }
     };
-    let deadline = Instant::now() + limit;
+    answer(&program, status, &stdout, &stderr, Instant::now() + limit)
+}
+
+/// What an ended program said: its stdout on success, the start of its stderr on failure. The pipe is waited for
+/// until `deadline`.
+fn answer(
+    program: &str,
+    status: ExitStatus,
+    stdout: &Output,
+    stderr: &Output,
+    deadline: Instant,
+) -> Result<String, Failure> {
     if status.success() {
         let (bytes, whole) = stdout.wait(deadline);
         if !whole {
-            log::warn!(
-                "{program} ended, but a program it started kept its output open for {} ms; what came by then is used",
-                limit.as_millis()
-            );
+            log::warn!("{program} ended, but a program it started kept its output open; what came by then is used");
         }
         Ok(String::from_utf8_lossy(&bytes).into_owned())
     } else {
